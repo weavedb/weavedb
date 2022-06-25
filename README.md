@@ -106,13 +106,13 @@ Update a doc
 Delete a field
 
 ```json
-[ { "age": { "__op": "del" }, "collection_name", "doc_id" ]
+[ { "age": { "__op": "del" } }, "collection_name", "doc_id" ]
 ```
 
 Increase/Decrease a field
 
 ```json
-[ { "age": { "__op": "inc", "n": 5 }, "collection_name", "doc_id" ]
+[ { "age": { "__op": "inc", "n": 5 } }, "collection_name", "doc_id" ]
 ```
 
 In the coming SDK, better APIs will be privided for `dec` `inc` operations.
