@@ -1,0 +1,43 @@
+import { isNil } from "ramda"
+const { recoverTypedSignature } = require("./eth-sig-util")
+export const validate = (state, action, func) => {
+  const { query, nonce, signature, caller } = action.input
+  const _caller = caller.toLowerCase()
+  const name = "asteroid"
+  const version = "1"
+  const EIP712Domain = [
+    { name: "name", type: "string" },
+    { name: "version", type: "string" },
+    { name: "verifyingContract", type: "string" },
+  ]
+  const domain = { name, version, verifyingContract: SmartWeave.contract.id }
+  const message = {
+    nonce,
+    query: JSON.stringify({ func, query }),
+  }
+  const _data = {
+    types: {
+      EIP712Domain,
+      Query: [
+        { name: "query", type: "string" },
+        { name: "nonce", type: "uint256" },
+      ],
+    },
+    domain,
+    primaryType: "Query",
+    message,
+  }
+  let signer = recoverTypedSignature({
+    version: "V4",
+    data: _data,
+    signature,
+  })
+  const _signer = signer.toLowerCase()
+  if (_signer !== _caller) throw new ContractError(`The wrong signature`)
+  if ((state.nonces[_caller] || 0) + 1 !== nonce) {
+    throw new ContractError(`The wrong nonce`)
+  }
+  if (isNil(state.nonces[_caller])) state.nonces[_caller] = 0
+  state.nonces[_caller] += 1
+  return _signer
+}

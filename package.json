@@ -1,0 +1,30 @@
+{
+  "name": "weavedb",
+  "version": "0.0.1",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@metamask/eth-sig-util": "^4.0.1",
+    "arlocal": "1.1.42",
+    "arweave": "1.11.4",
+    "bn.js": "^5.2.1",
+    "buffer": "^6.0.3",
+    "ethereumjs-wallet": "^1.0.2",
+    "ramda": "^0.28.0",
+    "replace-in-file": "^6.3.5",
+    "secp256k1": "^4.0.3",
+    "warp-contracts": "1.0.1"
+  },
+  "scripts": {
+    "test": "yarn build && mocha",
+    "build": "yarn clean && node build.js && npm run cp",
+    "clean": "rimraf ./dist",
+    "cp": "copyfiles -u 1 ./src/**/*.json dist"
+  },
+  "devDependencies": {
+    "chai": "^4.3.6",
+    "copyfiles": "^2.4.1",
+    "esbuild": "^0.14.46",
+    "mocha": "^10.0.0"
+  }
+}
