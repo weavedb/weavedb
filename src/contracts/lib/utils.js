@@ -1,4 +1,4 @@
-import { isNil, slice, includes, is } from "ramda"
+import { concat, without, isNil, slice, includes, is, complement } from "ramda"
 import { validate } from "./validate"
 
 export const getDoc = (data, path, _signer) => {
@@ -45,7 +45,16 @@ export const mergeData = (_data, new_data, overwrite = false) => {
   if (isNil(_data.__data) || overwrite) _data.__data = {}
   for (let k in new_data) {
     const d = new_data[k]
-    if (is(Object)(d) && d.__op === "inc") {
+
+    if (is(Object)(d) && d.__op === "arrayUnion") {
+      if (complement(is)(Array, d.arr)) err()
+      if (complement(is)(Array, _data.__data[k])) _data.__data[k] = []
+      _data.__data[k] = concat(_data.__data[k], d.arr)
+    } else if (is(Object)(d) && d.__op === "arrayRemove") {
+      if (complement(is)(Array, d.arr)) err()
+      if (complement(is)(Array, _data.__data[k])) _data.__data[k] = []
+      _data.__data[k] = without(d.arr, _data.__data[k])
+    } else if (is(Object)(d) && d.__op === "inc") {
       if (isNaN(d.n)) err()
       if (isNil(_data.__data[k])) _data.__data[k] = 0
       _data.__data[k] += d.n

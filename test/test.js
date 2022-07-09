@@ -7,6 +7,8 @@ const { init, addFunds, mineBlock, query, get, getNonce } = require("./util")
 const op = {
   del: () => ({ __op: "del" }),
   inc: n => ({ __op: "inc", n }),
+  union: (...args) => ({ __op: "arrayUnion", arr: args }),
+  remove: (...args) => ({ __op: "arrayRemove", arr: args }),
 }
 
 describe("WeaveDB", function () {
@@ -57,7 +59,7 @@ describe("WeaveDB", function () {
     expect(await get(["ppl", "Bob"])).to.eql(data2)
   })
 
-  it("shoud upate", async () => {
+  it.only("shoud upate", async () => {
     const data = { name: "Bob", age: 20 }
     await query(wallet, "set", [data, "ppl", "Bob"])
     expect(await get(["ppl", "Bob"])).to.eql(data)
@@ -67,6 +69,28 @@ describe("WeaveDB", function () {
     expect(await get(["ppl", "Bob"])).to.eql({ name: "Bob", age: 30 })
     await query(wallet, "update", [{ age: op.del(5) }, "ppl", "Bob"])
     expect(await get(["ppl", "Bob"])).to.eql({ name: "Bob" })
+
+    // arrayUnion
+    await query(wallet, "update", [
+      { foods: op.union("pasta", "cake", "wine") },
+      "ppl",
+      "Bob",
+    ])
+    expect(await get(["ppl", "Bob"])).to.eql({
+      name: "Bob",
+      foods: ["pasta", "cake", "wine"],
+    })
+
+    // arrayRemove
+    await query(wallet, "update", [
+      { foods: op.remove("pasta", "cake") },
+      "ppl",
+      "Bob",
+    ])
+    expect(await get(["ppl", "Bob"])).to.eql({
+      name: "Bob",
+      foods: ["wine"],
+    })
   })
 
   it("shoud upsert", async () => {

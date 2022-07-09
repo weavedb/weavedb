@@ -7,8 +7,6 @@ export const set = (state, action) => {
     action,
     "set"
   )
-  console.log(_data)
-  console.log(new_data)
   _data = mergeData(_data, new_data, true)
   return { state }
 }
