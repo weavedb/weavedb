@@ -41,8 +41,8 @@ export const parse = (state, action, func) => {
   return { data, query, _signer, new_data, path, _data }
 }
 
-export const mergeData = (_data, new_data) => {
-  if (isNil(_data.__data)) _data.__data = {}
+export const mergeData = (_data, new_data, overwrite = false) => {
+  if (isNil(_data.__data) || overwrite) _data.__data = {}
   for (let k in new_data) {
     const d = new_data[k]
     if (is(Object)(d) && d.__op === "inc") {
