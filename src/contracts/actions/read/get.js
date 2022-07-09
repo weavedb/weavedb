@@ -28,7 +28,7 @@ import {
 
 import { err, getDoc } from "../../lib/utils"
 
-export const get = (state, action) => {
+export const get = async (state, action) => {
   const { data } = state
   const { query } = action.input
   const [path, opt] = splitWhen(complement(is)(String), query)

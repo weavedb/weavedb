@@ -12,8 +12,39 @@ export const getDoc = (data, path, _signer) => {
     ? getDoc(data[col].__docs[id].subs, slice(2, path.length, path), _signer)
     : data[col].__docs[id]
 }
+function bigIntFromBytes(byteArr) {
+  let hexString = ""
+  for (const byte of byteArr) {
+    hexString += byte.toString(16).padStart(2, "0")
+  }
+  return BigInt("0x" + hexString)
+}
 
-export const parse = (state, action, func) => {
+async function getRandomIntNumber(max, action, uniqueValue = "") {
+  const pseudoRandomData = SmartWeave.arweave.utils.stringToBuffer(
+    SmartWeave.block.height +
+      SmartWeave.block.timestamp +
+      SmartWeave.transaction.id +
+      action.caller +
+      uniqueValue
+  )
+  const hashBytes = await SmartWeave.arweave.crypto.hash(pseudoRandomData)
+  const randomBigInt = bigIntFromBytes(hashBytes)
+  return Number(randomBigInt % BigInt(max))
+}
+
+const genId = async action => {
+  const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+  let autoId = ""
+  for (let i = 0; i < 20; i++) {
+    autoId += CHARS.charAt(
+      (await getRandomIntNumber(CHARS.length, action, i)) - 1
+    )
+  }
+  return autoId
+}
+
+export const parse = async (state, action, func) => {
   const { data } = state
   const { query } = action.input
   const _signer = validate(state, action, func)
@@ -23,6 +54,15 @@ export const parse = (state, action, func) => {
     path = query
   } else {
     ;[new_data, ...path] = query
+    if (func === "add") {
+      const id = await genId(action)
+      if (isNil(state.ids[SmartWeave.transaction.id])) {
+        state.ids[SmartWeave.transaction.id] = []
+      }
+      state.ids[SmartWeave.transaction.id].push(id)
+
+      path.push(id)
+    }
   }
   if (
     (isNil(new_data) && func !== "delete") ||

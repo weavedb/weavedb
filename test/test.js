@@ -2,7 +2,15 @@ const fs = require("fs")
 const path = require("path")
 const { expect } = require("chai")
 const { isNil, range } = require("ramda")
-const { init, addFunds, mineBlock, query, get, getNonce } = require("./util")
+const {
+  init,
+  addFunds,
+  mineBlock,
+  query,
+  get,
+  getIds,
+  getNonce,
+} = require("./util")
 
 const op = {
   del: () => ({ __op: "del" }),
@@ -23,7 +31,7 @@ describe("WeaveDB", function () {
     domain,
     wallet2
 
-  this.timeout(5000)
+  this.timeout(0)
   before(async () => {
     ;({
       arlocal,
@@ -50,6 +58,12 @@ describe("WeaveDB", function () {
     expect(await getNonce(wallet.getAddressString())).to.equal(2)
   })
 
+  it("shoud add & get", async () => {
+    const data = { name: "Bob", age: 20 }
+    const tx = await query(wallet, "add", [data, "ppl"])
+    expect(await get(["ppl", (await getIds(tx))[0]])).to.eql(data)
+  })
+
   it("shoud set & get", async () => {
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Alice", height: 160 }
@@ -59,7 +73,7 @@ describe("WeaveDB", function () {
     expect(await get(["ppl", "Bob"])).to.eql(data2)
   })
 
-  it.only("shoud upate", async () => {
+  it("shoud upate", async () => {
     const data = { name: "Bob", age: 20 }
     await query(wallet, "set", [data, "ppl", "Bob"])
     expect(await get(["ppl", "Bob"])).to.eql(data)
