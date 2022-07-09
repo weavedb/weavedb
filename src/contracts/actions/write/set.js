@@ -7,7 +7,6 @@ export const set = (state, action) => {
     action,
     "set"
   )
-  if (!isNil(_data.__data)) err(`Data already exists`)
   _data = mergeData(_data, new_data)
   return { state }
 }
