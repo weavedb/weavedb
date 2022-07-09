@@ -110,6 +110,15 @@ const getNonce = async function (addr) {
   return result + 1
 }
 
+const getIds = async function (tx) {
+  let result
+  ;({ result } = await wdb.viewState({
+    function: "ids",
+    tx,
+  }))
+  return result
+}
+
 const get = async function (query) {
   let result
   ;({ result } = await wdb.viewState({
@@ -151,7 +160,8 @@ const query = async function (wallet, func, query) {
       signature,
     })
   ).to.equal(addr)
-  await wdb.writeInteraction({
+  let tx = null
+  tx = await wdb.writeInteraction({
     function: func,
     query,
     signature,
@@ -159,12 +169,14 @@ const query = async function (wallet, func, query) {
     caller: wallet.getAddressString(),
   })
   await mineBlock(arweave)
+  return tx
 }
 
 module.exports = {
   get,
   query,
   getNonce,
+  getIds,
   addFunds,
   mineBlock,
   init,

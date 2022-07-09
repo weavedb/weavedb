@@ -1,8 +1,8 @@
 import { isNil } from "ramda"
 import { err, parse } from "../../lib/utils"
 
-export const remove = (state, action) => {
-  const { data, query, _signer, new_data, path, _data } = parse(
+export const remove = async (state, action) => {
+  const { data, query, _signer, new_data, path, _data } = await parse(
     state,
     action,
     "delete"
