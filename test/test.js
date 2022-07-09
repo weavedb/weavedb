@@ -50,8 +50,11 @@ describe("WeaveDB", function () {
 
   it("shoud set & get", async () => {
     const data = { name: "Bob", age: 20 }
+    const data2 = { name: "Alice", age: 25 }
     await query(wallet, "set", [data, "ppl", "Bob"])
     expect(await get(["ppl", "Bob"])).to.eql(data)
+    await query(wallet, "set", [data2, "ppl", "Bob"])
+    expect(await get(["ppl", "Bob"])).to.eql(data2)
   })
 
   it("shoud upate", async () => {
