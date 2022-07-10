@@ -9,6 +9,7 @@ const {
   mineBlock,
   query,
   get,
+  getSchema,
   getIds,
   getNonce,
 } = require("./util")
@@ -75,7 +76,7 @@ describe("WeaveDB", function () {
     expect(await get(["ppl", "Bob"])).to.eql(data2)
   })
 
-  it.only("shoud update", async () => {
+  it("shoud update", async () => {
     const data = { name: "Bob", age: 20 }
     await query(wallet, "set", [data, "ppl", "Bob"])
     expect(await get(["ppl", "Bob"])).to.eql(data)
@@ -272,5 +273,35 @@ describe("WeaveDB", function () {
     expect(await get(["ppl", "Bob"])).to.eql({ name: "Bob", age: 20 })
     expect(await get(["ppl", (await getIds(tx))[0]])).to.eql(data2)
     expect(await get(["ppl", "Beth"])).to.eql(null)
+  })
+
+  it("shoud set schema", async () => {
+    const data = { name: "Bob", age: 20 }
+    const schema = {
+      type: "object",
+      required: ["name"],
+      properties: {
+        name: {
+          type: "number",
+        },
+      },
+    }
+    const schema2 = {
+      type: "object",
+      required: ["name"],
+      properties: {
+        name: {
+          type: "string",
+        },
+      },
+    }
+    await query(wallet, "setSchema", [schema, "ppl"])
+    expect(await getSchema(["ppl"])).to.eql(schema)
+    await query(wallet, "set", [data, "ppl", "Bob"])
+    expect(await get(["ppl", "Bob"])).to.eql(null)
+    await query(wallet, "setSchema", [schema2, "ppl"])
+    expect(await getSchema(["ppl"])).to.eql(schema2)
+    await query(wallet, "set", [data, "ppl", "Bob"])
+    expect(await get(["ppl", "Bob"])).to.eql(data)
   })
 })

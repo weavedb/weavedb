@@ -114,13 +114,13 @@ export const get = async (state, action) => {
   if (!isNil(_start) && (_sort || []).length < _start.length - 1) err()
   if (!isNil(_end) && (_sort || []).length < _end.length - 1) err()
   if (isNil(path) || path.length === 0) err()
-
   if (path.length % 2 === 0) {
     if (any(complement(isNil))([_limit, _sort, _filter])) err()
-    const _data = getDoc(data, path)
+    const { doc: _data } = getDoc(data, path)
     return { result: _data.__data || null }
   } else {
-    const _data = path.length === 1 ? data : getDoc(data, slice(0, -1, path))
+    const { doc: _data } =
+      path.length === 1 ? { doc: data } : getDoc(data, slice(0, -1, path))
     const skipInclusive = (v2, end = false, i = 0) => {
       const tar = end ? _end : _start
       const field = _sort[i][0]

@@ -1,4 +1,5 @@
 import { concat, without, isNil, slice, includes, is, complement } from "ramda"
+import { validator } from "@exodus/schemasafe"
 
 export const getDoc = (data, path, _signer) => {
   const [col, id] = path
@@ -9,8 +10,27 @@ export const getDoc = (data, path, _signer) => {
   }
   return path.length >= 4
     ? getDoc(data[col].__docs[id].subs, slice(2, path.length, path), _signer)
-    : data[col].__docs[id]
+    : { doc: data[col].__docs[id], schema: data[col].schema }
 }
+
+export const getCol = (data, path, _signer) => {
+  const [col, id] = path
+  data[col] ||= { __docs: {} }
+  if (isNil(id)) {
+    return data[col]
+  } else {
+    data[col].__docs[id] ||= { __data: null, subs: {} }
+    if (!isNil(_signer) && isNil(data[col].__docs[id].setter)) {
+      data[col].__docs[id].setter = _signer
+    }
+    return getCol(
+      data[col].__docs[id].subs,
+      slice(2, path.length, path),
+      _signer
+    )
+  }
+}
+
 function bigIntFromBytes(byteArr) {
   let hexString = ""
   for (const byte of byteArr) {
@@ -48,7 +68,7 @@ export const parse = async (state, action, func, signer) => {
   const { query } = action.input
   let new_data = null
   let path = null
-  if (func === "delete") {
+  if (includes(func)(["delete", "getSchema"])) {
     path = query
   } else {
     ;[new_data, ...path] = query
@@ -58,25 +78,37 @@ export const parse = async (state, action, func, signer) => {
         state.ids[SmartWeave.transaction.id] = []
       }
       state.ids[SmartWeave.transaction.id].push(id)
-
       path.push(id)
     }
   }
   if (
-    (isNil(new_data) && func !== "delete") ||
+    (isNil(new_data) && !includes(func)(["delete", "getSchema"])) ||
     path.length === 0 ||
-    path.length % 2 !== 0
+    (path.length % 2 !== 0 && !includes(func)(["setSchema", "getSchema"]))
   ) {
     err()
   }
-  const _data = getDoc(data, path, signer, func)
+  let _data = null
+  let schema = null
+  if (includes(func)(["setSchema", "getSchema"])) {
+    _data = getCol(data, path, signer, func)
+  } else {
+    const doc = getDoc(data, path, signer, func)
+    _data = doc.doc
+    schema = doc.schema
+  }
   if (
     includes(func)(["update", "upsert", "delete"]) &&
     _data.setter !== signer
   ) {
-    err("caller is not data owner")
+  } else if (func === "setSchema" && action.caller !== state.owner) {
+    err("caller is not contract owner")
   }
-  return { data, query, new_data, path, _data }
+  if (includes(func)(["set", "add", "update", "upsert"]) && !isNil(schema)) {
+    const _validate = validator(schema)
+    if (!_validate(new_data)) err()
+  }
+  return { data, query, new_data, path, _data, schema }
 }
 
 export const mergeData = (_data, new_data, overwrite = false) => {
