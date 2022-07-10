@@ -7,9 +7,9 @@ import { add } from "./actions/write/add"
 import { update } from "./actions/write/update"
 import { upsert } from "./actions/write/upsert"
 import { remove } from "./actions/write/remove"
+import { batch } from "./actions/write/batch"
 
 export async function handle(state, action) {
-  const input = action.input
   switch (action.input.function) {
     case "add":
       return await add(state, action)
@@ -27,9 +27,11 @@ export async function handle(state, action) {
       return await ids(state, action)
     case "delete":
       return await remove(state, action)
+    case "batch":
+      return await batch(state, action)
     default:
       err(
-        `No function supplied or function not recognised: "${input.function}"`
+        `No function supplied or function not recognised: "${action.input.function}"`
       )
   }
   return { state }
