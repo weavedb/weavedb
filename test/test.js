@@ -248,4 +248,20 @@ describe("WeaveDB", function () {
       Alice,
     ])
   })
+  it("shoud batch execute", async () => {
+    const data = { name: "Bob", age: 20 }
+    const data2 = { name: "Alice", age: 40 }
+    const data3 = { name: "Beth", age: 10 }
+    const tx = await query(wallet, "batch", [
+      ["set", data, "ppl", "Bob"],
+      ["set", data3, "ppl", "Beth"],
+      ["update", { age: 30 }, "ppl", "Bob"],
+      ["upsert", { age: 20 }, "ppl", "Bob"],
+      ["add", data2, "ppl"],
+      ["delete", "ppl", "Beth"],
+    ])
+    expect(await get(["ppl", "Bob"])).to.eql({ name: "Bob", age: 20 })
+    expect(await get(["ppl", (await getIds(tx))[0]])).to.eql(data2)
+    expect(await get(["ppl", "Beth"])).to.eql(null)
+  })
 })
