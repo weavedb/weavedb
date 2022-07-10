@@ -1,5 +1,4 @@
 import { concat, without, isNil, slice, includes, is, complement } from "ramda"
-import { validate } from "./validate"
 
 export const getDoc = (data, path, _signer) => {
   const [col, id] = path
@@ -44,10 +43,9 @@ const genId = async action => {
   return autoId
 }
 
-export const parse = async (state, action, func) => {
+export const parse = async (state, action, func, signer) => {
   const { data } = state
   const { query } = action.input
-  const _signer = validate(state, action, func)
   let new_data = null
   let path = null
   if (func === "delete") {
@@ -71,14 +69,14 @@ export const parse = async (state, action, func) => {
   ) {
     err()
   }
-  const _data = getDoc(data, path, _signer, func)
+  const _data = getDoc(data, path, signer, func)
   if (
     includes(func)(["update", "upsert", "delete"]) &&
-    _data.setter !== _signer
+    _data.setter !== signer
   ) {
     err("caller is not data owner")
   }
-  return { data, query, _signer, new_data, path, _data }
+  return { data, query, new_data, path, _data }
 }
 
 export const mergeData = (_data, new_data, overwrite = false) => {
