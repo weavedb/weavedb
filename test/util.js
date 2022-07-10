@@ -128,6 +128,15 @@ const get = async function (query) {
   return result
 }
 
+const getSchema = async function (query) {
+  let result
+  ;({ result } = await wdb.viewState({
+    function: "getSchema",
+    query,
+  }))
+  return result
+}
+
 const query = async function (wallet, func, query) {
   const addr = wallet.getAddressString()
   let result
@@ -174,6 +183,7 @@ const query = async function (wallet, func, query) {
 
 module.exports = {
   get,
+  getSchema,
   query,
   getNonce,
   getIds,
