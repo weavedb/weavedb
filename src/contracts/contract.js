@@ -3,6 +3,8 @@ import { nonce } from "./actions/read/nonce"
 import { ids } from "./actions/read/ids"
 import { get } from "./actions/read/get"
 import { set } from "./actions/write/set"
+import { setSchema } from "./actions/write/setSchema"
+import { getSchema } from "./actions/read/getSchema"
 import { add } from "./actions/write/add"
 import { update } from "./actions/write/update"
 import { upsert } from "./actions/write/upsert"
@@ -21,6 +23,10 @@ export async function handle(state, action) {
       return await upsert(state, action)
     case "get":
       return await get(state, action)
+    case "setSchema":
+      return await setSchema(state, action)
+    case "getSchema":
+      return await getSchema(state, action)
     case "nonce":
       return await nonce(state, action)
     case "ids":
