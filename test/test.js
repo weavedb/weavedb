@@ -1,3 +1,4 @@
+const Arweave = require("arweave")
 const fs = require("fs")
 const path = require("path")
 const { expect } = require("chai")
@@ -13,6 +14,7 @@ const {
 } = require("./util")
 
 const op = {
+  ts: () => ({ __op: "ts" }),
   del: () => ({ __op: "del" }),
   inc: n => ({ __op: "inc", n }),
   union: (...args) => ({ __op: "arrayUnion", arr: args }),
@@ -73,7 +75,7 @@ describe("WeaveDB", function () {
     expect(await get(["ppl", "Bob"])).to.eql(data2)
   })
 
-  it("shoud upate", async () => {
+  it.only("shoud update", async () => {
     const data = { name: "Bob", age: 20 }
     await query(wallet, "set", [data, "ppl", "Bob"])
     expect(await get(["ppl", "Bob"])).to.eql(data)
@@ -105,6 +107,12 @@ describe("WeaveDB", function () {
       name: "Bob",
       foods: ["wine"],
     })
+
+    // timestamp
+    const tx = await query(wallet, "update", [{ death: op.ts() }, "ppl", "Bob"])
+    const tx_data = await arweave.transactions.get(tx)
+    const timestamp = (await arweave.blocks.get(tx_data.block)).timestamp
+    expect((await get(["ppl", "Bob"])).death).to.be.lte(timestamp)
   })
 
   it("shoud upsert", async () => {
@@ -248,6 +256,7 @@ describe("WeaveDB", function () {
       Alice,
     ])
   })
+
   it("shoud batch execute", async () => {
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Alice", age: 40 }

@@ -98,6 +98,8 @@ export const mergeData = (_data, new_data, overwrite = false) => {
       _data.__data[k] += d.n
     } else if (is(Object)(d) && d.__op === "del") {
       delete _data.__data[k]
+    } else if (is(Object)(d) && d.__op === "ts") {
+      _data.__data[k] = SmartWeave.block.timestamp
     } else {
       _data.__data[k] = d
     }
