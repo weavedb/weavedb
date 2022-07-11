@@ -53,6 +53,14 @@ async function init() {
   })
   LoggerFactory.INST.logLevel("error")
   warp = WarpNodeFactory.forTesting(arweave)
+  return {
+    arlocal,
+    arweave,
+    warp,
+  }
+}
+
+async function initBeforeEach() {
   wallet = Wallet.generate()
   wallet2 = Wallet.generate()
   arweave_wallet = await arweave.wallets.generate()
@@ -87,10 +95,6 @@ async function init() {
   domain = { name, version, verifyingContract: wdb._contractTxId }
 
   return {
-    domain,
-    arlocal,
-    arweave,
-    warp,
     wallet,
     walletAddress,
     contractSrc,
@@ -99,8 +103,10 @@ async function init() {
     wallet,
     wallet2,
     arweave_wallet,
+    domain,
   }
 }
+
 const getNonce = async function (addr) {
   let result
   ;({ result } = await wdb.viewState({
@@ -132,6 +138,15 @@ const getSchema = async function (query) {
   let result
   ;({ result } = await wdb.viewState({
     function: "getSchema",
+    query,
+  }))
+  return result
+}
+
+const getRules = async function (query) {
+  let result
+  ;({ result } = await wdb.viewState({
+    function: "getRules",
     query,
   }))
   return result
@@ -184,10 +199,12 @@ const query = async function (wallet, func, query) {
 module.exports = {
   get,
   getSchema,
+  getRules,
   query,
   getNonce,
   getIds,
   addFunds,
   mineBlock,
   init,
+  initBeforeEach,
 }
