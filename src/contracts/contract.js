@@ -5,6 +5,8 @@ import { get } from "./actions/read/get"
 import { set } from "./actions/write/set"
 import { setSchema } from "./actions/write/setSchema"
 import { getSchema } from "./actions/read/getSchema"
+import { setRules } from "./actions/write/setRules"
+import { getRules } from "./actions/read/getRules"
 import { add } from "./actions/write/add"
 import { update } from "./actions/write/update"
 import { upsert } from "./actions/write/upsert"
@@ -27,6 +29,10 @@ export async function handle(state, action) {
       return await setSchema(state, action)
     case "getSchema":
       return await getSchema(state, action)
+    case "setRules":
+      return await setRules(state, action)
+    case "getRules":
+      return await getRules(state, action)
     case "nonce":
       return await nonce(state, action)
     case "ids":

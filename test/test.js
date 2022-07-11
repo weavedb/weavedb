@@ -5,11 +5,13 @@ const { expect } = require("chai")
 const { isNil, range } = require("ramda")
 const {
   init,
+  initBeforeEach,
   addFunds,
   mineBlock,
   query,
   get,
   getSchema,
+  getRules,
   getIds,
   getNonce,
 } = require("./util")
@@ -35,11 +37,17 @@ describe("WeaveDB", function () {
     wallet2
 
   this.timeout(0)
+
   before(async () => {
+    ;({ arlocal, arweave, warp } = await init())
+  })
+
+  after(async () => {
+    await arlocal.stop()
+  })
+
+  beforeEach(async () => {
     ;({
-      arlocal,
-      arweave,
-      warp,
       wallet,
       walletAddress,
       contractSrc,
@@ -48,11 +56,7 @@ describe("WeaveDB", function () {
       domain,
       wallet,
       wallet2,
-    } = await init())
-  })
-
-  after(async () => {
-    await arlocal.stop()
+    } = await initBeforeEach())
   })
 
   it("shoud get nonce", async () => {
@@ -303,5 +307,28 @@ describe("WeaveDB", function () {
     expect(await getSchema(["ppl"])).to.eql(schema2)
     await query(wallet, "set", [data, "ppl", "Bob"])
     expect(await get(["ppl", "Bob"])).to.eql(data)
+  })
+
+  it("shoud set rules", async () => {
+    const data = { name: "Bob", age: 20 }
+    const rules = {
+      "allow create,update": {
+        and: [
+          { "!=": [{ var: "request.auth.signer" }, null] },
+          { "<": [{ var: "resource.newData.age" }, 30] },
+        ],
+      },
+      "deny delete": { "!=": [{ var: "request.auth.signer" }, null] },
+    }
+    await query(wallet, "setRules", [rules, "ppl"])
+    expect(await getRules(["ppl"])).to.eql(rules)
+    await query(wallet, "set", [data, "ppl", "Bob"])
+    expect(await get(["ppl", "Bob"])).to.eql(data)
+    await query(wallet, "delete", ["ppl", "Bob"])
+    expect(await get(["ppl", "Bob"])).to.eql(data)
+    await query(wallet, "update", [{ age: op.inc(10) }, "ppl", "Bob"])
+    expect(await get(["ppl", "Bob"])).to.eql({ name: "Bob", age: 20 })
+    await query(wallet, "update", [{ age: op.inc(5) }, "ppl", "Bob"])
+    expect(await get(["ppl", "Bob"])).to.eql({ name: "Bob", age: 25 })
   })
 })
