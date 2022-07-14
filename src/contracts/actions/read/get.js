@@ -1,4 +1,8 @@
 import {
+  uniq,
+  pluck,
+  range,
+  addIndex,
   keys,
   groupBy,
   flatten,
@@ -29,15 +33,20 @@ import {
 
 import { err, getDoc, getCol } from "../../lib/utils"
 import { getIndex, _getIndex } from "../../lib/index"
-export const get = async (state, action) => {
+// 1. verify interactions
+// 2. get index
+// 3. filter skip while limiting
+
+const parseQuery = (state, action) => {
   const { data } = state
-  const { query } = action.input
-  const [path, opt] = splitWhen(complement(is)(String), query)
+  const [path, opt] = splitWhen(complement(is)(String), action.input.query)
   let _limit = null
   let _filter = null
   let _sort = null
-  let _start = null
-  let _end = null
+  let _startAt = null
+  let _startAfter = null
+  let _endAt = null
+  let _endBefore = null
   for (const v of opt) {
     if (is(Number)(v)) {
       if (isNil(_limit)) {
@@ -47,24 +56,27 @@ export const get = async (state, action) => {
       }
     } else if (is(Array)(v)) {
       if (v.length === 0) err()
-
-      if (includes(v[0])(["startAt", "startAfter"])) {
-        if (
-          isNil(_start) &&
-          v.length > 1 &&
-          (v[0] === "startAt" || v.length === 2)
-        ) {
-          _start = v
+      if (v[0] === "startAt") {
+        if (isNil(_startAt) && v.length > 1 && v.length > 1) {
+          _startAt = v
         } else {
           err()
         }
-      } else if (includes(v[0])(["endAt", "endBefore"])) {
-        if (
-          isNil(_end) &&
-          v.length > 1 &&
-          (v[0] === "endAt" || v.length === 2)
-        ) {
-          _end = v
+      } else if (v[0] === "startAfter") {
+        if (isNil(_startAfter) && v.length > 1 && v.length > 1) {
+          _startAfter = v
+        } else {
+          err()
+        }
+      } else if (v[0] === "endAt") {
+        if (isNil(_endAt) && v.length > 1 && v.length > 1) {
+          _endAt = v
+        } else {
+          err()
+        }
+      } else if (v[0] === "endBefore") {
+        if (isNil(_endBefore) && v.length > 1 && v.length > 1) {
+          _endBefore = v
         } else {
           err()
         }
@@ -84,10 +96,10 @@ export const get = async (state, action) => {
           ])
         ) {
           if (isNil(_filter)) {
-            _filter = v
-          } else {
-            err()
+            _filter = {}
           }
+          if (!isNil(_filter[v[1]])) err()
+          _filter[v[1]] = v
         } else {
           err()
         }
@@ -112,135 +124,237 @@ export const get = async (state, action) => {
       }
     }
   }
-  if (!isNil(_start) && (_sort || []).length < _start.length - 1) err()
-  if (!isNil(_end) && (_sort || []).length < _end.length - 1) err()
+  const checkSkip = (a, b) => {
+    if (!isNil(a) || !isNil(b)) {
+      if (!isNil(a) && !isNil(b)) err()
+      if ((a || b).length < (_sort || []).length) err()
+    }
+  }
   if (isNil(path) || path.length === 0) err()
+  checkSkip(_startAt, _startAfter)
+  checkSkip(_endAt, _endBefore)
+  return {
+    path,
+    _limit,
+    _filter,
+    _sort,
+    _startAt,
+    _startAfter,
+    _endAt,
+    _endBefore,
+  }
+}
+
+const getColIndex = (state, data, path, _sort) => {
+  let index
+  let ind = getIndex(state, path)
+  if (!isNil(_sort)) {
+    let i = 0
+    let _ind = ind
+    for (let v of _sort) {
+      let subs = i === 0 ? _ind : _ind.subs
+      _ind = subs[v[0]][_sort.length === 1 ? "asc" : v[1] || "asc"]
+      i++
+    }
+    index = _ind._
+    if (_sort.length === 1 && _sort[0][1] === "desc") index = reverse(index)
+  } else {
+    index = keys(getCol(data, path).__docs)
+  }
+  return index
+}
+
+let comp = (val, x) => {
+  let res = 0
+  for (let i of range(0, val.length)) {
+    let a = val[i].val
+    let b = x[i]
+    if (val[i].desc) {
+      a = x[i]
+      b = val[i].val
+    }
+    if (a > b) {
+      res = -1
+      break
+    } else if (a < b) {
+      res = 1
+      break
+    }
+  }
+  return res
+}
+
+let bsearch = function (arr, x, sort, db, start = 0, end = arr.length - 1) {
+  if (start > end) return null
+  let mid = Math.floor((start + end) / 2)
+  const val = addIndex(map)((v, i) => ({
+    desc: sort[i][1] === "desc",
+    val: db[arr[mid]].__data[sort[i][0]],
+  }))(tail(x))
+  let res = comp(val, tail(x))
+  let res2 = 1
+  if (includes(x[0])(["startAt", "startAfter"])) {
+    if (mid > 0) {
+      const val2 = addIndex(map)((v, i) => ({
+        desc: sort[i][1] === "desc",
+        val: db[arr[mid - 1]].__data[sort[i][0]],
+      }))(tail(x))
+      res2 = comp(val2, tail(x))
+    }
+  } else {
+    if (mid < arr.length - 1) {
+      const val2 = addIndex(map)((v, i) => ({
+        desc: sort[i][1] === "desc",
+        val: db[arr[mid + 1]].__data[sort[i][0]],
+      }))(tail(x))
+      res2 = comp(val2, tail(x))
+    }
+  }
+  let down = false
+  switch (x[0]) {
+    case "startAt":
+      if (res2 === 1 && res <= 0) return mid
+      if (res <= 0) down = true
+      break
+    case "startAfter":
+      if (res2 >= 0 && res === -1) return mid
+      if (res < 0) down = true
+      break
+    case "endAt":
+      if (res2 === -1 && res >= 0) return mid
+      if (res < 0) down = true
+      break
+    case "endBefore":
+      if (res2 <= 0 && res === 1) return mid
+      if (res <= 0) down = true
+      break
+  }
+  if (down) {
+    return bsearch(arr, x, sort, db, start, mid - 1)
+  } else {
+    return bsearch(arr, x, sort, db, mid + 1, end)
+  }
+}
+
+export const get = async (state, action) => {
+  const {
+    path,
+    _limit,
+    _filter,
+    _sort,
+    _startAt,
+    _endAt,
+    _startAfter,
+    _endBefore,
+  } = parseQuery(state, action)
+  const { data } = state
   if (path.length % 2 === 0) {
     if (any(complement(isNil))([_limit, _sort, _filter])) err()
     const { doc: _data } = getDoc(data, path)
     return { result: _data.__data || null }
   } else {
-    let index = null
-    let ind = getIndex(state, path)
-    if (!isNil(_sort)) {
-      let i = 0
-      let _ind = ind
-      for (let v of _sort) {
-        let subs = i === 0 ? _ind : _ind.subs
-        _ind = subs[v[0]][_sort.length === 1 ? "asc" : v[1] || "asc"]
-        i++
-      }
-      index = _ind._
-      if (_sort.length === 1 && _sort[0][1] === "desc") index = reverse(index)
-    } else {
-      index = keys(getCol(data, path).__docs)
-    }
+    let index = getColIndex(state, data, path, _sort)
+    if (isNil(index)) err()
     const { doc: _data } =
       path.length === 1 ? { doc: data } : getDoc(data, slice(0, -1, path))
-    const skipInclusive = (v2, end = false, i = 0) => {
-      const tar = end ? _end : _start
-      const field = _sort[i][0]
-      const desc = _sort[i][1] === "desc"
-      let [a, b] = [v2[field], tar[i + 1]]
-      if (end) [b, a] = [a, b]
-      let ok = desc ? a <= b : a >= b
-      if (ok && tar.length - 2 > i && a === b) {
-        ok = skipInclusive(v2, end, i + 1)
+    const docs =
+      (path.length === 1 ? _data : _data.subs)[last(path)]?.__docs || {}
+    let _docs = []
+    let start = null
+    let end = null
+    let _start = _startAt || _startAfter
+    let _end = _endAt || _endBefore
+    if (!isNil(_start)) {
+      start = bsearch(index, _start, _sort, docs)
+      index.splice(0, start)
+    }
+    if (!isNil(_end)) {
+      if (!isNil(_start)) {
+        const len = Math.min(_end.length, _start.length) - 1
+        const val = take(
+          len,
+          addIndex(map)((v, i) => ({
+            desc: _sort[i][1] === "desc",
+            val: v,
+          }))(tail(_start))
+        )
+        if (comp(val, tail(_end)) === -1) err()
       }
-      return ok
+      end = bsearch(index, _end, _sort, docs)
+      index.splice(end + 1, index.length - end)
     }
-    const skipExclusive = (v2, val, end = false) => {
-      const field = _sort[0][0]
-      const desc = _sort[0][1] === "desc"
-      let [a, b] = [v2[field], val]
-      if (end) [b, a] = [a, b]
-      return desc ? a < b : a > b
-    }
-    const skip = (v, end) => {
-      const tar = end ? _end : _start
-      return filter(v2 =>
-        tar[0] === (end ? "endAt" : "startAt")
-          ? skipInclusive(v2, end)
-          : skipExclusive(v2, tar[1], end)
-      )(v)
-    }
-    const start = v => skip(v)
-    const end = v => skip(v, true)
-    const sorter = (v, str = _sort) => {
-      let s = str[0]
-      return compose(
-        ifElse(
-          always(str.length > 1),
-          compose(
-            flatten,
-            map(prop("vals")),
-            when(always(s[1] === "desc"), reverse),
-            sortBy(prop("key")),
-            values,
-            map(v2 => {
-              let ss = tail(_sort)
-              let v3 = map(prop("val"))(v2)
-              return {
-                key: v2[0].key,
-                vals: sorter(map(prop("val"))(v2), tail(str)),
-              }
-            }),
-            groupBy(prop("key")),
-            map(v2 => ({ key: v2[s[0]], val: v2 }))
-          ),
-          o(when(always(s[1] === "desc"), reverse), sortBy(prop(s[0])))
-        ),
-        filter(v => !isNil(v[s[0]]))
-      )(v)
-    }
-    if (!isNil(index)) {
-      const docs =
-        (path.length === 1 ? _data : _data.subs)[last(path)]?.__docs || {}
-      return {
-        result: compose(
-          when(o(complement(isNil), always(_limit)), take(_limit)),
-          when(o(complement(isNil), always(_end)), end),
-          when(o(complement(isNil), always(_start)), start),
-          when(
-            o(complement(isNil), always(_filter)),
-            filter(v => {
-              if (isNil(v[_filter[0]]) && v[_filter[0]] !== null) {
-                return false
-              }
-              switch (_filter[1]) {
-                case ">":
-                  return v[_filter[0]] > _filter[2]
-                case "<":
-                  return v[_filter[0]] < _filter[2]
-                case ">=":
-                  return v[_filter[0]] >= _filter[2]
-                case "<=":
-                  return v[_filter[0]] <= _filter[2]
-                case "=":
-                  return v[_filter[0]] === _filter[2]
-                case "!=":
-                  return v[_filter[0]] !== _filter[2]
-                case "in":
-                  return includes(v[_filter[0]])(_filter[2])
-                case "not-in":
-                  return !includes(v[_filter[0]])(_filter[2])
-                case "array-contains":
-                  return (
-                    is(Array, v[_filter[0]]) &&
-                    includes(_filter[2])(v[_filter[0]])
-                  )
-                case "array-contains-any":
-                  return (
-                    is(Array, v[_filter[0]]) &&
-                    intersection(_filter[2])(v[_filter[0]]).length > 0
-                  )
-              }
-            })
-          ),
-          filter(complement(isNil)),
-          map(k => docs[k]?.__data)
-        )(index),
+    let res = index
+    if (!isNil(filter)) {
+      res = []
+      const sort_field = compose(
+        uniq,
+        pluck(0),
+        filter(v => includes(v[1])([">", ">=", "<", "<=", "!=", "not-in"])),
+        values
+      )(_filter)
+      if (sort_field.length > 1) {
+        err()
       }
+      if (
+        sort_field.length === 1 &&
+        (isNil(_sort) || _sort[0][0] !== sort_field[0])
+      ) {
+        err()
+      }
+      for (let _v of index) {
+        const v = docs[_v].__data
+        let ok = true
+        for (let v2 of values(_filter)) {
+          if (isNil(v[v2[0]]) && v[v2[0]] !== null) {
+            ok = false
+          }
+          switch (v2[1]) {
+            case ">":
+              ok = v[v2[0]] > v2[2]
+              break
+            case "<":
+              ok = v[v2[0]] < v2[2]
+              break
+            case ">=":
+              ok = v[v2[0]] >= v2[2]
+              break
+            case "<=":
+              ok = v[v2[0]] <= v2[2]
+              break
+            case "=":
+              ok = v[v2[0]] === v2[2]
+              break
+            case "!=":
+              ok = v[v2[0]] !== v2[2]
+              break
+            case "in":
+              ok = includes(v[v2[0]])(v2[2])
+              break
+            case "not-in":
+              ok = !includes(v[v2[0]])(v2[2])
+              break
+            case "array-contains":
+              ok = is(Array, v[v2[0]]) && includes(v2[2])(v[v2[0]])
+              break
+            case "array-contains-any":
+              ok =
+                is(Array, v[v2[0]]) && intersection(v2[2])(v[v2[0]]).length > 0
+              break
+          }
+          if (!ok) continue
+        }
+        if (ok) {
+          res.push(_v)
+          if (!isNil(_limit) && res.length >= _limit) break
+        }
+      }
+    }
+
+    return {
+      result: compose(
+        when(o(complement(isNil), always(_limit)), take(_limit)),
+        map(v => docs[v].__data)
+      )(res),
     }
   }
 }
