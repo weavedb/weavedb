@@ -1,10 +1,10 @@
-import { isNil, over, lensPath, append } from "ramda"
-import { err, parse, mergeData } from "../../lib/utils"
+import { isNil, over, lensPath, append, init, last } from "ramda"
+import { err, parse, mergeData, getCol } from "../../lib/utils"
 import { validate } from "../../lib/validate"
-
+import { addData, getIndex } from "../../lib/index"
 export const add = async (state, action, signer) => {
   signer ||= validate(state, action, "add")
-  let { _data, data, query, new_data, path } = await parse(
+  let { _data, data, query, new_data, path, col } = await parse(
     state,
     action,
     "add",
@@ -12,5 +12,7 @@ export const add = async (state, action, signer) => {
   )
   if (!isNil(_data.__data)) err("doc already exists")
   _data = mergeData(_data, new_data, true)
+  let ind = getIndex(state, init(path))
+  addData(last(path), _data.__data, ind, col.__docs)
   return { state }
 }
