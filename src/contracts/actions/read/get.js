@@ -1,4 +1,5 @@
 import {
+  keys,
   groupBy,
   flatten,
   sortBy,
@@ -26,8 +27,8 @@ import {
   map,
 } from "ramda"
 
-import { err, getDoc } from "../../lib/utils"
-
+import { err, getDoc, getCol } from "../../lib/utils"
+import { getIndex, _getIndex } from "../../lib/index"
 export const get = async (state, action) => {
   const { data } = state
   const { query } = action.input
@@ -119,6 +120,21 @@ export const get = async (state, action) => {
     const { doc: _data } = getDoc(data, path)
     return { result: _data.__data || null }
   } else {
+    let index = null
+    let ind = getIndex(state, path)
+    if (!isNil(_sort)) {
+      let i = 0
+      let _ind = ind
+      for (let v of _sort) {
+        let subs = i === 0 ? _ind : _ind.subs
+        _ind = subs[v[0]][_sort.length === 1 ? "asc" : v[1] || "asc"]
+        i++
+      }
+      index = _ind._
+      if (_sort.length === 1 && _sort[0][1] === "desc") index = reverse(index)
+    } else {
+      index = keys(getCol(data, path).__docs)
+    }
     const { doc: _data } =
       path.length === 1 ? { doc: data } : getDoc(data, slice(0, -1, path))
     const skipInclusive = (v2, end = false, i = 0) => {
@@ -177,52 +193,54 @@ export const get = async (state, action) => {
         filter(v => !isNil(v[s[0]]))
       )(v)
     }
-    return {
-      result: compose(
-        when(o(complement(isNil), always(_limit)), take(_limit)),
-        when(o(complement(isNil), always(_end)), end),
-        when(o(complement(isNil), always(_start)), start),
-        when(o(complement(isNil), always(_sort)), sorter),
-        when(
-          o(complement(isNil), always(_filter)),
-          filter(v => {
-            if (isNil(v[_filter[0]]) && v[_filter[0]] !== null) {
-              return false
-            }
-            switch (_filter[1]) {
-              case ">":
-                return v[_filter[0]] > _filter[2]
-              case "<":
-                return v[_filter[0]] < _filter[2]
-              case ">=":
-                return v[_filter[0]] >= _filter[2]
-              case "<=":
-                return v[_filter[0]] <= _filter[2]
-              case "=":
-                return v[_filter[0]] === _filter[2]
-              case "!=":
-                return v[_filter[0]] !== _filter[2]
-              case "in":
-                return includes(v[_filter[0]])(_filter[2])
-              case "not-in":
-                return !includes(v[_filter[0]])(_filter[2])
-              case "array-contains":
-                return (
-                  is(Array, v[_filter[0]]) &&
-                  includes(_filter[2])(v[_filter[0]])
-                )
-              case "array-contains-any":
-                return (
-                  is(Array, v[_filter[0]]) &&
-                  intersection(_filter[2])(v[_filter[0]]).length > 0
-                )
-            }
-          })
-        ),
-        values,
-        filter(complement(isNil)),
-        map(prop("__data"))
-      )((path.length === 1 ? _data : _data.subs)[last(path)]?.__docs || {}),
+    if (!isNil(index)) {
+      const docs =
+        (path.length === 1 ? _data : _data.subs)[last(path)]?.__docs || {}
+      return {
+        result: compose(
+          when(o(complement(isNil), always(_limit)), take(_limit)),
+          when(o(complement(isNil), always(_end)), end),
+          when(o(complement(isNil), always(_start)), start),
+          when(
+            o(complement(isNil), always(_filter)),
+            filter(v => {
+              if (isNil(v[_filter[0]]) && v[_filter[0]] !== null) {
+                return false
+              }
+              switch (_filter[1]) {
+                case ">":
+                  return v[_filter[0]] > _filter[2]
+                case "<":
+                  return v[_filter[0]] < _filter[2]
+                case ">=":
+                  return v[_filter[0]] >= _filter[2]
+                case "<=":
+                  return v[_filter[0]] <= _filter[2]
+                case "=":
+                  return v[_filter[0]] === _filter[2]
+                case "!=":
+                  return v[_filter[0]] !== _filter[2]
+                case "in":
+                  return includes(v[_filter[0]])(_filter[2])
+                case "not-in":
+                  return !includes(v[_filter[0]])(_filter[2])
+                case "array-contains":
+                  return (
+                    is(Array, v[_filter[0]]) &&
+                    includes(_filter[2])(v[_filter[0]])
+                  )
+                case "array-contains-any":
+                  return (
+                    is(Array, v[_filter[0]]) &&
+                    intersection(_filter[2])(v[_filter[0]]).length > 0
+                  )
+              }
+            })
+          ),
+          filter(complement(isNil)),
+          map(k => docs[k]?.__data)
+        )(index),
+      }
     }
   }
 }
