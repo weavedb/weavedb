@@ -191,24 +191,31 @@ describe("WeaveDB", function () {
       Alice,
       John,
     ])
-
     // where =
     expect(await get(["ppl", ["age", "=", 30]])).to.eql([Alice, Beth])
 
     // where >
-    expect(await get(["ppl", ["age", ">", 30]])).to.eql([John])
+    expect(await get(["ppl", ["age"], ["age", ">", 30]])).to.eql([John])
 
     // where >=
-    expect(await get(["ppl", ["age", ">=", 30]])).to.eql([Alice, John, Beth])
+    expect(await get(["ppl", ["age"], ["age", ">=", 30]])).to.eql([
+      Beth,
+      Alice,
+      John,
+    ])
 
     // where <
-    expect(await get(["ppl", ["age", "<", 30]])).to.eql([Bob])
+    expect(await get(["ppl", ["age"], ["age", "<", 30]])).to.eql([Bob])
 
     // where <=
-    expect(await get(["ppl", ["age", "<=", 30]])).to.eql([Bob, Alice, Beth])
+    expect(await get(["ppl", ["age"], ["age", "<=", 30]])).to.eql([
+      Bob,
+      Beth,
+      Alice,
+    ])
 
     // where =!
-    expect(await get(["ppl", ["age", "!=", 30]])).to.eql([Bob, John])
+    expect(await get(["ppl", ["age"], ["age", "!=", 30]])).to.eql([Bob, John])
 
     // where in
     expect(await get(["ppl", ["age", "in", [20, 30]]])).to.eql([
@@ -216,9 +223,10 @@ describe("WeaveDB", function () {
       Alice,
       Beth,
     ])
-
     // where not-in
-    expect(await get(["ppl", ["age", "not-in", [20, 30]]])).to.eql([John])
+    expect(await get(["ppl", ["age"], ["age", "not-in", [20, 30]]])).to.eql([
+      John,
+    ])
 
     // where array-contains
     expect(await get(["ppl", ["letters", "array-contains", "b"]])).to.eql([
@@ -359,5 +367,8 @@ describe("WeaveDB", function () {
       data2,
       { name: "Beth", age: 30 },
     ])
+    expect(
+      await get(["ppl", ["age"], ["name", "in", ["Alice", "John"]]])
+    ).to.eql([data4, data2])
   })
 })
