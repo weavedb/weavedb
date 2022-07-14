@@ -105,6 +105,7 @@ export const getDoc = (data, path, _signer, func, new_data) => {
         doc,
         schema,
         rules,
+        col,
       }
 }
 
@@ -163,6 +164,7 @@ export const parse = async (state, action, func, signer) => {
   const { query } = action.input
   let new_data = null
   let path = null
+  let col
   if (includes(func)(["delete", "getSchema", "getRules"])) {
     path = query
   } else {
@@ -180,27 +182,45 @@ export const parse = async (state, action, func, signer) => {
     (isNil(new_data) && !includes(func)(["delete", "getSchema", "getRules"])) ||
     path.length === 0 ||
     (path.length % 2 !== 0 &&
-      !includes(func)(["setSchema", "getSchema", "setRules", "getRules"]))
+      !includes(func)([
+        "addIndex",
+        "removeIndex",
+        "setSchema",
+        "getSchema",
+        "setRules",
+        "getRules",
+      ]))
   ) {
     err()
   }
   let _data = null
   let schema = null
   let rules = null
-  if (includes(func)(["setSchema", "getSchema", "setRules", "getRules"])) {
+  if (
+    includes(func)([
+      "addIndex",
+      "removeIndex",
+      "setSchema",
+      "getSchema",
+      "setRules",
+      "getRules",
+    ])
+  ) {
     _data = getCol(data, path, signer, func)
+    col = _data
   } else {
     const doc = getDoc(data, path, signer, func, new_data)
     _data = doc.doc
     schema = doc.schema
     rules = doc.rules
+    col = doc.col
   }
   if (
     includes(func)(["update", "upsert", "delete"]) &&
     _data.setter !== signer
   ) {
   } else if (
-    includes(func)(["setSchema", "setRules"]) &&
+    includes(func)(["addIndex", "removeIndex", "setSchema", "setRules"]) &&
     action.caller !== state.owner
   ) {
     err("caller is not contract owner")
@@ -209,7 +229,7 @@ export const parse = async (state, action, func, signer) => {
     const _validate = validator(schema)
     if (!_validate(new_data)) err()
   }
-  return { data, query, new_data, path, _data, schema }
+  return { data, query, new_data, path, _data, schema, col }
 }
 
 export const err = (msg = `The wrong query`) => {

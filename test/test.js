@@ -59,19 +59,19 @@ describe("WeaveDB", function () {
     } = await initBeforeEach())
   })
 
-  it("shoud get nonce", async () => {
+  it("should get nonce", async () => {
     expect(await getNonce(wallet.getAddressString())).to.equal(1)
     await query(wallet, "set", [{ id: 1 }, "col", "doc"])
     expect(await getNonce(wallet.getAddressString())).to.equal(2)
   })
 
-  it("shoud add & get", async () => {
+  it("should add & get", async () => {
     const data = { name: "Bob", age: 20 }
     const tx = await query(wallet, "add", [data, "ppl"])
     expect(await get(["ppl", (await getIds(tx))[0]])).to.eql(data)
   })
 
-  it("shoud set & get", async () => {
+  it("should set & get", async () => {
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Alice", height: 160 }
     await query(wallet, "set", [data, "ppl", "Bob"])
@@ -80,7 +80,7 @@ describe("WeaveDB", function () {
     expect(await get(["ppl", "Bob"])).to.eql(data2)
   })
 
-  it("shoud update", async () => {
+  it("should update", async () => {
     const data = { name: "Bob", age: 20 }
     await query(wallet, "set", [data, "ppl", "Bob"])
     expect(await get(["ppl", "Bob"])).to.eql(data)
@@ -120,13 +120,13 @@ describe("WeaveDB", function () {
     expect((await get(["ppl", "Bob"])).death).to.be.lte(timestamp)
   })
 
-  it("shoud upsert", async () => {
+  it("should upsert", async () => {
     const data = { name: "Bob", age: 20 }
     await query(wallet, "upsert", [data, "ppl", "Bob"])
     expect(await get(["ppl", "Bob"])).to.eql(data)
   })
 
-  it("shoud delete", async () => {
+  it("should delete", async () => {
     const data = { name: "Bob", age: 20 }
     await query(wallet, "set", [data, "ppl", "Bob"])
     expect(await get(["ppl", "Bob"])).to.eql(data)
@@ -134,7 +134,7 @@ describe("WeaveDB", function () {
     expect(await get(["ppl", "Bob"])).to.eql(null)
   })
 
-  it("shoud get a collection", async () => {
+  it("should get a collection", async () => {
     const Bob = {
       name: "Bob",
       age: 20,
@@ -184,6 +184,7 @@ describe("WeaveDB", function () {
     ])
 
     // sort multiple fields
+    await query(wallet, "addIndex", [[["age"], ["weight", "desc"]], "ppl"])
     expect(await get(["ppl", ["age"], ["weight", "desc"]])).to.eql([
       Bob,
       Beth,
@@ -232,8 +233,8 @@ describe("WeaveDB", function () {
 
     // skip startAt
     expect(await get(["ppl", ["age"], ["startAt", 30]])).to.eql([
-      Alice,
       Beth,
+      Alice,
       John,
     ])
 
@@ -243,14 +244,15 @@ describe("WeaveDB", function () {
     // skip endAt
     expect(await get(["ppl", ["age"], ["endAt", 30]])).to.eql([
       Bob,
-      Alice,
       Beth,
+      Alice,
     ])
 
     // skip endBefore
     expect(await get(["ppl", ["age"], ["endBefore", 30]])).to.eql([Bob])
 
     // skip startAt multiple fields
+    await query(wallet, "addIndex", [[["age"], ["weight"]], "ppl"])
     expect(
       await get(["ppl", ["age"], ["weight"], ["startAt", 30, 70]])
     ).to.eql([Beth, John])
@@ -262,7 +264,7 @@ describe("WeaveDB", function () {
     ])
   })
 
-  it("shoud batch execute", async () => {
+  it("should batch execute", async () => {
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Alice", age: 40 }
     const data3 = { name: "Beth", age: 10 }
@@ -279,7 +281,7 @@ describe("WeaveDB", function () {
     expect(await get(["ppl", "Beth"])).to.eql(null)
   })
 
-  it("shoud set schema", async () => {
+  it("should set schema", async () => {
     const data = { name: "Bob", age: 20 }
     const schema = {
       type: "object",
@@ -309,7 +311,7 @@ describe("WeaveDB", function () {
     expect(await get(["ppl", "Bob"])).to.eql(data)
   })
 
-  it("shoud set rules", async () => {
+  it("should set rules", async () => {
     const data = { name: "Bob", age: 20 }
     const rules = {
       "allow create,update": {
@@ -330,5 +332,32 @@ describe("WeaveDB", function () {
     expect(await get(["ppl", "Bob"])).to.eql({ name: "Bob", age: 20 })
     await query(wallet, "update", [{ age: op.inc(5) }, "ppl", "Bob"])
     expect(await get(["ppl", "Bob"])).to.eql({ name: "Bob", age: 25 })
+  })
+
+  it("should add index", async () => {
+    const data = { name: "Bob", age: 20 }
+    const data2 = { name: "Alice", age: 25 }
+    const data3 = { name: "Beth", age: 5 }
+    const data4 = { name: "John", age: 20 }
+    await query(wallet, "add", [data, "ppl"])
+    expect(await get(["ppl", ["age"]])).to.eql([data])
+    await query(wallet, "set", [data2, "ppl", "Alice"])
+    expect(await get(["ppl", ["age", "desc"]])).to.eql([data2, data])
+    await query(wallet, "upsert", [data3, "ppl", "Beth"])
+    expect(await get(["ppl", ["age", "desc"]])).to.eql([data2, data, data3])
+    await query(wallet, "update", [{ age: 30 }, "ppl", "Beth"])
+    expect(await get(["ppl", ["age", "desc"]])).to.eql([
+      { name: "Beth", age: 30 },
+      data2,
+      data,
+    ])
+    await query(wallet, "addIndex", [[["age"], ["name", "desc"]], "ppl"])
+    await query(wallet, "upsert", [data4, "ppl", "John"])
+    expect(await get(["ppl", ["age"], ["name", "desc"]])).to.eql([
+      data4,
+      data,
+      data2,
+      { name: "Beth", age: 30 },
+    ])
   })
 })

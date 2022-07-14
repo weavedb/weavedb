@@ -7,6 +7,8 @@ import { setSchema } from "./actions/write/setSchema"
 import { getSchema } from "./actions/read/getSchema"
 import { setRules } from "./actions/write/setRules"
 import { getRules } from "./actions/read/getRules"
+import { addIndex } from "./actions/write/addIndex"
+import { removeIndex } from "./actions/write/removeIndex"
 import { add } from "./actions/write/add"
 import { update } from "./actions/write/update"
 import { upsert } from "./actions/write/upsert"
@@ -25,6 +27,10 @@ export async function handle(state, action) {
       return await upsert(state, action)
     case "get":
       return await get(state, action)
+    case "addIndex":
+      return await addIndex(state, action)
+    case "removeIndex":
+      return await removeIndex(state, action)
     case "setSchema":
       return await setSchema(state, action)
     case "getSchema":
