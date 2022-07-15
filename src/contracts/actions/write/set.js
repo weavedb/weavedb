@@ -12,7 +12,7 @@ export const set = async (state, action, signer) => {
     signer
   )
   let prev = clone(_data.__data)
-  const next_data = mergeData(_data, new_data, true)
+  const next_data = mergeData(_data, new_data, true, signer)
   validateSchema(schema, next_data.__data)
   let ind = getIndex(state, init(path))
   if (isNil(prev)) {
