@@ -12,6 +12,7 @@ export const setRules = async (state, action, signer) => {
     signer
   )
   for (let k in new_data) {
+    if (k === "let") continue
     const keys = k.split(" ")
     if (keys.length !== 2) err()
     const permission = keys[0]
