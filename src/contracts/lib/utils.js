@@ -1,4 +1,10 @@
 import {
+  cond,
+  compose,
+  o,
+  map,
+  apply,
+  tail,
   intersection,
   concat,
   without,
@@ -9,6 +15,7 @@ import {
   complement,
   clone,
 } from "ramda"
+import * as R from "ramda"
 import jsonLogic from "json-logic-js"
 import { validator } from "@exodus/schemasafe"
 
@@ -73,25 +80,46 @@ export const getDoc = (data, path, _signer, func, new_data, secure = false) => {
         newData = mergeData(clone(doc), new_data, false, _signer).__data
       }
     }
-    for (let k in rules) {
+    let rule_data = {
+      request: {
+        auth: { signer: _signer },
+        block: {
+          height: SmartWeave.block.height,
+          timestamp: SmartWeave.block.timestamp,
+        },
+        transaction: {
+          id: SmartWeave.transaction.id,
+        },
+        resource: { data: new_data },
+      },
+      resource: { data: doc.__data, setter: doc.setter, newData },
+    }
+
+    const fn = r => {
+      let ret = null
+      if (is(Array)(r) && is(Function)(r[0])) {
+        ret = compose(apply(r[0]), map(fn), tail)(r)
+      } else if (is(Array)(r) && is(Function)(R[r[0]])) {
+        ret = compose(apply(R[r[0]]), map(fn), tail)(r)
+      } else if (is(Object)(r) && is(String)(r.var)) {
+        ret = R.path(r.var.split("."))(rule_data)
+      } else if (is(Array)(r) || is(Object)(r)) {
+        ret = map(fn)(r)
+      } else ret = r
+      return is(Function)(ret[0]) ? fn(ret) : ret
+    }
+    if (!isNil(rules)) {
+      for (let k in rules.let || {}) {
+        rule_data[k] = fn(rules.let[k])
+      }
+    }
+
+    for (let k in rules || {}) {
+      if (k === "let") continue
       const rule = rules[k]
       const [permission, _ops] = k.split(" ")
       const ops = _ops.split(",")
       if (intersection(ops)(["write", op]).length > 0) {
-        const rule_data = {
-          request: {
-            auth: { signer: _signer },
-            block: {
-              height: SmartWeave.block.height,
-              timestamp: SmartWeave.block.timestamp,
-            },
-            transaction: {
-              id: SmartWeave.transaction.id,
-            },
-            resource: { data: new_data },
-          },
-          resource: { data: doc.__data, setter: doc.setter, newData },
-        }
         const ok = jsonLogic.apply(rule, rule_data)
         if (permission === "allow" && ok) {
           allowed = true
