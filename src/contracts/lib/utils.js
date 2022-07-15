@@ -12,7 +12,7 @@ import {
 import jsonLogic from "json-logic-js"
 import { validator } from "@exodus/schemasafe"
 
-export const mergeData = (_data, new_data, overwrite = false) => {
+export const mergeData = (_data, new_data, overwrite = false, signer) => {
   if (isNil(_data.__data) || overwrite) _data.__data = {}
   for (let k in new_data) {
     const d = new_data[k]
@@ -33,6 +33,8 @@ export const mergeData = (_data, new_data, overwrite = false) => {
       delete _data.__data[k]
     } else if (is(Object)(d) && d.__op === "ts") {
       _data.__data[k] = SmartWeave.block.timestamp
+    } else if (is(Object)(d) && d.__op === "signer") {
+      _data.__data[k] = signer
     } else {
       _data.__data[k] = d
     }

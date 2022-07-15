@@ -13,7 +13,7 @@ export const update = async (state, action, signer) => {
   )
   if (isNil(_data.__data)) err(`Data doesn't exist`)
   let prev = clone(_data.__data)
-  const next_data = mergeData(_data, new_data)
+  const next_data = mergeData(_data, new_data, false, signer)
   validateSchema(schema, next_data.__data)
   let ind = getIndex(state, init(path))
   updateData(last(path), next_data.__data, prev, ind, col.__docs)
