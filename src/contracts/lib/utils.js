@@ -68,9 +68,9 @@ export const getDoc = (data, path, _signer, func, new_data, secure = false) => {
     let newData = null
     if (path.length === 2) {
       if (includes(func)(["set", "add"])) {
-        newData = mergeData(clone(doc), new_data, true).__data
+        newData = mergeData(clone(doc), new_data, true, _signer).__data
       } else if (includes(func)(["update", "upsert"])) {
-        newData = mergeData(clone(doc), new_data).__data
+        newData = mergeData(clone(doc), new_data, false, _signer).__data
       }
     }
     for (let k in rules) {
