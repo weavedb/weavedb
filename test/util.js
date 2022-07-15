@@ -60,7 +60,7 @@ async function init() {
   }
 }
 
-async function initBeforeEach() {
+async function initBeforeEach(secure = false) {
   wallet = Wallet.generate()
   wallet2 = Wallet.generate()
   arweave_wallet = await arweave.wallets.generate()
@@ -80,6 +80,7 @@ async function initBeforeEach() {
   initialState = {
     ...stateFromFile,
     ...{
+      secure,
       owner: walletAddress,
     },
   }

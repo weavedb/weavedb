@@ -40,7 +40,7 @@ export const mergeData = (_data, new_data, overwrite = false) => {
   return _data
 }
 
-export const getDoc = (data, path, _signer, func, new_data) => {
+export const getDoc = (data, path, _signer, func, new_data, secure = false) => {
   const [_col, id] = path
   data[_col] ||= { __docs: {} }
   const col = data[_col]
@@ -50,7 +50,7 @@ export const getDoc = (data, path, _signer, func, new_data) => {
   if (!isNil(_signer) && isNil(doc.setter)) doc.setter = _signer
   if (
     includes(func)(["set", "add", "update", "upsert", "delete"]) &&
-    !isNil(rules)
+    (secure || !isNil(rules))
   ) {
     let op = func
     if (includes(op)("set", "add")) op = "create"
@@ -100,7 +100,7 @@ export const getDoc = (data, path, _signer, func, new_data) => {
   }
 
   return path.length >= 4
-    ? getDoc(doc.subs, slice(2, path.length, path), _signer, func)
+    ? getDoc(doc.subs, slice(2, path.length, path), _signer, func, null, secure)
     : {
         doc,
         schema,
@@ -209,7 +209,7 @@ export const parse = async (state, action, func, signer) => {
     _data = getCol(data, path, signer, func)
     col = _data
   } else {
-    const doc = getDoc(data, path, signer, func, new_data)
+    const doc = getDoc(data, path, signer, func, new_data, state.secure)
     _data = doc.doc
     schema = doc.schema
     rules = doc.rules
