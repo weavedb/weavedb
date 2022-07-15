@@ -9,8 +9,8 @@ import {
   complement,
   clone,
 } from "ramda"
-import { validator } from "@exodus/schemasafe"
 import jsonLogic from "json-logic-js"
+import { validator } from "@exodus/schemasafe"
 
 export const mergeData = (_data, new_data, overwrite = false) => {
   if (isNil(_data.__data) || overwrite) _data.__data = {}
@@ -225,13 +225,14 @@ export const parse = async (state, action, func, signer) => {
   ) {
     err("caller is not contract owner")
   }
-  if (includes(func)(["set", "add", "update", "upsert"]) && !isNil(schema)) {
-    const _validate = validator(schema)
-    if (!_validate(new_data)) err()
-  }
   return { data, query, new_data, path, _data, schema, col }
 }
-
+export const validateSchema = (schema, data) => {
+  if (!isNil(schema)) {
+    const _validate = validator(schema)
+    if (!_validate(data)) err()
+  }
+}
 export const err = (msg = `The wrong query`) => {
   throw new ContractError(msg)
 }
