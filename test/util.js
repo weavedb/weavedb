@@ -84,7 +84,7 @@ async function initBeforeEach(secure = false) {
       owner: walletAddress,
     },
   }
-  const contractTxId = await warp.createContract.deploy({
+  const { contractTxId } = await warp.createContract.deploy({
     wallet: arweave_wallet,
     initState: JSON.stringify(initialState),
     src: contractSrc,
