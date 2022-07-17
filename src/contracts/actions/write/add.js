@@ -2,7 +2,7 @@ import { isNil, over, lensPath, append, init, last } from "ramda"
 import { err, parse, mergeData, getCol, validateSchema } from "../../lib/utils"
 import { validate } from "../../lib/validate"
 import { addData, getIndex } from "../../lib/index"
-export const add = async (state, action, signer, salt) => {
+export const add = async (state, action, signer, salt = 0) => {
   signer ||= validate(state, action, "add")
   let { _data, data, query, new_data, path, schema, col } = await parse(
     state,
