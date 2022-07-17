@@ -47,6 +47,15 @@ export async function handle(state, action) {
       return await remove(state, action)
     case "batch":
       return await batch(state, action)
+    case "evolve":
+      if (state.canEvolve) {
+        if (state.owner !== action.caller) {
+          throw new ContractError("Only the owner can evolve a contract.")
+        }
+        state.evolve = action.input.value
+        return { state }
+      }
+      break
     default:
       err(
         `No function supplied or function not recognised: "${action.input.function}"`

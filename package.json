@@ -14,7 +14,7 @@
     "ramda": "^0.28.0",
     "replace-in-file": "^6.3.5",
     "secp256k1": "^4.0.3",
-    "warp-contracts": "1.0.1"
+    "warp-contracts": "^1.1.10"
   },
   "scripts": {
     "test": "yarn build && mocha",

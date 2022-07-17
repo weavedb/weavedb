@@ -1,4 +1,6 @@
 {
+  "canEvolve": true,
+  "evolve": null,
   "secure": false,
   "data": {},
   "nonces": {},
