@@ -44,7 +44,7 @@ const EIP712Domain = [
 ]
 
 async function init() {
-  arlocal = new ArLocal(1820)
+  arlocal = new ArLocal(1820, false)
   await arlocal.start()
   arweave = Arweave.init({
     host: "localhost",
