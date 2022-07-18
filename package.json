@@ -9,6 +9,7 @@
     "arlocal": "1.1.42",
     "arweave": "1.11.4",
     "bn.js": "^5.2.1",
+    "dotenv": "^16.0.1",
     "ethereumjs-wallet": "^1.0.2",
     "json-logic-js": "^2.0.2",
     "ramda": "^0.28.0",
