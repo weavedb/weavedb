@@ -144,17 +144,21 @@ const parseQuery = (state, action) => {
 }
 
 const getColIndex = (state, data, path, _sort) => {
-  let index
+  let index = []
   let ind = getIndex(state, path)
   if (!isNil(_sort)) {
     let i = 0
     let _ind = ind
     for (let v of _sort) {
       let subs = i === 0 ? _ind : _ind.subs
+      if (isNil(subs[v[0]])) {
+        if (i === 0) break
+        err()
+      }
       _ind = subs[v[0]][_sort.length === 1 ? "asc" : v[1] || "asc"]
       i++
     }
-    index = _ind._
+    index = _ind._ || []
     if (_sort.length === 1 && _sort[0][1] === "desc") index = reverse(index)
   } else {
     index = keys(getCol(data, path).__docs)
@@ -333,7 +337,7 @@ export const get = async (state, action, cursor = false) => {
       }
     }
     let res = index
-    if (!isNil(filter)) {
+    if (!isNil(_filter)) {
       res = []
       const sort_field = compose(
         uniq,
