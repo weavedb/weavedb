@@ -11,7 +11,7 @@ const {
   LoggerFactory,
   InteractionResult,
 } = require("warp-contracts")
-
+const { isNil } = require("ramda")
 const ArLocal = require("arlocal").default
 
 const Arweave = require("arweave")
@@ -171,10 +171,18 @@ const getRules = async function (query) {
   return result
 }
 
-const query = async function (wallet, func, query) {
-  const addr = wallet.getAddressString()
+const query = async function (
+  wallet,
+  func,
+  query,
+  nonce,
+  addr,
+  privateKey,
+  overwrite
+) {
+  addr ||= wallet.getAddressString()
   let result
-  let nonce = await getNonce(addr)
+  nonce ||= await getNonce(addr)
   const message = {
     nonce,
     query: JSON.stringify({ func, query }),
@@ -192,7 +200,7 @@ const query = async function (wallet, func, query) {
     message,
   }
   const signature = ethSigUtil.signTypedData({
-    privateKey: wallet.getPrivateKey(),
+    privateKey: privateKey || wallet.getPrivateKey(),
     data,
     version: "V4",
   })
@@ -209,7 +217,7 @@ const query = async function (wallet, func, query) {
     query,
     signature,
     nonce,
-    caller: wallet.getAddressString(),
+    caller: overwrite ? addr : wallet.getAddressString(),
   })
   await mineBlock(arweave)
   return tx

@@ -2,6 +2,8 @@ import { err, getDoc, parse, mergeData } from "./lib/utils"
 import { nonce } from "./actions/read/nonce"
 import { ids } from "./actions/read/ids"
 import { get } from "./actions/read/get"
+import { addAddressLink } from "./actions/write/addAddressLink"
+import { removeAddressLink } from "./actions/write/removeAddressLink"
 import { set } from "./actions/write/set"
 import { setSchema } from "./actions/write/setSchema"
 import { getSchema } from "./actions/read/getSchema"
@@ -18,6 +20,10 @@ import { batch } from "./actions/write/batch"
 
 export async function handle(state, action) {
   switch (action.input.function) {
+    case "addAddressLink":
+      return await addAddressLink(state, action)
+    case "removeAddressLink":
+      return await removeAddressLink(state, action)
     case "add":
       return await add(state, action)
     case "set":
