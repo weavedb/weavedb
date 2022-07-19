@@ -126,6 +126,15 @@ const getIds = async function (tx) {
   return result
 }
 
+const cget = async function (query) {
+  let result
+  ;({ result } = await wdb.viewState({
+    function: "cget",
+    query,
+  }))
+  return result
+}
+
 const get = async function (query) {
   let result
   ;({ result } = await wdb.viewState({
@@ -199,6 +208,7 @@ const query = async function (wallet, func, query) {
 
 module.exports = {
   get,
+  cget,
   getSchema,
   getRules,
   query,

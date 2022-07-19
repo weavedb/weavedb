@@ -27,6 +27,8 @@ export async function handle(state, action) {
       return await upsert(state, action)
     case "get":
       return await get(state, action)
+    case "cget":
+      return await get(state, action, true)
     case "addIndex":
       return await addIndex(state, action)
     case "removeIndex":

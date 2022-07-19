@@ -1,4 +1,5 @@
 import {
+  hasPath,
   uniq,
   pluck,
   range,
@@ -164,7 +165,7 @@ const getColIndex = (state, data, path, _sort) => {
   return index
 }
 
-let comp = (val, x) => {
+const comp = (val, x) => {
   let res = 0
   for (let i of range(0, val.length)) {
     let a = val[i].val
@@ -184,7 +185,7 @@ let comp = (val, x) => {
   return res
 }
 
-let bsearch = function (arr, x, sort, db, start = 0, end = arr.length - 1) {
+const bsearch = function (arr, x, sort, db, start = 0, end = arr.length - 1) {
   if (start > end) return null
   let mid = Math.floor((start + end) / 2)
   const val = addIndex(map)((v, i) => ({
@@ -236,7 +237,7 @@ let bsearch = function (arr, x, sort, db, start = 0, end = arr.length - 1) {
   }
 }
 
-export const get = async (state, action) => {
+export const get = async (state, action, cursor = false) => {
   const {
     path,
     _limit,
@@ -251,7 +252,20 @@ export const get = async (state, action) => {
   if (path.length % 2 === 0) {
     if (any(complement(isNil))([_limit, _sort, _filter])) err()
     const { doc: _data } = getDoc(data, path)
-    return { result: _data.__data || null }
+    return {
+      result: isNil(_data.__data)
+        ? null
+        : cursor
+        ? {
+            id: last(path),
+            data: _data.__data || null,
+            block: {
+              height: SmartWeave.block.height,
+              timestamp: SmartWeave.block.timestamp,
+            },
+          }
+        : _data.__data || null,
+    }
   } else {
     let index = getColIndex(state, data, path, _sort)
     if (isNil(index)) err()
@@ -265,8 +279,27 @@ export const get = async (state, action) => {
     let _start = _startAt || _startAfter
     let _end = _endAt || _endBefore
     if (!isNil(_start)) {
-      start = bsearch(index, _start, _sort, docs)
-      index.splice(0, start)
+      if (is(Object)(_start[1]) && hasPath([1, "id"])(_start)) {
+        start = bsearch(
+          index,
+          ["startAt", map(v => docs[_start[1].id].__data[v[0]])(_sort)],
+          _sort,
+          docs
+        )
+        for (let i = start; i < index.length; i++) {
+          if (index[i] === _start[1].id) {
+            start = i
+            break
+          }
+        }
+        if (!isNil(start)) {
+          if (_start[0] === "startAfter") start += 1
+          index.splice(0, start)
+        }
+      } else {
+        start = bsearch(index, _start, _sort, docs)
+        index.splice(0, start)
+      }
     }
     if (!isNil(_end)) {
       if (!isNil(_start)) {
@@ -280,8 +313,27 @@ export const get = async (state, action) => {
         )
         if (comp(val, tail(_end)) === -1) err()
       }
-      end = bsearch(index, _end, _sort, docs)
-      index.splice(end + 1, index.length - end)
+      if (is(Object)(_end[1]) && hasPath([1, "id"])(_end)) {
+        end = bsearch(
+          index,
+          ["startAt", map(v => docs[_end[1].id].__data[v[0]])(_sort)],
+          _sort,
+          docs
+        )
+        for (let i = end; i < index.length; i++) {
+          if (index[i] === _end[1].id) {
+            end = i
+            break
+          }
+        }
+        if (!isNil(end)) {
+          if (_end[0] === "endBefore" && end !== 0) end -= 1
+          index.splice(end + 1, index.length - end)
+        }
+      } else {
+        end = bsearch(index, _end, _sort, docs)
+        index.splice(end + 1, index.length - end)
+      }
     }
     let res = index
     if (!isNil(filter)) {
@@ -353,7 +405,18 @@ export const get = async (state, action) => {
     return {
       result: compose(
         when(o(complement(isNil), always(_limit)), take(_limit)),
-        map(v => docs[v].__data)
+        map(v =>
+          cursor
+            ? {
+                id: v,
+                data: docs[v].__data,
+                block: {
+                  height: SmartWeave.block.height,
+                  timestamp: SmartWeave.block.timestamp,
+                },
+              }
+            : docs[v].__data
+        )
       )(res),
     }
   }
