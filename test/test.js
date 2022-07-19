@@ -1,8 +1,11 @@
+const EthCrypto = require("eth-crypto")
+const { Wallet } = require("ethers")
 const Arweave = require("arweave")
 const fs = require("fs")
 const path = require("path")
 const { expect } = require("chai")
 const { isNil, range } = require("ramda")
+const ethSigUtil = require("@metamask/eth-sig-util")
 const {
   init,
   initBeforeEach,
@@ -410,5 +413,69 @@ describe("WeaveDB", function () {
       ],
       [["height", "asc"]],
     ])
+  })
+  it.only("should link temporarily generated address", async () => {
+    const addr = wallet.getAddressString()
+    const identity = EthCrypto.createIdentity()
+    const EIP712Domain = [
+      { name: "name", type: "string" },
+      { name: "version", type: "string" },
+      { name: "verifyingContract", type: "string" },
+    ]
+    let nonce = await getNonce(addr)
+    const message = {
+      nonce,
+      query: JSON.stringify({ func: "auth", query: { address: addr } }),
+    }
+    const data = {
+      types: {
+        EIP712Domain,
+        Query: [
+          { name: "query", type: "string" },
+          { name: "nonce", type: "uint256" },
+        ],
+      },
+      domain,
+      primaryType: "Query",
+      message,
+    }
+    const signature = ethSigUtil.signTypedData({
+      privateKey: Buffer.from(identity.privateKey.replace(/^0x/, ""), "hex"),
+      data,
+      version: "V4",
+    })
+    const query2 = { signature, address: identity.address.toLowerCase() }
+    expect(
+      ethSigUtil.recoverTypedSignature({
+        version: "V4",
+        data,
+        signature,
+      })
+    ).to.equal(identity.address.toLowerCase())
+    await query(wallet, "addAddressLink", query2, nonce)
+    await query(
+      wallet,
+      "set",
+      [{ name: "Beth", age: 10 }, "ppl", "Beth"],
+      null,
+      identity.address.toLowerCase(),
+      Buffer.from(identity.privateKey.replace(/^0x/, ""), "hex")
+    )
+    expect((await cget(["ppl", "Beth"])).setter).to.eql(addr)
+    await query(wallet, "removeAddressLink", {
+      address: identity.address.toLowerCase(),
+    })
+    await query(
+      wallet,
+      "set",
+      [{ name: "Bob", age: 20 }, "ppl", "Bob"],
+      null,
+      identity.address.toLowerCase(),
+      Buffer.from(identity.privateKey.replace(/^0x/, ""), "hex"),
+      true
+    )
+    expect((await cget(["ppl", "Bob"])).setter).to.eql(
+      identity.address.toLowerCase()
+    )
   })
 })
