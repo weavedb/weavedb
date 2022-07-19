@@ -10,6 +10,7 @@ const {
   mineBlock,
   query,
   get,
+  cget,
   getSchema,
   getRules,
   getIds,
@@ -78,6 +79,16 @@ describe("WeaveDB", function () {
     expect(await get(["ppl", "Bob"])).to.eql(data)
     await query(wallet, "set", [data2, "ppl", "Bob"])
     expect(await get(["ppl", "Bob"])).to.eql(data2)
+  })
+
+  it("should cget & pagenate", async () => {
+    const data = { name: "Bob", age: 20 }
+    const data2 = { name: "Alice", age: 160 }
+    await query(wallet, "set", [data, "ppl", "Bob"])
+    expect(await get(["ppl", "Bob"])).to.eql(data)
+    await query(wallet, "set", [data2, "ppl", "Alice"])
+    const cursor = (await cget(["ppl", ["age"], 1]))[0]
+    expect(await get(["ppl", ["age"], ["startAfter", cursor]])).to.eql([data2])
   })
 
   it("should update", async () => {
