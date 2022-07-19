@@ -14,6 +14,7 @@ import {
   is,
   complement,
   clone,
+  last,
 } from "ramda"
 import * as R from "ramda"
 import jsonLogic from "json-logic-js"
@@ -91,8 +92,16 @@ export const getDoc = (data, path, _signer, func, new_data, secure = false) => {
           id: SmartWeave.transaction.id,
         },
         resource: { data: new_data },
+        id: last(path),
+        path,
       },
-      resource: { data: doc.__data, setter: doc.setter, newData },
+      resource: {
+        data: doc.__data,
+        setter: doc.setter,
+        newData,
+        id: last(path),
+        path,
+      },
     }
     const fn = r => {
       let ret = null
