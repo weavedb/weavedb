@@ -33,18 +33,19 @@ export const validate = (state, action, func) => {
     message,
   }
 
-  let signer = recoverTypedSignature({
+  const signer = recoverTypedSignature({
     version: "V4",
     data: _data,
     signature,
   })
-
-  const _signer = signer.toLowerCase()
+  const original_signer = signer.toLowerCase()
+  let _signer = signer.toLowerCase()
+  if (!isNil(state.auth.links[_signer])) _signer = state.auth.links[_signer]
   if (_signer !== _caller) throw new ContractError(`The wrong signature`)
-  if ((state.nonces[_caller] || 0) + 1 !== nonce) {
+  if ((state.nonces[original_signer] || 0) + 1 !== nonce) {
     throw new ContractError(`The wrong nonce`)
   }
-  if (isNil(state.nonces[_caller])) state.nonces[_caller] = 0
-  state.nonces[_caller] += 1
+  if (isNil(state.nonces[original_signer])) state.nonces[original_signer] = 0
+  state.nonces[original_signer] += 1
   return _signer
 }

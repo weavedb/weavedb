@@ -259,6 +259,7 @@ export const get = async (state, action, cursor = false) => {
         : cursor
         ? {
             id: last(path),
+            setter: _data.setter,
             data: _data.__data || null,
             block: {
               height: SmartWeave.block.height,
@@ -410,6 +411,7 @@ export const get = async (state, action, cursor = false) => {
           cursor
             ? {
                 id: v,
+                setter: docs[v].setter,
                 data: docs[v].__data,
                 block: {
                   height: SmartWeave.block.height,
