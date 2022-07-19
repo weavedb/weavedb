@@ -34,9 +34,6 @@ import {
 
 import { err, getDoc, getCol } from "../../lib/utils"
 import { getIndex, _getIndex } from "../../lib/index"
-// 1. verify interactions
-// 2. get index
-// 3. filter skip while limiting
 
 const parseQuery = (state, action) => {
   const { data } = state

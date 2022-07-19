@@ -15,6 +15,7 @@ const {
   getRules,
   getIds,
   getNonce,
+  getIndexes,
 } = require("./util")
 
 const op = {
@@ -353,11 +354,11 @@ describe("WeaveDB", function () {
     expect(await get(["ppl", "Bob"])).to.eql({ name: "Bob", age: 25 })
   })
 
-  it("should add index", async () => {
+  it.only("should add index", async () => {
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Alice", age: 25 }
     const data3 = { name: "Beth", age: 5 }
-    const data4 = { name: "John", age: 20 }
+    const data4 = { name: "John", age: 20, height: 150 }
     await query(wallet, "add", [data, "ppl"])
     expect(await get(["ppl", ["age"]])).to.eql([data])
     await query(wallet, "set", [data2, "ppl", "Alice"])
@@ -371,6 +372,15 @@ describe("WeaveDB", function () {
       data,
     ])
     await query(wallet, "addIndex", [[["age"], ["name", "desc"]], "ppl"])
+    await query(wallet, "addIndex", [
+      [["age"], ["name", "desc"], ["height"]],
+      "ppl",
+    ])
+    await query(wallet, "addIndex", [
+      [["age"], ["name", "desc"], ["height", "desc"]],
+      "ppl",
+    ])
+
     await query(wallet, "upsert", [data4, "ppl", "John"])
     expect(await get(["ppl", ["age"], ["name", "desc"]])).to.eql([
       data4,
@@ -381,5 +391,24 @@ describe("WeaveDB", function () {
     expect(
       await get(["ppl", ["age"], ["name", "in", ["Alice", "John"]]])
     ).to.eql([data4, data2])
+    expect(await getIndexes(["ppl"])).to.eql([
+      [["name", "asc"]],
+      [["age", "asc"]],
+      [
+        ["age", "asc"],
+        ["name", "desc"],
+      ],
+      [
+        ["age", "asc"],
+        ["name", "desc"],
+        ["height", "asc"],
+      ],
+      [
+        ["age", "asc"],
+        ["name", "desc"],
+        ["height", "desc"],
+      ],
+      [["height", "asc"]],
+    ])
   })
 })

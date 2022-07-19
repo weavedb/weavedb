@@ -144,6 +144,15 @@ const get = async function (query) {
   return result
 }
 
+const getIndexes = async function (query) {
+  let result
+  ;({ result } = await wdb.viewState({
+    function: "getIndexes",
+    query,
+  }))
+  return result
+}
+
 const getSchema = async function (query) {
   let result
   ;({ result } = await wdb.viewState({
@@ -218,4 +227,5 @@ module.exports = {
   mineBlock,
   init,
   initBeforeEach,
+  getIndexes,
 }
