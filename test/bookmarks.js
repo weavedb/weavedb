@@ -78,9 +78,22 @@ describe("WeaveDB", function () {
     }
     await query(wallet, "setSchema", [schema, "bookmarks"])
     const rules = {
+      let: {
+        id: [
+          "join",
+          ":",
+          [
+            { var: "resource.newData.article_id" },
+            { var: "resource.newData.user_address" },
+          ],
+        ],
+      },
       "allow create": {
         and: [
           { "!=": [{ var: "request.auth.signer" }, null] },
+          {
+            "==": [{ var: "resource.id" }, { var: "id" }],
+          },
           {
             "==": [
               { var: "request.auth.signer" },
@@ -123,19 +136,33 @@ describe("WeaveDB", function () {
 
   const bookmark = async () => {
     let batches = []
-    let ids = [1, 2, 3, 4, 2, 3, 4, 3, 4, 4]
-    for (let i of range(0, 10)) {
+    for (let v of [1, 2, 3, 4]) {
       batches.push([
-        "add",
+        "set",
         {
           date: op.ts(),
-          article_id: "article" + ids[i],
+          article_id: "article" + v,
           user_address: op.signer(),
         },
         "bookmarks",
+        `${"article" + v}:${wallet.getAddressString()}`,
       ])
     }
     await query(wallet, "batch", batches)
+    let batches2 = []
+    for (let v of [2, 3, 4]) {
+      batches2.push([
+        "set",
+        {
+          date: op.ts(),
+          article_id: "article" + v,
+          user_address: op.signer(),
+        },
+        "bookmarks",
+        `${"article" + v}:${wallet2.getAddressString()}`,
+      ])
+    }
+    await query(wallet2, "batch", batches2)
   }
 
   const calc = async () => {
@@ -201,12 +228,11 @@ describe("WeaveDB", function () {
     await initDB()
     await bookmark()
     await calc()
-    /*
     expect(pluck("id", await get(["mirror", ["pt", "desc"], 10]))).to.eql([
+      "article2",
       "article4",
       "article3",
-      "article2",
       "article1",
-    ])*/
+    ])
   })
 })

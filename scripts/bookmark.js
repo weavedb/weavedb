@@ -19,7 +19,7 @@ const {
 } = require("warp-contracts")
 
 let arweave = null
-
+let wdb = null
 if (isNil(wallet_name)) {
   console.log("no wallet name given")
   process.exit()
@@ -68,6 +68,18 @@ const rules = {
     "allow create": {
       and: [
         { "!=": [{ var: "request.auth.signer" }, null] },
+        {
+          "==": [
+            { var: "resource.id" },
+            {
+              cat: [
+                { var: "resource.newData.article_id" },
+                ":",
+                { var: "resource.newData.user_address" },
+              ],
+            },
+          ],
+        },
         {
           "==": [
             { var: "request.auth.signer" },
