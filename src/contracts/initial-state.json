@@ -5,5 +5,10 @@
   "data": {},
   "nonces": {},
   "ids": {},
-  "indexes":{}
+  "indexes":{},
+  "auth":{
+    "name": "asteroid",
+    "version": "1",
+    "links": {}
+  }
 }
