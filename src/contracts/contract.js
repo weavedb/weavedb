@@ -8,6 +8,7 @@ import { getSchema } from "./actions/read/getSchema"
 import { setRules } from "./actions/write/setRules"
 import { getRules } from "./actions/read/getRules"
 import { addIndex } from "./actions/write/addIndex"
+import { getIndexes } from "./actions/read/getIndexes"
 import { removeIndex } from "./actions/write/removeIndex"
 import { add } from "./actions/write/add"
 import { update } from "./actions/write/update"
@@ -31,6 +32,8 @@ export async function handle(state, action) {
       return await get(state, action, true)
     case "addIndex":
       return await addIndex(state, action)
+    case "getIndexes":
+      return await getIndexes(state, action)
     case "removeIndex":
       return await removeIndex(state, action)
     case "setSchema":
