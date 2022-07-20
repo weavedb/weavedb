@@ -24,7 +24,8 @@ The current access control model is rather primitive where only the original cre
 
 A demo dapp is deployed at [weavedb.asteroid.ac](https://weavedb.asteroid.ac).
 
-V0.2 contract is deployed on the Warp testnet at [2NbtdD8IcJUlZ0r8yaiQpQpEfx6NuIAvC8Lrafsn7Ek](https://sonar.warp.cc/?#/app/contract/2NbtdD8IcJUlZ0r8yaiQpQpEfx6NuIAvC8Lrafsn7Ek?network=testnet#) (srcTxId: wSb-Yj2IxLGRomBtXmWnY4ByMrk4mjNp-tmtF9ZYjug).
+V0.2 contract is deployed on the Warp testnet at [K95Rl6wn35TT9OP8fc6t4hzzJTaFYpqjr1ZmvslaPnc](https://sonar.warp.cc/?#/app/contract/K95Rl6wn35TT9OP8fc6t4hzzJTaFYpqjr1ZmvslaPnc?network=testnet#)  
+(srcTxId: BHVoeYbbT5gQQlk7XP_gqaiA2uOCySzGo868tB8uOGs).
 
 V0.1 contract is deployed on the Warp testnet at [ltj7QZSNIKbklMmP2b4ypbuUZoN77EQkjFR4Wid2ZIE](https://sonar.warp.cc/?#/app/contract/ltj7QZSNIKbklMmP2b4ypbuUZoN77EQkjFR4Wid2ZIE?network=testnet#).
 
