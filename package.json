@@ -18,6 +18,9 @@
     "secp256k1": "^4.0.3",
     "warp-contracts": "^1.1.10"
   },
+  "engines": {
+    "node": "16"
+  },
   "scripts": {
     "test": "yarn build && mocha",
     "build": "yarn clean && node build.js && npm run cp",

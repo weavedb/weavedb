@@ -164,6 +164,7 @@ const query = async function (wdb, wallet, func, query) {
     nonce,
     caller: addr,
   })
+  console.log(tx)
   await mineBlock(arweave)
   return tx
 }
@@ -173,7 +174,7 @@ const setup = async () => {
     host: "testnet.redstone.tools",
     port: 443,
     protocol: "https",
-    timeout: 0,
+    timeout: 200000,
   })
   LoggerFactory.INST.logLevel("error")
   const warp = WarpWebFactory.memCachedBased(arweave)
@@ -192,7 +193,7 @@ const setup = async () => {
   const wallet = JSON.parse(fs.readFileSync(wallet_path, "utf8"))
   const wdb = warp.pst(contractTxId).connect(wallet)
 
-  console.log("init WeaveDB...")
+  console.log("init WeaveDB..." + contractTxId)
 
   await query(wdb, wallet, "setSchema", [schemas.bookmarks, "bookmarks"])
   console.log("bookmarks schema set!")
