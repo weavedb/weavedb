@@ -52,12 +52,12 @@ const deploy = async () => {
       owner: walletAddress,
     },
   }
-  const contractTxId = await warp.createContract.deploy({
+  const res = await warp.createContract.deploy({
     wallet,
     initState: JSON.stringify(initialState),
     src: contractSrc,
   })
-  console.log(contractTxId)
+  console.log(res)
   process.exit()
 }
 
