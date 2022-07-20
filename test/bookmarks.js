@@ -10,6 +10,7 @@ const {
   mineBlock,
   query,
   get,
+  cget,
   getSchema,
   getRules,
   getIds,

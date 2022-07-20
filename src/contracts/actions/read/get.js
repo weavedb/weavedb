@@ -395,7 +395,7 @@ export const get = async (state, action, cursor = false) => {
                 is(Array, v[v2[0]]) && intersection(v2[2])(v[v2[0]]).length > 0
               break
           }
-          if (!ok) continue
+          if (!ok) break
         }
         if (ok) {
           res.push(_v)
