@@ -1,25 +1,11 @@
 require("dotenv").config()
 const fs = require("fs")
-const { expect } = require("chai")
 const path = require("path")
-const Arweave = require("arweave")
 const wallet_name = process.argv[2]
 const contractTxId = process.env.CONTRACT_TX_ID
 const { isNil } = require("ramda")
-const ethSigUtil = require("@metamask/eth-sig-util")
+const SDK = require("../sdk")
 
-const {
-  PstContract,
-  PstState,
-  Warp,
-  WarpNodeFactory,
-  WarpWebFactory,
-  LoggerFactory,
-  InteractionResult,
-} = require("warp-contracts")
-
-let arweave = null
-let wdb = null
 if (isNil(wallet_name)) {
   console.log("no wallet name given")
   process.exit()
@@ -30,20 +16,8 @@ if (isNil(contractTxId)) {
   process.exit()
 }
 
-const pkey32 = Buffer.from(process.env.PRIVATE_KEY, "hex")
 const addr = process.env.ETHERIUM_ADDRESS.toLowerCase()
-
-const EIP712Domain = [
-  { name: "name", type: "string" },
-  { name: "version", type: "string" },
-  { name: "verifyingContract", type: "string" },
-]
-
-const domain = {
-  name: "asteroid",
-  version: "1",
-  verifyingContract: contractTxId,
-}
+const pkey32 = Buffer.from(process.env.PRIVATE_KEY, "hex")
 
 const schemas = {
   bookmarks: {
@@ -113,74 +87,7 @@ const rules = {
   },
 }
 
-async function mineBlock(arweave) {
-  await arweave.api.get("mine")
-}
-
-const getNonce = async function (wdb, addr) {
-  let result
-  ;({ result } = await wdb.viewState({
-    function: "nonce",
-    address: addr,
-  }))
-  return result + 1
-}
-
-const query = async function (wdb, wallet, func, query) {
-  let nonce = await getNonce(wdb, addr)
-  const message = {
-    nonce,
-    query: JSON.stringify({ func, query }),
-  }
-  const data = {
-    types: {
-      EIP712Domain,
-      Query: [
-        { name: "query", type: "string" },
-        { name: "nonce", type: "uint256" },
-      ],
-    },
-    domain,
-    primaryType: "Query",
-    message,
-  }
-  const signature = ethSigUtil.signTypedData({
-    privateKey: pkey32,
-    data,
-    version: "V4",
-  })
-  expect(
-    ethSigUtil.recoverTypedSignature({
-      version: "V4",
-      data,
-      signature,
-    })
-  ).to.equal(addr)
-  let tx = null
-  tx = await wdb.writeInteraction({
-    function: func,
-    query,
-    signature,
-    nonce,
-    caller: addr,
-  })
-  console.log(tx)
-  await mineBlock(arweave)
-  return tx
-}
-
 const setup = async () => {
-  arweave = Arweave.init({
-    host: "testnet.redstone.tools",
-    port: 443,
-    protocol: "https",
-    timeout: 200000,
-  })
-  LoggerFactory.INST.logLevel("error")
-  const warp = WarpWebFactory.memCachedBased(arweave)
-    .useArweaveGateway()
-    .build()
-
   const wallet_path = path.resolve(
     __dirname,
     ".wallets",
@@ -191,15 +98,33 @@ const setup = async () => {
     process.exit()
   }
   const wallet = JSON.parse(fs.readFileSync(wallet_path, "utf8"))
-  const wdb = warp.pst(contractTxId).connect(wallet)
+
+  const sdk = new SDK({
+    wallet,
+    name: "asteroid",
+    version: "1",
+    contractTxId,
+    arweave: {
+      host: "testnet.redstone.tools",
+      port: 443,
+      protocol: "https",
+      timeout: 200000,
+    },
+  })
 
   console.log("init WeaveDB..." + contractTxId)
 
-  await query(wdb, wallet, "setSchema", [schemas.bookmarks, "bookmarks"])
+  await sdk.setSchema(schemas.bookmarks, "bookmarks", {
+    privateKey: pkey32,
+    addr,
+  })
   console.log("bookmarks schema set!")
 
   for (let k in rules) {
-    await query(wdb, wallet, "setRules", [rules[k], k])
+    await sdk.setRules(rules[k], k, {
+      privateKey: pkey32,
+      addr,
+    })
     console.log(`${k} rules set!`)
   }
 
