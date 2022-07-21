@@ -3,19 +3,7 @@ const fs = require("fs")
 const path = require("path")
 const { expect } = require("chai")
 const { pluck, isNil, range, indexBy, prop } = require("ramda")
-const {
-  init,
-  initBeforeEach,
-  addFunds,
-  mineBlock,
-  query,
-  get,
-  cget,
-  getSchema,
-  getRules,
-  getIds,
-  getNonce,
-} = require("../test/util")
+const { init, initBeforeEach, addFunds } = require("./util")
 
 const op = {
   signer: () => ({ __op: "signer" }),
@@ -27,21 +15,11 @@ const op = {
 }
 
 describe("WeaveDB", function () {
-  let arlocal,
-    arweave,
-    warp,
-    wallet,
-    walletAddress,
-    contractSrc,
-    initialState,
-    wdb,
-    domain,
-    wallet2
-
+  let arlocal, wallet, walletAddress, wallet2, sdk
   this.timeout(0)
 
   before(async () => {
-    ;({ arlocal, arweave, warp } = await init())
+    ;({ sdk, arlocal } = await init())
   })
 
   after(async () => {
@@ -49,16 +27,7 @@ describe("WeaveDB", function () {
   })
 
   beforeEach(async () => {
-    ;({
-      wallet,
-      walletAddress,
-      contractSrc,
-      initialState,
-      wdb,
-      domain,
-      wallet,
-      wallet2,
-    } = await initBeforeEach(true))
+    ;({ walletAddress, wallet, wallet2 } = await initBeforeEach(true))
   })
 
   const initDB = async () => {
@@ -77,7 +46,7 @@ describe("WeaveDB", function () {
         },
       },
     }
-    await query(wallet, "setSchema", [schema, "bookmarks"])
+    await sdk.setSchema(schema, "bookmarks")
     const rules = {
       let: {
         id: [
@@ -116,7 +85,7 @@ describe("WeaveDB", function () {
         ],
       },
     }
-    await query(wallet, "setRules", [rules, "bookmarks"])
+    await sdk.setRules(rules, "bookmarks")
     const conf_rules = {
       "allow write": {
         "==": [{ var: "request.auth.signer" }, wallet.getAddressString()],
@@ -131,8 +100,8 @@ describe("WeaveDB", function () {
         },
       },
     }
-    await query(wallet, "setRules", [conf_rules, "conf"])
-    await query(wallet, "setRules", [conf_rules, "mirror"])
+    await sdk.setRules(conf_rules, "conf")
+    await sdk.setRules(conf_rules, "mirror")
   }
 
   const bookmark = async () => {
@@ -149,7 +118,7 @@ describe("WeaveDB", function () {
         `${"article" + v}:${wallet.getAddressString()}`,
       ])
     }
-    await query(wallet, "batch", batches)
+    await sdk.batch(batches)
     let batches2 = []
     for (let v of [2, 3, 4]) {
       batches2.push([
@@ -163,22 +132,22 @@ describe("WeaveDB", function () {
         `${"article" + v}:${wallet2.getAddressString()}`,
       ])
     }
-    await query(wallet2, "batch", batches2)
+    await sdk.batch(batches2, { wallet: wallet2 })
   }
 
   const calc = async () => {
-    const conf = (await get(["conf", "mirror-calc"])) || { ver: 0 }
-    const ex = (await get(["mirror", ["ver"], ["ver", "!=", 0]])) || []
+    const conf = (await sdk.get("conf", "mirror-calc")) || { ver: 0 }
+    const ex = (await sdk.get("mirror", ["ver"], ["ver", "!=", 0])) || []
     let emap = indexBy(prop("id"))(ex)
     const day = 60 * 60 * 24
     const two_weeks = day * 14
     const d = Date.now() / 1000
     const date = Date.now() / 1000 - two_weeks
-    const bookmarks = await get([
+    const bookmarks = await sdk.get(
       "bookmarks",
       ["date", "desc"],
-      ["date", ">=", date],
-    ])
+      ["date", ">=", date]
+    )
     const rank = {}
     let batches = [
       [
@@ -222,14 +191,14 @@ describe("WeaveDB", function () {
         batches.push(["update", { pt: op.del(), ver: op.del() }, "mirror", k])
       }
     }
-    await query(wallet, "batch", batches)
+    await sdk.batch(batches)
   }
 
   it("should bookmark", async () => {
     await initDB()
     await bookmark()
     await calc()
-    expect(pluck("id", await get(["mirror", ["pt", "desc"], 10]))).to.eql([
+    expect(pluck("id", await sdk.get("mirror", ["pt", "desc"], 10))).to.eql([
       "article2",
       "article4",
       "article3",
