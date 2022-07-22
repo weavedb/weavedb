@@ -7,7 +7,7 @@
   "ids": {},
   "indexes":{},
   "auth":{
-    "name": "asteroid",
+    "name": "weavedb",
     "version": "1",
     "links": {}
   }

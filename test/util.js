@@ -26,14 +26,23 @@ let arlocal,
   arweave_wallet,
   wallet,
   wallet2,
+  wallet3,
+  wallet4,
   walletAddress,
   contractSrc,
   initialState,
   sdk
 
+let isInit = false
+let stopto = null
 async function init() {
-  arlocal = new ArLocal(1820, false)
-  await arlocal.start()
+  if (isInit === false) {
+    isInit = true
+    arlocal = new ArLocal(1820, false)
+    await arlocal.start()
+  } else {
+    clearTimeout(stopto)
+  }
   sdk = new SDK({
     arweave: {
       host: "localhost",
@@ -43,12 +52,19 @@ async function init() {
   })
   arweave = sdk.arweave
   warp = sdk.warp
-  return { arlocal, sdk }
+  return sdk
+}
+async function stop() {
+  stopto = setTimeout(async () => {
+    await arlocal.stop()
+  }, 1000)
 }
 
 async function initBeforeEach(secure = false) {
   wallet = Wallet.generate()
   wallet2 = Wallet.generate()
+  wallet3 = Wallet.generate()
+  wallet4 = Wallet.generate()
   arweave_wallet = await arweave.wallets.generate()
   await addFunds(arweave, arweave_wallet)
   walletAddress = await arweave.wallets.jwkToAddress(arweave_wallet)
@@ -75,7 +91,7 @@ async function initBeforeEach(secure = false) {
     initState: JSON.stringify(initialState),
     src: contractSrc,
   })
-  const name = "asteroid"
+  const name = "weavedb"
   const version = "1"
   sdk.initialize({
     contractTxId,
@@ -92,6 +108,8 @@ async function initBeforeEach(secure = false) {
     contractSrc,
     wallet,
     wallet2,
+    wallet3,
+    wallet4,
     arweave_wallet,
   }
 }
@@ -100,4 +118,5 @@ module.exports = {
   addFunds,
   init,
   initBeforeEach,
+  stop,
 }
