@@ -3,31 +3,28 @@ const fs = require("fs")
 const path = require("path")
 const { expect } = require("chai")
 const { pluck, isNil, range, indexBy, prop } = require("ramda")
-const { init, initBeforeEach, addFunds } = require("./util")
+const { init, stop, initBeforeEach, addFunds } = require("./util")
 
-const op = {
-  signer: () => ({ __op: "signer" }),
-  ts: () => ({ __op: "ts" }),
-  del: () => ({ __op: "del" }),
-  inc: n => ({ __op: "inc", n }),
-  union: (...args) => ({ __op: "arrayUnion", arr: args }),
-  remove: (...args) => ({ __op: "arrayRemove", arr: args }),
-}
-
-describe("WeaveDB", function () {
-  let arlocal, wallet, walletAddress, wallet2, sdk
+describe("Bookmarks Example", function () {
+  let arlocal, wallet, walletAddress, wallet2, sdk, wallet3, wallet4
   this.timeout(0)
 
   before(async () => {
-    ;({ sdk, arlocal } = await init())
+    sdk = await init()
   })
 
   after(async () => {
-    await arlocal.stop()
+    await stop()
   })
 
   beforeEach(async () => {
-    ;({ walletAddress, wallet, wallet2 } = await initBeforeEach(true))
+    ;({
+      walletAddress,
+      wallet,
+      wallet2,
+      wallet3,
+      wallet4,
+    } = await initBeforeEach(true))
   })
 
   const initDB = async () => {
@@ -105,34 +102,26 @@ describe("WeaveDB", function () {
   }
 
   const bookmark = async () => {
-    let batches = []
-    for (let v of [1, 2, 3, 4]) {
-      batches.push([
-        "set",
-        {
-          date: op.ts(),
-          article_id: "article" + v,
-          user_address: op.signer(),
-        },
-        "bookmarks",
-        `${"article" + v}:${wallet.getAddressString()}`,
-      ])
+    const _bookmark = async (arr, wallet) => {
+      let batches = []
+      for (let v of arr) {
+        batches.push([
+          "set",
+          {
+            date: sdk.ts(),
+            article_id: "article" + v,
+            user_address: sdk.signer(),
+          },
+          "bookmarks",
+          `${"article" + v}:${wallet.getAddressString()}`,
+        ])
+      }
+      await sdk.batch(batches, { wallet })
     }
-    await sdk.batch(batches)
-    let batches2 = []
-    for (let v of [2, 3, 4]) {
-      batches2.push([
-        "set",
-        {
-          date: op.ts(),
-          article_id: "article" + v,
-          user_address: op.signer(),
-        },
-        "bookmarks",
-        `${"article" + v}:${wallet2.getAddressString()}`,
-      ])
-    }
-    await sdk.batch(batches2, { wallet: wallet2 })
+    await _bookmark([1, 2, 3, 4], wallet)
+    await _bookmark([2, 3, 4], wallet2)
+    await _bookmark([3, 4], wallet3)
+    await _bookmark([4], wallet4)
   }
 
   const calc = async () => {
@@ -199,9 +188,9 @@ describe("WeaveDB", function () {
     await bookmark()
     await calc()
     expect(pluck("id", await sdk.get("mirror", ["pt", "desc"], 10))).to.eql([
-      "article2",
       "article4",
       "article3",
+      "article2",
       "article1",
     ])
   })

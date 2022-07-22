@@ -29,13 +29,10 @@ if (isNil(contractTxId)) {
 }
 
 const pkey32 = Buffer.from(process.env.PRIVATE_KEY, "hex")
-const opt = {
-  privateKey: pkey32,
-  addr,
-}
+
 const calc = async sdk => {
   const conf = (await sdk.get("conf", "mirror-calc")) || { ver: 0 }
-  const ex = (await sdk.get("mirror", ["ver", "!=", 0])) || []
+  const ex = (await sdk.get("mirror", ["ver"], ["ver", "!=", 0])) || []
   let emap = indexBy(prop("id"))(ex)
   const day = 60 * 60 * 24
   const two_weeks = day * 14
@@ -84,8 +81,12 @@ const calc = async sdk => {
       batches.push(["update", { pt: sdk.del(), ver: sdk.del() }, "mirror", k])
     }
   }
-  console.log(batches)
-  await sdk.batch("batch", batches, opt)
+  await sdk.batch(batches, {
+    privateKey: pkey32,
+    dryWrite: true,
+    addr,
+    bundle: wallet_name === "mainnet",
+  })
 }
 
 const setup = async () => {
@@ -105,7 +106,8 @@ const setup = async () => {
     version: "1",
     contractTxId,
     arweave: {
-      host: "testnet.redstone.tools",
+      host:
+        wallet_name === "mainnet" ? "arweave.net" : "testnet.redstone.tools",
       port: 443,
       protocol: "https",
       timeout: 200000,
