@@ -6,19 +6,19 @@ const path = require("path")
 const { expect } = require("chai")
 const { isNil, range } = require("ramda")
 const ethSigUtil = require("@metamask/eth-sig-util")
-const { init, initBeforeEach, addFunds } = require("./util")
+const { init, stop, initBeforeEach, addFunds } = require("./util")
 
 describe("WeaveDB", function () {
-  let arlocal, wallet, walletAddress, wallet2, sdk
+  let wallet, walletAddress, wallet2, sdk
 
   this.timeout(0)
 
   before(async () => {
-    ;({ arlocal, sdk } = await init())
+    sdk = await init()
   })
 
   after(async () => {
-    await arlocal.stop()
+    await stop()
   })
 
   beforeEach(async () => {

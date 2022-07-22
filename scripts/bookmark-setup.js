@@ -98,14 +98,14 @@ const setup = async () => {
     process.exit()
   }
   const wallet = JSON.parse(fs.readFileSync(wallet_path, "utf8"))
-
   const sdk = new SDK({
     wallet,
     name: "asteroid",
     version: "1",
     contractTxId,
     arweave: {
-      host: "testnet.redstone.tools",
+      host:
+        wallet_name === "mainnet" ? "arweave.net" : "testnet.redstone.tools",
       port: 443,
       protocol: "https",
       timeout: 200000,
@@ -113,10 +113,12 @@ const setup = async () => {
   })
 
   console.log("init WeaveDB..." + contractTxId)
-
+  console.log(await sdk.db.currentState())
+  process.exit()
   await sdk.setSchema(schemas.bookmarks, "bookmarks", {
     privateKey: pkey32,
     addr,
+    bundle: wallet_name === "mainnet",
   })
   console.log("bookmarks schema set!")
 
@@ -124,6 +126,7 @@ const setup = async () => {
     await sdk.setRules(rules[k], k, {
       privateKey: pkey32,
       addr,
+      bundle: wallet_name === "mainnet",
     })
     console.log(`${k} rules set!`)
   }

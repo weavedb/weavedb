@@ -1,5 +1,6 @@
-const Arweave = require("arweave")
-const { init, is, last, isNil } = require("ramda")
+const { all, complement, init, is, last, isNil } = require("ramda")
+let Arweave = require("arweave")
+Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
 const ethSigUtil = require("@metamask/eth-sig-util")
 const {
   Warp,
@@ -30,22 +31,23 @@ class SDK {
     if (arweave.host === "localhost") {
       this.warp = WarpNodeFactory.forTesting(this.arweave)
     } else {
-      this.warp = WarpWebFactory.memCachedBased(this.arweave)
-        .useArweaveGateway()
-        .build()
+      if (isNil(web3)) {
+        this.warp = WarpNodeFactory.memCachedBased(this.arweave)
+          .useWarpGateway()
+          .build()
+      } else {
+        this.warp = WarpWebFactory.memCachedBased(this.arweave)
+          .useWarpGateway()
+          .build()
+      }
     }
-    if (
-      !isNil(contractTxId) &&
-      !isNil(wallet) &&
-      !isNil(name) &&
-      !isNil(version)
-    ) {
+    if (all(complement(isNil))([contractTxId, wallet, name, version])) {
       this.initialize({ contractTxId, wallet, name, version, EthWallet })
     }
   }
 
   initialize({ contractTxId, wallet, name, version, EthWallet }) {
-    this.db = this.warp.contract(contractTxId).connect(wallet)
+    this.db = this.warp.pst(contractTxId).connect(wallet)
     this.domain = { name, version, verifyingContract: contractTxId }
     if (!isNil(EthWallet)) this.setEthWallet(EthWallet)
   }
@@ -107,9 +109,11 @@ class SDK {
   }
 
   async _write(func, ...query) {
-    let nonce, addr, privateKey, overwrite, wallet, dryWrite
+    let nonce, addr, privateKey, overwrite, wallet, dryWrite, bundle
     if (is(Object, last(query)) && !is(Array, last(query))) {
-      ;({ nonce, addr, privateKey, overwrite, wallet, dryWrite } = last(query))
+      ;({ nonce, addr, privateKey, overwrite, wallet, dryWrite, bundle } = last(
+        query
+      ))
       query = init(query)
     }
     if (func === "batch") query = query[0]
@@ -121,14 +125,15 @@ class SDK {
       addr,
       privateKey,
       overwrite,
-      dryWrite
+      dryWrite,
+      bundle
     )
   }
 
   async _write2(func, query, opt) {
-    let nonce, addr, privateKey, overwrite, wallet, dryWrite
+    let nonce, addr, privateKey, overwrite, wallet, dryWrite, bundle
     if (!isNil(opt)) {
-      ;({ nonce, addr, privateKey, overwrite, wallet, dryWrite } = opt)
+      ;({ nonce, addr, privateKey, overwrite, wallet, dryWrite, bundle } = opt)
     }
     return await this.write(
       wallet || this.wallet,
@@ -138,7 +143,8 @@ class SDK {
       addr,
       privateKey,
       overwrite,
-      dryWrite
+      dryWrite,
+      bundle
     )
   }
 
@@ -194,7 +200,8 @@ class SDK {
     addr,
     privateKey,
     overwrite,
-    dryWrite
+    dryWrite,
+    bundle
   ) {
     const isaddr = !isNil(addr)
     addr ||= is(String, wallet) ? wallet : wallet.getAddressString()
@@ -245,8 +252,10 @@ class SDK {
         return { err: dryState }
       }
     }
-    let tx = await this.db.writeInteraction(param)
-    await this.mineBlock()
+    let tx = await this.db[bundle ? "bundleInteraction" : "writeInteraction"](
+      param
+    )
+    if (isNil(this.web3)) await this.mineBlock()
     return tx
   }
 
