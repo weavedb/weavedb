@@ -1,3 +1,6 @@
+const readline = require("readline")
+const { stdin: input, stdout: output } = require("process")
+const rl = readline.createInterface({ input, output })
 const SDK = require("../sdk")
 const fs = require("fs")
 const path = require("path")
@@ -12,7 +15,7 @@ const {
   LoggerFactory,
   InteractionResult,
 } = require("warp-contracts")
-const { isNil } = require("ramda")
+const { isNil, keys, includes } = require("ramda")
 const ArLocal = require("arlocal").default
 
 async function addFunds(arweave, wallet) {
@@ -20,28 +23,13 @@ async function addFunds(arweave, wallet) {
   await arweave.api.get(`/mint/${walletAddress}/1000000000000000`)
 }
 
-let arlocal,
-  arweave,
-  warp,
-  arweave_wallet,
-  wallet,
-  wallet2,
-  wallet3,
-  wallet4,
-  walletAddress,
-  contractSrc,
-  sdk
+let arlocal, arweave, warp, arweave_wallet, walletAddress, contractSrc, sdk
 
 let isInit = false
 let stopto = null
 async function init() {
-  if (isInit === false) {
-    isInit = true
-    arlocal = new ArLocal(1820, false)
-    await arlocal.start()
-  } else {
-    clearTimeout(stopto)
-  }
+  arlocal = new ArLocal(1820, false)
+  await arlocal.start()
   sdk = new SDK({
     arweave: {
       host: "localhost",
@@ -51,23 +39,12 @@ async function init() {
   })
   arweave = sdk.arweave
   warp = sdk.warp
-  return sdk
-}
-async function stop() {
-  stopto = setTimeout(async () => {
-    await arlocal.stop()
-  }, 1000)
-}
-
-async function initBeforeEach(secure = false) {
-  wallet = Wallet.generate()
-  wallet2 = Wallet.generate()
-  wallet3 = Wallet.generate()
-  wallet4 = Wallet.generate()
+  const wallet = Wallet.generate()
   arweave_wallet = await arweave.wallets.generate()
   await addFunds(arweave, arweave_wallet)
   walletAddress = await arweave.wallets.jwkToAddress(arweave_wallet)
-
+  console.log(`Arweave wallet generated: ` + walletAddress)
+  console.log(`Ethereum wallet generated: ` + wallet.getAddressString())
   contractSrc = fs.readFileSync(
     path.join(__dirname, "../dist/contract.js"),
     "utf8"
@@ -81,41 +58,62 @@ async function initBeforeEach(secure = false) {
   const initialState = {
     ...stateFromFile,
     ...{
-      secure,
+      secure: true,
       owner: walletAddress,
     },
   }
-  const { contractTxId } = await warp.createContract.deploy({
+  const contract = await warp.createContract.deploy({
     wallet: arweave_wallet,
     initState: JSON.stringify(initialState),
     src: contractSrc,
   })
+  console.log(contract)
   const name = "weavedb"
   const version = "1"
   sdk.initialize({
-    contractTxId,
+    contractTxId: contract.contractTxId,
     wallet: arweave_wallet,
     name,
     version,
     EthWallet: wallet,
   })
   await sdk.mineBlock()
-
-  return {
-    wallet,
-    walletAddress,
-    contractSrc,
-    wallet,
-    wallet2,
-    wallet3,
-    wallet4,
-    arweave_wallet,
-  }
+  waitForCommand()
 }
-
-module.exports = {
-  addFunds,
-  init,
-  initBeforeEach,
-  stop,
+function waitForCommand() {
+  const methods = [
+    "add",
+    "get",
+    "cget",
+    "set",
+    "update",
+    "upsert",
+    "delete",
+    "addIndex",
+    "getIndex",
+    "removeIndex",
+    "setRules",
+    "getRules",
+    "setSchema",
+    "getSchema",
+    "nonce",
+    "ids",
+    "batch",
+    "evolve",
+  ]
+  rl.question("> ", async method => {
+    try {
+      let pr = eval(`sdk.${method}`)
+      const res = await pr
+      if (!isNil(res.err)) {
+        console.log(`error: ${res.err.errorMessage}`)
+      } else {
+        console.log(res)
+      }
+    } catch (e) {
+      console.log(e)
+    }
+    waitForCommand()
+  })
 }
+init()

@@ -200,7 +200,7 @@ class SDK {
     addr,
     privateKey,
     overwrite,
-    dryWrite,
+    dryWrite = true,
     bundle
   ) {
     const isaddr = !isNil(addr)
@@ -248,9 +248,7 @@ class SDK {
     }
     if (dryWrite) {
       let dryState = await this.db.dryWrite(param)
-      if (dryState.type === "error") {
-        return { err: dryState }
-      }
+      if (dryState.type === "error") return { err: dryState }
     }
     let tx = await this.db[bundle ? "bundleInteraction" : "writeInteraction"](
       param

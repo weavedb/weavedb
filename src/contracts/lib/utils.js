@@ -133,9 +133,8 @@ export const getDoc = (data, path, _signer, func, new_data, secure = false) => {
         } else if (permission === "deny" && ok) err()
       }
     }
-    if (!allowed) err()
+    if (!allowed) err("operation not allowed")
   }
-
   return path.length >= 4
     ? getDoc(doc.subs, slice(2, path.length, path), _signer, func, null, secure)
     : {
