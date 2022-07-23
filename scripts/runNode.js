@@ -28,7 +28,7 @@ let arlocal, arweave, warp, arweave_wallet, walletAddress, contractSrc, sdk
 let isInit = false
 let stopto = null
 async function init() {
-  arlocal = new ArLocal(1820, false)
+  arlocal = new ArLocal(1820)
   await arlocal.start()
   sdk = new SDK({
     arweave: {
@@ -78,6 +78,19 @@ async function init() {
     EthWallet: wallet,
   })
   await sdk.mineBlock()
+  const metadata = {
+    ethereum: {
+      privateKey: wallet.getPrivateKeyString(),
+      publicKey: wallet.getPublicKeyString(),
+      address: wallet.getAddressString(),
+    },
+    arweave: arweave_wallet,
+    weavedb: { ...contract, name, version },
+  }
+  fs.writeFileSync(
+    path.resolve(__dirname, "../console/lib/weavedb.json"),
+    JSON.stringify(metadata)
+  )
   waitForCommand()
 }
 function waitForCommand() {
