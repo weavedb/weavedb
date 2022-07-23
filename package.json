@@ -27,7 +27,8 @@
     "test": "yarn build && mocha",
     "build": "yarn clean && node build.js && npm run cp",
     "clean": "rimraf ./dist",
-    "cp": "copyfiles -u 1 ./src/**/*.json dist"
+    "cp": "copyfiles -u 1 ./src/**/*.json dist",
+    "repl": "node scripts/runNode.js"
   },
   "devDependencies": {
     "chai": "^4.3.6",
