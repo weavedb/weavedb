@@ -28,7 +28,8 @@ class SDK {
     this.arweave = Arweave.init(arweave)
     LoggerFactory.INST.logLevel("error")
     this.web3 = web3
-    if (arweave.host === "localhost") {
+    this.isLocalhost = arweave.host === "localhost"
+    if (this.isLocalhost) {
       this.warp = WarpNodeFactory.forTesting(this.arweave)
     } else {
       if (isNil(web3)) {
@@ -253,7 +254,7 @@ class SDK {
     let tx = await this.db[bundle ? "bundleInteraction" : "writeInteraction"](
       param
     )
-    if (isNil(this.web3)) await this.mineBlock()
+    if (this.isLocalhost) await this.mineBlock()
     return tx
   }
 
