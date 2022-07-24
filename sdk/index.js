@@ -173,6 +173,10 @@ class SDK {
     return this._write("addIndex", ...query)
   }
 
+  async addIndex(...query) {
+    return this._write("removeIndex", ...query)
+  }
+
   async update(...query) {
     return this._write("update", ...query)
   }
