@@ -57,6 +57,7 @@ async function stop() {
   stopto = setTimeout(async () => {
     await arlocal.stop()
   }, 1000)
+  return
 }
 
 async function initBeforeEach(secure = false) {

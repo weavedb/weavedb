@@ -17,9 +17,7 @@ describe("WeaveDB", function () {
     sdk = await init()
   })
 
-  after(async () => {
-    await stop()
-  })
+  after(async () => await stop())
 
   beforeEach(async () => {
     ;({ walletAddress, wallet, wallet2 } = await initBeforeEach())
@@ -367,7 +365,7 @@ describe("WeaveDB", function () {
       [["height", "asc"]],
     ])
   })
-  it("should link temporarily generated address", async () => {
+  it.only("should link temporarily generated address", async () => {
     const addr = wallet.getAddressString()
     const identity = EthCrypto.createIdentity()
     const EIP712Domain = [

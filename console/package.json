@@ -1,0 +1,35 @@
+{
+  "name": "weavedb-console",
+  "version": "0.2.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@bit/warashibe.nextdapp.core": "file:./nd/core",
+    "@chakra-ui/react": "^2.2.4",
+    "@emotion/react": "^11",
+    "@emotion/styled": "^11",
+    "eth-crypto": "^2.3.0",
+    "framer-motion": "^6",
+    "isomorphic-fetch": "^3.0.0",
+    "localforage": "^1.10.0",
+    "next": "^12.0.4",
+    "next-offline": "^5.0.5",
+    "normalize.css": "^8.0.1",
+    "ramda": "^0.28.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-json-pretty": "^2.2.0",
+    "recoil": "^0.5.2",
+    "weavedb-sdk": "^0.2.3"
+  },
+  "scripts": {
+    "dev": "next",
+    "build": "next build",
+    "start": "next start"
+  },
+  "bit": {
+    "env": {},
+    "componentsDefaultDirectory": "nd/{name}",
+    "packageManager": "npm"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log",
+    "env:set": "firebase functions:config:set env=\"$(cat env.json)\"",
+    "env:copy": "firebase functions:config:get > .runtimeconfig.json",
+    "dev": "GOOGLE_APPLICATION_CREDENTIALS=\"../key.json\" firebase emulators:start --only functions"
+  },
+  "engines": {
+    "node": "10"
+  },
+  "dependencies": {
+    "firebase-admin": "^8.6.0",
+    "firebase-functions": "^3.3.0",
+    "firestore-sweet": "^0.4.9",
+    "node-rsa": "^1.0.8",
+    "ramda": "^0.27.0",
+    "uuid": "^8.2.0"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^0.1.6"
+  },
+  "bit": {
+    "env": {},
+    "componentsDefaultDirectory": "nd/{name}",
+    "packageManager": "npm"
+  },
+  "private": true
+}
