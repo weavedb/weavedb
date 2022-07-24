@@ -28,7 +28,7 @@ let arlocal, arweave, warp, arweave_wallet, walletAddress, contractSrc, sdk
 let isInit = false
 let stopto = null
 async function init() {
-  arlocal = new ArLocal(1820)
+  arlocal = new ArLocal(1820, false)
   await arlocal.start()
   sdk = new SDK({
     arweave: {
