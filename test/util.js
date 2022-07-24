@@ -2,8 +2,8 @@ const SDK = require("../sdk")
 const fs = require("fs")
 const path = require("path")
 const { expect } = require("chai")
-const ethSigUtil = require("@metamask/eth-sig-util")
 const Wallet = require("ethereumjs-wallet").default
+
 const {
   PstContract,
   PstState,
