@@ -1,0 +1,26 @@
+{
+  "name": "@bit/warashibe.nextdapp.core",
+  "version": "0.0.14",
+  "homepage": "https://bit.dev/warashibe/nextdapp/core",
+  "main": "index.js",
+  "componentId": {
+    "scope": "warashibe.nextdapp",
+    "name": "core",
+    "version": "0.0.14"
+  },
+  "dependencies": {
+    "md5": "2.2.1",
+    "isomorphic-fetch": "2.2.1"
+  },
+  "devDependencies": {},
+  "peerDependencies": {
+    "ramda": "^0.27.0",
+    "react": "^16.13.1",
+    "recoil": "^0.0.10",
+    "next": "^9.4.4"
+  },
+  "license": "SEE LICENSE IN LICENSE",
+  "bit": {
+    "env": {}
+  }
+}
