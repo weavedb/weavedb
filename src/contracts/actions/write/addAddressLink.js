@@ -44,8 +44,10 @@ export const addAddressLink = async (state, action, signer) => {
   })
 
   const _signer = signer2.toLowerCase()
-  if (_signer !== address) err()
-  if (!isNil(state.auth.links[address])) err("link already exists")
-  state.auth.links[address] = signer
+  if (_signer !== address.toLowerCase()) err()
+  if (!isNil(state.auth.links[address.toLowerCase()])) {
+    err("link already exists")
+  }
+  state.auth.links[address.toLowerCase()] = signer
   return { state }
 }
