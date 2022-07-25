@@ -20,7 +20,7 @@
     "react-dom": "^18.2.0",
     "react-json-pretty": "^2.2.0",
     "recoil": "^0.5.2",
-    "weavedb-sdk": "^0.2.3"
+    "weavedb-sdk": "^0.2.6"
   },
   "scripts": {
     "dev": "next",

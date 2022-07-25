@@ -1,6 +1,6 @@
 {
   "name": "weavedb-sdk",
-  "version": "0.2.3",
+  "version": "0.2.6",
   "description": "A decentralized NoSQL database powered by Arweave.",
   "homepage": "https://weavedb.asteroid.ac",
   "repository": {
@@ -15,6 +15,7 @@
   "dependencies": {
     "@metamask/eth-sig-util": "^4.0.1",
     "arweave": "^1.11.4",
+    "eth-crypto": "^2.3.0",
     "ramda": "^0.28.0",
     "warp-contracts": "^1.1.14"
   }

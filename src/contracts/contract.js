@@ -61,7 +61,7 @@ export async function handle(state, action) {
     case "evolve":
       if (state.canEvolve) {
         if (state.owner !== action.caller) {
-          throw new ContractError("Only the owner can evolve a contract.")
+          err("Only the owner can evolve a contract.")
         }
         state.evolve = action.input.value
         return { state }
