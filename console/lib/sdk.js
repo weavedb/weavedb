@@ -1,4 +1,3 @@
-const EthCrypto = require("eth-crypto")
 const { all, complement, init, is, last, isNil } = require("ramda")
 let Arweave = require("arweave")
 Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
@@ -30,7 +29,8 @@ class SDK {
     LoggerFactory.INST.logLevel("error")
     this.web3 = web3
     this.isLocalhost = arweave.host === "localhost"
-    if (this.isLocalhost) {
+    console.log("lets see......", this.isLocalhost)
+    if (arweave.host === "localhost") {
       this.warp = WarpNodeFactory.forTesting(this.arweave)
     } else {
       if (isNil(web3)) {
@@ -150,39 +150,6 @@ class SDK {
     )
   }
 
-  async createTempAddress(addr) {
-    const identity = EthCrypto.createIdentity()
-    const nonce = await this.getNonce(addr.toLowerCase())
-    const message = {
-      nonce,
-      query: JSON.stringify({
-        func: "auth",
-        query: { address: addr.toLowerCase() },
-      }),
-    }
-    const data = {
-      types: {
-        EIP712Domain,
-        Query: [
-          { name: "query", type: "string" },
-          { name: "nonce", type: "uint256" },
-        ],
-      },
-      domain: this.domain,
-      primaryType: "Query",
-      message,
-    }
-    const signature = ethSigUtil.signTypedData({
-      privateKey: Buffer.from(identity.privateKey.replace(/^0x/, ""), "hex"),
-      data,
-      version: "V4",
-    })
-    const tx = await this.addAddressLink(
-      { signature, address: identity.address.toLowerCase() },
-      { wallet: this.wallet || addr.toLowerCase(), nonce }
-    )
-    return isNil(tx.err) ? { tx, identity } : null
-  }
   async addAddressLink(query, opt) {
     return await this._write2("addAddressLink", query, opt)
   }
@@ -205,10 +172,6 @@ class SDK {
 
   async addIndex(...query) {
     return this._write("addIndex", ...query)
-  }
-
-  async removeIndex(...query) {
-    return this._write("removeIndex", ...query)
   }
 
   async update(...query) {
@@ -244,7 +207,6 @@ class SDK {
   ) {
     const isaddr = !isNil(addr)
     addr ||= is(String, wallet) ? wallet : wallet.getAddressString()
-    addr = addr.toLowerCase()
     let result
     nonce ||= await this.getNonce(addr)
     const message = {
@@ -270,9 +232,7 @@ class SDK {
             params: [addr, JSON.stringify(data)],
           })
         : ethSigUtil.signTypedData({
-            privateKey: !isNil(privateKey)
-              ? Buffer.from(privateKey.replace(/^0x/, ""), "hex")
-              : wallet.getPrivateKey(),
+            privateKey: privateKey || wallet.getPrivateKey(),
             data,
             version: "V4",
           })
@@ -285,7 +245,7 @@ class SDK {
         overwrite || isNil(wallet)
           ? addr
           : is(String, wallet)
-          ? wallet.toLowerCase()
+          ? wallet
           : wallet.getAddressString(),
     }
     if (dryWrite) {
