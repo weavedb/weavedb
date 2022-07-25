@@ -6667,13 +6667,14 @@ watchpack@2.1.1:
     glob-to-regexp "^0.4.1"
     graceful-fs "^4.1.2"
 
-weavedb-sdk@^0.2.3:
-  version "0.2.3"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.2.3.tgz#3cf79e949cb43f903f89a6eb6dff61ad18086a55"
-  integrity sha512-5tELPMyb4UMOaKlU6HvKnayIVPadYqyEA+2/WXWkNK4lDgdubv5Ns9d524thN5cvPmbMTTvL69iaRvB40gfhuA==
+weavedb-sdk@^0.2.6:
+  version "0.2.6"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.2.6.tgz#a43b694be9d0386a4cd7f4cc5ee19594d0a3af5f"
+  integrity sha512-jTmOskefS6E0wbOKrZlSCYVaRK6wbRhbZD0Ozp5+82lQm3aDhaoN4vHd0F7syQ5f/Tmxasfu/jdCJJQr8upnrg==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     arweave "^1.11.4"
+    eth-crypto "^2.3.0"
     ramda "^0.28.0"
     warp-contracts "^1.1.14"
 

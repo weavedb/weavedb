@@ -51,49 +51,14 @@ export const createTempAddress = async ({ conf, set }) => {
     `temp_address:${weavedb.weavedb.contractTxId}:${addr}`
   )
   let identity = ex_identity
+  let tx
   if (isNil(identity)) {
-    identity = EthCrypto.createIdentity()
+    ;({ tx, identity } = await sdk.createTempAddress(addr))
   } else {
     await lf.setItem("temp_address:current", addr)
     set(addr, "temp_current")
     return
   }
-
-  const EIP712Domain = [
-    { name: "name", type: "string" },
-    { name: "version", type: "string" },
-    { name: "verifyingContract", type: "string" },
-  ]
-  let nonce = await sdk.getNonce(addr.toLowerCase())
-  const message = {
-    nonce,
-    query: JSON.stringify({
-      func: "auth",
-      query: { address: addr.toLowerCase() },
-    }),
-  }
-  const data = {
-    types: {
-      EIP712Domain,
-      Query: [
-        { name: "query", type: "string" },
-        { name: "nonce", type: "uint256" },
-      ],
-    },
-    domain: sdk.domain,
-    primaryType: "Query",
-    message,
-  }
-  const signature = ethSigUtil.signTypedData({
-    privateKey: Buffer.from(identity.privateKey.replace(/^0x/, ""), "hex"),
-    data,
-    version: "V4",
-  })
-  const query2 = { signature, address: identity.address.toLowerCase() }
-  let tx = await sdk.addAddressLink(query2, {
-    nonce,
-    wallet: addr.toLowerCase(),
-  })
   if (!isNil(tx) && isNil(tx.err)) {
     identity.tx = tx
     identity.linked_address = addr
@@ -142,19 +107,13 @@ export const queryDB = async ({
     const opt =
       !isNil(identity) && !isNil(identity.tx)
         ? {
-            wallet: current.toLowerCase(),
-            addr: identity.address.toLowerCase(),
-            privateKey: Buffer.from(
-              identity.privateKey.replace(/^0x/, ""),
-              "hex"
-            ),
+            wallet: current,
+            addr: identity.address,
+            privateKey: identity.privateKey,
           }
         : {
             addr: weavedb.ethereum.address,
-            privateKey: Buffer.from(
-              weavedb.ethereum.privateKey.replace(/^0x/, ""),
-              "hex"
-            ),
+            privateKey: weavedb.ethereum.privateKey,
           }
     const res = await sdk[method](...q, opt)
     if (!isNil(res.err)) {

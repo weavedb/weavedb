@@ -24,12 +24,15 @@ The current access control model is rather primitive where only the original cre
 
 ### Demo
 
-A demo dapp is deployed at [weavedb.asteroid.ac](https://weavedb.asteroid.ac).
 
-V0.2 contract is deployed on the Warp mainnet at [Ndw5zrbokHM4uFWaEVRQwPYr6PwLme16O4cnxZ0pgV4](https://sonar.warp.cc/?#/app/contract/Ndw5zrbokHM4uFWaEVRQwPYr6PwLme16O4cnxZ0pgV4)  
-(srcTxId: pM6kWlV2HeqHUe4kzgnDxED4SSVMbIow-l365h2nvv0).
 
-V0.1 contract is deployed on the Warp testnet at [ltj7QZSNIKbklMmP2b4ypbuUZoN77EQkjFR4Wid2ZIE](https://sonar.warp.cc/?#/app/contract/ltj7QZSNIKbklMmP2b4ypbuUZoN77EQkjFR4Wid2ZIE?network=testnet#).
+The v0.2 contract is deployed on the Warp mainnet at [Ndw5zrbokHM4uFWaEVRQwPYr6PwLme16O4cnxZ0pgV4](https://sonar.warp.cc/?#/app/contract/Ndw5zrbokHM4uFWaEVRQwPYr6PwLme16O4cnxZ0pgV4)
+
+A v0.2 demo dapp (Social Bookmarking) is deployed at [asteroid.ac](https://asteroid.ac).
+
+The v0.1 contract is deployed on the Warp testnet at [ltj7QZSNIKbklMmP2b4ypbuUZoN77EQkjFR4Wid2ZIE](https://sonar.warp.cc/?#/app/contract/ltj7QZSNIKbklMmP2b4ypbuUZoN77EQkjFR4Wid2ZIE?network=testnet#).
+
+A v0.1 demo dapp (Todo App) is deployed at [weavedb.asteroid.ac](https://weavedb.asteroid.ac).
 
 ## Development
 
@@ -258,7 +261,7 @@ Delete a doc
 await db.delete("collection_name", "doc_id")
 ```
 
-## Schemas
+## Data Schemas
 
 It's essential to set a presice data schema and access controls to each collection as otherwise WeaveDB is permissionless and anyone can put arbitrary data.
 
@@ -437,49 +440,34 @@ You can revoke the address link anytime and forget about the disposal address.
 
 This will create a great UX for dapps where users only sign once for address linking (this is also instant) and dapp transactions are free, instant and automatic all thanks to [Bundlr](https://bundlr.network/) used underneath.
 
+### Temporary Address for Auto-signing
+
+Create a temporary address. Dapps would do this only once when users sign in.
+
 ```js
-const EthCrypto = require("eth-crypto")
-const { Wallet } = require("ethers")
-const Wallet = require("ethereumjs-wallet").default
-
-const wallet = Wallet.generate()
-const addr = wallet.getAddressString()
-const identity = EthCrypto.createIdentity()
-const EIP712Domain = [
-  { name: "name", type: "string" },
-  { name: "version", type: "string" },
-  { name: "verifyingContract", type: "string" },
-]
-let nonce = await db.getNonce(addr)
-const message = {
-  nonce,
-  query: JSON.stringify({ func: "auth", query: { address: addr } }),
-}
-const data = {
-  types: {
-    EIP712Domain,
-    Query: [
-      { name: "query", type: "string" },
-      { name: "nonce", type: "uint256" },
-    ],
-  },
-  domain: db.domain,
-  primaryType: "Query",
-  message,
-}
-const signature = ethSigUtil.signTypedData({
-  privateKey: Buffer.from(identity.privateKey.replace(/^0x/, ""), "hex"),
-  data,
-  version: "V4",
-})
-
-await db.addAddressLink({ signature, address: identity.address.toLowerCase() }, { nonce })
+const { identity } = db.createTempAddress(METAMASK_ADDRESS)
 ```
 
-remove an address link
+Dapps can store the `identity` in the IndexedDB and auto-sign when the user creates transactions.
+
+Query DB with the temporary address
 
 ```js
-await db.removeAddressLink({ address: identity.address.toLowerCase() })
+await db.add(
+  { name: "Bob", age: 20 },
+  "people",
+  {
+    wallet: METAMASK_ADDRESS,
+    addr: identity.address,
+    privateKey: identity.privateKey,
+  }
+)
+```
+
+Remove an address link
+
+```js
+await db.removeAddressLink({ address: identity.address })
 ```
 
 ## Further References
