@@ -27,6 +27,9 @@ const gen = async () => {
   const wallet = await arweave.wallets.generate()
   if (!fs.existsSync(wallet_dir_path)) fs.mkdirSync(wallet_dir_path)
   fs.writeFileSync(wallet_path, JSON.stringify(wallet))
+  const walletAddress = await arweave.wallets.jwkToAddress(wallet)
+
+  console.log(`A new wallet (${walletAddress}) saved at ${wallet_path}`)
 }
 
 gen()

@@ -347,7 +347,7 @@ await db.setRules(rules, "bookmarks")
 ```
 Within the rules object, each top level key defines one rule. A keys should be a combination of (`allow` or `deny`) and (`write`, `create`, `update`, `delete`).
 
-`allow write` is equivalent to `allow create, update, delete`.
+`allow write` is equivalent to `allow create,update,delete`.
 
 You can access to various data within the validation blocks.
 
