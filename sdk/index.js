@@ -3,6 +3,7 @@ const { all, complement, init, is, last, isNil } = require("ramda")
 let Arweave = require("arweave")
 Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
 const ethSigUtil = require("@metamask/eth-sig-util")
+const { privateToAddress } = require("ethereumjs-util")
 const {
   Warp,
   WarpNodeFactory,
@@ -29,8 +30,13 @@ class SDK {
     this.arweave = Arweave.init(arweave)
     LoggerFactory.INST.logLevel("error")
     this.web3 = web3
-    this.isLocalhost = arweave.host === "localhost"
-    if (this.isLocalhost) {
+    this.network =
+      arweave.host === "localhost"
+        ? "localhost"
+        : arweave.host === "arweave.net"
+        ? "mainnet"
+        : "testnet"
+    if (this.network === "localhost") {
       this.warp = WarpNodeFactory.forTesting(this.arweave)
     } else {
       if (isNil(web3)) {
@@ -111,9 +117,9 @@ class SDK {
   }
 
   async _write(func, ...query) {
-    let nonce, addr, privateKey, overwrite, wallet, dryWrite, bundle
+    let nonce, privateKey, overwrite, wallet, dryWrite, bundle
     if (is(Object, last(query)) && !is(Array, last(query))) {
-      ;({ nonce, addr, privateKey, overwrite, wallet, dryWrite, bundle } = last(
+      ;({ nonce, privateKey, overwrite, wallet, dryWrite, bundle } = last(
         query
       ))
       query = init(query)
@@ -124,7 +130,6 @@ class SDK {
       func,
       query,
       nonce,
-      addr,
       privateKey,
       overwrite,
       dryWrite,
@@ -133,16 +138,15 @@ class SDK {
   }
 
   async _write2(func, query, opt) {
-    let nonce, addr, privateKey, overwrite, wallet, dryWrite, bundle
+    let nonce, privateKey, overwrite, wallet, dryWrite, bundle
     if (!isNil(opt)) {
-      ;({ nonce, addr, privateKey, overwrite, wallet, dryWrite, bundle } = opt)
+      ;({ nonce, privateKey, overwrite, wallet, dryWrite, bundle } = opt)
     }
     return await this.write(
       wallet || this.wallet,
       func,
       query,
       nonce,
-      addr,
       privateKey,
       overwrite,
       dryWrite,
@@ -236,17 +240,22 @@ class SDK {
     func,
     query,
     nonce,
-    addr,
     privateKey,
     overwrite,
     dryWrite = true,
     bundle
   ) {
+    let addr = isNil(privateKey)
+      ? null
+      : `0x${privateToAddress(
+          Buffer.from(privateKey.replace(/^0x/, ""), "hex")
+        ).toString("hex")}`
     const isaddr = !isNil(addr)
     addr ||= is(String, wallet) ? wallet : wallet.getAddressString()
     addr = addr.toLowerCase()
     let result
     nonce ||= await this.getNonce(addr)
+    bundle ||= this.network === "mainnet"
     const message = {
       nonce,
       query: JSON.stringify({ func, query }),
@@ -295,7 +304,7 @@ class SDK {
     let tx = await this.db[bundle ? "bundleInteraction" : "writeInteraction"](
       param
     )
-    if (this.isLocalhost) await this.mineBlock()
+    if (this.network === "localhost") await this.mineBlock()
     return tx
   }
 

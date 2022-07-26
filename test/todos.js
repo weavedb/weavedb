@@ -46,7 +46,7 @@ describe("Bookmarks Example", function () {
         },
       },
     }
-    await db.setSchema(schema, "bookmarks")
+    await db.setSchema(schema, "todos")
     const rules = {
       "allow create": {
         and: [

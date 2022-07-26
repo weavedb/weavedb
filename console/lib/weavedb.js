@@ -84,7 +84,6 @@ export const checkTempAddress = async function ({ conf, set }) {
 export const logoutTemp = async ({ conf, set }) => {
   await lf.removeItem("temp_address:current")
   set(null, "temp_current")
-  set(null, "temp_image")
 }
 
 export const queryDB = async ({
@@ -108,11 +107,9 @@ export const queryDB = async ({
       !isNil(identity) && !isNil(identity.tx)
         ? {
             wallet: current,
-            addr: identity.address,
             privateKey: identity.privateKey,
           }
         : {
-            addr: weavedb.ethereum.address,
             privateKey: weavedb.ethereum.privateKey,
           }
     const res = await sdk[method](...q, opt)

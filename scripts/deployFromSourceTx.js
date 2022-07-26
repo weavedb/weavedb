@@ -49,6 +49,7 @@ const deploy = async () => {
     )
   )
   const walletAddress = await arweave.wallets.jwkToAddress(wallet)
+
   const initialState = {
     ...stateFromFile,
     ...{
