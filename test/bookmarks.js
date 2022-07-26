@@ -6,11 +6,11 @@ const { pluck, isNil, range, indexBy, prop } = require("ramda")
 const { init, stop, initBeforeEach, addFunds } = require("./util")
 
 describe("Bookmarks Example", function () {
-  let arlocal, wallet, walletAddress, wallet2, sdk, wallet3, wallet4
+  let arlocal, wallet, walletAddress, wallet2, db, wallet3, wallet4
   this.timeout(0)
 
   before(async () => {
-    sdk = await init()
+    db = await init()
   })
 
   after(async () => {
@@ -43,7 +43,7 @@ describe("Bookmarks Example", function () {
         },
       },
     }
-    await sdk.setSchema(schema, "bookmarks")
+    await db.setSchema(schema, "bookmarks")
     const rules = {
       let: {
         id: [
@@ -57,7 +57,6 @@ describe("Bookmarks Example", function () {
       },
       "allow create": {
         and: [
-          { "!=": [{ var: "request.auth.signer" }, null] },
           {
             "==": [{ var: "resource.id" }, { var: "id" }],
           },
@@ -76,13 +75,13 @@ describe("Bookmarks Example", function () {
         ],
       },
       "allow delete": {
-        "!=": [
+        "==": [
           { var: "request.auth.signer" },
-          { var: "resource.newData.user_address" },
+          { var: "resource.data.user_address" },
         ],
       },
     }
-    await sdk.setRules(rules, "bookmarks")
+    await db.setRules(rules, "bookmarks")
     const conf_rules = {
       "allow write": {
         "==": [{ var: "request.auth.signer" }, wallet.getAddressString()],
@@ -97,8 +96,9 @@ describe("Bookmarks Example", function () {
         },
       },
     }
-    await sdk.setRules(conf_rules, "conf")
-    await sdk.setRules(conf_rules, "mirror")
+    await db.setRules(conf_rules, "conf")
+    await db.setRules(conf_rules, "mirror")
+    await db.setSchema(conf_schema, "conf")
   }
 
   const bookmark = async () => {
@@ -108,15 +108,15 @@ describe("Bookmarks Example", function () {
         batches.push([
           "set",
           {
-            date: sdk.ts(),
+            date: db.ts(),
             article_id: "article" + v,
-            user_address: sdk.signer(),
+            user_address: db.signer(),
           },
           "bookmarks",
           `${"article" + v}:${wallet.getAddressString()}`,
         ])
       }
-      await sdk.batch(batches, { wallet })
+      await db.batch(batches, { wallet })
     }
     await _bookmark([1, 2, 3, 4], wallet)
     await _bookmark([2, 3, 4], wallet2)
@@ -125,26 +125,21 @@ describe("Bookmarks Example", function () {
   }
 
   const calc = async () => {
-    const conf = (await sdk.get("conf", "mirror-calc")) || { ver: 0 }
-    const ex = (await sdk.get("mirror", ["ver"], ["ver", "!=", 0])) || []
-    let emap = indexBy(prop("id"))(ex)
+    const conf = (await db.get("conf", "mirror-calc")) || { ver: 0 }
+    const exists = (await db.get("mirror", ["ver"], ["ver", "!=", 0])) || []
+    let exists_map = indexBy(prop("id"))(exists)
     const day = 60 * 60 * 24
     const two_weeks = day * 14
-    const d = Date.now() / 1000
-    const date = Date.now() / 1000 - two_weeks
-    const bookmarks = await sdk.get(
+    const now = Date.now() / 1000
+    const deadline = now - two_weeks
+    const bookmarks = await db.get(
       "bookmarks",
       ["date", "desc"],
-      ["date", ">=", date]
+      ["date", ">=", deadline]
     )
     const rank = {}
     let batches = [
-      [
-        "upsert",
-        { ver: conf.ver + 1, date: Date.now() },
-        "conf",
-        "mirror-calc",
-      ],
+      ["upsert", { ver: conf.ver + 1, date: now }, "conf", "mirror-calc"],
     ]
     for (let v of bookmarks) {
       if (isNil(rank[v.article_id])) {
@@ -155,13 +150,13 @@ describe("Bookmarks Example", function () {
         }
       }
       rank[v.article_id].bookmarks += 1
-      const k = (two_weeks - (d - v.date)) / day
+      const k = (two_weeks - (now - v.date)) / day
       rank[v.article_id].pt += k
     }
     for (let k in rank) {
       let v = rank[k]
-      if (!isNil(emap[k])) {
-        emap[k].ex = true
+      if (!isNil(exists_map[k])) {
+        exists_map[k].exists = true
       }
       batches.push([
         "upsert",
@@ -175,19 +170,19 @@ describe("Bookmarks Example", function () {
         k,
       ])
     }
-    for (let k in emap) {
-      if (emap[k].ex !== true) {
-        batches.push(["update", { pt: op.del(), ver: op.del() }, "mirror", k])
+    for (let k in exists_map) {
+      if (exists_map[k].exists !== true) {
+        batches.push(["update", { pt: db.del(), ver: db.del() }, "mirror", k])
       }
     }
-    await sdk.batch(batches)
+    await db.batch(batches)
   }
 
   it("should bookmark", async () => {
     await initDB()
     await bookmark()
     await calc()
-    expect(pluck("id", await sdk.get("mirror", ["pt", "desc"], 10))).to.eql([
+    expect(pluck("id", await db.get("mirror", ["pt", "desc"], 10))).to.eql([
       "article4",
       "article3",
       "article2",
