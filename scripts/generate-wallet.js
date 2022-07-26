@@ -15,9 +15,9 @@ const gen = async () => {
     port: 443,
     protocol: "https",
   })
+  const wallet_dir_path = path.resolve(__dirname, ".wallets")
   const wallet_path = path.resolve(
-    __dirname,
-    ".wallets",
+    wallet_dir_path,
     `wallet-${wallet_name}.json`
   )
   if (fs.existsSync(wallet_path)) {
@@ -25,6 +25,7 @@ const gen = async () => {
     process.exit()
   }
   const wallet = await arweave.wallets.generate()
+  if (!fs.existsSync(wallet_dir_path)) fs.mkdirSync(wallet_dir_path)
   fs.writeFileSync(wallet_path, JSON.stringify(wallet))
 }
 

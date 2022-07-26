@@ -24,8 +24,6 @@ The current access control model is rather primitive where only the original cre
 
 ### Demo
 
-
-
 The v0.2 contract is deployed on the Warp mainnet at [Ndw5zrbokHM4uFWaEVRQwPYr6PwLme16O4cnxZ0pgV4](https://sonar.warp.cc/?#/app/contract/Ndw5zrbokHM4uFWaEVRQwPYr6PwLme16O4cnxZ0pgV4)
 
 A v0.2 demo dapp (Social Bookmarking) is deployed at [asteroid.ac](https://asteroid.ac).
@@ -103,7 +101,7 @@ window.Buffer = Buffer
 ### Install
 
 ```bash
-yarn add weave-sdk
+yarn add weavedb-sdk
 ```
 
 ### Instantiate WeaveDB
