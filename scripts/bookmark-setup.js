@@ -2,7 +2,7 @@ require("dotenv").config()
 const fs = require("fs")
 const path = require("path")
 const wallet_name = process.argv[2]
-const contractTxId = process.env.CONTRACT_TX_ID
+const contractTxId = process.argv[3] || process.env.CONTRACT_TX_ID
 const { isNil } = require("ramda")
 const SDK = require("../sdk")
 
@@ -17,7 +17,6 @@ if (isNil(contractTxId)) {
 }
 
 const addr = process.env.ETHERIUM_ADDRESS.toLowerCase()
-const pkey32 = Buffer.from(process.env.PRIVATE_KEY, "hex")
 
 const schemas = {
   bookmarks: {
@@ -113,10 +112,9 @@ const setup = async () => {
   })
 
   console.log("init WeaveDB..." + contractTxId)
-  console.log(await sdk.db.currentState())
-  process.exit()
+
   await sdk.setSchema(schemas.bookmarks, "bookmarks", {
-    privateKey: pkey32,
+    privateKey: process.env.PRIVATE_KEY,
     addr,
     bundle: wallet_name === "mainnet",
   })
@@ -124,7 +122,7 @@ const setup = async () => {
 
   for (let k in rules) {
     await sdk.setRules(rules[k], k, {
-      privateKey: pkey32,
+      privateKey: process.env.PRIVATE_KEY,
       addr,
       bundle: wallet_name === "mainnet",
     })

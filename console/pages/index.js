@@ -21,7 +21,6 @@ import {
 } from "ramda"
 import { bind } from "nd"
 import weavedb from "lib/weavedb.json"
-let sdk
 export default bind(
   ({ set, init, router, conf, $ }) => {
     const fn = init([
@@ -42,9 +41,9 @@ export default bind(
     useEffect(() => {
       ;(async () => {
         fn.checkTempAddress()
-        sdk = await fn.setupWeaveDB()
+        const db = await fn.setupWeaveDB()
         setInterval(async () => {
-          setState(await sdk.db.currentState())
+          setState(await db.db.currentState())
         }, 1000)
       })()
     }, [])

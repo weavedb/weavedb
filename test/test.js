@@ -367,16 +367,16 @@ describe("WeaveDB", function () {
     delete db.wallet
     await db.set({ name: "Beth", age: 10 }, "ppl", "Beth", {
       wallet: addr,
-      addr: identity.address,
       privateKey: identity.privateKey,
     })
     expect((await db.cget("ppl", "Beth")).setter).to.eql(addr)
-    return
-    await db.removeAddressLink({
-      address: identity.address,
-    })
+    await db.removeAddressLink(
+      {
+        address: identity.address,
+      },
+      { wallet }
+    )
     await db.set({ name: "Bob", age: 20 }, "ppl", "Bob", {
-      addr: identity.address,
       privateKey: identity.privateKey,
       overwrite: true,
     })

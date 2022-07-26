@@ -2,7 +2,7 @@ require("dotenv").config()
 const fs = require("fs")
 const path = require("path")
 const wallet_name = process.argv[2]
-const contractTxId = process.env.CONTRACT_TX_ID
+const contractTxId = process.argv[3] || process.env.CONTRACT_TX_ID
 const { isNil, indexBy, prop } = require("ramda")
 const SDK = require("../sdk")
 
@@ -27,8 +27,6 @@ if (isNil(contractTxId)) {
   console.log("contract not specified")
   process.exit()
 }
-
-const pkey32 = Buffer.from(process.env.PRIVATE_KEY, "hex")
 
 const calc = async sdk => {
   const conf = (await sdk.get("conf", "mirror-calc")) || { ver: 0 }
@@ -82,7 +80,7 @@ const calc = async sdk => {
     }
   }
   await sdk.batch(batches, {
-    privateKey: pkey32,
+    privateKey: process.env.PRIVATE_KEY,
     dryWrite: true,
     addr,
     bundle: wallet_name === "mainnet",
