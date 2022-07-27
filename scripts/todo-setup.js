@@ -1,3 +1,4 @@
+const EthCrypto = require("eth-crypto")
 require("dotenv").config()
 const fs = require("fs")
 const path = require("path")
@@ -15,8 +16,6 @@ if (isNil(contractTxId)) {
   console.log("contract not specified")
   process.exit()
 }
-
-const addr = process.env.ETHERIUM_ADDRESS.toLowerCase()
 
 const schemas = {
   type: "object",
@@ -105,18 +104,14 @@ const setup = async () => {
 
   console.log("init WeaveDB..." + contractTxId)
   const walletAddress = await sdk.arweave.wallets.jwkToAddress(wallet)
-
+  const identity = EthCrypto.createIdentity()
   await sdk.setSchema(schemas, "tasks", {
-    privateKey: process.env.PRIVATE_KEY,
-    addr,
-    bundle: wallet_name === "mainnet",
+    privateKey: identity.privateKey,
   })
   console.log("tasks schema set!")
 
   await sdk.setRules(rules, "tasks", {
-    privateKey: process.env.PRIVATE_KEY,
-    addr,
-    bundle: wallet_name === "mainnet",
+    privateKey: identity.privateKey,
   })
   console.log(`tasks rules set!`)
 
