@@ -1,3 +1,4 @@
+const EthCrypto = require("eth-crypto")
 require("dotenv").config()
 const fs = require("fs")
 const path = require("path")
@@ -15,8 +16,6 @@ if (isNil(contractTxId)) {
   console.log("contract not specified")
   process.exit()
 }
-
-const addr = process.env.ETHERIUM_ADDRESS.toLowerCase()
 
 if (isNil(wallet_name)) {
   console.log("no wallet name given")
@@ -79,11 +78,10 @@ const calc = async sdk => {
       batches.push(["update", { pt: sdk.del(), ver: sdk.del() }, "mirror", k])
     }
   }
+  const identity = EthCrypto.createIdentity()
   await sdk.batch(batches, {
-    privateKey: process.env.PRIVATE_KEY,
+    privateKey: identity.privateKey,
     dryWrite: true,
-    addr,
-    bundle: wallet_name === "mainnet",
   })
 }
 
