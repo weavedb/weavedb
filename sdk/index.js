@@ -29,7 +29,10 @@ class SDK {
   }) {
     this.arweave = Arweave.init(arweave)
     LoggerFactory.INST.logLevel("error")
-    this.web3 = web3
+    if (typeof window === "object") {
+      require("@metamask/legacy-web3")
+      this.web3 = window.web3
+    }
     this.network =
       arweave.host === "localhost"
         ? "localhost"

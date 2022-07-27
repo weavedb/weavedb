@@ -28,7 +28,7 @@ describe("Bookmarks Example", function () {
   })
 
   const initDB = async () => {
-    const schema = {
+    const schemas = {
       type: "object",
       required: ["article_id", "date", "user_address", "done"],
       properties: {
@@ -46,7 +46,7 @@ describe("Bookmarks Example", function () {
         },
       },
     }
-    await db.setSchema(schema, "todos")
+    await db.setSchema(schemas, "todos")
     const rules = {
       "allow create": {
         and: [
