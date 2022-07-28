@@ -1,0 +1,9 @@
+{
+  "label": "Example Dapps",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "Build example dapps using WeaveDB."
+
+  }
+}
