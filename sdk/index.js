@@ -254,7 +254,9 @@ class SDK {
           Buffer.from(privateKey.replace(/^0x/, ""), "hex")
         ).toString("hex")}`
     const isaddr = !isNil(addr)
-    addr ||= is(String, wallet) ? wallet : wallet.getAddressString()
+    if (isNil(addr)) {
+      addr = is(String, wallet) ? wallet : wallet.getAddressString()
+    }
     addr = addr.toLowerCase()
     let result
     nonce ||= await this.getNonce(addr)
