@@ -7,6 +7,7 @@ import {
   Box,
   Flex,
   Input,
+  Textarea,
 } from "@chakra-ui/react"
 import {
   filter,
@@ -18,6 +19,7 @@ import {
   mapObjIndexed,
   is,
   slice,
+  hasPath,
 } from "ramda"
 import { bind } from "nd"
 import weavedb from "lib/weavedb.json"
@@ -41,16 +43,20 @@ export default bind(
     const tabs = ["Data", "Schemas", "Rules", "Indexes"]
     const [network, setNetwork] = useState("Localhost")
     const [newNetwork, setNewNetwork] = useState("Localhost")
+    const [newRules, setNewRules] = useState(`{"allow write": true}`)
     const [editNetwork, setEditNetwork] = useState(false)
     const networks = ["Mainnet", "Testnet", "Localhost"]
     const [initDB, setInitDB] = useState(false)
     const [networkErr, setNetworkErr] = useState(false)
+    const [newCollection, setNewCollection] = useState("")
     const [contractTxId, setContractTxId] = useState(
       weavedb.weavedb.contractTxId
     )
     const [newContractTxId, setNewContractTxId] = useState(
       weavedb.weavedb.contractTxId
     )
+    const [addCollection, setAddCollection] = useState(false)
+
     useEffect(() => {
       ;(async () => {
         db = await fn.setupWeaveDB({ network, contractTxId })
@@ -60,7 +66,7 @@ export default bind(
     useEffect(() => {
       ;(async () => {
         if (initDB) {
-          fn.checkTempAddress()
+          fn.checkTempAddress({ contractTxId })
           setInterval(async () => {
             try {
               setState(await db.db.currentState())
@@ -119,7 +125,7 @@ export default bind(
         onClick={async () => {
           if (isNil($.temp_current)) {
             set(true, "signing_in")
-            await fn.createTempAddress({})
+            await fn.createTempAddress({ contractTxId })
             set(false, "signing_in")
           } else {
             if (confirm("Would you like to sign out?")) {
@@ -307,7 +313,14 @@ export default bind(
                   direction="column"
                 >
                   <Flex py={2} px={3} color="white" bg="#333" h="35px">
-                    Collections
+                    <Box>Collections</Box>
+                    <Box flex={1} />
+                    <Box
+                      onClick={() => setAddCollection(true)}
+                      sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
+                    >
+                      <Box as="i" className="fas fa-plus" />
+                    </Box>
                   </Flex>
                   {map(v => (
                     <Flex
@@ -513,7 +526,11 @@ export default bind(
                 bg="#333"
                 onClick={async () => {
                   try {
-                    const res = await fn.queryDB({ query, method })
+                    const res = await fn.queryDB({
+                      query,
+                      method,
+                      contractTxId,
+                    })
                     setResult(res)
                   } catch (e) {
                     console.log(e)
@@ -549,6 +566,84 @@ export default bind(
             </Flex>
           </Flex>
         </Flex>
+        {addCollection !== false ? (
+          <Flex
+            w="100%"
+            h="100%"
+            position="fixed"
+            sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+            bg="rgba(0,0,0,0.5)"
+            onClick={() => setAddCollection(false)}
+            justify="center"
+            align="center"
+          >
+            <Box
+              bg="white"
+              width="500px"
+              p={3}
+              sx={{ borderRadius: "5px", cursor: "default" }}
+              onClick={e => e.stopPropagation()}
+            >
+              <Input
+                value={newCollection}
+                placeholder="Collection ID"
+                onChange={e => setNewCollection(e.target.value)}
+                sx={{
+                  borderRadius: "3px",
+                }}
+              />
+              <Textarea
+                mt={3}
+                value={newRules}
+                placeholder="Access Control Rules"
+                onChange={e => setNewRules(e.target.value)}
+                sx={{
+                  borderRadius: "3px",
+                }}
+              />
+              <Flex
+                mt={4}
+                sx={{
+                  borderRadius: "3px",
+                  cursor: "pointer",
+                  ":hover": { opacity: 0.75 },
+                }}
+                p={2}
+                justify="center"
+                align="center"
+                color="white"
+                bg="#333"
+                onClick={async () => {
+                  if (/^\s*$/.test(newCollection)) {
+                    alert("Enter Collection ID")
+                    return
+                  } else if (hasPath(["data", newCollection])(state)) {
+                    alert("Collection exists")
+                    return
+                  }
+                  try {
+                    JSON.parse(newRules)
+                  } catch (e) {
+                    alert("Wrong JSON format")
+                    return
+                  }
+                  const res = await fn.queryDB({
+                    method: "setRules",
+                    query: `${newRules}, "${newCollection}"`,
+                    contractTxId,
+                  })
+                  if (/^Error:/.test(res)) {
+                    alert("Something went wrong")
+                  } else {
+                    setAddCollection(false)
+                  }
+                }}
+              >
+                Add
+              </Flex>
+            </Box>
+          </Flex>
+        ) : null}
       </ChakraProvider>
     )
   },
