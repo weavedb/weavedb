@@ -23,19 +23,34 @@ import { Buffer } from "buffer"
 import weavedb from "lib/weavedb.json"
 let sdk
 
-export const setupWeaveDB = async ({ conf, set }) => {
-  sdk = new SDK({
-    web3: web3,
-    wallet: weavedb.arweave,
-    name: weavedb.weavedb.name,
-    version: weavedb.weavedb.version,
-    contractTxId: weavedb.weavedb.contractTxId,
-    arweave: {
+export const setupWeaveDB = async ({
+  conf,
+  set,
+  val: { network, contractTxId },
+}) => {
+  let arweave = {
+    Localhost: {
       host: "localhost",
       port: 1820,
       protocol: "http",
-      timeout: 200000,
     },
+    Testnet: {
+      host: "testnet.redstone.tools",
+      port: 443,
+      protocol: "https",
+    },
+    Mainnet: {
+      host: "arweave.net",
+      port: 443,
+      protocol: "https",
+    },
+  }
+  sdk = new SDK({
+    wallet: weavedb.arweave,
+    name: weavedb.weavedb.name,
+    version: weavedb.weavedb.version,
+    contractTxId: contractTxId,
+    arweave: arweave[network],
   })
   window.Buffer = Buffer
   set(true, "initWDB")
