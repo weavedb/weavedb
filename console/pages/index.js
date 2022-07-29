@@ -21,6 +21,7 @@ import {
 } from "ramda"
 import { bind } from "nd"
 import weavedb from "lib/weavedb.json"
+let db
 export default bind(
   ({ set, init, router, conf, $ }) => {
     const fn = init([
@@ -38,15 +39,39 @@ export default bind(
     const [method, setMethod] = useState("get")
     const [query, setQuery] = useState("")
     const tabs = ["Data", "Schemas", "Rules", "Indexes"]
+    const [network, setNetwork] = useState("Localhost")
+    const [newNetwork, setNewNetwork] = useState("Localhost")
+    const [editNetwork, setEditNetwork] = useState(false)
+    const networks = ["Mainnet", "Testnet", "Localhost"]
+    const [initDB, setInitDB] = useState(false)
+    const [networkErr, setNetworkErr] = useState(false)
+    const [contractTxId, setContractTxId] = useState(
+      weavedb.weavedb.contractTxId
+    )
+    const [newContractTxId, setNewContractTxId] = useState(
+      weavedb.weavedb.contractTxId
+    )
     useEffect(() => {
       ;(async () => {
-        fn.checkTempAddress()
-        const db = await fn.setupWeaveDB()
-        setInterval(async () => {
-          setState(await db.db.currentState())
-        }, 1000)
+        db = await fn.setupWeaveDB({ network, contractTxId })
+        setInitDB(true)
       })()
-    }, [])
+    }, [contractTxId, network])
+    useEffect(() => {
+      ;(async () => {
+        if (initDB) {
+          fn.checkTempAddress()
+          setInterval(async () => {
+            try {
+              setState(await db.db.currentState())
+              setNetworkErr(false)
+            } catch (e) {
+              setNetworkErr(true)
+            }
+          }, 1000)
+        }
+      })()
+    }, [initDB])
     let cols = []
     let docs = []
     let data = null
@@ -184,10 +209,69 @@ export default bind(
             />
             WeaveDB
           </Flex>
-          <Flex flex={1} justify="center" fontSize="10px">
-            <Box px={2}>http://localhost:1820</Box>
-            <Box px={2}>contractTxId: {weavedb.weavedb.contractTxId}</Box>
-          </Flex>
+          {editNetwork ? (
+            <Flex flex={1} justify="center" fontSize="10px">
+              <Flex maxW="750px" width="100%">
+                <Select
+                  w="150px"
+                  value={newNetwork}
+                  onChange={e => setNewNetwork(e.target.value)}
+                  sx={{ borderRadius: "5px 0 0 5px" }}
+                >
+                  {map(v => <option value={v}>{v}</option>)(networks)}
+                </Select>
+                <Input
+                  flex={1}
+                  value={newContractTxId}
+                  onChange={e => setNewContractTxId(e.target.value)}
+                  sx={{ borderRadius: 0 }}
+                />
+                <Flex
+                  py={2}
+                  px={6}
+                  bg="#333"
+                  color="white"
+                  sx={{
+                    borderRadius: "0 5px 5px 0",
+                    cursor: "pointer",
+                    ":hover": { opacity: 0.75 },
+                  }}
+                  justifyContent="center"
+                  align="center"
+                  fontSize="16px"
+                  onClick={async () => {
+                    if (!/^\s*$/.test(newContractTxId)) {
+                      setNetwork(newNetwork)
+                      setContractTxId(newContractTxId)
+                      setEditNetwork(false)
+                    }
+                  }}
+                >
+                  Change
+                </Flex>
+              </Flex>
+            </Flex>
+          ) : (
+            <Flex
+              flex={1}
+              justify="center"
+              fontSize="10px"
+              onClick={() => setEditNetwork(true)}
+              sx={{ cursor: "pointer" }}
+            >
+              <Box px={2}>{network}</Box>
+              <Flex px={2}>
+                contractTxId:{" "}
+                {networkErr ? (
+                  <Box ml={2} color="red">
+                    Network Error
+                  </Box>
+                ) : (
+                  contractTxId
+                )}
+              </Flex>
+            </Flex>
+          )}
           <Flex justify="center" align="center" justifySelf="flex-end" px={5}>
             <ConnectWallet />
           </Flex>
