@@ -1,7 +1,5 @@
 import lf from "localforage"
 import SDK from "weavedb-sdk"
-import EthCrypto from "eth-crypto"
-const ethSigUtil = require("@metamask/eth-sig-util")
 import { ethers } from "ethers"
 import {
   includes,
@@ -57,14 +55,16 @@ export const setupWeaveDB = async ({
   return sdk
 }
 
-export const createTempAddress = async ({ conf, set }) => {
+export const createTempAddress = async ({
+  conf,
+  set,
+  val: { contractTxId },
+}) => {
   const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
   await provider.send("eth_requestAccounts", [])
   const signer = provider.getSigner()
   const addr = await signer.getAddress()
-  const ex_identity = await lf.getItem(
-    `temp_address:${weavedb.weavedb.contractTxId}:${addr}`
-  )
+  const ex_identity = await lf.getItem(`temp_address:${contractTxId}:${addr}`)
   let identity = ex_identity
   let tx
   if (isNil(identity)) {
@@ -78,20 +78,19 @@ export const createTempAddress = async ({ conf, set }) => {
     identity.tx = tx
     identity.linked_address = addr
     await lf.setItem("temp_address:current", addr)
-    await lf.setItem(
-      `temp_address:${weavedb.weavedb.contractTxId}:${addr}`,
-      identity
-    )
+    await lf.setItem(`temp_address:${contractTxId}:${addr}`, identity)
     set(addr, "temp_current")
   }
 }
 
-export const checkTempAddress = async function ({ conf, set }) {
+export const checkTempAddress = async function ({
+  conf,
+  set,
+  val: { contractTxId },
+}) {
   const current = await lf.getItem(`temp_address:current`)
   if (!isNil(current)) {
-    const identity = await lf.getItem(
-      `temp_address:${weavedb.weavedb.contractTxId}:${current}`
-    )
+    const identity = await lf.getItem(`temp_address:${contractTxId}:${current}`)
     if (!isNil(identity)) set(current, "temp_current")
   }
 }
@@ -102,7 +101,7 @@ export const logoutTemp = async ({ conf, set }) => {
 }
 
 export const queryDB = async ({
-  val: { query, method },
+  val: { query, method, contractTxId },
   global,
   set,
   fn,
@@ -115,9 +114,7 @@ export const queryDB = async ({
     eval(`q = [${query}]`)
     const identity = isNil(current)
       ? null
-      : await lf.getItem(
-          `temp_address:${weavedb.weavedb.contractTxId}:${current}`
-        )
+      : await lf.getItem(`temp_address:${contractTxId}:${current}`)
     const opt =
       !isNil(identity) && !isNil(identity.tx)
         ? {
