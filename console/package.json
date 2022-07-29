@@ -8,7 +8,6 @@
     "@chakra-ui/react": "^2.2.4",
     "@emotion/react": "^11",
     "@emotion/styled": "^11",
-    "eth-crypto": "^2.3.0",
     "framer-motion": "^6",
     "isomorphic-fetch": "^3.0.0",
     "localforage": "^1.10.0",
@@ -20,7 +19,7 @@
     "react-dom": "^18.2.0",
     "react-json-pretty": "^2.2.0",
     "recoil": "^0.5.2",
-    "weavedb-sdk": "^0.2.6"
+    "weavedb-sdk": "^0.2.36"
   },
   "scripts": {
     "dev": "next",

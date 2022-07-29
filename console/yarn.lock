@@ -2301,6 +2301,11 @@
     tweetnacl "^1.0.3"
     tweetnacl-util "^0.15.1"
 
+"@metamask/legacy-web3@^2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@metamask/legacy-web3/-/legacy-web3-2.0.0.tgz#10c506791ef248d79909ff6321a6b25a3f3d2549"
+  integrity sha512-hR5sbVR0wU3sXMXx2btRBKYzzTkBNTYoZbPHqqB7UARwxm9yEe9C/Y79YyciyzC9cnKetNV6s6VAwNQp5LNpLw==
+
 "@motionone/animation@^10.12.0":
   version "10.13.1"
   resolved "https://registry.yarnpkg.com/@motionone/animation/-/animation-10.13.1.tgz#ebacb50df4b7eb4957cf398c221ae10852f28520"
@@ -6667,14 +6672,16 @@ watchpack@2.1.1:
     glob-to-regexp "^0.4.1"
     graceful-fs "^4.1.2"
 
-weavedb-sdk@^0.2.6:
-  version "0.2.6"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.2.6.tgz#a43b694be9d0386a4cd7f4cc5ee19594d0a3af5f"
-  integrity sha512-jTmOskefS6E0wbOKrZlSCYVaRK6wbRhbZD0Ozp5+82lQm3aDhaoN4vHd0F7syQ5f/Tmxasfu/jdCJJQr8upnrg==
+weavedb-sdk@^0.2.36:
+  version "0.2.36"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.2.36.tgz#f50349cfeeeebff2fa35d0974c51bcd62ffed571"
+  integrity sha512-KVs2YQSTCieHKFB3wGlSDCY+fF71g2ctDM4oJ1cT+V/d28f+3wkXiqjpswfWFkZntaWtDuWFBY8E61fd46Re+A==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
+    "@metamask/legacy-web3" "^2.0.0"
     arweave "^1.11.4"
     eth-crypto "^2.3.0"
+    ethereumjs-util "^7.1.5"
     ramda "^0.28.0"
     warp-contracts "^1.1.14"
 
