@@ -44,11 +44,13 @@ export default bind(
     const [network, setNetwork] = useState("Localhost")
     const [newNetwork, setNewNetwork] = useState("Localhost")
     const [newRules, setNewRules] = useState(`{"allow write": true}`)
+    const [newData, setNewData] = useState(`{}`)
     const [editNetwork, setEditNetwork] = useState(false)
     const networks = ["Mainnet", "Testnet", "Localhost"]
     const [initDB, setInitDB] = useState(false)
     const [networkErr, setNetworkErr] = useState(false)
     const [newCollection, setNewCollection] = useState("")
+    const [newDoc, setNewDoc] = useState("")
     const [contractTxId, setContractTxId] = useState(
       weavedb.weavedb.contractTxId
     )
@@ -56,6 +58,7 @@ export default bind(
       weavedb.weavedb.contractTxId
     )
     const [addCollection, setAddCollection] = useState(false)
+    const [addDoc, setAddDoc] = useState(false)
 
     useEffect(() => {
       ;(async () => {
@@ -439,7 +442,19 @@ export default bind(
                       direction="column"
                     >
                       <Flex py={2} px={3} color="white" bg="#333" h="35px">
-                        Docs
+                        <Box>Docs</Box>
+                        <Box flex={1} />
+                        {isNil(col) ? null : (
+                          <Box
+                            onClick={() => setAddDoc(true)}
+                            sx={{
+                              cursor: "pointer",
+                              ":hover": { opacity: 0.75 },
+                            }}
+                          >
+                            <Box as="i" className="fas fa-plus" />
+                          </Box>
+                        )}
                       </Flex>
                       <Box height="500px" sx={{ overflowY: "auto" }}>
                         {map(v => (
@@ -636,6 +651,83 @@ export default bind(
                     alert("Something went wrong")
                   } else {
                     setAddCollection(false)
+                  }
+                }}
+              >
+                Add
+              </Flex>
+            </Box>
+          </Flex>
+        ) : addDoc !== false ? (
+          <Flex
+            w="100%"
+            h="100%"
+            position="fixed"
+            sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+            bg="rgba(0,0,0,0.5)"
+            onClick={() => setAddDoc(false)}
+            justify="center"
+            align="center"
+          >
+            <Box
+              bg="white"
+              width="500px"
+              p={3}
+              sx={{ borderRadius: "5px", cursor: "default" }}
+              onClick={e => e.stopPropagation()}
+            >
+              <Input
+                value={newDoc}
+                placeholder="Doc ID - leave it empty for random generation"
+                onChange={e => setNewDoc(e.target.value)}
+                sx={{
+                  borderRadius: "3px",
+                }}
+              />
+              <Textarea
+                mt={3}
+                value={newData}
+                placeholder="Access Control Rules"
+                onChange={e => setNewData(e.target.value)}
+                sx={{
+                  borderRadius: "3px",
+                }}
+              />
+              <Flex
+                mt={4}
+                sx={{
+                  borderRadius: "3px",
+                  cursor: "pointer",
+                  ":hover": { opacity: 0.75 },
+                }}
+                p={2}
+                justify="center"
+                align="center"
+                color="white"
+                bg="#333"
+                onClick={async () => {
+                  const exID = !/^\s*$/.test(newDoc)
+                  if (exID && hasPath(["data", col, "_docs", newDoc])(state)) {
+                    alert("Doc exists")
+                    return
+                  }
+                  try {
+                    JSON.parse(newData)
+                  } catch (e) {
+                    alert("Wrong JSON format")
+                    return
+                  }
+                  let query = `${newData}, "${col}"`
+                  if (exID) query += `, "${newDoc}"`
+                  const res = await fn.queryDB({
+                    method: exID ? "set" : "add",
+                    query,
+                    contractTxId,
+                  })
+                  if (/^Error:/.test(res)) {
+                    alert("Something went wrong")
+                  } else {
+                    setAddDoc(false)
                   }
                 }}
               >
