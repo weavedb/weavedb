@@ -10,6 +10,8 @@ import {
   Textarea,
 } from "@chakra-ui/react"
 import {
+  join,
+  clone,
   filter,
   compose,
   values,
@@ -47,6 +49,7 @@ export default bind(
     const [newRules, setNewRules] = useState(`{"allow write": true}`)
     const [newRules2, setNewRules2] = useState(`{"allow write": true}`)
     const [newData, setNewData] = useState(`{}`)
+    const [newIndex, setNewIndex] = useState(`[]`)
     const [newSchemas, setNewSchemas] = useState("")
     const [newField, setNewField] = useState("")
     const [newFieldType, setNewFieldType] = useState(`string`)
@@ -69,6 +72,7 @@ export default bind(
     const [addDoc, setAddDoc] = useState(false)
     const [addData, setAddData] = useState(false)
     const [addRules, setAddRules] = useState(false)
+    const [addIndex, setAddIndex] = useState(false)
 
     useEffect(() => {
       ;(async () => {
@@ -417,6 +421,18 @@ export default bind(
                     >
                       <Flex py={2} px={3} color="white" bg="#333" h="35px">
                         Compound Indexes
+                        <Box flex={1} />
+                        {isNil(col) ? null : (
+                          <Box
+                            onClick={() => setAddIndex(true)}
+                            sx={{
+                              cursor: "pointer",
+                              ":hover": { opacity: 0.75 },
+                            }}
+                          >
+                            <Box as="i" className="fas fa-plus" />
+                          </Box>
+                        )}
                       </Flex>
                       <Box height="500px" sx={{ overflowY: "auto" }}>
                         {compose(
@@ -1055,6 +1071,97 @@ export default bind(
                     alert("Something went wrong")
                   } else {
                     setAddRules(false)
+                  }
+                }}
+              >
+                Add
+              </Flex>
+            </Box>
+          </Flex>
+        ) : addIndex !== false ? (
+          <Flex
+            w="100%"
+            h="100%"
+            position="fixed"
+            sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+            bg="rgba(0,0,0,0.5)"
+            onClick={() => setAddIndex(false)}
+            justify="center"
+            align="center"
+          >
+            <Box
+              bg="white"
+              width="500px"
+              p={3}
+              sx={{ borderRadius: "5px", cursor: "default" }}
+              onClick={e => e.stopPropagation()}
+            >
+              <Textarea
+                mt={3}
+                value={newIndex}
+                placeholder="Compound Index"
+                onChange={e => setNewIndex(e.target.value)}
+                sx={{
+                  borderRadius: "3px",
+                }}
+              />
+              <Flex
+                mt={4}
+                sx={{
+                  borderRadius: "3px",
+                  cursor: "pointer",
+                  ":hover": { opacity: 0.75 },
+                }}
+                p={2}
+                justify="center"
+                align="center"
+                color="white"
+                bg="#333"
+                onClick={async () => {
+                  const exIndex = !/^\s*$/.test(newIndex)
+                  if (!exIndex) {
+                    alert("Enter rules")
+                  }
+                  let val = null
+                  let obj
+                  try {
+                    eval(`obj = ${newIndex}`)
+                    if (!is(Array, obj)) {
+                      alert("Index must be an array")
+                      return
+                    }
+                    if (obj.length < 2) {
+                      alert("Compound Index must have at least 2 fields")
+                      return
+                    }
+                    val = newIndex
+                  } catch (e) {
+                    alert("Wrong JSON format")
+                    return
+                  }
+                  const serialize = v =>
+                    map(v2 => {
+                      let v3 = clone(v2)
+                      if (v3.length < 2) v3.push("asc")
+                      return join(":")(v2)
+                    })(v).join(",")
+                  if (
+                    compose(includes(serialize(obj)), map(serialize))(indexes)
+                  ) {
+                    alert("Index exists")
+                    return
+                  }
+
+                  let query = `${newIndex}, "${col}"`
+                  const res = await fn.queryDB({
+                    method: "addIndex",
+                    query,
+                    contractTxId,
+                  })
+                  if (/^Error:/.test(res)) {
+                    alert("Something went wrong")
+                  } else {
+                    setAddIndex(false)
                   }
                 }}
               >
