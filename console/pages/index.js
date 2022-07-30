@@ -45,7 +45,9 @@ export default bind(
     const [network, setNetwork] = useState("Localhost")
     const [newNetwork, setNewNetwork] = useState("Localhost")
     const [newRules, setNewRules] = useState(`{"allow write": true}`)
+    const [newRules2, setNewRules2] = useState(`{"allow write": true}`)
     const [newData, setNewData] = useState(`{}`)
+    const [newSchemas, setNewSchemas] = useState("")
     const [newField, setNewField] = useState("")
     const [newFieldType, setNewFieldType] = useState(`string`)
     const [newFieldVal, setNewFieldVal] = useState("")
@@ -63,8 +65,10 @@ export default bind(
       weavedb.weavedb.contractTxId
     )
     const [addCollection, setAddCollection] = useState(false)
+    const [addSchemas, setAddSchemas] = useState(false)
     const [addDoc, setAddDoc] = useState(false)
     const [addData, setAddData] = useState(false)
+    const [addRules, setAddRules] = useState(false)
 
     useEffect(() => {
       ;(async () => {
@@ -189,11 +193,22 @@ export default bind(
     }
     let indexes = []
     let rules = {}
-    let schemas = {}
+    let schema = {}
     if (!isNil(col)) {
       indexes = scanIndexes(getIndex(state, [col]))
-      ;({ rules, schemas } = getCol(state.data, [col]))
+      ;({ rules, schema } = getCol(state.data, [col]))
     }
+    useEffect(() => {
+      ;(async () => {
+        if (isNil(col)) {
+          setNewSchemas(null)
+        } else {
+          ;({ rules, schema } = getCol(state.data, [col]))
+          setNewSchemas(JSON.stringify(schema))
+          setNewRules2(JSON.stringify(rules))
+        }
+      })()
+    }, [col])
     return (
       <ChakraProvider>
         <style global jsx>{`
@@ -350,10 +365,22 @@ export default bind(
                     direction="column"
                   >
                     <Flex py={2} px={3} color="white" bg="#333" h="35px">
-                      Schamas
+                      <Box>Schamas</Box>
+                      <Box flex={1} />
+                      {isNil(col) ? null : (
+                        <Box
+                          onClick={() => setAddSchemas(true)}
+                          sx={{
+                            cursor: "pointer",
+                            ":hover": { opacity: 0.75 },
+                          }}
+                        >
+                          <Box as="i" className="fas fa-plus" />
+                        </Box>
+                      )}
                     </Flex>
                     <Box height="500px" sx={{ overflowY: "auto" }} p={3}>
-                      <JSONPretty id="json-pretty" data={schemas}></JSONPretty>
+                      <JSONPretty id="json-pretty" data={schema}></JSONPretty>
                     </Box>
                   </Flex>
                 ) : tab === "Rules" ? (
@@ -363,7 +390,19 @@ export default bind(
                     direction="column"
                   >
                     <Flex py={2} px={3} color="white" bg="#333" h="35px">
-                      Rules
+                      <Box>Rules</Box>
+                      <Box flex={1} />
+                      {isNil(col) ? null : (
+                        <Box
+                          onClick={() => setAddRules(true)}
+                          sx={{
+                            cursor: "pointer",
+                            ":hover": { opacity: 0.75 },
+                          }}
+                        >
+                          <Box as="i" className="fas fa-plus" />
+                        </Box>
+                      )}
                     </Flex>
                     <Box height="500px" sx={{ overflowY: "auto" }} p={3}>
                       <JSONPretty id="json-pretty" data={rules}></JSONPretty>
@@ -881,6 +920,141 @@ export default bind(
                     alert("Something went wrong")
                   } else {
                     setAddData(false)
+                  }
+                }}
+              >
+                Add
+              </Flex>
+            </Box>
+          </Flex>
+        ) : addSchemas !== false ? (
+          <Flex
+            w="100%"
+            h="100%"
+            position="fixed"
+            sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+            bg="rgba(0,0,0,0.5)"
+            onClick={() => setAddSchemas(false)}
+            justify="center"
+            align="center"
+          >
+            <Box
+              bg="white"
+              width="500px"
+              p={3}
+              sx={{ borderRadius: "5px", cursor: "default" }}
+              onClick={e => e.stopPropagation()}
+            >
+              <Textarea
+                mt={3}
+                value={newSchemas}
+                placeholder="Access Control Rules"
+                onChange={e => setNewSchemas(e.target.value)}
+                sx={{
+                  borderRadius: "3px",
+                }}
+              />
+              <Flex
+                mt={4}
+                sx={{
+                  borderRadius: "3px",
+                  cursor: "pointer",
+                  ":hover": { opacity: 0.75 },
+                }}
+                p={2}
+                justify="center"
+                align="center"
+                color="white"
+                bg="#333"
+                onClick={async () => {
+                  const exID = !/^\s*$/.test(newSchemas)
+                  let val = null
+                  try {
+                    eval(`const obj = ${newSchemas}`)
+                    val = newSchemas
+                  } catch (e) {
+                    alert("Wrong JSON format")
+                    return
+                  }
+                  let query = `${newSchemas}, "${col}"`
+                  const res = await fn.queryDB({
+                    method: "setSchema",
+                    query,
+                    contractTxId,
+                  })
+                  if (/^Error:/.test(res)) {
+                    alert("Something went wrong")
+                  } else {
+                    setAddSchemas(false)
+                  }
+                }}
+              >
+                Add
+              </Flex>
+            </Box>
+          </Flex>
+        ) : addRules !== false ? (
+          <Flex
+            w="100%"
+            h="100%"
+            position="fixed"
+            sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+            bg="rgba(0,0,0,0.5)"
+            onClick={() => setAddRules(false)}
+            justify="center"
+            align="center"
+          >
+            <Box
+              bg="white"
+              width="500px"
+              p={3}
+              sx={{ borderRadius: "5px", cursor: "default" }}
+              onClick={e => e.stopPropagation()}
+            >
+              <Textarea
+                mt={3}
+                value={newRules2}
+                placeholder="Access Control Rules"
+                onChange={e => setNewRules2(e.target.value)}
+                sx={{
+                  borderRadius: "3px",
+                }}
+              />
+              <Flex
+                mt={4}
+                sx={{
+                  borderRadius: "3px",
+                  cursor: "pointer",
+                  ":hover": { opacity: 0.75 },
+                }}
+                p={2}
+                justify="center"
+                align="center"
+                color="white"
+                bg="#333"
+                onClick={async () => {
+                  const exRules = !/^\s*$/.test(newRules2)
+                  if (!exRules) {
+                    alert("Enter rules")
+                  }
+                  let val = null
+                  try {
+                    eval(`const obj = ${newRules2}`)
+                    val = newRules2
+                  } catch (e) {
+                    alert("Wrong JSON format")
+                    return
+                  }
+                  let query = `${newRules2}, "${col}"`
+                  const res = await fn.queryDB({
+                    method: "setRules",
+                    query,
+                    contractTxId,
+                  })
+                  if (/^Error:/.test(res)) {
+                    alert("Something went wrong")
+                  } else {
+                    setAddRules(false)
                   }
                 }}
               >
