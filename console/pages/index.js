@@ -20,6 +20,7 @@ import {
   is,
   slice,
   hasPath,
+  includes,
 } from "ramda"
 import { bind } from "nd"
 import weavedb from "lib/weavedb.json"
@@ -45,6 +46,10 @@ export default bind(
     const [newNetwork, setNewNetwork] = useState("Localhost")
     const [newRules, setNewRules] = useState(`{"allow write": true}`)
     const [newData, setNewData] = useState(`{}`)
+    const [newField, setNewField] = useState("")
+    const [newFieldType, setNewFieldType] = useState(`string`)
+    const [newFieldVal, setNewFieldVal] = useState("")
+    const [newFieldBool, setNewFieldBool] = useState(true)
     const [editNetwork, setEditNetwork] = useState(false)
     const networks = ["Mainnet", "Testnet", "Localhost"]
     const [initDB, setInitDB] = useState(false)
@@ -59,6 +64,7 @@ export default bind(
     )
     const [addCollection, setAddCollection] = useState(false)
     const [addDoc, setAddDoc] = useState(false)
+    const [addData, setAddData] = useState(false)
 
     useEffect(() => {
       ;(async () => {
@@ -479,7 +485,21 @@ export default bind(
                       direction="column"
                     >
                       <Flex py={2} px={3} color="white" bg="#333" h="35px">
-                        Data
+                        <Box>Data</Box>
+                        <Box flex={1} />
+                        {isNil(col) ||
+                        isNil(doc) ||
+                        !hasPath(["data", col, "__docs", doc])(state) ? null : (
+                          <Box
+                            onClick={() => setAddData(true)}
+                            sx={{
+                              cursor: "pointer",
+                              ":hover": { opacity: 0.75 },
+                            }}
+                          >
+                            <Box as="i" className="fas fa-plus" />
+                          </Box>
+                        )}
                       </Flex>
                       {compose(
                         values,
@@ -707,7 +727,7 @@ export default bind(
                 bg="#333"
                 onClick={async () => {
                   const exID = !/^\s*$/.test(newDoc)
-                  if (exID && hasPath(["data", col, "_docs", newDoc])(state)) {
+                  if (exID && hasPath(["data", col, "__docs", newDoc])(state)) {
                     alert("Doc exists")
                     return
                   }
@@ -728,6 +748,139 @@ export default bind(
                     alert("Something went wrong")
                   } else {
                     setAddDoc(false)
+                  }
+                }}
+              >
+                Add
+              </Flex>
+            </Box>
+          </Flex>
+        ) : addData !== false ? (
+          <Flex
+            w="100%"
+            h="100%"
+            position="fixed"
+            sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+            bg="rgba(0,0,0,0.5)"
+            onClick={() => setAddData(false)}
+            justify="center"
+            align="center"
+          >
+            <Box
+              bg="white"
+              width="500px"
+              p={3}
+              sx={{ borderRadius: "5px", cursor: "default" }}
+              onClick={e => e.stopPropagation()}
+            >
+              <Flex>
+                <Select
+                  value={newFieldType}
+                  onChange={e => setNewFieldType(e.target.value)}
+                >
+                  {map(v => <option value={v}>{v}</option>)([
+                    "string",
+                    "bool",
+                    "number",
+                    "object",
+                    "null",
+                  ])}
+                </Select>
+                <Input
+                  value={newField}
+                  placeholder="Field Key"
+                  onChange={e => setNewField(e.target.value)}
+                  sx={{
+                    borderRadius: "3px",
+                  }}
+                />
+              </Flex>
+              {newFieldType === "bool" ? (
+                <Select
+                  mt={3}
+                  value={newFieldBool}
+                  onChange={e => setNewFieldBool(eval(e.target.value))}
+                >
+                  {map(v => <option value={v}>{v ? "true" : "false"}</option>)([
+                    true,
+                    false,
+                  ])}
+                </Select>
+              ) : (
+                <Textarea
+                  mt={3}
+                  value={newFieldType === "null" ? "null" : newFieldVal}
+                  placeholder="Field Value"
+                  onChange={e => setNewFieldVal(e.target.value)}
+                  disabled={newFieldType === "null"}
+                  sx={{
+                    borderRadius: "3px",
+                  }}
+                />
+              )}
+              <Flex
+                mt={4}
+                sx={{
+                  borderRadius: "3px",
+                  cursor: "pointer",
+                  ":hover": { opacity: 0.75 },
+                }}
+                p={2}
+                justify="center"
+                align="center"
+                color="white"
+                bg="#333"
+                onClick={async () => {
+                  const exID = !/^\s*$/.test(newField)
+                  const exVal =
+                    includes(newFieldType)(["bool", "null"]) ||
+                    !/^\s*$/.test(newFieldVal)
+                  if (!exVal) alert("Enter a value")
+                  if (!exID) alert("Enter field key")
+                  if (
+                    exID &&
+                    hasPath(["data", col, "__docs", doc, "__data", newField])(
+                      state
+                    )
+                  ) {
+                    alert("Field exists")
+                    return
+                  }
+                  let val = null
+                  switch (newFieldType) {
+                    case "number":
+                      if (Number.isNaN(newFieldVal * 1)) {
+                        alert("Enter a number")
+                        return
+                      }
+                      val = newFieldVal * 1
+                      break
+                    case "string":
+                      val = `"${newFieldVal}"`
+                      break
+                    case "bool":
+                      val = eval(newFieldBool)
+                      break
+                    case "object":
+                      try {
+                        eval(`const obj = ${newFieldVal}`)
+                        val = newFieldVal
+                      } catch (e) {
+                        alert("Wrong JSON format")
+                        return
+                      }
+                      break
+                  }
+                  let query = `{ "${newField}": ${val}}, "${col}", "${doc}"`
+                  const res = await fn.queryDB({
+                    method: "update",
+                    query,
+                    contractTxId,
+                  })
+                  if (/^Error:/.test(res)) {
+                    alert("Something went wrong")
+                  } else {
+                    setAddData(false)
                   }
                 }}
               >
