@@ -37,13 +37,14 @@ export default bind(
       "queryDB",
     ])
     const [result, setResult] = useState("")
+    const [admin_address, setAdminAddress] = useState("")
     const [state, setState] = useState(null)
     const [col, setCol] = useState(null)
     const [doc, setDoc] = useState(null)
     const [tab, setTab] = useState("Data")
     const [method, setMethod] = useState("get")
     const [query, setQuery] = useState("")
-    const tabs = ["Data", "Schemas", "Rules", "Indexes"]
+    const tabs = ["Data", "Schemas", "Rules", "Indexes", "Auth"]
     const [network, setNetwork] = useState("Localhost")
     const [newNetwork, setNewNetwork] = useState("Localhost")
     const [newRules, setNewRules] = useState(`{"allow write": true}`)
@@ -77,6 +78,7 @@ export default bind(
     useEffect(() => {
       ;(async () => {
         db = await fn.setupWeaveDB({ network, contractTxId })
+        setAdminAddress(await db.arweave.wallets.jwkToAddress(weavedb.arweave))
         setInitDB(true)
       })()
     }, [contractTxId, network])
@@ -335,33 +337,35 @@ export default bind(
               sx={{ border: "1px solid #333" }}
             >
               <Flex h="535px" w="100%">
-                <Box
-                  flex={1}
-                  sx={{ border: "1px solid #555" }}
-                  direction="column"
-                >
-                  <Flex py={2} px={3} color="white" bg="#333" h="35px">
-                    <Box>Collections</Box>
-                    <Box flex={1} />
-                    <Box
-                      onClick={() => setAddCollection(true)}
-                      sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
-                    >
-                      <Box as="i" className="fas fa-plus" />
-                    </Box>
-                  </Flex>
-                  {map(v => (
-                    <Flex
-                      onClick={() => setCol(v)}
-                      bg={col === v ? "#ddd" : ""}
-                      py={2}
-                      px={3}
-                      sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
-                    >
-                      {v}
+                {tab === "Auth" ? null : (
+                  <Box
+                    flex={1}
+                    sx={{ border: "1px solid #555" }}
+                    direction="column"
+                  >
+                    <Flex py={2} px={3} color="white" bg="#333" h="35px">
+                      <Box>Collections</Box>
+                      <Box flex={1} />
+                      <Box
+                        onClick={() => setAddCollection(true)}
+                        sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
+                      >
+                        <Box as="i" className="fas fa-plus" />
+                      </Box>
                     </Flex>
-                  ))(cols)}
-                </Box>
+                    {map(v => (
+                      <Flex
+                        onClick={() => setCol(v)}
+                        bg={col === v ? "#ddd" : ""}
+                        py={2}
+                        px={3}
+                        sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
+                      >
+                        {v}
+                      </Flex>
+                    ))(cols)}
+                  </Box>
+                )}
                 {tab === "Schemas" ? (
                   <Flex
                     flex={1}
@@ -492,6 +496,113 @@ export default bind(
                           )),
                           filter(v => v.length === 1)
                         )(indexes)}
+                      </Box>
+                    </Flex>
+                  </>
+                ) : tab === "Auth" ? (
+                  <>
+                    <Flex
+                      flex={1}
+                      sx={{ border: "1px solid #555" }}
+                      direction="column"
+                    >
+                      <Flex py={2} px={3} color="white" bg="#333" h="35px">
+                        Authentication
+                        <Box flex={1} />
+                        {isNil(col) ? null : (
+                          <Box
+                            onClick={() => setAddIndex(true)}
+                            sx={{
+                              cursor: "pointer",
+                              ":hover": { opacity: 0.75 },
+                            }}
+                          >
+                            <Box as="i" className="fas fa-plus" />
+                          </Box>
+                        )}
+                      </Flex>
+                      <Box height="500px" sx={{ overflowY: "auto" }}>
+                        {isNil(state.auth) ? null : (
+                          <>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#ddd"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                Name
+                              </Box>
+                              {state.auth.name}
+                            </Flex>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#ddd"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                Version
+                              </Box>
+                              {state.auth.version}
+                            </Flex>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#ddd"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                Owner
+                              </Box>
+                              {state.owner}
+                            </Flex>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#ddd"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                Network
+                              </Box>
+                              {network}
+                            </Flex>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#ddd"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                contractTxId
+                              </Box>
+                              {contractTxId}
+                            </Flex>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#ddd"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                Admin Arweave Address
+                              </Box>
+                              {admin_address}
+                            </Flex>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#ddd"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                Logged In ETH Address
+                              </Box>
+                              {$.temp_current || "Not Logged In"}
+                            </Flex>
+                          </>
+                        )}
                       </Box>
                     </Flex>
                   </>
