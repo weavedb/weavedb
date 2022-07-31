@@ -10,6 +10,10 @@ import {
   Textarea,
 } from "@chakra-ui/react"
 import {
+  concat,
+  last,
+  init as _init,
+  take,
   join,
   clone,
   filter,
@@ -23,6 +27,8 @@ import {
   slice,
   hasPath,
   includes,
+  append,
+  addIndex as _addIndex,
 } from "ramda"
 import { bind } from "nd"
 import weavedb from "lib/weavedb.json"
@@ -39,8 +45,7 @@ export default bind(
     const [result, setResult] = useState("")
     const [admin_address, setAdminAddress] = useState("")
     const [state, setState] = useState(null)
-    const [col, setCol] = useState(null)
-    const [doc, setDoc] = useState(null)
+    const [doc_path, setDocPath] = useState([])
     const [tab, setTab] = useState("Data")
     const [method, setMethod] = useState("get")
     const [query, setQuery] = useState("")
@@ -97,15 +102,57 @@ export default bind(
         }
       })()
     }, [initDB])
+
+    const getCol = (data, path) => {
+      const [col, id] = path
+      data[col] ||= { __docs: {} }
+      if (isNil(id)) {
+        return data[col]
+      } else {
+        data[col].__docs[id] ||= { __data: null, subs: {} }
+        return getCol(data[col].__docs[id].subs, slice(2, path.length, path))
+      }
+    }
+
     let cols = []
     let docs = []
     let data = null
+    let subs = {}
+    let base = {}
+    let col = null
+    let doc = null
+    let base_path = []
     if (!isNil(state)) {
-      cols = keys(state.data)
-      if (!isNil(state.data[col])) {
-        docs = keys(state.data[col].__docs)
-        if (!isNil(doc) && !isNil(state.data[col].__docs[doc])) {
-          data = state.data[col].__docs[doc].__data
+      base = state.data
+      if (doc_path.length > 2) {
+        base_path = take(
+          doc_path.length % 2 === 0 ? doc_path.length - 2 : doc_path.length - 1,
+          doc_path
+        )
+        const len =
+          doc_path.length % 2 === 0 ? doc_path.length - 3 : doc_path.length - 2
+        const last_key =
+          doc_path.length % 2 === 0
+            ? doc_path[doc_path.length - 3]
+            : doc_path[doc_path.length - 2]
+        const _col = getCol(state.data, take(len)(doc_path))
+        base = _col.__docs[last_key].subs
+        if (doc_path.length % 2 === 0) {
+          doc = doc_path[doc_path.length - 1]
+          col = doc_path[doc_path.length - 2]
+        } else {
+          col = doc_path[doc_path.length - 1]
+        }
+      } else {
+        col = doc_path[0]
+        doc = doc_path[1]
+      }
+      cols = keys(base)
+      if (!isNil(base[col])) {
+        docs = keys(base[col].__docs)
+        if (!isNil(doc) && !isNil(base[col].__docs[doc])) {
+          data = base[col].__docs[doc].__data
+          subs = base[col].__docs[doc].subs
         }
       }
     }
@@ -158,23 +205,6 @@ export default bind(
           : `${$.temp_current.slice(0, 6)}...${$.temp_current.slice(-4)}`}
       </Flex>
     )
-    const getCol = (data, path, _signer) => {
-      const [col, id] = path
-      data[col] ||= { __docs: {} }
-      if (isNil(id)) {
-        return data[col]
-      } else {
-        data[col].__docs[id] ||= { __data: null, subs: {} }
-        if (!isNil(_signer) && isNil(data[col].__docs[id].setter)) {
-          data[col].__docs[id].setter = _signer
-        }
-        return getCol(
-          data[col].__docs[id].subs,
-          slice(2, path.length, path),
-          _signer
-        )
-      }
-    }
 
     const getIndex = (state, path) => {
       if (isNil(state.indexes[path.join(".")]))
@@ -201,15 +231,15 @@ export default bind(
     let rules = {}
     let schema = {}
     if (!isNil(col)) {
-      indexes = scanIndexes(getIndex(state, [col]))
-      ;({ rules, schema } = getCol(state.data, [col]))
+      indexes = scanIndexes(getIndex(state, append(col, base_path)))
+      ;({ rules, schema } = getCol(state.data, append(col, base_path)))
     }
     useEffect(() => {
       ;(async () => {
         if (isNil(col)) {
           setNewSchemas(null)
         } else {
-          ;({ rules, schema } = getCol(state.data, [col]))
+          ;({ rules, schema } = getCol(state.data, append(col, base_path)))
           setNewSchemas(JSON.stringify(schema))
           setNewRules2(JSON.stringify(rules))
         }
@@ -299,7 +329,7 @@ export default bind(
               <Flex px={2}>
                 contractTxId:{" "}
                 {networkErr ? (
-                  <Box ml={2} color="red">
+                  <Box ml={2} color="#F50057">
                     Network Error
                   </Box>
                 ) : (
@@ -330,6 +360,22 @@ export default bind(
                 )
               })(tabs)}
             </Flex>
+            <Flex mb={3} align="center">
+              WeaveDB
+              {_addIndex(map)((v, i) => (
+                <>
+                  <Box mx={2} as="i" className="fas fa-angle-right" />
+                  <Box
+                    onClick={() => setDocPath(take(i + 1, doc_path))}
+                    sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
+                    as="span"
+                    color={i === doc_path.length - 1 ? "#F50057" : ""}
+                  >
+                    {v}
+                  </Box>
+                </>
+              ))(doc_path)}
+            </Flex>
             <Flex
               height="535px"
               maxW="960px"
@@ -355,7 +401,9 @@ export default bind(
                     </Flex>
                     {map(v => (
                       <Flex
-                        onClick={() => setCol(v)}
+                        onClick={() => {
+                          setDocPath([...base_path, v])
+                        }}
                         bg={col === v ? "#ddd" : ""}
                         py={2}
                         px={3}
@@ -509,17 +557,6 @@ export default bind(
                       <Flex py={2} px={3} color="white" bg="#333" h="35px">
                         Authentication
                         <Box flex={1} />
-                        {isNil(col) ? null : (
-                          <Box
-                            onClick={() => setAddIndex(true)}
-                            sx={{
-                              cursor: "pointer",
-                              ":hover": { opacity: 0.75 },
-                            }}
-                          >
-                            <Box as="i" className="fas fa-plus" />
-                          </Box>
-                        )}
                       </Flex>
                       <Box height="500px" sx={{ overflowY: "auto" }}>
                         {isNil(state.auth) ? null : (
@@ -589,6 +626,13 @@ export default bind(
                                 Admin Arweave Address
                               </Box>
                               {admin_address}
+                              {state.owner !== admin_address ? (
+                                <Box as="span" ml={2} color="#F50057">
+                                  (not the owner)
+                                </Box>
+                              ) : (
+                                ""
+                              )}
                             </Flex>
                             <Flex align="center" p={2} px={3}>
                               <Box
@@ -631,7 +675,9 @@ export default bind(
                       <Box height="500px" sx={{ overflowY: "auto" }}>
                         {map(v => (
                           <Flex
-                            onClick={() => setDoc(v)}
+                            onClick={() =>
+                              setDocPath(concat(base_path, [col, v]))
+                            }
                             bg={doc === v ? "#ddd" : ""}
                             p={2}
                             px={3}
@@ -655,7 +701,9 @@ export default bind(
                         <Box flex={1} />
                         {isNil(col) ||
                         isNil(doc) ||
-                        !hasPath(["data", col, "__docs", doc])(state) ? null : (
+                        !hasPath(["data", doc_path[0], "__docs", doc_path[1]])(
+                          state
+                        ) ? null : (
                           <Box
                             onClick={() => setAddData(true)}
                             sx={{
@@ -667,6 +715,36 @@ export default bind(
                           </Box>
                         )}
                       </Flex>
+                      {compose(
+                        values,
+                        mapObjIndexed((v, k) => {
+                          return (
+                            <Flex
+                              align="center"
+                              p={2}
+                              px={3}
+                              sx={{
+                                cursor: "pointer",
+                                ":hover": { opacity: 0.75 },
+                              }}
+                              onClick={() => {
+                                setDocPath(append(k)(doc_path))
+                              }}
+                            >
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#333"
+                                color="white"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                Sub Collection
+                              </Box>
+                              {k}
+                            </Flex>
+                          )
+                        })
+                      )(subs)}
                       {compose(
                         values,
                         mapObjIndexed((v, k) => {
@@ -759,7 +837,7 @@ export default bind(
               <Flex
                 flex={1}
                 px={2}
-                color={/^Error:/.test(result) ? "red" : "#333"}
+                color={/^Error:/.test(result) ? "#F50057" : "#333"}
                 p={2}
               >
                 {result}
@@ -818,7 +896,7 @@ export default bind(
                   if (/^\s*$/.test(newCollection)) {
                     alert("Enter Collection ID")
                     return
-                  } else if (hasPath(["data", newCollection])(state)) {
+                  } else if (hasPath([newCollection])(base)) {
                     alert("Collection exists")
                     return
                   }
@@ -828,9 +906,14 @@ export default bind(
                     alert("Wrong JSON format")
                     return
                   }
+
                   const res = await fn.queryDB({
                     method: "setRules",
-                    query: `${newRules}, "${newCollection}"`,
+                    query: `${newRules}, ${compose(
+                      join(", "),
+                      map(v => `"${v}"`),
+                      append(newCollection)
+                    )(base_path)}`,
                     contractTxId,
                   })
                   if (/^Error:/.test(res)) {
@@ -873,7 +956,7 @@ export default bind(
               <Textarea
                 mt={3}
                 value={newData}
-                placeholder="Access Control Rules"
+                placeholder="JSON Data"
                 onChange={e => setNewData(e.target.value)}
                 sx={{
                   borderRadius: "3px",
@@ -893,7 +976,7 @@ export default bind(
                 bg="#333"
                 onClick={async () => {
                   const exID = !/^\s*$/.test(newDoc)
-                  if (exID && hasPath(["data", col, "__docs", newDoc])(state)) {
+                  if (exID && hasPath([col, "__docs", newDoc])(base)) {
                     alert("Doc exists")
                     return
                   }
@@ -903,7 +986,12 @@ export default bind(
                     alert("Wrong JSON format")
                     return
                   }
-                  let query = `${newData}, "${col}"`
+                  let col_path = compose(
+                    join(", "),
+                    map(v => `"${v}"`),
+                    append(col)
+                  )(base_path)
+                  let query = `${newData}, ${col_path}`
                   if (exID) query += `, "${newDoc}"`
                   const res = await fn.queryDB({
                     method: exID ? "set" : "add",
@@ -950,11 +1038,16 @@ export default bind(
                     "number",
                     "object",
                     "null",
+                    "sub collection",
                   ])}
                 </Select>
                 <Input
                   value={newField}
-                  placeholder="Field Key"
+                  placeholder={
+                    newFieldType === "sub collection"
+                      ? "Collection ID"
+                      : "Field Key"
+                  }
                   onChange={e => setNewField(e.target.value)}
                   sx={{
                     borderRadius: "3px",
@@ -976,7 +1069,11 @@ export default bind(
                 <Textarea
                   mt={3}
                   value={newFieldType === "null" ? "null" : newFieldVal}
-                  placeholder="Field Value"
+                  placeholder={
+                    newFieldType === "sub collection"
+                      ? "Access Control Rules"
+                      : "Field Value"
+                  }
                   onChange={e => setNewFieldVal(e.target.value)}
                   disabled={newFieldType === "null"}
                   sx={{
@@ -1005,9 +1102,7 @@ export default bind(
                   if (!exID) alert("Enter field key")
                   if (
                     exID &&
-                    hasPath(["data", col, "__docs", doc, "__data", newField])(
-                      state
-                    )
+                    hasPath([col, "__docs", doc, "__data", newField])(base)
                   ) {
                     alert("Field exists")
                     return
@@ -1036,10 +1131,45 @@ export default bind(
                         return
                       }
                       break
+                    case "sub collection":
+                      if (/^\s*$/.test(newField)) {
+                        alert("Enter Collection ID")
+                        return
+                      } else if (
+                        hasPath([col, "__docs", doc, "subs", newField])(base)
+                      ) {
+                        alert("Collection exists")
+                        return
+                      }
+                      try {
+                        JSON.parse(newFieldVal)
+                        val = newFieldVal
+                      } catch (e) {
+                        alert("Wrong JSON format")
+                        return
+                      }
+                      break
                   }
-                  let query = `{ "${newField}": ${val}}, "${col}", "${doc}"`
+                  let query = ""
+                  let method = ""
+                  if (newFieldType === "sub collection") {
+                    method = "setRules"
+                    query = `${val}, ${compose(
+                      join(", "),
+                      map(v => `"${v}"`),
+                      append(newField)
+                    )(doc_path)}`
+                  } else {
+                    method = "update"
+                    let _doc_path = compose(
+                      join(", "),
+                      map(v => `"${v}"`),
+                      concat(base_path)
+                    )([col, doc])
+                    query = `{ "${newField}": ${val}}, ${_doc_path}`
+                  }
                   const res = await fn.queryDB({
-                    method: "update",
+                    method,
                     query,
                     contractTxId,
                   })
@@ -1103,7 +1233,12 @@ export default bind(
                     alert("Wrong JSON format")
                     return
                   }
-                  let query = `${newSchemas}, "${col}"`
+                  let col_path = compose(
+                    join(", "),
+                    map(v => `"${v}"`),
+                    append(col)
+                  )(base_path)
+                  let query = `${newSchemas}, ${col_path}`
                   const res = await fn.queryDB({
                     method: "setSchema",
                     query,
@@ -1172,7 +1307,12 @@ export default bind(
                     alert("Wrong JSON format")
                     return
                   }
-                  let query = `${newRules2}, "${col}"`
+                  let col_path = compose(
+                    join(", "),
+                    map(v => `"${v}"`),
+                    append(col)
+                  )(base_path)
+                  let query = `${newRules2}, ${col_path}`
                   const res = await fn.queryDB({
                     method: "setRules",
                     query,
@@ -1262,8 +1402,12 @@ export default bind(
                     alert("Index exists")
                     return
                   }
-
-                  let query = `${newIndex}, "${col}"`
+                  let col_path = compose(
+                    join(", "),
+                    map(v => `"${v}"`),
+                    append(col)
+                  )(base_path)
+                  let query = `${newIndex}, ${col_path}`
                   const res = await fn.queryDB({
                     method: "addIndex",
                     query,
