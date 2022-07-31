@@ -794,13 +794,59 @@ export default bind(
                               >
                                 {k}
                               </Box>
-                              {is(Object)(v)
-                                ? JSON.stringify(v)
-                                : is(Boolean)(v)
-                                ? v
-                                  ? "true"
-                                  : "false"
-                                : v}
+                              <Box flex={1}>
+                                {is(Object)(v)
+                                  ? JSON.stringify(v)
+                                  : is(Boolean)(v)
+                                  ? v
+                                    ? "true"
+                                    : "false"
+                                  : v}
+                              </Box>
+                              <Box
+                                color="#999"
+                                sx={{
+                                  cursor: "pointer",
+                                  ":hover": { opacity: 0.75, color: "#F50057" },
+                                }}
+                                onClick={async e => {
+                                  e.stopPropagation()
+                                  if (
+                                    !hasPath([col, "__docs", doc, "__data", k])(
+                                      base
+                                    )
+                                  ) {
+                                    alert("Field doesn't exist")
+                                    return
+                                  }
+                                  let query = ""
+                                  method = "update"
+                                  let _doc_path = compose(
+                                    join(", "),
+                                    map(v => `"${v}"`),
+                                    concat(base_path)
+                                  )([col, doc])
+                                  query = `{ "${k}": ${JSON.stringify(
+                                    db.del()
+                                  )}}, ${_doc_path}`
+                                  if (
+                                    confirm(
+                                      "Would you like to delete the field?"
+                                    )
+                                  ) {
+                                    const res = await fn.queryDB({
+                                      method,
+                                      query,
+                                      contractTxId,
+                                    })
+                                    if (/^Error:/.test(res)) {
+                                      alert("Something went wrong")
+                                    }
+                                  }
+                                }}
+                              >
+                                <Box as="i" className="fas fa-trash" />
+                              </Box>
                             </Flex>
                           )
                         })
