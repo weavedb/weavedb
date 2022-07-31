@@ -5,7 +5,7 @@ const { expect } = require("chai")
 const { pluck, isNil, range, indexBy, prop } = require("ramda")
 const { init, stop, initBeforeEach, addFunds } = require("./util")
 
-describe("Bookmarks Example", function () {
+describe("Todos Example", function () {
   let arlocal, wallet, walletAddress, wallet2, db, wallet3, wallet4
   this.timeout(0)
 
