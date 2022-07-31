@@ -148,7 +148,7 @@ export default bind(
         doc = doc_path[1]
       }
       cols = keys(base)
-      if (!isNil(base[col])) {
+      if (!isNil(col) && !isNil(base[col])) {
         docs = keys(base[col].__docs)
         if (!isNil(doc) && !isNil(base[col].__docs[doc])) {
           data = base[col].__docs[doc].__data
@@ -686,7 +686,43 @@ export default bind(
                               ":hover": { opacity: 0.75 },
                             }}
                           >
-                            {v}
+                            <Box mr={3} flex={1}>
+                              {v}
+                            </Box>
+                            <Box
+                              color="#999"
+                              sx={{
+                                cursor: "pointer",
+                                ":hover": { opacity: 0.75, color: "#F50057" },
+                              }}
+                              onClick={async e => {
+                                e.stopPropagation()
+                                if (!hasPath([col, "__docs", v])(base)) {
+                                  alert("Doc doesn't exist")
+                                  return
+                                }
+                                let col_path = compose(
+                                  join(", "),
+                                  map(v2 => `"${v2}"`),
+                                  append(col)
+                                )(base_path)
+                                let query = `${col_path}, "${v}"`
+                                if (
+                                  confirm("Would you like to delete the doc?")
+                                ) {
+                                  const res = await fn.queryDB({
+                                    method: "delete",
+                                    query,
+                                    contractTxId,
+                                  })
+                                  if (/^Error:/.test(res)) {
+                                    alert("Something went wrong")
+                                  }
+                                }
+                              }}
+                            >
+                              <Box as="i" className="fas fa-trash" />
+                            </Box>
                           </Flex>
                         ))(docs)}
                       </Box>
