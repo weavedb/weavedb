@@ -244,7 +244,7 @@ export default bind(
           setNewRules2(JSON.stringify(rules))
         }
       })()
-    }, [col])
+    }, [doc_path])
     return (
       <ChakraProvider>
         <style global jsx>{`
