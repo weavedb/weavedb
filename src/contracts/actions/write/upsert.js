@@ -14,16 +14,16 @@ export const upsert = async (state, action, signer) => {
     schema,
     _data,
     col,
+    next_data,
   } = await parse(state, action, "upsert", signer)
   let prev = clone(_data.__data)
-  const next_data = mergeData(_data, new_data, false, signer)
-  validateSchema(schema, next_data.__data)
+  validateSchema(schema, next_data)
   let ind = getIndex(state, init(path))
   if (isNil(prev)) {
-    addData(last(path), next_data.__data, ind, col.__docs)
+    addData(last(path), next_data, ind, col.__docs)
   } else {
-    updateData(last(path), next_data.__data, prev, ind, col.__docs)
+    updateData(last(path), next_data, prev, ind, col.__docs)
   }
-  _data = next_data
+  _data.__data = next_data
   return { state }
 }

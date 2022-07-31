@@ -384,4 +384,16 @@ describe("WeaveDB", function () {
       identity.address.toLowerCase()
     )
   })
+  it("should pre-process the new data with rules", async () => {
+    const rules = {
+      let: {
+        "resource.newData.age": 30,
+      },
+      "allow create": true,
+    }
+    await db.setRules(rules, "ppl")
+    await db.upsert({ name: "Bob" }, "ppl", "Bob")
+    expect((await db.get("ppl", "Bob")).age).to.eql(30)
+    await db.upsert({ name: "Bob" }, "ppl", "Bob")
+  })
 })
