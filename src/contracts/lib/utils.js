@@ -24,7 +24,6 @@ export const mergeData = (_data, new_data, overwrite = false, signer) => {
   if (isNil(_data.__data) || overwrite) _data.__data = {}
   for (let k in new_data) {
     const d = new_data[k]
-
     if (is(Object)(d) && d.__op === "arrayUnion") {
       if (complement(is)(Array, d.arr)) err()
       if (complement(is)(Array, _data.__data[k])) _data.__data[k] = []
@@ -58,6 +57,14 @@ export const getDoc = (data, path, _signer, func, new_data, secure = false) => {
   col.__docs[id] ||= { __data: null, subs: {} }
   const doc = col.__docs[id]
   if (!isNil(_signer) && isNil(doc.setter)) doc.setter = _signer
+  let next_data = null
+  if (path.length === 2) {
+    if (includes(func)(["set", "add"])) {
+      next_data = mergeData(clone(doc), new_data, true, _signer).__data
+    } else if (includes(func)(["update", "upsert"])) {
+      next_data = mergeData(clone(doc), new_data, false, _signer).__data
+    }
+  }
   if (
     includes(func)(["set", "add", "update", "upsert", "delete"]) &&
     (secure || !isNil(rules))
@@ -73,16 +80,9 @@ export const getDoc = (data, path, _signer, func, new_data, secure = false) => {
       }
     }
     let allowed = false
-    let newData = null
-    if (path.length === 2) {
-      if (includes(func)(["set", "add"])) {
-        newData = mergeData(clone(doc), new_data, true, _signer).__data
-      } else if (includes(func)(["update", "upsert"])) {
-        newData = mergeData(clone(doc), new_data, false, _signer).__data
-      }
-    }
     let rule_data = {
       request: {
+        method: op,
         auth: { signer: _signer },
         block: {
           height: SmartWeave.block.height,
@@ -98,7 +98,7 @@ export const getDoc = (data, path, _signer, func, new_data, secure = false) => {
       resource: {
         data: doc.__data,
         setter: doc.setter,
-        newData,
+        newData: next_data,
         id: last(path),
         path,
       },
@@ -116,11 +116,27 @@ export const getDoc = (data, path, _signer, func, new_data, secure = false) => {
       } else ret = r
       return is(Function)(ret[0]) ? fn(ret) : ret
     }
+    const setElm = (k, val) => {
+      let elm = rule_data
+      let elm_path = k.split(".")
+      let i = 0
+      for (let v of elm_path) {
+        if (i === elm_path.length - 1) {
+          elm[v] = val
+          break
+        } else if (isNil(elm[v])) elm[v] = {}
+        elm = elm[v]
+        i++
+      }
+      return elm
+    }
+
     if (!isNil(rules)) {
       for (let k in rules.let || {}) {
-        rule_data[k] = fn(rules.let[k])
+        let elm = setElm(k, fn(rules.let[k]))
       }
     }
+
     for (let k in rules || {}) {
       if (k === "let") continue
       const rule = rules[k]
@@ -142,6 +158,7 @@ export const getDoc = (data, path, _signer, func, new_data, secure = false) => {
         schema,
         rules,
         col,
+        next_data,
       }
 }
 
@@ -233,6 +250,7 @@ export const parse = async (state, action, func, signer, salt) => {
   let _data = null
   let schema = null
   let rules = null
+  let next_data
   if (
     includes(func)([
       "addIndex",
@@ -248,9 +266,7 @@ export const parse = async (state, action, func, signer, salt) => {
   } else {
     const doc = getDoc(data, path, signer, func, new_data, state.secure)
     _data = doc.doc
-    schema = doc.schema
-    rules = doc.rules
-    col = doc.col
+    ;({ next_data, schema, rules, col } = doc)
   }
   if (
     includes(func)(["update", "upsert", "delete"]) &&
@@ -262,7 +278,7 @@ export const parse = async (state, action, func, signer, salt) => {
   ) {
     err("caller is not contract owner")
   }
-  return { data, query, new_data, path, _data, schema, col }
+  return { data, query, new_data, path, _data, schema, col, next_data }
 }
 export const validateSchema = (schema, data) => {
   if (!isNil(schema)) {
