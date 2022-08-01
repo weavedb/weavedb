@@ -17,8 +17,18 @@ import { update } from "./actions/write/update"
 import { upsert } from "./actions/write/upsert"
 import { remove } from "./actions/write/remove"
 import { batch } from "./actions/write/batch"
+import { cron } from "./lib/cron"
+import { addCron } from "./actions/write/addCron"
+import { removeCron } from "./actions/write/removeCron"
+import { getCrons } from "./actions/read/getCrons"
 
 export async function handle(state, action) {
+  try {
+    ;({ state } = await cron(state))
+  } catch (e) {
+    console.log(e)
+  }
+
   switch (action.input.function) {
     case "addAddressLink":
       return await addAddressLink(state, action)
@@ -36,6 +46,12 @@ export async function handle(state, action) {
       return await get(state, action)
     case "cget":
       return await get(state, action, true)
+    case "addCron":
+      return await addCron(state, action)
+    case "removeCron":
+      return await removeCron(state, action)
+    case "getCrons":
+      return await getCrons(state, action)
     case "addIndex":
       return await addIndex(state, action)
     case "getIndexes":
