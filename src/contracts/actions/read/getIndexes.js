@@ -20,7 +20,7 @@ const scanIndexes = ind => {
   return indexes
 }
 
-export const getIndexes = async (state, action, cursor = false) => {
+export const getIndexes = async (state, action) => {
   const path = action.input.query
   if (path.length % 2 === 0) err()
   const index = getIndex(state, path)

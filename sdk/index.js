@@ -95,6 +95,10 @@ class SDK {
     return this.read("getIndexes", ...query)
   }
 
+  async getCrons(...query) {
+    return this.read("getCrons", ...query)
+  }
+
   async getSchema(...query) {
     return this.read("getSchema", ...query)
   }
@@ -212,6 +216,14 @@ class SDK {
 
   async addIndex(...query) {
     return this._write("addIndex", ...query)
+  }
+
+  async addCron(...query) {
+    return this._write("addCron", ...query)
+  }
+
+  async removeCron(...query) {
+    return this._write("removeCron", ...query)
   }
 
   async removeIndex(...query) {
