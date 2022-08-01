@@ -20,6 +20,28 @@ import * as R from "ramda"
 import jsonLogic from "json-logic-js"
 import { validator } from "@exodus/schemasafe"
 
+export const fn = (r, d) => {
+  let ret = null
+  if (is(Array)(r) && is(Function)(r[0])) {
+    ret = compose(
+      apply(r[0]),
+      map(v => fn(v, d)),
+      tail
+    )(r)
+  } else if (is(Array)(r) && is(Function)(R[r[0]])) {
+    ret = compose(
+      apply(R[r[0]]),
+      map(v => fn(v, d)),
+      tail
+    )(r)
+  } else if (is(Object)(r) && is(String)(r.var)) {
+    ret = R.path(r.var.split("."))(d)
+  } else if (is(Array)(r) || is(Object)(r)) {
+    ret = map(v => fn(v, d))(r)
+  } else ret = r
+  return is(Function)(ret[0]) ? fn(ret, d) : ret
+}
+
 export const mergeData = (_data, new_data, overwrite = false, signer) => {
   if (isNil(_data.__data) || overwrite) _data.__data = {}
   for (let k in new_data) {
@@ -103,19 +125,6 @@ export const getDoc = (data, path, _signer, func, new_data, secure = false) => {
         path,
       },
     }
-    const fn = r => {
-      let ret = null
-      if (is(Array)(r) && is(Function)(r[0])) {
-        ret = compose(apply(r[0]), map(fn), tail)(r)
-      } else if (is(Array)(r) && is(Function)(R[r[0]])) {
-        ret = compose(apply(R[r[0]]), map(fn), tail)(r)
-      } else if (is(Object)(r) && is(String)(r.var)) {
-        ret = R.path(r.var.split("."))(rule_data)
-      } else if (is(Array)(r) || is(Object)(r)) {
-        ret = map(fn)(r)
-      } else ret = r
-      return is(Function)(ret[0]) ? fn(ret) : ret
-    }
     const setElm = (k, val) => {
       let elm = rule_data
       let elm_path = k.split(".")
@@ -130,13 +139,11 @@ export const getDoc = (data, path, _signer, func, new_data, secure = false) => {
       }
       return elm
     }
-
     if (!isNil(rules)) {
       for (let k in rules.let || {}) {
-        let elm = setElm(k, fn(rules.let[k]))
+        setElm(k, fn(rules.let[k], rule_data))
       }
     }
-
     for (let k in rules || {}) {
       if (k === "let") continue
       const rule = rules[k]
@@ -213,7 +220,14 @@ const genId = async (action, salt) => {
   return autoId
 }
 
-export const parse = async (state, action, func, signer, salt) => {
+export const parse = async (
+  state,
+  action,
+  func,
+  signer,
+  salt,
+  contractErr = true
+) => {
   const { data } = state
   const { query } = action.input
   let new_data = null
@@ -245,7 +259,7 @@ export const parse = async (state, action, func, signer, salt) => {
         "getRules",
       ]))
   ) {
-    err()
+    err(null, contractErr)
   }
   let _data = null
   let schema = null
@@ -276,16 +290,20 @@ export const parse = async (state, action, func, signer, salt) => {
     includes(func)(["addIndex", "removeIndex", "setSchema", "setRules"]) &&
     action.caller !== state.owner
   ) {
-    err("caller is not contract owner")
+    err("caller is not contract owner", contractErr)
   }
   return { data, query, new_data, path, _data, schema, col, next_data }
 }
-export const validateSchema = (schema, data) => {
+export const validateSchema = (schema, data, contractErr) => {
   if (!isNil(schema)) {
     const _validate = validator(schema)
-    if (!_validate(data)) err()
+    if (!_validate(data)) err(null, contractErr)
   }
 }
-export const err = (msg = `The wrong query`) => {
-  throw new ContractError(msg)
+export const err = (msg = `The wrong query`, contractErr = false) => {
+  if (contractErr) {
+    throw new ContractError(msg)
+  } else {
+    throw msg
+  }
 }
