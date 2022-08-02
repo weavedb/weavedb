@@ -1,5 +1,15 @@
 import { fn } from "./utils"
-import { path, is, map, isNil, clone, includes, sortBy, prop } from "ramda"
+import {
+  path,
+  is,
+  map,
+  isNil,
+  clone,
+  includes,
+  sortBy,
+  prop,
+  head,
+} from "ramda"
 import { get } from "../actions/read/get"
 import { upsert } from "../actions/write/upsert"
 import { update } from "../actions/write/update"
@@ -19,10 +29,15 @@ export const cron = async state => {
     const v = state.crons.crons[k]
     let start = v.start
     let end = v.end
+    let times = 0
     while (start <= now) {
       if ((start > last && isNil(end)) || end >= start) {
-        crons.push({ start, crons: v })
+        if (start !== v.start || v.do) {
+          crons.push({ start, crons: v })
+          times += 1
+        }
       }
+      if (!isNil(v.times) && times >= v.times) break
       start += v.span
     }
   }
@@ -48,32 +63,42 @@ export const cron = async state => {
       return query
     }
     for (let job of cron.crons.jobs) {
-      if (job.op === "do") {
-        fn(job.code, vars)
-      } else if (job.op === "let") {
-        vars[job.var] = fn(job.code, vars)
-      } else if (job.op === "get") {
-        vars[job.var] =
+      const op = head(job)
+      let _var = null
+      let query = null
+      if (includes(op)(["get", "let"])) {
+        _var = job[1]
+        query = job[2]
+      } else {
+        query = job[1]
+      }
+      if (op === "do") {
+        fn(query, vars)
+      } else if (op === "let") {
+        vars[_var] = fn(query, vars)
+      } else if (op === "get") {
+        const _default = job[3]
+        vars[_var] =
           (
             await get(obj.state, {
               caller: state.owner,
-              input: { function: "get", query: await parse(job.query) },
+              input: { function: "get", query: await parse(query) },
             })
-          ).result || job.default
+          ).result || _default
       } else if (
-        includes(job.op)(["set", "upsert", "add", "delete", "update", "batch"])
+        includes(op)(["set", "upsert", "add", "delete", "update", "batch"])
       ) {
         let params = [
           obj.state,
           {
             caller: state.owner,
-            input: { function: job.op, query: await parse(job.query) },
+            input: { function: op, query: await parse(query) },
           },
           true,
         ]
-        if (job.op === "add") params.push(0)
+        if (op === "add") params.push(0)
         params.push(false)
-        await ops[job.op](...params)
+        await ops[op](...params)
       }
     }
   }
