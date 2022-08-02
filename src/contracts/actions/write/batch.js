@@ -7,8 +7,8 @@ import { update } from "./update"
 import { upsert } from "./upsert"
 import { remove } from "./remove"
 
-export const batch = async (state, action) => {
-  const signer = validate(state, action, "batch")
+export const batch = async (state, action, signer, contractErr = true) => {
+  signer ||= validate(state, action, "batch")
   let _state = state
   let i = 0
   for (let v of action.input.query) {
@@ -17,22 +17,27 @@ export const batch = async (state, action) => {
     let res = null
     switch (op) {
       case "add":
-        res = await add(_state, _action, signer, i)
+        res = await add(_state, _action, signer, i, contractErr)
         break
       case "set":
-        res = await set(_state, _action, signer)
+        res = await set(_state, _action, signer, contractErr)
         break
       case "update":
-        res = await update(_state, _action, signer)
+        res = await update(_state, _action, signer, contractErr)
         break
       case "upsert":
-        res = await upsert(_state, _action, signer)
+        res = await upsert(_state, _action, signer, contractErr)
         break
       case "delete":
-        res = await remove(_state, _action, signer)
+        res = await remove(_state, _action, signer, contractErr)
         break
       default:
-        err(`No function supplied or function not recognised: "${op}"`)
+        const msg = `No function supplied or function not recognised: "${op}"`
+        if (contractErr) {
+          err(msg)
+        } else {
+          throw msg
+        }
     }
     _state = res.state
     i++

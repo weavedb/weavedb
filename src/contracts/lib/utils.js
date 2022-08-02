@@ -21,25 +21,45 @@ import jsonLogic from "json-logic-js"
 import { validator } from "@exodus/schemasafe"
 
 export const fn = (r, d) => {
+  const _var = R.curry((path, ignore) => {
+    if (/^\$/.test(path)) path = _var(tail(path), true)
+    return R.path(path.split("."))(d)
+  })
+
+  const _let = R.curry((path, val) => {
+    let tar = d
+    if (/^\$/.test(path)) path = _var(tail(path), true)
+    let _path = path.split(".")
+    for (let v of R.init(_path)) {
+      if (R.isNil(tar[v])) tar[v] = {}
+      tar = tar[v]
+    }
+    tar[R.last(_path)] = val
+    return ["let", path, val]
+  })
+
   let ret = null
-  if (is(Array)(r) && is(Function)(r[0])) {
-    ret = compose(
-      apply(r[0]),
-      map(v => fn(v, d)),
-      tail
-    )(r)
-  } else if (is(Array)(r) && is(Function)(R[r[0]])) {
-    ret = compose(
-      apply(R[r[0]]),
-      map(v => fn(v, d)),
-      tail
-    )(r)
-  } else if (is(Object)(r) && is(String)(r.var)) {
+  if (R.is(Function, r[0])) {
+    const args = tail(r)
+    ret = r[0](...args)
+  } else if (R.is(Array)(r) && r.length === 1 && r[0] === "__") {
+    ret = R.__
+  } else if (
+    R.is(Array)(r) &&
+    (includes(r[0])(["let", "var"]) || R.is(Function)(R[r[0]]))
+  ) {
+    ret =
+      R.compose(
+        R.apply(r[0] === "var" ? _var : r[0] === "let" ? _let : R[r[0]]),
+        R.map(v => fn(v, d)),
+        R.tail
+      )(r) || []
+  } else if (R.is(Object)(r) && R.is(String)(r.var)) {
     ret = R.path(r.var.split("."))(d)
-  } else if (is(Array)(r) || is(Object)(r)) {
-    ret = map(v => fn(v, d))(r)
+  } else if (R.is(Array)(r) || R.is(Object)(r)) {
+    ret = R.map(v => fn(v, d))(r)
   } else ret = r
-  return is(Function)(ret[0]) ? fn(ret, d) : ret
+  return R.is(Function)(ret[0]) ? fn(ret, d) : ret
 }
 
 export const mergeData = (_data, new_data, overwrite = false, signer) => {
