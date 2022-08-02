@@ -35,7 +35,7 @@ export const fn = (r, d) => {
       tar = tar[v]
     }
     tar[R.last(_path)] = val
-    return ["let", path, val]
+    return val
   })
 
   let ret = null
