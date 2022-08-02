@@ -138,44 +138,23 @@ describe("Bookmarks Example", function () {
     const cron = {
       span: 1,
       jobs: [
-        {
-          op: "get",
-          query: ["conf", "mirror-calc"],
-          default: { ver: 0 },
-          var: "conf",
-        },
-        {
-          op: "get",
-          query: ["mirror", ["ver"], ["ver", "!=", 0]],
-          var: "exists",
-        },
-        {
-          op: "let",
-          var: "exists_map",
-          code: ["indexBy", ["prop", "id"], { var: "exists" }],
-        },
-        { op: "let", var: "day", code: 60 * 60 * 24 },
-        { op: "let", var: "two_weeks", code: ["multiply", { var: "day" }, 14] },
-        { op: "let", var: "now", code: { var: "block.timestamp" } },
-        {
-          op: "let",
-          var: "deadline",
-          code: ["subtract", { var: "now" }, { var: "two_weeks" }],
-        },
-        {
-          op: "get",
-          var: "bookmarks",
-          query: [
-            "bookmarks",
-            ["date", "desc"],
-            ["date", ">=", { var: "deadline" }],
-          ],
-        },
-        { op: "let", var: "rank", code: {} },
-        {
-          op: "let",
-          var: "batches",
-          code: [
+        ["get", "conf", ["conf", "mirror-calc"], { ver: 0 }],
+        ["get", "exists", ["mirror", ["ver"], ["ver", "!=", 0]]],
+        ["let", "exists_map", ["indexBy", ["prop", "id"], { var: "exists" }]],
+        ["let", "day", 60 * 60 * 24],
+        ["let", "two_weeks", ["multiply", { var: "day" }, 14]],
+        ["let", "now", { var: "block.timestamp" }],
+        ["let", "deadline", ["subtract", { var: "now" }, { var: "two_weeks" }]],
+        [
+          "get",
+          "bookmarks",
+          ["bookmarks", ["date", "desc"], ["date", ">=", { var: "deadline" }]],
+        ],
+        ["let", "rank", {}],
+        [
+          "let",
+          "batches",
+          [
             [
               "upsert",
               {
@@ -186,10 +165,10 @@ describe("Bookmarks Example", function () {
               "mirror-calc",
             ],
           ],
-        },
-        {
-          op: "do",
-          code: [
+        ],
+        [
+          "do",
+          [
             "forEach",
             [
               "pipe",
@@ -244,10 +223,10 @@ describe("Bookmarks Example", function () {
             ],
             { var: "bookmarks" },
           ],
-        },
-        {
-          op: "do",
-          code: [
+        ],
+        [
+          "do",
+          [
             "forEachObjIndexed",
             [
               "pipe",
@@ -290,10 +269,10 @@ describe("Bookmarks Example", function () {
             ],
             { var: "rank" },
           ],
-        },
-        {
-          op: "do",
-          code: [
+        ],
+        [
+          "do",
+          [
             "forEachObjIndexed",
             [
               "pipe",
@@ -333,8 +312,8 @@ describe("Bookmarks Example", function () {
               ],
             ],
           ],
-        },
-        { op: "batch", query: { var: "batches" } },
+        ],
+        ["batch", { var: "batches" }],
       ],
     }
 
