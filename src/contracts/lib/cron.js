@@ -6,6 +6,7 @@ import { update } from "../actions/write/update"
 import { add } from "../actions/write/add"
 import { remove } from "../actions/write/remove"
 import { set } from "../actions/write/set"
+import { batch } from "../actions/write/batch"
 
 export const cron = async state => {
   const now = SmartWeave.block.timestamp
@@ -25,31 +26,34 @@ export const cron = async state => {
       start += v.span
     }
   }
-
-  let obj = { state: clone(state), vars: {} }
+  let obj = { state: clone(state) }
   for (let cron of crons) {
-    let ops = { upsert, update, add, delete: remove, set }
+    let vars = {
+      block: {
+        height: SmartWeave.block.height,
+        timestamp: SmartWeave.block.timestamp,
+      },
+    }
+    let ops = { upsert, update, add, delete: remove, set, batch }
     const parse = query => {
       if (is(Array, query)) {
-        for (let v of query) {
-          if (is(Object, v)) v = parse(v)
-        }
+        query = map(v => (is(Object, v) ? parse(v) : v))(query)
       } else if (is(Object, query)) {
         if (is(String, query.var)) {
-          return path(query.var.split("."))(obj.vars)
+          return path(query.var.split("."))(vars)
         } else {
-          for (let k in query) {
-            query[k] = parse(query[k])
-          }
+          query = map(v => parse(v))(query)
         }
       }
       return query
     }
     for (let job of cron.crons.jobs) {
-      if (job.op === "let") {
-        obj.vars[job.var] = fn(job.code)
+      if (job.op === "do") {
+        fn(job.code, vars)
+      } else if (job.op === "let") {
+        vars[job.var] = fn(job.code, vars)
       } else if (job.op === "get") {
-        obj.vars[job.var] =
+        vars[job.var] =
           (
             await get(obj.state, {
               caller: state.owner,
@@ -57,7 +61,7 @@ export const cron = async state => {
             })
           ).result || job.default
       } else if (
-        includes(job.op)(["set", "upsert", "add", "delete", "update"])
+        includes(job.op)(["set", "upsert", "add", "delete", "update", "batch"])
       ) {
         let params = [
           obj.state,

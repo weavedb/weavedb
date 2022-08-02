@@ -155,7 +155,7 @@ You need to downgrade `next` package to `12.0` for compatibility with `warp-cont
 :::
 
 ```bash
-yarn create next-app
+yarn create next-app todos
 cd todos
 yarn add next@12.0
 yarn dev
@@ -322,7 +322,7 @@ export default function App() {
 
 #### login
 
-We will generate a disposal account the first time a user log in, link it with the Metamask address within WeaveDB, and save it locally in the browser's IndexedDB.
+We will generate a disposal account the first time a user logs in, link it with the Metamask address within WeaveDB, and save it locally in the browser's IndexedDB.
 
 `{ wallet, privateKey }` is how we need to pass the user object to the SDK when making transactions, so we will save it like so.
 
@@ -437,9 +437,9 @@ When the page is loaded, check if the user is logged in.
         }}
       >
         {!isNil(user) ? (
-          <div onClick={() => logout()}>{user.wallet.slice(0, 7)}</div>
+          <Box onClick={() => logout()}>{user.wallet.slice(0, 7)}</Box>
         ) : (
-          <div onClick={() => login()}>Connect Wallet</div>
+          <Box onClick={() => login()}>Connect Wallet</Box>
         )}
       </Flex>
     </Flex>
@@ -730,9 +730,9 @@ export default function App() {
         }}
       >
         {!isNil(user) ? (
-          <div onClick={() => logout()}>{user.wallet.slice(0, 7)}</div>
+          <Box onClick={() => logout()}>{user.wallet.slice(0, 7)}</Box>
         ) : (
-          <div onClick={() => login()}>Connect Wallet</div>
+          <Box onClick={() => login()}>Connect Wallet</Box>
         )}
       </Flex>
     </Flex>
