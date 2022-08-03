@@ -1,7 +1,7 @@
 ---
-sidebar_position: 7
+sidebar_position: 6
 ---
-# Authentication
+# Crons
 
 When writing to the DB, Ethereum-based addresses are authenticated with [EIP-712](https://eips.ethereum.org/EIPS/eip-712) signatures. However, this requires dapp users to sign with Metamask for every action, and it's a very poor UX. To solve this, WeaveDB allows internal address linking, so dapp users can use disposal addresses for auto-signing.
 
