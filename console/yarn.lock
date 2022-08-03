@@ -6672,10 +6672,10 @@ watchpack@2.1.1:
     glob-to-regexp "^0.4.1"
     graceful-fs "^4.1.2"
 
-weavedb-sdk@^0.2.36:
-  version "0.2.36"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.2.36.tgz#f50349cfeeeebff2fa35d0974c51bcd62ffed571"
-  integrity sha512-KVs2YQSTCieHKFB3wGlSDCY+fF71g2ctDM4oJ1cT+V/d28f+3wkXiqjpswfWFkZntaWtDuWFBY8E61fd46Re+A==
+weavedb-sdk@^0.2.37:
+  version "0.2.37"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.2.37.tgz#ecf677c322499b3b425dc1c2e6af1e502edc23d5"
+  integrity sha512-ymdISC7IUz04YrE4iOosn0QZX6arKkSOlGgVQW1CrQdknbydsgI7n4pkilU8KiUX0XCSbRW1RWKJQE+JWfxFxg==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"

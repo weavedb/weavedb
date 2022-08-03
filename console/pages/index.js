@@ -1,6 +1,7 @@
 import { useEffect, Fragment, useState } from "react"
 import JSONPretty from "react-json-pretty"
 import {
+  Checkbox,
   Image,
   Select,
   ChakraProvider,
@@ -47,9 +48,10 @@ export default bind(
     const [state, setState] = useState(null)
     const [doc_path, setDocPath] = useState([])
     const [tab, setTab] = useState("Data")
+    const [cron, setCron] = useState(null)
     const [method, setMethod] = useState("get")
     const [query, setQuery] = useState("")
-    const tabs = ["Data", "Schemas", "Rules", "Indexes", "Auth"]
+    const tabs = ["Data", "Schemas", "Rules", "Indexes", "Crons", "Auth"]
     const [network, setNetwork] = useState("Localhost")
     const [newNetwork, setNewNetwork] = useState("Localhost")
     const [newRules, setNewRules] = useState(`{"allow write": true}`)
@@ -57,6 +59,7 @@ export default bind(
     const [newData, setNewData] = useState(`{}`)
     const [newIndex, setNewIndex] = useState(`[]`)
     const [newSchemas, setNewSchemas] = useState("")
+    const [newCron, setNewCron] = useState("")
     const [newField, setNewField] = useState("")
     const [newFieldType, setNewFieldType] = useState(`string`)
     const [newFieldVal, setNewFieldVal] = useState("")
@@ -67,6 +70,12 @@ export default bind(
     const [networkErr, setNetworkErr] = useState(false)
     const [newCollection, setNewCollection] = useState("")
     const [newDoc, setNewDoc] = useState("")
+    const [newDo, setNewDo] = useState("")
+    const [newSpan, setNewSpan] = useState("")
+    const [newCronName, setNewCronName] = useState("")
+    const [newStart, setNewStart] = useState("")
+    const [newEnd, setNewEnd] = useState("")
+    const [newTimes, setNewTimes] = useState("")
     const [contractTxId, setContractTxId] = useState(
       weavedb.weavedb.contractTxId
     )
@@ -78,6 +87,7 @@ export default bind(
     const [addDoc, setAddDoc] = useState(false)
     const [addData, setAddData] = useState(false)
     const [addRules, setAddRules] = useState(false)
+    const [addCron, setAddCron] = useState(false)
     const [addIndex, setAddIndex] = useState(false)
 
     useEffect(() => {
@@ -172,6 +182,9 @@ export default bind(
       "getRules",
       "setSchema",
       "getSchema",
+      "addCron",
+      "getCrons",
+      "removeCron",
       "nonce",
       "ids",
       "evolve",
@@ -230,6 +243,12 @@ export default bind(
     let indexes = []
     let rules = {}
     let schema = {}
+    let crons = {}
+    let _cron = null
+    if (!isNil(state)) {
+      crons = state.crons.crons
+      _cron = crons[cron]
+    }
     if (!isNil(col)) {
       indexes = scanIndexes(getIndex(state, append(col, base_path)))
       ;({ rules, schema } = getCol(state.data, append(col, base_path)))
@@ -383,7 +402,7 @@ export default bind(
               sx={{ border: "1px solid #333" }}
             >
               <Flex h="535px" w="100%">
-                {tab === "Auth" ? null : (
+                {includes(tab)(["Auth", "Crons"]) ? null : (
                   <Box
                     flex={1}
                     sx={{ border: "1px solid #555" }}
@@ -464,6 +483,177 @@ export default bind(
                       <JSONPretty id="json-pretty" data={rules}></JSONPretty>
                     </Box>
                   </Flex>
+                ) : tab === "Crons" ? (
+                  <>
+                    <Flex
+                      flex={1}
+                      sx={{ border: "1px solid #555" }}
+                      direction="column"
+                    >
+                      <Flex py={2} px={3} color="white" bg="#333" h="35px">
+                        Crons
+                        <Box flex={1} />
+                        <Box
+                          onClick={() => setAddCron(true)}
+                          sx={{
+                            cursor: "pointer",
+                            ":hover": { opacity: 0.75 },
+                          }}
+                        >
+                          <Box as="i" className="fas fa-plus" />
+                        </Box>
+                      </Flex>
+                      <Box height="500px" sx={{ overflowY: "auto" }}>
+                        {compose(
+                          map(v => (
+                            <Flex
+                              onClick={() => {
+                                setCron(v)
+                              }}
+                              bg={cron === v ? "#ddd" : ""}
+                              py={2}
+                              px={3}
+                              sx={{
+                                cursor: "pointer",
+                                ":hover": { opacity: 0.75 },
+                              }}
+                            >
+                              <Box mr={3} flex={1}>
+                                {v}
+                              </Box>
+                              <Box
+                                color="#999"
+                                sx={{
+                                  cursor: "pointer",
+                                  ":hover": { opacity: 0.75, color: "#F50057" },
+                                }}
+                                onClick={async e => {
+                                  e.stopPropagation()
+                                  let query = `"${v}"`
+                                  if (
+                                    confirm(
+                                      "Would you like to remove the cron?"
+                                    )
+                                  ) {
+                                    const res = await fn.queryDB({
+                                      method: "removeCron",
+                                      query,
+                                      contractTxId,
+                                    })
+                                    if (/^Error:/.test(res)) {
+                                      alert("Something went wrong")
+                                    }
+                                  }
+                                }}
+                              >
+                                <Box as="i" className="fas fa-trash" />
+                              </Box>
+                            </Flex>
+                          )),
+                          keys
+                        )(crons)}
+                      </Box>
+                    </Flex>
+                    <Flex
+                      flex={1}
+                      sx={{ border: "1px solid #555" }}
+                      direction="column"
+                    >
+                      <Flex py={2} px={3} color="white" bg="#333" h="35px">
+                        Settings
+                        <Box flex={1} />
+                      </Flex>
+                      <Box height="500px" sx={{ overflowY: "auto" }}>
+                        {isNil(_cron) ? null : (
+                          <>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#ddd"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                Name
+                              </Box>
+                              <Box flex={1}>{cron}</Box>
+                            </Flex>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#ddd"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                Start
+                              </Box>
+                              <Box flex={1}>{_cron.start}</Box>
+                            </Flex>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#ddd"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                End
+                              </Box>
+                              <Box flex={1}>{_cron.end || "-"}</Box>
+                            </Flex>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#ddd"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                Do
+                              </Box>
+                              <Box flex={1}>{_cron.do ? "true" : "false"}</Box>
+                            </Flex>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#ddd"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                Span
+                              </Box>
+                              <Box flex={1}>{_cron.span}</Box>
+                            </Flex>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#ddd"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                Times
+                              </Box>
+                              <Box flex={1}>{_cron.times || "-"}</Box>
+                            </Flex>
+                          </>
+                        )}
+                      </Box>
+                    </Flex>
+                    <Flex
+                      flex={1}
+                      sx={{ border: "1px solid #555" }}
+                      direction="column"
+                    >
+                      <Flex py={2} px={3} color="white" bg="#333" h="35px">
+                        Jobs
+                      </Flex>
+                      <Box height="500px" sx={{ overflowY: "auto" }} p={3}>
+                        {isNil(_cron) ? null : (
+                          <JSONPretty
+                            id="json-pretty"
+                            data={_cron.jobs}
+                          ></JSONPretty>
+                        )}
+                      </Box>
+                    </Flex>
+                  </>
                 ) : tab === "Indexes" ? (
                   <>
                     <Flex
@@ -1330,6 +1520,167 @@ export default bind(
                     alert("Something went wrong")
                   } else {
                     setAddSchemas(false)
+                  }
+                }}
+              >
+                Add
+              </Flex>
+            </Box>
+          </Flex>
+        ) : addCron !== false ? (
+          <Flex
+            w="100%"
+            h="100%"
+            position="fixed"
+            sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+            bg="rgba(0,0,0,0.5)"
+            onClick={() => setAddCron(false)}
+            justify="center"
+            align="center"
+          >
+            <Box
+              bg="white"
+              width="500px"
+              p={3}
+              sx={{ borderRadius: "5px", cursor: "default" }}
+              onClick={e => e.stopPropagation()}
+            >
+              <Flex>
+                <Input
+                  value={newCronName}
+                  placeholder="Cron Name"
+                  onChange={e => setNewCronName(e.target.value)}
+                  sx={{
+                    borderRadius: "3px",
+                  }}
+                />
+              </Flex>
+              <Flex mt={4}>
+                <Input
+                  mr={2}
+                  value={newStart}
+                  placeholder="Start"
+                  onChange={e => {
+                    if (!Number.isNaN(e.target.value * 1)) {
+                      setNewStart(e.target.value)
+                    }
+                  }}
+                  sx={{
+                    borderRadius: "3px",
+                  }}
+                />
+                <Input
+                  ml={2}
+                  value={newEnd}
+                  placeholder="End"
+                  onChange={e => {
+                    if (!Number.isNaN(e.target.value * 1)) {
+                      setNewEnd(e.target.value)
+                    }
+                  }}
+                  sx={{
+                    borderRadius: "3px",
+                  }}
+                />
+              </Flex>
+              <Flex mt={4}>
+                <Flex mx={2} align="center" flex={1}>
+                  <Checkbox
+                    mr={2}
+                    checked={newDo}
+                    onClick={e => setNewDo(!newDo)}
+                    sx={{
+                      borderRadius: "3px",
+                    }}
+                  />
+                  Do at Start
+                </Flex>
+                <Input
+                  flex={1}
+                  mr={2}
+                  value={newSpan}
+                  placeholder="Span"
+                  onChange={e => {
+                    if (!Number.isNaN(e.target.value * 1)) {
+                      setNewSpan(e.target.value)
+                    }
+                  }}
+                  sx={{
+                    borderRadius: "3px",
+                  }}
+                />
+                <Input
+                  flex={1}
+                  ml={2}
+                  value={newTimes}
+                  placeholder="Times"
+                  onChange={e => {
+                    if (!Number.isNaN(e.target.value * 1)) {
+                      setNewTimes(e.target.value)
+                    }
+                  }}
+                  sx={{
+                    borderRadius: "3px",
+                  }}
+                />
+              </Flex>
+              <Textarea
+                mt={3}
+                value={newCron}
+                placeholder="Cron Jobs"
+                onChange={e => setNewCron(e.target.value)}
+                sx={{
+                  borderRadius: "3px",
+                }}
+              />
+              <Flex
+                mt={4}
+                sx={{
+                  borderRadius: "3px",
+                  cursor: "pointer",
+                  ":hover": { opacity: 0.75 },
+                }}
+                p={2}
+                justify="center"
+                align="center"
+                color="white"
+                bg="#333"
+                onClick={async () => {
+                  const exID = !/^\s*$/.test(newCronName)
+                  if (!exID) {
+                    alert("Enter Cron Name")
+                    return
+                  }
+                  if (newSpan * 1 === 0) {
+                    alert("Span must be greater than 0")
+                  }
+                  let val = null
+                  try {
+                    let obj = null
+                    eval(`obj = ${newCron}`)
+                    val = newCron
+                    if (!is(Array)(obj)) {
+                      alert("Jobs should be an array.")
+                      return
+                    }
+                  } catch (e) {
+                    alert("Wrong JSON format")
+                    return
+                  }
+                  let query = `{times: ${newTimes || null}, start: ${
+                    newStart || null
+                  }, end: ${newEnd || null},do: ${
+                    newDo ? "true" : "false"
+                  }, span: ${newSpan * 1}, jobs: ${newCron}}, "${newCronName}"`
+                  const res = await fn.queryDB({
+                    method: "addCron",
+                    query,
+                    contractTxId,
+                  })
+                  if (/^Error:/.test(res)) {
+                    alert("Something went wrong")
+                  } else {
+                    setAddCron(false)
                   }
                 }}
               >

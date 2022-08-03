@@ -22,6 +22,7 @@ await db.addCron(cron, "count-crons")
 `span` and `jobs` are mandatory fields.
 
 - `start` - timestamp the cron should start at, if ommited, it will be set to `block.timestamp`
+- `end` - timestamp the cron should end at, if ommited, it will run indefinitely
 - `span` - seconds between each execution, be careful not to set it too short like `1` second outside the test purposes
 - `do` - wheather the task should be executed at `start`, it defaults to `false` if omitted, and in that case, the first execution time will be `start + span`
 - `times` - how many times the task should be executed, it will run forever if omitted
