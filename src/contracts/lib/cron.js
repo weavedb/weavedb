@@ -98,6 +98,7 @@ export const cron = async state => {
       times += 1
     }
   }
+  crons = sortBy(prop("start"))(crons)
   let _state = clone(state)
   for (let cron of crons) {
     await executeCron(cron, _state)
