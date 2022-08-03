@@ -401,7 +401,8 @@ describe("WeaveDB", function () {
     await db.addCron(
       {
         span: 1,
-        jobs: [{ op: "upsert", query: [{ age: db.inc(1) }, "ppl", "Bob"] }],
+        do: true,
+        jobs: [["upsert", [{ age: db.inc(1) }, "ppl", "Bob"]]],
       },
       "inc age"
     )
