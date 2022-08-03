@@ -396,23 +396,26 @@ describe("WeaveDB", function () {
     expect((await db.get("ppl", "Bob")).age).to.eql(30)
     await db.upsert({ name: "Bob" }, "ppl", "Bob")
   })
+
   it("should execute crons", async () => {
     await db.set({ age: 3 }, "ppl", "Bob")
     await db.addCron(
       {
-        span: 1,
+        span: 2,
+        times: 2,
         do: true,
         jobs: [["upsert", [{ age: db.inc(1) }, "ppl", "Bob"]]],
       },
       "inc age"
     )
+    expect((await db.get("ppl", "Bob")).age).to.eql(4)
     while (true) {
       await db.mineBlock()
-      if ((await db.get("ppl", "Bob")).age > 3) {
+      if ((await db.get("ppl", "Bob")).age > 4) {
         break
       }
     }
-    expect((await db.get("ppl", "Bob")).age).to.be.gt(3)
+    expect((await db.get("ppl", "Bob")).age).to.be.eql(5)
     await db.removeCron("inc age")
     expect((await db.getCrons()).crons).to.eql({})
   })

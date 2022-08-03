@@ -1,6 +1,6 @@
 {
   "name": "weavedb",
-  "version": "0.0.1",
+  "version": "0.2.0",
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
@@ -22,7 +22,7 @@
     "node": "16"
   },
   "scripts": {
-    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet pM6kWlV2HeqHUe4kzgnDxED4SSVMbIow-l365h2nvv0",
+    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet rdCItOQhL_I2FpYCrdqfmMrKh0KXlByT64OxuHgri_c",
     "deploy-testnet": "yarn build && node scripts/deployFromSourceTx.js testnet Edl8vTOmxD8L-Ccjum19inkUsQHYNu2a3BAmFQrl_kM",
     "test": "yarn build && mocha",
     "build": "yarn clean && node build.js && npm run cp",

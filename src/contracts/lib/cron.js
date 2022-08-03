@@ -18,6 +18,66 @@ import { remove } from "../actions/write/remove"
 import { set } from "../actions/write/set"
 import { batch } from "../actions/write/batch"
 
+export const executeCron = async (cron, state) => {
+  let vars = {
+    block: {
+      height: SmartWeave.block.height,
+      timestamp: SmartWeave.block.timestamp,
+    },
+  }
+  let ops = { upsert, update, add, delete: remove, set, batch }
+  const parse = query => {
+    if (is(Array, query)) {
+      query = map(v => (is(Object, v) ? parse(v) : v))(query)
+    } else if (is(Object, query)) {
+      if (is(String, query.var)) {
+        return path(query.var.split("."))(vars)
+      } else {
+        query = map(v => parse(v))(query)
+      }
+    }
+    return query
+  }
+  for (let job of cron.crons.jobs) {
+    const op = head(job)
+    let _var = null
+    let query = null
+    if (includes(op)(["get", "let"])) {
+      _var = job[1]
+      query = job[2]
+    } else {
+      query = job[1]
+    }
+    if (op === "do") {
+      fn(query, vars)
+    } else if (op === "let") {
+      vars[_var] = fn(query, vars)
+    } else if (op === "get") {
+      const _default = job[3]
+      vars[_var] =
+        (
+          await get(state, {
+            caller: state.owner,
+            input: { function: "get", query: await parse(query) },
+          })
+        ).result || _default
+    } else if (
+      includes(op)(["set", "upsert", "add", "delete", "update", "batch"])
+    ) {
+      let params = [
+        state,
+        {
+          caller: state.owner,
+          input: { function: op, query: await parse(query) },
+        },
+        true,
+      ]
+      if (op === "add") params.push(0)
+      params.push(false)
+      await ops[op](...params)
+    }
+  }
+}
 export const cron = async state => {
   const now = SmartWeave.block.timestamp
   if (isNil(state.crons)) {
@@ -29,79 +89,19 @@ export const cron = async state => {
     const v = state.crons.crons[k]
     let start = v.start
     let end = v.end
-    let times = 0
-    while (start <= now) {
+    let times = v.do ? 1 : 0
+    while (start <= now && (isNil(v.times) || v.times >= times)) {
       if ((start > last && isNil(end)) || end >= start) {
-        if (start !== v.start || v.do) {
-          crons.push({ start, crons: v })
-          times += 1
-        }
+        if (start !== v.start || v.do) crons.push({ start, crons: v })
       }
-      if (!isNil(v.times) && times >= v.times) break
       start += v.span
+      times += 1
     }
   }
-  let obj = { state: clone(state) }
+  let _state = clone(state)
   for (let cron of crons) {
-    let vars = {
-      block: {
-        height: SmartWeave.block.height,
-        timestamp: SmartWeave.block.timestamp,
-      },
-    }
-    let ops = { upsert, update, add, delete: remove, set, batch }
-    const parse = query => {
-      if (is(Array, query)) {
-        query = map(v => (is(Object, v) ? parse(v) : v))(query)
-      } else if (is(Object, query)) {
-        if (is(String, query.var)) {
-          return path(query.var.split("."))(vars)
-        } else {
-          query = map(v => parse(v))(query)
-        }
-      }
-      return query
-    }
-    for (let job of cron.crons.jobs) {
-      const op = head(job)
-      let _var = null
-      let query = null
-      if (includes(op)(["get", "let"])) {
-        _var = job[1]
-        query = job[2]
-      } else {
-        query = job[1]
-      }
-      if (op === "do") {
-        fn(query, vars)
-      } else if (op === "let") {
-        vars[_var] = fn(query, vars)
-      } else if (op === "get") {
-        const _default = job[3]
-        vars[_var] =
-          (
-            await get(obj.state, {
-              caller: state.owner,
-              input: { function: "get", query: await parse(query) },
-            })
-          ).result || _default
-      } else if (
-        includes(op)(["set", "upsert", "add", "delete", "update", "batch"])
-      ) {
-        let params = [
-          obj.state,
-          {
-            caller: state.owner,
-            input: { function: op, query: await parse(query) },
-          },
-          true,
-        ]
-        if (op === "add") params.push(0)
-        params.push(false)
-        await ops[op](...params)
-      }
-    }
+    await executeCron(cron, _state)
   }
-  obj.state.crons.lastExecuted = SmartWeave.block.timestamp
-  return { state: obj.state }
+  _state.crons.lastExecuted = SmartWeave.block.timestamp
+  return { state: _state }
 }
