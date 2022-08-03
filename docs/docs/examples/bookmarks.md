@@ -219,6 +219,183 @@ for (let k in exists_map) {
 await db.batch(batches)
 ```
 
+## Advanced: Calculate Bookmark Counts with Cron
+
+You can do the same thing by automating the periodical calculation with a cron.
+
+```js
+const cron = {
+  span: 60 * 60 * 12, // execute every 12 hours
+  do: true,
+  jobs: [
+    ["get", "conf", ["conf", "mirror-calc"], { ver: 0 }],
+    ["get", "exists", ["mirror", ["ver"], ["ver", "!=", 0]]],
+    ["let", "exists_map", ["indexBy", ["prop", "id"], { var: "exists" }]],
+    ["let", "day", 60 * 60 * 24],
+    ["let", "two_weeks", ["multiply", { var: "day" }, 14]],
+    ["let", "now", { var: "block.timestamp" }],
+    ["let", "deadline", ["subtract", { var: "now" }, { var: "two_weeks" }]],
+    [
+      "get",
+      "bookmarks",
+      ["bookmarks", ["date", "desc"], ["date", ">=", { var: "deadline" }]],
+    ],
+    ["let", "rank", {}],
+    [
+      "let",
+      "batches",
+      [
+        [
+          "upsert",
+          {
+            ver: ["add", 1, ["prop", "ver", { var: "conf" }]],
+            date: { var: "now" },
+          },
+          "conf",
+          "mirror-calc",
+        ],
+      ],
+    ],
+    [
+      "do",
+      [
+        "forEach",
+        [
+          "pipe",
+          ["let", "v"],
+          ["prop", "article_id"],
+          ["pair", "rank"],
+          ["join", "."],
+          ["let", "rank_path"],
+          [
+            "when",
+            ["pipe", ["var", "$rank_path"], ["isNil"]],
+            [
+              "pipe",
+              [
+                "applySpec",
+                {
+                  id: ["identity"],
+                  pt: ["always", 0],
+                  bookmarks: ["always", 0],
+                },
+              ],
+              ["let", "$rank_path"],
+            ],
+          ],
+          ["var", "$rank_path"],
+          ["over", ["lensProp", "bookmarks"], ["inc"]],
+          ["let", "$rank_path"],
+          ["var", "v"],
+          ["prop", "date"],
+          ["subtract", { var: "now" }],
+          ["subtract", { var: "two_weeks" }],
+          ["divide", ["__"], { var: "day" }],
+          ["let", "k"],
+          ["var", "$rank_path"],
+          [
+            "over",
+            ["lensProp", "pt"],
+            [
+              "pipe",
+              ["applySpec", { pt: ["identity"], k: ["var", "k"] }],
+              ["values"],
+              ["sum"],
+            ],
+          ],
+          ["let", "$rank_path"],
+        ],
+        { var: "bookmarks" },
+      ],
+    ],
+    [
+      "do",
+      [
+        "forEachObjIndexed",
+        [
+          "pipe",
+          ["unapply", ["take", 2]],
+          ["tap", ["pipe", ["head"], ["let", "v"]]],
+          ["pipe", ["last"], ["let", "k"]],
+          ["pair", "exists_map"],
+          ["join", "."],
+          ["let", "ex_path"],
+          ["var", ["__"], true],
+          [
+            "when",
+            ["pipe", ["isNil"], ["not"]],
+            ["pipe", ["assoc", true, "exists"], ["let", "$ex_path"]],
+          ],
+          ["var", "v"],
+          [
+            "applySpec",
+            {
+              method: ["always", "upsert"],
+              query: {
+                id: ["var", "k"],
+                ver: ["pipe", ["var", "conf"], ["prop", "ver"], ["inc"]],
+                pt: ["prop", "pt"],
+                bookmarks: ["prop", "bookmarks"],
+              },
+              collection: ["always", "mirror"],
+              doc: ["var", "k"],
+            },
+          ],
+          ["values"],
+          ["applySpec", { query: ["identity"], batches: ["var", "batches"] }],
+          ["values"],
+          ["apply", ["append"]],
+          ["let", "batches"],
+        ],
+        { var: "rank" },
+      ],
+    ],
+    [
+      "do",
+      [
+        "forEachObjIndexed",
+        [
+          "pipe",
+          ["unapply", ["take", 2]],
+          ["tap", ["pipe", ["head"], ["let", "v"]]],
+          ["pipe", ["last"], ["let", "k"]],
+        ],
+        ["pair", "exists_map"],
+        ["join", "."],
+        ["var", ["__"], true],
+        [
+          "when",
+          ["pipe", ["propEq", "exists", true], ["not"]],
+          [
+            "pipe",
+            [
+              "applySpec",
+              {
+                method: ["always", "update"],
+                query: {
+                  pt: ["always", db.del()],
+                  ver: ["always", db.del()],
+                },
+                collection: ["always", "mirror"],
+                doc: ["var", "k"],
+              },
+            ],
+            ["values"],
+            ["applySpec", { query: ["identity"], batches: ["var", "batches"] }],
+            ["values"],
+            ["apply", ["append"]],
+            ["let", "batches"],
+          ],
+        ],
+      ],
+    ],
+    ["batch", { var: "batches" }],
+  ],
+}
+
+await db.addCron(cron, "count")
+```
+
 ## Get Trending Articles
 
 The following query will fetch top 10 trending articles in the past 2 weeks.

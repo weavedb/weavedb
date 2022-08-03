@@ -1,7 +1,7 @@
 import { isNil, clone } from "ramda"
 import { err } from "../../lib/utils"
 import { validate } from "../../lib/validate"
-
+import { executeCron } from "../../lib/cron"
 export const addCron = async (state, action, signer) => {
   signer ||= validate(state, action, "addCron")
   if (action.caller !== state.owner) err()
@@ -26,5 +26,13 @@ export const addCron = async (state, action, signer) => {
     err("span must be greater than 0")
   }
   state.crons.crons[key] = _cron
+  if (_cron.do) {
+    try {
+      await executeCron({ start: _cron.start, crons: _cron }, state)
+    } catch (e) {
+      console.log(e)
+      err("cron failed to execute")
+    }
+  }
   return { state }
 }
