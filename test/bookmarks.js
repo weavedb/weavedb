@@ -136,7 +136,8 @@ describe("Bookmarks Example", function () {
 
   const calc = async () => {
     const cron = {
-      span: 1,
+      span: 60 * 60 * 12,
+      do: true,
       jobs: [
         ["get", "conf", ["conf", "mirror-calc"], { ver: 0 }],
         ["get", "exists", ["mirror", ["ver"], ["ver", "!=", 0]]],
@@ -310,12 +311,6 @@ describe("Bookmarks Example", function () {
     }
 
     await db.addCron(cron, "count")
-    while (true) {
-      await db.mineBlock()
-      if ((await db.get("mirror")).length > 0) {
-        break
-      }
-    }
   }
 
   it("should bookmark", async () => {

@@ -1,10 +1,14 @@
 const EthCrypto = require("eth-crypto")
+const { privateToAddress } = require("ethereumjs-util")
 require("dotenv").config()
 const fs = require("fs")
 const path = require("path")
 const wallet_name = process.argv[2]
 const contractTxId = process.argv[3] || process.env.CONTRACT_TX_ID
-const { isNil, indexBy, prop } = require("ramda")
+const name = process.env.NAME || "weavedb"
+const version = process.env.VERSION || "1"
+let privateKey = process.env.PRIVATE_KEY
+const { isNil } = require("ramda")
 const SDK = require("../sdk")
 
 if (isNil(wallet_name)) {
@@ -80,8 +84,7 @@ const calc = async sdk => {
   }
   const identity = EthCrypto.createIdentity()
   await sdk.batch(batches, {
-    privateKey: identity.privateKey,
-    dryWrite: true,
+    privateKey,
   })
 }
 
@@ -98,8 +101,8 @@ const setup = async () => {
   const wallet = JSON.parse(fs.readFileSync(wallet_path, "utf8"))
   const sdk = new SDK({
     wallet,
-    name: "asteroid",
-    version: "1",
+    name,
+    version,
     contractTxId,
     arweave: {
       host:
