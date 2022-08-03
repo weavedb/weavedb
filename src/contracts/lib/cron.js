@@ -101,7 +101,11 @@ export const cron = async state => {
   crons = sortBy(prop("start"))(crons)
   let _state = clone(state)
   for (let cron of crons) {
-    await executeCron(cron, _state)
+    try {
+      await executeCron(cron, _state)
+    } catch (e) {
+      console.log(e)
+    }
   }
   _state.crons.lastExecuted = SmartWeave.block.timestamp
   return { state: _state }
