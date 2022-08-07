@@ -245,7 +245,7 @@ export default bind(
     let schema = {}
     let crons = {}
     let _cron = null
-    if (!isNil(state)) {
+    if (!isNil(state) && !isNil(state.crons)) {
       crons = state.crons.crons
       _cron = crons[cron]
     }
@@ -749,7 +749,7 @@ export default bind(
                         <Box flex={1} />
                       </Flex>
                       <Box height="500px" sx={{ overflowY: "auto" }}>
-                        {isNil(state.auth) ? null : (
+                        {isNil(state) || isNil(state.auth) ? null : (
                           <>
                             <Flex align="center" p={2} px={3}>
                               <Box

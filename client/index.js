@@ -1,15 +1,9 @@
+const { DBClient } = require("./weavedb_grpc_web_pb")
+const { WeaveDBRequest } = require("./weavedb_pb")
 const EthCrypto = require("eth-crypto")
 const { all, complement, init, is, last, isNil } = require("ramda")
-let Arweave = require("arweave")
-Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
 const ethSigUtil = require("@metamask/eth-sig-util")
 const { privateToAddress } = require("ethereumjs-util")
-const {
-  Warp,
-  WarpNodeFactory,
-  WarpWebFactory,
-  LoggerFactory,
-} = require("warp-contracts")
 
 const EIP712Domain = [
   { name: "name", type: "string" },
@@ -18,39 +12,11 @@ const EIP712Domain = [
 ]
 
 class SDK {
-  constructor({
-    arweave,
-    contractTxId,
-    wallet,
-    name,
-    version,
-    EthWallet,
-    web3,
-  }) {
-    this.arweave = Arweave.init(arweave)
-    LoggerFactory.INST.logLevel("error")
+  constructor({ rpc, contractTxId, wallet, name, version, EthWallet, web3 }) {
+    this.client = new DBClient(rpc)
     if (typeof window === "object") {
       require("@metamask/legacy-web3")
       this.web3 = window.web3
-    }
-    this.network =
-      arweave.host === "localhost"
-        ? "localhost"
-        : arweave.host === "arweave.net"
-        ? "mainnet"
-        : "testnet"
-    if (this.network === "localhost") {
-      this.warp = WarpNodeFactory.forTesting(this.arweave)
-    } else {
-      if (isNil(web3)) {
-        this.warp = WarpNodeFactory.memCachedBased(this.arweave)
-          .useWarpGateway()
-          .build()
-      } else {
-        this.warp = WarpWebFactory.memCachedBased(this.arweave)
-          .useWarpGateway()
-          .build()
-      }
     }
     if (all(complement(isNil))([contractTxId, wallet, name, version])) {
       this.initialize({ contractTxId, wallet, name, version, EthWallet })
@@ -58,7 +24,6 @@ class SDK {
   }
 
   initialize({ contractTxId, wallet, name, version, EthWallet }) {
-    this.db = this.warp.pst(contractTxId).connect(wallet)
     this.domain = { name, version, verifyingContract: contractTxId }
     if (!isNil(EthWallet)) this.setEthWallet(EthWallet)
   }
@@ -67,15 +32,29 @@ class SDK {
     this.wallet = wallet
   }
 
-  async mineBlock() {
-    await this.arweave.api.get("mine")
+  async _request(func, query) {
+    const request = new WeaveDBRequest()
+    request.setMethod(func)
+    request.setQuery(JSON.stringify(query))
+    const _query = () =>
+      new Promise(ret => {
+        this.client.query(request, {}, (err, response) => {
+          if (!isNil(err)) {
+            ret({ result: null, err })
+          } else if (response.toObject().err === "") {
+            ret({ result: JSON.parse(response.toObject().result), err: null })
+          } else {
+            ret({ result: null, err: response.toObject().err })
+          }
+        })
+      })
+    let q = await _query()
+    console.log(q)
+    return q.result
   }
 
-  async read(func, ...query) {
-    return this.viewState({
-      function: func,
-      query,
-    })
+  async request(func, ...query) {
+    return await this._request(func, query)
   }
 
   async viewState(opt) {
@@ -84,43 +63,35 @@ class SDK {
   }
 
   async get(...query) {
-    return this.read("get", ...query)
+    return this.request("get", ...query)
   }
 
   async cget(...query) {
-    return this.read("cget", ...query)
+    return this.request("cget", ...query)
   }
 
   async getIndexes(...query) {
-    return this.read("getIndexes", ...query)
+    return this.request("getIndexes", ...query)
   }
 
   async getCrons(...query) {
-    return this.read("getCrons", ...query)
+    return this.request("getCrons", ...query)
   }
 
   async getSchema(...query) {
-    return this.read("getSchema", ...query)
+    return this.request("getSchema", ...query)
   }
 
   async getRules(...query) {
-    return this.read("getRules", ...query)
+    return this.request("getRules", ...query)
   }
 
   async getNonce(addr) {
-    return (
-      (await this.viewState({
-        function: "nonce",
-        address: addr,
-      })) + 1
-    )
+    return this.request("getNonce", JSON.stringify([addr]))
   }
 
   async getIds(tx) {
-    return this.viewState({
-      function: "ids",
-      tx,
-    })
+    return this.request("getIds", JSON.stringify([tx]))
   }
 
   async _write(func, ...query) {
@@ -272,7 +243,6 @@ class SDK {
     addr = addr.toLowerCase()
     let result
     nonce ||= await this.getNonce(addr)
-    bundle ||= this.network === "mainnet"
     const message = {
       nonce,
       query: JSON.stringify({ func, query }),
@@ -314,19 +284,7 @@ class SDK {
           ? wallet.toLowerCase()
           : wallet.getAddressString(),
     }
-    if (dryWrite) {
-      let dryState = await this.db.dryWrite(param)
-      if (dryState.type === "error") return { err: dryState }
-    }
-    return await this.send(param, bundle)
-  }
-
-  async send(param, bundle) {
-    let tx = await this.db[bundle ? "bundleInteraction" : "writeInteraction"](
-      param
-    )
-    if (this.network === "localhost") await this.mineBlock()
-    return tx
+    return await this._request("send", param)
   }
 
   signer() {
