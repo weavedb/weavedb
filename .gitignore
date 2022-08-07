@@ -1,6 +1,7 @@
 scripts/.wallets
-
 packages
+!node/packages
+
 # Logs
 logs
 *.log
