@@ -6,9 +6,11 @@
 
 [WeaveDB](https://github.com/asteroid-dao/weavedb) is a monorepo that contains
 
-- [WeaveDB Warp Contracts](/src/contracts)
+- [Warp Contracts](/src/contracts)
 - [Tests](/test)
 - [SDK](/sdk)
+- [Light Client](/client)
+- [gRPC Node](/node)
 - [REPL](/scripts/runNode.js)
 - [Web Console](/console)
 - [Docs](/docs)

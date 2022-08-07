@@ -18,12 +18,12 @@ class SDK {
       require("@metamask/legacy-web3")
       this.web3 = window.web3
     }
-    if (all(complement(isNil))([contractTxId, wallet, name, version])) {
-      this.initialize({ contractTxId, wallet, name, version, EthWallet })
+    if (all(complement(isNil))([contractTxId, name, version])) {
+      this.initialize({ contractTxId, name, version, EthWallet })
     }
   }
 
-  initialize({ contractTxId, wallet, name, version, EthWallet }) {
+  initialize({ contractTxId, name, version, EthWallet }) {
     this.domain = { name, version, verifyingContract: contractTxId }
     if (!isNil(EthWallet)) this.setEthWallet(EthWallet)
   }
@@ -87,11 +87,11 @@ class SDK {
   }
 
   async getNonce(addr) {
-    return this.request("getNonce", JSON.stringify([addr]))
+    return this.request("getNonce", addr, true)
   }
 
   async getIds(tx) {
-    return this.request("getIds", JSON.stringify([tx]))
+    return this.request("getIds", tx)
   }
 
   async _write(func, ...query) {
@@ -134,6 +134,7 @@ class SDK {
 
   async createTempAddress(addr) {
     const identity = EthCrypto.createIdentity()
+    console.log(addr)
     const nonce = await this.getNonce(addr.toLowerCase())
     const message = {
       nonce,
