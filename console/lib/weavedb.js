@@ -1,3 +1,4 @@
+import client from "weavedb-client"
 import lf from "localforage"
 import SDK from "weavedb-sdk"
 import { ethers } from "ethers"
@@ -134,4 +135,15 @@ export const queryDB = async ({
     console.log(e)
     return `Error: Something went wrong`
   }
+}
+
+export const testRPC = async ({ conf, set, get, val: { contractTxId } }) => {
+  const db = new client({
+    wallet: weavedb.arweave,
+    name: weavedb.weavedb.name,
+    version: weavedb.weavedb.version,
+    contractTxId: contractTxId,
+    rpc: "http://104.154.174.221:8080",
+  })
+  console.log(await db.get("mirror"))
 }
