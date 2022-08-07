@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "io.grpc.examples.weavedb";
+option java_outer_classname = "WeaveDB";
+option objc_class_prefix = "WDB";
+
+package weavedb;
+
+service DB {
+  rpc query (WeaveDBRequest) returns (WeaveDBReply) {}
+}
+
+// The request message containing the user's name.
+message WeaveDBRequest {
+  string method = 1;
+  string query = 2;
+  bool nocache = 3;
+}
+
+// The response message containing the greetings
+message WeaveDBReply {
+  string result = 1;
+  string err = 2;
+}
