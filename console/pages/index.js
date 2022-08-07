@@ -37,6 +37,7 @@ let db
 export default bind(
   ({ set, init, router, conf, $ }) => {
     const fn = init([
+      "testRPC",
       "checkTempAddress",
       "setupWeaveDB",
       "createTempAddress",
@@ -92,6 +93,7 @@ export default bind(
 
     useEffect(() => {
       ;(async () => {
+        fn.testRPC({ contractTxId })
         db = await fn.setupWeaveDB({ network, contractTxId })
         setAdminAddress(await db.arweave.wallets.jwkToAddress(weavedb.arweave))
         setInitDB(true)
