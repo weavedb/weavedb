@@ -1,11 +1,11 @@
 ---
-sidebar_position: 6
+sidebar_position: 7
 ---
 # Crons
 
 With SCP (Storage-based Consensus Paradigm) and its nature of determinictic calculation, defining and executing scheduled tasks can be built-in to smart contracts.
 
-You can use JSON-based [Ramda](https://ramdajs.com) functional programming to build complex tasks.
+You can use JSON-based functional programming language called [FPJSON](https://fpjson.asteroid.ac) to build complex tasks.
 
 ## Add a Cron
 
@@ -78,7 +78,7 @@ await db.removeCrons("count-crons")
 
 ## JSON-based Functional Programming
 
-Since JS functions cannot be stored as SmartWeave states, we have invented a little new programming lanuguage to allow writing functional instructions in the JSON format.
+Since JS functions cannot be stored as SmartWeave states, we have invented a little new programming lanuguage called [FPJSON](https://fpjson.asteroid.ac) to allow writing functional instructions in the JSON format.
 
 You should familiarize yourself with [Ramda](https://ramdajs.com) which enables Haskell-like functional programming with JS. You can use all the powerful ramda functions with [point-free style](https://ramdajs.com) in JSON.
 

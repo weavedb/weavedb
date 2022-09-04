@@ -19,48 +19,7 @@ import {
 import * as R from "ramda"
 import jsonLogic from "json-logic-js"
 import { validator } from "@exodus/schemasafe"
-
-export const fn = (r, d) => {
-  const _var = R.curry((path, ignore) => {
-    if (/^\$/.test(path)) path = _var(tail(path), true)
-    return R.path(path.split("."))(d)
-  })
-
-  const _let = R.curry((path, val) => {
-    let tar = d
-    if (/^\$/.test(path)) path = _var(tail(path), true)
-    let _path = path.split(".")
-    for (let v of R.init(_path)) {
-      if (R.isNil(tar[v])) tar[v] = {}
-      tar = tar[v]
-    }
-    tar[R.last(_path)] = val
-    return val
-  })
-
-  let ret = null
-  if (R.is(Function, r[0])) {
-    const args = tail(r)
-    ret = r[0](...args)
-  } else if (R.is(Array)(r) && r.length === 1 && r[0] === "__") {
-    ret = R.__
-  } else if (
-    R.is(Array)(r) &&
-    (includes(r[0])(["let", "var"]) || R.is(Function)(R[r[0]]))
-  ) {
-    ret =
-      R.compose(
-        R.apply(r[0] === "var" ? _var : r[0] === "let" ? _let : R[r[0]]),
-        R.map(v => fn(v, d)),
-        R.tail
-      )(r) || []
-  } else if (R.is(Object)(r) && R.is(String)(r.var)) {
-    ret = R.path(r.var.split("."))(d)
-  } else if (R.is(Array)(r) || R.is(Object)(r)) {
-    ret = R.map(v => fn(v, d))(r)
-  } else ret = r
-  return R.is(Function)(ret[0]) ? fn(ret, d) : ret
-}
+import fpjson from "fpjson-lang"
 
 export const mergeData = (_data, new_data, overwrite = false, signer) => {
   if (isNil(_data.__data) || overwrite) _data.__data = {}
@@ -161,7 +120,7 @@ export const getDoc = (data, path, _signer, func, new_data, secure = false) => {
     }
     if (!isNil(rules)) {
       for (let k in rules.let || {}) {
-        setElm(k, fn(rules.let[k], rule_data))
+        setElm(k, fpjson(rules.let[k], rule_data))
       }
     }
     for (let k in rules || {}) {
