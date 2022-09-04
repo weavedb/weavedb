@@ -1,6 +1,6 @@
 {
   "name": "weavedb",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
@@ -12,18 +12,19 @@
     "dotenv": "^16.0.1",
     "eth-crypto": "^2.3.0",
     "ethereumjs-wallet": "^1.0.2",
+    "fpjson-lang": "^0.1.1",
     "json-logic-js": "^2.0.2",
     "ramda": "^0.28.0",
     "replace-in-file": "^6.3.5",
     "secp256k1": "^4.0.3",
-    "warp-contracts": "^1.1.10"
+    "warp-contracts": "^1.1.14"
   },
   "engines": {
     "node": "16"
   },
   "scripts": {
-    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet mxmWtkpCvmY1icBQKzBLtM1uvJWsA9DdA9ELyDqy7zA",
-    "deploy-testnet": "yarn build && node scripts/deployFromSourceTx.js testnet 2VqJ-xGEDX-D8lCsITHhagouxwrYdKZoaBMeRX5wyJk",
+    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet yex8KeJXdkv4vlJtcySt5tTGqIVuS9R92ZXHuwHEos0",
+    "deploy-testnet": "yarn build && node scripts/deployFromSourceTx.js testnet AlVfDSV7UWS76bEaBARMCn_vp2Ja0jJwBr0ZmUT2aBs",
     "test": "yarn build && mocha",
     "build": "yarn clean && node build.js && npm run cp",
     "clean": "rimraf ./dist",
