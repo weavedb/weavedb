@@ -1,4 +1,5 @@
-import { fn } from "./utils"
+import fpjson from "fpjson-lang"
+
 import {
   path,
   is,
@@ -49,9 +50,9 @@ export const executeCron = async (cron, state) => {
       query = job[1]
     }
     if (op === "do") {
-      fn(query, vars)
+      fpjson(query, vars)
     } else if (op === "let") {
-      vars[_var] = fn(query, vars)
+      vars[_var] = fpjson(query, vars)
     } else if (op === "get") {
       const _default = job[3]
       vars[_var] =

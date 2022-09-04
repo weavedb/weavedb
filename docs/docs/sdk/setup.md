@@ -3,7 +3,13 @@ sidebar_position: 1
 ---
 # Set up SDK
 
-## Install
+WeaveDB has two types of SDKs.
+- a full WeaveDB SDK wrapping the Warp SDK
+- a light client to interact with a remote gRPC node
+
+The query APIs for both the SDKs are the same.
+
+## Install Full SDK
 
 ```bash
 yarn add weavedb-sdk
