@@ -210,6 +210,8 @@ const arweave_wallet = ARWEAVE_WALLET_JSON
 Note that this is not a secure way to insert a wallet. Don't deploy this code to production environments.
 
 We generated a disposal wallet for this tutorial and never funded it.
+
+The correct approach is to set up a remote gRPC node and use the light client for browsers.
 :::
 
 ### Define React States

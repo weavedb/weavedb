@@ -49,7 +49,6 @@ class SDK {
         })
       })
     let q = await _query()
-    console.log(q)
     return q.result
   }
 
@@ -134,7 +133,6 @@ class SDK {
 
   async createTempAddress(addr) {
     const identity = EthCrypto.createIdentity()
-    console.log(addr)
     const nonce = await this.getNonce(addr.toLowerCase())
     const message = {
       nonce,
