@@ -6,6 +6,8 @@
   "dependencies": {
     "@bit/warashibe.nextdapp.core": "file:./nd/core",
     "@chakra-ui/react": "^2.2.4",
+    "@dfinity/auth-client": "^0.13.2",
+    "@dfinity/authentication": "^0.13.2",
     "@emotion/react": "^11",
     "@emotion/styled": "^11",
     "framer-motion": "^6",
@@ -20,7 +22,7 @@
     "react-json-pretty": "^2.2.0",
     "recoil": "^0.5.2",
     "weavedb-client": "^0.2.1",
-    "weavedb-sdk": "^0.2.37"
+    "weavedb-sdk": "^0.3.0"
   },
   "scripts": {
     "dev": "next",

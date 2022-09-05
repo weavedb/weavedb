@@ -37,10 +37,10 @@ let db
 export default bind(
   ({ set, init, router, conf, $ }) => {
     const fn = init([
-      "testRPC",
       "checkTempAddress",
       "setupWeaveDB",
       "createTempAddress",
+      "createTempAddressWithII",
       "logoutTemp",
       "queryDB",
     ])
@@ -93,7 +93,6 @@ export default bind(
 
     useEffect(() => {
       ;(async () => {
-        fn.testRPC({ contractTxId })
         db = await fn.setupWeaveDB({ network, contractTxId })
         setAdminAddress(await db.arweave.wallets.jwkToAddress(weavedb.arweave))
         setInitDB(true)
@@ -205,9 +204,7 @@ export default bind(
         justifyContent="center"
         onClick={async () => {
           if (isNil($.temp_current)) {
-            set(true, "signing_in")
-            await fn.createTempAddress({ contractTxId })
-            set(false, "signing_in")
+            set(true, "signing_in_modal")
           } else {
             if (confirm("Would you like to sign out?")) {
               fn.logoutTemp()
@@ -215,9 +212,22 @@ export default bind(
           }
         }}
       >
-        {isNil($.temp_current)
-          ? "Sign In"
-          : `${$.temp_current.slice(0, 6)}...${$.temp_current.slice(-4)}`}
+        {isNil($.temp_current) ? (
+          "Sign In"
+        ) : (
+          <Flex align="center">
+            <Image
+              boxSize="25px"
+              src={
+                $.temp_current.length < 88
+                  ? "/static/images/metamask.png"
+                  : "/static/images/dfinity.png"
+              }
+              mr={3}
+            />
+            {`${$.temp_current.slice(0, 6)}...${$.temp_current.slice(-4)}`}
+          </Flex>
+        )}
       </Flex>
     )
 
@@ -833,7 +843,11 @@ export default bind(
                                 bg="#ddd"
                                 sx={{ borderRadius: "3px" }}
                               >
-                                Logged In ETH Address
+                                Logged In{" "}
+                                {isNil($.temp_current) ||
+                                $.temp_current.length < 88
+                                  ? "ETH Address"
+                                  : "Internet Identity"}
                               </Box>
                               {$.temp_current || "Not Logged In"}
                             </Flex>
@@ -1860,8 +1874,82 @@ export default bind(
             </Box>
           </Flex>
         ) : null}
+        {$.signing_in_modal ? (
+          <Flex
+            align="center"
+            justify="center"
+            sx={{
+              bg: "rgba(0,0,0,.5)",
+              position: "fixed",
+              w: "100%",
+              h: "100%",
+              zIndex: 100,
+              top: 0,
+              left: 0,
+              cursor: "pointer",
+            }}
+            onClick={() => set(false, "signing_in_modal")}
+          >
+            <Flex
+              width="400px"
+              p={4}
+              bg="white"
+              sx={{ borderRadius: "10px", cursor: "default" }}
+              onClick={e => e.stopPropagation()}
+            >
+              <Flex
+                justify="center"
+                align="center"
+                direction="column"
+                boxSize="150px"
+                p={4}
+                m={4}
+                bg="#333"
+                color="white"
+                sx={{
+                  borderRadius: "10px",
+                  cursor: "pointer",
+                  ":hover": { opacity: 0.75 },
+                }}
+                onClick={async () => {
+                  set(true, "signing_in")
+                  await fn.createTempAddress({ contractTxId })
+                  set(false, "signing_in")
+                  set(false, "signing_in_modal")
+                }}
+              >
+                <Image height="100px" src="/static/images/metamask.png" />
+                <Box textAlign="center">MetaMask</Box>
+              </Flex>
+              <Flex
+                p={4}
+                m={4}
+                boxSize="150px"
+                bg="#333"
+                color="white"
+                justify="center"
+                align="center"
+                direction="column"
+                sx={{
+                  borderRadius: "10px",
+                  cursor: "pointer",
+                  ":hover": { opacity: 0.75 },
+                }}
+                onClick={async () => {
+                  set(true, "signing_in")
+                  await fn.createTempAddressWithII({ contractTxId })
+                  set(false, "signing_in")
+                  set(false, "signing_in_modal")
+                }}
+              >
+                <Image height="100px" src="/static/images/dfinity.png" />
+                <Box textAlign="center">Internet Identity</Box>
+              </Flex>
+            </Flex>
+          </Flex>
+        ) : null}
       </ChakraProvider>
     )
   },
-  ["temp_current", "initWDB"]
+  ["temp_current", "initWDB", "signing_in", "signing_in_modal"]
 )
