@@ -17,6 +17,7 @@
     "ramda": "^0.28.0",
     "replace-in-file": "^6.3.5",
     "secp256k1": "^4.0.3",
+    "tweetnacl": "^1.0.3",
     "warp-contracts": "^1.1.14"
   },
   "engines": {
@@ -32,6 +33,10 @@
     "repl": "node scripts/runNode.js"
   },
   "devDependencies": {
+    "@dfinity/agent": "^0.13.2",
+    "@dfinity/candid": "^0.13.2",
+    "@dfinity/identity": "^0.13.2",
+    "@dfinity/principal": "^0.13.2",
     "chai": "^4.3.6",
     "copyfiles": "^2.4.1",
     "esbuild": "^0.14.46",
