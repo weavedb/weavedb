@@ -1,8 +1,11 @@
+const { Ed25519KeyIdentity } = require("@dfinity/identity")
 import client from "weavedb-client"
 import lf from "localforage"
 import SDK from "weavedb-sdk"
 import { ethers } from "ethers"
+import { AuthClient } from "@dfinity/auth-client"
 import {
+  is,
   includes,
   difference,
   keys,
@@ -54,6 +57,35 @@ export const setupWeaveDB = async ({
   window.Buffer = Buffer
   set(true, "initWDB")
   return sdk
+}
+
+export const createTempAddressWithII = async ({
+  conf,
+  set,
+  val: { contractTxId },
+}) => {
+  const iiUrl = `http://localhost:8000/?canisterId=rwlgt-iiaaa-aaaaa-aaaaa-cai`
+  console.log(iiUrl)
+  const authClient = await AuthClient.create()
+  await new Promise((resolve, reject) => {
+    authClient.login({
+      identityProvider: iiUrl,
+      onSuccess: resolve,
+      onError: reject,
+    })
+  })
+  const ii = authClient.getIdentity()
+  if (isNil(ii._inner)) return
+  const addr = ii._inner.toJSON()[0]
+  const ex_identity = await lf.getItem(`temp_address:${contractTxId}:${addr}`)
+  let identity = ex_identity
+  let tx
+  identity = ii._inner.toJSON()
+  await lf.setItem("temp_address:current", addr)
+  set(addr, "temp_current")
+  await lf.setItem("temp_address:current", addr)
+  await lf.setItem(`temp_address:${contractTxId}:${addr}`, identity)
+  set(addr, "temp_current")
 }
 
 export const createTempAddress = async ({
@@ -116,15 +148,20 @@ export const queryDB = async ({
     const identity = isNil(current)
       ? null
       : await lf.getItem(`temp_address:${contractTxId}:${current}`)
-    const opt =
-      !isNil(identity) && !isNil(identity.tx)
-        ? {
-            wallet: current,
-            privateKey: identity.privateKey,
-          }
-        : {
-            privateKey: weavedb.ethereum.privateKey,
-          }
+    let ii = null
+    if (is(Array)(identity)) {
+      ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(identity))
+    }
+    const opt = !isNil(ii)
+      ? { ii }
+      : !isNil(identity) && !isNil(identity.tx)
+      ? {
+          wallet: current,
+          privateKey: identity.privateKey,
+        }
+      : {
+          privateKey: weavedb.ethereum.privateKey,
+        }
     const res = await sdk[method](...q, opt)
     if (!isNil(res.err)) {
       return `Error: ${res.err.errorMessage}`
@@ -135,15 +172,4 @@ export const queryDB = async ({
     console.log(e)
     return `Error: Something went wrong`
   }
-}
-
-export const testRPC = async ({ conf, set, get, val: { contractTxId } }) => {
-  const db = new client({
-    wallet: weavedb.arweave,
-    name: weavedb.weavedb.name,
-    version: weavedb.weavedb.version,
-    contractTxId: contractTxId,
-    rpc: "http://104.154.174.221:8080",
-  })
-  console.log(await db.get("mirror"))
 }
