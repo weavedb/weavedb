@@ -124,44 +124,48 @@ class SDK {
   }
 
   async _write(func, ...query) {
-    let nonce, privateKey, overwrite, wallet, dryWrite, bundle
+    let opt = null
     if (is(Object, last(query)) && !is(Array, last(query))) {
-      ;({ nonce, privateKey, overwrite, wallet, dryWrite, bundle } = last(
-        query
-      ))
+      opt = last(query)
       query = init(query)
     }
     if (func === "batch") query = query[0]
-    return await this.write(
-      wallet || this.wallet,
-      func,
-      query,
-      nonce,
-      privateKey,
-      overwrite,
-      dryWrite,
-      bundle
-    )
+    return await this._write2(func, query, opt)
   }
 
   async _write2(func, query, opt) {
-    let nonce, privateKey, overwrite, wallet, dryWrite, bundle
+    let nonce, privateKey, overwrite, wallet, dryWrite, bundle, ii
     if (!isNil(opt)) {
-      ;({ nonce, privateKey, overwrite, wallet, dryWrite, bundle } = opt)
+      ;({ nonce, privateKey, overwrite, wallet, dryWrite, bundle, ii } = opt)
     }
-    return await this.write(
-      wallet || this.wallet,
-      func,
-      query,
-      nonce,
-      privateKey,
-      overwrite,
-      dryWrite,
-      bundle
-    )
+    return isNil(ii)
+      ? await this.write(
+          wallet || this.wallet,
+          func,
+          query,
+          nonce,
+          privateKey,
+          overwrite,
+          dryWrite,
+          bundle
+        )
+      : await this.writeWithII(ii, func, query, nonce, dryWrite, bundle)
+  }
+
+  async createTempAddressWithII(ii) {
+    let addr = ii.toJSON()[0]
+    return this._createTempAddress(addr, {
+      ii,
+    })
   }
 
   async createTempAddress(addr) {
+    return this._createTempAddress(addr, {
+      wallet: this.wallet || addr.toLowerCase(),
+    })
+  }
+
+  async _createTempAddress(addr, opt) {
     const identity = EthCrypto.createIdentity()
     const nonce = await this.getNonce(addr.toLowerCase())
     const message = {
@@ -190,10 +194,11 @@ class SDK {
     })
     const tx = await this.addAddressLink(
       { signature, address: identity.address.toLowerCase() },
-      { wallet: this.wallet || addr.toLowerCase(), nonce }
+      { nonce, ...opt }
     )
     return isNil(tx.err) ? { tx, identity } : null
   }
+
   async addAddressLink(query, opt) {
     return await this._write2("addAddressLink", query, opt)
   }
@@ -250,6 +255,53 @@ class SDK {
     return this._write("batch", ...query)
   }
 
+  async writeWithII(ii, func, query, nonce, dryWrite = true, bundle) {
+    let addr = ii.toJSON()[0]
+    const isaddr = !isNil(addr)
+    addr = addr.toLowerCase()
+    let result
+    nonce ||= await this.getNonce(addr)
+    bundle ||= this.network === "mainnet"
+    const message = {
+      nonce,
+      query: JSON.stringify({ func, query }),
+    }
+    const data = {
+      types: {
+        EIP712Domain,
+        Query: [
+          { name: "query", type: "string" },
+          { name: "nonce", type: "uint256" },
+        ],
+      },
+      domain: this.domain,
+      primaryType: "Query",
+      message,
+    }
+
+    function toHexString(bytes) {
+      return new Uint8Array(bytes).reduce(
+        (str, byte) => str + byte.toString(16).padStart(2, "0"),
+        ""
+      )
+    }
+    const _data = Buffer.from(JSON.stringify(data))
+    const signature = toHexString(await ii.sign(_data))
+    const param = {
+      function: func,
+      query,
+      signature,
+      nonce,
+      caller: addr,
+      type: "ed25519",
+    }
+    if (dryWrite) {
+      let dryState = await this.db.dryWrite(param)
+      if (dryState.type === "error") return { err: dryState }
+    }
+    return await this.send(param, bundle)
+  }
+
   async write(
     wallet,
     func,
@@ -302,6 +354,7 @@ class SDK {
             data,
             version: "V4",
           })
+
     const param = {
       function: func,
       query,
