@@ -1,3 +1,5 @@
+const crypto = require("crypto")
+const { Ed25519KeyIdentity } = require("@dfinity/identity")
 const { Wallet } = require("ethers")
 const Arweave = require("arweave")
 const fs = require("fs")
@@ -9,6 +11,10 @@ const { init, stop, initBeforeEach, addFunds } = require("./util")
 
 describe("WeaveDB", function () {
   let wallet, walletAddress, wallet2, db
+  const _ii = [
+    "302a300506032b6570032100ccd1d1f725fc35a681d8ef5d563a3c347829bf3f0fe822b4a4b004ee0224fc0d",
+    "010925abb4cf8ccb7accbcfcbf0a6adf1bbdca12644694bb47afc7182a4ade66ccd1d1f725fc35a681d8ef5d563a3c347829bf3f0fe822b4a4b004ee0224fc0d",
+  ]
 
   this.timeout(0)
 
@@ -418,5 +424,38 @@ describe("WeaveDB", function () {
     expect((await db.get("ppl", "Bob")).age).to.be.eql(5)
     await db.removeCron("inc age")
     expect((await db.getCrons()).crons).to.eql({})
+  })
+
+  it("should link temporarily generated address with internet identity", async () => {
+    const ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(_ii))
+    const addr = ii.toJSON()[0]
+    const { identity } = await db.createTempAddressWithII(ii)
+    await db.set({ name: "Beth", age: 10 }, "ppl", "Beth", {
+      wallet: addr,
+      privateKey: identity.privateKey,
+    })
+    expect((await db.cget("ppl", "Beth")).setter).to.eql(addr)
+    await db.removeAddressLink(
+      {
+        address: identity.address,
+      },
+      { ii }
+    )
+    await db.set({ name: "Bob", age: 20 }, "ppl", "Bob", {
+      privateKey: identity.privateKey,
+      overwrite: true,
+    })
+    expect((await db.cget("ppl", "Bob")).setter).to.eql(
+      identity.address.toLowerCase()
+    )
+  })
+
+  it("should add & get with internet identity", async () => {
+    const ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(_ii))
+    const data = { name: "Bob", age: 20 }
+    const tx = await db.add(data, "ppl", { ii })
+    expect((await db.cget("ppl", (await db.getIds(tx))[0])).setter).to.eql(
+      ii.toJSON()[0]
+    )
   })
 })
