@@ -24,8 +24,8 @@
     "node": "16"
   },
   "scripts": {
-    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet yex8KeJXdkv4vlJtcySt5tTGqIVuS9R92ZXHuwHEos0",
-    "deploy-testnet": "yarn build && node scripts/deployFromSourceTx.js testnet AlVfDSV7UWS76bEaBARMCn_vp2Ja0jJwBr0ZmUT2aBs",
+    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet nr41utBGQ1Faxm-Rbo12jAwR8Dv32h_NcNSvhTeOPpY",
+    "deploy-testnet": "yarn build && node scripts/deployFromSourceTx.js testnet u-H_1hJ5m_sUaOQuIAWk2gUqaMCCm0WjDdJ6bfJbRiI",
     "test": "yarn build && mocha",
     "build": "yarn clean && node build.js && npm run cp",
     "clean": "rimraf ./dist",
