@@ -5,6 +5,7 @@ const path = require("path")
 const wallet_name = process.argv[2]
 const contractTxId = process.argv[3] || process.env.CONTRACT_TX_ID
 const newContractSrcTxId = process.argv[4] || process.env.NEW_SOURCE_TX_ID
+const name = process.argv[5] || process.env.APP_NAME
 const { isNil } = require("ramda")
 const SDK = require("../sdk")
 
@@ -31,7 +32,7 @@ const setup = async () => {
   const wallet = JSON.parse(fs.readFileSync(wallet_path, "utf8"))
   const sdk = new SDK({
     wallet,
-    name: "asteroid",
+    name,
     version: "1",
     contractTxId,
     arweave: {
