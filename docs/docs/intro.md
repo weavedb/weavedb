@@ -22,7 +22,7 @@ Other types of crypto accounts will be supported in the future such as Arweave a
 
 ## Demo Dapps
 
-The v0.3 contract is deployed on the Warp mainnet at [q60Z1uHLUJ9u9NVIsuQzqBoksH-JBXWaAW8GiOcLvkI](https://sonar.warp.cc/?#/app/contract/q60Z1uHLUJ9u9NVIsuQzqBoksH-JBXWaAW8GiOcLvkI).
+The v0.3 contract is deployed on the Warp mainnet at [294CYgsHIbcJ_nJcipS6p10__hnUdqR4_rHKEoXXUYo](https://sonar.warp.cc/?#/app/contract/294CYgsHIbcJ_nJcipS6p10__hnUdqR4_rHKEoXXUYo).
 
 ### Todo Manager
 
