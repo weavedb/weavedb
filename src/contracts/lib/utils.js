@@ -118,13 +118,32 @@ export const getDoc = (data, path, _signer, func, new_data, secure = false) => {
       }
       return elm
     }
+
     if (!isNil(rules)) {
-      for (let k in rules.let || {}) {
-        setElm(k, fpjson(rules.let[k], rule_data))
+      for (let k in rules || {}) {
+        const [permission, _ops] = k.split(" ")
+        if (permission !== "let") continue
+        const rule = rules[k]
+        let ok = false
+        if (isNil(_ops)) {
+          ok = true
+        } else {
+          const ops = _ops.split(",")
+          if (intersection(ops)(["write", op]).length > 0) {
+            ok = true
+          }
+        }
+        if (ok) {
+          for (let k2 in rule || {}) {
+            setElm(k2, fpjson(rule[k2], rule_data))
+          }
+        }
       }
     }
+
     for (let k in rules || {}) {
-      if (k === "let") continue
+      const spk = k.split(" ")
+      if (spk[0] === "let") continue
       const rule = rules[k]
       const [permission, _ops] = k.split(" ")
       const ops = _ops.split(",")

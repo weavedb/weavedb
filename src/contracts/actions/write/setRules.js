@@ -12,16 +12,22 @@ export const setRules = async (state, action, signer) => {
     signer
   )
   for (let k in new_data) {
-    if (k === "let") continue
     const keys = k.split(" ")
-    if (keys.length !== 2) err()
     const permission = keys[0]
-    if (!includes(permission)(["allow", "deny"])) err()
-    const ops = keys[1].split(",")
-    if (difference(ops, ["write", "create", "update", "delete"]).length > 0) {
+    if (keys.length !== 2 && permission !== "let") err()
+    if (!includes(permission)(["allow", "deny", "let"])) err()
+    if (keys.length === 2) {
+      const ops = keys[1].split(",")
+      if (difference(ops, ["write", "create", "update", "delete"]).length > 0) {
+        err()
+      }
+    }
+    if (
+      permission !== "let" &&
+      !is(Boolean)(jsonLogic.apply(new_data[k], {}))
+    ) {
       err()
     }
-    if (!is(Boolean)(jsonLogic.apply(new_data[k], {}))) err()
   }
   _data.rules = new_data
   return { state }
