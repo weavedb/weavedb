@@ -4,7 +4,7 @@ import { validate } from "../../lib/validate"
 import { validator } from "@exodus/schemasafe"
 import jsonLogic from "json-logic-js"
 export const setRules = async (state, action, signer) => {
-  signer ||= validate(state, action, "setRules")
+  signer ||= await validate(state, action, "setRules")
   let { _data, data, query, new_data, path } = await parse(
     state,
     action,

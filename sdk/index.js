@@ -17,6 +17,9 @@ const EIP712Domain = [
   { name: "verifyingContract", type: "string" },
 ]
 
+const encoding = require("text-encoding")
+const encoder = new encoding.TextEncoder()
+
 class SDK {
   constructor({
     arweave,
@@ -58,6 +61,7 @@ class SDK {
   }
 
   initialize({ contractTxId, wallet, name, version, EthWallet }) {
+    this.arweave_wallet = wallet
     this.db = this.warp.pst(contractTxId).connect(wallet)
     this.domain = { name, version, verifyingContract: contractTxId }
     if (!isNil(EthWallet)) this.setEthWallet(EthWallet)
@@ -134,12 +138,24 @@ class SDK {
   }
 
   async _write2(func, query, opt) {
-    let nonce, privateKey, overwrite, wallet, dryWrite, bundle, ii
+    let nonce, privateKey, overwrite, wallet, dryWrite, bundle, ii, ar
     if (!isNil(opt)) {
-      ;({ nonce, privateKey, overwrite, wallet, dryWrite, bundle, ii } = opt)
+      ;({
+        nonce,
+        privateKey,
+        overwrite,
+        wallet,
+        dryWrite,
+        bundle,
+        ii,
+        ar,
+      } = opt)
     }
-    return isNil(ii)
-      ? await this.write(
+    return !isNil(ii)
+      ? await this.writeWithII(ii, func, query, nonce, dryWrite, bundle)
+      : !isNil(ar)
+      ? await this.writeWithAR(ar, func, query, nonce, dryWrite, bundle)
+      : await this.write(
           wallet || this.wallet,
           func,
           query,
@@ -149,7 +165,6 @@ class SDK {
           dryWrite,
           bundle
         )
-      : await this.writeWithII(ii, func, query, nonce, dryWrite, bundle)
   }
 
   async createTempAddressWithII(ii) {
@@ -159,20 +174,34 @@ class SDK {
     })
   }
 
-  async createTempAddress(addr) {
+  async createTempAddressWithAR(ar) {
+    const wallet = is(Object, ar) && ar.walletName === "ArConnect" ? ar : null
+    let addr = null
+    if (!isNil(wallet)) {
+      await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
+      addr = await wallet.getActiveAddress()
+    } else {
+      addr = await this.arweave.wallets.jwkToAddress(ar)
+    }
     return this._createTempAddress(addr, {
+      ar,
+    })
+  }
+
+  async createTempAddress(addr) {
+    return this._createTempAddress(addr.toLowerCase(), {
       wallet: this.wallet || addr.toLowerCase(),
     })
   }
 
   async _createTempAddress(addr, opt) {
     const identity = EthCrypto.createIdentity()
-    const nonce = await this.getNonce(addr.toLowerCase())
+    const nonce = await this.getNonce(addr)
     const message = {
       nonce,
       query: JSON.stringify({
         func: "auth",
-        query: { address: addr.toLowerCase() },
+        query: { address: addr },
       }),
     }
     const data = {
@@ -302,6 +331,63 @@ class SDK {
     return await this.send(param, bundle)
   }
 
+  async writeWithAR(ar, func, query, nonce, dryWrite = true, bundle) {
+    const wallet = is(Object, ar) && ar.walletName === "ArConnect" ? ar : null
+    let addr = null
+    let pubKey = null
+    if (!isNil(wallet)) {
+      await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
+      addr = await wallet.getActiveAddress()
+      pubKey = await wallet.getActivePublicKey()
+    } else {
+      addr = await this.arweave.wallets.jwkToAddress(ar)
+      pubKey = ar.n
+    }
+    const isaddr = !isNil(addr)
+    let result
+    nonce ||= await this.getNonce(addr)
+    bundle ||= this.network === "mainnet"
+    const message = {
+      nonce,
+      query: JSON.stringify({ func, query }),
+    }
+    const data = {
+      types: {
+        EIP712Domain,
+        Query: [
+          { name: "query", type: "string" },
+          { name: "nonce", type: "uint256" },
+        ],
+      },
+      domain: this.domain,
+      primaryType: "Query",
+      message,
+    }
+    const encoded = encoder.encode(JSON.stringify(data))
+    const signature = isNil(wallet)
+      ? (await this.arweave.wallets.crypto.sign(ar, encoded)).toString("hex")
+      : Buffer.from(
+          await wallet.signature(encoded, {
+            name: "RSA-PSS",
+            saltLength: 32,
+          })
+        ).toString("hex")
+    const param = {
+      function: func,
+      query,
+      signature,
+      nonce,
+      caller: addr,
+      pubKey,
+      type: "rsa256",
+    }
+    if (dryWrite) {
+      let dryState = await this.db.dryWrite(param)
+      if (dryState.type === "error") return { err: dryState }
+    }
+    return await this.send(param, bundle)
+  }
+
   async write(
     wallet,
     func,
@@ -364,7 +450,7 @@ class SDK {
         overwrite || isNil(wallet)
           ? addr
           : is(String, wallet)
-          ? wallet.toLowerCase()
+          ? wallet
           : wallet.getAddressString(),
     }
     if (dryWrite) {
