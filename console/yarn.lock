@@ -8260,7 +8260,7 @@ walker@^1.0.8:
   dependencies:
     makeerror "1.0.12"
 
-warp-contracts@^1.1.14:
+warp-contracts@1.1.14:
   version "1.1.14"
   resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.1.14.tgz#403b7a01710de64463526c5eb228dfd9cc8a84a5"
   integrity sha512-b/o1o7z3G1qJ0qlyT3ALkln9v4lkM/KvZtIU0EYn71jKUTvYceaUaRpmmIfvlEfQCG6+Lrc8W/Z99RF8P3NJlw==
@@ -8303,10 +8303,10 @@ weavedb-client@^0.2.1:
     grpc-web "^1.3.1"
     ramda "^0.28.0"
 
-weavedb-sdk@^0.3.0:
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.3.0.tgz#ac496be65008b4a6c6ee295c8c059b948ed343c3"
-  integrity sha512-0+I1DFT1mjB61tF6t8LbILXBRNzbn+ScnYJQRYsgd5n4v8s6GUDDTTDmi2THApYGHEdgh13Zt+UhNrEE94Gmxw==
+weavedb-sdk@^0.4.1:
+  version "0.4.1"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.4.1.tgz#edcfe4d9f391cba83e1cf5774f4a62f8b312a3cd"
+  integrity sha512-ZIze+oBZsEBbSXBpFsH96NosRBs6wQ0eQV3W93FkQPSx/1HqDVXkuEXrqRf59I3LeHDxXDXZhO4SSauO8nm3Hw==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"
@@ -8314,7 +8314,7 @@ weavedb-sdk@^0.3.0:
     eth-crypto "^2.3.0"
     ethereumjs-util "^7.1.5"
     ramda "^0.28.0"
-    warp-contracts "^1.1.14"
+    warp-contracts "1.1.14"
 
 webidl-conversions@^3.0.0:
   version "3.0.1"

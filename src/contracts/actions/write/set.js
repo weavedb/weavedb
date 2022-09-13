@@ -4,7 +4,7 @@ import { validate } from "../../lib/validate"
 import { updateData, addData, getIndex } from "../../lib/index"
 
 export const set = async (state, action, signer, contractErr = true) => {
-  signer ||= validate(state, action, "set")
+  signer ||= await validate(state, action, "set")
   let {
     _data,
     data,

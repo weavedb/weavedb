@@ -9,7 +9,7 @@ export const add = async (
   salt = 0,
   contractErr = true
 ) => {
-  signer ||= validate(state, action, "add")
+  signer ||= await validate(state, action, "add")
   let {
     _data,
     data,

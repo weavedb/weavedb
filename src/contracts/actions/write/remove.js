@@ -4,7 +4,7 @@ import { validate } from "../../lib/validate"
 import { removeData, getIndex } from "../../lib/index"
 
 export const remove = async (state, action, signer, contractErr = true) => {
-  signer ||= validate(state, action, "delete")
+  signer ||= await validate(state, action, "delete")
   const { data, query, new_data, path, _data, col } = await parse(
     state,
     action,
