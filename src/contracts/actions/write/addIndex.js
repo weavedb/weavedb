@@ -3,7 +3,7 @@ import { err, parse, mergeData } from "../../lib/utils"
 import { validate } from "../../lib/validate"
 import { addIndex as _addIndex, getIndex } from "../../lib/index"
 export const addIndex = async (state, action, signer) => {
-  signer ||= validate(state, action, "addIndex")
+  signer ||= await validate(state, action, "addIndex")
   let { col, _data, data, query, new_data, path } = await parse(
     state,
     action,

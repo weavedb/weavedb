@@ -3,7 +3,7 @@ import { err } from "../../lib/utils"
 import { validate } from "../../lib/validate"
 import { executeCron } from "../../lib/cron"
 export const addCron = async (state, action, signer) => {
-  signer ||= validate(state, action, "addCron")
+  signer ||= await validate(state, action, "addCron")
   if (action.caller !== state.owner) err()
   if (isNil(state.crons)) {
     state.crons = { lastExecuted: SmartWeave.block.timestamp, crons: {} }

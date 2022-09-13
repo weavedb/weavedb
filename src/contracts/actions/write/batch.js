@@ -8,7 +8,7 @@ import { upsert } from "./upsert"
 import { remove } from "./remove"
 
 export const batch = async (state, action, signer, contractErr = true) => {
-  signer ||= validate(state, action, "batch")
+  signer ||= await validate(state, action, "batch")
   let _state = state
   let i = 0
   for (let v of action.input.query) {

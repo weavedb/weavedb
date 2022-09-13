@@ -1,4 +1,5 @@
 const { Ed25519KeyIdentity } = require("@dfinity/identity")
+import arweave from "arweave"
 import client from "weavedb-client"
 import lf from "localforage"
 import SDK from "weavedb-sdk"
@@ -86,6 +87,36 @@ export const createTempAddressWithII = async ({
   await lf.setItem("temp_address:current", addr)
   await lf.setItem(`temp_address:${contractTxId}:${addr}`, identity)
   set(addr, "temp_current")
+}
+
+const encoding = require("text-encoding")
+const encoder = new encoding.TextEncoder()
+
+export const createTempAddressWithAR = async ({
+  conf,
+  set,
+  val: { contractTxId },
+}) => {
+  const wallet = window.arweaveWallet
+  await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
+  let addr = await wallet.getActiveAddress()
+  const ex_identity = await lf.getItem(`temp_address:${contractTxId}:${addr}`)
+  let identity = ex_identity
+  let tx
+  if (isNil(identity)) {
+    ;({ tx, identity } = await sdk.createTempAddressWithAR(wallet))
+  } else {
+    await lf.setItem("temp_address:current", addr)
+    set(addr, "temp_current")
+    return
+  }
+  if (!isNil(tx) && isNil(tx.err)) {
+    identity.tx = tx
+    identity.linked_address = addr
+    await lf.setItem("temp_address:current", addr)
+    await lf.setItem(`temp_address:${contractTxId}:${addr}`, identity)
+    set(addr, "temp_current")
+  }
 }
 
 export const createTempAddress = async ({
