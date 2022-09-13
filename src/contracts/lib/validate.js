@@ -1,6 +1,8 @@
 import { isNil } from "ramda"
 import { sign } from "tweetnacl"
 const { recoverTypedSignature } = require("./eth-sig-util")
+const encoding = require("text-encoding")
+const encoder = new encoding.TextEncoder()
 
 function fromHexString(hexString) {
   return new Uint8Array(
@@ -61,7 +63,7 @@ const unwrapDER = (derEncoded, oid) => {
   offset += oid.byteLength
 
   expect(0x03, "bit string")
-  const payloadLen = decodeLen(buf, offset) - 1 // Subtracting 1 to account for the 0 padding
+  const payloadLen = decodeLen(buf, offset) - 1
   offset += decodeLenBytes(buf, offset)
   expect(0x00, "0 padding")
   const result = buf.slice(offset)
@@ -73,9 +75,16 @@ const unwrapDER = (derEncoded, oid) => {
   return result
 }
 
-export const validate = (state, action, func) => {
-  const { query, nonce, signature, caller, type = "secp256k1" } = action.input
-  const _caller = caller.toLowerCase()
+export const validate = async (state, action, func) => {
+  const {
+    query,
+    nonce,
+    signature,
+    caller,
+    type = "secp256k1",
+    pubKey,
+  } = action.input
+  let _caller = caller
   const EIP712Domain = [
     { name: "name", type: "string" },
     { name: "version", type: "string" },
@@ -105,7 +114,6 @@ export const validate = (state, action, func) => {
     primaryType: "Query",
     message,
   }
-
   let signer = null
   if (type === "ed25519") {
     try {
@@ -123,18 +131,30 @@ export const validate = (state, action, func) => {
     } catch (e) {
       throw new ContractError(`The wrong signature`)
     }
-  } else {
+  } else if (type === "rsa256") {
+    const isValid = await SmartWeave.arweave.wallets.crypto.verify(
+      pubKey,
+      encoder.encode(JSON.stringify(_data)),
+      Buffer.from(signature, "hex")
+    )
+    if (isValid) {
+      signer = caller
+    } else {
+      throw new ContractError(`The wrong signature`)
+    }
+  } else if (type == "secp256k1") {
     signer = recoverTypedSignature({
       version: "V4",
       data: _data,
       signature,
     })
+    if (/^0x/.test(signer)) signer = signer.toLowerCase()
+    if (/^0x/.test(_caller)) _caller = _caller.toLowerCase()
   }
-
-  const original_signer = signer.toLowerCase()
-  let _signer = signer.toLowerCase()
+  let original_signer = signer
+  let _signer = signer
   if (!isNil(state.auth.links[_signer])) _signer = state.auth.links[_signer]
-  if (_signer !== _caller) throw new ContractError(`The wrong signature`)
+  if (_signer !== _caller) throw new ContractError(`signer is not caller`)
   if ((state.nonces[original_signer] || 0) + 1 !== nonce) {
     throw new ContractError(`The wrong nonce`)
   }

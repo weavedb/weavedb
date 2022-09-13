@@ -4,7 +4,7 @@ import { validate } from "../../lib/validate"
 import { updateData, addData, getIndex } from "../../lib/index"
 
 export const upsert = async (state, action, signer, contractErr = true) => {
-  signer ||= validate(state, action, "upsert")
+  signer ||= await validate(state, action, "upsert")
   let {
     data,
     query,

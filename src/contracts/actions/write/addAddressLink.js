@@ -4,7 +4,7 @@ import { validate } from "../../lib/validate"
 const { recoverTypedSignature } = require("../../lib/eth-sig-util")
 
 export const addAddressLink = async (state, action, signer) => {
-  signer ||= validate(state, action, "addAddressLink")
+  signer ||= await validate(state, action, "addAddressLink")
   const { address, signature } = action.input.query
   const { nonce } = action.input
   const EIP712Domain = [
@@ -36,7 +36,6 @@ export const addAddressLink = async (state, action, signer) => {
     primaryType: "Query",
     message,
   }
-
   let signer2 = recoverTypedSignature({
     version: "V4",
     data,

@@ -41,6 +41,7 @@ export default bind(
       "setupWeaveDB",
       "createTempAddress",
       "createTempAddressWithII",
+      "createTempAddressWithAR",
       "logoutTemp",
       "queryDB",
     ])
@@ -1891,8 +1892,10 @@ export default bind(
             onClick={() => set(false, "signing_in_modal")}
           >
             <Flex
-              width="400px"
+              width="580px"
+              wrap="wrap"
               p={4}
+              justify="center"
               bg="white"
               sx={{ borderRadius: "10px", cursor: "default" }}
               onClick={e => e.stopPropagation()}
@@ -1944,6 +1947,30 @@ export default bind(
               >
                 <Image height="100px" src="/static/images/dfinity.png" />
                 <Box textAlign="center">Internet Identity</Box>
+              </Flex>
+              <Flex
+                p={4}
+                m={4}
+                boxSize="150px"
+                bg="#333"
+                color="white"
+                justify="center"
+                align="center"
+                direction="column"
+                sx={{
+                  borderRadius: "10px",
+                  cursor: "pointer",
+                  ":hover": { opacity: 0.75 },
+                }}
+                onClick={async () => {
+                  set(true, "signing_in")
+                  await fn.createTempAddressWithAR({ contractTxId })
+                  set(false, "signing_in")
+                  set(false, "signing_in_modal")
+                }}
+              >
+                <Image height="100px" src="/static/images/arconnect.png" />
+                <Box textAlign="center">ArConnect</Box>
               </Flex>
             </Flex>
           </Flex>

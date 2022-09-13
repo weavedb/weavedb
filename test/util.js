@@ -4,14 +4,6 @@ const path = require("path")
 const { expect } = require("chai")
 const Wallet = require("ethereumjs-wallet").default
 
-const {
-  PstContract,
-  PstState,
-  Warp,
-  WarpNodeFactory,
-  LoggerFactory,
-  InteractionResult,
-} = require("warp-contracts")
 const { isNil } = require("ramda")
 const ArLocal = require("arlocal").default
 
