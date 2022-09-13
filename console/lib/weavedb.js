@@ -89,9 +89,6 @@ export const createTempAddressWithII = async ({
   set(addr, "temp_current")
 }
 
-const encoding = require("text-encoding")
-const encoder = new encoding.TextEncoder()
-
 export const createTempAddressWithAR = async ({
   conf,
   set,
