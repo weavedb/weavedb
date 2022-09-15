@@ -55,6 +55,96 @@ docker-compose up -d node-server envoy
 
 Now you can interact with the node using the [Light Client](/docs/sdk/client).
 
+## Deploy on Local Machine
+
+Deploying a WeaveDB node on your local machine is much easier than on a cloud service.
+
+##### 1. Clone the WeaveDB monorepo
+
+```bash
+git clone https://github.com/asteroid-dao/weavedb.git
+cd weavedb
+yarn
+```
+
+##### 2. If you have no Arweave wallet, generate one for the test
+
+```bash
+node scripts/generate-wallet.js mainnet
+```
+
+Now you have a new wallet at `/scripts/.wallets/wallet-mainnet.json`.
+
+##### 3. Create a configuration file at `/node/net/grpc/gateway/weavedb/node-server/weavedb.config.js`.
+
+You can copy the newly generated wallet from the previous step to `wallet`.
+
+For the `contractTxId`, you can run [a local instance](/docs/development/repl) and copy the displayed `contractTxId`, or use [our public demo contract](https://sonar.warp.cc/?#/app/contract/2ohyMxM2Z2exV4dVLgRNa9jMnEY09H_I-5WkkZBR0Ns) (`2ohyMxM2Z2exV4dVLgRNa9jMnEY09H_I-5WkkZBR0Ns`).
+
+```js
+module.exports = {
+  name: "weavedb",
+  version: "1",
+  contractTxId: "xxxxxxxx...",
+  arweave: {
+    host: "arweave.net",
+    port: 443,
+    protocol: "https"
+  },
+  wallet: {
+    kty: "RSA",
+    n: ...
+  }
+}
+```
+
+##### 4. Install Docker and Docker Compose according to your environment
+
+##### 5. Run Docker Conompose
+
+```bash
+cd weavedb/node
+docker-compose pull prereqs node-server envoy
+docker-compose up --build -d node-server envoy
+```
+
+##### 6. Set the instance IP address to the Light Client
+
+- Create an Next.js app and install `weavedb-client`
+- For now, you need `next@12.0` for compatibility
+
+```bash
+npx create-next-app@latest test-node
+cd test-node
+yarn add next@12.0 weavedb-client
+yarn dev
+```
+
+In case of using our public demo contract, you should be able to fetch wall comments like below.
+
+`/page/index.js`
+
+```javascript
+import { useEffect, useState } from "react"
+import client from "weavedb-client"
+
+export default function Home() {
+  const [ok, setOK] = useState(false)
+  useEffect(() => {
+    ;(async () => {
+      const db = new client({
+        name: "weavedb",
+        version: "1",
+        contractTxId: "2ohyMxM2Z2exV4dVLgRNa9jMnEY09H_I-5WkkZBR0Ns",
+        rpc: "http://localhost:8080",
+      })
+      setOK((await db.get("wall", 1)).length > 0)
+    })()
+  }, [])
+  return <div>{ok ? "ok" : "not ok"}</div>
+}
+```
+
 ## Deploy on GCP
 
 This is how you would deploy a WeaveDB node using Compute Engine on Google Cloud Platform.
@@ -188,9 +278,9 @@ sudo nginx -t && sudo nginx -s reload
 ##### 5. Set the instance IP address to the Light Client
 
 ```javascript
-import WeaveDB from "weavedb-client"
+import client from "weavedb-client"
 
-const db = new WeaveDB({
+const db = new client({
   name: "weavedb", // for EIP-712 signature
   version: "1", // for EIP-712 signature
   contractTxId: WEAVEDB_CONTRACT_TX_ID,
