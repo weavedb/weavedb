@@ -1,6 +1,6 @@
 {
   "name": "weavedb",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
@@ -24,14 +24,14 @@
     "stream-browserify": "^3.0.0",
     "text-encoding": "^0.7.0",
     "tweetnacl": "^1.0.3",
-    "warp-contracts": "^1.2.4"
+    "warp-contracts": "1.1.14"
   },
   "engines": {
     "node": "16"
   },
   "scripts": {
-    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet G7aMmk1Fux6Dqw7M7CFoNQf5KZV2J1UCuZjfEn_VFVM",
-    "deploy-testnet": "yarn build && node scripts/deployFromSourceTx.js testnet FZq00DUKlUuSkIHW7NlwubZM44Lqyav0ykAgOeT8bqc",
+    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet UR6tFLrjEdiujqQBTGEnyNYB7YUv3IkIJvNIiCiLCic",
+    "deploy-testnet": "yarn build && node scripts/deployFromSourceTx.js testnet J9zQvTyjNvRSBPyvSyZf0zehIaNB4CUKOQXRX_18B6Q",
     "test": "yarn build && mocha",
     "build": "yarn clean && node build.js && npm run cp",
     "clean": "rimraf ./dist",

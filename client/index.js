@@ -312,7 +312,7 @@ class SDK {
         overwrite || isNil(wallet)
           ? addr
           : is(String, wallet)
-          ? wallet.toLowerCase()
+          ? wallet
           : wallet.getAddressString(),
     }
     return await this._request("send", param)
