@@ -22,6 +22,6 @@ const db = new WeaveDB({
   name: "weavedb", // for EIP-712 signature
   version: "1", // for EIP-712 signature
   contractTxId: WEAVEDB_CONTRACT_TX_ID,
-  rpc: "http:xxx.yyy.zzz.aaa:8080" // gRPC node URL
+  rpc: "http://xxx.yyy.zzz.aaa:8080" // gRPC node URL
 })
 ```
