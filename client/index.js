@@ -157,19 +157,19 @@ class SDK {
   }
 
   async createTempAddress(addr) {
-    return this._createTempAddress(addr, {
+    return this._createTempAddress(addr.toLowerCase(), {
       wallet: this.wallet || addr.toLowerCase(),
     })
   }
 
   async _createTempAddress(addr, opt) {
     const identity = EthCrypto.createIdentity()
-    const nonce = await this.getNonce(addr.toLowerCase())
+    const nonce = await this.getNonce(addr)
     const message = {
       nonce,
       query: JSON.stringify({
         func: "auth",
-        query: { address: addr.toLowerCase() },
+        query: { address: addr },
       }),
     }
     const data = {
