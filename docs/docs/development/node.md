@@ -275,7 +275,9 @@ server {
 sudo nginx -t && sudo nginx -s reload
 ```
 
-##### 5. Set the instance IP address to the Light Client
+##### 5. Set the instance URL to the Light Client
+
+- To health-check, you can follow the last step in [Deploy on Local Machine](/docs/development/node#6-set-the-instance-ip-address-to-the-light-client)
 
 ```javascript
 import client from "weavedb-client"
