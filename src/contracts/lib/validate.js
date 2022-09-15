@@ -1,8 +1,6 @@
 import { isNil } from "ramda"
 import { sign } from "tweetnacl"
 const { recoverTypedSignature } = require("./eth-sig-util")
-const encoding = require("text-encoding")
-const encoder = new encoding.TextEncoder()
 
 function fromHexString(hexString) {
   return new Uint8Array(
@@ -132,9 +130,14 @@ export const validate = async (state, action, func) => {
       throw new ContractError(`The wrong signature`)
     }
   } else if (type === "rsa256") {
+    let encoded_data = JSON.stringify(_data)
+    if (typeof TextEncoder !== "undefined") {
+      const enc = new TextEncoder()
+      encoded_data = enc.encode(encoded_data)
+    }
     const isValid = await SmartWeave.arweave.wallets.crypto.verify(
       pubKey,
-      encoder.encode(JSON.stringify(_data)),
+      encoded_data,
       Buffer.from(signature, "hex")
     )
     if (isValid) {
