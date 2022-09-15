@@ -175,5 +175,14 @@ describe("Wall Example", function () {
     expect(
       (await db.get("wall", ["user", "=", addr], ["date", "desc"])).length
     ).to.eql(5)
+    const arweave_wallet = await db.arweave.wallets.generate()
+    const { identity } = await db.createTempAddressWithAR(arweave_wallet)
+    const addr2 = await db.arweave.wallets.jwkToAddress(arweave_wallet)
+    const user = { name: "Bob", address: addr2 }
+    await db.set(user, "users", addr2, {
+      wallet: addr2,
+      privateKey: identity.privateKey,
+    })
+    expect(await db.get("users", addr2)).to.eql(user)
   })
 })

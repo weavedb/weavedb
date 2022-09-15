@@ -3,7 +3,8 @@ import { err } from "../../lib/utils"
 
 export const nonce = async (state, action) => {
   const { nonces } = state
-  const { address } = action.input
+  let { address } = action.input
   if (isNil(address)) err(`No Address`)
-  return { result: nonces[address.toLowerCase()] || 0 }
+  if (/^0x/.test(address)) address = address.toLowerCase()
+  return { result: nonces[address] || 0 }
 }

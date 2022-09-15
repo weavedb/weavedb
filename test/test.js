@@ -478,7 +478,6 @@ describe("WeaveDB", function () {
       wallet: addr,
       privateKey: identity.privateKey,
     })
-    return
     expect((await db.cget("ppl", "Beth")).setter).to.eql(addr)
     await db.removeAddressLink(
       {
