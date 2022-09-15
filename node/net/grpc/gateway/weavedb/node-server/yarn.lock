@@ -2745,6 +2745,11 @@ tarn@^3.0.1:
   resolved "https://registry.yarnpkg.com/tarn/-/tarn-3.0.2.tgz#73b6140fbb881b71559c4f8bfde3d9a4b3d27693"
   integrity sha512-51LAVKUSZSVfI05vjPESNc5vwqqZpbXCsU+/+wxlOrUjk2SnFTt97v9ZgQrD4YmxYW1Px6w2KjaDitCfkvgxMQ==
 
+text-encoding@^0.7.0:
+  version "0.7.0"
+  resolved "https://registry.yarnpkg.com/text-encoding/-/text-encoding-0.7.0.tgz#f895e836e45990624086601798ea98e8f36ee643"
+  integrity sha512-oJQ3f1hrOnbRLOcwKz0Liq2IcrvDeZRHXhd9RgLrsT+DjWY/nty1Hi7v3dtkaEYbPYe0mUoOfzRrMwfXXwgPUA==
+
 tildify@2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/tildify/-/tildify-2.0.0.tgz#f205f3674d677ce698b7067a99e949ce03b4754a"
@@ -2831,7 +2836,7 @@ vm2@3.9.9:
     acorn "^8.7.0"
     acorn-walk "^8.2.0"
 
-warp-contracts@^1.1.14:
+warp-contracts@1.1.14:
   version "1.1.14"
   resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.1.14.tgz#403b7a01710de64463526c5eb228dfd9cc8a84a5"
   integrity sha512-b/o1o7z3G1qJ0qlyT3ALkln9v4lkM/KvZtIU0EYn71jKUTvYceaUaRpmmIfvlEfQCG6+Lrc8W/Z99RF8P3NJlw==
@@ -2853,10 +2858,10 @@ warp-contracts@^1.1.14:
     unzipit "^1.4.0"
     vm2 "3.9.9"
 
-weavedb-sdk@^0.2.39:
-  version "0.2.39"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.2.39.tgz#9f2fcd2da7a28185d6b5d804d9d611b221be1597"
-  integrity sha512-Ds9S+M00t2v4RJ4fFjmiwkIhuhkJgc50k0SXs9JOOGoOfboXJs47LpsZlyPly0bq6A1pcyD9LrMRNSuDDz+aUQ==
+weavedb-sdk@^0.4.2:
+  version "0.4.2"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.4.2.tgz#06cdd86b6e93b20e0fc0a39bd410f35470db6247"
+  integrity sha512-SqY2SYK88/dh/yTXGrcNjs9qpQmrDeNCHK3B8G6Sw8pgKpjP2BmJGcdv0LepwYSkHdFs8Mjk4MUSe64puf0wmw==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"
@@ -2864,7 +2869,8 @@ weavedb-sdk@^0.2.39:
     eth-crypto "^2.3.0"
     ethereumjs-util "^7.1.5"
     ramda "^0.28.0"
-    warp-contracts "^1.1.14"
+    text-encoding "^0.7.0"
+    warp-contracts "1.1.14"
 
 webidl-conversions@^3.0.0:
   version "3.0.1"
