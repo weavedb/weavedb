@@ -30,6 +30,7 @@
     "node": "16"
   },
   "scripts": {
+    "generate": "node scripts/generate-wallet.js mainnet",
     "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet UR6tFLrjEdiujqQBTGEnyNYB7YUv3IkIJvNIiCiLCic",
     "deploy-testnet": "yarn build && node scripts/deployFromSourceTx.js testnet J9zQvTyjNvRSBPyvSyZf0zehIaNB4CUKOQXRX_18B6Q",
     "test": "yarn build && mocha",
