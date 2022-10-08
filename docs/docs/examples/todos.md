@@ -8,7 +8,7 @@ How to build the simplest todo dapp with WeaveDB and [Next.js](https://nextjs.or
 ## Deploy WeaveDB Contracts
 
 ```bash
-git clone https://github.com/asteroid-dao/weavedb.git
+git clone https://github.com/weavedb/weavedb.git
 cd weavedb
 yarn
 node scripts/generate-wallet.js mainnet
@@ -171,7 +171,7 @@ Open a new terminal and move to the root directry to continue depelopment.
 
 We use these minimum dependencies.
 
-- [WeaveDB SDK](https://weavedb.asteroid.ac) - to connect with WeaveDB
+- [WeaveDB SDK](https://weavedb.dev) - to connect with WeaveDB
 - [Buffer](https://github.com/feross/buffer) - a dependency for WeaveDB
 - [Ramda.js](https://ramdajs.com) - functional programming utilities
 - [Chakra UI](https://chakra-ui.com) - UI library

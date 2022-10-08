@@ -12,7 +12,7 @@ The implementation details will be omitted for this tutorial. You can go through
 ## Deploy WeaveDB Contracts
 
 ```bash
-git clone https://github.com/asteroid-dao/weavedb.git
+git clone https://github.com/weavedb/weavedb.git
 cd weavedb
 yarn
 node scripts/generate-wallet.js mainnet
