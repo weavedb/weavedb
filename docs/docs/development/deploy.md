@@ -5,7 +5,7 @@ sidebar_position: 4
 
 ## Initial States
 
-Modify [initial-state.json](https://github.com/asteroid-dao/weavedb/blob/master/src/contracts/initial-state.json) if necessary.
+Modify [initial-state.json](https://github.com/weavedb/weavedb/blob/master/src/contracts/initial-state.json) if necessary.
 
 Setting `secure` `false` will let anyone write anything to your DB, which only makes sense for test purposes during development.
 
