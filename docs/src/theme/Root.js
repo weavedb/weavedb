@@ -13,7 +13,7 @@ export default function Root({ children }) {
           display: inline;
         }
         .navbar__brand b {
-          color: #f50057;
+          color: #000138;
           font-family: "Righteous", cursive;
           font-weight: normal;
         }

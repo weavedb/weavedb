@@ -8,7 +8,7 @@ const darkCodeTheme = require("prism-react-renderer/themes/dracula")
 const config = {
   title: "WeaveDB",
   tagline: "Decentralized NoSQL Database on Arweave",
-  url: "https://weavedb.asteroid.ac",
+  url: "https://weavedb.dev",
   baseUrl: "/",
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
@@ -16,7 +16,7 @@ const config = {
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: "asteroid-dao", // Usually your GitHub org/user name.
+  organizationName: "weavedb", // Usually your GitHub org/user name.
   projectName: "weavedb", // Usually your repo name.
 
   // Even if you don't use internalization, you can use this field to set useful
@@ -50,7 +50,7 @@ const config = {
         title: "WeaveDB",
         logo: {
           alt: "WeaveDB Logo",
-          src: "img/logo.svg",
+          src: "img/favicon.ico",
         },
         items: [
           {
@@ -65,7 +65,7 @@ const config = {
             position: "left",
           },
           {
-            href: "https://github.com/asteroid-dao/weavedb",
+            href: "https://github.com/weavedb/weavedb",
             label: "GitHub",
             position: "right",
           },
@@ -96,7 +96,11 @@ const config = {
               },
               {
                 label: "Twitter",
-                href: "https://twitter.com/AsteroidDAO",
+                href: "https://twitter.com/weave_db",
+              },
+              {
+                label: "GitHub",
+                href: "https://github.com/weavedb/weavedb",
               },
             ],
           },
@@ -104,17 +108,17 @@ const config = {
             title: "More",
             items: [
               {
-                label: "GitHub",
-                href: "https://github.com/asteroid-dao/weavedb",
+                label: "WeaveDB",
+                href: "https://weavedb.dev",
               },
               {
-                label: "ASTΞROIÐ",
-                href: "https://asteroid.ac",
+                label: "FPJSON",
+                href: "https://fpjson.weavedb.dev",
               },
             ],
           },
         ],
-        copyright: "Built by ASTΞROIÐ",
+        copyright: "Powered by Arweave",
       },
       prism: {
         theme: lightCodeTheme,

@@ -62,7 +62,7 @@ Deploying a WeaveDB node on your local machine is much easier than on a cloud se
 ##### 1. Clone the WeaveDB monorepo
 
 ```bash
-git clone https://github.com/asteroid-dao/weavedb.git
+git clone https://github.com/weavedb/weavedb.git
 cd weavedb
 yarn
 ```
@@ -178,7 +178,7 @@ sudo chmod +x /usr/local/bin/docker-compose
 - Clone the WeaveDB monorepo
 
 ```bash
-git clone https://github.com/asteroid-dao/weavedb.git
+git clone https://github.com/weavedb/weavedb.git
 ```
 
 - Create and edit `weavedb.config.js` with your favorite editor such as Emacs
