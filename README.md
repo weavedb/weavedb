@@ -4,7 +4,7 @@
 
 ## About This Repo
 
-[WeaveDB](https://github.com/asteroid-dao/weavedb) is a monorepo that contains
+[WeaveDB](https://github.com/weavedb/weavedb) is a monorepo that contains
 
 - [Warp Contracts](/src/contracts)
 - [Tests](/test)
@@ -15,7 +15,8 @@
 - [Web Console](/console)
 - [Docs](/docs)
 
-You can view the docs at [weavedb.asteroid.ac](https://weavedb.asteroid.ac).
+You can view the docs at [docs.weavedb.dev](https://docs.weavedb.dev).
+
 ## What is WeaveDB?
 
 WeaveDB is a NoSQL database powered by [Warp Contracts](https://warp.cc/) (SmartWeave) on the [Arweave](https://www.arweave.org/) blockchain.
