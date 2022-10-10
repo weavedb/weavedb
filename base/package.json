@@ -1,5 +1,5 @@
 {
-  "name": "weavedb-sdk",
+  "name": "weavedb-base",
   "version": "0.4.3",
   "description": "A decentralized NoSQL database powered by Arweave.",
   "homepage": "https://weavedb.dev",
@@ -13,11 +13,13 @@
     "node": "16"
   },
   "dependencies": {
+    "@metamask/eth-sig-util": "^4.0.1",
     "@metamask/legacy-web3": "^2.0.0",
     "arweave": "^1.11.4",
+    "eth-crypto": "^2.3.0",
+    "ethereumjs-util": "^7.1.5",
     "ramda": "^0.28.0",
-    "warp-contracts": "1.1.14",
-    "weavedb-base": "^0.4.3"
+    "text-encoding": "^0.7.0"
   },
   "devDependencies": {
     "esbuild": "^0.14.50",
