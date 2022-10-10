@@ -1,11 +1,9 @@
-const { DBClient } = require("./weavedb_grpc_web_pb")
-const { WeaveDBRequest } = require("./weavedb_pb")
 const EthCrypto = require("eth-crypto")
-const { all, complement, init, is, last, isNil } = require("ramda")
+const { includes, all, complement, init, is, last, isNil } = require("ramda")
+let Arweave = require("arweave")
+Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
 const ethSigUtil = require("@metamask/eth-sig-util")
 const { privateToAddress } = require("ethereumjs-util")
-const encoding = require("text-encoding")
-const encoder = new encoding.TextEncoder()
 
 const EIP712Domain = [
   { name: "name", type: "string" },
@@ -13,55 +11,17 @@ const EIP712Domain = [
   { name: "verifyingContract", type: "string" },
 ]
 
-class SDK {
-  constructor({ rpc, contractTxId, wallet, name, version, EthWallet, web3 }) {
-    this.client = new DBClient(rpc)
-    if (typeof window === "object") {
-      require("@metamask/legacy-web3")
-      this.web3 = window.web3
-    }
-    if (all(complement(isNil))([contractTxId, name, version])) {
-      this.initialize({ contractTxId, name, version, EthWallet })
-    }
-  }
+const encoding = require("text-encoding")
+const encoder = new encoding.TextEncoder()
 
-  initialize({ contractTxId, name, version, EthWallet }) {
-    this.domain = { name, version, verifyingContract: contractTxId }
-    if (!isNil(EthWallet)) this.setEthWallet(EthWallet)
-  }
-
+class Base {
   setEthWallet(wallet) {
     this.wallet = wallet
-  }
-
-  async _request(func, query) {
-    const request = new WeaveDBRequest()
-    request.setMethod(func)
-    request.setQuery(JSON.stringify(query))
-    const _query = () =>
-      new Promise(ret => {
-        this.client.query(request, {}, (err, response) => {
-          if (!isNil(err)) {
-            ret({ result: null, err })
-          } else if (response.toObject().err === "") {
-            ret({ result: JSON.parse(response.toObject().result), err: null })
-          } else {
-            ret({ result: null, err: response.toObject().err })
-          }
-        })
-      })
-    let q = await _query()
-    return q.result
-  }
-
-  async request(func, ...query) {
-    return await this._request(func, query)
   }
 
   async get(...query) {
     return this.request("get", ...query)
   }
-
   async cget(...query) {
     return this.request("cget", ...query)
   }
@@ -80,14 +40,6 @@ class SDK {
 
   async getRules(...query) {
     return this.request("getRules", ...query)
-  }
-
-  async getNonce(addr) {
-    return this.request("getNonce", addr, true)
-  }
-
-  async getIds(tx) {
-    return this.request("getIds", tx)
   }
 
   async _write(func, ...query) {
@@ -129,7 +81,6 @@ class SDK {
           bundle
         )
   }
-
   async createTempAddressWithII(ii) {
     let addr = ii.toJSON()[0]
     return this._createTempAddress(addr, {
@@ -247,6 +198,30 @@ class SDK {
     return this._write("batch", ...query)
   }
 
+  signer() {
+    return { __op: "signer" }
+  }
+
+  ts() {
+    return { __op: "ts" }
+  }
+
+  del() {
+    return { __op: "del" }
+  }
+
+  inc(n) {
+    return { __op: "inc", n }
+  }
+
+  union(...args) {
+    return { __op: "arrayUnion", arr: args }
+  }
+
+  remove(...args) {
+    return { __op: "arrayRemove", arr: args }
+  }
+
   async write(
     wallet,
     func,
@@ -269,6 +244,7 @@ class SDK {
     addr = addr.toLowerCase()
     let result
     nonce ||= await this.getNonce(addr)
+    bundle ||= this.network === "mainnet"
     const message = {
       nonce,
       query: JSON.stringify({ func, query }),
@@ -298,6 +274,7 @@ class SDK {
             data,
             version: "V4",
           })
+
     const param = {
       function: func,
       query,
@@ -310,7 +287,7 @@ class SDK {
           ? wallet
           : wallet.getAddressString(),
     }
-    return await this._request("send", param)
+    return await this._request(func, param, dryWrite, bundle)
   }
 
   async writeWithII(ii, func, query, nonce, dryWrite = true, bundle) {
@@ -343,7 +320,6 @@ class SDK {
         ""
       )
     }
-
     const _data = Buffer.from(JSON.stringify(data))
     const signature = toHexString(await ii.sign(_data))
     const param = {
@@ -354,7 +330,7 @@ class SDK {
       caller: addr,
       type: "ed25519",
     }
-    return await this._request("send", param)
+    return await this._request(func, param, dryWrite, bundle)
   }
 
   async writeWithAR(ar, func, query, nonce, dryWrite = true, bundle) {
@@ -407,32 +383,8 @@ class SDK {
       pubKey,
       type: "rsa256",
     }
-    return await this._request("send", param)
-  }
-
-  signer() {
-    return { __op: "signer" }
-  }
-
-  ts() {
-    return { __op: "ts" }
-  }
-
-  del() {
-    return { __op: "del" }
-  }
-
-  inc(n) {
-    return { __op: "inc", n }
-  }
-
-  union(...args) {
-    return { __op: "arrayUnion", arr: args }
-  }
-
-  remove(...args) {
-    return { __op: "arrayRemove", arr: args }
+    return await this._request(func, param, dryWrite, bundle)
   }
 }
 
-module.exports = SDK
+module.exports = Base
