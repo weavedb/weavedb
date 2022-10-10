@@ -36,7 +36,7 @@
     "build": "yarn clean && node build.js && npm run cp",
     "clean": "rimraf ./dist",
     "cp": "copyfiles -u 1 ./src/**/*.json dist",
-    "repl": "node scripts/runNode.js"
+    "repl": "yarn build && node scripts/runNode.js"
   },
   "devDependencies": {
     "@dfinity/agent": "^0.13.2",
