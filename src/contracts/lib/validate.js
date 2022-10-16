@@ -1,6 +1,9 @@
-import { isNil } from "ramda"
+import { includes, isNil } from "ramda"
 import { sign } from "tweetnacl"
 const { recoverTypedSignature } = require("./eth-sig-util")
+const { buildEddsa } = require("./circomlibjs")
+const Scalar = require("./ffjavascript").Scalar
+const sha256 = new (require("./sha.js/sha256"))()
 
 function fromHexString(hexString) {
   return new Uint8Array(
@@ -73,6 +76,14 @@ const unwrapDER = (derEncoded, oid) => {
   return result
 }
 
+const toArrayBuffer = buf => {
+  const ab = new ArrayBuffer(buf.length)
+  const view = new Uint8Array(ab)
+  for (let i = 0; i < buf.length; ++i) {
+    view[i] = buf[i]
+  }
+  return ab
+}
 export const validate = async (state, action, func) => {
   const {
     query,
@@ -151,9 +162,32 @@ export const validate = async (state, action, func) => {
       data: _data,
       signature,
     })
+  } else if (type == "poseidon") {
+    const eddsa = await buildEddsa()
+    let msg = JSON.stringify(_data)
+    const msgHashed = Buffer.from(toArrayBuffer(sha256.update(msg).digest()))
+    const msg2 = eddsa.babyJub.F.e(Scalar.fromRprLE(msgHashed, 0))
+    const packedSig = Uint8Array.from(
+      Buffer.from(signature.replace(/^0x/, ""), "hex")
+    )
+    const sig = eddsa.unpackSignature(packedSig)
+    const packedPublicKey = Uint8Array.from(
+      Buffer.from(pubKey.replace(/^0x/, ""), "hex")
+    )
+    const publicKey = eddsa.babyJub.unpackPoint(packedPublicKey)
+    const isValid = eddsa.verifyPoseidon(msg2, sig, publicKey)
+    if (isValid) {
+      signer = caller
+    } else {
+      throw new ContractError(`The wrong signature`)
+    }
+  }
+
+  if (includes(type)(["secp256k1", "poseidon"])) {
     if (/^0x/.test(signer)) signer = signer.toLowerCase()
     if (/^0x/.test(_caller)) _caller = _caller.toLowerCase()
   }
+
   let original_signer = signer
   let _signer = signer
   if (!isNil(state.auth.links[_signer])) _signer = state.auth.links[_signer]
