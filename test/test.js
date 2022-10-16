@@ -543,4 +543,22 @@ describe("WeaveDB", function () {
       identity.address.toLowerCase()
     )
   })
+
+  it("should set algorithms", async () => {
+    const provider = new providers.JsonRpcProvider("http://localhost/")
+    const intmax_wallet = new Account(provider)
+    await intmax_wallet.activate()
+    const data = { name: "Bob", age: 20 }
+    const tx = await db.add(data, "ppl", { intmax: intmax_wallet })
+    const addr = intmax_wallet._address
+    expect((await db.cget("ppl", (await db.getIds(tx))[0])).setter).to.eql(addr)
+    await db.setAlgorithms(["secp256k1"])
+    const data2 = { name: "Alice", age: 25 }
+    await db.set(data2, "ppl", "Alice", { intmax: intmax_wallet })
+    expect(await db.get("ppl", "Alice")).to.be.eql(null)
+    await db.setAlgorithms(["poseidon"])
+    await db.set(data2, "ppl", "Alice", { intmax: intmax_wallet })
+    expect(await db.get("ppl", "Alice")).to.be.eql(data2)
+    return
+  })
 })
