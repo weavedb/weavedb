@@ -35,6 +35,10 @@ class Base {
     return this.request("getCrons", ...query)
   }
 
+  async getAlgorithms(...query) {
+    return this.request("getAlgorithms", ...query)
+  }
+
   async getSchema(...query) {
     return this.request("getSchema", ...query)
   }
@@ -213,6 +217,10 @@ class Base {
 
   async setSchema(...query) {
     return this._write("setSchema", ...query)
+  }
+
+  async setAlgorithms(...query) {
+    return this._write("setAlgorithms", ...query)
   }
 
   async setRules(...query) {

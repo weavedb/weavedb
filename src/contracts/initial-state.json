@@ -7,6 +7,7 @@
   "ids": {},
   "indexes": {},
   "auth":{
+    "algorithms": ["secp256k1", "ed25519", "rsa256", "poseidon"],
     "name": "weavedb",
     "version": "1",
     "links": {}
