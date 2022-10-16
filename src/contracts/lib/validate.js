@@ -93,6 +93,13 @@ export const validate = async (state, action, func) => {
     type = "secp256k1",
     pubKey,
   } = action.input
+  if (
+    !includes(type)(
+      state.auth.algorithms || ["secp256k1", "ed25519", "rsa256", "poseidon"]
+    )
+  ) {
+    throw new ContractError(`The wrong algorithm`)
+  }
   let _caller = caller
   const EIP712Domain = [
     { name: "name", type: "string" },
