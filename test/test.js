@@ -1,7 +1,8 @@
 const { Signature, RSAKey, KEYUTIL } = require("jsrsasign")
+const Scalar = require("ffjavascript").Scalar
 const crypto = require("crypto")
 const { Ed25519KeyIdentity } = require("@dfinity/identity")
-const { Wallet } = require("ethers")
+const { providers, Wallet } = require("ethers")
 const Arweave = require("arweave")
 const fs = require("fs")
 const path = require("path")
@@ -10,6 +11,9 @@ const { isNil, range, pick } = require("ramda")
 const ethSigUtil = require("@metamask/eth-sig-util")
 const { init, stop, initBeforeEach, addFunds } = require("./util")
 const { Buffer } = require("buffer")
+const buildEddsa = require("circomlibjs").buildEddsa
+const Account = require("intmax").Account
+const shajs = require("sha.js")
 
 describe("WeaveDB", function () {
   let wallet, walletAddress, wallet2, db
@@ -484,6 +488,52 @@ describe("WeaveDB", function () {
         address: identity.address,
       },
       { ar: arweave_wallet }
+    )
+    await db.set({ name: "Bob", age: 20 }, "ppl", "Bob", {
+      privateKey: identity.privateKey,
+      overwrite: true,
+    })
+    expect((await db.cget("ppl", "Bob")).setter).to.eql(
+      identity.address.toLowerCase()
+    )
+  })
+
+  function toArrayBuffer(buf) {
+    const ab = new ArrayBuffer(buf.length)
+    const view = new Uint8Array(ab)
+    for (let i = 0; i < buf.length; ++i) {
+      view[i] = buf[i]
+    }
+    return ab
+  }
+
+  it("should add & get with Intmax wallet", async () => {
+    const provider = new providers.JsonRpcProvider("http://localhost/")
+    const intmax_wallet = new Account(provider)
+    await intmax_wallet.activate()
+    const data = { name: "Bob", age: 20 }
+    const tx = await db.add(data, "ppl", { intmax: intmax_wallet })
+    const addr = intmax_wallet._address
+    expect((await db.cget("ppl", (await db.getIds(tx))[0])).setter).to.eql(addr)
+    return
+  })
+
+  it("should link temporarily generated address with Intmax wallet", async () => {
+    const provider = new providers.JsonRpcProvider("http://localhost/")
+    const intmax_wallet = new Account(provider)
+    await intmax_wallet.activate()
+    const addr = intmax_wallet._address
+    const { identity } = await db.createTempAddressWithIntmax(intmax_wallet)
+    await db.set({ name: "Beth", age: 10 }, "ppl", "Beth", {
+      wallet: addr,
+      privateKey: identity.privateKey,
+    })
+    expect((await db.cget("ppl", "Beth")).setter).to.eql(addr)
+    await db.removeAddressLink(
+      {
+        address: identity.address,
+      },
+      { intmax: intmax_wallet }
     )
     await db.set({ name: "Bob", age: 20 }, "ppl", "Bob", {
       privateKey: identity.privateKey,
