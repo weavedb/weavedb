@@ -1,6 +1,6 @@
 {
   "name": "weavedb-base",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "A decentralized NoSQL database powered by Arweave.",
   "homepage": "https://weavedb.dev",
   "repository": {
@@ -19,7 +19,8 @@
     "eth-crypto": "^2.3.0",
     "ethereumjs-util": "^7.1.5",
     "ramda": "^0.28.0",
-    "text-encoding": "^0.7.0"
+    "text-encoding": "^0.7.0",
+    "circomlibjs": "git+https://github.com/InternetMaximalism/circomlibjs#fc534a12d9b34f2694ed0f75a686d080fc7a92d6"
   },
   "devDependencies": {
     "esbuild": "^0.14.50",

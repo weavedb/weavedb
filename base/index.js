@@ -1,4 +1,5 @@
 const EthCrypto = require("eth-crypto")
+const buildEddsa = require("circomlibjs").buildEddsa
 const { includes, all, complement, init, is, last, isNil } = require("ramda")
 let Arweave = require("arweave")
 Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
@@ -53,7 +54,7 @@ class Base {
   }
 
   async _write2(func, query, opt) {
-    let nonce, privateKey, overwrite, wallet, dryWrite, bundle, ii, ar
+    let nonce, privateKey, overwrite, wallet, dryWrite, bundle, ii, ar, intmax
     if (!isNil(opt)) {
       ;({
         nonce,
@@ -64,9 +65,12 @@ class Base {
         bundle,
         ii,
         ar,
+        intmax,
       } = opt)
     }
-    return !isNil(ii)
+    return !isNil(intmax)
+      ? await this.writeWithIntmax(intmax, func, query, nonce, dryWrite, bundle)
+      : !isNil(ii)
       ? await this.writeWithII(ii, func, query, nonce, dryWrite, bundle)
       : !isNil(ar)
       ? await this.writeWithAR(ar, func, query, nonce, dryWrite, bundle)
@@ -81,6 +85,7 @@ class Base {
           bundle
         )
   }
+
   async createTempAddressWithII(ii) {
     let addr = ii.toJSON()[0]
     return this._createTempAddress(addr, {
@@ -99,6 +104,26 @@ class Base {
     }
     return this._createTempAddress(addr, {
       ar,
+    })
+  }
+
+  async createTempAddress(addr) {
+    return this._createTempAddress(addr.toLowerCase(), {
+      wallet: this.wallet || addr.toLowerCase(),
+    })
+  }
+
+  async createTempAddressWithIntmax(intmax) {
+    const wallet = is(Object, intmax) ? intmax : null
+    let addr = null
+    if (!isNil(wallet)) {
+      addr = !isNil(wallet._account) ? wallet._account.address : intmax._address
+    } else {
+      throw Error("No Intmax wallet")
+      return
+    }
+    return this._createTempAddress(addr, {
+      intmax,
     })
   }
 
@@ -382,6 +407,59 @@ class Base {
       caller: addr,
       pubKey,
       type: "rsa256",
+    }
+    return await this._request(func, param, dryWrite, bundle)
+  }
+
+  async writeWithIntmax(intmax, func, query, nonce, dryWrite = true, bundle) {
+    const eddsa = await buildEddsa()
+    const wallet = is(Object, intmax) ? intmax : null
+    let addr = null
+    let pubKey = null
+    if (!isNil(wallet)) {
+      if (!isNil(wallet._account)) {
+        pubKey = wallet._account.publicKey
+        addr = wallet._account.address
+      } else {
+        const packedPublicKey = eddsa.babyJub.packPoint(intmax._publicKey)
+        pubKey = "0x" + Buffer.from(packedPublicKey).toString("hex")
+        addr = intmax._address
+      }
+    } else {
+      throw Error("No Intmax wallet")
+      return
+    }
+    const isaddr = !isNil(addr)
+    let result
+    nonce ||= await this.getNonce(addr)
+    bundle ||= this.network === "mainnet"
+    const message = {
+      nonce,
+      query: JSON.stringify({ func, query }),
+    }
+    const data = {
+      types: {
+        EIP712Domain,
+        Query: [
+          { name: "query", type: "string" },
+          { name: "nonce", type: "uint256" },
+        ],
+      },
+      domain: this.domain,
+      primaryType: "Query",
+      message,
+    }
+    const signature = !isNil(wallet._account)
+      ? await intmax.signMessage(JSON.stringify(data))
+      : await intmax.sign(JSON.stringify(data))
+    const param = {
+      function: func,
+      query,
+      signature,
+      nonce,
+      caller: addr,
+      pubKey,
+      type: "poseidon",
     }
     return await this._request(func, param, dryWrite, bundle)
   }
