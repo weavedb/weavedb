@@ -21,6 +21,8 @@ import { cron } from "./lib/cron"
 import { addCron } from "./actions/write/addCron"
 import { removeCron } from "./actions/write/removeCron"
 import { getCrons } from "./actions/read/getCrons"
+import { getAlgorithms } from "./actions/read/getAlgorithms"
+import { setAlgorithms } from "./actions/write/setAlgorithms"
 
 export async function handle(state, action) {
   try {
@@ -52,6 +54,10 @@ export async function handle(state, action) {
       return await removeCron(state, action)
     case "getCrons":
       return await getCrons(state, action)
+    case "getAlgorithms":
+      return await getAlgorithms(state, action)
+    case "setAlgorithms":
+      return await setAlgorithms(state, action)
     case "addIndex":
       return await addIndex(state, action)
     case "getIndexes":

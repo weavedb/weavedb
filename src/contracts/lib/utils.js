@@ -231,7 +231,7 @@ export const parse = async (
   let new_data = null
   let path = null
   let col
-  if (includes(func)(["delete", "getSchema", "getRules"])) {
+  if (includes(func)(["delete", "getSchema", "getRules", "getAlgorithms"])) {
     path = query
   } else {
     ;[new_data, ...path] = query
@@ -245,14 +245,16 @@ export const parse = async (
     }
   }
   if (
-    (isNil(new_data) && !includes(func)(["delete", "getSchema", "getRules"])) ||
-    path.length === 0 ||
+    (isNil(new_data) &&
+      !includes(func)(["delete", "getSchema", "getRules", "getAlgorithms"])) ||
+    (path.length === 0 && !includes(func)(["setAlgorithms"])) ||
     (path.length % 2 !== 0 &&
       !includes(func)([
         "addIndex",
         "removeIndex",
         "setSchema",
         "getSchema",
+        "getAlgorithms",
         "setRules",
         "getRules",
       ]))
@@ -269,6 +271,8 @@ export const parse = async (
       "removeIndex",
       "setSchema",
       "getSchema",
+      "setAlgorithms",
+      "getAlgorithms",
       "setRules",
       "getRules",
     ])
@@ -285,7 +289,13 @@ export const parse = async (
     _data.setter !== signer
   ) {
   } else if (
-    includes(func)(["addIndex", "removeIndex", "setSchema", "setRules"]) &&
+    includes(func)([
+      "addIndex",
+      "removeIndex",
+      "setSchema",
+      "setAlgorithms",
+      "setRules",
+    ]) &&
     action.caller !== state.owner
   ) {
     err("caller is not contract owner", contractErr)
