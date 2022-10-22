@@ -5,12 +5,16 @@ import { ModuleBuilder } from "wasmbuilder"
 
 globalThis.curve_bls12381 = null
 
-export default async function buildBls12381(singleThread, plugins) {
+export default async function buildBls12381(
+  singleThread,
+  plugins,
+  poseidonConstants
+) {
   const moduleBuilder = new ModuleBuilder()
   moduleBuilder.setMemory(25)
   buildBls12381wasm(moduleBuilder)
 
-  if (plugins) plugins(moduleBuilder)
+  if (plugins) plugins(moduleBuilder, poseidonConstants)
 
   const bls12381wasm = {}
 

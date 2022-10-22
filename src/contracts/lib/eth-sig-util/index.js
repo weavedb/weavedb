@@ -1,6 +1,6 @@
 const ethereumjs_util_1 = require("../ethereumjs-util")
 const ethereumjs_abi_1 = require("../ethereumjs-abi")
-
+const { isHexString } = require("../ethjs-util")
 var SignTypedDataVersion = {}
 SignTypedDataVersion["V1"] = "V1"
 SignTypedDataVersion["V3"] = "V3"
@@ -201,6 +201,33 @@ function recoverTypedSignature({ data, signature, version }) {
   const sender = ethereumjs_util_1.publicToAddress(publicKey)
   return ethereumjs_util_1.bufferToHex(sender)
 }
+
+function legacyToBuffer(value) {
+  return typeof value === "string" && !isHexString(value)
+    ? Buffer.from(value)
+    : ethereumjs_util_1.toBuffer(value)
+}
+
+function getPublicKeyFor(message, signature) {
+  const messageHash = ethereumjs_util_1.hashPersonalMessage(
+    legacyToBuffer(message)
+  )
+  return recoverPublicKey(messageHash, signature)
+}
+
+function recoverPersonalSignature({ data, signature }) {
+  if (isNullish(data)) {
+    throw new Error("Missing data parameter")
+  } else if (isNullish(signature)) {
+    throw new Error("Missing signature parameter")
+  }
+  const publicKey = getPublicKeyFor(data, signature)
+  const sender = ethereumjs_util_1.publicToAddress(publicKey)
+  const senderHex = ethereumjs_util_1.bufferToHex(sender)
+  return senderHex
+}
+
 module.exports = {
   recoverTypedSignature,
+  recoverPersonalSignature,
 }

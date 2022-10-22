@@ -5,6 +5,8 @@ const Arweave = require("arweave")
 const wallet_name = process.argv[2]
 const { isNil } = require("ramda")
 const srcTxId = process.argv[3] || process.env.SOURCE_TX_ID
+const srcTxId_Intmax = process.argv[4] || process.env.INTMAX_SOURCE_TX_ID
+
 const {
   PstContract,
   PstState,
@@ -18,25 +20,59 @@ if (isNil(wallet_name)) {
   console.log("no wallet name given")
   process.exit()
 }
+let warp, arweave, walletAddress, wallet
+
+async function deployContractIntmax() {
+  const contractSrc = fs.readFileSync(
+    path.join(__dirname, "../dist/intmax.js"),
+    "utf8"
+  )
+  const stateFromFile = JSON.parse(
+    fs.readFileSync(
+      path.join(__dirname, "../dist/contracts/initial-state-intmax.json"),
+      "utf8"
+    )
+  )
+  const initialState = {
+    ...stateFromFile,
+    ...{
+      owner: walletAddress,
+    },
+  }
+  const res = await warp.createContract.deployFromSourceTx(
+    {
+      wallet,
+      initState: JSON.stringify(initialState),
+      srcTxId: srcTxId_Intmax,
+    },
+    wallet_name === "mainnet"
+  )
+  console.log(res)
+  return res.contractTxId
+}
+
 const deploy = async () => {
-  const arweave = Arweave.init({
+  arweave = Arweave.init({
     host: wallet_name === "mainnet" ? "arweave.net" : "testnet.redstone.tools",
     port: 443,
     protocol: "https",
   })
   LoggerFactory.INST.logLevel("error")
-  const warp = WarpNodeFactory.memCachedBased(arweave).useWarpGateway().build()
+  warp = WarpNodeFactory.memCachedBased(arweave).useWarpGateway().build()
   const wallet_path = path.resolve(
     __dirname,
-    !isNil(process.argv[4])
-      ? process.env.PWD + "/" + process.argv[4]
+    !isNil(process.argv[5])
+      ? process.env.PWD + "/" + process.argv[5]
       : `.wallets/wallet-${wallet_name}.json`
   )
   if (!fs.existsSync(wallet_path)) {
     console.log("wallet doesn't exist")
     process.exit()
   }
-  const wallet = JSON.parse(fs.readFileSync(wallet_path, "utf8"))
+  wallet = JSON.parse(fs.readFileSync(wallet_path, "utf8"))
+  walletAddress = await arweave.wallets.jwkToAddress(wallet)
+
+  const contractTxIdIntmax = await deployContractIntmax()
 
   const contractSrc = fs.readFileSync(
     path.join(__dirname, "../dist/contract.js"),
@@ -48,7 +84,6 @@ const deploy = async () => {
       "utf8"
     )
   )
-  const walletAddress = await arweave.wallets.jwkToAddress(wallet)
 
   const initialState = {
     ...stateFromFile,
@@ -56,7 +91,7 @@ const deploy = async () => {
       owner: walletAddress,
     },
   }
-
+  initialState.contracts.intmax = contractTxIdIntmax
   const res = await warp.createContract.deployFromSourceTx(
     {
       wallet,
