@@ -257,6 +257,8 @@ export const parse = async (
         "getAlgorithms",
         "setRules",
         "getRules",
+        "linkContract",
+        "unlinkContract",
       ]))
   ) {
     err(null, contractErr)
@@ -265,21 +267,27 @@ export const parse = async (
   let schema = null
   let rules = null
   let next_data
+
   if (
     includes(func)([
       "addIndex",
       "removeIndex",
       "setSchema",
       "getSchema",
-      "setAlgorithms",
-      "getAlgorithms",
       "setRules",
       "getRules",
     ])
   ) {
     _data = getCol(data, path, signer, func)
     col = _data
-  } else {
+  } else if (
+    !includes(func)([
+      "setAlgorithms",
+      "getAlgorithms",
+      "linkContract",
+      "unlinkContract",
+    ])
+  ) {
     const doc = getDoc(data, path, signer, func, new_data, state.secure)
     _data = doc.doc
     ;({ next_data, schema, rules, col } = doc)
@@ -295,6 +303,9 @@ export const parse = async (
       "setSchema",
       "setAlgorithms",
       "setRules",
+      "unlinkContract",
+      "linkContract",
+      "unlinkContract",
     ]) &&
     action.caller !== state.owner
   ) {

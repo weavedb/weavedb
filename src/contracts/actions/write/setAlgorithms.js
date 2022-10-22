@@ -1,7 +1,6 @@
-import { isNil, mergeLeft, is, intersection } from "ramda"
-import { err, parse, mergeData } from "../../lib/utils"
+import { isNil, is, intersection } from "ramda"
+import { err, parse } from "../../lib/utils"
 import { validate } from "../../lib/validate"
-import { validator } from "@exodus/schemasafe"
 
 export const setAlgorithms = async (state, action, signer) => {
   signer ||= await validate(state, action, "setAlgorithms")

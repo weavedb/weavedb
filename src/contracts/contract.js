@@ -23,6 +23,9 @@ import { removeCron } from "./actions/write/removeCron"
 import { getCrons } from "./actions/read/getCrons"
 import { getAlgorithms } from "./actions/read/getAlgorithms"
 import { setAlgorithms } from "./actions/write/setAlgorithms"
+import { getLinkedContract } from "./actions/read/getLinkedContract"
+import { linkContract } from "./actions/write/linkContract"
+import { unlinkContract } from "./actions/write/unlinkContract"
 
 export async function handle(state, action) {
   try {
@@ -56,8 +59,14 @@ export async function handle(state, action) {
       return await getCrons(state, action)
     case "getAlgorithms":
       return await getAlgorithms(state, action)
+    case "getLinkedContract":
+      return await getLinkedContract(state, action)
     case "setAlgorithms":
       return await setAlgorithms(state, action)
+    case "linkContract":
+      return await linkContract(state, action)
+    case "unlinkContract":
+      return await unlinkContract(state, action)
     case "addIndex":
       return await addIndex(state, action)
     case "getIndexes":

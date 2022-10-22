@@ -11,9 +11,9 @@ import buildMimcSponge from "./mimcsponge.js"
 import createBlakeHash from "blake-hash"
 */
 
-export default async function buildEddsa() {
+export default async function buildEddsa(poseidonConstants) {
   const babyJub = await buildBabyJub("bn128")
-  const poseidon = await buildPoseidon()
+  const poseidon = await buildPoseidon(poseidonConstants)
   /*
     const pedersenHash = await buildPedersenHash()
     const mimc7 = await buildMimc7();

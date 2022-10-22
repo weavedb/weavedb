@@ -3144,19 +3144,20 @@ wasmcurves@0.2.0:
   dependencies:
     wasmbuilder "0.0.16"
 
-weavedb-base@^0.4.5:
-  version "0.4.5"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.4.5.tgz#79f2a6cc345cfc9e07e57ba291f05bd2caf2f3f4"
-  integrity sha512-XXQ0wA9WoxFTtbw7Cg3/ffnMRFsQfRuRV34GGkZBHtRfK+C8RPxqLov9YudpAqLKdI0q3IDQEVT7S1Don/xGpA==
+weavedb-base@^0.5.2, weavedb-base@^0.5.3:
+  version "0.5.3"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.5.3.tgz#11533f46762126df01569bb576694947a3355f17"
+  integrity sha512-t2xjwqMtGW4qBNYp3bKVi2IW0KBTzoQ8hfykptGF5gsr8KB9YC43EcmeiNXXrnq2BUG3i/UpyUYbcNXR+DRgXw==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"
     arweave "^1.11.4"
-    circomlibjs "git+https://github.com/InternetMaximalism/circomlibjs#fc534a12d9b34f2694ed0f75a686d080fc7a92d6"
+    circomlibjs "git+https://github.com/InternetMaximalism/circomlibjs.git#fc534a12d9b34f2694ed0f75a686d080fc7a92d6"
     eth-crypto "^2.3.0"
     ethereumjs-util "^7.1.5"
     ramda "^0.28.0"
     text-encoding "^0.7.0"
+    weavedb-base "^0.5.2"
 
 web-worker@^1.2.0:
   version "1.2.0"

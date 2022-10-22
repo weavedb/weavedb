@@ -5,6 +5,10 @@ sidebar_position: 8
 
 When writing to the DB, Ethereum-based addresses are authenticated with [EIP-712](https://eips.ethereum.org/EIPS/eip-712) signatures. However, this requires dapp users to sign with Metamask for every action, and it's a very poor UX. To solve this, WeaveDB allows internal address linking, so dapp users can use disposal addresses for auto-signing.
 
+WeaveDB has integrated 4 types of cryptography (secp256k1, ed25519, rsa256, poseidon), which enables [MetaMask](https://metamask.io/), [Internet Identity](https://identity.ic0.app/), [ArConnect](https://www.arconnect.io/) and [IntmaxWallet](https://www.intmaxwallet.io).
+
+![](/img/wallets.png)
+
 ## Auth Flow for Dapps
 
 Users will generate a disposal address by signing with Metamask when logging in to the dapp.
@@ -23,10 +27,19 @@ This will create a great UX for dapps where users only sign once for address lin
 
 ## Temporary Address for Auto-signing
 
+### MetaMask (EVM)
+
 Create a temporary address. Dapps would do this only once when users sign in.
 
 ```js
-const { identity } = db.createTempAddress(METAMASK_ADDRESS)
+import { ethers } from "ethers"
+
+const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
+await provider.send("eth_requestAccounts", [])
+const signer = provider.getSigner()
+const addr = await signer.getAddress()
+
+const { identity } = db.createTempAddress(addr)
 ```
 
 Dapps can store the `identity` in the IndexedDB and auto-sign when the user creates transactions.
@@ -38,14 +51,97 @@ await db.add(
   { name: "Bob", age: 20 },
   "people",
   {
-    wallet: METAMASK_ADDRESS,
+    wallet: addr,
     privateKey: identity.privateKey,
   }
 )
 ```
 
+### Internet Identity (DFINITY)
+
+[Internet Identity](https://identity.ic0.app/) enables biometric authentication on any device.
+
+```js
+import { AuthClient } from "@dfinity/auth-client"
+
+const iiUrl = `https://identity.ic0.app`
+const authClient = await AuthClient.create()
+  await new Promise((resolve, reject) => {
+  authClient.login({
+    identityProvider: iiUrl,
+	onSuccess: resolve,
+	onError: reject
+  })
+})
+
+const ii = authClient.getIdentity()
+if (isNil(ii._inner)) return
+const addr = ii._inner.toJSON()[0]
+const { identity } = await db.createTempAddressWithII(ii)
+```
+
+### ArConnect (Arweave)
+
+[ArConnect](https://arconnect.io) is a simple browser wallet for Arweave.
+
+```js
+const wallet = window.arweaveWallet
+await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
+const addr = await wallet.getActiveAddress()
+const { identity } = await db.createTempAddressWithAR(wallet)
+```
+
+### IntmaxWallet (Intmax)
+
+[Intmax](https://intmax.io) is the most scalable Ethereum L2 zkRollup with privacy for the web.
+
+```js
+import { IntmaxWalletSigner } from "webmax"
+
+const signer = new IntmaxWalletSigner()
+let addr = null
+try {
+  await signer.connectToAccount()
+  addr.signer._account
+} catch (e) {
+  console.log(e)
+}
+
+const { identity } = db.createTempAddressWithIntmax(signer)
+
+```
+## Remove Address Link
+
 Remove an address link
 
 ```js
 await db.removeAddressLink({ address: identity.address })
+```
+
+## Without Temporary Address
+
+You can also write to the DB without a temporary address, which requires a manual signature every time you write.
+
+### MetaMask (EVM)
+
+```js
+await db.add({ name: "Bob", age: 20 }, "ppl", { wallet: signer })
+```
+
+### Internet Identity (DFINITY)
+
+```js
+await db.add({ name: "Bob", age: 20 }, "ppl", { ii: ii })
+```
+
+### ArConnect (Arweave)
+
+```js
+await db.add({ name: "Bob", age: 20 }, "ppl", { ar: wallet })
+```
+
+### IntmaxWallet (Intmax)
+
+```js
+await db.add({ name: "Bob", age: 20 }, "ppl", { intmax: signer })
 ```
