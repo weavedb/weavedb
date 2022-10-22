@@ -1,9 +1,10 @@
 import { includes, isNil } from "ramda"
 import { sign } from "tweetnacl"
-const { recoverTypedSignature } = require("./eth-sig-util")
-const { buildEddsa } = require("./circomlibjs")
-const Scalar = require("./ffjavascript").Scalar
-const sha256 = new (require("./sha.js/sha256"))()
+import { utils } from "ethers"
+const {
+  recoverPersonalSignature,
+  recoverTypedSignature,
+} = require("./eth-sig-util")
 
 function fromHexString(hexString) {
   return new Uint8Array(
@@ -76,14 +77,6 @@ const unwrapDER = (derEncoded, oid) => {
   return result
 }
 
-const toArrayBuffer = buf => {
-  const ab = new ArrayBuffer(buf.length)
-  const view = new Uint8Array(ab)
-  for (let i = 0; i < buf.length; ++i) {
-    view[i] = buf[i]
-  }
-  return ab
-}
 export const validate = async (state, action, func) => {
   const {
     query,
@@ -93,9 +86,16 @@ export const validate = async (state, action, func) => {
     type = "secp256k1",
     pubKey,
   } = action.input
+
   if (
     !includes(type)(
-      state.auth.algorithms || ["secp256k1", "ed25519", "rsa256", "poseidon"]
+      state.auth.algorithms || [
+        "secp256k1",
+        "secp256k1-2",
+        "ed25519",
+        "rsa256",
+        "poseidon",
+      ]
     )
   ) {
     throw new ContractError(`The wrong algorithm`)
@@ -169,20 +169,20 @@ export const validate = async (state, action, func) => {
       data: _data,
       signature,
     })
+  } else if (type == "secp256k1-2") {
+    signer = recoverPersonalSignature({
+      data: JSON.stringify(_data),
+      signature,
+    })
   } else if (type == "poseidon") {
-    const eddsa = await buildEddsa()
-    let msg = JSON.stringify(_data)
-    const msgHashed = Buffer.from(toArrayBuffer(sha256.update(msg).digest()))
-    const msg2 = eddsa.babyJub.F.e(Scalar.fromRprLE(msgHashed, 0))
-    const packedSig = Uint8Array.from(
-      Buffer.from(signature.replace(/^0x/, ""), "hex")
-    )
-    const sig = eddsa.unpackSignature(packedSig)
-    const packedPublicKey = Uint8Array.from(
-      Buffer.from(pubKey.replace(/^0x/, ""), "hex")
-    )
-    const publicKey = eddsa.babyJub.unpackPoint(packedPublicKey)
-    const isValid = eddsa.verifyPoseidon(msg2, sig, publicKey)
+    const { isValid } = (
+      await SmartWeave.contracts.viewContractState(state.contracts.intmax, {
+        function: "verify",
+        data: _data,
+        signature,
+        pubKey,
+      })
+    ).result
     if (isValid) {
       signer = caller
     } else {
@@ -190,7 +190,7 @@ export const validate = async (state, action, func) => {
     }
   }
 
-  if (includes(type)(["secp256k1", "poseidon"])) {
+  if (includes(type)(["secp256k1", "secp256k1-2", "poseidon"])) {
     if (/^0x/.test(signer)) signer = signer.toLowerCase()
     if (/^0x/.test(_caller)) _caller = _caller.toLowerCase()
   }
