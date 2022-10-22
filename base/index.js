@@ -39,6 +39,10 @@ class Base {
     return this.request("getAlgorithms", ...query)
   }
 
+  async getLinkedContract(...query) {
+    return this.request("getLinkedContract", ...query)
+  }
+
   async getSchema(...query) {
     return this.request("getSchema", ...query)
   }
@@ -144,7 +148,7 @@ class Base {
       nonce,
       query: JSON.stringify({
         func: "auth",
-        query: { address: addr },
+        query: { address: addr.toLowerCase() },
       }),
     }
     const data = {
@@ -221,6 +225,14 @@ class Base {
 
   async setAlgorithms(...query) {
     return this._write("setAlgorithms", ...query)
+  }
+
+  async linkContract(...query) {
+    return this._write("linkContract", ...query)
+  }
+
+  async unlinkContract(...query) {
+    return this._write("unlinkContract", ...query)
   }
 
   async setRules(...query) {
@@ -460,15 +472,25 @@ class Base {
     const signature = !isNil(wallet._account)
       ? await intmax.signMessage(JSON.stringify(data))
       : await intmax.sign(JSON.stringify(data))
-    const param = {
-      function: func,
-      query,
-      signature,
-      nonce,
-      caller: addr,
-      pubKey,
-      type: "poseidon",
-    }
+    const param =
+      !isNil(pubKey) && pubKey.length === 66
+        ? {
+            function: func,
+            query,
+            signature,
+            nonce,
+            caller: addr,
+            pubKey,
+            type: "poseidon",
+          }
+        : {
+            function: func,
+            query,
+            signature,
+            nonce,
+            caller: addr,
+            type: "secp256k1-2",
+          }
     return await this._request(func, param, dryWrite, bundle)
   }
 }

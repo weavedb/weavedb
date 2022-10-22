@@ -1,9 +1,13 @@
-import poseidonConstants from "./poseidon_constants_opt.js"
-
+//import poseidonConstants from "./poseidon_constants_opt.js"
 import { getCurveFromName, Scalar, F1Field } from "../ffjavascript"
 
-export async function buildPoseidon() {
-  const bn128 = await getCurveFromName("bn128", true, buildPoseidonWasm)
+export async function buildPoseidon(poseidonConstants) {
+  const bn128 = await getCurveFromName(
+    "bn128",
+    true,
+    buildPoseidonWasm,
+    poseidonConstants
+  )
 
   const F = bn128.Fr
 
@@ -51,7 +55,7 @@ export async function buildPoseidon() {
   return poseidon
 }
 
-export function buildPoseidonWasm(module) {
+export function buildPoseidonWasm(module, poseidonConstants) {
   const F = new F1Field(
     Scalar.e(
       "21888242871839275222246405745257275088548364400416034343698204186575808495617"

@@ -189,3 +189,18 @@ exports.pubToAddress = function (pubKey, sanitize) {
   return exports.keccak(pubKey).slice(-20)
 }
 exports.publicToAddress = exports.pubToAddress
+
+const assertIsBuffer = function (input) {
+  if (!Buffer.isBuffer(input)) {
+    const msg = `This method only supports Buffer but input was: ${input}`
+    throw new Error(msg)
+  }
+}
+
+exports.hashPersonalMessage = function (message) {
+  const prefix = Buffer.from(
+    `\u0019Ethereum Signed Message:\n${message.length}`,
+    "utf-8"
+  )
+  return Buffer.from(exports.keccak(Buffer.concat([prefix, message])))
+}

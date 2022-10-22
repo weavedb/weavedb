@@ -38,11 +38,11 @@ WeaveDB allows JSON-based functional programming on data, which opens up possibi
 
 ## Demo Dapps
 
-The v0.4 contract is deployed on the Warp mainnet at [DL6Jyvf_5o2qS_lgHJki76Ydx2FN5vb2MEvPkF00rqM](https://sonar.warp.cc/?#/app/contract/DL6Jyvf_5o2qS_lgHJki76Ydx2FN5vb2MEvPkF00rqM).
+The v0.5 contract is deployed on the Warp mainnet at [uPPza-MU3-lt9a4Iee9ZV046JvUmuDDGuhrnR9FoSiI](https://sonar.warp.cc/?#/app/contract/uPPza-MU3-lt9a4Iee9ZV046JvUmuDDGuhrnR9FoSiI).
 
 ### The Wall 2 on DEFINITY
 
-A v0.4 demo dapp (The Wall 2) is deployed at [xdiw4-hiaaa-aaaai-qnnbq-cai.ic0.app](https://xdiw4-hiaaa-aaaai-qnnbq-cai.ic0.app).
+A v0.5 demo dapp (The Wall 2) is deployed at [xdiw4-hiaaa-aaaai-qnnbq-cai.ic0.app](https://xdiw4-hiaaa-aaaai-qnnbq-cai.ic0.app).
 
 ### Todo Manager
 

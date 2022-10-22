@@ -7,7 +7,7 @@
   "ids": {},
   "indexes": {},
   "auth":{
-    "algorithms": ["secp256k1", "ed25519", "rsa256", "poseidon"],
+    "algorithms": ["secp256k1", "secp256k1-2", "ed25519", "rsa256", "poseidon"],
     "name": "weavedb",
     "version": "1",
     "links": {}
@@ -15,5 +15,6 @@
   "crons": {
     "lastExecuted": 0,
     "crons":{}
-  }
+  },
+  "contracts":{}
 }

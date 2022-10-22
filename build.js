@@ -1,6 +1,10 @@
 const { build } = require("esbuild")
 const replace = require("replace-in-file")
-const contracts = ["/contracts/contract.js"]
+const contracts = [
+  "/contracts/contract.js",
+  "/contracts/intmax.js",
+  "/contracts/poseidonConstants.js",
+]
 
 build({
   entryPoints: contracts.map(source => {
