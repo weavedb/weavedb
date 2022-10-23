@@ -5,6 +5,7 @@
   "license": "MIT",
   "dependencies": {
     "@exodus/schemasafe": "^1.0.0-rc.7",
+    "@metamask/eth-sig-util": "^5.0.0",
     "@peculiar/webcrypto": "^1.4.0",
     "arlocal": "1.1.42",
     "arweave": "1.11.4",
@@ -41,7 +42,7 @@
     "node": "16"
   },
   "scripts": {
-    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet RszGqgty1N3AtNfcUDj2BHn6ylCgFhK9ZLe2Bj6Uccw dbtcrG7tselFoyRzMm9j1e6HLEbjRR7QOgPmFNcCNKg",
+    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet RszGqgty1N3AtNfcUDj2BHn6ylCgFhK9ZLe2Bj6Uccw OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94",
     "test": "yarn build && mocha",
     "build": "yarn clean && node build.js && npm run cp",
     "clean": "rimraf ./dist",
