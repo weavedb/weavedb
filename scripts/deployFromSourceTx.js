@@ -2,8 +2,8 @@ require("dotenv").config()
 const fs = require("fs")
 const path = require("path")
 const Arweave = require("arweave")
-const wallet_name = process.argv[2]
 const { isNil } = require("ramda")
+const wallet_name = process.argv[2]
 const srcTxId = process.argv[3] || process.env.SOURCE_TX_ID
 const srcTxId_Intmax = process.argv[4] || process.env.INTMAX_SOURCE_TX_ID
 
@@ -71,8 +71,6 @@ const deploy = async () => {
   }
   wallet = JSON.parse(fs.readFileSync(wallet_path, "utf8"))
   walletAddress = await arweave.wallets.jwkToAddress(wallet)
-
-  const contractTxIdIntmax = await deployContractIntmax()
 
   const contractSrc = fs.readFileSync(
     path.join(__dirname, "../dist/contract.js"),
