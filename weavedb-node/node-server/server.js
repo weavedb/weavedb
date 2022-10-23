@@ -20,7 +20,13 @@ const weavedb = grpc.loadPackageDefinition(packageDefinition).weavedb
 let _cache = {}
 
 async function query(call, callback) {
-  const { method, query, nocache } = call.request
+  const { method, query, nocache, path } = call.request
+  console.log("call.request: ", call.request)
+  console.log("method: ", method)
+  console.log("query: ", query)
+  console.log("path: ", path)
+  console.log("nocache: ", nocache)
+  // console.log("call: ", call)
   const start = Date.now()
   const key = `${query}`
 
@@ -72,18 +78,40 @@ async function query(call, callback) {
   }
 }
 
+
+function sayHello(call, callback) {
+  console.log("sayHello:")
+
+  const { method, query, nocache, path } = call.request
+  console.log("call.request: ", call.request)
+  console.log("method: ", method)
+  console.log("query: ", query)
+  console.log("path: ", path)
+  console.log("name: ", name)
+  console.log("nocache: ", nocache)
+  callback(null, {message: 'Hello ' + call.request.name});
+}
+function ping(call, callback) {
+  // console.log("ping: " , call)  
+  callback(null, {message: 'pong '});
+}
+
 async function main() {
   sdk = new SDK(config)
+  console.log("config.contractTxId: ", config.contractTxId)
   const server = new grpc.Server()
 
   server.addService(weavedb.DB.service, {
     query,
+    ping,
+    sayHello
   })
 
   server.bindAsync(
-    "0.0.0.0:9090",
+    "0.0.0.0:8080",
     grpc.ServerCredentials.createInsecure(),
     () => {
+      console.log("8080")
       server.start()
     }
   )
