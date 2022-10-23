@@ -24,6 +24,7 @@ const deploy = async () => {
     port: 443,
     protocol: "https",
   })
+
   LoggerFactory.INST.logLevel("error")
   const warp = WarpNodeFactory.memCachedBased(arweave).useWarpGateway().build()
   const wallet_path = path.resolve(
@@ -37,7 +38,7 @@ const deploy = async () => {
     process.exit()
   }
   const wallet = JSON.parse(fs.readFileSync(wallet_path, "utf8"))
-
+  // console.log("wallet: ", wallet)
   const contractSrc = fs.readFileSync(
     path.join(__dirname, "../dist/contract.js"),
     "utf8"

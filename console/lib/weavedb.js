@@ -24,8 +24,9 @@ import {
 } from "ramda"
 import { Buffer } from "buffer"
 import weavedb from "lib/weavedb.json"
+// import weavedb from "lib/weavedb.config.json"
 let sdk
-
+let light
 export const setupWeaveDB = async ({
   conf,
   set,
@@ -55,6 +56,16 @@ export const setupWeaveDB = async ({
     contractTxId: contractTxId,
     arweave: arweave[network],
   })
+
+  // light = new client({
+  //   wallet: weavedb.arweave,
+  //   name: weavedb.weavedb.name,
+  //   version: weavedb.weavedb.version,
+  //   contractTxId: contractTxId,
+  //   arweave: arweave[network],
+  // })
+  // const a = await light.get("asfa", 1)
+  // console.log("a: ", a)
   window.Buffer = Buffer
   set(true, "initWDB")
   return sdk
@@ -129,7 +140,8 @@ export const createTempAddress = async ({
   let identity = ex_identity
   let tx
   if (isNil(identity)) {
-    ;({ tx, identity } = await sdk.createTempAddress(addr))
+    // ;({ tx, identity } = await sdk.createTempAddress(addr))
+    ({ tx, identity } = await sdk.createTempAddress(addr))
   } else {
     await lf.setItem("temp_address:current", addr)
     set(addr, "temp_current")

@@ -3,6 +3,7 @@
   "version": "0.2.0",
   "main": "index.js",
   "license": "MIT",
+  "_type": "module",
   "dependencies": {
     "@bit/warashibe.nextdapp.core": "file:./nd/core",
     "@chakra-ui/react": "^2.2.4",
