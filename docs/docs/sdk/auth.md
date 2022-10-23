@@ -145,3 +145,22 @@ await db.add({ name: "Bob", age: 20 }, "ppl", { ar: wallet })
 ```js
 await db.add({ name: "Bob", age: 20 }, "ppl", { intmax: signer })
 ```
+## Setting Authentication Algorithms
+
+WeaveDB defaults to use all algorithms, but you can specify authentication algoritims to enable for your instance.
+
+### Algorithms
+
+- `secp256k1` : for EVM-based accounts ( Metamask )
+- `ed25519` : for DFINITY ( Internet Identity )
+- `rsa256` : for Arweave ( ArConnect )
+- `poseidon` : for IntmaxWallet with Zero Knowledge Proof
+- `secp256k1-2` : for IntmaxWallet with EVM-based accounts
+
+### Set Algorithms
+
+To enable Intmax Wallet, and disable the others.
+
+```javascript
+await db.setAlgorithms([ "poseidon", "secp256k1-2" ])
+```
