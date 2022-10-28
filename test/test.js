@@ -401,6 +401,7 @@ describe("WeaveDB", function () {
       identity.address.toLowerCase()
     )
   })
+
   it("should pre-process the new data with rules", async () => {
     const rules = {
       let: {
