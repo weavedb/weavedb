@@ -22,7 +22,7 @@ let warp, walletAddress, arweave, wallet
 
 async function deployContract(secure) {
   const contractSrc = fs.readFileSync(
-    path.join(__dirname, "../dist/contract.js"),
+    path.join(__dirname, "../dist/contracts/contract.js"),
     "utf8"
   )
 
