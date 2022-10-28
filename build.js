@@ -4,6 +4,7 @@ const contracts = [
   "/contracts/contract.js",
   "/contracts/intmax.js",
   "/contracts/poseidonConstants.js",
+  "/contracts-exm/exm.js",
 ]
 
 build({
