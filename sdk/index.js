@@ -52,7 +52,6 @@ class SDK extends Base {
   }
 
   initialize({ contractTxId, wallet, name, version, EthWallet }) {
-    this.arweave_wallet = wallet
     this.db = this.warp.pst(contractTxId).connect(wallet)
     this.domain = { name, version, verifyingContract: contractTxId }
     if (!isNil(EthWallet)) this.setEthWallet(EthWallet)

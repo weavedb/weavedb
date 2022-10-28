@@ -41,7 +41,6 @@ export const addAddressLink = async (state, action, signer) => {
     data,
     signature,
   })
-
   const _signer = signer2.toLowerCase()
   if (_signer !== address.toLowerCase()) err()
   if (!isNil(state.auth.links[address.toLowerCase()])) {
