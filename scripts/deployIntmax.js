@@ -25,7 +25,7 @@ async function deployContractIntmax(
   contractTxIdPoseidon2
 ) {
   const contractSrc = fs.readFileSync(
-    path.join(__dirname, "../dist/intmax.js"),
+    path.join(__dirname, "../dist/contracts/intmax.js"),
     "utf8"
   )
   const stateFromFile = JSON.parse(
@@ -57,7 +57,7 @@ async function deployContractIntmax(
 
 async function deployContractPoseidon(poseidonConstants) {
   const contractSrc = fs.readFileSync(
-    path.join(__dirname, "../dist/poseidonConstants.js"),
+    path.join(__dirname, "../dist/contracts/poseidonConstants.js"),
     "utf8"
   )
   const stateFromFile = JSON.parse(
