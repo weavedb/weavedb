@@ -76,6 +76,10 @@ class Base {
         intmax,
       } = opt)
     }
+
+    if (all(isNil)([wallet, ii, intmax, ar]) && !isNil(this.arweave_wallet)) {
+      ar = this.arweave_wallet
+    }
     return !isNil(intmax)
       ? await this.writeWithIntmax(intmax, func, query, nonce, dryWrite, bundle)
       : !isNil(ii)
@@ -116,7 +120,7 @@ class Base {
   }
 
   async createTempAddress(addr) {
-    return this._createTempAddress(addr.toLowerCase(), {
+    return this._createTempAddress(addr, {
       wallet: this.wallet || addr.toLowerCase(),
     })
   }
@@ -130,7 +134,7 @@ class Base {
       throw Error("No Intmax wallet")
       return
     }
-    return this._createTempAddress(addr, {
+    return this._createTempAddress(addr.toLowerCase(), {
       intmax,
     })
   }
@@ -148,7 +152,7 @@ class Base {
       nonce,
       query: JSON.stringify({
         func: "auth",
-        query: { address: addr.toLowerCase() },
+        query: { address: addr },
       }),
     }
     const data = {
