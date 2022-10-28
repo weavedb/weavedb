@@ -46,7 +46,7 @@ async function init() {
   console.log(`Arweave wallet generated: ` + walletAddress)
   console.log(`Ethereum wallet generated: ` + wallet.getAddressString())
   contractSrc = fs.readFileSync(
-    path.join(__dirname, "../dist/contract.js"),
+    path.join(__dirname, "../dist/contracts/contract.js"),
     "utf8"
   )
   const stateFromFile = JSON.parse(
