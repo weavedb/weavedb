@@ -40,13 +40,8 @@ Deploy on the Warp mainnet.
 node scripts/generate-wallet.js mainnet
 yarn deploy
 ```
-or on the testnet
 
-```bash
-node scripts/generate-wallet.js testnet
-node scripts/add-funds.js testnet
-yarn deploy-testnet
-```
+Testnet deployment has been deprecated as it's not so stable. You can test on the mainnet for free, or we are going to develop a local test environment soon.
 
 ## Buffer Dependency
 In the client app, you will need to install `buffer` package and expose it to `window.Buffer` to resolve the Buffer dependency for crypto authentications. This will be removed in future releases.
