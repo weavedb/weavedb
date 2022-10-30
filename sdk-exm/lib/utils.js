@@ -65,103 +65,6 @@ const getDoc = (data, path, _signer, func, new_data, secure = false) => {
   const doc = col.__docs[id]
   if (!isNil(_signer) && isNil(doc.setter)) doc.setter = _signer
   let next_data = null
-  if (path.length === 2) {
-    if (includes(func)(["set", "add"])) {
-      next_data = mergeData(clone(doc), new_data, true, _signer).__data
-    } else if (includes(func)(["update", "upsert"])) {
-      next_data = mergeData(clone(doc), new_data, false, _signer).__data
-    }
-  }
-  if (
-    includes(func)(["set", "add", "update", "upsert", "delete"]) &&
-    (secure || !isNil(rules))
-  ) {
-    let op = func
-    if (includes(op)(["set", "add"])) op = "create"
-    if (op === "create" && !isNil(doc.__data)) op = "update"
-    if (op === "upsert") {
-      if (!isNil(doc.__data)) {
-        op = "update"
-      } else {
-        op = "create"
-      }
-    }
-    let allowed = false
-    let rule_data = {
-      request: {
-        method: op,
-        auth: { signer: _signer },
-        block: {
-          height: SmartWeave.block.height,
-          timestamp: SmartWeave.block.timestamp,
-        },
-        transaction: {
-          id: SmartWeave.transaction.id,
-        },
-        resource: { data: new_data },
-        id: last(path),
-        path,
-      },
-      resource: {
-        data: doc.__data,
-        setter: doc.setter,
-        newData: next_data,
-        id: last(path),
-        path,
-      },
-    }
-    const setElm = (k, val) => {
-      let elm = rule_data
-      let elm_path = k.split(".")
-      let i = 0
-      for (let v of elm_path) {
-        if (i === elm_path.length - 1) {
-          elm[v] = val
-          break
-        } else if (isNil(elm[v])) elm[v] = {}
-        elm = elm[v]
-        i++
-      }
-      return elm
-    }
-
-    if (!isNil(rules)) {
-      for (let k in rules || {}) {
-        const [permission, _ops] = k.split(" ")
-        if (permission !== "let") continue
-        const rule = rules[k]
-        let ok = false
-        if (isNil(_ops)) {
-          ok = true
-        } else {
-          const ops = _ops.split(",")
-          if (intersection(ops)(["write", op]).length > 0) {
-            ok = true
-          }
-        }
-        if (ok) {
-          for (let k2 in rule || {}) {
-            setElm(k2, fpjson(rule[k2], rule_data))
-          }
-        }
-      }
-    }
-
-    for (let k in rules || {}) {
-      const spk = k.split(" ")
-      if (spk[0] === "let") continue
-      const rule = rules[k]
-      const [permission, _ops] = k.split(" ")
-      const ops = _ops.split(",")
-      if (intersection(ops)(["write", op]).length > 0) {
-        const ok = jsonLogic.apply(rule, rule_data)
-        if (permission === "allow" && ok) {
-          allowed = true
-        } else if (permission === "deny" && ok) err()
-      }
-    }
-    if (!allowed) err("operation not allowed")
-  }
   return path.length >= 4
     ? getDoc(doc.subs, slice(2, path.length, path), _signer, func, null, secure)
     : {
@@ -201,15 +104,6 @@ const parse = async (state, action, func, signer, salt, contractErr = true) => {
     path = query
   } else {
     ;[new_data, ...path] = query
-    /*
-    if (func === "add") {
-      const id = await genId(action, salt)
-      if (isNil(state.ids[SmartWeave.transaction.id])) {
-        state.ids[SmartWeave.transaction.id] = []
-      }
-      state.ids[SmartWeave.transaction.id].push(id)
-      path.push(id)
-      }*/
   }
   if (
     (isNil(new_data) &&
@@ -257,25 +151,6 @@ const parse = async (state, action, func, signer, salt, contractErr = true) => {
     const doc = getDoc(data, path, signer, func, new_data, state.secure)
     _data = doc.doc
     ;({ next_data, schema, rules, col } = doc)
-  }
-  if (
-    includes(func)(["update", "upsert", "delete"]) &&
-    _data.setter !== signer
-  ) {
-  } else if (
-    includes(func)([
-      "addIndex",
-      "removeIndex",
-      "setSchema",
-      "setAlgorithms",
-      "setRules",
-      "unlinkContract",
-      "linkContract",
-      "unlinkContract",
-    ]) &&
-    action.caller !== state.owner
-  ) {
-    err("caller is not contract owner", contractErr)
   }
   return { data, query, new_data, path, _data, schema, col, next_data }
 }

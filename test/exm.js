@@ -85,7 +85,7 @@ describe("WeaveDB on EXM", function () {
             path.resolve(__dirname, "../dist/contracts-exm/initial-state.json")
           )
         ),
-        owner: "@test",
+        owner: addr,
       },
     })
   })
