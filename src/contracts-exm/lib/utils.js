@@ -119,7 +119,6 @@ export const getDoc = (data, path, _signer, func, new_data, secure = false) => {
       }
       return elm
     }
-
     if (!isNil(rules)) {
       for (let k in rules || {}) {
         const [permission, _ops] = k.split(" ")
@@ -136,12 +135,11 @@ export const getDoc = (data, path, _signer, func, new_data, secure = false) => {
         }
         if (ok) {
           for (let k2 in rule || {}) {
-            setElm(k2, fpjson(rule[k2], rule_data))
+            setElm(k2, fpjson(clone(rule[k2]), rule_data))
           }
         }
       }
     }
-
     for (let k in rules || {}) {
       const spk = k.split(" ")
       if (spk[0] === "let") continue
@@ -307,7 +305,7 @@ export const parse = async (
       "linkContract",
       "unlinkContract",
     ]) &&
-    action.caller !== state.owner
+    signer !== state.owner
   ) {
     err("caller is not contract owner", contractErr)
   }
@@ -315,7 +313,7 @@ export const parse = async (
 }
 export const validateSchema = (schema, data, contractErr) => {
   if (!isNil(schema)) {
-    const _validate = validator(clone(schema))
+    const _validate = validator(clone(JSON.parse(JSON.stringify(schema))))
     if (!_validate(data)) err(null, contractErr)
   }
 }

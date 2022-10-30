@@ -1,19 +1,13 @@
 const EthCrypto = require("eth-crypto")
 const buildEddsa = require("circomlibjs").buildEddsa
 const { includes, all, complement, init, is, last, isNil } = require("ramda")
-let Arweave = require("arweave")
-Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
 const ethSigUtil = require("@metamask/eth-sig-util")
 const { privateToAddress } = require("ethereumjs-util")
-
 const EIP712Domain = [
   { name: "name", type: "string" },
   { name: "version", type: "string" },
   { name: "verifyingContract", type: "string" },
 ]
-
-const encoding = require("text-encoding")
-const encoder = new encoding.TextEncoder()
 
 class Base {
   setEthWallet(wallet) {
@@ -414,7 +408,8 @@ class Base {
       primaryType: "Query",
       message,
     }
-    const encoded = encoder.encode(JSON.stringify(data))
+    const enc = new TextEncoder()
+    const encoded = enc.encode(JSON.stringify(data))
     const signature = isNil(wallet)
       ? (await this.arweave.wallets.crypto.sign(ar, encoded)).toString("hex")
       : Buffer.from(
