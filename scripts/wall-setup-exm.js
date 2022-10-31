@@ -24,6 +24,81 @@ if (isNil(token)) {
   process.exit()
 }
 
+const schemas_users = {
+  type: "object",
+  required: ["address", "name"],
+  properties: {
+    address: {
+      type: "string",
+    },
+    name: {
+      type: "string",
+    },
+  },
+}
+const schemas_wall = {
+  type: "object",
+  required: ["text", "user", "date", "id"],
+  properties: {
+    id: {
+      type: "string",
+    },
+    text: {
+      type: "string",
+    },
+    name: {
+      type: "string",
+    },
+    date: {
+      type: "number",
+    },
+  },
+}
+const rules_users = {
+  "allow create,update": {
+    and: [
+      {
+        "==": [{ var: "resource.id" }, { var: "request.auth.signer" }],
+      },
+      {
+        "==": [
+          { var: "request.auth.signer" },
+          { var: "resource.newData.address" },
+        ],
+      },
+      {
+        "!=": [{ var: "resource.newData.name" }, ""],
+      },
+    ],
+  },
+  "allow delete": {
+    and: [
+      {
+        "==": [{ var: "resource.id" }, { var: "request.auth.signer" }],
+      },
+    ],
+  },
+}
+const rules_wall = {
+  "let create": {
+    id: [
+      "join",
+      ":",
+      [{ var: "resource.newData.user" }, { var: "resource.newData.id" }],
+    ],
+  },
+  "allow create": {
+    and: [
+      {
+        "!=": [{ var: "resource.newData.text" }, ""],
+      },
+    ],
+  },
+  "allow delete": {
+    "==": [{ var: "request.auth.signer" }, { var: "resource.data.user" }],
+  },
+}
+
 const setup = async () => {
   const wallet_path = path.resolve(
     __dirname,
@@ -40,117 +115,26 @@ const setup = async () => {
     functionId,
     token,
   })
-
-  const schemas_users = {
-    type: "object",
-    required: ["address", "name"],
-    properties: {
-      address: {
-        type: "string",
-      },
-      name: {
-        type: "string",
-      },
-    },
+  const queries = [
+    { func: "setSchema", q: [schemas_users, "users"], msg: "users schema set" },
+    { func: "setRules", q: [rules_users, "users"], msg: "users rules set" },
+    { func: "setSchema", q: [schemas_wall, "wall"], msg: "wall schema set" },
+    { func: "setRules", q: [rules_wall, "wall"], msg: "wall rules set" },
+  ]
+  const send = async (v, tries = 0) => {
+    let res = await db[v.func](...v.q)
+    if (values(res.data.execution.validity)[0] !== true) {
+      if (tries < 3) {
+        console.log("retry..." + tries)
+        await send(v, ++tries)
+      } else {
+        console.log("something went wrong")
+        process.exit()
+      }
+    }
+    console.log(v.msg)
   }
-  if (
-    values(
-      (await db.setSchema(schemas_users, "users")).data.execution.validity
-    )[0] !== true
-  ) {
-    console.log("something went wrong")
-    process.exit()
-  }
-  console.log("users schema set")
-  const rules_users = {
-    "allow create,update": {
-      and: [
-        {
-          "==": [{ var: "resource.id" }, { var: "request.auth.signer" }],
-        },
-        {
-          "==": [
-            { var: "request.auth.signer" },
-            { var: "resource.newData.address" },
-          ],
-        },
-        {
-          "!=": [{ var: "resource.newData.name" }, ""],
-        },
-      ],
-    },
-    "allow delete": {
-      and: [
-        {
-          "==": [{ var: "resource.id" }, { var: "request.auth.signer" }],
-        },
-      ],
-    },
-  }
-  if (
-    values(
-      (await db.setRules(rules_users, "users")).data.execution.validity
-    )[0] !== true
-  ) {
-    console.log("something went wrong")
-    process.exit()
-  }
-  console.log("users rules set")
-  const schemas_wall = {
-    type: "object",
-    required: ["text", "user", "date", "id"],
-    properties: {
-      id: {
-        type: "string",
-      },
-      text: {
-        type: "string",
-      },
-      name: {
-        type: "string",
-      },
-      date: {
-        type: "number",
-      },
-    },
-  }
-  if (
-    values(
-      (await db.setSchema(schemas_wall, "wall")).data.execution.validity
-    )[0] !== true
-  ) {
-    console.log("something went wrong")
-    process.exit()
-  }
-  console.log("wall schema set")
-  const rules_wall = {
-    "let create": {
-      id: [
-        "join",
-        ":",
-        [{ var: "resource.newData.user" }, { var: "resource.newData.id" }],
-      ],
-    },
-    "allow create": {
-      and: [
-        {
-          "!=": [{ var: "resource.newData.text" }, ""],
-        },
-      ],
-    },
-    "allow delete": {
-      "==": [{ var: "request.auth.signer" }, { var: "resource.data.user" }],
-    },
-  }
-  if (
-    values(
-      (await db.setRules(rules_wall, "wall")).data.execution.validity
-    )[0] !== true
-  ) {
-    console.log("something went wrong")
-    process.exit()
-  }
-  console.log("wall rules set")
+  for (let v of queries) await send(v)
   process.exit()
 }
 
