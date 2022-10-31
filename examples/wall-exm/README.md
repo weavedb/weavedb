@@ -1,34 +1,66 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# The Wall EXM
 
-## Getting Started
+![](../../assets/the-wall-exm.png)
 
-First, run the development server:
+This is a demo dapp built with [WeaveDB](https://weavedb.dev) on [Execution Machine](https://exm.dev).
+
+You can access a working demo at [wall-exm.vercel.app](https://wall-exm.vercel.app/).
+
+## Run Locally
+
+### 1. Clone the WeaveDB repo.
 
 ```bash
-npm run dev
-# or
+git clone https://github.com/weavedb/weavedb.git
+cd weavedb
+yarn
+```
+
+### 2. Generate a test Arweave account.
+
+```bash
+node scripts/generate-wallet.js mainnet
+```
+A new wallet is stored at `scripts/.wallets/wallet-mainnet.json`
+
+### 3. Deploy a WeaveDB function to EXM.
+
+Sign up for [EXM](https://exm.dev) to get a token, if you haven't yet.
+
+```bash
+yarn deploy-exm [YOUR_TOKEN]
+```
+
+Take note of the `id` returned by the command. This is your `functionId`.
+
+### 4. Set up the WeaveDB instance.
+
+Set up data schemas and access control rules for the wall dapp.
+
+```bash
+node scripts/wall-setup-exm.js mainnet [YOUR_FUNCTION_ID] [YOUR_TOKEN]
+```
+
+### 5. Set environmental variables.
+
+Move into the dapp directory, and install the dependencies.
+
+```bash
+cd examples/wall-exm
+yarn
+```
+
+Create `.env.local` in the dapp root directory, and assign environmental variables.
+
+```
+TOKEN=[YOUR_TOKEN]
+NEXT_PUBLIC_FUNCTION_ID=[YOUR_FUNCTION_ID]
+```
+
+### 6. Run the dapp.
+
+```bash
 yarn dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `pages/index.js`. The page auto-updates as you edit the file.
-
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.js`.
-
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+Now the dapp is running at [localhost:3000](http://localhost:3000).
