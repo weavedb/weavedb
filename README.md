@@ -11,6 +11,8 @@
 - [SDK](/sdk)
 - [Web Light Client](/web-client)
 - [Node Light Client](/node-client)
+- [SDK for EXM](/sdk-exm)
+- [Web Client for EXM](/sdk-exm-web)
 - [gRPC Node](/node)
 - [REPL](/scripts/runNode.js)
 - [Web Console](/console)
