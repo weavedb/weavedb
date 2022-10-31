@@ -1,5 +1,5 @@
 import { includes, isNil } from "ramda"
-import { sign } from "tweetnacl"
+import { sign } from "./tweetnacl"
 import { utils } from "ethers"
 const {
   recoverPersonalSignature,
@@ -130,6 +130,7 @@ export const validate = async (state, action, func) => {
     primaryType: "Query",
     message,
   }
+
   let signer = null
   if (type === "ed25519") {
     try {

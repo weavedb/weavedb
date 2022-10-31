@@ -1199,9 +1199,9 @@ cipher-base@^1.0.0, cipher-base@^1.0.1, cipher-base@^1.0.3:
     inherits "^2.0.1"
     safe-buffer "^5.0.1"
 
-"circomlibjs@git+https://github.com/InternetMaximalism/circomlibjs#fc534a12d9b34f2694ed0f75a686d080fc7a92d6":
+"circomlibjs@git+https://github.com/InternetMaximalism/circomlibjs.git#fc534a12d9b34f2694ed0f75a686d080fc7a92d6":
   version "0.1.7"
-  resolved "git+https://github.com/InternetMaximalism/circomlibjs#fc534a12d9b34f2694ed0f75a686d080fc7a92d6"
+  resolved "git+https://github.com/InternetMaximalism/circomlibjs.git#fc534a12d9b34f2694ed0f75a686d080fc7a92d6"
   dependencies:
     blake-hash "^2.0.0"
     blake2b "^2.1.3"
@@ -1910,6 +1910,14 @@ is-weakref@^1.0.2:
   dependencies:
     call-bind "^1.0.2"
 
+isomorphic-fetch@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/isomorphic-fetch/-/isomorphic-fetch-3.0.0.tgz#0267b005049046d2421207215d45d6a262b8b8b4"
+  integrity sha512-qvUtwJ3j6qwsF3jLxkZ72qCgjMysPzDfeV240JHiGZsANBYd+EEuu35v7dfrJ9Up0Ak07D7GGSkGhCHTqg/5wA==
+  dependencies:
+    node-fetch "^2.6.1"
+    whatwg-fetch "^3.4.1"
+
 js-sha3@0.8.0:
   version "0.8.0"
   resolved "https://registry.yarnpkg.com/js-sha3/-/js-sha3-0.8.0.tgz#b9b7a5da73afad7dedd0f8c463954cbde6818840"
@@ -1991,6 +1999,13 @@ node-addon-api@^3.0.0:
   version "3.2.1"
   resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-3.2.1.tgz#81325e0a2117789c0128dab65e7e38f07ceba161"
   integrity sha512-mmcei9JghVNDYydghQmeDX8KoAm0FAiYyIcUt/N4nhyAipB17pllZQDOJD2fotxABnt4Mdz+dKTO7eftLg4d0A==
+
+node-fetch@^2.6.1:
+  version "2.6.7"
+  resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.6.7.tgz#24de9fba827e3b4ae44dc8b20256a379160052ad"
+  integrity sha512-ZjMPFEfVx5j+y2yF35Kzx5sF7kDzxuDj6ziH4FFbOp87zKDZNx8yExJIb05OGF4Nlt9IHFIMBkRl41VdvcNdbQ==
+  dependencies:
+    whatwg-url "^5.0.0"
 
 node-gyp-build@^4.2.0, node-gyp-build@^4.2.2:
   version "4.5.0"
@@ -2189,10 +2204,10 @@ strip-hex-prefix@1.0.0:
   dependencies:
     is-hex-prefixed "1.0.0"
 
-text-encoding@^0.7.0:
-  version "0.7.0"
-  resolved "https://registry.yarnpkg.com/text-encoding/-/text-encoding-0.7.0.tgz#f895e836e45990624086601798ea98e8f36ee643"
-  integrity sha512-oJQ3f1hrOnbRLOcwKz0Liq2IcrvDeZRHXhd9RgLrsT+DjWY/nty1Hi7v3dtkaEYbPYe0mUoOfzRrMwfXXwgPUA==
+tr46@~0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/tr46/-/tr46-0.0.3.tgz#8184fd347dac9cdc185992f3a6622e14b9d9ab6a"
+  integrity sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw==
 
 tweetnacl-util@^0.15.1:
   version "0.15.1"
@@ -2243,24 +2258,40 @@ wasmcurves@0.2.0:
   dependencies:
     wasmbuilder "0.0.16"
 
-weavedb-base@^0.5.5:
-  version "0.5.5"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.5.5.tgz#103accde20cfbabea04fbadc434eda2135339815"
-  integrity sha512-Fo06Uxy+ou/9t0wLgU5egcyVmlOZrxOR3SqRECvXXa3vgGLSyCBPkGxQsA89D9S3Hgpkij2ykHmVKkS7r2EKmQ==
+weavedb-base@^0.5.11:
+  version "0.5.11"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.5.11.tgz#33625c6abed9b0ebffdb30714a4c07f60ca07315"
+  integrity sha512-efCzLW1RRgYAE2zpqo+Wsk/OXZCH3MA42lIxdGSOHalL3YwnrB4S4wKIVoc21ZwhqSaGRaCivhZtVonqb8o4XQ==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"
-    arweave "^1.11.4"
     circomlibjs "git+https://github.com/InternetMaximalism/circomlibjs#fc534a12d9b34f2694ed0f75a686d080fc7a92d6"
     eth-crypto "^2.3.0"
     ethereumjs-util "^7.1.5"
     ramda "^0.28.0"
-    text-encoding "^0.7.0"
 
 web-worker@^1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/web-worker/-/web-worker-1.2.0.tgz#5d85a04a7fbc1e7db58f66595d7a3ac7c9c180da"
   integrity sha512-PgF341avzqyx60neE9DD+XS26MMNMoUQRz9NOZwW32nPQrF6p77f1htcnjBSEV8BGMKZ16choqUG4hyI0Hx7mA==
+
+webidl-conversions@^3.0.0:
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/webidl-conversions/-/webidl-conversions-3.0.1.tgz#24534275e2a7bc6be7bc86611cc16ae0a5654871"
+  integrity sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==
+
+whatwg-fetch@^3.4.1:
+  version "3.6.2"
+  resolved "https://registry.yarnpkg.com/whatwg-fetch/-/whatwg-fetch-3.6.2.tgz#dced24f37f2624ed0281725d51d0e2e3fe677f8c"
+  integrity sha512-bJlen0FcuU/0EMLrdbJ7zOnW6ITZLrZMIarMUVmdKtsGvZna8vxKYaexICWPfZ8qwf9fzNq+UEIZrnSaApt6RA==
+
+whatwg-url@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/whatwg-url/-/whatwg-url-5.0.0.tgz#966454e8765462e37644d3626f6742ce8b70965d"
+  integrity sha512-saE57nupxk6v3HY35+jzBwYa0rKSy0XR8JSxZPwgLr7ys0IBzhGviA1/TUGJLmSVqs8pb9AnvICXEuOHLprYTw==
+  dependencies:
+    tr46 "~0.0.3"
+    webidl-conversions "^3.0.0"
 
 which-boxed-primitive@^1.0.2:
   version "1.0.2"

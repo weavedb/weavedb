@@ -1,4 +1,5 @@
-const Base = require("weavedb-base")
+//const Base = require("weavedb-base")
+const Base = require("../base")
 const Arweave = require("arweave")
 const { handle } = require("./lib/reads")
 const { clone, keys } = require("ramda")

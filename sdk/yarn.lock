@@ -3024,11 +3024,6 @@ tarn@^3.0.1:
   resolved "https://registry.yarnpkg.com/tarn/-/tarn-3.0.2.tgz#73b6140fbb881b71559c4f8bfde3d9a4b3d27693"
   integrity sha512-51LAVKUSZSVfI05vjPESNc5vwqqZpbXCsU+/+wxlOrUjk2SnFTt97v9ZgQrD4YmxYW1Px6w2KjaDitCfkvgxMQ==
 
-text-encoding@^0.7.0:
-  version "0.7.0"
-  resolved "https://registry.yarnpkg.com/text-encoding/-/text-encoding-0.7.0.tgz#f895e836e45990624086601798ea98e8f36ee643"
-  integrity sha512-oJQ3f1hrOnbRLOcwKz0Liq2IcrvDeZRHXhd9RgLrsT+DjWY/nty1Hi7v3dtkaEYbPYe0mUoOfzRrMwfXXwgPUA==
-
 tildify@2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/tildify/-/tildify-2.0.0.tgz#f205f3674d677ce698b7067a99e949ce03b4754a"
@@ -3144,19 +3139,17 @@ wasmcurves@0.2.0:
   dependencies:
     wasmbuilder "0.0.16"
 
-weavedb-base@^0.5.5:
-  version "0.5.5"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.5.5.tgz#103accde20cfbabea04fbadc434eda2135339815"
-  integrity sha512-Fo06Uxy+ou/9t0wLgU5egcyVmlOZrxOR3SqRECvXXa3vgGLSyCBPkGxQsA89D9S3Hgpkij2ykHmVKkS7r2EKmQ==
+weavedb-base@^0.5.11:
+  version "0.5.11"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.5.11.tgz#33625c6abed9b0ebffdb30714a4c07f60ca07315"
+  integrity sha512-efCzLW1RRgYAE2zpqo+Wsk/OXZCH3MA42lIxdGSOHalL3YwnrB4S4wKIVoc21ZwhqSaGRaCivhZtVonqb8o4XQ==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"
-    arweave "^1.11.4"
     circomlibjs "git+https://github.com/InternetMaximalism/circomlibjs#fc534a12d9b34f2694ed0f75a686d080fc7a92d6"
     eth-crypto "^2.3.0"
     ethereumjs-util "^7.1.5"
     ramda "^0.28.0"
-    text-encoding "^0.7.0"
 
 web-worker@^1.2.0:
   version "1.2.0"
