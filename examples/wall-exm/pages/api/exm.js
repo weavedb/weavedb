@@ -1,5 +1,4 @@
 import SDK from "weavedb-exm-sdk-web"
-import { includes } from "ramda"
 
 export default async function handler(req, res) {
   const query = JSON.parse(req.body)
@@ -13,13 +12,9 @@ export default async function handler(req, res) {
   } else if (query.function === "ids") {
     res.status(200).json(await db.getIds(query.tx))
   } else if (
-    includes(query.function)([
-      "get",
-      "cget",
-      "getIndexes",
-      "getSchema",
-      "getRules",
-    ])
+    ["get", "cget", "getIndexes", "getSchema", "getRules"].includes(
+      query.function
+    )
   ) {
     res.status(200).json(await db[query.function](...query.query))
   } else {

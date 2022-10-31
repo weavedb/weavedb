@@ -5,7 +5,7 @@ const Arweave = require("arweave")
 const { isNil } = require("ramda")
 const wallet_name = process.argv[2]
 const srcTxId = process.argv[3] || process.env.SOURCE_TX_ID
-const srcTxId_Intmax = process.argv[4] || process.env.INTMAX_SOURCE_TX_ID
+const contractTxId_Intmax = process.argv[4] || process.env.INTMAX_SOURCE_TX_ID
 
 const {
   PstContract,
@@ -43,7 +43,7 @@ async function deployContractIntmax() {
     {
       wallet,
       initState: JSON.stringify(initialState),
-      srcTxId: srcTxId_Intmax,
+      srcTxId: contractTxId_Intmax,
     },
     wallet_name === "mainnet"
   )
@@ -89,7 +89,7 @@ const deploy = async () => {
       owner: walletAddress,
     },
   }
-  initialState.contracts.intmax = contractTxIdIntmax
+  initialState.contracts.intmax = contractTxId_Intmax
   const res = await warp.createContract.deployFromSourceTx(
     {
       wallet,
