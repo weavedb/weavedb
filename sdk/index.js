@@ -2,7 +2,6 @@ const { all, complement, isNil } = require("ramda")
 let Arweave = require("arweave")
 Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
 const Base = require("weavedb-base")
-
 const {
   Warp,
   WarpNodeFactory,

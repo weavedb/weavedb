@@ -37,7 +37,8 @@
     "tweetnacl": "^1.0.3",
     "warp-contracts": "1.1.14",
     "wasmbuilder": "^0.0.16",
-    "wasmcurves": "^0.2.0"
+    "wasmcurves": "^0.2.0",
+    "weavedb-base": "^0.5.6"
   },
   "engines": {
     "node": "16"
