@@ -1,4 +1,4 @@
-import {
+const {
   hasPath,
   uniq,
   pluck,
@@ -30,10 +30,10 @@ import {
   slice,
   filter,
   map,
-} from "ramda"
+} = require("ramda")
 
-import { err, getDoc, getCol } from "../../lib/utils"
-import { getIndex, _getIndex } from "../../lib/index"
+const { err, getDoc, getCol } = require("../../lib/utils")
+const { getIndex, _getIndex } = require("../../lib/index")
 
 const parseQuery = (state, action) => {
   const { data } = state
@@ -238,7 +238,7 @@ const bsearch = function (arr, x, sort, db, start = 0, end = arr.length - 1) {
   }
 }
 
-export const get = async (state, action, cursor = false) => {
+exports.get = async (state, action, cursor = false) => {
   const {
     path,
     _limit,
@@ -413,10 +413,6 @@ export const get = async (state, action, cursor = false) => {
                 id: v,
                 setter: docs[v].setter,
                 data: docs[v].__data,
-                block: {
-                  height: SmartWeave.block.height,
-                  timestamp: SmartWeave.block.timestamp,
-                },
               }
             : docs[v].__data
         )

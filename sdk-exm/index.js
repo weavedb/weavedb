@@ -1,7 +1,5 @@
-//const Base = require("weavedb-base")
-const Base = require("../base")
+const Base = require("weavedb-base")
 const Arweave = require("arweave")
-const { handle } = require("./lib/reads")
 const { clone, keys } = require("ramda")
 const { Exm } = require("@execution-machine/sdk")
 
@@ -25,12 +23,11 @@ class SDK extends Base {
   }
 
   async viewState(opt) {
-    this.state = await this.exm.functions.read(this.functionId)
-    return await handle(clone(this.state), { input: opt })
+    const tx = await this.exm.functions.write(this.functionId, opt)
+    return tx.data.execution.result
   }
 
   async getNonce(addr) {
-    this.state = await this.exm.functions.read(this.functionId)
     return (
       (await this.viewState({
         function: "nonce",
@@ -51,9 +48,11 @@ class SDK extends Base {
   }
 
   async send(param) {
-    const tx = await this.exm.functions.write(this.functionId, param)
-    this.state = tx.data.execution.state
-    return tx
+    return await this.exm.functions.write(this.functionId, param)
+  }
+
+  async evolve(value, opt) {
+    return this._write2("evolve", { value }, opt)
   }
 }
 
