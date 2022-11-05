@@ -1,6 +1,6 @@
 {
   "name": "weavedb-exm-sdk",
-  "version": "0.5.10",
+  "version": "0.5.11",
   "description": "WeaveDB on Execution Machine.",
   "homepage": "https://weavedb.dev",
   "repository": {
@@ -15,8 +15,6 @@
   "dependencies": {
     "@execution-machine/sdk": "^0.1.42",
     "arweave": "^1.11.4",
-    "fpjson-lang": "^0.1.1",
-    "json-logic-js": "^2.0.2",
     "ramda": "^0.28.0",
     "weavedb-base": "^0.5.11"
   },

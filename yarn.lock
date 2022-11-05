@@ -1197,13 +1197,14 @@
     "@ethersproject/properties" "^5.7.0"
     "@ethersproject/strings" "^5.7.0"
 
-"@execution-machine/sdk@^0.1.42":
-  version "0.1.42"
-  resolved "https://registry.yarnpkg.com/@execution-machine/sdk/-/sdk-0.1.42.tgz#705f1b76d3cef15628a63d45f103445674ce716d"
-  integrity sha512-HyLs+MmN93fm/ek1FUHTxebTq/xc8vGzeCu+M88xMTKuutBa0qRkV4eUQYNsbkZZZae+xQ9QyHG5X0w7VeV9dA==
+"@execution-machine/sdk@^0.1.5":
+  version "0.1.5"
+  resolved "https://registry.yarnpkg.com/@execution-machine/sdk/-/sdk-0.1.5.tgz#b4d532bfb1d03c3907bb7c377cc144b5c2f6f3d9"
+  integrity sha512-r4tX89aZ3wVH8FsjA7eOdVA189/3OiPbKmzPAx61zsbs6wmX3fSQvXIdfhl+YVVt3w9jrOCJPiRR9qEIbAztWg==
   dependencies:
     "@types/node" "^18.0.0"
-    arweave "^1.11.4"
+    chalk "^4.1.2"
+    cli-box "^6.0.10"
     commander "^9.3.0"
     dotenv "^16.0.1"
     find-cache-dir "^3.3.2"
@@ -1213,6 +1214,7 @@
     three-em-0-3-12 "npm:@three-em/node@^0.3.12"
     three-em-0-3-13 "npm:@three-em/node@^0.3.13"
     three-em-0-3-14 "npm:@three-em/node@^0.3.14"
+    three-em-0-3-15 "npm:@three-em/node@^0.3.15"
 
 "@exodus/schemasafe@^1.0.0-rc.7":
   version "1.0.0-rc.7"
@@ -1787,6 +1789,11 @@
   version "0.3.14"
   resolved "https://registry.yarnpkg.com/@three-em/node-darwin-arm64/-/node-darwin-arm64-0.3.14.tgz#60e155de95be88e52588f83d4cb36ee288a67e4d"
   integrity sha512-YZuqCG3P0Yyyjv72MlgfNShb0Rh4nf3aD2GhuEuptqd/nmWbCdBk44+doZStrDJ781+5PNifO1hWkFgg0arf1g==
+
+"@three-em/node-darwin-arm64@0.3.15":
+  version "0.3.15"
+  resolved "https://registry.yarnpkg.com/@three-em/node-darwin-arm64/-/node-darwin-arm64-0.3.15.tgz#685771f52d04502ccd494407fb31e214114f3325"
+  integrity sha512-a+aHqpLNd8yltdoQo0sBX/WZxyI5Hp5mFfHOpCqH05a23aOoZ0M5AuLwPiHUkumL1qYqU5u/Gw/r1V01mqdv6A==
 
 "@tootallnate/once@1":
   version "1.1.2"
@@ -2409,6 +2416,11 @@ ansi-magenta@^0.1.1:
   integrity sha512-A1Giu+HRwyWuiXKyXPw2AhG1yWZjNHWO+5mpt+P+VWYkmGRpLPry0O5gmlJQEvpjNpl4RjFV7DJQ4iozWOmkbQ==
   dependencies:
     ansi-wrap "0.1.0"
+
+ansi-parser@^3.2.1:
+  version "3.2.10"
+  resolved "https://registry.yarnpkg.com/ansi-parser/-/ansi-parser-3.2.10.tgz#6ddcf8a1c41339394f0e64c7b075985fb2a87c95"
+  integrity sha512-CGKGIbd678lm15IXJXI1cTyOVAnMQw0jES+klW/yIc+GzYccsYanLMhczPIIj2hE64B79g75QfiuWrEWd6nJdg==
 
 ansi-red@^0.1.1:
   version "0.1.1"
@@ -3325,16 +3337,6 @@ cipher-base@^1.0.0, cipher-base@^1.0.1, cipher-base@^1.0.3:
     ethers "^5.5.1"
     ffjavascript "^0.2.45"
 
-"circomlibjs@git+https://github.com/InternetMaximalism/circomlibjs.git#fc534a12d9b34f2694ed0f75a686d080fc7a92d6":
-  version "0.1.7"
-  uid fc534a12d9b34f2694ed0f75a686d080fc7a92d6
-  resolved "git+https://github.com/InternetMaximalism/circomlibjs.git#fc534a12d9b34f2694ed0f75a686d080fc7a92d6"
-  dependencies:
-    blake-hash "^2.0.0"
-    blake2b "^2.1.3"
-    ethers "^5.5.1"
-    ffjavascript "^0.2.45"
-
 cjs-module-lexer@^1.0.0:
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/cjs-module-lexer/-/cjs-module-lexer-1.2.2.tgz#9f84ba3244a512f3a54e5277e8eef4c489864e40"
@@ -3344,6 +3346,17 @@ clean-stack@^2.0.0:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/clean-stack/-/clean-stack-2.2.0.tgz#ee8472dbb129e727b31e8a10a427dee9dfe4008b"
   integrity sha512-4diC9HaTE+KRAMWhDhrGOECgWZxoevMc5TlkObMqNSsVU62PYzXZ/SMTjzyGAFF1YusgxGcSWTEXBhp0CPwQ1A==
+
+cli-box@^6.0.10:
+  version "6.0.10"
+  resolved "https://registry.yarnpkg.com/cli-box/-/cli-box-6.0.10.tgz#98e72a19cab889376fd5604baa1e8f8c747b8f9e"
+  integrity sha512-6jjSF6G1gOXaCyBQJKo3L3lZKxP8jzdECG7FBiA4m2w7K8jBxXXwsMb75fBLwoVwOtKwvgKjLJurw8HU5XNciw==
+  dependencies:
+    ansi-parser "^3.2.1"
+    deffy "^2.2.1"
+    is-undefined "^1.0.0"
+    is-win "^1.0.0"
+    ul "^5.2.1"
 
 cli-color@0.3.2:
   version "0.3.2"
@@ -3741,6 +3754,13 @@ defaults@^1.0.3:
   integrity sha512-s82itHOnYrN0Ib8r+z7laQz3sdE+4FP3d9Q7VLO7U+KRT+CR0GsWuyHxzdAY82I7cXv0G/twrqomTJLOssO5HA==
   dependencies:
     clone "^1.0.2"
+
+deffy@^2.2.1, deffy@^2.2.2:
+  version "2.2.4"
+  resolved "https://registry.yarnpkg.com/deffy/-/deffy-2.2.4.tgz#53c1b5f59b58a58150b1c9de5529229875c4cc17"
+  integrity sha512-pLc9lsbsWjr6RxmJ2OLyvm+9l4j1yK69h+TML/gUit/t3vTijpkNGh8LioaJYTGO7F25m6HZndADcUOo2PsiUg==
+  dependencies:
+    typpy "^2.0.0"
 
 define-properties@^1.1.3, define-properties@^1.1.4:
   version "1.1.4"
@@ -4842,6 +4862,13 @@ function-bind@^1.1.1:
   resolved "https://registry.yarnpkg.com/function-bind/-/function-bind-1.1.1.tgz#a56899d3ea3c9bab874bb9773b7c5ede92f4895d"
   integrity sha512-yIovAzMX49sF8Yl58fSCWJ5svSLuaibPxXQJFLmBObTuCr0Mf1KiPopGM9NiFjiYBCbfaa2Fh6breQ6ANVTI0A==
 
+function.name@^1.0.3:
+  version "1.0.13"
+  resolved "https://registry.yarnpkg.com/function.name/-/function.name-1.0.13.tgz#eef045abc4b5ff4e3e9d001a53ce14e090c971c6"
+  integrity sha512-mVrqdoy5npWZyoXl4DxCeuVF6delDcQjVS9aPdvLYlBxtMTZDR2B5GVEQEoM1jJyspCqg3C0v4ABkLE7tp9xFA==
+  dependencies:
+    noop6 "^1.0.1"
+
 function.prototype.name@^1.1.5:
   version "1.1.5"
   resolved "https://registry.yarnpkg.com/function.prototype.name/-/function.prototype.name-1.1.5.tgz#cce0505fe1ffb80503e6f9e46cc64e46a12a9621"
@@ -5526,6 +5553,11 @@ is-typed-array@^1.1.3, is-typed-array@^1.1.9:
     for-each "^0.3.3"
     has-tostringtag "^1.0.0"
 
+is-undefined@^1.0.0:
+  version "1.0.11"
+  resolved "https://registry.yarnpkg.com/is-undefined/-/is-undefined-1.0.11.tgz#2a6453cfacbeddaa6d93d88c80b083888dc7ff12"
+  integrity sha512-gRwyH8IRpV73MDlVefPllIjxBjrP9YAB0YCLtxnROhRkedTSzzBJgfxTC6HgP2/dttawQHWNZe88MvXS9Hbn/g==
+
 is-unicode-supported@^0.1.0:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/is-unicode-supported/-/is-unicode-supported-0.1.0.tgz#3f26c76a809593b52bfa2ecb5710ed2779b522a7"
@@ -5537,6 +5569,11 @@ is-weakref@^1.0.2:
   integrity sha512-qctsuLZmIQ0+vSSMfoVvyFe2+GSEvnmZ2ezTup1SBse9+twCCeial6EEi3Nc2KFcf6+qz2FBPnjXsk8xhKSaPQ==
   dependencies:
     call-bind "^1.0.2"
+
+is-win@^1.0.0:
+  version "1.0.10"
+  resolved "https://registry.yarnpkg.com/is-win/-/is-win-1.0.10.tgz#ca420ec7f80cc16b92ceea59eb2c039d439a3fb9"
+  integrity sha512-tJ9PPj5RW2RUaZ2lAIVRqQjMSynA44Ln89h+Ue+pOecoWIv6dLHvN6dtLxeCi/h5epPJPSVyuaNObLAMq62OEA==
 
 is-windows@^1.0.1:
   version "1.0.2"
@@ -6837,6 +6874,11 @@ noms@0.0.0:
     inherits "^2.0.1"
     readable-stream "~1.0.31"
 
+noop6@^1.0.1:
+  version "1.0.9"
+  resolved "https://registry.yarnpkg.com/noop6/-/noop6-1.0.9.tgz#8749944c15c09f2cd2d562ac24f5a8341762a950"
+  integrity sha512-DB3Hwyd89dPr5HqEPg3YHjzvwh/mCqizC1zZ8vyofqc+TQRyPDnT4wgXXbLGF4z9YAzwwTLi8pNLhGqcbSjgkA==
+
 nopt@^5.0.0:
   version "5.0.0"
   resolved "https://registry.yarnpkg.com/nopt/-/nopt-5.0.0.tgz#530942bb58a512fccafe53fe210f13a25355dc88"
@@ -8118,6 +8160,16 @@ text-encoding@^0.7.0:
   optionalDependencies:
     "@three-em/node-darwin-arm64" "0.3.14"
 
+"three-em-0-3-15@npm:@three-em/node@^0.3.15":
+  version "0.3.15"
+  resolved "https://registry.yarnpkg.com/@three-em/node/-/node-0.3.15.tgz#55fc9eaaa39c13d47980b2c55af64d97f6da6ffa"
+  integrity sha512-yo83Uckr7KauDHGhYxh2RQK0Xs59saEj10dYKkxEisliH0ZeSGwIR81p9ny3wzEBmP8d/YzcK0sQ6ETesMMVeQ==
+  dependencies:
+    detect-libc "^1.0.3"
+    jest "^28.1.0"
+  optionalDependencies:
+    "@three-em/node-darwin-arm64" "0.3.15"
+
 through2@^2.0.1, through2@~2.0.0:
   version "2.0.5"
   resolved "https://registry.yarnpkg.com/through2/-/through2-2.0.5.tgz#01c1e39eb31d07cb7d03a96a70823260b23132cd"
@@ -8326,6 +8378,21 @@ typeson@^6.0.0, typeson@^6.1.0:
   version "6.1.0"
   resolved "https://registry.yarnpkg.com/typeson/-/typeson-6.1.0.tgz#5b2a53705a5f58ff4d6f82f965917cabd0d7448b"
   integrity sha512-6FTtyGr8ldU0pfbvW/eOZrEtEkczHRUtduBnA90Jh9kMPCiFNnXIon3vF41N0S4tV1HHQt4Hk1j4srpESziCaA==
+
+typpy@^2.0.0, typpy@^2.3.4:
+  version "2.3.13"
+  resolved "https://registry.yarnpkg.com/typpy/-/typpy-2.3.13.tgz#7e16a3aa83d7eecdfbd5ee615b9ffd785887ee7e"
+  integrity sha512-vOxIcQz9sxHi+rT09SJ5aDgVgrPppQjwnnayTrMye1ODaU8gIZTDM19t9TxmEElbMihx2Nq/0/b/MtyKfayRqA==
+  dependencies:
+    function.name "^1.0.3"
+
+ul@^5.2.1:
+  version "5.2.15"
+  resolved "https://registry.yarnpkg.com/ul/-/ul-5.2.15.tgz#426425355ae15df2d5d09b351aade26ed06dd9ed"
+  integrity sha512-svLEUy8xSCip5IWnsRa0UOg+2zP0Wsj4qlbjTmX6GJSmvKMHADBuHOm1dpNkWqWPIGuVSqzUkV3Cris5JrlTRQ==
+  dependencies:
+    deffy "^2.2.2"
+    typpy "^2.3.4"
 
 unbox-primitive@^1.0.2:
   version "1.0.2"
