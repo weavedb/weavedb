@@ -1,6 +1,6 @@
 {
   "name": "weavedb-exm-sdk-web",
-  "version": "0.5.18",
+  "version": "0.5.19",
   "description": "Web Client for WeaveDB on Execution Machine",
   "homepage": "https://weavedb.dev",
   "repository": {
