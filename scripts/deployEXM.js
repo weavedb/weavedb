@@ -2,6 +2,7 @@ const Arweave = require("arweave")
 const { Exm, ContractType } = require("@execution-machine/sdk")
 const { readFileSync } = require("fs")
 const path = require("path")
+const { isNil, mergeLeft } = require("ramda")
 const wallet_name = process.argv[2]
 const token = process.argv[3]
 const exm = new Exm({
@@ -9,6 +10,15 @@ const exm = new Exm({
 })
 
 const deploy = async () => {
+  const wallet_path = path.resolve(
+    __dirname,
+    ".wallets",
+    `wallet-${wallet_name}.json`
+  )
+  const wallet = JSON.parse(readFileSync(wallet_path, "utf8"))
+  const arweave = Arweave.init()
+  const walletAddress = await arweave.wallets.jwkToAddress(wallet)
+
   const contractSource = readFileSync(
     path.resolve(__dirname, "../dist/contracts-exm/exm.js")
   )
@@ -18,15 +28,6 @@ const deploy = async () => {
       "utf8"
     )
   )
-  const wallet_path = path.resolve(
-    __dirname,
-    ".wallets",
-    `wallet-${wallet_name}.json`
-  )
-  const wallet = JSON.parse(readFileSync(wallet_path, "utf8"))
-  const arweave = Arweave.init()
-  const walletAddress = await arweave.wallets.jwkToAddress(wallet)
-  init.owner = walletAddress
   console.log(await exm.functions.deploy(contractSource, init, ContractType.JS))
 }
 

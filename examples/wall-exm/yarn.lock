@@ -4215,10 +4215,10 @@ wasmcurves@0.2.0:
   dependencies:
     wasmbuilder "0.0.16"
 
-weavedb-base@^0.5.10:
-  version "0.5.10"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.5.10.tgz#6aaddceb799a4d11cc85940e209f55ad5d44bf11"
-  integrity sha512-pEcdRXU0+4xIOUxBVETpQehYZZM2/44fx4p05zJ1LA2rkvdiSXr6bKNtja5URFglPbDS8xDQ/aZbCjnJ4hYlZQ==
+weavedb-base@^0.5.11:
+  version "0.5.11"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.5.11.tgz#33625c6abed9b0ebffdb30714a4c07f60ca07315"
+  integrity sha512-efCzLW1RRgYAE2zpqo+Wsk/OXZCH3MA42lIxdGSOHalL3YwnrB4S4wKIVoc21ZwhqSaGRaCivhZtVonqb8o4XQ==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"
@@ -4227,17 +4227,17 @@ weavedb-base@^0.5.10:
     ethereumjs-util "^7.1.5"
     ramda "^0.28.0"
 
-weavedb-exm-sdk-web@^0.5.15:
-  version "0.5.15"
-  resolved "https://registry.yarnpkg.com/weavedb-exm-sdk-web/-/weavedb-exm-sdk-web-0.5.15.tgz#559577f3cb4901a2ec2bf1a02f2b4d6174d2d76d"
-  integrity sha512-A4aZGpYoTItgnmzIMY40lMo72nKsANlr3dEfXsOCyS4RZu+aWIUQOTiP0Urc1L5+4ENuRkYLRHihgTB0o7uHCQ==
+weavedb-exm-sdk-web@^0.5.18:
+  version "0.5.18"
+  resolved "https://registry.yarnpkg.com/weavedb-exm-sdk-web/-/weavedb-exm-sdk-web-0.5.18.tgz#45c9f322197e4ee8b99551e5c2ef300b79cf2fac"
+  integrity sha512-kidimEDkZnZoacW70yNdlZJYuzeOVAIM15GQPv/34Mvg0tCh+MLtRNOrZIUErdPjGT8l/nWVbK8QfppufUBdwQ==
   dependencies:
     arweave "^1.11.4"
     fpjson-lang "^0.1.1"
     isomorphic-fetch "^3.0.0"
     json-logic-js "^2.0.2"
     ramda "^0.28.0"
-    weavedb-base "^0.5.10"
+    weavedb-base "^0.5.11"
 
 web-worker@^1.2.0:
   version "1.2.0"
