@@ -2,16 +2,14 @@ const Base = require("weavedb-base")
 const { isNil, clone, keys } = require("ramda")
 let Arweave = require("arweave")
 Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
-const { handle } = require("./lib/reads")
 require("isomorphic-fetch")
 
 class SDK extends Base {
-  constructor({ endpoint, functionId, token }) {
+  constructor({ endpoint, functionId }) {
     super()
     this.functionId = functionId
     this.endpoint = endpoint
     this.arweave = Arweave.init()
-    this.token = token
     this.domain = { name: "weavedb", version: "1", verifyingContract: "exm" }
   }
 
@@ -24,10 +22,13 @@ class SDK extends Base {
 
   async viewState(opt) {
     if (isNil(this.endpoint)) {
-      const state = await fetch(
-        `https://api.exm.dev/read/${this.functionId}`
-      ).then(v => v.json())
-      return await handle(state, { input: opt })
+      return (
+        await fetch(`https://${this.functionId}.exm.run`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(opt),
+        }).then(v => v.json())
+      ).data.execution.result
     } else {
       return await fetch(this.endpoint, {
         method: "POST",
@@ -58,26 +59,11 @@ class SDK extends Base {
 
   async send(param) {
     if (isNil(this.endpoint)) {
-      const body = {
-        functionId: this.functionId,
-        inputs: [
-          {
-            input: JSON.stringify(param),
-            tags: [],
-          },
-        ],
-      }
-      return await fetch(
-        `https://api.exm.dev/api/transactions?token=${this.token}`,
-        {
-          method: "POST",
-          body: JSON.stringify(body),
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        }
-      ).then(v => v.json())
+      return await fetch(`https://${this.functionId}.exm.run`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(param),
+      }).then(v => v.json())
     } else {
       return await fetch(this.endpoint, {
         method: "POST",
