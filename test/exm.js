@@ -30,7 +30,8 @@ class SDK extends Base {
   }
 
   async viewState(opt) {
-    return await handle(clone(this.state), { input: opt })
+    const tx = await this._send(opt)
+    return tx.result
   }
 
   async getNonce(addr) {
@@ -52,14 +53,17 @@ class SDK extends Base {
   async _request(func, param) {
     return await this.send(param)
   }
-
-  async send(param) {
-    const tx = await TestFunction({
+  async _send(param) {
+    return await TestFunction({
       functionSource: this.src,
       functionType: FunctionType.JAVASCRIPT,
       functionInitState: this.state,
       writes: [createWrite(param)],
     })
+  }
+
+  async send(param) {
+    const tx = await this._send(param)
     this.state = tx.state
     return tx
   }
@@ -99,7 +103,7 @@ describe("WeaveDB on EXM", function () {
   it("should add & get", async () => {
     const data = { name: "Bob", age: 20 }
     const tx = await db.add(data, "ppl")
-    const lastId = tx.state.ids[keys(tx.validity)[0]][0]
+    const lastId = (await db.getIds(tx))[0]
     expect(await db.get("ppl", lastId)).to.eql(data)
   })
 
