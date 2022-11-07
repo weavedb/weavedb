@@ -5,10 +5,9 @@ Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
 require("isomorphic-fetch")
 
 class SDK extends Base {
-  constructor({ endpoint, functionId }) {
+  constructor({ functionId }) {
     super()
     this.functionId = functionId
-    this.endpoint = endpoint
     this.arweave = Arweave.init()
     this.domain = { name: "weavedb", version: "1", verifyingContract: "exm" }
   }
@@ -21,20 +20,7 @@ class SDK extends Base {
   }
 
   async viewState(opt) {
-    if (isNil(this.endpoint)) {
-      return (
-        await fetch(`https://${this.functionId}.exm.run`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(opt),
-        }).then(v => v.json())
-      ).data.execution.result
-    } else {
-      return await fetch(this.endpoint, {
-        method: "POST",
-        body: JSON.stringify({ ...opt, functionId: this.functionId }),
-      }).then(v => v.json())
-    }
+    return (await this.send(opt)).data.execution.result
   }
 
   async getNonce(addr) {
@@ -58,18 +44,11 @@ class SDK extends Base {
   }
 
   async send(param) {
-    if (isNil(this.endpoint)) {
-      return await fetch(`https://${this.functionId}.exm.run`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(param),
-      }).then(v => v.json())
-    } else {
-      return await fetch(this.endpoint, {
-        method: "POST",
-        body: JSON.stringify({ input: param, functionId: this.functionId }),
-      }).then(v => v.json())
-    }
+    return await fetch(`https://${this.functionId}.exm.run`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(param),
+    }).then(v => v.json())
   }
 }
 
