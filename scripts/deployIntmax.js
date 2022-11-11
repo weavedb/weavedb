@@ -3,7 +3,7 @@ const path = require("path")
 const Arweave = require("arweave")
 const wallet_name = process.argv[2]
 const { isNil } = require("ramda")
-const Constants = require("../src/contracts/lib/circomlibjs/poseidon_constants_opt.js")
+const Constants = require("../src/intmax/lib/circomlibjs/poseidon_constants_opt.js")
 const {
   PstContract,
   PstState,
@@ -25,12 +25,12 @@ async function deployContractIntmax(
   contractTxIdPoseidon2
 ) {
   const contractSrc = fs.readFileSync(
-    path.join(__dirname, "../dist/contracts/intmax.js"),
+    path.join(__dirname, "../dist/intmax/intmax.js"),
     "utf8"
   )
   const stateFromFile = JSON.parse(
     fs.readFileSync(
-      path.join(__dirname, "../dist/contracts/initial-state-intmax.json"),
+      path.join(__dirname, "../dist/intmax/initial-state-intmax.json"),
       "utf8"
     )
   )
@@ -57,14 +57,14 @@ async function deployContractIntmax(
 
 async function deployContractPoseidon(poseidonConstants) {
   const contractSrc = fs.readFileSync(
-    path.join(__dirname, "../dist/contracts/poseidonConstants.js"),
+    path.join(__dirname, "../dist/poseidon/poseidonConstants.js"),
     "utf8"
   )
   const stateFromFile = JSON.parse(
     fs.readFileSync(
       path.join(
         __dirname,
-        "../dist/contracts/initial-state-poseidon-constants.json"
+        "../dist/poseidon/initial-state-poseidon-constants.json"
       ),
       "utf8"
     )
