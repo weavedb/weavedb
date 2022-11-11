@@ -3,6 +3,8 @@ const replace = require("replace-in-file")
 const contracts = [
   "/warp/contract.js",
   "/intmax/intmax.js",
+  "/internet-identity/ii.js",
+  "/ethereum/eth.js",
   "/poseidon/poseidonConstants.js",
   "/exm/exm.js",
 ]
