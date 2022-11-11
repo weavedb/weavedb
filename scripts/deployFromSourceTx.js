@@ -24,12 +24,12 @@ let warp, arweave, walletAddress, wallet
 
 async function deployContractIntmax() {
   const contractSrc = fs.readFileSync(
-    path.join(__dirname, "../dist/contracts/intmax.js"),
+    path.join(__dirname, "../dist/intmax/intmax.js"),
     "utf8"
   )
   const stateFromFile = JSON.parse(
     fs.readFileSync(
-      path.join(__dirname, "../dist/contracts/initial-state-intmax.json"),
+      path.join(__dirname, "../dist/intmax/initial-state-intmax.json"),
       "utf8"
     )
   )
@@ -73,12 +73,12 @@ const deploy = async () => {
   walletAddress = await arweave.wallets.jwkToAddress(wallet)
 
   const contractSrc = fs.readFileSync(
-    path.join(__dirname, "../dist/contracts/contract.js"),
+    path.join(__dirname, "../dist/warp/contract.js"),
     "utf8"
   )
   const stateFromFile = JSON.parse(
     fs.readFileSync(
-      path.join(__dirname, "../dist/contracts/initial-state.json"),
+      path.join(__dirname, "../dist/warp/initial-state.json"),
       "utf8"
     )
   )

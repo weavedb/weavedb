@@ -20,11 +20,11 @@ const deploy = async () => {
   const walletAddress = await arweave.wallets.jwkToAddress(wallet)
 
   const contractSource = readFileSync(
-    path.resolve(__dirname, "../dist/contracts-exm/exm.js")
+    path.resolve(__dirname, "../dist/exm/exm.js")
   )
   let init = JSON.parse(
     readFileSync(
-      path.resolve(__dirname, "../dist/contracts-exm/initial-state.json"),
+      path.resolve(__dirname, "../dist/exm/initial-state.json"),
       "utf8"
     )
   )

@@ -2,7 +2,7 @@ const fs = require("fs")
 const path = require("path")
 
 let lines = fs
-  .readFileSync(path.resolve(__dirname, "../dist/contracts-exm/exm.js"), "utf8")
+  .readFileSync(path.resolve(__dirname, "../dist/exm/exm.js"), "utf8")
   .split("\n")
   .slice(1, -2)
 
@@ -19,6 +19,6 @@ for (let v of lines) {
 }
 lines2.push("module.exports = handle")
 fs.writeFileSync(
-  path.resolve(__dirname, "../dist/contracts-exm/exm.js"),
+  path.resolve(__dirname, "../dist/exm/exm.js"),
   lines.join("\n")
 )
