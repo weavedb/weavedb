@@ -44,7 +44,7 @@
     "node": "16"
   },
   "scripts": {
-    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet 8h8kO41WpUvc4bW1bzJmi70w3URulmCxoQl42Z7tSsc OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94",
+    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet 7vXOxkxZ_eG0mwBO4pc_mB_oh1MY4pmHXzRQJfdMGCw OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94 RQpDSz3PSyYSn6LRzWnX85bu6iGqCZKLxkdwQVoKzTI dtLqn4y5fFD5xyiRCzaYjWxz5k8I6VxoVeARFphhuY4",
     "deploy-exm": "yarn build && node scripts/deployEXM.js mainnet",
     "test": "yarn build && mocha",
     "build": "yarn clean && node build.js && npm run cp && node scripts/mod.js",
