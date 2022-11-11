@@ -22,13 +22,13 @@ let warp, walletAddress, arweave, wallet
 
 async function deployContract(secure) {
   const contractSrc = fs.readFileSync(
-    path.join(__dirname, "../dist/contracts/contract.js"),
+    path.join(__dirname, "../dist/warp/contract.js"),
     "utf8"
   )
 
   const stateFromFile = JSON.parse(
     fs.readFileSync(
-      path.join(__dirname, "../dist/contracts/initial-state.json"),
+      path.join(__dirname, "../dist/warp/initial-state.json"),
       "utf8"
     )
   )

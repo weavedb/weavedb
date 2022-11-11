@@ -80,13 +80,11 @@ describe("WeaveDB on EXM", function () {
     addr = await arweave.wallets.jwkToAddress(arweave_wallet)
     db = new SDK({
       arweave_wallet,
-      src: readFileSync(
-        path.resolve(__dirname, "../dist/contracts-exm/exm.js")
-      ),
+      src: readFileSync(path.resolve(__dirname, "../dist/exm/exm.js")),
       state: {
         ...JSON.parse(
           readFileSync(
-            path.resolve(__dirname, "../dist/contracts-exm/initial-state.json")
+            path.resolve(__dirname, "../dist/exm/initial-state.json")
           )
         ),
         owner: addr,
