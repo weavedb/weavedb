@@ -1,7 +1,6 @@
 import { isNil } from "ramda"
 import { err } from "../../lib/utils"
 import { validate } from "../../lib/validate"
-const { recoverTypedSignature } = require("../../lib/eth-sig-util")
 
 export const removeAddressLink = async (state, action, signer) => {
   signer ||= await validate(state, action, "removeAddressLink")

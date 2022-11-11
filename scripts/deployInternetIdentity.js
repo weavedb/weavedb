@@ -2,9 +2,6 @@ const fs = require("fs")
 const path = require("path")
 const Arweave = require("arweave")
 const wallet_name = process.argv[2]
-const contractTxIdIntmax = process.argv[3]
-const contractTxIdInternetIdentity = process.argv[4]
-const contractTxIdEthereum = process.argv[5]
 const { isNil } = require("ramda")
 const {
   PstContract,
@@ -22,37 +19,32 @@ if (isNil(wallet_name)) {
 
 let warp, walletAddress, arweave, wallet
 
-async function deployContract(secure) {
+async function deployContract() {
   const contractSrc = fs.readFileSync(
-    path.join(__dirname, "../dist/warp/contract.js"),
+    path.join(__dirname, "../dist/internet-identity/ii.js"),
     "utf8"
   )
-
   const stateFromFile = JSON.parse(
     fs.readFileSync(
-      path.join(__dirname, "../dist/warp/initial-state.json"),
+      path.join(__dirname, "../dist/internet-identity/initial-state-ii.json"),
       "utf8"
     )
   )
-
   const initialState = {
     ...stateFromFile,
     ...{
       owner: walletAddress,
     },
   }
-  initialState.contracts.intmax = contractTxIdIntmax
-  initialState.contracts.dfinity = contractTxIdInternetIdentity
-  initialState.contracts.ethereum = contractTxIdEthereum
   const res = await warp.createContract.deploy(
     {
-      wallet,
+      wallet: wallet,
       initState: JSON.stringify(initialState),
       src: contractSrc,
     },
     wallet_name === "mainnet"
   )
-  console.log("deployed WeaveDB contract")
+  console.log("deployed Internet Identity contract")
   console.log(res)
   return res.contractTxId
 }
@@ -77,7 +69,8 @@ const deploy = async () => {
   }
   wallet = JSON.parse(fs.readFileSync(wallet_path, "utf8"))
   walletAddress = await arweave.wallets.jwkToAddress(wallet)
-  await deployContract(true)
+
+  await deployContract()
   process.exit()
 }
 

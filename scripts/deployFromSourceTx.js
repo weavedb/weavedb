@@ -6,6 +6,8 @@ const { isNil } = require("ramda")
 const wallet_name = process.argv[2]
 const srcTxId = process.argv[3] || process.env.SOURCE_TX_ID
 const contractTxId_Intmax = process.argv[4] || process.env.INTMAX_SOURCE_TX_ID
+const contractTxId_II = process.argv[5] || process.env.II_SOURCE_TX_ID
+const contractTxId_ETH = process.argv[6] || process.env.ETH_SOURCE_TX_ID
 
 const {
   PstContract,
@@ -22,35 +24,6 @@ if (isNil(wallet_name)) {
 }
 let warp, arweave, walletAddress, wallet
 
-async function deployContractIntmax() {
-  const contractSrc = fs.readFileSync(
-    path.join(__dirname, "../dist/intmax/intmax.js"),
-    "utf8"
-  )
-  const stateFromFile = JSON.parse(
-    fs.readFileSync(
-      path.join(__dirname, "../dist/intmax/initial-state-intmax.json"),
-      "utf8"
-    )
-  )
-  const initialState = {
-    ...stateFromFile,
-    ...{
-      owner: walletAddress,
-    },
-  }
-  const res = await warp.createContract.deployFromSourceTx(
-    {
-      wallet,
-      initState: JSON.stringify(initialState),
-      srcTxId: contractTxId_Intmax,
-    },
-    wallet_name === "mainnet"
-  )
-  console.log(res)
-  return res.contractTxId
-}
-
 const deploy = async () => {
   arweave = Arweave.init({
     host: wallet_name === "mainnet" ? "arweave.net" : "testnet.redstone.tools",
@@ -61,12 +34,10 @@ const deploy = async () => {
   warp = WarpNodeFactory.memCachedBased(arweave).useWarpGateway().build()
   const wallet_path = path.resolve(
     __dirname,
-    !isNil(process.argv[5])
-      ? process.env.PWD + "/" + process.argv[5]
-      : `.wallets/wallet-${wallet_name}.json`
+    `.wallets/wallet-${wallet_name}.json`
   )
   if (!fs.existsSync(wallet_path)) {
-    console.log("wallet doesn't exist")
+    console.log("wallet doesn't exist: " + wallet_path)
     process.exit()
   }
   wallet = JSON.parse(fs.readFileSync(wallet_path, "utf8"))
@@ -90,6 +61,9 @@ const deploy = async () => {
     },
   }
   initialState.contracts.intmax = contractTxId_Intmax
+  initialState.contracts.dfinity = contractTxId_II
+  initialState.contracts.ethereum = contractTxId_ETH
+
   const res = await warp.createContract.deployFromSourceTx(
     {
       wallet,
