@@ -6,7 +6,7 @@ const Wallet = require("ethereumjs-wallet").default
 
 const { isNil } = require("ramda")
 const ArLocal = require("arlocal").default
-const Constants = require("../src/contracts/lib/circomlibjs/poseidon_constants_opt.js")
+const Constants = require("../src/intmax/lib/circomlibjs/poseidon_constants_opt.js")
 async function addFunds(arweave, wallet) {
   const walletAddress = await arweave.wallets.getAddress(wallet)
   await arweave.api.get(`/mint/${walletAddress}/1000000000000000`)
@@ -54,12 +54,12 @@ async function stop() {
 
 async function deployContract(secure, contractTxIdIntmax) {
   const contractSrc = fs.readFileSync(
-    path.join(__dirname, "../dist/contracts/contract.js"),
+    path.join(__dirname, "../dist/warp/contract.js"),
     "utf8"
   )
   const stateFromFile = JSON.parse(
     fs.readFileSync(
-      path.join(__dirname, "../dist/contracts/initial-state.json"),
+      path.join(__dirname, "../dist/warp/initial-state.json"),
       "utf8"
     )
   )
@@ -94,12 +94,12 @@ async function deployContractIntmax(
   contractTxIdPoseidon2
 ) {
   const contractSrc = fs.readFileSync(
-    path.join(__dirname, "../dist/contracts/intmax.js"),
+    path.join(__dirname, "../dist/intmax/intmax.js"),
     "utf8"
   )
   const stateFromFile = JSON.parse(
     fs.readFileSync(
-      path.join(__dirname, "../dist/contracts/initial-state-intmax.json"),
+      path.join(__dirname, "../dist/intmax/initial-state-intmax.json"),
       "utf8"
     )
   )
@@ -122,14 +122,14 @@ async function deployContractIntmax(
 
 async function deployContractPoseidon(poseidonConstants) {
   const contractSrc = fs.readFileSync(
-    path.join(__dirname, "../dist/contracts/poseidonConstants.js"),
+    path.join(__dirname, "../dist/poseidon/poseidonConstants.js"),
     "utf8"
   )
   const stateFromFile = JSON.parse(
     fs.readFileSync(
       path.join(
         __dirname,
-        "../dist/contracts/initial-state-poseidon-constants.json"
+        "../dist/poseidon/initial-state-poseidon-constants.json"
       ),
       "utf8"
     )

@@ -1,8 +1,9 @@
-import { err } from "./lib/utils"
+import { err } from "../lib/utils"
+import verifyPoseidon from "./actions/read/verifyPoseidon"
 export async function handle(state, action) {
   switch (action.input.function) {
-    case "get":
-      return { result: state.poseidonConstants }
+    case "verify":
+      return await verifyPoseidon(state, action)
     case "evolve":
       if (state.canEvolve) {
         if (state.owner !== action.caller) {
