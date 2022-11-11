@@ -1,7 +1,6 @@
 import { isNil } from "ramda"
 import { err } from "../../lib/utils"
 import { validate } from "../../lib/validate"
-const { recoverTypedSignature } = require("../../lib/eth-sig-util")
 
 export const addAddressLink = async (state, action, signer) => {
   signer ||= await validate(state, action, "addAddressLink")
@@ -36,11 +35,13 @@ export const addAddressLink = async (state, action, signer) => {
     primaryType: "Query",
     message,
   }
-  let signer2 = recoverTypedSignature({
-    version: "V4",
-    data,
-    signature,
-  })
+  let signer2 = (
+    await SmartWeave.contracts.viewContractState(state.contracts.ethereum, {
+      function: "verify712",
+      data,
+      signature,
+    })
+  ).result.signer
   const _signer = signer2.toLowerCase()
   if (_signer !== address.toLowerCase()) err()
   if (!isNil(state.auth.links[address.toLowerCase()])) {
