@@ -1,6 +1,7 @@
 import { err, getDoc, parse, mergeData } from "./lib/utils"
 import { nonce } from "./actions/read/nonce"
 import { ids } from "./actions/read/ids"
+import { version } from "./actions/read/version"
 import { get } from "./actions/read/get"
 import { addAddressLink } from "./actions/write/addAddressLink"
 import { removeAddressLink } from "./actions/write/removeAddressLink"
@@ -83,6 +84,8 @@ export async function handle(state, action) {
       return await getRules(state, action)
     case "nonce":
       return await nonce(state, action)
+    case "version":
+      return await version(state, action)
     case "ids":
       return await ids(state, action)
     case "delete":
