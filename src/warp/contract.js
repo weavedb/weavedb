@@ -23,10 +23,13 @@ import { addCron } from "./actions/write/addCron"
 import { removeCron } from "./actions/write/removeCron"
 import { getCrons } from "./actions/read/getCrons"
 import { getAlgorithms } from "./actions/read/getAlgorithms"
+import { getEvolve } from "./actions/read/getEvolve"
 import { setAlgorithms } from "./actions/write/setAlgorithms"
 import { getLinkedContract } from "./actions/read/getLinkedContract"
 import { linkContract } from "./actions/write/linkContract"
 import { unlinkContract } from "./actions/write/unlinkContract"
+import { evolve } from "./actions/write/evolve"
+import { setCanEvolve } from "./actions/write/setCanEvolve"
 
 export async function handle(state, action) {
   try {
@@ -92,15 +95,12 @@ export async function handle(state, action) {
       return await remove(state, action)
     case "batch":
       return await batch(state, action)
+    case "getEvolve":
+      return await getEvolve(state, action)
     case "evolve":
-      if (state.canEvolve) {
-        if (state.owner !== action.caller) {
-          err("Only the owner can evolve a contract.")
-        }
-        state.evolve = action.input.value
-        return { state }
-      }
-      break
+      return await evolve(state, action)
+    case "setCanEvolve":
+      return await setCanEvolve(state, action)
     default:
       err(
         `No function supplied or function not recognised: "${action.input.function}"`
