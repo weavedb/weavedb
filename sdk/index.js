@@ -94,6 +94,12 @@ class SDK extends Base {
     })
   }
 
+  async getEvolve() {
+    return await this.viewState({
+      function: "getEvolve",
+    })
+  }
+
   async _request(func, param, dryWrite, bundle) {
     if (dryWrite) {
       let dryState = await this.db.dryWrite(param)
@@ -108,6 +114,14 @@ class SDK extends Base {
     )
     if (this.network === "localhost") await this.mineBlock()
     return tx
+  }
+
+  async evolve(value, opt) {
+    return this._write2("evolve", { value }, { ...opt, extra: { value } })
+  }
+
+  async setCanEvolve(value, opt) {
+    return this._write2("setCanEvolve", { value }, opt)
   }
 }
 
