@@ -26,6 +26,7 @@ class Base {
   async get(...query) {
     return this.request("get", ...query)
   }
+
   async cget(...query) {
     return this.request("cget", ...query)
   }

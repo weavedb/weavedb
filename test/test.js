@@ -663,4 +663,17 @@ describe("WeaveDB", function () {
     expect(await db.getEvolve()).to.eql({ canEvolve: false, evolve: evolve })
     return
   })
+
+  it("should manage owner", async () => {
+    const addr = await db.arweave.wallets.jwkToAddress(arweave_wallet)
+    const arweave_wallet2 = await db.arweave.wallets.generate()
+    let addr2 = await db.arweave.wallets.jwkToAddress(arweave_wallet2)
+    expect(await db.getOwner()).to.eql([addr])
+    await db.addOwner(addr2, { ar: arweave_wallet })
+    expect(await db.getOwner()).to.eql([addr, addr2])
+    await db.removeOwner(addr2, { ar: arweave_wallet })
+    await db.removeOwner(addr, { ar: arweave_wallet })
+    expect(await db.getOwner()).to.eql([])
+    return
+  })
 })
