@@ -72,6 +72,12 @@ class SDK extends Base {
     return res.result
   }
 
+  async getVersion() {
+    return await this.viewState({
+      function: "version",
+    })
+  }
+
   async getNonce(addr) {
     return (
       (await this.viewState({
