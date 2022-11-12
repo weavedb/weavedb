@@ -121,14 +121,14 @@ class Base {
         )
   }
 
-  async createTempAddressWithII(ii) {
+  async createTempAddressWithII(ii, expiry) {
     let addr = ii.toJSON()[0]
-    return this._createTempAddress(addr, {
+    return this._createTempAddress(addr, expiry, {
       ii,
     })
   }
 
-  async createTempAddressWithAR(ar) {
+  async createTempAddressWithAR(ar, expiry) {
     const wallet = is(Object, ar) && ar.walletName === "ArConnect" ? ar : null
     let addr = null
     if (!isNil(wallet)) {
@@ -137,18 +137,12 @@ class Base {
     } else {
       addr = await this.arweave.wallets.jwkToAddress(ar)
     }
-    return this._createTempAddress(addr, {
+    return this._createTempAddress(addr, expiry, {
       ar,
     })
   }
 
-  async createTempAddress(addr) {
-    return this._createTempAddress(addr, {
-      wallet: this.wallet || addr.toLowerCase(),
-    })
-  }
-
-  async createTempAddressWithIntmax(intmax) {
+  async createTempAddressWithIntmax(intmax, expiry) {
     const wallet = is(Object, intmax) ? intmax : null
     let addr = null
     if (!isNil(wallet)) {
@@ -157,25 +151,29 @@ class Base {
       throw Error("No Intmax wallet")
       return
     }
-    return this._createTempAddress(addr.toLowerCase(), {
+    return this._createTempAddress(addr.toLowerCase(), expiry, {
       intmax,
     })
   }
 
-  async createTempAddress(addr) {
-    return this._createTempAddress(addr.toLowerCase(), {
+  async createTempAddress(addr, expiry) {
+    return this._createTempAddress(addr.toLowerCase(), expiry, {
       wallet: this.wallet || addr.toLowerCase(),
     })
   }
 
-  async _createTempAddress(addr, opt) {
+  async _createTempAddress(addr, expiry, opt) {
     const identity = EthCrypto.createIdentity()
     const nonce = await this.getNonce(addr)
+    const query =
+      typeof expiry === "undefined"
+        ? { address: addr }
+        : { address: addr, expiry }
     const message = {
       nonce,
       query: JSON.stringify({
         func: "auth",
-        query: { address: addr },
+        query,
       }),
     }
     const data = {
@@ -196,7 +194,7 @@ class Base {
       version: "V4",
     })
     const tx = await this.addAddressLink(
-      { signature, address: identity.address.toLowerCase() },
+      { signature, address: identity.address.toLowerCase(), expiry },
       { nonce, ...opt }
     )
     return isNil(tx.err) ? { tx, identity } : null

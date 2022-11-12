@@ -2,6 +2,7 @@ const { all, complement, isNil } = require("ramda")
 let Arweave = require("arweave")
 Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
 const Base = require("weavedb-base")
+
 const {
   Warp,
   WarpNodeFactory,
@@ -56,8 +57,12 @@ class SDK extends Base {
     if (!isNil(EthWallet)) this.setEthWallet(EthWallet)
   }
 
-  async getOwner(...query) {
+  async getOwner() {
     return this.request("getOwner")
+  }
+
+  async getAddressLink(address) {
+    return this.viewState({ function: "getAddressLink", query: { address } })
   }
 
   async mineBlock() {
