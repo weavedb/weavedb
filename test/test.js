@@ -40,7 +40,7 @@ describe("WeaveDB", function () {
     } = await initBeforeEach())
   })
 
-  it.only("should get version", async () => {
+  it("should get version", async () => {
     expect(await db.getVersion()).to.equal(
       JSON.parse(
         readFileSync(
@@ -648,6 +648,19 @@ describe("WeaveDB", function () {
         })
       ).result.isValid
     ).to.eql(true)
+    return
+  })
+
+  it("should evolve", async () => {
+    const evolve = "contract-1"
+    const evolve2 = "contract-2"
+    expect(await db.getEvolve()).to.eql({ canEvolve: true, evolve: null })
+    await db.evolve(evolve, { ar: arweave_wallet })
+    expect(await db.getEvolve()).to.eql({ canEvolve: true, evolve })
+    await db.setCanEvolve(false, { ar: arweave_wallet })
+    expect(await db.getEvolve()).to.eql({ canEvolve: false, evolve })
+    await db.evolve(evolve2, { ar: arweave_wallet })
+    expect(await db.getEvolve()).to.eql({ canEvolve: false, evolve: evolve })
     return
   })
 })
