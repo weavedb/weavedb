@@ -20,11 +20,6 @@ if (isNil(contractTxId)) {
   process.exit()
 }
 
-if (isNil(newIntmaxTxId)) {
-  console.log("intmax contract not specified")
-  process.exit()
-}
-
 const setup = async () => {
   const wallet_path = path.resolve(
     __dirname,
@@ -50,10 +45,8 @@ const setup = async () => {
     },
   })
   console.log("evolve WeaveDB..." + contractTxId + " to " + newContractSrcTxId)
-  await sdk.db.evolve(newContractSrcTxId, true)
+  await sdk.evolve(newContractSrcTxId, { ar: wallet })
   console.log("evolved!")
-  await sdk.linkContract("intmax", newIntmaxTxId, { ar: wallet })
-  console.log("intmax contract linked!")
   process.exit()
 }
 

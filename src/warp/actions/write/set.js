@@ -1,6 +1,7 @@
 import { init, last, isNil, clone } from "ramda"
-import { err, parse, mergeData, validateSchema } from "../../lib/utils"
-import { validate } from "../../lib/validate"
+import { parse, mergeData, validateSchema } from "../../lib/utils"
+import { err } from "../../../common/warp/lib/utils"
+import { validate } from "../../../common/warp/lib/validate"
 import { updateData, addData, getIndex } from "../../lib/index"
 
 export const set = async (state, action, signer, contractErr = true) => {

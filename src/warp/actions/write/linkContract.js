@@ -1,6 +1,7 @@
 import { isNil, is } from "ramda"
-import { validate } from "../../lib/validate"
-import { err, parse } from "../../lib/utils"
+import { validate } from "../../../common/warp/lib/validate"
+import { parse } from "../../lib/utils"
+import { err } from "../../../common/warp/lib/utils"
 
 export const linkContract = async (state, action, signer) => {
   signer ||= await validate(state, action, "linkContract")

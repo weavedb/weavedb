@@ -1,5 +1,5 @@
 import { isNil } from "ramda"
-import { err } from "../../lib/utils"
+import { err } from "../../../common/warp/lib/utils"
 
 export const version = async (state, action) => {
   const { version } = state
