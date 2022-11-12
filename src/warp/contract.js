@@ -33,6 +33,10 @@ import { evolve } from "../common/warp/actions/write/evolve"
 import { setCanEvolve } from "../common/warp/actions/write/setCanEvolve"
 import { getEvolve } from "../common/warp/actions/read/getEvolve"
 
+import { getOwner } from "../common/warp/actions/read/getOwner"
+import { addOwner } from "../common/warp/actions/write/addOwner"
+import { removeOwner } from "../common/warp/actions/write/removeOwner"
+
 export async function handle(state, action) {
   try {
     ;({ state } = await cron(state))
@@ -97,6 +101,16 @@ export async function handle(state, action) {
       return await remove(state, action)
     case "batch":
       return await batch(state, action)
+
+    case "getOwner":
+      return await getOwner(state, action)
+
+    case "addOwner":
+      return await addOwner(state, action)
+
+    case "removeOwner":
+      return await removeOwner(state, action)
+
     case "getEvolve":
       return await getEvolve(state, action)
     case "evolve":
