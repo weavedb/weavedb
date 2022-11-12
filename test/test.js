@@ -13,7 +13,8 @@ const { Buffer } = require("buffer")
 const buildEddsa = require("circomlibjs").buildEddsa
 const Account = require("intmax").Account
 const shajs = require("sha.js")
-
+const { readFileSync } = require("fs")
+const { resolve } = require("path")
 describe("WeaveDB", function () {
   let wallet, walletAddress, wallet2, db, intmaxSrcTxId, arweave_wallet
   const _ii = [
@@ -37,6 +38,17 @@ describe("WeaveDB", function () {
       wallet,
       wallet2,
     } = await initBeforeEach())
+  })
+
+  it.only("should get version", async () => {
+    expect(await db.getVersion()).to.equal(
+      JSON.parse(
+        readFileSync(
+          resolve(__dirname, "../dist/warp/initial-state.json"),
+          "utf8"
+        )
+      ).version
+    )
   })
 
   it("should get nonce", async () => {
