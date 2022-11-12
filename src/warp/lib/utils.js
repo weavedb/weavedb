@@ -1,4 +1,5 @@
 import {
+  of,
   cond,
   compose,
   o,
@@ -293,11 +294,9 @@ export const parse = async (
     _data = doc.doc
     ;({ next_data, schema, rules, col } = doc)
   }
+  let owner = state.owner || []
+  if (is(String)(owner)) owner = of(owner)
   if (
-    includes(func)(["update", "upsert", "delete"]) &&
-    _data.setter !== signer
-  ) {
-  } else if (
     includes(func)([
       "addIndex",
       "removeIndex",
@@ -308,12 +307,13 @@ export const parse = async (
       "linkContract",
       "unlinkContract",
     ]) &&
-    action.caller !== state.owner
+    !includes(action.caller)(owner)
   ) {
     err("caller is not contract owner", contractErr)
   }
   return { data, query, new_data, path, _data, schema, col, next_data }
 }
+
 export const validateSchema = (schema, data, contractErr) => {
   if (!isNil(schema)) {
     const _validate = validator(schema)

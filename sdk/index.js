@@ -56,6 +56,10 @@ class SDK extends Base {
     if (!isNil(EthWallet)) this.setEthWallet(EthWallet)
   }
 
+  async getOwner(...query) {
+    return this.request("getOwner")
+  }
+
   async mineBlock() {
     await this.arweave.api.get("mine")
   }
@@ -122,6 +126,14 @@ class SDK extends Base {
 
   async setCanEvolve(value, opt) {
     return this._write2("setCanEvolve", { value }, opt)
+  }
+
+  async addOwner(address, opt) {
+    return this._write2("addOwner", { address }, opt)
+  }
+
+  async removeOwner(address, opt) {
+    return this._write2("removeOwner", { address }, opt)
   }
 }
 
