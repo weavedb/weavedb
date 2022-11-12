@@ -32,7 +32,8 @@ import {
   map,
 } from "ramda"
 
-import { err, getDoc, getCol } from "../../lib/utils"
+import { getDoc, getCol } from "../../lib/utils"
+import { err } from "../../../common/warp/lib/utils"
 import { getIndex, _getIndex } from "../../lib/index"
 
 const parseQuery = (state, action) => {
