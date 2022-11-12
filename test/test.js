@@ -393,6 +393,10 @@ describe("WeaveDB", function () {
   it("should link temporarily generated address", async () => {
     const addr = wallet.getAddressString()
     const { identity } = await db.createTempAddress(addr)
+    expect(await db.getAddressLink(identity.address.toLowerCase())).to.eql({
+      address: addr,
+      expiry: 0,
+    })
     delete db.wallet
     await db.set({ name: "Beth", age: 10 }, "ppl", "Beth", {
       wallet: addr,
