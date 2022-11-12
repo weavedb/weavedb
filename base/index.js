@@ -1,6 +1,15 @@
 const EthCrypto = require("eth-crypto")
 const buildEddsa = require("circomlibjs").buildEddsa
-const { includes, all, complement, init, is, last, isNil } = require("ramda")
+const {
+  includes,
+  all,
+  complement,
+  init,
+  is,
+  last,
+  isNil,
+  mergeLeft,
+} = require("ramda")
 const ethSigUtil = require("@metamask/eth-sig-util")
 const { privateToAddress } = require("ethereumjs-util")
 const EIP712Domain = [
@@ -56,7 +65,16 @@ class Base {
   }
 
   async _write2(func, query, opt) {
-    let nonce, privateKey, overwrite, wallet, dryWrite, bundle, ii, ar, intmax
+    let nonce,
+      privateKey,
+      overwrite,
+      wallet,
+      dryWrite,
+      bundle,
+      ii,
+      ar,
+      intmax,
+      extra
     if (!isNil(opt)) {
       ;({
         nonce,
@@ -68,6 +86,7 @@ class Base {
         ii,
         ar,
         intmax,
+        extra,
       } = opt)
     }
 
@@ -75,11 +94,19 @@ class Base {
       ar = this.arweave_wallet
     }
     return !isNil(intmax)
-      ? await this.writeWithIntmax(intmax, func, query, nonce, dryWrite, bundle)
+      ? await this.writeWithIntmax(
+          intmax,
+          func,
+          query,
+          nonce,
+          dryWrite,
+          bundle,
+          extra
+        )
       : !isNil(ii)
-      ? await this.writeWithII(ii, func, query, nonce, dryWrite, bundle)
+      ? await this.writeWithII(ii, func, query, nonce, dryWrite, bundle, extra)
       : !isNil(ar)
-      ? await this.writeWithAR(ar, func, query, nonce, dryWrite, bundle)
+      ? await this.writeWithAR(ar, func, query, nonce, dryWrite, bundle, extra)
       : await this.write(
           wallet || this.wallet,
           func,
@@ -88,7 +115,8 @@ class Base {
           privateKey,
           overwrite,
           dryWrite,
-          bundle
+          bundle,
+          extra
         )
   }
 
@@ -273,7 +301,8 @@ class Base {
     privateKey,
     overwrite,
     dryWrite = true,
-    bundle
+    bundle,
+    extra = {}
   ) {
     let addr = isNil(privateKey)
       ? null
@@ -318,7 +347,7 @@ class Base {
             version: "V4",
           })
 
-    const param = {
+    const param = mergeLeft(extra, {
       function: func,
       query,
       signature,
@@ -329,11 +358,11 @@ class Base {
           : is(String, wallet)
           ? wallet
           : wallet.getAddressString(),
-    }
+    })
     return await this._request(func, param, dryWrite, bundle)
   }
 
-  async writeWithII(ii, func, query, nonce, dryWrite = true, bundle) {
+  async writeWithII(ii, func, query, nonce, dryWrite = true, bundle, extra) {
     let addr = ii.toJSON()[0]
     const isaddr = !isNil(addr)
     addr = addr.toLowerCase()
@@ -365,18 +394,18 @@ class Base {
     }
     const _data = Buffer.from(JSON.stringify(data))
     const signature = toHexString(await ii.sign(_data))
-    const param = {
+    const param = mergeLeft(extra, {
       function: func,
       query,
       signature,
       nonce,
       caller: addr,
       type: "ed25519",
-    }
+    })
     return await this._request(func, param, dryWrite, bundle)
   }
 
-  async writeWithAR(ar, func, query, nonce, dryWrite = true, bundle) {
+  async writeWithAR(ar, func, query, nonce, dryWrite = true, bundle, extra) {
     const wallet = is(Object, ar) && ar.walletName === "ArConnect" ? ar : null
     let addr = null
     let pubKey = null
@@ -418,7 +447,7 @@ class Base {
             saltLength: 32,
           })
         ).toString("hex")
-    const param = {
+    const param = mergeLeft(extra, {
       function: func,
       query,
       signature,
@@ -426,11 +455,19 @@ class Base {
       caller: addr,
       pubKey,
       type: "rsa256",
-    }
+    })
     return await this._request(func, param, dryWrite, bundle)
   }
 
-  async writeWithIntmax(intmax, func, query, nonce, dryWrite = true, bundle) {
+  async writeWithIntmax(
+    intmax,
+    func,
+    query,
+    nonce,
+    dryWrite = true,
+    bundle,
+    extra
+  ) {
     const eddsa = await buildEddsa()
     const wallet = is(Object, intmax) ? intmax : null
     let addr = null
@@ -471,7 +508,8 @@ class Base {
     const signature = !isNil(wallet._account)
       ? await intmax.signMessage(JSON.stringify(data))
       : await intmax.sign(JSON.stringify(data))
-    const param =
+    const param = mergeLeft(
+      extra,
       !isNil(pubKey) && pubKey.length === 66
         ? {
             function: func,
@@ -490,6 +528,7 @@ class Base {
             caller: addr,
             type: "secp256k1-2",
           }
+    )
     return await this._request(func, param, dryWrite, bundle)
   }
 }
