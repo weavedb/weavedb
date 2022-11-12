@@ -1,4 +1,4 @@
-import { includes, isNil } from "ramda"
+import { is, includes, isNil } from "ramda"
 import { utils } from "ethers"
 
 export const validate = async (state, action, func) => {
@@ -125,7 +125,13 @@ export const validate = async (state, action, func) => {
 
   let original_signer = signer
   let _signer = signer
-  if (!isNil(state.auth.links[_signer])) _signer = state.auth.links[_signer]
+  const link = state.auth.links[_signer]
+  if (!isNil(link)) {
+    let _address = is(Object, link) ? link.address : link
+    let _expiry = is(Object, link) ? link.expiry || 0 : 0
+    if (_expiry === 0 || SmartWeave.block.timestamp <= _expiry)
+      _signer = _address
+  }
   if (_signer !== _caller) throw new ContractError(`signer is not caller`)
   if ((state.nonces[original_signer] || 0) + 1 !== nonce) {
     throw new ContractError(`The wrong nonce`)
