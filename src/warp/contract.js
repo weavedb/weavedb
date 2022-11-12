@@ -4,8 +4,6 @@ import { nonce } from "./actions/read/nonce"
 import { ids } from "./actions/read/ids"
 import { version } from "./actions/read/version"
 import { get } from "./actions/read/get"
-import { addAddressLink } from "./actions/write/addAddressLink"
-import { removeAddressLink } from "./actions/write/removeAddressLink"
 import { set } from "./actions/write/set"
 import { setSchema } from "./actions/write/setSchema"
 import { getSchema } from "./actions/read/getSchema"
@@ -37,6 +35,10 @@ import { getOwner } from "../common/warp/actions/read/getOwner"
 import { addOwner } from "../common/warp/actions/write/addOwner"
 import { removeOwner } from "../common/warp/actions/write/removeOwner"
 
+import { getAddressLink } from "./actions/read/getAddressLink"
+import { addAddressLink } from "./actions/write/addAddressLink"
+import { removeAddressLink } from "./actions/write/removeAddressLink"
+
 export async function handle(state, action) {
   try {
     ;({ state } = await cron(state))
@@ -45,6 +47,8 @@ export async function handle(state, action) {
   }
 
   switch (action.input.function) {
+    case "getAddressLink":
+      return await getAddressLink(state, action)
     case "addAddressLink":
       return await addAddressLink(state, action)
     case "removeAddressLink":
