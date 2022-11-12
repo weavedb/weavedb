@@ -1,5 +1,6 @@
 import { isNil, mergeLeft } from "ramda"
-import { err, parse, mergeData } from "../../lib/utils"
+import { parse, mergeData } from "../../lib/utils"
+import { err } from "../../../common/warp/lib/utils"
 
 export const getSchema = async (state, action) => {
   let { _data, data, query, new_data, path } = await parse(

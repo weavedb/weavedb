@@ -1,6 +1,6 @@
 import { isNil } from "ramda"
-import { err } from "../../lib/utils"
-import { validate } from "../../lib/validate"
+import { err } from "../../../common/warp/lib/utils"
+import { validate } from "../../../common/warp/lib/validate"
 
 export const addAddressLink = async (state, action, signer) => {
   signer ||= await validate(state, action, "addAddressLink")

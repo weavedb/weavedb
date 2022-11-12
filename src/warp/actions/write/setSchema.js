@@ -1,7 +1,9 @@
 import { isNil, mergeLeft } from "ramda"
-import { err, parse, mergeData } from "../../lib/utils"
-import { validate } from "../../lib/validate"
+import { parse, mergeData } from "../../lib/utils"
+import { err } from "../../../common/warp/lib/utils"
+import { validate } from "../../../common/warp/lib/validate"
 import { validator } from "@exodus/schemasafe"
+
 export const setSchema = async (state, action, signer) => {
   signer ||= await validate(state, action, "setSchema")
   let { _data, data, query, new_data, path } = await parse(

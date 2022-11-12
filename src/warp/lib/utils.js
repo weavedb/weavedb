@@ -20,6 +20,7 @@ import * as R from "ramda"
 import jsonLogic from "json-logic-js"
 import { validator } from "@exodus/schemasafe"
 import fpjson from "fpjson-lang"
+import { err } from "../../common/warp/lib/utils"
 
 export const mergeData = (_data, new_data, overwrite = false, signer) => {
   if (isNil(_data.__data) || overwrite) _data.__data = {}
@@ -317,12 +318,5 @@ export const validateSchema = (schema, data, contractErr) => {
   if (!isNil(schema)) {
     const _validate = validator(schema)
     if (!_validate(data)) err(null, contractErr)
-  }
-}
-export const err = (msg = `The wrong query`, contractErr = false) => {
-  if (contractErr) {
-    throw new ContractError(msg)
-  } else {
-    throw msg
   }
 }

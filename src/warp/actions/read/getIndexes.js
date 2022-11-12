@@ -1,6 +1,6 @@
 import { isNil } from "ramda"
 
-import { err } from "../../lib/utils"
+import { err } from "../../../common/warp/lib/utils"
 import { getIndex } from "../../lib/index"
 
 const scanIndexes = ind => {
