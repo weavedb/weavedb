@@ -1,17 +1,18 @@
-import { err } from "../lib/utils"
+import { err } from "../common/warp/lib/utils"
+import { evolve } from "../common/warp/actions/write/evolve"
+import { setCanEvolve } from "../common/warp/actions/write/setCanEvolve"
+import { getEvolve } from "../common/warp/actions/read/getEvolve"
+
 export async function handle(state, action) {
   switch (action.input.function) {
     case "get":
       return { result: state.poseidonConstants }
+    case "getEvolve":
+      return await getEvolve(state, action)
     case "evolve":
-      if (state.canEvolve) {
-        if (state.owner !== action.caller) {
-          err("Only the owner can evolve a contract.")
-        }
-        state.evolve = action.input.value
-        return { state }
-      }
-      break
+      return await evolve(state, action)
+    case "setCanEvolve":
+      return await setCanEvolve(state, action)
     default:
       err(
         `No function supplied or function not recognised: "${action.input.function}"`

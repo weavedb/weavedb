@@ -1,6 +1,7 @@
 import { isNil, last, init } from "ramda"
-import { err, parse } from "../../lib/utils"
-import { validate } from "../../lib/validate"
+import { parse } from "../../lib/utils"
+import { err } from "../../../common/warp/lib/utils"
+import { validate } from "../../../common/warp/lib/validate"
 import { removeData, getIndex } from "../../lib/index"
 
 export const remove = async (state, action, signer, contractErr = true) => {
