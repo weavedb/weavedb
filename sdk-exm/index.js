@@ -1,6 +1,6 @@
 const Base = require("weavedb-base")
 const Arweave = require("arweave")
-const { clone, keys } = require("ramda")
+const { isNil, clone, keys } = require("ramda")
 const { Exm } = require("@execution-machine/sdk")
 
 class SDK extends Base {
@@ -24,7 +24,13 @@ class SDK extends Base {
 
   async viewState(opt) {
     const tx = await this.exm.functions.write(this.functionId, opt)
-    return tx.data.execution.result
+    if (
+      isNil(tx.data.execution.result) ||
+      tx.data.execution.result.success !== true
+    ) {
+      throw new Error()
+    }
+    return tx.data.execution.result.result
   }
 
   async getNonce(addr) {
@@ -48,7 +54,14 @@ class SDK extends Base {
   }
 
   async send(param) {
-    return await this.exm.functions.write(this.functionId, param)
+    const tx = await this.exm.functions.write(this.functionId, param)
+    if (
+      isNil(tx.data.execution.result) ||
+      tx.data.execution.result.success !== true
+    ) {
+      throw new Error()
+    }
+    return tx
   }
 
   async evolve(value, opt) {
