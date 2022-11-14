@@ -129,8 +129,9 @@ export const validate = async (state, action, func) => {
   if (!isNil(link)) {
     let _address = is(Object, link) ? link.address : link
     let _expiry = is(Object, link) ? link.expiry || 0 : 0
-    if (_expiry === 0 || SmartWeave.block.timestamp <= _expiry)
+    if (_expiry === 0 || SmartWeave.block.timestamp <= _expiry) {
       _signer = _address
+    }
   }
   if (_signer !== _caller) throw new ContractError(`signer is not caller`)
   if ((state.nonces[original_signer] || 0) + 1 !== nonce) {

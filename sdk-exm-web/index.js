@@ -20,7 +20,14 @@ class SDK extends Base {
   }
 
   async viewState(opt) {
-    return (await this.send(opt)).data.execution.result
+    const tx = await this.send(opt)
+    if (
+      isNil(tx.data.execution.result) ||
+      tx.data.execution.result.success !== true
+    ) {
+      throw new Error()
+    }
+    return tx.data.execution.result.result
   }
 
   async getNonce(addr) {
@@ -44,11 +51,18 @@ class SDK extends Base {
   }
 
   async send(param) {
-    return await fetch(`https://${this.functionId}.exm.run`, {
+    const tx = await fetch(`https://${this.functionId}.exm.run`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(param),
     }).then(v => v.json())
+    if (
+      isNil(tx.data.execution.result) ||
+      tx.data.execution.result.success !== true
+    ) {
+      throw new Error()
+    }
+    return tx
   }
 }
 

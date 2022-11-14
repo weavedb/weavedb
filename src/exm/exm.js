@@ -20,51 +20,64 @@ import { setSchema } from "./actions/write/setSchema"
 import { setRules } from "./actions/write/setRules"
 import { evolve } from "./actions/write/evolve"
 
+const wrapResult = result => ({ result: { ...result, success: true } })
 export async function handle(state, action) {
+  let _state = JSON.parse(JSON.stringify(state))
   switch (action.input.function) {
     case "nonce":
-      return await nonce(state, action)
+      return wrapResult(await nonce(_state, action))
     case "ids":
-      return await ids(state, action)
+      return wrapResult(await ids(_state, action))
     case "get":
-      return await get(state, action)
+      return wrapResult(await get(_state, action))
     case "cget":
-      return await get(state, action, true)
+      return wrapResult(await get(_state, action, true))
 
     case "getSchema":
-      return await getSchema(state, action)
+      return wrapResult(await getSchema(_state, action))
     case "getRules":
-      return await getRules(state, action)
+      return wrapResult(await getRules(_state, action))
     case "getIndexes":
-      return await getIndexes(state, action)
+      return wrapResult(await getIndexes(_state, action))
 
     case "add":
-      return await add(state, action)
+      await add(_state, action)
+      break
     case "set":
-      return await set(state, action)
+      await set(_state, action)
+      break
     case "update":
-      return await update(state, action)
+      await update(_state, action)
+      break
     case "upsert":
-      return await upsert(state, action)
+      await upsert(_state, action)
+      break
     case "delete":
-      return await remove(state, action)
+      await remove(_state, action)
+      break
     case "batch":
-      return await batch(state, action)
+      await batch(_state, action)
+      break
     case "addIndex":
-      return await addIndex(state, action)
+      await addIndex(_state, action)
+      break
     case "removeIndex":
-      return await removeIndex(state, action)
+      await removeIndex(_state, action)
+      break
     case "setSchema":
-      return await setSchema(state, action)
+      await setSchema(_state, action)
+      break
     case "setRules":
-      return await setRules(state, action)
+      await setRules(_state, action)
+      break
     case "evolve":
-      return await evolve(state, action)
+      await evolve(_state, action)
+      break
 
     default:
       err(
         `No function supplied or function not recognised: "${action.input.function}"`
       )
   }
-  return { state }
+  return { state: _state, result: { success: true } }
 }
