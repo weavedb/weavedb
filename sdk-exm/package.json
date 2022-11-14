@@ -1,6 +1,6 @@
 {
   "name": "weavedb-exm-sdk",
-  "version": "0.5.11",
+  "version": "0.7.0",
   "description": "WeaveDB on Execution Machine.",
   "homepage": "https://weavedb.dev",
   "repository": {

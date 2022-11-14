@@ -31,7 +31,10 @@ class SDK extends Base {
 
   async viewState(opt) {
     const tx = await this._send(opt)
-    return tx.result
+    if (isNil(tx.result) || tx.result.success !== true) {
+      throw new Error()
+    }
+    return tx.result.result
   }
 
   async getNonce(addr) {
@@ -64,6 +67,9 @@ class SDK extends Base {
 
   async send(param) {
     const tx = await this._send(param)
+    if (isNil(tx.result) || tx.result.success !== true) {
+      throw new Error()
+    }
     this.state = tx.state
     return tx
   }
@@ -88,6 +94,7 @@ describe("WeaveDB on EXM", function () {
           )
         ),
         owner: addr,
+        secure: false,
       },
     })
   })
@@ -349,7 +356,9 @@ describe("WeaveDB on EXM", function () {
     }
     await db.setSchema(schema, "ppl")
     expect(await db.getSchema("ppl")).to.eql(schema)
-    await db.set(data, "ppl", "Bob")
+    try {
+      await db.set(data, "ppl", "Bob")
+    } catch (e) {}
     expect(await db.get("ppl", "Bob")).to.eql(null)
     await db.setSchema(schema2, "ppl")
     expect(await db.getSchema("ppl")).to.eql(schema2)
@@ -372,9 +381,13 @@ describe("WeaveDB on EXM", function () {
     expect(await db.getRules("ppl")).to.eql(rules)
     await db.set(data, "ppl", "Bob")
     expect(await db.get("ppl", "Bob")).to.eql(data)
-    await db.delete("ppl", "Bob")
+    try {
+      await db.delete("ppl", "Bob")
+    } catch (e) {}
     expect(await db.get("ppl", "Bob")).to.eql(data)
-    await db.update({ age: db.inc(10) }, "ppl", "Bob")
+    try {
+      await db.update({ age: db.inc(10) }, "ppl", "Bob")
+    } catch (e) {}
     expect(await db.get("ppl", "Bob")).to.eql({ name: "Bob", age: 20 })
     await db.update({ age: db.inc(5) }, "ppl", "Bob")
     expect(await db.get("ppl", "Bob")).to.eql({ name: "Bob", age: 25 })
@@ -442,6 +455,5 @@ describe("WeaveDB on EXM", function () {
     await db.setRules(rules, "ppl")
     await db.upsert({ name: "Bob" }, "ppl", "Bob")
     expect((await db.get("ppl", "Bob")).age).to.eql(30)
-    await db.upsert({ name: "Bob" }, "ppl", "Bob")
   })
 })
