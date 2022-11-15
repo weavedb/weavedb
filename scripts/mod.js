@@ -1,24 +1,26 @@
 const fs = require("fs")
 const path = require("path")
+const { isNil } = require("ramda")
+const mod = (file1, file2, start, end) => {
+  let lines = fs
+    .readFileSync(path.resolve(__dirname, `../dist${file1}`), "utf8")
+    .split("\n")
 
-let lines = fs
-  .readFileSync(path.resolve(__dirname, "../dist/exm/exm.js"), "utf8")
-  .split("\n")
-  .slice(1, -2)
-
-let i = 0
-let lines2 = []
-for (let v of lines) {
-  if (v === "  async function handle(state, action) {") {
-    lines[i] = "export async function handle(state, action) {"
-  } else {
-    lines[i] = v.replace(/^  /, "")
+  if (!isNil(start) && !isNil(end)) {
+    lines = lines.slice(start, end)
   }
-  lines2[i] = v.replace(/^  /, "")
-  i++
+  let i = 0
+  for (let v of lines) {
+    if (v === "  async function handle(state, action) {") {
+      lines[i] = "export async function handle(state, action) {"
+    } else {
+      lines[i] = v.replace(/^  /, "")
+    }
+    i++
+  }
+
+  fs.writeFileSync(path.resolve(__dirname, `../dist${file2}`), lines.join("\n"))
 }
-lines2.push("module.exports = handle")
-fs.writeFileSync(
-  path.resolve(__dirname, "../dist/exm/exm.js"),
-  lines.join("\n")
-)
+
+mod("/exm/exm.js", "/exm/exm.js", 1, -2)
+mod("/ethereum/eth-exm.js", "/ethereum/eth-exm.js")

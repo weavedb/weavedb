@@ -1,9 +1,9 @@
-import { err } from "../common/warp/lib/utils"
+import { err } from "../common/lib/utils"
 import verifyPoseidon from "./actions/read/verifyPoseidon"
 
 import { evolve } from "../common/warp/actions/write/evolve"
-import { setCanEvolve } from "../common/warp/actions/write/setCanEvolve"
-import { getEvolve } from "../common/warp/actions/read/getEvolve"
+import { setCanEvolve } from "../common/actions/write/setCanEvolve"
+import { getEvolve } from "../common/actions/read/getEvolve"
 
 export async function handle(state, action) {
   switch (action.input.function) {
