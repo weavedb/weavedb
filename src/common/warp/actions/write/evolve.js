@@ -1,6 +1,6 @@
 import { is, of, includes, mergeLeft } from "ramda"
-import { err } from "../../lib/utils"
-import { validate } from "../../lib/validate"
+import { err } from "../../../lib/utils"
+import { validate } from "../../../lib/validate"
 
 export const evolve = async (state, action, signer) => {
   signer ||= await validate(state, action, "evolve")

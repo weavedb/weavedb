@@ -5,6 +5,7 @@ const contracts = [
   "/intmax/intmax.js",
   "/internet-identity/ii.js",
   "/ethereum/eth.js",
+  "/ethereum/eth-exm.js",
   "/poseidon/poseidonConstants.js",
   "/exm/exm.js",
 ]
