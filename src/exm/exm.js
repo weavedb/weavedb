@@ -1,28 +1,27 @@
-import { err } from "./lib/utils"
+import { err, clone, wrapResult } from "../common/exm/lib/utils"
 import { mergeLeft } from "ramda"
 
-import { nonce } from "./actions/read/nonce"
-import { ids } from "./actions/read/ids"
-import { get } from "./actions/read/get"
-import { getSchema } from "./actions/read/getSchema"
-import { getRules } from "./actions/read/getRules"
-import { getIndexes } from "./actions/read/getIndexes"
+import { nonce } from "../common/actions/read/nonce"
+import { ids } from "../common/actions/read/ids"
+import { get } from "../common/actions/read/get"
+import { getSchema } from "../common/actions/read/getSchema"
+import { getRules } from "../common/actions/read/getRules"
+import { getIndexes } from "../common/actions/read/getIndexes"
 
-import { add } from "./actions/write/add"
-import { set } from "./actions/write/set"
-import { update } from "./actions/write/update"
-import { upsert } from "./actions/write/upsert"
-import { remove } from "./actions/write/remove"
-import { batch } from "./actions/write/batch"
-import { addIndex } from "./actions/write/addIndex"
-import { removeIndex } from "./actions/write/removeIndex"
-import { setSchema } from "./actions/write/setSchema"
-import { setRules } from "./actions/write/setRules"
-import { evolve } from "./actions/write/evolve"
+import { add } from "../common/actions/write/add"
+import { set } from "../common/actions/write/set"
+import { update } from "../common/actions/write/update"
+import { upsert } from "../common/actions/write/upsert"
+import { remove } from "../common/actions/write/remove"
+import { batch } from "../common/actions/write/batch"
+import { addIndex } from "../common/actions/write/addIndex"
+import { removeIndex } from "../common/actions/write/removeIndex"
+import { setSchema } from "../common/actions/write/setSchema"
+import { setRules } from "../common/actions/write/setRules"
+import { evolve } from "../common/exm/actions/write/evolve"
 
-const wrapResult = result => ({ result: { ...result, success: true } })
 export async function handle(state, action) {
-  let _state = JSON.parse(JSON.stringify(state))
+  let _state = clone(state)
   switch (action.input.function) {
     case "nonce":
       return wrapResult(await nonce(_state, action))
