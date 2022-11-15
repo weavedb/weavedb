@@ -176,16 +176,15 @@ describe("WeaveDB", function () {
       Beth,
       Alice,
     ])
-
     // sort multiple fields
     await db.addIndex([["age"], ["weight", "desc"]], "ppl")
+
     expect(await db.get("ppl", ["age"], ["weight", "desc"])).to.eql([
       Bob,
       Beth,
       Alice,
       John,
     ])
-
     // where =
     expect(await db.get("ppl", ["age", "=", 30])).to.eql([Alice, Beth])
 
