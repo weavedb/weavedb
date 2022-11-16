@@ -1,3 +1,11 @@
+let {
+  contractTxId,
+  port = 1820,
+  dbPath = null,
+  persist = false,
+  secure = false,
+} = require("yargs")(process.argv.slice(2)).argv
+const Constants = require("../src/intmax/lib/circomlibjs/poseidon_constants_opt.js")
 const readline = require("readline")
 const { stdin: input, stdout: output } = require("process")
 const rl = readline.createInterface({ input, output })
@@ -7,6 +15,7 @@ const path = require("path")
 const { expect } = require("chai")
 const ethSigUtil = require("@metamask/eth-sig-util")
 const Wallet = require("ethereumjs-wallet").default
+const { deployContracts } = require("../test/util")
 const {
   PstContract,
   PstState,
@@ -27,51 +36,60 @@ let arlocal, arweave, warp, arweave_wallet, walletAddress, contractSrc, sdk
 
 let isInit = false
 let stopto = null
+
 async function init() {
-  arlocal = new ArLocal(1820, false)
+  dbPath = isNil(dbPath)
+    ? path.resolve(__dirname, ".db")
+    : /^\//.test(dbPath)
+    ? dbPath
+    : path.resolve(process.cwd(), dbPath)
+  if (persist) {
+    console.log(`dbPath: ${dbPath}`)
+  }
+  arlocal = new ArLocal(port, false, dbPath, persist)
   await arlocal.start()
   sdk = new SDK({
     arweave: {
       host: "localhost",
-      port: 1820,
+      port,
       protocol: "http",
     },
   })
   arweave = sdk.arweave
   warp = sdk.warp
   const wallet = Wallet.generate()
-  arweave_wallet = await arweave.wallets.generate()
-  await addFunds(arweave, arweave_wallet)
-  walletAddress = await arweave.wallets.jwkToAddress(arweave_wallet)
+
+  const {
+    contract,
+    intmaxSrcTxId,
+    dfinitySrcTxId,
+    ethereumSrcTxId,
+    poseidon1TxId,
+    poseidon2TxId,
+    arweave_wallet,
+    walletAddress,
+  } = await deployContracts({
+    secure,
+    warp,
+    arweave,
+    contractTxId,
+  })
+
+  console.log()
   console.log(`Arweave wallet generated: ` + walletAddress)
   console.log(`Ethereum wallet generated: ` + wallet.getAddressString())
-  contractSrc = fs.readFileSync(
-    path.join(__dirname, "../dist/warp/contract.js"),
-    "utf8"
-  )
-  const stateFromFile = JSON.parse(
-    fs.readFileSync(
-      path.join(__dirname, "../dist/warp/initial-state.json"),
-      "utf8"
-    )
-  )
-  const initialState = {
-    ...stateFromFile,
-    ...{
-      secure: true,
-      owner: walletAddress,
-    },
+
+  if (isNil(contractTxId)) {
+    console.log()
+    console.log(`New DB instance deployed (secure: ${secure})`)
+    console.log(contract)
+    ;({ contractTxId } = contract)
   }
-  const contract = await warp.createContract.deploy({
-    wallet: arweave_wallet,
-    initState: JSON.stringify(initialState),
-    src: contractSrc,
-  })
-  console.log(contract)
+
   const name = "weavedb"
   const version = "1"
   sdk.initialize({
-    contractTxId: contract.contractTxId,
+    contractTxId,
     wallet: arweave_wallet,
     name,
     version,
@@ -84,6 +102,7 @@ async function init() {
       publicKey: wallet.getPublicKeyString(),
       address: wallet.getAddressString(),
     },
+    port,
     arweave: arweave_wallet,
     weavedb: { ...contract, name, version },
   }
@@ -93,6 +112,7 @@ async function init() {
   )
   waitForCommand()
 }
+
 function waitForCommand() {
   const methods = [
     "add",
@@ -114,6 +134,7 @@ function waitForCommand() {
     "batch",
     "evolve",
   ]
+  console.log()
   rl.question("> ", async method => {
     try {
       let pr = eval(`sdk.${method}`)
