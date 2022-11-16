@@ -53,6 +53,24 @@ class SDK extends Base {
     })
   }
 
+  async getEvolve() {
+    return await this.viewState({
+      function: "getEvolve",
+    })
+  }
+  async copy() {
+    return await this.viewState({
+      function: "copy",
+    })
+  }
+
+  async evolve(value, opt) {
+    return this._write2("evolve", { value }, { ...opt, extra: { value } })
+  }
+  async setCanEvolve(value, opt) {
+    return this._write2("setCanEvolve", { value }, opt)
+  }
+
   async _request(func, param) {
     return await this.send(param)
   }
@@ -97,6 +115,7 @@ class SDK extends Base {
 let arweave_wallet, arweave, addr, db
 
 describe("WeaveDB on EXM", function () {
+  this.timeout(0)
   before(async () => {
     arweave = Arweave.init()
   })
@@ -496,5 +515,21 @@ describe("WeaveDB on EXM", function () {
         )
       ).version
     )
+  })
+
+  it("should evolve", async () => {
+    const evolve = "YRdskKzpedSuMCJaORJ-3PR3u4j40e7IpYQGNir0sJ0"
+    const evolve2 = "atfnCnfJ0_hKq03XFGow803MPvEVTTZiz9SFyWfbtlY"
+    expect((await db.copy()).canEvolve).to.eql(true)
+    expect(await db.getEvolve()).to.eql({ canEvolve: true, evolve: null })
+    await db.evolve(evolve)
+    expect(await db.getEvolve()).to.eql({ canEvolve: true, evolve })
+    await db.setCanEvolve(false)
+    expect(await db.getEvolve()).to.eql({ canEvolve: false, evolve })
+    try {
+      await db.evolve(evolve2)
+    } catch (e) {}
+    expect(await db.getEvolve()).to.eql({ canEvolve: false, evolve: evolve })
+    return
   })
 })
