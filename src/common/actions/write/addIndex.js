@@ -14,6 +14,5 @@ export const addIndex = async (state, action, signer) => {
   )
   let ind = getIndex(state, path)
   _addIndex(new_data, ind, col.__docs)
-  console.log(state)
   return { state }
 }
