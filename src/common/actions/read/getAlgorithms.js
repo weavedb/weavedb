@@ -5,6 +5,6 @@ export const getAlgorithms = async (state, action) => {
     state.auth.algorithms = ["secp256k1", "ed25519", "rsa256", "poseidon"]
   }
   return {
-    result: state.crons,
+    result: state.auth.algorithms,
   }
 }

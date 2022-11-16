@@ -323,8 +323,9 @@ export const parse = async (
       "linkContract",
       "unlinkContract",
     ]) &&
-    !includes(isNil(SmartWeave.contract) ? signer : action.caller)(owner)
+    !includes(signer)(owner)
   ) {
+    console.log(signer, owner, action.caller)
     err("caller is not contract owner", contractErr)
   }
   return { data, query, new_data, path, _data, schema, col, next_data }
