@@ -6,7 +6,7 @@ const {
 
 const { expect } = require("chai")
 const { readFileSync } = require("fs")
-const path = require("path")
+const { resolve } = require("path")
 const Base = require("../base")
 const { all, complement, clone, isNil, keys } = require("ramda")
 const Arweave = require("arweave")
@@ -86,6 +86,12 @@ class SDK extends Base {
   async removeOwner(address, opt) {
     return this._write2("removeOwner", { address }, opt)
   }
+
+  async getVersion() {
+    return await this.viewState({
+      function: "version",
+    })
+  }
 }
 
 let arweave_wallet, arweave, addr, db
@@ -99,12 +105,10 @@ describe("WeaveDB on EXM", function () {
     addr = await arweave.wallets.jwkToAddress(arweave_wallet)
     db = new SDK({
       arweave_wallet,
-      src: readFileSync(path.resolve(__dirname, "../dist/exm/exm.js")),
+      src: readFileSync(resolve(__dirname, "../dist/exm/exm.js")),
       state: {
         ...JSON.parse(
-          readFileSync(
-            path.resolve(__dirname, "../dist/exm/initial-state.json")
-          )
+          readFileSync(resolve(__dirname, "../dist/exm/initial-state.json"))
         ),
         owner: addr,
         secure: false,
@@ -187,145 +191,6 @@ describe("WeaveDB on EXM", function () {
     expect(await db.get("ppl", "Bob")).to.eql(data)
     await db.delete("ppl", "Bob")
     expect(await db.get("ppl", "Bob")).to.eql(null)
-  })
-  it("should get a collection", async () => {
-    const Bob = {
-      name: "Bob",
-      age: 20,
-      height: 170,
-      weight: 75,
-      letters: ["b", "o"],
-    }
-    const Alice = {
-      name: "Alice",
-      age: 30,
-      height: 160,
-      weight: 60,
-      letters: ["a", "l", "i", "c", "e"],
-    }
-    const John = {
-      name: "John",
-      age: 40,
-      height: 180,
-      weight: 100,
-      letters: ["j", "o", "h", "n"],
-    }
-    const Beth = {
-      name: "Beth",
-      age: 30,
-      height: 165,
-      weight: 70,
-      letters: ["b", "e", "t", "h"],
-    }
-    await db.set(Bob, "ppl", "Bob")
-    await db.set(Alice, "ppl", "Alice")
-    await db.set(John, "ppl", "John")
-    await db.set(Beth, "ppl", "Beth")
-    expect(await db.get("ppl")).to.eql([Bob, Alice, John, Beth])
-
-    // limit
-    expect((await db.get("ppl", 1)).length).to.eql(1)
-
-    // sort
-    expect(await db.get("ppl", ["height"])).to.eql([Alice, Beth, Bob, John])
-
-    // sort desc
-    expect(await db.get("ppl", ["height", "desc"])).to.eql([
-      John,
-      Bob,
-      Beth,
-      Alice,
-    ])
-
-    // sort multiple fields
-    await db.addIndex([["age"], ["weight", "desc"]], "ppl")
-    expect(await db.get("ppl", ["age"], ["weight", "desc"])).to.eql([
-      Bob,
-      Beth,
-      Alice,
-      John,
-    ])
-
-    // where =
-    expect(await db.get("ppl", ["age", "=", 30])).to.eql([Alice, Beth])
-
-    // where >
-    expect(await db.get("ppl", ["age"], ["age", ">", 30])).to.eql([John])
-
-    // where >=
-    expect(await db.get("ppl", ["age"], ["age", ">=", 30])).to.eql([
-      Beth,
-      Alice,
-      John,
-    ])
-
-    // where <
-    expect(await db.get("ppl", ["age"], ["age", "<", 30])).to.eql([Bob])
-
-    // where <=
-    expect(await db.get("ppl", ["age"], ["age", "<=", 30])).to.eql([
-      Bob,
-      Beth,
-      Alice,
-    ])
-
-    // where =!
-    expect(await db.get("ppl", ["age"], ["age", "!=", 30])).to.eql([Bob, John])
-
-    // where in
-    expect(await db.get("ppl", ["age", "in", [20, 30]])).to.eql([
-      Bob,
-      Alice,
-      Beth,
-    ])
-
-    // where not-in
-    expect(await db.get("ppl", ["age"], ["age", "not-in", [20, 30]])).to.eql([
-      John,
-    ])
-
-    // where array-contains
-    expect(await db.get("ppl", ["letters", "array-contains", "b"])).to.eql([
-      Bob,
-      Beth,
-    ])
-
-    // where array-contains-any
-    expect(
-      await db.get("ppl", ["letters", "array-contains-any", ["j", "t"]])
-    ).to.eql([John, Beth])
-
-    // skip startAt
-    expect(await db.get("ppl", ["age"], ["startAt", 30])).to.eql([
-      Beth,
-      Alice,
-      John,
-    ])
-
-    // skip startAfter
-    expect(await db.get("ppl", ["age"], ["startAfter", 30])).to.eql([John])
-
-    // skip endAt
-    expect(await db.get("ppl", ["age"], ["endAt", 30])).to.eql([
-      Bob,
-      Beth,
-      Alice,
-    ])
-
-    // skip endBefore
-    expect(await db.get("ppl", ["age"], ["endBefore", 30])).to.eql([Bob])
-
-    // skip startAt multiple fields
-    await db.addIndex([["age"], ["weight"]], "ppl")
-    expect(
-      await db.get("ppl", ["age"], ["weight"], ["startAt", 30, 70])
-    ).to.eql([Beth, John])
-
-    // skip endAt multiple fields
-    expect(await db.get("ppl", ["age"], ["weight"], ["endAt", 30, 60])).to.eql([
-      Bob,
-      Alice,
-    ])
   })
 
   it("should get a collection", async () => {
@@ -620,5 +485,16 @@ describe("WeaveDB on EXM", function () {
     await db.removeOwner(addr)
     expect(await db.getOwner()).to.eql([])
     return
+  })
+
+  it("should get version", async () => {
+    expect(await db.getVersion()).to.equal(
+      JSON.parse(
+        readFileSync(
+          resolve(__dirname, "../dist/exm/initial-state.json"),
+          "utf8"
+        )
+      ).version
+    )
   })
 })

@@ -9,6 +9,7 @@ import { getSchema } from "../common/actions/read/getSchema"
 import { getRules } from "../common/actions/read/getRules"
 import { getIndexes } from "../common/actions/read/getIndexes"
 import { getOwner } from "../common/actions/read/getOwner"
+import { version } from "../common/actions/read/version"
 
 import { add } from "../common/actions/write/add"
 import { set } from "../common/actions/write/set"
@@ -44,6 +45,8 @@ export async function handle(state, action) {
       return wrapResult(await getIndexes(_state, action))
     case "getOwner":
       return wrapResult(await getOwner(_state, action))
+    case "version":
+      return wrapResult(await version(state, action))
 
     case "add":
       await add(_state, action)
