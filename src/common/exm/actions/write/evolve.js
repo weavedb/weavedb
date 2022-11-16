@@ -1,10 +1,12 @@
-import { mergeLeft } from "ramda"
-import { err } from "../../../lib/utils"
+import { isNil, is, of, includes, mergeLeft } from "ramda"
+import { clone, err } from "../../../lib/utils"
 import { validate } from "../../../lib/validate"
 
 export const evolve = async (state, action, signer) => {
   signer ||= await validate(state, action, "evolve")
-  if (state.owner !== signer) err("Only the owner can evolve a contract.")
+  let owner = state.owner || []
+  if (is(String)(owner)) owner = of(owner)
+  if (!includes(signer)(owner)) err("Signer is not the owner.")
   if (state.canEvolve) {
     const prev_state = (
       await EXM.deterministicFetch(
@@ -12,13 +14,16 @@ export const evolve = async (state, action, signer) => {
         {
           method: "post",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ function: "read" }),
+          body: JSON.stringify({ function: "copy" }),
         }
       )
-    ).asJSON().data.execution.state
-    state = mergeLeft(prev_state, state)
-    state.evolve = action.input.query.value
-    return { state }
+    ).asJSON().data.execution.result
+    if (isNil(prev_state) || prev_state.success !== true) {
+      err("The previous contract doesn't allow evolve.")
+    }
+    let _state = mergeLeft(prev_state.result, state)
+    _state.evolve = action.input.query.value
+    return { state: _state }
   } else {
     err(`This contract cannot evolve.`)
   }

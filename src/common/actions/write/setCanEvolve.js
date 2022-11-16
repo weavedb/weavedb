@@ -1,10 +1,12 @@
 import { err } from "../../lib/utils"
-import { is } from "ramda"
+import { is, of, includes } from "ramda"
 import { validate } from "../../lib/validate"
 
 export const setCanEvolve = async (state, action, signer) => {
   signer ||= await validate(state, action, "setCanEvolve")
-  if (state.owner !== signer) err("Only the owner can evolve a contract.")
+  let owner = state.owner || []
+  if (is(String)(owner)) owner = of(owner)
+  if (!includes(signer)(owner)) err("Signer is not the owner.")
   if (!is(Boolean)(action.input.query.value)) {
     err("Value must be a boolean.")
   }
