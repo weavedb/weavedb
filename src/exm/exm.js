@@ -1,4 +1,5 @@
-import { err, clone, wrapResult } from "../common/exm/lib/utils"
+import { err, clone } from "../common/lib/utils"
+import { wrapResult } from "../common/exm/lib/utils"
 import { mergeLeft } from "ramda"
 
 import { nonce } from "../common/actions/read/nonce"
@@ -7,6 +8,7 @@ import { get } from "../common/actions/read/get"
 import { getSchema } from "../common/actions/read/getSchema"
 import { getRules } from "../common/actions/read/getRules"
 import { getIndexes } from "../common/actions/read/getIndexes"
+import { getOwner } from "../common/actions/read/getOwner"
 
 import { add } from "../common/actions/write/add"
 import { set } from "../common/actions/write/set"
@@ -19,6 +21,8 @@ import { removeIndex } from "../common/actions/write/removeIndex"
 import { setSchema } from "../common/actions/write/setSchema"
 import { setRules } from "../common/actions/write/setRules"
 import { evolve } from "../common/exm/actions/write/evolve"
+import { addOwner } from "../common/actions/write/addOwner"
+import { removeOwner } from "../common/actions/write/removeOwner"
 
 export async function handle(state, action) {
   let _state = clone(state)
@@ -38,6 +42,8 @@ export async function handle(state, action) {
       return wrapResult(await getRules(_state, action))
     case "getIndexes":
       return wrapResult(await getIndexes(_state, action))
+    case "getOwner":
+      return wrapResult(await getOwner(_state, action))
 
     case "add":
       await add(_state, action)
@@ -71,6 +77,13 @@ export async function handle(state, action) {
       break
     case "evolve":
       await evolve(_state, action)
+      break
+
+    case "addOwner":
+      await addOwner(_state, action)
+      break
+    case "removeOwner":
+      await removeOwner(_state, action)
       break
 
     default:

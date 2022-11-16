@@ -177,7 +177,9 @@ describe("WeaveDB", function () {
       Alice,
     ])
     // sort multiple fields
-    await db.addIndex([["age"], ["weight", "desc"]], "ppl")
+    await db.addIndex([["age"], ["weight", "desc"]], "ppl", {
+      ar: arweave_wallet,
+    })
 
     expect(await db.get("ppl", ["age"], ["weight", "desc"])).to.eql([
       Bob,
@@ -185,6 +187,7 @@ describe("WeaveDB", function () {
       Alice,
       John,
     ])
+
     // where =
     expect(await db.get("ppl", ["age", "=", 30])).to.eql([Alice, Beth])
 
@@ -255,7 +258,9 @@ describe("WeaveDB", function () {
     expect(await db.get("ppl", ["age"], ["endBefore", 30])).to.eql([Bob])
 
     // skip startAt multiple fields
-    await db.addIndex([["age"], ["weight"]], "ppl")
+    await db.addIndex([["age"], ["weight"]], "ppl", {
+      ar: arweave_wallet,
+    })
     expect(
       await db.get("ppl", ["age"], ["weight"], ["startAt", 30, 70])
     ).to.eql([Beth, John])
@@ -304,11 +309,15 @@ describe("WeaveDB", function () {
         },
       },
     }
-    await db.setSchema(schema, "ppl")
+    await db.setSchema(schema, "ppl", {
+      ar: arweave_wallet,
+    })
     expect(await db.getSchema("ppl")).to.eql(schema)
     await db.set(data, "ppl", "Bob")
     expect(await db.get("ppl", "Bob")).to.eql(null)
-    await db.setSchema(schema2, "ppl")
+    await db.setSchema(schema2, "ppl", {
+      ar: arweave_wallet,
+    })
     expect(await db.getSchema("ppl")).to.eql(schema2)
     await db.set(data, "ppl", "Bob")
     expect(await db.get("ppl", "Bob")).to.eql(data)
@@ -325,7 +334,9 @@ describe("WeaveDB", function () {
       },
       "deny delete": { "!=": [{ var: "request.auth.signer" }, null] },
     }
-    await db.setRules(rules, "ppl")
+    await db.setRules(rules, "ppl", {
+      ar: arweave_wallet,
+    })
     expect(await db.getRules("ppl")).to.eql(rules)
     await db.set(data, "ppl", "Bob")
     expect(await db.get("ppl", "Bob")).to.eql(data)
@@ -354,9 +365,15 @@ describe("WeaveDB", function () {
       data2,
       data,
     ])
-    await db.addIndex([["age"], ["name", "desc"]], "ppl")
-    await db.addIndex([["age"], ["name", "desc"], ["height"]], "ppl")
-    await db.addIndex([["age"], ["name", "desc"], ["height", "desc"]], "ppl")
+    await db.addIndex([["age"], ["name", "desc"]], "ppl", {
+      ar: arweave_wallet,
+    })
+    await db.addIndex([["age"], ["name", "desc"], ["height"]], "ppl", {
+      ar: arweave_wallet,
+    })
+    await db.addIndex([["age"], ["name", "desc"], ["height", "desc"]], "ppl", {
+      ar: arweave_wallet,
+    })
 
     await db.upsert(data4, "ppl", "John")
     expect(await db.get("ppl", ["age"], ["name", "desc"])).to.eql([
@@ -424,7 +441,9 @@ describe("WeaveDB", function () {
       },
       "allow create": true,
     }
-    await db.setRules(rules, "ppl")
+    await db.setRules(rules, "ppl", {
+      ar: arweave_wallet,
+    })
     await db.upsert({ name: "Bob" }, "ppl", "Bob")
     expect((await db.get("ppl", "Bob")).age).to.eql(30)
     await db.upsert({ name: "Bob" }, "ppl", "Bob")
@@ -554,14 +573,13 @@ describe("WeaveDB", function () {
   it("should link temporarily generated address with Intmax wallet with EVM account", async () => {
     const intmax_wallet = Wallet.createRandom()
     intmax_wallet._account = { address: intmax_wallet.address }
-    const addr = intmax_wallet._address
+    const addr = intmax_wallet._account.address
     const { identity } = await db.createTempAddressWithIntmax(intmax_wallet)
-    return
     await db.set({ name: "Beth", age: 10 }, "ppl", "Beth", {
       wallet: addr,
       privateKey: identity.privateKey,
     })
-    expect((await db.cget("ppl", "Beth")).setter).to.eql(addr)
+    expect((await db.cget("ppl", "Beth")).setter).to.eql(addr.toLowerCase())
     await db.removeAddressLink(
       {
         address: identity.address,
@@ -611,11 +629,15 @@ describe("WeaveDB", function () {
     const tx = await db.add(data, "ppl", { intmax: intmax_wallet })
     const addr = intmax_wallet._address
     expect((await db.cget("ppl", (await db.getIds(tx))[0])).setter).to.eql(addr)
-    await db.setAlgorithms(["secp256k1"])
+    await db.setAlgorithms(["secp256k1", "rsa256"], {
+      ar: arweave_wallet,
+    })
     const data2 = { name: "Alice", age: 25 }
     await db.set(data2, "ppl", "Alice", { intmax: intmax_wallet })
     expect(await db.get("ppl", "Alice")).to.be.eql(null)
-    await db.setAlgorithms(["poseidon"])
+    await db.setAlgorithms(["poseidon", "rsa256"], {
+      ar: arweave_wallet,
+    })
     await db.set(data2, "ppl", "Alice", { intmax: intmax_wallet })
     expect(await db.get("ppl", "Alice")).to.be.eql(data2)
     return
@@ -623,9 +645,13 @@ describe("WeaveDB", function () {
 
   it("should link and unlink external contracts", async () => {
     expect(await db.getLinkedContract("contractA")).to.eql(null)
-    await db.linkContract("contractA", "xyz")
+    await db.linkContract("contractA", "xyz", {
+      ar: arweave_wallet,
+    })
     expect(await db.getLinkedContract("contractA")).to.eql("xyz")
-    await db.unlinkContract("contractA", "xyz")
+    await db.unlinkContract("contractA", "xyz", {
+      ar: arweave_wallet,
+    })
     expect(await db.getLinkedContract("contractA")).to.eql(null)
     return
   })

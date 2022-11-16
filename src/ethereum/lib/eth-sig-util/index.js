@@ -1,6 +1,7 @@
 const ethereumjs_util_1 = require("../ethereumjs-util")
 const ethereumjs_abi_1 = require("../ethereumjs-abi")
 const { isHexString } = require("../ethjs-util")
+
 var SignTypedDataVersion = {}
 SignTypedDataVersion["V1"] = "V1"
 SignTypedDataVersion["V3"] = "V3"
