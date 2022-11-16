@@ -10,6 +10,8 @@ import { getRules } from "../common/actions/read/getRules"
 import { getIndexes } from "../common/actions/read/getIndexes"
 import { getOwner } from "../common/actions/read/getOwner"
 import { version } from "../common/actions/read/version"
+import { getEvolve } from "../common/actions/read/getEvolve"
+import { copy } from "../common/exm/actions/read/copy"
 
 import { add } from "../common/actions/write/add"
 import { set } from "../common/actions/write/set"
@@ -22,6 +24,7 @@ import { removeIndex } from "../common/actions/write/removeIndex"
 import { setSchema } from "../common/actions/write/setSchema"
 import { setRules } from "../common/actions/write/setRules"
 import { evolve } from "../common/exm/actions/write/evolve"
+import { setCanEvolve } from "../common/actions/write/setCanEvolve"
 import { addOwner } from "../common/actions/write/addOwner"
 import { removeOwner } from "../common/actions/write/removeOwner"
 
@@ -46,7 +49,11 @@ export async function handle(state, action) {
     case "getOwner":
       return wrapResult(await getOwner(_state, action))
     case "version":
-      return wrapResult(await version(state, action))
+      return wrapResult(await version(_state, action))
+    case "getEvolve":
+      return wrapResult(await getEvolve(_state, action))
+    case "copy":
+      return wrapResult(await copy(_state, action))
 
     case "add":
       await add(_state, action)
@@ -78,8 +85,11 @@ export async function handle(state, action) {
     case "setRules":
       await setRules(_state, action)
       break
+    case "setCanEvolve":
+      await setCanEvolve(_state, action)
+      break
     case "evolve":
-      await evolve(_state, action)
+      _state = (await evolve(_state, action)).state
       break
 
     case "addOwner":
