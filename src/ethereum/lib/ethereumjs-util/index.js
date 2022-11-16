@@ -2,6 +2,7 @@ var BN = require("bn.js")
 var _secp256k1 = require("secp256k1")
 var ethjsUtil = require("../ethjs-util")
 var { keccak256 } = require("../js-sha3/keccak")
+
 exports.keccak = function (a, bits) {
   if (bits === void 0) {
     bits = 256

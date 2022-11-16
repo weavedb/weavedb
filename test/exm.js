@@ -56,6 +56,7 @@ class SDK extends Base {
   async _request(func, param) {
     return await this.send(param)
   }
+
   async _send(param) {
     return await TestFunction({
       functionSource: this.src,
@@ -72,6 +73,18 @@ class SDK extends Base {
     }
     this.state = tx.state
     return tx
+  }
+
+  async getOwner() {
+    return this.request("getOwner")
+  }
+
+  async addOwner(address, opt) {
+    return this._write2("addOwner", { address }, opt)
+  }
+
+  async removeOwner(address, opt) {
+    return this._write2("removeOwner", { address }, opt)
   }
 }
 
@@ -594,5 +607,18 @@ describe("WeaveDB on EXM", function () {
     await db.setRules(rules, "ppl")
     await db.upsert({ name: "Bob" }, "ppl", "Bob")
     expect((await db.get("ppl", "Bob")).age).to.eql(30)
+  })
+
+  it("should manage owner", async () => {
+    const addr = await db.arweave.wallets.jwkToAddress(arweave_wallet)
+    const arweave_wallet2 = await db.arweave.wallets.generate()
+    let addr2 = await db.arweave.wallets.jwkToAddress(arweave_wallet2)
+    expect(await db.getOwner()).to.eql([addr])
+    await db.addOwner(addr2)
+    expect(await db.getOwner()).to.eql([addr, addr2])
+    await db.removeOwner(addr2)
+    await db.removeOwner(addr)
+    expect(await db.getOwner()).to.eql([])
+    return
   })
 })

@@ -23,7 +23,7 @@ export const validate = async (state, action, func) => {
       ]
     )
   ) {
-    throw new err(`The wrong algorithm`)
+    err(`The wrong algorithm`)
   }
   let _caller = caller
   const EIP712Domain = [
@@ -70,7 +70,7 @@ export const validate = async (state, action, func) => {
     if (isValid) {
       signer = caller
     } else {
-      throw new err(`The wrong signature`)
+      err(`The wrong signature`)
     }
   } else if (type === "rsa256") {
     let encoded_data = JSON.stringify(_data)
@@ -88,7 +88,7 @@ export const validate = async (state, action, func) => {
     if (isValid) {
       signer = caller
     } else {
-      throw new err(`The wrong signature`)
+      err(`The wrong signature`)
     }
   } else if (type == "secp256k1") {
     signer = (
@@ -116,7 +116,7 @@ export const validate = async (state, action, func) => {
     if (isValid) {
       signer = caller
     } else {
-      throw new err(`The wrong signature`)
+      err(`The wrong signature`)
     }
   }
 
@@ -135,9 +135,9 @@ export const validate = async (state, action, func) => {
       _signer = _address
     }
   }
-  if (_signer !== _caller) throw new err(`signer is not caller`)
+  if (_signer !== _caller) err(`signer is not caller`)
   if ((state.nonces[original_signer] || 0) + 1 !== nonce) {
-    throw new err(`The wrong nonce`)
+    err(`The wrong nonce`)
   }
   if (isNil(state.nonces[original_signer])) state.nonces[original_signer] = 0
   state.nonces[original_signer] += 1
