@@ -23,7 +23,7 @@ class SDK extends Base {
   }
 
   async viewState(opt) {
-    const tx = await this.exm.functions.write(this.functionId, opt)
+    const tx = await this.exm.functions.write(this.functionId, [opt], true)
     if (
       isNil(tx.data.execution.result) ||
       tx.data.execution.result.success !== true
@@ -54,7 +54,7 @@ class SDK extends Base {
   }
 
   async send(param) {
-    const tx = await this.exm.functions.write(this.functionId, param)
+    const tx = await this.exm.functions.write(this.functionId, [param], true)
     if (
       isNil(tx.data.execution.result) ||
       tx.data.execution.result.success !== true
