@@ -4227,10 +4227,10 @@ weavedb-base@^0.5.11:
     ethereumjs-util "^7.1.5"
     ramda "^0.28.0"
 
-weavedb-exm-sdk-web@^0.5.20:
-  version "0.5.20"
-  resolved "https://registry.yarnpkg.com/weavedb-exm-sdk-web/-/weavedb-exm-sdk-web-0.5.20.tgz#993820fd7af0c6769faabf8b3a314a5af52b14d2"
-  integrity sha512-+kSKoKLl2FEnxGFphldQB8P9aVMOhF4Gn59GEcoS4RdIdlBF1StLNLQ68lmMmpnJNYu0dUHJFLa65rEtIRyZ4Q==
+weavedb-exm-sdk-web@^0.7.2:
+  version "0.7.2"
+  resolved "https://registry.yarnpkg.com/weavedb-exm-sdk-web/-/weavedb-exm-sdk-web-0.7.2.tgz#12a89e49b1820feda1d01bc545cfbd3faed47a73"
+  integrity sha512-XcfQ9oOQFnOHyZ963o65/VaIAwDS/RSwt8cW1lzV3M8oPrWG+io7xsqFH6sDwAa1qHsG0dLQjgLNa+U/Q0HZ/Q==
   dependencies:
     arweave "^1.11.4"
     fpjson-lang "^0.1.1"

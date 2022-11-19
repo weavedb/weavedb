@@ -28,6 +28,8 @@ const deploy = async () => {
       "utf8"
     )
   )
+  const addr = await arweave.wallets.jwkToAddress(wallet)
+  init.owner = addr
   console.log(await exm.functions.deploy(contractSource, init, ContractType.JS))
 }
 

@@ -34,7 +34,7 @@ export const setupWeaveDB = async ({
   let arweave = {
     Localhost: {
       host: "localhost",
-      port: 1820,
+      port: weavedb.port || 1820,
       protocol: "http",
     },
     Testnet: {
