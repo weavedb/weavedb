@@ -50,12 +50,19 @@ class SDK extends Base {
     return await this.send(param)
   }
 
+  async evolve(value, opt) {
+    return this._write2("evolve", { value }, { ...opt, extra: { value } })
+  }
+
   async send(param) {
-    const tx = await fetch(`https://${this.functionId}.exm.run`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(param),
-    }).then(v => v.json())
+    const tx = await fetch(
+      `https://${this.functionId}.exm.run?ignoreState=true`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(param),
+      }
+    ).then(v => v.json())
     if (
       isNil(tx.data.execution.result) ||
       tx.data.execution.result.success !== true

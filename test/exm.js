@@ -58,6 +58,7 @@ class SDK extends Base {
       function: "getEvolve",
     })
   }
+
   async copy() {
     return await this.viewState({
       function: "copy",
