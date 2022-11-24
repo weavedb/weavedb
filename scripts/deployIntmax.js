@@ -4,14 +4,7 @@ const Arweave = require("arweave")
 const wallet_name = process.argv[2]
 const { isNil } = require("ramda")
 const Constants = require("../src/intmax/lib/circomlibjs/poseidon_constants_opt.js")
-const {
-  PstContract,
-  PstState,
-  Warp,
-  WarpNodeFactory,
-  LoggerFactory,
-  InteractionResult,
-} = require("warp-contracts")
+const { WarpFactory, LoggerFactory } = require("warp-contracts")
 
 if (isNil(wallet_name)) {
   console.log("no wallet name given")
@@ -42,14 +35,11 @@ async function deployContractIntmax(
   }
   initialState.contracts.poseidonConstants1 = contractTxIdPoseidon1
   initialState.contracts.poseidonConstants2 = contractTxIdPoseidon2
-  const res = await warp.createContract.deploy(
-    {
-      wallet: wallet,
-      initState: JSON.stringify(initialState),
-      src: contractSrc,
-    },
-    wallet_name === "mainnet"
-  )
+  const res = await warp.createContract.deploy({
+    wallet: wallet,
+    initState: JSON.stringify(initialState),
+    src: contractSrc,
+  })
   console.log("deployed Intmax contract")
   console.log(res)
   return res.contractTxId
@@ -76,14 +66,11 @@ async function deployContractPoseidon(poseidonConstants) {
       poseidonConstants,
     },
   }
-  const res = await warp.createContract.deploy(
-    {
-      wallet: wallet,
-      initState: JSON.stringify(initialState),
-      src: contractSrc,
-    },
-    wallet_name === "mainnet"
-  )
+  const res = await warp.createContract.deploy({
+    wallet: wallet,
+    initState: JSON.stringify(initialState),
+    src: contractSrc,
+  })
   console.log("deployed PoseidonConstants contract")
   console.log(res)
   return res.contractTxId
@@ -96,7 +83,7 @@ const deploy = async () => {
     protocol: "https",
   })
   LoggerFactory.INST.logLevel("error")
-  warp = WarpNodeFactory.memCachedBased(arweave).useWarpGateway().build()
+  warp = WarpFactory.forMainnet()
   const wallet_path = path.resolve(
     __dirname,
     ".wallets",

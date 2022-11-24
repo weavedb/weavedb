@@ -2,12 +2,7 @@ const { all, complement, isNil } = require("ramda")
 let Arweave = require("arweave")
 Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
 const Base = require("weavedb-base")
-const {
-  Warp,
-  WarpNodeFactory,
-  WarpWebFactory,
-  LoggerFactory,
-} = require("warp-contracts")
+const { Warp, WarpFactory, LoggerFactory } = require("warp-contracts")
 
 class SDK extends Base {
   constructor({
@@ -33,16 +28,12 @@ class SDK extends Base {
         ? "mainnet"
         : "testnet"
     if (this.network === "localhost") {
-      this.warp = WarpNodeFactory.forTesting(this.arweave)
+      this.warp = WarpFactory.forLocal(1820)
     } else {
       if (isNil(web3)) {
-        this.warp = WarpNodeFactory.memCachedBased(this.arweave)
-          .useWarpGateway()
-          .build()
+        this.warp = WarpFactory.forMainnet()
       } else {
-        this.warp = WarpWebFactory.memCachedBased(this.arweave)
-          .useWarpGateway()
-          .build()
+        this.warp = WarpFactory.forMainnet()
       }
     }
     if (all(complement(isNil))([contractTxId, wallet, name, version])) {
@@ -51,7 +42,12 @@ class SDK extends Base {
   }
 
   initialize({ contractTxId, wallet, name, version, EthWallet }) {
-    this.db = this.warp.pst(contractTxId).connect(wallet)
+    this.db = this.warp
+      .contract(contractTxId)
+      .connect(wallet)
+      .setEvaluationOptions({
+        allowBigInt: true,
+      })
     this.domain = { name, version, verifyingContract: contractTxId }
     if (!isNil(EthWallet)) this.setEthWallet(EthWallet)
   }
