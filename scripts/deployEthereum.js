@@ -3,14 +3,7 @@ const path = require("path")
 const Arweave = require("arweave")
 const wallet_name = process.argv[2]
 const { isNil } = require("ramda")
-const {
-  PstContract,
-  PstState,
-  Warp,
-  WarpNodeFactory,
-  LoggerFactory,
-  InteractionResult,
-} = require("warp-contracts")
+const { WarpFactory, LoggerFactory } = require("warp-contracts")
 
 if (isNil(wallet_name)) {
   console.log("no wallet name given")
@@ -36,14 +29,11 @@ async function deployContract() {
       owner: walletAddress,
     },
   }
-  const res = await warp.createContract.deploy(
-    {
-      wallet: wallet,
-      initState: JSON.stringify(initialState),
-      src: contractSrc,
-    },
-    wallet_name === "mainnet"
-  )
+  const res = await warp.createContract.deploy({
+    wallet: wallet,
+    initState: JSON.stringify(initialState),
+    src: contractSrc,
+  })
   console.log("deployed Internet Identity contract")
   console.log(res)
   return res.contractTxId
@@ -56,7 +46,7 @@ const deploy = async () => {
     protocol: "https",
   })
   LoggerFactory.INST.logLevel("error")
-  warp = WarpNodeFactory.memCachedBased(arweave).useWarpGateway().build()
+  warp = WarpFactory.forMainnet()
   const wallet_path = path.resolve(
     __dirname,
     ".wallets",

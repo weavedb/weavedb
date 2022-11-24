@@ -4,10 +4,7 @@ const Arweave = require("arweave")
 const wallet_name = process.argv[2]
 const { isNil } = require("ramda")
 const {
-  PstContract,
-  PstState,
-  Warp,
-  WarpNodeFactory,
+  WarpFactory,
   LoggerFactory,
   InteractionResult,
 } = require("warp-contracts")
@@ -47,7 +44,7 @@ const add = async () => {
     process.exit()
   }
   const wallet = JSON.parse(fs.readFileSync(wallet_path, "utf8"))
-  const warp = WarpNodeFactory.memCached(arweave)
+  const warp = WarpFactory.forTestnet()
   await addFunds(arweave, wallet)
   process.exit()
 }

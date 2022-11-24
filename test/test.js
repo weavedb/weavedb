@@ -59,7 +59,7 @@ describe("WeaveDB", function () {
 
   it("should add & get", async () => {
     const data = { name: "Bob", age: 20 }
-    const tx = await db.add(data, "ppl")
+    const tx = (await db.add(data, "ppl")).originalTxId
     expect(await db.get("ppl", (await db.getIds(tx))[0])).to.eql(data)
   })
 
@@ -108,7 +108,7 @@ describe("WeaveDB", function () {
     })
 
     // timestamp
-    const tx = await db.update({ death: db.ts() }, "ppl", "Bob")
+    const tx = (await db.update({ death: db.ts() }, "ppl", "Bob")).originalTxId
     const tx_data = await db.arweave.transactions.get(tx)
     const timestamp = (await db.arweave.blocks.get(tx_data.block)).timestamp
     expect((await db.get("ppl", "Bob")).death).to.be.lte(timestamp)
@@ -276,14 +276,16 @@ describe("WeaveDB", function () {
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Alice", age: 40 }
     const data3 = { name: "Beth", age: 10 }
-    const tx = await db.batch([
-      ["set", data, "ppl", "Bob"],
-      ["set", data3, "ppl", "Beth"],
-      ["update", { age: 30 }, "ppl", "Bob"],
-      ["upsert", { age: 20 }, "ppl", "Bob"],
-      ["add", data2, "ppl"],
-      ["delete", "ppl", "Beth"],
-    ])
+    const tx = (
+      await db.batch([
+        ["set", data, "ppl", "Bob"],
+        ["set", data3, "ppl", "Beth"],
+        ["update", { age: 30 }, "ppl", "Bob"],
+        ["upsert", { age: 20 }, "ppl", "Bob"],
+        ["add", data2, "ppl"],
+        ["delete", "ppl", "Beth"],
+      ])
+    ).originalTxId
     expect(await db.get("ppl", "Bob")).to.eql({ name: "Bob", age: 20 })
     expect(await db.get("ppl", (await db.getIds(tx))[0])).to.eql(data2)
     expect(await db.get("ppl", "Beth")).to.eql(null)
@@ -499,7 +501,7 @@ describe("WeaveDB", function () {
   it("should add & get with internet identity", async () => {
     const ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(_ii))
     const data = { name: "Bob", age: 20 }
-    const tx = await db.add(data, "ppl", { ii })
+    const tx = (await db.add(data, "ppl", { ii })).originalTxId
     expect((await db.cget("ppl", (await db.getIds(tx))[0])).setter).to.eql(
       ii.toJSON()[0]
     )
@@ -508,7 +510,7 @@ describe("WeaveDB", function () {
   it("should add & get with Arweave wallet", async () => {
     const arweave_wallet = await db.arweave.wallets.generate()
     const data = { name: "Bob", age: 20 }
-    const tx = await db.add(data, "ppl", { ar: arweave_wallet })
+    const tx = (await db.add(data, "ppl", { ar: arweave_wallet })).originalTxId
     const addr = await db.arweave.wallets.jwkToAddress(arweave_wallet)
     expect((await db.cget("ppl", (await db.getIds(tx))[0])).setter).to.eql(addr)
     return
@@ -552,7 +554,8 @@ describe("WeaveDB", function () {
     const intmax_wallet = new Account(provider)
     await intmax_wallet.activate()
     const data = { name: "Bob", age: 20 }
-    const tx = await db.add(data, "ppl", { intmax: intmax_wallet })
+    const tx = (await db.add(data, "ppl", { intmax: intmax_wallet }))
+      .originalTxId
     const addr = intmax_wallet._address
     expect((await db.cget("ppl", (await db.getIds(tx))[0])).setter).to.eql(addr)
     return
@@ -562,7 +565,8 @@ describe("WeaveDB", function () {
     const intmax_wallet = Wallet.createRandom()
     intmax_wallet._account = { address: intmax_wallet.address }
     const data = { name: "Bob", age: 20 }
-    const tx = await db.add(data, "ppl", { intmax: intmax_wallet })
+    const tx = (await db.add(data, "ppl", { intmax: intmax_wallet }))
+      .originalTxId
     const addr = intmax_wallet.address
     expect((await db.cget("ppl", (await db.getIds(tx))[0])).setter).to.eql(
       addr.toLowerCase()
@@ -626,7 +630,8 @@ describe("WeaveDB", function () {
     const intmax_wallet = new Account(provider)
     await intmax_wallet.activate()
     const data = { name: "Bob", age: 20 }
-    const tx = await db.add(data, "ppl", { intmax: intmax_wallet })
+    const tx = (await db.add(data, "ppl", { intmax: intmax_wallet }))
+      .originalTxId
     const addr = intmax_wallet._address
     expect((await db.cget("ppl", (await db.getIds(tx))[0])).setter).to.eql(addr)
     await db.setAlgorithms(["secp256k1", "rsa256"], {
@@ -660,7 +665,12 @@ describe("WeaveDB", function () {
     const provider = new providers.JsonRpcProvider("http://localhost/")
     const intmax_wallet = new Account(provider)
     await intmax_wallet.activate()
-    const intmax = db.warp.pst(intmaxSrcTxId).connect(arweave_wallet)
+    const intmax = db.warp
+      .pst(intmaxSrcTxId)
+      .connect(arweave_wallet)
+      .setEvaluationOptions({
+        allowBigInt: true,
+      })
     const data = { test: 1 }
     const signature = await intmax_wallet.sign(JSON.stringify(data))
     const _publicKey = intmax_wallet._publicKey
