@@ -63,10 +63,6 @@ class SDK extends Base {
     }
     return tx
   }
-
-  async evolve(value, opt) {
-    return this._write2("evolve", { value }, opt)
-  }
 }
 
 module.exports = SDK
