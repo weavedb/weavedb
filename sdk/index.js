@@ -2,7 +2,6 @@ const { all, complement, isNil } = require("ramda")
 let Arweave = require("arweave")
 Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
 const Base = require("weavedb-base")
-
 const {
   Warp,
   WarpNodeFactory,
@@ -57,18 +56,6 @@ class SDK extends Base {
     if (!isNil(EthWallet)) this.setEthWallet(EthWallet)
   }
 
-  async getOwner() {
-    return this.request("getOwner")
-  }
-
-  async getAddressLink(address) {
-    return this.viewState({ function: "getAddressLink", query: { address } })
-  }
-
-  async mineBlock() {
-    await this.arweave.api.get("mine")
-  }
-
   async request(func, ...query) {
     return this.viewState({
       function: func,
@@ -79,34 +66,6 @@ class SDK extends Base {
   async viewState(opt) {
     let res = await this.db.viewState(opt)
     return res.result
-  }
-
-  async getVersion() {
-    return await this.viewState({
-      function: "version",
-    })
-  }
-
-  async getNonce(addr) {
-    return (
-      (await this.viewState({
-        function: "nonce",
-        address: addr,
-      })) + 1
-    )
-  }
-
-  async getIds(tx) {
-    return this.viewState({
-      function: "ids",
-      tx,
-    })
-  }
-
-  async getEvolve() {
-    return await this.viewState({
-      function: "getEvolve",
-    })
   }
 
   async _request(func, param, dryWrite, bundle) {
@@ -123,22 +82,6 @@ class SDK extends Base {
     )
     if (this.network === "localhost") await this.mineBlock()
     return tx
-  }
-
-  async evolve(value, opt) {
-    return this._write2("evolve", { value }, { ...opt, extra: { value } })
-  }
-
-  async setCanEvolve(value, opt) {
-    return this._write2("setCanEvolve", { value }, opt)
-  }
-
-  async addOwner(address, opt) {
-    return this._write2("addOwner", { address }, opt)
-  }
-
-  async removeOwner(address, opt) {
-    return this._write2("removeOwner", { address }, opt)
   }
 }
 
