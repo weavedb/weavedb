@@ -530,6 +530,62 @@ class Base {
     )
     return await this._request(func, param, dryWrite, bundle)
   }
+
+  async getOwner() {
+    return this.request("getOwner")
+  }
+
+  async addOwner(address, opt) {
+    return this._write2("addOwner", { address }, opt)
+  }
+
+  async removeOwner(address, opt) {
+    return this._write2("removeOwner", { address }, opt)
+  }
+
+  async getEvolve() {
+    return await this.viewState({
+      function: "getEvolve",
+    })
+  }
+
+  async evolve(value, opt) {
+    return this._write2("evolve", { value }, { ...opt, extra: { value } })
+  }
+
+  async setCanEvolve(value, opt) {
+    return this._write2("setCanEvolve", { value }, opt)
+  }
+
+  async getAddressLink(address) {
+    return this.viewState({ function: "getAddressLink", query: { address } })
+  }
+
+  async getVersion() {
+    return await this.viewState({
+      function: "version",
+    })
+  }
+
+  async getNonce(addr) {
+    return (
+      (await this.viewState({
+        function: "nonce",
+        address: addr,
+      })) + 1
+    )
+  }
+
+  async getIds(tx) {
+    return this.viewState({
+      function: "ids",
+      tx,
+    })
+  }
+
+  async mineBlock() {
+    await this.arweave.api.get("mine")
+  }
 }
 
 module.exports = Base

@@ -1,6 +1,6 @@
 {
   "name": "weavedb-exm-sdk-web",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "Web Client for WeaveDB on Execution Machine",
   "homepage": "https://weavedb.dev",
   "repository": {
@@ -13,12 +13,12 @@
     "node": "16"
   },
   "dependencies": {
+    "arweave": "^1.11.4",
     "fpjson-lang": "^0.1.1",
     "isomorphic-fetch": "^3.0.0",
     "json-logic-js": "^2.0.2",
-    "arweave": "^1.11.4",
     "ramda": "^0.28.0",
-    "weavedb-base": "^0.5.11"
+    "weavedb-base": "^0.7.3"
   },
   "devDependencies": {
     "esbuild": "^0.14.50",
