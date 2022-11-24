@@ -22,7 +22,7 @@
     "react-json-pretty": "^2.2.0",
     "recoil": "^0.5.2",
     "weavedb-client": "^0.2.1",
-    "weavedb-sdk": "^0.4.2"
+    "weavedb-sdk": "^0.7.4"
   },
   "scripts": {
     "dev": "next",
