@@ -52,8 +52,14 @@ async function stop() {
   return
 }
 
-async function deployContracts({ secure, warp, arweave, contractTxId }) {
-  const arweave_wallet = await arweave.wallets.generate()
+async function deployContracts({
+  secure,
+  warp,
+  arweave,
+  contractTxId,
+  arweave_wallet,
+}) {
+  arweave_wallet ||= await arweave.wallets.generate()
   await addFunds(arweave, arweave_wallet)
   const walletAddress = await arweave.wallets.jwkToAddress(arweave_wallet)
   async function deployContract(
