@@ -1,4 +1,5 @@
 let {
+  wallet = null,
   contractTxId,
   port = 1820,
   dbPath = null,
@@ -57,8 +58,16 @@ async function init() {
   })
   arweave = sdk.arweave
   warp = sdk.warp
-  const wallet = Wallet.generate()
-
+  let _wallet = Wallet.generate()
+  let _arweave_wallet = null
+  if (!isNil(wallet)) {
+    const wallet_path = path.resolve(
+      __dirname,
+      ".wallets",
+      `wallet-${wallet}.json`
+    )
+    _arweave_wallet = JSON.parse(fs.readFileSync(wallet_path, "utf8"))
+  }
   const {
     contract,
     intmaxSrcTxId,
@@ -73,11 +82,12 @@ async function init() {
     warp,
     arweave,
     contractTxId,
+    arweave_wallet: _arweave_wallet,
   })
 
   console.log()
   console.log(`Arweave wallet generated: ` + walletAddress)
-  console.log(`Ethereum wallet generated: ` + wallet.getAddressString())
+  console.log(`Ethereum wallet generated: ` + _wallet.getAddressString())
 
   if (isNil(contractTxId)) {
     console.log()
@@ -93,14 +103,14 @@ async function init() {
     wallet: arweave_wallet,
     name,
     version,
-    EthWallet: wallet,
+    EthWallet: _wallet,
   })
   await sdk.mineBlock()
   const metadata = {
     ethereum: {
-      privateKey: wallet.getPrivateKeyString(),
-      publicKey: wallet.getPublicKeyString(),
-      address: wallet.getAddressString(),
+      privateKey: _wallet.getPrivateKeyString(),
+      publicKey: _wallet.getPublicKeyString(),
+      address: _wallet.getAddressString(),
     },
     port,
     arweave: arweave_wallet,
