@@ -105,9 +105,10 @@ export default bind(
           fn.checkTempAddress({ contractTxId })
           setInterval(async () => {
             try {
-              setState(await db.db.currentState())
+              setState((await db.db.viewState({ function: "error" })).state)
               setNetworkErr(false)
             } catch (e) {
+              console.log(e)
               setNetworkErr(true)
             }
           }, 1000)
