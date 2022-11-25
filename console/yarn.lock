@@ -4385,9 +4385,9 @@ cipher-base@^1.0.0, cipher-base@^1.0.1, cipher-base@^1.0.3:
     inherits "^2.0.1"
     safe-buffer "^5.0.1"
 
-"circomlibjs@git+https://github.com/InternetMaximalism/circomlibjs.git#fc534a12d9b34f2694ed0f75a686d080fc7a92d6":
+"circomlibjs@git+https://github.com/InternetMaximalism/circomlibjs#fc534a12d9b34f2694ed0f75a686d080fc7a92d6":
   version "0.1.7"
-  resolved "git+https://github.com/InternetMaximalism/circomlibjs.git#fc534a12d9b34f2694ed0f75a686d080fc7a92d6"
+  resolved "git+https://github.com/InternetMaximalism/circomlibjs#fc534a12d9b34f2694ed0f75a686d080fc7a92d6"
   dependencies:
     blake-hash "^2.0.0"
     blake2b "^2.1.3"
@@ -8811,10 +8811,8 @@ weavedb-client@^0.2.1:
     grpc-web "^1.3.1"
     ramda "^0.28.0"
 
-weavedb-sdk@^0.7.4:
-  version "0.7.4"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.7.4.tgz#ecc287c6ff99118319a6511b109165885e4429ae"
-  integrity sha512-+8qQviOBnOzcwYXbefwaxNCWtdCw1oe0h9XK60+6wh6FkC2oKkuvqzbqPpFTDOqrNnZeKrSqoy4IquvIlgtk8g==
+weavedb-sdk@../sdk:
+  version "0.7.5"
   dependencies:
     "@metamask/legacy-web3" "^2.0.0"
     arweave "^1.11.4"

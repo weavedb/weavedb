@@ -21,8 +21,9 @@
     "react-dom": "^18.2.0",
     "react-json-pretty": "^2.2.0",
     "recoil": "^0.5.2",
+    "warp-contracts": "^1.2.24",
     "weavedb-client": "^0.2.1",
-    "weavedb-sdk": "^0.7.4"
+    "weavedb-sdk": "../sdk"
   },
   "scripts": {
     "dev": "next",
