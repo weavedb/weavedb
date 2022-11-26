@@ -28,7 +28,9 @@ class SDK extends Base {
         ? "mainnet"
         : "testnet"
     if (this.network === "localhost") {
-      this.warp = WarpFactory.forLocal(1820)
+      this.warp = WarpFactory.forLocal(
+        isNil(arweave) || isNil(arweave.port) ? 1820 : arweave.port
+      )
     } else {
       if (isNil(web3)) {
         this.warp = WarpFactory.forMainnet()
