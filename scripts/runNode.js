@@ -66,6 +66,10 @@ async function init() {
       ".wallets",
       `wallet-${wallet}.json`
     )
+    if (!fs.existsSync(wallet_path)) {
+      console.log("wallet doesn't exist: " + wallet_path)
+      process.exit()
+    }
     _arweave_wallet = JSON.parse(fs.readFileSync(wallet_path, "utf8"))
   }
   const {

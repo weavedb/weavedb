@@ -1,4 +1,6 @@
 require("dotenv").config()
+let { wallet = null } = require("yargs")(process.argv.slice(2)).argv
+
 const fs = require("fs")
 const path = require("path")
 const Arweave = require("arweave")
@@ -15,11 +17,11 @@ if (isNil(wallet_name)) {
   console.log("no wallet name given")
   process.exit()
 }
-let warp, arweave, walletAddress, wallet
+let warp, arweave, walletAddress, _wallet
 
 const deploy = async () => {
   arweave = Arweave.init({
-    host: wallet_name === "mainnet" ? "arweave.net" : "testnet.redstone.tools",
+    host: "arweave.net",
     port: 443,
     protocol: "https",
   })
@@ -27,14 +29,14 @@ const deploy = async () => {
   warp = WarpFactory.forMainnet()
   const wallet_path = path.resolve(
     __dirname,
-    `.wallets/wallet-${wallet_name}.json`
+    `.wallets/wallet-${wallet || wallet_name}.json`
   )
   if (!fs.existsSync(wallet_path)) {
     console.log("wallet doesn't exist: " + wallet_path)
     process.exit()
   }
-  wallet = JSON.parse(fs.readFileSync(wallet_path, "utf8"))
-  walletAddress = await arweave.wallets.jwkToAddress(wallet)
+  _wallet = JSON.parse(fs.readFileSync(wallet_path, "utf8"))
+  walletAddress = await arweave.wallets.jwkToAddress(_wallet)
 
   const contractSrc = fs.readFileSync(
     path.join(__dirname, "../dist/warp/contract.js"),
@@ -58,7 +60,7 @@ const deploy = async () => {
   initialState.contracts.ethereum = contractTxId_ETH
 
   const res = await warp.createContract.deployFromSourceTx({
-    wallet,
+    wallet: _wallet,
     initState: JSON.stringify(initialState),
     srcTxId,
   })
