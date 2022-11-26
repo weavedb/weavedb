@@ -38,7 +38,11 @@ const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
 await provider.send("eth_requestAccounts", [])
 const signer = provider.getSigner()
 const addr = await signer.getAddress()
+const expiry = 60 * 60 * 24 * 7 // set expiry to a week
 
+const { identity } = db.createTempAddress(addr, expiry)
+
+// or set no expiry
 const { identity } = db.createTempAddress(addr)
 ```
 
@@ -77,6 +81,11 @@ const authClient = await AuthClient.create()
 const ii = authClient.getIdentity()
 if (isNil(ii._inner)) return
 const addr = ii._inner.toJSON()[0]
+const expiry = 60 * 60 * 24 * 7 // set expiry to a week
+
+const { identity } = await db.createTempAddressWithII(ii, expiry)
+
+// or set no expiry
 const { identity } = await db.createTempAddressWithII(ii)
 ```
 
@@ -88,6 +97,11 @@ const { identity } = await db.createTempAddressWithII(ii)
 const wallet = window.arweaveWallet
 await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
 const addr = await wallet.getActiveAddress()
+const expiry = 60 * 60 * 24 * 7 // set expiry to a week
+
+const { identity } = await db.createTempAddressWithAR(wallet, expiry)
+
+// or set no expiry
 const { identity } = await db.createTempAddressWithAR(wallet)
 ```
 
@@ -106,9 +120,12 @@ try {
 } catch (e) {
   console.log(e)
 }
+const expiry = 60 * 60 * 24 * 7 // set expiry to a week
 
+const { identity } = db.createTempAddressWithIntmax(signer, expiry)
+
+// or set no expiry
 const { identity } = db.createTempAddressWithIntmax(signer)
-
 ```
 ## Remove Address Link
 
