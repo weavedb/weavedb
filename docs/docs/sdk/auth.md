@@ -127,6 +127,15 @@ const { identity } = db.createTempAddressWithIntmax(signer, expiry)
 // or set no expiry
 const { identity } = db.createTempAddressWithIntmax(signer)
 ```
+
+## Get Address Link
+
+Get an linked address
+
+```js
+await db.getAddressLink(address)
+```
+
 ## Remove Address Link
 
 Remove an address link
