@@ -6,7 +6,14 @@ const { pluck, isNil, range, indexBy, prop } = require("ramda")
 const { init, stop, initBeforeEach, addFunds } = require("./util")
 
 describe("Wall Example", function () {
-  let arlocal, wallet, walletAddress, wallet2, db, wallet3, wallet4
+  let arlocal,
+    wallet,
+    walletAddress,
+    wallet2,
+    db,
+    wallet3,
+    wallet4,
+    arweave_wallet
   this.timeout(0)
 
   before(async () => {
@@ -24,6 +31,7 @@ describe("Wall Example", function () {
       wallet2,
       wallet3,
       wallet4,
+      arweave_wallet,
     } = await initBeforeEach(true))
   })
 
@@ -40,7 +48,7 @@ describe("Wall Example", function () {
         },
       },
     }
-    await db.setSchema(schemas_users, "users")
+    await db.setSchema(schemas_users, "users", { ar: arweave_wallet })
     const rules_users = {
       "allow create,update": {
         and: [
@@ -66,7 +74,7 @@ describe("Wall Example", function () {
         ],
       },
     }
-    await db.setRules(rules_users, "users")
+    await db.setRules(rules_users, "users", { ar: arweave_wallet })
 
     const schemas_wall = {
       type: "object",
@@ -86,7 +94,7 @@ describe("Wall Example", function () {
         },
       },
     }
-    await db.setSchema(schemas_wall, "wall")
+    await db.setSchema(schemas_wall, "wall", { ar: arweave_wallet })
 
     const rules_wall = {
       "let create": {
@@ -122,7 +130,7 @@ describe("Wall Example", function () {
         "==": [{ var: "request.auth.signer" }, { var: "resource.data.user" }],
       },
     }
-    await db.setRules(rules_wall, "wall")
+    await db.setRules(rules_wall, "wall", { ar: arweave_wallet })
   }
 
   const addProfile = async () => {
