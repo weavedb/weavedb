@@ -6,7 +6,14 @@ const { pluck, isNil, range, indexBy, prop } = require("ramda")
 const { init, stop, initBeforeEach, addFunds } = require("./util")
 
 describe("Todos Example", function () {
-  let arlocal, wallet, walletAddress, wallet2, db, wallet3, wallet4
+  let arlocal,
+    wallet,
+    walletAddress,
+    wallet2,
+    db,
+    wallet3,
+    wallet4,
+    arweave_wallet
   this.timeout(0)
 
   before(async () => {
@@ -24,7 +31,8 @@ describe("Todos Example", function () {
       wallet2,
       wallet3,
       wallet4,
-    } = await initBeforeEach(true))
+      arweave_wallet,
+    } = await initBeforeEach())
   })
 
   const initDB = async () => {
@@ -46,7 +54,7 @@ describe("Todos Example", function () {
         },
       },
     }
-    await db.setSchema(schemas, "todos")
+    await db.setSchema(schemas, "todos", { ar: arweave_wallet })
     const rules = {
       "allow create": {
         and: [
@@ -87,7 +95,7 @@ describe("Todos Example", function () {
         ],
       },
     }
-    await db.setRules(rules, "tasks")
+    await db.setRules(rules, "tasks", { ar: arweave_wallet })
   }
 
   const addTasks = async () => {

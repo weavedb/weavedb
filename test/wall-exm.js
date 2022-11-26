@@ -89,6 +89,7 @@ describe("Wall on EXM", function () {
       },
     })
   })
+
   const initDB = async () => {
     const schemas_users = {
       type: "object",
@@ -232,8 +233,5 @@ describe("Wall on EXM", function () {
     expect(
       (await db.get("wall", ["user", "=", addr], ["date", "desc"])).length
     ).to.eql(5)
-    const id = (await db.cget("users"))[0].id
-    console.log(await db.delete("users", id))
-    console.log(await db.cget("users"))
   })
 })
