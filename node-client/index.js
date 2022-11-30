@@ -1,4 +1,4 @@
-const { all, complement, init, is, last, isNil } = require("ramda")
+const { all, complement, isNil } = require("ramda")
 const Base = require("weavedb-base")
 const PROTO_PATH = __dirname + "/weavedb.proto"
 const grpc = require("@grpc/grpc-js")
@@ -11,10 +11,21 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   oneofs: true,
 })
 const weavedb_proto = grpc.loadPackageDefinition(packageDefinition).weavedb
+let Arweave = require("arweave")
 
 class SDK extends Base {
-  constructor({ rpc, contractTxId, wallet, name, version, EthWallet, web3 }) {
+  constructor({
+    rpc,
+    contractTxId,
+    wallet,
+    name,
+    version,
+    EthWallet,
+    web3,
+    arweave,
+  }) {
     super()
+    this.arweave = Arweave.init(arweave)
     this.client = new weavedb_proto.DB(rpc, grpc.credentials.createInsecure())
     if (typeof window === "object") {
       require("@metamask/legacy-web3")
@@ -51,7 +62,11 @@ class SDK extends Base {
         })
       })
     let q = await _query()
-    return q.result
+    if (isNil(q.err)) {
+      return q.result
+    } else {
+      throw new Error(q.err)
+    }
   }
 
   async request(func, ...query) {
