@@ -51,7 +51,8 @@
     "build": "yarn clean && node build.js && npm run cp && node scripts/mod.js",
     "clean": "rimraf ./dist",
     "cp": "copyfiles -u 1 ./src/**/*.json dist",
-    "repl": "yarn build && node scripts/runNode.js"
+    "repl": "yarn build && node scripts/runNode.js",
+    "run-node": "cd node && docker-compose down && docker-compose pull prereqs node-server envoy && docker-compose up --build -d node-server envoy"
   },
   "devDependencies": {
     "@dfinity/agent": "^0.13.2",
