@@ -22,12 +22,18 @@ class SDK extends Base {
       this.web3 = window.web3
     }
     this.network =
-      arweave.host === "localhost"
+      arweave.host === "host.docker.internal"
+        ? "localhost"
+        : arweave.host === "localhost"
         ? "localhost"
         : arweave.host === "arweave.net"
         ? "mainnet"
         : "testnet"
-    if (this.network === "localhost") {
+    if (!isNil(arweave) && arweave.host === "host.docker.internal") {
+      this.warp = WarpFactory.custom(this.arweave, {}, "local")
+        .useArweaveGateway()
+        .build()
+    } else if (this.network === "localhost") {
       this.warp = WarpFactory.forLocal(
         isNil(arweave) || isNil(arweave.port) ? 1820 : arweave.port
       )
@@ -75,9 +81,11 @@ class SDK extends Base {
   }
 
   async send(param, bundle) {
-    let tx = await this.db[bundle ? "bundleInteraction" : "writeInteraction"](
-      param
-    )
+    let tx = await this.db[
+      bundle && this.network !== "localhost"
+        ? "bundleInteraction"
+        : "writeInteraction"
+    ](param)
     if (this.network === "localhost") await this.mineBlock()
     return tx
   }

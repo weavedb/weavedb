@@ -1594,10 +1594,10 @@ wasmcurves@0.2.0:
   dependencies:
     wasmbuilder "0.0.16"
 
-weavedb-base@^0.5.11:
-  version "0.5.11"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.5.11.tgz#33625c6abed9b0ebffdb30714a4c07f60ca07315"
-  integrity sha512-efCzLW1RRgYAE2zpqo+Wsk/OXZCH3MA42lIxdGSOHalL3YwnrB4S4wKIVoc21ZwhqSaGRaCivhZtVonqb8o4XQ==
+weavedb-base@^0.7.3:
+  version "0.7.3"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.7.3.tgz#f7172f01e80a5dd5da6606c9637cc4208b048975"
+  integrity sha512-QYCvvRzueZdxSoP20GzYIVDjm+bZaYMrR4t0lqYVPBocsrWtHFs0xpUyp3SENUnAR9Kh/d1snIPdsHUeg5Xxhw==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"

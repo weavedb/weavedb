@@ -1,17 +1,7 @@
 const { DBClient } = require("./weavedb_grpc_web_pb")
 const { WeaveDBRequest } = require("./weavedb_pb")
-const EthCrypto = require("eth-crypto")
-const { all, complement, init, is, last, isNil } = require("ramda")
-const ethSigUtil = require("@metamask/eth-sig-util")
-const { privateToAddress } = require("ethereumjs-util")
-const encoding = require("text-encoding")
-const encoder = new encoding.TextEncoder()
+const { all, complement, last, isNil } = require("ramda")
 const Base = require("weavedb-base")
-const EIP712Domain = [
-  { name: "name", type: "string" },
-  { name: "version", type: "string" },
-  { name: "verifyingContract", type: "string" },
-]
 
 class SDK extends Base {
   constructor({ rpc, contractTxId, wallet, name, version, EthWallet, web3 }) {
