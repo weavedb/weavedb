@@ -1,7 +1,6 @@
 const config = require("./weavedb.config.js")
 const PROTO_PATH = __dirname + "/../weavedb.proto"
 let sdk = null
-
 const { isNil, includes } = require("ramda")
 const SDK = require("weavedb-sdk")
 const grpc = require("@grpc/grpc-js")
@@ -86,8 +85,6 @@ async function main() {
       server.start()
     }
   )
-
-  console.log("initializing sdk...")
   await sdk.get("conf")
   console.log("sdk ready!")
 }

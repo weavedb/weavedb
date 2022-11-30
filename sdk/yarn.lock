@@ -3103,7 +3103,7 @@ vm2@3.9.11:
     acorn "^8.7.0"
     acorn-walk "^8.2.0"
 
-warp-contracts@^1.2.24:
+warp-contracts@1.2.24:
   version "1.2.24"
   resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.2.24.tgz#cc9cd7893d7e1cdcd49e87b83d061c05630f47b4"
   integrity sha512-b9N4X8CqAcM7IHqeEKWlqS2modofbysmS2PEuPfqml7AMIpUchhaeYOg95IiaZfOqdtETEKzhbHJVau6uwbHIQ==

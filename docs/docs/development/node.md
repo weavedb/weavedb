@@ -79,13 +79,34 @@ Now you have a new wallet at `/scripts/.wallets/wallet-mainnet.json`.
 
 You can copy the newly generated wallet from the previous step to `wallet`.
 
-For the `contractTxId`, you can run [a local instance](/docs/development/repl) and copy the displayed `contractTxId`, or use [our public demo contract](https://sonar.warp.cc/?#/app/contract/2ohyMxM2Z2exV4dVLgRNa9jMnEY09H_I-5WkkZBR0Ns) (`2ohyMxM2Z2exV4dVLgRNa9jMnEY09H_I-5WkkZBR0Ns`).
+For the `contractTxId`, you can run [a local instance](/docs/development/repl) and copy the displayed `contractTxId`.
+
+Use `host.docker.internal` as `host` to internally connect from the docker container.
 
 ```js
 module.exports = {
   name: "weavedb",
   version: "1",
-  contractTxId: "xxxxxxxx...",
+  contractTxId: "xxxxx...",
+  arweave: {
+    host: "host.docker.internal",
+    port: 1820,
+    protocol: "http"
+  },
+  wallet: {
+    kty: "RSA",
+    n: ...
+  }
+}
+```
+
+Or use [our public demo contract](https://sonar.warp.cc/?#/app/contract/2ohyMxM2Z2exV4dVLgRNa9jMnEY09H_I-5WkkZBR0Ns).
+
+```js
+module.exports = {
+  name: "weavedb",
+  version: "1",
+  contractTxId: "2ohyMxM2Z2exV4dVLgRNa9jMnEY09H_I-5WkkZBR0Ns",
   arweave: {
     host: "arweave.net",
     port: 443,
@@ -103,9 +124,7 @@ module.exports = {
 ##### 5. Run Docker Conompose
 
 ```bash
-cd weavedb/node
-docker-compose pull prereqs node-server envoy
-docker-compose up --build -d node-server envoy
+yarn run-node
 ```
 
 ##### 6. Set the instance IP address to the Light Client
