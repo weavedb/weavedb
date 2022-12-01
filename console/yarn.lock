@@ -8745,7 +8745,7 @@ walker@^1.0.8:
   dependencies:
     makeerror "1.0.12"
 
-warp-contracts@^1.2.24:
+warp-contracts@1.2.24, warp-contracts@^1.2.24:
   version "1.2.24"
   resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.2.24.tgz#cc9cd7893d7e1cdcd49e87b83d061c05630f47b4"
   integrity sha512-b9N4X8CqAcM7IHqeEKWlqS2modofbysmS2PEuPfqml7AMIpUchhaeYOg95IiaZfOqdtETEKzhbHJVau6uwbHIQ==
@@ -8812,12 +8812,12 @@ weavedb-client@^0.2.1:
     ramda "^0.28.0"
 
 weavedb-sdk@../sdk:
-  version "0.7.5"
+  version "0.7.13"
   dependencies:
     "@metamask/legacy-web3" "^2.0.0"
     arweave "^1.11.4"
     ramda "^0.28.0"
-    warp-contracts "^1.2.24"
+    warp-contracts "1.2.24"
     weavedb-base "^0.7.3"
 
 web-worker@^1.2.0:

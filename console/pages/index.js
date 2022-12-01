@@ -11,6 +11,8 @@ import {
   Textarea,
 } from "@chakra-ui/react"
 import {
+  reject,
+  propEq,
   concat,
   last,
   init as _init,
@@ -29,8 +31,11 @@ import {
   hasPath,
   includes,
   append,
+  indexBy,
+  prop,
   addIndex as _addIndex,
 } from "ramda"
+import lf from "localforage"
 import { bind } from "nd"
 import weavedb from "lib/weavedb.json"
 let db
@@ -53,7 +58,7 @@ export default bind(
     const [cron, setCron] = useState(null)
     const [method, setMethod] = useState("get")
     const [query, setQuery] = useState("")
-    const tabs = ["Data", "Schemas", "Rules", "Indexes", "Crons", "Auth"]
+    const tabs = ["DB", "Data", "Schemas", "Rules", "Indexes", "Crons"]
     const [network, setNetwork] = useState("Localhost")
     const [newNetwork, setNewNetwork] = useState("Localhost")
     const [newRules, setNewRules] = useState(`{"allow write": true}`)
@@ -67,7 +72,7 @@ export default bind(
     const [newFieldVal, setNewFieldVal] = useState("")
     const [newFieldBool, setNewFieldBool] = useState(true)
     const [editNetwork, setEditNetwork] = useState(false)
-    const networks = ["Mainnet", "Testnet", "Localhost"]
+    const networks = ["Mainnet", "Localhost"]
     const [initDB, setInitDB] = useState(false)
     const [networkErr, setNetworkErr] = useState(false)
     const [newCollection, setNewCollection] = useState("")
@@ -91,30 +96,68 @@ export default bind(
     const [addRules, setAddRules] = useState(false)
     const [addCron, setAddCron] = useState(false)
     const [addIndex, setAddIndex] = useState(false)
+    const [dbs, setDBs] = useState([])
 
+    const addDB = async _db => {
+      const dbmap = indexBy(prop("contractTxId"), dbs)
+      if (isNil(dbmap[_db.contractTxId])) {
+        const _dbs = append(_db, dbs)
+        setDBs(_dbs)
+        await lf.setItem(`my_dbs`, _dbs)
+      }
+    }
+    const removeDB = async _db => {
+      const dbmap = indexBy(prop("contractTxId"), dbs)
+      if (!isNil(dbmap[_db.contractTxId])) {
+        const _dbs = reject(propEq("contractTxId", _db.contractTxId), dbs)
+        setDBs(_dbs)
+        await lf.setItem(`my_dbs`, _dbs)
+      }
+    }
+
+    useEffect(() => {
+      ;(async () => {
+        let _dbs = (await lf.getItem(`my_dbs`)) || []
+        const dbmap = indexBy(prop("contractTxId"), _dbs)
+        if (isNil(dbmap[weavedb.weavedb.contractTxId])) {
+          _dbs = append(
+            {
+              network: "Localhost",
+              port: weavedb.port,
+              contractTxId: weavedb.weavedb.contractTxId,
+            },
+            _dbs
+          )
+          await lf.setItem(`my_dbs`, _dbs)
+        }
+        setDBs(_dbs)
+      })()
+    }, [])
     useEffect(() => {
       ;(async () => {
         db = await fn.setupWeaveDB({ network, contractTxId })
         setAdminAddress(await db.arweave.wallets.jwkToAddress(weavedb.arweave))
+        setState((await db.db.viewState({ function: "copy" })).state)
         setInitDB(true)
       })()
-    }, [contractTxId, network])
+    }, [contractTxId])
+
     useEffect(() => {
       ;(async () => {
         if (initDB) {
           fn.checkTempAddress({ contractTxId })
           setInterval(async () => {
-            try {
+            /*try {
               setState((await db.db.viewState({ function: "error" })).state)
               setNetworkErr(false)
             } catch (e) {
               console.log(e)
               setNetworkErr(true)
-            }
+              }*/
           }, 1000)
         }
       })()
-    }, [initDB])
+    }, [initDB, contractTxId])
 
     const getCol = (data, path) => {
       const [col, id] = path
@@ -221,8 +264,12 @@ export default bind(
             <Image
               boxSize="25px"
               src={
-                $.temp_current.length < 88
-                  ? "/static/images/metamask.png"
+                $.temp_wallet === "intmax"
+                  ? "/static/images/intmax.png"
+                  : $.temp_current.length < 88
+                  ? /^0x/.test($.temp_current)
+                    ? "/static/images/metamask.png"
+                    : "/static/images/arconnect.png"
                   : "/static/images/dfinity.png"
               }
               mr={3}
@@ -299,10 +346,10 @@ export default bind(
           }}
           align="center"
         >
-          <Flex px={5} justify="center" align="center" w="160px">
+          <Flex px={5} justify="flex-start" align="center" fontSize="16px">
             <Image
               boxSize="40px"
-              src="/static/images/logo.svg"
+              src="/static/images/logo.png"
               sx={{ borderRadius: "50%" }}
               mr={2}
             />
@@ -343,6 +390,11 @@ export default bind(
                       setNetwork(newNetwork)
                       setContractTxId(newContractTxId)
                       setEditNetwork(false)
+                      addDB({
+                        network: newNetwork,
+                        port: newNetwork === "Localhost" ? weavedb.port : 443,
+                        contractTxId: newContractTxId,
+                      })
                     }
                   }}
                 >
@@ -394,7 +446,7 @@ export default bind(
               })(tabs)}
             </Flex>
             <Flex mb={3} align="center">
-              WeaveDB
+              WeaveDB ({contractTxId.slice(0, 4)})
               {_addIndex(map)((v, i) => (
                 <>
                   <Box mx={2} as="i" className="fas fa-angle-right" />
@@ -416,7 +468,7 @@ export default bind(
               sx={{ border: "1px solid #333" }}
             >
               <Flex h="535px" w="100%">
-                {includes(tab)(["Auth", "Crons"]) ? null : (
+                {includes(tab)(["DB", "Crons"]) ? null : (
                   <Box
                     flex={1}
                     sx={{ border: "1px solid #555" }}
@@ -427,7 +479,10 @@ export default bind(
                       <Box flex={1} />
                       <Box
                         onClick={() => setAddCollection(true)}
-                        sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
+                        sx={{
+                          cursor: "pointer",
+                          ":hover": { opacity: 0.75 },
+                        }}
                       >
                         <Box as="i" className="fas fa-plus" />
                       </Box>
@@ -440,7 +495,10 @@ export default bind(
                         bg={col === v ? "#ddd" : ""}
                         py={2}
                         px={3}
-                        sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
+                        sx={{
+                          cursor: "pointer",
+                          ":hover": { opacity: 0.75 },
+                        }}
                       >
                         {v}
                       </Flex>
@@ -539,7 +597,10 @@ export default bind(
                                 color="#999"
                                 sx={{
                                   cursor: "pointer",
-                                  ":hover": { opacity: 0.75, color: "#F50057" },
+                                  ":hover": {
+                                    opacity: 0.75,
+                                    color: "#F50057",
+                                  },
                                 }}
                                 onClick={async e => {
                                   e.stopPropagation()
@@ -751,7 +812,7 @@ export default bind(
                       </Box>
                     </Flex>
                   </>
-                ) : tab === "Auth" ? (
+                ) : tab === "DB" ? (
                   <>
                     <Flex
                       flex={1}
@@ -759,7 +820,65 @@ export default bind(
                       direction="column"
                     >
                       <Flex py={2} px={3} color="white" bg="#333" h="35px">
-                        Authentication
+                        WeaveDB Instances
+                        <Box flex={1} />
+                        {isNil(col) ? null : (
+                          <Box
+                            onClick={() => setAddIndex(true)}
+                            sx={{
+                              cursor: "pointer",
+                              ":hover": { opacity: 0.75 },
+                            }}
+                          >
+                            <Box as="i" className="fas fa-plus" />
+                          </Box>
+                        )}
+                      </Flex>
+                      <Box height="500px" sx={{ overflowY: "auto" }}>
+                        {compose(
+                          map(v => (
+                            <Flex
+                              onClick={() => {
+                                setNetwork(v.network)
+                                setContractTxId(v.contractTxId)
+                              }}
+                              p={2}
+                              px={3}
+                              bg={contractTxId === v.contractTxId ? "#ddd" : ""}
+                              sx={{
+                                cursor: "pointer",
+                                ":hover": { opacity: 0.75 },
+                              }}
+                            >
+                              <Box flex={1}>{v.contractTxId}</Box>
+                              <Box
+                                color="#999"
+                                sx={{
+                                  cursor: "pointer",
+                                  ":hover": {
+                                    opacity: 0.75,
+                                    color: "#F50057",
+                                  },
+                                }}
+                                onClick={async e => {
+                                  e.stopPropagation()
+                                  removeDB(v)
+                                }}
+                              >
+                                <Box as="i" className="fas fa-trash" />
+                              </Box>
+                            </Flex>
+                          ))
+                        )(dbs)}
+                      </Box>
+                    </Flex>
+                    <Flex
+                      flex={1}
+                      sx={{ border: "1px solid #555" }}
+                      direction="column"
+                    >
+                      <Flex py={2} px={3} color="white" bg="#333" h="35px">
+                        Settings
                         <Box flex={1} />
                       </Flex>
                       <Box height="500px" sx={{ overflowY: "auto" }}>
@@ -772,7 +891,18 @@ export default bind(
                                 bg="#ddd"
                                 sx={{ borderRadius: "3px" }}
                               >
-                                Name
+                                DB Version
+                              </Box>
+                              {state.version || "less than 0.7.0"}
+                            </Flex>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#ddd"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                EIP712 Name
                               </Box>
                               {state.auth.name}
                             </Flex>
@@ -783,7 +913,7 @@ export default bind(
                                 bg="#ddd"
                                 sx={{ borderRadius: "3px" }}
                               >
-                                Version
+                                EIP712 Version
                               </Box>
                               {state.auth.version}
                             </Flex>
@@ -794,9 +924,36 @@ export default bind(
                                 bg="#ddd"
                                 sx={{ borderRadius: "3px" }}
                               >
-                                Owner
+                                Owner{" "}
+                                {$.temp_current === state.owner ? (
+                                  <Box as="span" color="#F50057">
+                                    ★
+                                  </Box>
+                                ) : null}
                               </Box>
                               {state.owner}
+                            </Flex>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#ddd"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                canEvolve
+                              </Box>
+                              {state.canEvolve ? "true" : "false"}
+                            </Flex>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#ddd"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                evolve
+                              </Box>
+                              {isNil(state.evolve) ? "null" : state.evolve}
                             </Flex>
                             <Flex align="center" p={2} px={3}>
                               <Box
@@ -820,39 +977,6 @@ export default bind(
                               </Box>
                               {contractTxId}
                             </Flex>
-                            <Flex align="center" p={2} px={3}>
-                              <Box
-                                mr={2}
-                                px={3}
-                                bg="#ddd"
-                                sx={{ borderRadius: "3px" }}
-                              >
-                                Admin Arweave Address
-                              </Box>
-                              {admin_address}
-                              {state.owner !== admin_address ? (
-                                <Box as="span" ml={2} color="#F50057">
-                                  (not the owner)
-                                </Box>
-                              ) : (
-                                ""
-                              )}
-                            </Flex>
-                            <Flex align="center" p={2} px={3}>
-                              <Box
-                                mr={2}
-                                px={3}
-                                bg="#ddd"
-                                sx={{ borderRadius: "3px" }}
-                              >
-                                Logged In{" "}
-                                {isNil($.temp_current) ||
-                                $.temp_current.length < 88
-                                  ? "ETH Address"
-                                  : "Internet Identity"}
-                              </Box>
-                              {$.temp_current || "Not Logged In"}
-                            </Flex>
                           </>
                         )}
                       </Box>
@@ -862,7 +986,7 @@ export default bind(
                   <>
                     <Flex
                       flex={1}
-                      sx={{ border: "1px solid #555" }}
+                      sx={{ border: "1px solid #555", overflowX: "hidden" }}
                       direction="column"
                     >
                       <Flex py={2} px={3} color="white" bg="#333" h="35px">
@@ -894,7 +1018,7 @@ export default bind(
                               ":hover": { opacity: 0.75 },
                             }}
                           >
-                            <Box mr={3} flex={1}>
+                            <Box mr={3} flex={1} sx={{ overflowX: "hidden" }}>
                               {v}
                             </Box>
                             <Box
@@ -937,7 +1061,7 @@ export default bind(
                     </Flex>
                     <Box
                       flex={1}
-                      sx={{ border: "1px solid #555" }}
+                      sx={{ border: "1px solid #555", overflowX: "hidden" }}
                       direction="column"
                     >
                       <Flex py={2} px={3} color="white" bg="#333" h="35px">
@@ -1002,7 +1126,7 @@ export default bind(
                               >
                                 {k}
                               </Box>
-                              <Box flex={1}>
+                              <Box flex={1} sx={{ overflowX: "hidden" }} mr={2}>
                                 {is(Object)(v)
                                   ? JSON.stringify(v)
                                   : is(Boolean)(v)
@@ -1015,7 +1139,10 @@ export default bind(
                                 color="#999"
                                 sx={{
                                   cursor: "pointer",
-                                  ":hover": { opacity: 0.75, color: "#F50057" },
+                                  ":hover": {
+                                    opacity: 0.75,
+                                    color: "#F50057",
+                                  },
                                 }}
                                 onClick={async e => {
                                   e.stopPropagation()
