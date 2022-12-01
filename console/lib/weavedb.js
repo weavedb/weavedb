@@ -190,6 +190,7 @@ export const queryDB = async ({
       : {
           privateKey: weavedb.ethereum.privateKey,
         }
+    console.log(q, opt)
     const res = await sdk[method](...q, opt)
     if (!isNil(res.err)) {
       return `Error: ${res.err.errorMessage}`

@@ -2,10 +2,13 @@ const { DBClient } = require("./weavedb_grpc_web_pb")
 const { WeaveDBRequest } = require("./weavedb_pb")
 const { all, complement, last, isNil } = require("ramda")
 const Base = require("weavedb-base")
+let Arweave = require("arweave")
+Arweave = Arweave.default || Arweave
 
 class SDK extends Base {
   constructor({ rpc, contractTxId, wallet, name, version, EthWallet, web3 }) {
     super()
+    this.arweave = Arweave.init()
     this.client = new DBClient(rpc)
     if (typeof window === "object") {
       require("@metamask/legacy-web3")
@@ -38,6 +41,7 @@ class SDK extends Base {
         })
       })
     let q = await _query()
+    if (!isNil(q.err)) throw new Error(q.err)
     return q.result
   }
 
