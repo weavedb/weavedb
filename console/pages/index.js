@@ -299,10 +299,10 @@ export default bind(
           }}
           align="center"
         >
-          <Flex px={5} justify="center" align="center" w="160px">
+          <Flex px={5} justify="flex-start" align="center" fontSize="16px">
             <Image
               boxSize="40px"
-              src="/static/images/logo.svg"
+              src="/static/images/logo.png"
               sx={{ borderRadius: "50%" }}
               mr={2}
             />
@@ -427,7 +427,10 @@ export default bind(
                       <Box flex={1} />
                       <Box
                         onClick={() => setAddCollection(true)}
-                        sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
+                        sx={{
+                          cursor: "pointer",
+                          ":hover": { opacity: 0.75 },
+                        }}
                       >
                         <Box as="i" className="fas fa-plus" />
                       </Box>
@@ -440,7 +443,10 @@ export default bind(
                         bg={col === v ? "#ddd" : ""}
                         py={2}
                         px={3}
-                        sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
+                        sx={{
+                          cursor: "pointer",
+                          ":hover": { opacity: 0.75 },
+                        }}
                       >
                         {v}
                       </Flex>
@@ -539,7 +545,10 @@ export default bind(
                                 color="#999"
                                 sx={{
                                   cursor: "pointer",
-                                  ":hover": { opacity: 0.75, color: "#F50057" },
+                                  ":hover": {
+                                    opacity: 0.75,
+                                    color: "#F50057",
+                                  },
                                 }}
                                 onClick={async e => {
                                   e.stopPropagation()
@@ -1015,7 +1024,10 @@ export default bind(
                                 color="#999"
                                 sx={{
                                   cursor: "pointer",
-                                  ":hover": { opacity: 0.75, color: "#F50057" },
+                                  ":hover": {
+                                    opacity: 0.75,
+                                    color: "#F50057",
+                                  },
                                 }}
                                 onClick={async e => {
                                   e.stopPropagation()
