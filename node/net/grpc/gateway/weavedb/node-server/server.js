@@ -45,6 +45,12 @@ async function query(call, callback) {
           "getRules",
           "getNonce",
           "getIds",
+          "getOwner",
+          "getAddressLink",
+          "getAlgorithms",
+          "getLinkedContract",
+          "getEvolve",
+          "getVersion",
         ])
       ) {
         result = await sdk[method](...JSON.parse(query))
