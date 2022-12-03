@@ -5,6 +5,7 @@ import lf from "localforage"
 import SDK from "weavedb-sdk"
 import { ethers } from "ethers"
 import { AuthClient } from "@dfinity/auth-client"
+import { WarpFactory } from "warp-contracts"
 import {
   is,
   includes,
@@ -25,6 +26,11 @@ import {
 import { Buffer } from "buffer"
 import weavedb from "lib/weavedb.json"
 let sdk
+
+const weavedbSrcTxId = "7vXOxkxZ_eG0mwBO4pc_mB_oh1MY4pmHXzRQJfdMGCw"
+const intmaxSrcTxId = "OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94"
+const dfinitySrcTxId = "RQpDSz3PSyYSn6LRzWnX85bu6iGqCZKLxkdwQVoKzTI"
+const ethereumSrcTxId = "dtLqn4y5fFD5xyiRCzaYjWxz5k8I6VxoVeARFphhuY4"
 
 export const setupWeaveDB = async ({
   conf,
@@ -218,124 +224,34 @@ export const queryDB = async ({
 
 const Constants = require("lib/poseidon_constants_opt.js")
 
-async function deployContractPoseidon(poseidonConstants, walletAddress) {
-  const contractSrc = await fetch("/static/poseidonConstants.js").then(v =>
-    v.text()
-  )
+async function deploy({ src, warp, init, extra, arweave }) {
+  const contractSrc = await fetch(`/static/${src}.js`).then(v => v.text())
   const stateFromFile = JSON.parse(
-    await fetch("/static/initial-state-poseidon-constants.json").then(v =>
-      v.text()
-    )
+    await fetch(`/static/${init}.json`).then(v => v.text())
   )
-  const initialState = {
-    ...stateFromFile,
-    ...{
-      owner: walletAddress,
-      poseidonConstants,
-    },
-  }
-  const { contractTxId } = await sdk.warp.createContract.deploy({
+  const initialState = mergeLeft(extra, stateFromFile)
+  const { contractTxId } = await warp.createContract.deploy({
     initState: JSON.stringify(initialState),
     src: contractSrc,
   })
-  await sdk.arweave.api.get("mine")
+  if (!isNil(arweave)) await arweave.api.get("mine")
   return contractTxId
 }
 
-async function deployContractIntmax(
-  contractTxIdPoseidon1,
-  contractTxIdPoseidon2,
-  walletAddress
-) {
-  const contractSrc = await fetch("/static/intmax.js").then(v => v.text())
+async function deployFromSrc({ src, warp, init, extra }) {
   const stateFromFile = JSON.parse(
-    await fetch("/static/initial-state-intmax.json").then(v => v.text())
+    await fetch(`/static/${init}.json`).then(v => v.text())
   )
-  const initialState = {
-    ...stateFromFile,
-    ...{
-      owner: walletAddress,
-    },
-  }
-  initialState.contracts.poseidonConstants1 = contractTxIdPoseidon1
-  initialState.contracts.poseidonConstants2 = contractTxIdPoseidon2
-  const { contractTxId } = await sdk.warp.createContract.deploy({
+  const initialState = mergeLeft(extra, stateFromFile)
+  const { contractTxId } = await warp.createContract.deployFromSourceTx({
     initState: JSON.stringify(initialState),
-    src: contractSrc,
+    srcTxId: src,
   })
-  await sdk.arweave.api.get("mine")
   return contractTxId
-}
-
-async function deployContractDfinity(walletAddress) {
-  const contractSrc = await fetch("/static/ii.js").then(v => v.text())
-  const stateFromFile = JSON.parse(
-    await fetch("/static/initial-state-ii.json").then(v => v.text())
-  )
-  const initialState = {
-    ...stateFromFile,
-    ...{
-      owner: walletAddress,
-    },
-  }
-  const { contractTxId } = await sdk.warp.createContract.deploy({
-    initState: JSON.stringify(initialState),
-    src: contractSrc,
-  })
-  await sdk.arweave.api.get("mine")
-  return contractTxId
-}
-
-async function deployContractEthereum(walletAddress) {
-  const contractSrc = await fetch("/static/eth.js").then(v => v.text())
-  const stateFromFile = JSON.parse(
-    await fetch("/static/initial-state-eth.json").then(v => v.text())
-  )
-  const initialState = {
-    ...stateFromFile,
-    ...{
-      owner: walletAddress,
-    },
-  }
-  const { contractTxId } = await sdk.warp.createContract.deploy({
-    initState: JSON.stringify(initialState),
-    src: contractSrc,
-  })
-  await sdk.arweave.api.get("mine")
-  return contractTxId
-}
-
-async function deployContract(
-  secure,
-  contractTxIdIntmax,
-  contractTxIdDfinity,
-  contractTxIdEthereum,
-  walletAddress
-) {
-  const contractSrc = await fetch("/static/contract.js").then(v => v.text())
-  const stateFromFile = JSON.parse(
-    await fetch("/static/initial-state.json").then(v => v.text())
-  )
-  let initialState = {
-    ...stateFromFile,
-    ...{
-      secure,
-      owner: walletAddress,
-    },
-  }
-  initialState.contracts.intmax = contractTxIdIntmax
-  initialState.contracts.dfinity = contractTxIdDfinity
-  initialState.contracts.ethereum = contractTxIdEthereum
-  const contract = await sdk.warp.createContract.deploy({
-    initState: JSON.stringify(initialState),
-    src: contractSrc,
-  })
-  await sdk.arweave.api.get("mine")
-  return contract
 }
 
 export const deployDB = async ({
-  val: { owner },
+  val: { owner, network, port },
   global,
   set,
   fn,
@@ -346,34 +262,98 @@ export const deployDB = async ({
     alert("Contract Owner is missing")
     return {}
   }
-  const walletAddress = owner
-  const poseidon1TxId = await deployContractPoseidon(
-    {
-      C: Constants.C,
-      M: Constants.M,
-      P: Constants.P,
-    },
-    walletAddress
-  )
-  const poseidon2TxId = await deployContractPoseidon(
-    {
-      S: Constants.S,
-    },
-    walletAddress
-  )
-  const intmaxSrcTxId = await deployContractIntmax(
-    poseidon1TxId,
-    poseidon2TxId,
-    walletAddress
-  )
-  const dfinitySrcTxId = await deployContractDfinity(walletAddress)
-  const ethereumSrcTxId = await deployContractEthereum(walletAddress)
-  const contract = await deployContract(
-    false,
-    intmaxSrcTxId,
-    dfinitySrcTxId,
-    ethereumSrcTxId,
-    walletAddress
-  )
-  return contract
+  if (network === "Mainnet") {
+    const warp = WarpFactory.forMainnet()
+    const contractTxId = await deployFromSrc({
+      src: weavedbSrcTxId,
+      init: "initial-state",
+      warp,
+      extra: {
+        secure: false,
+        owner,
+        contracts: {
+          intmax: intmaxSrcTxId,
+          dfinity: dfinitySrcTxId,
+          ethereum: ethereumSrcTxId,
+        },
+      },
+    })
+    return { contractTxId, network }
+  } else {
+    const warp = WarpFactory.forLocal(port)
+    const poseidon1TxId = await deploy({
+      src: "poseidonConstants",
+      init: "initial-state-poseidon-constants",
+      warp,
+      arweave: sdk.arweave,
+      extra: {
+        owner,
+        poseidonConstants: {
+          C: Constants.C,
+          M: Constants.M,
+          P: Constants.P,
+        },
+      },
+    })
+    const poseidon2TxId = await deploy({
+      src: "poseidonConstants",
+      init: "initial-state-poseidon-constants",
+      warp,
+      arweave: sdk.arweave,
+      extra: {
+        owner: walletAddress,
+        poseidonConstants: {
+          S: Constants.S,
+        },
+      },
+    })
+    const intmaxSrcTxId = await deploy({
+      src: "intmax",
+      init: "initial-state-intmax",
+      warp,
+      arweave: sdk.arweave,
+      extra: {
+        owner: walletAddress,
+        contracts: {
+          poseidonConstants1: poseidon1TxId,
+          poseidonConstants2: poseidon2TxId,
+        },
+      },
+    })
+    const dfinitySrcTxId = await deploy({
+      src: "ii",
+      init: "initial-state-ii",
+      warp,
+      arweave: sdk.arweave,
+      extra: {
+        owner: walletAddress,
+      },
+    })
+    const ethereumSrcTxId = await deploy({
+      src: "eth",
+      init: "initial-state-eth",
+      warp,
+      arweave: sdk.arweave,
+      extra: {
+        owner: walletAddress,
+      },
+    })
+    const contractTxId = await deploy({
+      src: "contract",
+      init: "initial-state",
+      warp,
+      arweave: sdk.arweave,
+      extra: {
+        secure: false,
+        owner: walletAddress,
+        contracts: {
+          intmax: intmaxSrcTxId,
+          dfinity: dfinitySrcTxId,
+          ethereum: ethereumSrcTxId,
+        },
+      },
+    })
+
+    return { contractTxId, network }
+  }
 }

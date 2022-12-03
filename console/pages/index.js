@@ -2027,8 +2027,7 @@ export default bind(
               </Flex>
               <Select
                 w="100%"
-                value={deployMode === "Deploy" ? "Localhost" : newNetwork}
-                disabled={deployMode === "Deploy" ? "disabled" : ""}
+                value={newNetwork}
                 onChange={e => setNewNetwork(e.target.value)}
                 sx={{ borderRadius: "5px 0 0 5px" }}
                 mb={3}
@@ -2074,12 +2073,14 @@ export default bind(
                   color="white"
                   bg="#333"
                   onClick={async () => {
-                    const { contractTxId } = await fn.deployDB({
+                    const { contractTxId, network } = await fn.deployDB({
+                      port: weavedb.port,
                       owner: $.temp_current,
+                      network: newNetwork,
                     })
                     if (!isNil(contractTxId)) {
                       addDB({
-                        network: "Localhost",
+                        network,
                         port: weavedb.port,
                         contractTxId,
                       })
