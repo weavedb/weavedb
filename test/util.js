@@ -93,6 +93,7 @@ async function deployContracts({
       initState: JSON.stringify(initialState),
       src: contractSrc,
     })
+    await arweave.api.get("mine")
     return contract
   }
 
