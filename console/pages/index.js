@@ -38,11 +38,13 @@ import {
 import lf from "localforage"
 import { bind } from "nd"
 import weavedb from "lib/weavedb.json"
-let db
+let db, iv
 export default bind(
   ({ set, init, router, conf, $ }) => {
     const fn = init([
+      "deployDB",
       "checkTempAddress",
+      "switchTempAddress",
       "setupWeaveDB",
       "createTempAddress",
       "createTempAddressWithII",
@@ -51,10 +53,9 @@ export default bind(
       "queryDB",
     ])
     const [result, setResult] = useState("")
-    const [admin_address, setAdminAddress] = useState("")
     const [state, setState] = useState(null)
     const [doc_path, setDocPath] = useState([])
-    const [tab, setTab] = useState("Data")
+    const [tab, setTab] = useState("DB")
     const [cron, setCron] = useState(null)
     const [method, setMethod] = useState("get")
     const [query, setQuery] = useState("")
@@ -96,6 +97,8 @@ export default bind(
     const [addRules, setAddRules] = useState(false)
     const [addCron, setAddCron] = useState(false)
     const [addIndex, setAddIndex] = useState(false)
+    const [addInstance, setAddInstance] = useState(false)
+    const [deployMode, setDeployMode] = useState("Connect")
     const [dbs, setDBs] = useState([])
 
     const addDB = async _db => {
@@ -136,8 +139,8 @@ export default bind(
     useEffect(() => {
       ;(async () => {
         db = await fn.setupWeaveDB({ network, contractTxId })
-        setAdminAddress(await db.arweave.wallets.jwkToAddress(weavedb.arweave))
         setState((await db.db.viewState({ function: "copy" })).state)
+        fn.switchTempAddress({ contractTxId })
         setInitDB(true)
       })()
     }, [contractTxId])
@@ -146,14 +149,15 @@ export default bind(
       ;(async () => {
         if (initDB) {
           fn.checkTempAddress({ contractTxId })
-          setInterval(async () => {
-            /*try {
+          clearInterval(iv)
+          iv = setInterval(async () => {
+            try {
               setState((await db.db.viewState({ function: "error" })).state)
               setNetworkErr(false)
             } catch (e) {
               console.log(e)
               setNetworkErr(true)
-              }*/
+            }
           }, 1000)
         }
       })()
@@ -355,74 +359,7 @@ export default bind(
             />
             WeaveDB
           </Flex>
-          {editNetwork ? (
-            <Flex flex={1} justify="center" fontSize="10px">
-              <Flex maxW="750px" width="100%">
-                <Select
-                  w="150px"
-                  value={newNetwork}
-                  onChange={e => setNewNetwork(e.target.value)}
-                  sx={{ borderRadius: "5px 0 0 5px" }}
-                >
-                  {map(v => <option value={v}>{v}</option>)(networks)}
-                </Select>
-                <Input
-                  flex={1}
-                  value={newContractTxId}
-                  onChange={e => setNewContractTxId(e.target.value)}
-                  sx={{ borderRadius: 0 }}
-                />
-                <Flex
-                  py={2}
-                  px={6}
-                  bg="#333"
-                  color="white"
-                  sx={{
-                    borderRadius: "0 5px 5px 0",
-                    cursor: "pointer",
-                    ":hover": { opacity: 0.75 },
-                  }}
-                  justifyContent="center"
-                  align="center"
-                  fontSize="16px"
-                  onClick={async () => {
-                    if (!/^\s*$/.test(newContractTxId)) {
-                      setNetwork(newNetwork)
-                      setContractTxId(newContractTxId)
-                      setEditNetwork(false)
-                      addDB({
-                        network: newNetwork,
-                        port: newNetwork === "Localhost" ? weavedb.port : 443,
-                        contractTxId: newContractTxId,
-                      })
-                    }
-                  }}
-                >
-                  Change
-                </Flex>
-              </Flex>
-            </Flex>
-          ) : (
-            <Flex
-              flex={1}
-              justify="center"
-              fontSize="10px"
-              onClick={() => setEditNetwork(true)}
-              sx={{ cursor: "pointer" }}
-            >
-              <Box px={2}>{network}</Box>
-              <Flex px={2}>
-                contractTxId:{" "}
-                {networkErr ? (
-                  <Box ml={2} color="#F50057">
-                    Network Error
-                  </Box>
-                ) : (
-                  contractTxId
-                )}
-              </Flex>
-            </Flex>
-          )}
+          <Flex flex={1} />
           <Flex justify="center" align="center" justifySelf="flex-end" px={5}>
             <ConnectWallet />
           </Flex>
@@ -822,17 +759,15 @@ export default bind(
                       <Flex py={2} px={3} color="white" bg="#333" h="35px">
                         WeaveDB Instances
                         <Box flex={1} />
-                        {isNil(col) ? null : (
-                          <Box
-                            onClick={() => setAddIndex(true)}
-                            sx={{
-                              cursor: "pointer",
-                              ":hover": { opacity: 0.75 },
-                            }}
-                          >
-                            <Box as="i" className="fas fa-plus" />
-                          </Box>
-                        )}
+                        <Box
+                          onClick={() => setAddInstance(true)}
+                          sx={{
+                            cursor: "pointer",
+                            ":hover": { opacity: 0.75 },
+                          }}
+                        >
+                          <Box as="i" className="fas fa-plus" />
+                        </Box>
                       </Flex>
                       <Box height="500px" sx={{ overflowY: "auto" }}>
                         {compose(
@@ -850,6 +785,19 @@ export default bind(
                                 ":hover": { opacity: 0.75 },
                               }}
                             >
+                              <Box
+                                mr={2}
+                                px={3}
+                                w="80px"
+                                textAlign="center"
+                                bg={
+                                  v.network === "Mainnet" ? "#F50057" : "#333"
+                                }
+                                color="white"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                {v.network}
+                              </Box>
                               <Box flex={1}>{v.contractTxId}</Box>
                               <Box
                                 color="#999"
@@ -862,7 +810,13 @@ export default bind(
                                 }}
                                 onClick={async e => {
                                   e.stopPropagation()
-                                  removeDB(v)
+                                  if (
+                                    confirm(
+                                      "Would you like to remove the link to this instance?"
+                                    )
+                                  ) {
+                                    removeDB(v)
+                                  }
                                 }}
                               >
                                 <Box as="i" className="fas fa-trash" />
@@ -884,6 +838,47 @@ export default bind(
                       <Box height="500px" sx={{ overflowY: "auto" }}>
                         {isNil(state) || isNil(state.auth) ? null : (
                           <>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#ddd"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                contractTxId
+                              </Box>
+                              <Box
+                                as="a"
+                                target="_blank"
+                                color={
+                                  network === "Mainnet" ? "#F50057" : "#333"
+                                }
+                                sx={{
+                                  textDecoration:
+                                    network === "Mainnet"
+                                      ? "underline"
+                                      : "none",
+                                }}
+                                href={
+                                  network === "Mainnet"
+                                    ? `https://sonar.warp.cc/?#/app/contract/${contractTxId}`
+                                    : null
+                                }
+                              >
+                                {contractTxId}
+                              </Box>
+                            </Flex>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#ddd"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                Network
+                              </Box>
+                              {network}
+                            </Flex>
                             <Flex align="center" p={2} px={3}>
                               <Box
                                 mr={2}
@@ -921,15 +916,19 @@ export default bind(
                               <Box
                                 mr={2}
                                 px={3}
-                                bg="#ddd"
+                                bg={
+                                  $.temp_current === state.owner
+                                    ? "#F50057"
+                                    : "#ddd"
+                                }
+                                color={
+                                  $.temp_current === state.owner
+                                    ? "white"
+                                    : "#333"
+                                }
                                 sx={{ borderRadius: "3px" }}
                               >
                                 Owner{" "}
-                                {$.temp_current === state.owner ? (
-                                  <Box as="span" color="#F50057">
-                                    ★
-                                  </Box>
-                                ) : null}
                               </Box>
                               {state.owner}
                             </Flex>
@@ -954,28 +953,6 @@ export default bind(
                                 evolve
                               </Box>
                               {isNil(state.evolve) ? "null" : state.evolve}
-                            </Flex>
-                            <Flex align="center" p={2} px={3}>
-                              <Box
-                                mr={2}
-                                px={3}
-                                bg="#ddd"
-                                sx={{ borderRadius: "3px" }}
-                              >
-                                Network
-                              </Box>
-                              {network}
-                            </Flex>
-                            <Flex align="center" p={2} px={3}>
-                              <Box
-                                mr={2}
-                                px={3}
-                                bg="#ddd"
-                                sx={{ borderRadius: "3px" }}
-                              >
-                                contractTxId
-                              </Box>
-                              {contractTxId}
                             </Flex>
                           </>
                         )}
@@ -2000,6 +1977,149 @@ export default bind(
               >
                 Add
               </Flex>
+            </Box>
+          </Flex>
+        ) : addInstance !== false ? (
+          <Flex
+            w="100%"
+            h="100%"
+            position="fixed"
+            sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+            bg="rgba(0,0,0,0.5)"
+            onClick={() => setAddInstance(false)}
+            justify="center"
+            align="center"
+          >
+            <Box
+              bg="white"
+              width="500px"
+              p={3}
+              sx={{ borderRadius: "5px", cursor: "default" }}
+              onClick={e => e.stopPropagation()}
+            >
+              <Flex>
+                {map(v => {
+                  return (
+                    <Flex
+                      justify="center"
+                      align="center"
+                      onClick={() => setDeployMode(v)}
+                      mb={3}
+                      mr={2}
+                      px={3}
+                      py={1}
+                      bg={deployMode === v ? "#333" : "#ddd"}
+                      sx={{
+                        borderRadius: "3px",
+                        fontSize: "12px",
+                        ":hover": { opacity: 0.75 },
+                        cursor: "pointer",
+                        color: deployMode === v ? "#ddd" : "#333",
+                      }}
+                    >
+                      {v}
+                    </Flex>
+                  )
+                })(["Connect", "Deploy"])}
+              </Flex>
+              <Flex fontSize="10px" m={1}>
+                Network
+              </Flex>
+              <Select
+                w="100%"
+                value={deployMode === "Deploy" ? "Localhost" : newNetwork}
+                disabled={deployMode === "Deploy" ? "disabled" : ""}
+                onChange={e => setNewNetwork(e.target.value)}
+                sx={{ borderRadius: "5px 0 0 5px" }}
+                mb={3}
+              >
+                {map(v => <option value={v}>{v}</option>)(networks)}
+              </Select>
+              {deployMode === "Deploy" ? (
+                <>
+                  <Flex fontSize="10px" m={1}>
+                    Contract Owner
+                  </Flex>
+                  <Input
+                    flex={1}
+                    disabled={true}
+                    value={$.temp_current || ""}
+                    sx={{ borderRadius: 0 }}
+                  />
+                </>
+              ) : (
+                <>
+                  <Flex fontSize="10px" m={1}>
+                    ContractTxId
+                  </Flex>
+                  <Input
+                    flex={1}
+                    value={newContractTxId}
+                    onChange={e => setNewContractTxId(e.target.value)}
+                    sx={{ borderRadius: 0 }}
+                  />
+                </>
+              )}
+              {deployMode === "Deploy" ? (
+                <Flex
+                  mt={4}
+                  sx={{
+                    borderRadius: "3px",
+                    cursor: "pointer",
+                    ":hover": { opacity: 0.75 },
+                  }}
+                  p={2}
+                  justify="center"
+                  align="center"
+                  color="white"
+                  bg="#333"
+                  onClick={async () => {
+                    const { contractTxId } = await fn.deployDB({
+                      owner: $.temp_current,
+                    })
+                    if (!isNil(contractTxId)) {
+                      addDB({
+                        network: "Localhost",
+                        port: weavedb.port,
+                        contractTxId,
+                      })
+                      setAddInstance(false)
+                    }
+                  }}
+                >
+                  Deploy DB Instance
+                </Flex>
+              ) : (
+                <Flex
+                  mt={4}
+                  sx={{
+                    borderRadius: "3px",
+                    cursor: "pointer",
+                    ":hover": { opacity: 0.75 },
+                  }}
+                  p={2}
+                  justify="center"
+                  align="center"
+                  color="white"
+                  bg="#333"
+                  onClick={async () => {
+                    if (!/^\s*$/.test(newContractTxId)) {
+                      setNetwork(newNetwork)
+                      setContractTxId(newContractTxId)
+                      setEditNetwork(false)
+                      addDB({
+                        network: newNetwork,
+                        port: newNetwork === "Localhost" ? weavedb.port : 443,
+                        contractTxId: newContractTxId,
+                      })
+                      setAddInstance(false)
+                      setNewContractTxId("")
+                    }
+                  }}
+                >
+                  Connect to DB
+                </Flex>
+              )}
             </Box>
           </Flex>
         ) : null}
