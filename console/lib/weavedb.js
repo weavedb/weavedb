@@ -85,7 +85,6 @@ export const createTempAddressWithII = async ({
   val: { contractTxId },
 }) => {
   const iiUrl = `http://localhost:8000/?canisterId=rwlgt-iiaaa-aaaaa-aaaaa-cai`
-  console.log(iiUrl)
   const authClient = await AuthClient.create()
   await new Promise((resolve, reject) => {
     authClient.login({
@@ -102,10 +101,9 @@ export const createTempAddressWithII = async ({
   let tx
   identity = ii._inner.toJSON()
   await lf.setItem("temp_address:current", addr)
-  set(addr, "temp_current")
-  await lf.setItem("temp_address:current", addr)
   await lf.setItem(`temp_address:${contractTxId}:${addr}`, identity)
   set(addr, "temp_current")
+  set(addr, "temp_current_all")
 }
 
 export const createTempAddressWithAR = async ({
@@ -129,6 +127,7 @@ export const createTempAddressWithAR = async ({
   } else {
     await lf.setItem("temp_address:current", addr)
     set(addr, "temp_current")
+    set(addr, "temp_current_all")
     return
   }
   if (!isNil(tx) && isNil(tx.err)) {
@@ -137,7 +136,54 @@ export const createTempAddressWithAR = async ({
     await lf.setItem("temp_address:current", addr)
     await lf.setItem(`temp_address:${contractTxId}:${addr}`, identity)
     set(addr, "temp_current")
+    set(addr, "temp_current_all")
   }
+}
+
+export const connectAddress = async ({ conf, set, val: {} }) => {
+  const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
+  await provider.send("eth_requestAccounts", [])
+  const signer = provider.getSigner()
+  const addr = await signer.getAddress()
+  if (!isNil(addr)) {
+    set(addr, "temp_current_all")
+  } else {
+    alert("couldn't connect address")
+  }
+  return
+}
+
+export const connectAddressWithII = async ({ conf, set, val: {} }) => {
+  const iiUrl = `http://localhost:8000/?canisterId=rwlgt-iiaaa-aaaaa-aaaaa-cai`
+  const authClient = await AuthClient.create()
+  await new Promise((resolve, reject) => {
+    authClient.login({
+      identityProvider: iiUrl,
+      onSuccess: resolve,
+      onError: reject,
+    })
+  })
+  const ii = authClient.getIdentity()
+  if (isNil(ii._inner)) return
+  const addr = ii._inner.toJSON()[0]
+  if (!isNil(addr)) {
+    set(addr, "temp_current_all")
+  } else {
+    alert("couldn't connect address")
+  }
+  return
+}
+
+export const connectAddressWithAR = async ({ conf, set, val: {} }) => {
+  const wallet = window.arweaveWallet
+  await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
+  let addr = await wallet.getActiveAddress()
+  if (!isNil(addr)) {
+    set(addr, "temp_current_all")
+  } else {
+    alert("couldn't connect address")
+  }
+  return
 }
 
 export const createTempAddress = async ({
@@ -162,6 +208,7 @@ export const createTempAddress = async ({
   } else {
     await lf.setItem("temp_address:current", addr)
     set(addr, "temp_current")
+    set(addr, "temp_current_all")
     return
   }
   if (!isNil(tx) && isNil(tx.err)) {
@@ -170,6 +217,7 @@ export const createTempAddress = async ({
     await lf.setItem("temp_address:current", addr)
     await lf.setItem(`temp_address:${contractTxId}:${addr}`, identity)
     set(addr, "temp_current")
+    set(addr, "temp_current_all")
   }
 }
 
@@ -182,6 +230,9 @@ export const switchTempAddress = async function ({
   if (!isNil(current)) {
     const identity = await lf.getItem(`temp_address:${contractTxId}:${current}`)
     set(!isNil(identity) ? current : null, "temp_current")
+    if (!isNil(identity)) {
+      set(current, "temp_current_all")
+    }
   } else {
     set(null, "temp_current")
   }
@@ -202,6 +253,7 @@ export const checkTempAddress = async function ({
 export const logoutTemp = async ({ conf, set }) => {
   await lf.removeItem("temp_address:current")
   set(null, "temp_current")
+  set(null, "temp_current_all")
 }
 
 export const queryDB = async ({
