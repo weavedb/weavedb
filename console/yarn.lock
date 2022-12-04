@@ -8811,8 +8811,10 @@ weavedb-client@^0.2.1:
     grpc-web "^1.3.1"
     ramda "^0.28.0"
 
-weavedb-sdk@../sdk:
+weavedb-sdk@^0.7.13:
   version "0.7.13"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.7.13.tgz#dde1d6f3f47f37f3abe1fc8cb5fa295f7d9f97fe"
+  integrity sha512-afZlRtjf0OTGB6G6QRQwd1MyJE4ENYr96AIRwwcXWTX0FisdCTJzTSLQyi/DmytojZpp2glo9f9Y6kicYvblRw==
   dependencies:
     "@metamask/legacy-web3" "^2.0.0"
     arweave "^1.11.4"

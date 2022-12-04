@@ -37,11 +37,11 @@ import {
 } from "ramda"
 import lf from "localforage"
 import { bind } from "nd"
-import weavedb from "lib/weavedb.json"
 let db, iv
 export default bind(
   ({ set, init, router, conf, $ }) => {
     const fn = init([
+      "connectLocalhost",
       "deployDB",
       "checkTempAddress",
       "switchTempAddress",
@@ -60,6 +60,7 @@ export default bind(
     const [method, setMethod] = useState("get")
     const [query, setQuery] = useState("")
     const tabs = ["DB", "Data", "Schemas", "Rules", "Indexes", "Crons"]
+    const [port, setPort] = useState(null)
     const [network, setNetwork] = useState("Localhost")
     const [newNetwork, setNewNetwork] = useState("Localhost")
     const [newRules, setNewRules] = useState(`{"allow write": true}`)
@@ -84,12 +85,8 @@ export default bind(
     const [newStart, setNewStart] = useState("")
     const [newEnd, setNewEnd] = useState("")
     const [newTimes, setNewTimes] = useState("")
-    const [contractTxId, setContractTxId] = useState(
-      weavedb.weavedb.contractTxId
-    )
-    const [newContractTxId, setNewContractTxId] = useState(
-      weavedb.weavedb.contractTxId
-    )
+    const [contractTxId, setContractTxId] = useState(null)
+    const [newContractTxId, setNewContractTxId] = useState("")
     const [addCollection, setAddCollection] = useState(false)
     const [addSchemas, setAddSchemas] = useState(false)
     const [addDoc, setAddDoc] = useState(false)
@@ -100,6 +97,8 @@ export default bind(
     const [addInstance, setAddInstance] = useState(false)
     const [deployMode, setDeployMode] = useState("Connect")
     const [dbs, setDBs] = useState([])
+    const [connect, setConnect] = useState(false)
+    const [newPort, setNewPort] = useState(1820)
 
     const addDB = async _db => {
       const dbmap = indexBy(prop("contractTxId"), dbs)
@@ -122,6 +121,7 @@ export default bind(
       ;(async () => {
         let _dbs = (await lf.getItem(`my_dbs`)) || []
         const dbmap = indexBy(prop("contractTxId"), _dbs)
+        /*
         if (isNil(dbmap[weavedb.weavedb.contractTxId])) {
           _dbs = append(
             {
@@ -132,19 +132,22 @@ export default bind(
             _dbs
           )
           await lf.setItem(`my_dbs`, _dbs)
-        }
+          }*/
         setDBs(_dbs)
       })()
     }, [])
     useEffect(() => {
       ;(async () => {
-        db = await fn.setupWeaveDB({ network, contractTxId })
-        setState((await db.db.viewState({ function: "copy" })).state)
-        fn.switchTempAddress({ contractTxId })
+        if (!isNil(contractTxId)) {
+          db = await fn.setupWeaveDB({ network, contractTxId, port })
+          setState((await db.db.readState()).cachedValue.state)
+          fn.switchTempAddress({ contractTxId })
+        } else {
+          db = await fn.setupWeaveDB({ network: "Mainnet" })
+        }
         setInitDB(true)
       })()
     }, [contractTxId])
-
     useEffect(() => {
       ;(async () => {
         if (initDB) {
@@ -152,8 +155,10 @@ export default bind(
           clearInterval(iv)
           iv = setInterval(async () => {
             try {
-              setState((await db.db.viewState({ function: "error" })).state)
-              setNetworkErr(false)
+              if (!isNil(db.db)) {
+                setState((await db.db.readState()).cachedValue.state)
+                setNetworkErr(false)
+              }
             } catch (e) {
               console.log(e)
               setNetworkErr(true)
@@ -252,7 +257,9 @@ export default bind(
         }}
         justifyContent="center"
         onClick={async () => {
-          if (isNil($.temp_current)) {
+          if (isNil(contractTxId)) {
+            alert("select DB instance")
+          } else if (isNil($.temp_current)) {
             set(true, "signing_in_modal")
           } else {
             if (confirm("Would you like to sign out?")) {
@@ -320,6 +327,19 @@ export default bind(
     }
     useEffect(() => {
       ;(async () => {
+        const _port = await fn.connectLocalhost({ port: newPort })
+        if (!isNil(_port)) {
+          setPort(_port)
+          setConnect(false)
+        }
+      })()
+    }, [])
+
+    useEffect(() => {
+      if (isNil(port)) setNewNetwork("Localhost")
+    }, [port])
+    useEffect(() => {
+      ;(async () => {
         if (isNil(col)) {
           setNewSchemas(null)
         } else {
@@ -350,7 +370,13 @@ export default bind(
           }}
           align="center"
         >
-          <Flex px={5} justify="flex-start" align="center" fontSize="16px">
+          <Flex
+            px={5}
+            justify="flex-start"
+            align="center"
+            fontSize="16px"
+            w="250px"
+          >
             <Image
               boxSize="40px"
               src="/static/images/logo.png"
@@ -359,8 +385,34 @@ export default bind(
             />
             WeaveDB
           </Flex>
-          <Flex flex={1} />
-          <Flex justify="center" align="center" justifySelf="flex-end" px={5}>
+          <Flex flex={1} justify="center" fontSize="12px">
+            {isNil(port) ? (
+              <Flex onClick={() => setConnect(true)} sx={{ cursor: "pointer" }}>
+                Connect with Localhost
+              </Flex>
+            ) : (
+              <Flex
+                sx={{ cursor: "pointer" }}
+                onClick={() => {
+                  if (confirm("Would you like to disconnect?")) {
+                    setPort(null)
+                  }
+                }}
+              >
+                Connected with port{" "}
+                <Box ml={2} color="#F50057">
+                  {port}
+                </Box>
+              </Flex>
+            )}
+          </Flex>
+          <Flex
+            w="250px"
+            justify="flex-end"
+            align="center"
+            justifySelf="flex-end"
+            px={5}
+          >
             <ConnectWallet />
           </Flex>
         </Flex>
@@ -383,7 +435,7 @@ export default bind(
               })(tabs)}
             </Flex>
             <Flex mb={3} align="center">
-              WeaveDB ({contractTxId.slice(0, 4)})
+              WeaveDB ({isNil(contractTxId) ? "" : contractTxId.slice(0, 4)})
               {_addIndex(map)((v, i) => (
                 <>
                   <Box mx={2} as="i" className="fas fa-angle-right" />
@@ -774,6 +826,11 @@ export default bind(
                           map(v => (
                             <Flex
                               onClick={() => {
+                                if (v.network === "Localhost" && isNil(port)) {
+                                  alert("not connected with localhost")
+                                  return
+                                }
+                                setState(null)
                                 setNetwork(v.network)
                                 setContractTxId(v.contractTxId)
                               }}
@@ -2032,7 +2089,9 @@ export default bind(
                 sx={{ borderRadius: "5px 0 0 5px" }}
                 mb={3}
               >
-                {map(v => <option value={v}>{v}</option>)(networks)}
+                {map(v => <option value={v}>{v}</option>)(
+                  isNil(port) ? ["Localhost"] : networks
+                )}
               </Select>
               {deployMode === "Deploy" ? (
                 <>
@@ -2074,14 +2133,14 @@ export default bind(
                   bg="#333"
                   onClick={async () => {
                     const { contractTxId, network } = await fn.deployDB({
-                      port: weavedb.port,
+                      port: port,
                       owner: $.temp_current,
                       network: newNetwork,
                     })
                     if (!isNil(contractTxId)) {
                       addDB({
                         network,
-                        port: weavedb.port,
+                        port,
                         contractTxId,
                       })
                       setAddInstance(false)
@@ -2110,7 +2169,7 @@ export default bind(
                       setEditNetwork(false)
                       addDB({
                         network: newNetwork,
-                        port: newNetwork === "Localhost" ? weavedb.port : 443,
+                        port: newNetwork === "Localhost" ? port : 443,
                         contractTxId: newContractTxId,
                       })
                       setAddInstance(false)
@@ -2121,6 +2180,65 @@ export default bind(
                   Connect to DB
                 </Flex>
               )}
+            </Box>
+          </Flex>
+        ) : connect !== false ? (
+          <Flex
+            w="100%"
+            h="100%"
+            position="fixed"
+            sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+            bg="rgba(0,0,0,0.5)"
+            onClick={() => setConnect(false)}
+            justify="center"
+            align="center"
+          >
+            <Box
+              bg="white"
+              width="500px"
+              p={3}
+              sx={{ borderRadius: "5px", cursor: "default" }}
+              onClick={e => e.stopPropagation()}
+            >
+              <>
+                <Flex fontSize="10px" m={1}>
+                  Port
+                </Flex>
+                <Input
+                  flex={1}
+                  value={newPort}
+                  sx={{ borderRadius: 0 }}
+                  onChange={e => {
+                    if (!Number.isNaN(e.target.value * 1)) {
+                      setNewPort(e.target.value * 1)
+                    }
+                  }}
+                />
+              </>
+              <Flex
+                mt={4}
+                sx={{
+                  borderRadius: "3px",
+                  cursor: "pointer",
+                  ":hover": { opacity: 0.75 },
+                }}
+                p={2}
+                justify="center"
+                align="center"
+                color="white"
+                bg="#333"
+                onClick={async () => {
+                  const _port = await fn.connectLocalhost({ port: newPort })
+                  if (isNil(_port)) {
+                    alert("couldn't connect with the port")
+                  } else {
+                    setPort(_port)
+                    setConnect(false)
+                  }
+                }}
+              >
+                Connect
+              </Flex>
             </Box>
           </Flex>
         ) : null}

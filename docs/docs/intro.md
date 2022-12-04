@@ -22,7 +22,7 @@ Other types of crypto accounts will be supported in the future such as Arweave a
 
 ## Demo Dapps
 
-The v0.5 contract is deployed on the Warp mainnet at [hhbjasTq1zTpOo94oE1z-mXMf5T6vF5Eqabo-PBugwI](https://sonar.warp.cc/?#/app/contract/hhbjasTq1zTpOo94oE1z-mXMf5T6vF5Eqabo-PBugwI).
+The v0.7 contract is deployed on the Warp mainnet at [PliTJIFuE-mC0R1qivwV4Prh7B5OMDLfkL4qk6MbeUw](https://sonar.warp.cc/#/app/source/PliTJIFuE-mC0R1qivwV4Prh7B5OMDLfkL4qk6MbeUw).
 
 ### The Wall 2 on DEFINITY
 
