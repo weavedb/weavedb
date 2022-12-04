@@ -23,7 +23,7 @@
     "recoil": "^0.5.2",
     "warp-contracts": "1.2.24",
     "weavedb-client": "^0.2.1",
-    "weavedb-sdk": "../sdk"
+    "weavedb-sdk": "^0.7.13"
   },
   "scripts": {
     "dev": "next",
