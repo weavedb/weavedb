@@ -41,6 +41,9 @@ let db, iv
 export default bind(
   ({ set, init, router, conf, $ }) => {
     const fn = init([
+      "connectAddress",
+      "connectAddressWithII",
+      "connectAddressWithAR",
       "connectLocalhost",
       "deployDB",
       "checkTempAddress",
@@ -2096,14 +2099,49 @@ export default bind(
               {deployMode === "Deploy" ? (
                 <>
                   <Flex fontSize="10px" m={1}>
-                    Contract Owner
+                    <Box>Contract Owner</Box>
+                    <Box flex={1} />
+                    {isNil($.temp_current_all) ? null : (
+                      <Box
+                        sx={{ textDecoration: "underline", cursor: "pointer" }}
+                        mr={2}
+                        onClick={() => {
+                          set(true, "owner_signing_in_modal")
+                        }}
+                        color="#F50057"
+                      >
+                        change
+                      </Box>
+                    )}
                   </Flex>
-                  <Input
-                    flex={1}
-                    disabled={true}
-                    value={$.temp_current || ""}
-                    sx={{ borderRadius: 0 }}
-                  />
+                  {isNil($.temp_current_all) ? (
+                    <Flex
+                      sx={{
+                        borderRadius: "3px",
+                        border: "1px solid #333",
+                        cursor: "pointer",
+                        ":hover": { opacity: 0.75 },
+                      }}
+                      p={2}
+                      justify="center"
+                      align="center"
+                      color="#333"
+                      onClick={async () => {
+                        if (isNil(contractTxId)) {
+                          set(true, "owner_signing_in_modal")
+                        }
+                      }}
+                    >
+                      Connect Owner Wallet
+                    </Flex>
+                  ) : (
+                    <Input
+                      flex={1}
+                      disabled={true}
+                      value={$.temp_current_all || ""}
+                      sx={{ borderRadius: 0 }}
+                    />
+                  )}
                 </>
               ) : (
                 <>
@@ -2134,7 +2172,7 @@ export default bind(
                   onClick={async () => {
                     const { contractTxId, network } = await fn.deployDB({
                       port: port,
-                      owner: $.temp_current,
+                      owner: $.temp_current_all,
                       network: newNetwork,
                     })
                     if (!isNil(contractTxId)) {
@@ -2242,7 +2280,7 @@ export default bind(
             </Box>
           </Flex>
         ) : null}
-        {$.signing_in_modal ? (
+        {$.signing_in_modal || $.owner_signing_in_modal ? (
           <Flex
             align="center"
             justify="center"
@@ -2256,7 +2294,10 @@ export default bind(
               left: 0,
               cursor: "pointer",
             }}
-            onClick={() => set(false, "signing_in_modal")}
+            onClick={() => {
+              set(false, "signing_in_modal")
+              set(false, "owner_signing_in_modal")
+            }}
           >
             <Flex
               width="580px"
@@ -2283,9 +2324,14 @@ export default bind(
                 }}
                 onClick={async () => {
                   set(true, "signing_in")
-                  await fn.createTempAddress({ contractTxId })
+                  if ($.owner_signing_in_modal) {
+                    await fn.connectAddress({})
+                  } else {
+                    await fn.createTempAddress({ contractTxId })
+                  }
                   set(false, "signing_in")
                   set(false, "signing_in_modal")
+                  set(false, "owner_signing_in_modal")
                 }}
               >
                 <Image height="100px" src="/static/images/metamask.png" />
@@ -2307,9 +2353,14 @@ export default bind(
                 }}
                 onClick={async () => {
                   set(true, "signing_in")
-                  await fn.createTempAddressWithII({ contractTxId })
+                  if ($.owner_signing_in_modal) {
+                    await fn.connectAddressWithII({})
+                  } else {
+                    await fn.createTempAddressWithII({ contractTxId })
+                  }
                   set(false, "signing_in")
                   set(false, "signing_in_modal")
+                  set(false, "owner_signing_in_modal")
                 }}
               >
                 <Image height="100px" src="/static/images/dfinity.png" />
@@ -2331,9 +2382,14 @@ export default bind(
                 }}
                 onClick={async () => {
                   set(true, "signing_in")
-                  await fn.createTempAddressWithAR({ contractTxId })
+                  if ($.owner_signing_in_modal) {
+                    await fn.connectAddressWithAR({})
+                  } else {
+                    await fn.createTempAddressWithAR({ contractTxId })
+                  }
                   set(false, "signing_in")
                   set(false, "signing_in_modal")
+                  set(false, "owner_signing_in_modal")
                 }}
               >
                 <Image height="100px" src="/static/images/arconnect.png" />
@@ -2345,5 +2401,12 @@ export default bind(
       </ChakraProvider>
     )
   },
-  ["temp_current", "initWDB", "signing_in", "signing_in_modal"]
+  [
+    "temp_current_all",
+    "temp_current",
+    "initWDB",
+    "signing_in",
+    "signing_in_modal",
+    "owner_signing_in_modal",
+  ]
 )
