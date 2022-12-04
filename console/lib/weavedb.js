@@ -355,7 +355,7 @@ export const deployDB = async ({
         },
       },
     })
-    return { contractTxId, network }
+    return { contractTxId, network, port }
   } else {
     const warp = WarpFactory.forLocal(port)
     const poseidon1TxId = await deploy({
@@ -431,6 +431,6 @@ export const deployDB = async ({
       },
     })
 
-    return { contractTxId, network }
+    return { contractTxId, network, port }
   }
 }
