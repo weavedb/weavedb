@@ -1,5 +1,5 @@
 const { Ed25519KeyIdentity } = require("@dfinity/identity")
-import arweave from "arweave"
+import Arweave from "arweave"
 import client from "weavedb-client"
 import lf from "localforage"
 import SDK from "weavedb-sdk"
@@ -24,23 +24,36 @@ import {
   path,
 } from "ramda"
 import { Buffer } from "buffer"
-import weavedb from "lib/weavedb.json"
 let sdk
-
-const weavedbSrcTxId = "7vXOxkxZ_eG0mwBO4pc_mB_oh1MY4pmHXzRQJfdMGCw"
+const weavedbSrcTxId = "PliTJIFuE-mC0R1qivwV4Prh7B5OMDLfkL4qk6MbeUw"
 const intmaxSrcTxId = "OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94"
 const dfinitySrcTxId = "RQpDSz3PSyYSn6LRzWnX85bu6iGqCZKLxkdwQVoKzTI"
 const ethereumSrcTxId = "dtLqn4y5fFD5xyiRCzaYjWxz5k8I6VxoVeARFphhuY4"
+import weavedb from "lib/weavedb.json"
+
+export const connectLocalhost = async ({ conf, set, val: { port } }) => {
+  const arweave = Arweave.init({
+    host: "localhost",
+    port,
+    protocol: "http",
+  })
+  try {
+    await arweave.network.getInfo()
+    return port
+  } catch (e) {
+    return null
+  }
+}
 
 export const setupWeaveDB = async ({
   conf,
   set,
-  val: { network, contractTxId },
+  val: { network, contractTxId, port },
 }) => {
   let arweave = {
     Localhost: {
       host: "localhost",
-      port: weavedb.port || 1820,
+      port: port || 1820,
       protocol: "http",
     },
     Testnet: {
@@ -56,8 +69,8 @@ export const setupWeaveDB = async ({
   }
   sdk = new SDK({
     wallet: weavedb.arweave,
-    name: weavedb.weavedb.name,
-    version: weavedb.weavedb.version,
+    name: "weavedb",
+    version: "1",
     contractTxId: contractTxId,
     arweave: arweave[network],
   })
@@ -108,6 +121,11 @@ export const createTempAddressWithAR = async ({
   let tx
   if (isNil(identity)) {
     ;({ tx, identity } = await sdk.createTempAddressWithAR(wallet))
+    const linked = await sdk.getAddressLink(identity.address)
+    if (isNil(linked)) {
+      alert("something went wrong")
+      return
+    }
   } else {
     await lf.setItem("temp_address:current", addr)
     set(addr, "temp_current")
@@ -136,6 +154,11 @@ export const createTempAddress = async ({
   let tx
   if (isNil(identity)) {
     ;({ tx, identity } = await sdk.createTempAddress(addr))
+    const linked = await sdk.getAddressLink(identity.address)
+    if (isNil(linked)) {
+      alert("something went wrong")
+      return
+    }
   } else {
     await lf.setItem("temp_address:current", addr)
     set(addr, "temp_current")
@@ -207,9 +230,11 @@ export const queryDB = async ({
           wallet: current,
           privateKey: identity.privateKey,
         }
-      : {
-          privateKey: weavedb.ethereum.privateKey,
-        }
+      : null
+    if (isNil(opt)) {
+      alert("not logged in")
+      return
+    }
     const res = await sdk[method](...q, opt)
     if (!isNil(res.err)) {
       return `Error: ${res.err.errorMessage}`
@@ -301,7 +326,7 @@ export const deployDB = async ({
       warp,
       arweave: sdk.arweave,
       extra: {
-        owner: walletAddress,
+        owner,
         poseidonConstants: {
           S: Constants.S,
         },
@@ -313,7 +338,7 @@ export const deployDB = async ({
       warp,
       arweave: sdk.arweave,
       extra: {
-        owner: walletAddress,
+        owner,
         contracts: {
           poseidonConstants1: poseidon1TxId,
           poseidonConstants2: poseidon2TxId,
@@ -326,7 +351,7 @@ export const deployDB = async ({
       warp,
       arweave: sdk.arweave,
       extra: {
-        owner: walletAddress,
+        owner,
       },
     })
     const ethereumSrcTxId = await deploy({
@@ -335,7 +360,7 @@ export const deployDB = async ({
       warp,
       arweave: sdk.arweave,
       extra: {
-        owner: walletAddress,
+        owner,
       },
     })
     const contractTxId = await deploy({
@@ -345,7 +370,7 @@ export const deployDB = async ({
       arweave: sdk.arweave,
       extra: {
         secure: false,
-        owner: walletAddress,
+        owner,
         contracts: {
           intmax: intmaxSrcTxId,
           dfinity: dfinitySrcTxId,
