@@ -29,7 +29,7 @@ const weavedbSrcTxId = "PliTJIFuE-mC0R1qivwV4Prh7B5OMDLfkL4qk6MbeUw"
 const intmaxSrcTxId = "OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94"
 const dfinitySrcTxId = "RQpDSz3PSyYSn6LRzWnX85bu6iGqCZKLxkdwQVoKzTI"
 const ethereumSrcTxId = "dtLqn4y5fFD5xyiRCzaYjWxz5k8I6VxoVeARFphhuY4"
-import weavedb from "lib/weavedb.json"
+import weavedb from "./weavedb.json"
 
 export const connectLocalhost = async ({ conf, set, val: { port } }) => {
   const arweave = Arweave.init({
@@ -299,7 +299,7 @@ export const queryDB = async ({
   }
 }
 
-const Constants = require("lib/poseidon_constants_opt.js")
+const Constants = require("./poseidon_constants_opt.js")
 
 async function deploy({ src, warp, init, extra, arweave }) {
   const contractSrc = await fetch(`/static/${src}.js`).then(v => v.text())
