@@ -357,6 +357,9 @@ export const deployDB = async ({
     alert("Contract Owner is missing")
     return {}
   }
+  if (owner.length === 42 && owner.slice(0, 2) == "0x") {
+    owner = owner.toLowerCase()
+  }
   if (network === "Mainnet") {
     const warp = WarpFactory.forMainnet()
     const contractTxId = await deployFromSrc({
