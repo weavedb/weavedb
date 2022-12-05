@@ -11,6 +11,7 @@ import {
   Textarea,
 } from "@chakra-ui/react"
 import {
+  without,
   trim,
   reject,
   propEq,
@@ -113,6 +114,9 @@ export default inject(
     const [dbs, setDBs] = useState([])
     const [connect, setConnect] = useState(false)
     const [newPort, setNewPort] = useState(1820)
+    const [auths, setAuths] = useState(["Arweave", "EVM", "DFINITY", "Intmax"])
+    const [secure, setSecure] = useState(true)
+    const [canEvolve, setCanEvolve] = useState(true)
 
     const addDB = async _db => {
       const dbmap = indexBy(prop("contractTxId"), dbs)
@@ -2148,6 +2152,71 @@ export default inject(
                       sx={{ borderRadius: 0 }}
                     />
                   )}
+                  <Flex mt={3}>
+                    <Box flex={1}>
+                      <Flex fontSize="10px" mx={1} my={1}>
+                        Secure
+                      </Flex>
+                      <Select
+                        w="100%"
+                        value={secure}
+                        onChange={e => setSecure(e.target.value === "True")}
+                        sx={{ borderRadius: "5px 0 0 5px" }}
+                        mb={3}
+                      >
+                        {map(v => <option value={v}>{v}</option>)([
+                          "True",
+                          "False",
+                        ])}
+                      </Select>
+                    </Box>
+                    <Box flex={1} ml={1}>
+                      <Flex fontSize="10px" mx={1} my={1}>
+                        canEvolve
+                      </Flex>
+                      <Select
+                        w="100%"
+                        value={canEvolve}
+                        onChange={e => setCanEvolve(e.target.value === "True")}
+                        sx={{ borderRadius: "5px 0 0 5px" }}
+                        mb={3}
+                      >
+                        {map(v => <option value={v}>{v}</option>)([
+                          "True",
+                          "False",
+                        ])}
+                      </Select>
+                    </Box>
+                  </Flex>
+                  <Flex fontSize="10px" mx={1} my={1}>
+                    Authentication
+                  </Flex>
+                  <Flex>
+                    {map(v => (
+                      <Box mx={3}>
+                        <Box
+                          onClick={() => {
+                            if (includes(v)(auths)) {
+                              setAuths(without([v], auths))
+                            } else {
+                              setAuths(append(v, auths))
+                            }
+                          }}
+                          className={
+                            includes(v)(auths)
+                              ? "fas fa-check-square"
+                              : "far fa-square"
+                          }
+                          mr={2}
+                          sx={{
+                            cursor: "pointer",
+                            ":hover": { opacity: 0.75 },
+                          }}
+                        />
+                        {v}
+                      </Box>
+                    ))(["Arweave", "EVM", "DFINITY", "Intmax"])}
+                  </Flex>
                 </>
               ) : (
                 <>
@@ -2162,6 +2231,7 @@ export default inject(
                   />
                 </>
               )}
+
               {deployMode === "Deploy" ? (
                 <Flex
                   mt={4}
@@ -2182,6 +2252,9 @@ export default inject(
                         port: port,
                         owner: $.temp_current_all,
                         network: newNetwork,
+                        secure,
+                        canEvolve,
+                        auths,
                       })
                       if (!isNil(res.contractTxId)) {
                         addDB(res)

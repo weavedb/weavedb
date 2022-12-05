@@ -328,13 +328,31 @@ async function deployFromSrc({ src, warp, init, extra }) {
 }
 
 export const deployDB = async ({
-  val: { owner, network, port },
+  val: { owner, network, port, secure, canEvolve, auths },
   global,
   set,
   fn,
   conf,
   get,
 }) => {
+  let algorithms = []
+  for (let v of auths) {
+    switch (v) {
+      case "EVM":
+        algorithms.push("secp256k1")
+        break
+      case "Arweave":
+        algorithms.push("rsa256")
+        break
+      case "Intmax":
+        algorithms.push("secp256k1-2")
+        algorithms.push("poseidon")
+        break
+      case "DFINITY":
+        algorithms.push("ed25519")
+        break
+    }
+  }
   if (isNil(owner)) {
     alert("Contract Owner is missing")
     return {}
@@ -353,6 +371,9 @@ export const deployDB = async ({
           dfinity: dfinitySrcTxId,
           ethereum: ethereumSrcTxId,
         },
+        secure,
+        canEvolve,
+        algorithms,
       },
     })
     return { contractTxId, network, port }
@@ -428,9 +449,11 @@ export const deployDB = async ({
           dfinity: dfinitySrcTxId,
           ethereum: ethereumSrcTxId,
         },
+        secure,
+        canEvolve,
+        algorithms,
       },
     })
-
     return { contractTxId, network, port }
   }
 }
