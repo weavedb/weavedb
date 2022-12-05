@@ -1026,6 +1026,30 @@ export default inject(
                               </Box>
                               {isNil(state.evolve) ? "null" : state.evolve}
                             </Flex>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#ddd"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                secure
+                              </Box>
+                              {state.secure ? "true" : "false"}
+                            </Flex>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#ddd"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                Authentication
+                              </Box>
+                              {map(v => <Box mr={2}>{v}</Box>)(
+                                state.algorithms || []
+                              )}
+                            </Flex>
                           </>
                         )}
                       </Box>
