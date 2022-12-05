@@ -37,25 +37,35 @@ import {
   addIndex as _addIndex,
 } from "ramda"
 import lf from "localforage"
-import { bind } from "nd"
+import { inject } from "roidjs"
 let db, iv
-export default bind(
-  ({ set, init, router, conf, $ }) => {
-    const fn = init([
-      "connectAddress",
-      "connectAddressWithII",
-      "connectAddressWithAR",
-      "connectLocalhost",
-      "deployDB",
-      "checkTempAddress",
-      "switchTempAddress",
-      "setupWeaveDB",
-      "createTempAddress",
-      "createTempAddressWithII",
-      "createTempAddressWithAR",
-      "logoutTemp",
-      "queryDB",
-    ])
+import {
+  connectAddress,
+  connectAddressWithII,
+  connectAddressWithAR,
+  connectLocalhost,
+  deployDB,
+  checkTempAddress,
+  switchTempAddress,
+  setupWeaveDB,
+  createTempAddress,
+  createTempAddressWithII,
+  createTempAddressWithAR,
+  logoutTemp,
+  queryDB,
+} from "../lib/weavedb.js"
+
+export default inject(
+  [
+    "temp_current_all",
+    "temp_current",
+    "initWDB",
+    "signing_in",
+    "signing_in_modal",
+    "owner_signing_in_modal",
+    "on_connecting",
+  ],
+  ({ set, init, router, conf, fn, $ }) => {
     const [result, setResult] = useState("")
     const [state, setState] = useState(null)
     const [doc_path, setDocPath] = useState([])
@@ -131,11 +141,11 @@ export default bind(
     useEffect(() => {
       ;(async () => {
         if (!isNil(contractTxId)) {
-          db = await fn.setupWeaveDB({ network, contractTxId, port })
+          db = await fn(setupWeaveDB)({ network, contractTxId, port })
           setState((await db.db.readState()).cachedValue.state)
-          fn.switchTempAddress({ contractTxId })
+          fn(switchTempAddress)({ contractTxId })
         } else {
-          db = await fn.setupWeaveDB({ network: "Mainnet" })
+          db = await fn(setupWeaveDB)({ network: "Mainnet" })
         }
         setInitDB(true)
       })()
@@ -143,7 +153,7 @@ export default bind(
     useEffect(() => {
       ;(async () => {
         if (initDB) {
-          fn.checkTempAddress({ contractTxId })
+          fn(checkTempAddress)({ contractTxId })
           clearInterval(iv)
           iv = setInterval(async () => {
             try {
@@ -255,7 +265,7 @@ export default bind(
             set(true, "signing_in_modal")
           } else {
             if (confirm("Would you like to sign out?")) {
-              fn.logoutTemp()
+              fn(logoutTemp)()
             }
           }
         }}
@@ -321,7 +331,7 @@ export default bind(
     }
     useEffect(() => {
       ;(async () => {
-        const _port = await fn.connectLocalhost({ port: newPort })
+        const _port = await fn(connectLocalhost)({ port: newPort })
         if (!isNil(_port)) {
           setPort(_port)
           setConnect(false)
@@ -593,7 +603,7 @@ export default bind(
                                       "Would you like to remove the cron?"
                                     )
                                   ) {
-                                    const res = await fn.queryDB({
+                                    const res = await fn(queryDB)({
                                       method: "removeCron",
                                       query,
                                       contractTxId,
@@ -1077,7 +1087,7 @@ export default bind(
                                 if (
                                   confirm("Would you like to delete the doc?")
                                 ) {
-                                  const res = await fn.queryDB({
+                                  const res = await fn(queryDB)({
                                     method: "delete",
                                     query,
                                     contractTxId,
@@ -1190,7 +1200,7 @@ export default bind(
                                     return
                                   }
                                   let query = ""
-                                  method = "update"
+                                  const method = "update"
                                   let _doc_path = compose(
                                     join(", "),
                                     map(v => `"${v}"`),
@@ -1204,7 +1214,7 @@ export default bind(
                                       "Would you like to delete the field?"
                                     )
                                   ) {
-                                    const res = await fn.queryDB({
+                                    const res = await fn(queryDB)({
                                       method,
                                       query,
                                       contractTxId,
@@ -1257,7 +1267,7 @@ export default bind(
                 bg="#333"
                 onClick={async () => {
                   try {
-                    const res = await fn.queryDB({
+                    const res = await fn(queryDB)({
                       query,
                       method,
                       contractTxId,
@@ -1359,7 +1369,7 @@ export default bind(
                     return
                   }
 
-                  const res = await fn.queryDB({
+                  const res = await fn(queryDB)({
                     method: "setRules",
                     query: `${newRules}, ${compose(
                       join(", "),
@@ -1445,7 +1455,7 @@ export default bind(
                   )(base_path)
                   let query = `${newData}, ${col_path}`
                   if (exID) query += `, "${newDoc}"`
-                  const res = await fn.queryDB({
+                  const res = await fn(queryDB)({
                     method: exID ? "set" : "add",
                     query,
                     contractTxId,
@@ -1620,7 +1630,7 @@ export default bind(
                     )([col, doc])
                     query = `{ "${newField}": ${val}}, ${_doc_path}`
                   }
-                  const res = await fn.queryDB({
+                  const res = await fn(queryDB)({
                     method,
                     query,
                     contractTxId,
@@ -1691,7 +1701,7 @@ export default bind(
                     append(col)
                   )(base_path)
                   let query = `${newSchemas}, ${col_path}`
-                  const res = await fn.queryDB({
+                  const res = await fn(queryDB)({
                     method: "setSchema",
                     query,
                     contractTxId,
@@ -1852,7 +1862,7 @@ export default bind(
                   }, end: ${newEnd || null},do: ${
                     newDo ? "true" : "false"
                   }, span: ${newSpan * 1}, jobs: ${newCron}}, "${newCronName}"`
-                  const res = await fn.queryDB({
+                  const res = await fn(queryDB)({
                     method: "addCron",
                     query,
                     contractTxId,
@@ -1926,7 +1936,7 @@ export default bind(
                     append(col)
                   )(base_path)
                   let query = `${newRules2}, ${col_path}`
-                  const res = await fn.queryDB({
+                  const res = await fn(queryDB)({
                     method: "setRules",
                     query,
                     contractTxId,
@@ -2021,7 +2031,7 @@ export default bind(
                     append(col)
                   )(base_path)
                   let query = `${newIndex}, ${col_path}`
-                  const res = await fn.queryDB({
+                  const res = await fn(queryDB)({
                     method: "addIndex",
                     query,
                     contractTxId,
@@ -2168,7 +2178,7 @@ export default bind(
                   onClick={async () => {
                     if (!$.on_connecting) {
                       set(true, "on_connecting")
-                      const res = await fn.deployDB({
+                      const res = await fn(deployDB)({
                         port: port,
                         owner: $.temp_current_all,
                         network: newNetwork,
@@ -2279,7 +2289,7 @@ export default bind(
                 color="white"
                 bg="#333"
                 onClick={async () => {
-                  const _port = await fn.connectLocalhost({ port: newPort })
+                  const _port = await fn(connectLocalhost)({ port: newPort })
                   if (isNil(_port)) {
                     alert("couldn't connect with the port")
                   } else {
@@ -2365,9 +2375,9 @@ export default bind(
                     onClick={async () => {
                       set(true, "signing_in")
                       if ($.owner_signing_in_modal) {
-                        await fn.connectAddress({})
+                        await fn(connectAddress)({})
                       } else {
-                        await fn.createTempAddress({ contractTxId })
+                        await fn(createTempAddress)({ contractTxId })
                       }
                       set(false, "signing_in")
                       set(false, "signing_in_modal")
@@ -2394,9 +2404,9 @@ export default bind(
                     onClick={async () => {
                       set(true, "signing_in")
                       if ($.owner_signing_in_modal) {
-                        await fn.connectAddressWithII({})
+                        await fn(connectAddressWithII)({})
                       } else {
-                        await fn.createTempAddressWithII({ contractTxId })
+                        await fn(createTempAddressWithII)({ contractTxId })
                       }
                       set(false, "signing_in")
                       set(false, "signing_in_modal")
@@ -2423,9 +2433,9 @@ export default bind(
                     onClick={async () => {
                       set(true, "signing_in")
                       if ($.owner_signing_in_modal) {
-                        await fn.connectAddressWithAR({})
+                        await fn(connectAddressWithAR)({})
                       } else {
-                        await fn.createTempAddressWithAR({ contractTxId })
+                        await fn(createTempAddressWithAR)({ contractTxId })
                       }
                       set(false, "signing_in")
                       set(false, "signing_in_modal")
@@ -2442,14 +2452,5 @@ export default bind(
         ) : null}
       </ChakraProvider>
     )
-  },
-  [
-    "temp_current_all",
-    "temp_current",
-    "initWDB",
-    "signing_in",
-    "signing_in_modal",
-    "owner_signing_in_modal",
-    "on_connecting",
-  ]
+  }
 )

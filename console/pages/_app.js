@@ -1,3 +1,11 @@
+import { Roid } from "roidjs"
 import "normalize.css"
-import { _app } from "nd"
-export default _app({})
+function MyApp({ Component, pageProps }) {
+  return (
+    <Roid>
+      <Component {...pageProps} />
+    </Roid>
+  )
+}
+
+export default MyApp
