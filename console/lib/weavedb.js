@@ -82,9 +82,12 @@ export const setupWeaveDB = async ({
 export const createTempAddressWithII = async ({
   conf,
   set,
-  val: { contractTxId },
+  val: { contractTxId, network },
 }) => {
-  const iiUrl = `http://localhost:8000/?canisterId=rwlgt-iiaaa-aaaaa-aaaaa-cai`
+  const iiUrl =
+    network === "Mainnet"
+      ? "https://identity.ic0.app/"
+      : `http://localhost:8000/?canisterId=rwlgt-iiaaa-aaaaa-aaaaa-cai`
   const authClient = await AuthClient.create()
   await new Promise((resolve, reject) => {
     authClient.login({
@@ -100,16 +103,18 @@ export const createTempAddressWithII = async ({
   let identity = ex_identity
   let tx
   identity = ii._inner.toJSON()
+  identity.network = network
+  identity.type = "ii"
   await lf.setItem("temp_address:current", addr)
   await lf.setItem(`temp_address:${contractTxId}:${addr}`, identity)
   set(addr, "temp_current")
-  set(addr, "temp_current_all")
+  set({ addr, type: "ii", network }, "temp_current_all")
 }
 
 export const createTempAddressWithAR = async ({
   conf,
   set,
-  val: { contractTxId },
+  val: { contractTxId, network },
 }) => {
   const wallet = window.arweaveWallet
   await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
@@ -127,34 +132,39 @@ export const createTempAddressWithAR = async ({
   } else {
     await lf.setItem("temp_address:current", addr)
     set(addr, "temp_current")
-    set(addr, "temp_current_all")
+    set({ addr, type: "ar", network }, "temp_current_all")
     return
   }
   if (!isNil(tx) && isNil(tx.err)) {
     identity.tx = tx
     identity.linked_address = addr
     await lf.setItem("temp_address:current", addr)
+    identity.network = network
+    identity.type = "ar"
     await lf.setItem(`temp_address:${contractTxId}:${addr}`, identity)
     set(addr, "temp_current")
-    set(addr, "temp_current_all")
+    set({ addr, type: "ar", network }, "temp_current_all")
   }
 }
 
-export const connectAddress = async ({ conf, set, val: {} }) => {
+export const connectAddress = async ({ conf, set, val: { network } }) => {
   const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
   await provider.send("eth_requestAccounts", [])
   const signer = provider.getSigner()
   const addr = await signer.getAddress()
   if (!isNil(addr)) {
-    set(addr, "temp_current_all")
+    set({ addr, type: "evm", network }, "temp_current_all")
   } else {
     alert("couldn't connect address")
   }
   return
 }
 
-export const connectAddressWithII = async ({ conf, set, val: {} }) => {
-  const iiUrl = `http://localhost:8000/?canisterId=rwlgt-iiaaa-aaaaa-aaaaa-cai`
+export const connectAddressWithII = async ({ conf, set, val: { network } }) => {
+  const iiUrl =
+    network === "Mainnet"
+      ? "https://identity.ic0.app/"
+      : `http://localhost:8000/?canisterId=rwlgt-iiaaa-aaaaa-aaaaa-cai`
   const authClient = await AuthClient.create()
   await new Promise((resolve, reject) => {
     authClient.login({
@@ -167,19 +177,19 @@ export const connectAddressWithII = async ({ conf, set, val: {} }) => {
   if (isNil(ii._inner)) return
   const addr = ii._inner.toJSON()[0]
   if (!isNil(addr)) {
-    set(addr, "temp_current_all")
+    set({ addr, type: "ii", network }, "temp_current_all")
   } else {
     alert("couldn't connect address")
   }
   return
 }
 
-export const connectAddressWithAR = async ({ conf, set, val: {} }) => {
+export const connectAddressWithAR = async ({ conf, set, val: { network } }) => {
   const wallet = window.arweaveWallet
   await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
   let addr = await wallet.getActiveAddress()
   if (!isNil(addr)) {
-    set(addr, "temp_current_all")
+    set({ addr, type: "ar", network }, "temp_current_all")
   } else {
     alert("couldn't connect address")
   }
@@ -189,7 +199,7 @@ export const connectAddressWithAR = async ({ conf, set, val: {} }) => {
 export const createTempAddress = async ({
   conf,
   set,
-  val: { contractTxId },
+  val: { contractTxId, network },
 }) => {
   const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
   await provider.send("eth_requestAccounts", [])
@@ -208,16 +218,18 @@ export const createTempAddress = async ({
   } else {
     await lf.setItem("temp_address:current", addr)
     set(addr, "temp_current")
-    set(addr, "temp_current_all")
+    set({ addr, type: "evm", network }, "temp_current_all")
     return
   }
   if (!isNil(tx) && isNil(tx.err)) {
     identity.tx = tx
     identity.linked_address = addr
+    identity.network = network
+    identity.type = "evm"
     await lf.setItem("temp_address:current", addr)
     await lf.setItem(`temp_address:${contractTxId}:${addr}`, identity)
     set(addr, "temp_current")
-    set(addr, "temp_current_all")
+    set({ addr, type: "evm", network }, "temp_current_all")
   }
 }
 
@@ -231,7 +243,10 @@ export const switchTempAddress = async function ({
     const identity = await lf.getItem(`temp_address:${contractTxId}:${current}`)
     set(!isNil(identity) ? current : null, "temp_current")
     if (!isNil(identity)) {
-      set(current, "temp_current_all")
+      set(
+        { addr: current, type: "evm", network: identity.network },
+        "temp_current_all"
+      )
     }
   } else {
     set(null, "temp_current")
