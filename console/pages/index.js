@@ -39,7 +39,6 @@ import {
 } from "ramda"
 import lf from "localforage"
 import { inject } from "roidjs"
-let db, iv
 import {
   connectAddress,
   connectAddressWithII,
@@ -56,6 +55,7 @@ import {
   queryDB,
 } from "../lib/weavedb.js"
 
+let db, iv
 export default inject(
   [
     "temp_current_all",
@@ -142,6 +142,7 @@ export default inject(
         setDBs(_dbs)
       })()
     }, [])
+
     useEffect(() => {
       ;(async () => {
         if (!isNil(contractTxId)) {
@@ -154,6 +155,7 @@ export default inject(
         setInitDB(true)
       })()
     }, [contractTxId])
+
     useEffect(() => {
       ;(async () => {
         if (initDB) {
@@ -304,6 +306,7 @@ export default inject(
         state.indexes[path.join(".")] = {}
       return state.indexes[path.join(".")]
     }
+
     const scanIndexes = ind => {
       let indexes = []
       for (let k in ind) {
@@ -320,6 +323,7 @@ export default inject(
       }
       return indexes
     }
+
     let indexes = []
     let rules = {}
     let schema = {}
@@ -333,6 +337,7 @@ export default inject(
       indexes = scanIndexes(getIndex(state, append(col, base_path)))
       ;({ rules, schema } = getCol(state.data, append(col, base_path)))
     }
+
     useEffect(() => {
       ;(async () => {
         const _port = await fn(connectLocalhost)({ port: newPort })
@@ -346,6 +351,18 @@ export default inject(
     useEffect(() => {
       if (isNil(port)) setNewNetwork("Localhost")
     }, [port])
+
+    useEffect(() => {
+      if (
+        addInstance &&
+        !isNil($.temp_current_all) &&
+        $.temp_current_all.type === "ii" &&
+        $.temp_current_all.network !== newNetwork
+      ) {
+        set(null, "temp_current_all")
+      }
+    }, [newNetwork, addInstance])
+
     useEffect(() => {
       ;(async () => {
         if (isNil(col)) {
@@ -357,6 +374,7 @@ export default inject(
         }
       })()
     }, [doc_path])
+
     return (
       <ChakraProvider>
         <style global jsx>{`
@@ -883,7 +901,6 @@ export default inject(
                                     removeDB(v)
                                     console.log(contractTxId, v.contractTxId)
                                     if (contractTxId === v.contractTxId) {
-                                      console.log("are we here???")
                                       setState(null)
                                       setNetwork("Mainnet")
                                       setContractTxId(null)
@@ -2172,7 +2189,7 @@ export default inject(
                     <Input
                       flex={1}
                       disabled={true}
-                      value={$.temp_current_all || ""}
+                      value={$.temp_current_all.addr || ""}
                       sx={{ borderRadius: 0 }}
                     />
                   )}
@@ -2183,7 +2200,7 @@ export default inject(
                       </Flex>
                       <Select
                         w="100%"
-                        value={secure}
+                        value={secure ? "True" : "False"}
                         onChange={e => setSecure(e.target.value === "True")}
                         sx={{ borderRadius: "5px 0 0 5px" }}
                         mb={3}
@@ -2200,7 +2217,7 @@ export default inject(
                       </Flex>
                       <Select
                         w="100%"
-                        value={canEvolve}
+                        value={canEvolve ? "True" : "False"}
                         onChange={e => setCanEvolve(e.target.value === "True")}
                         sx={{ borderRadius: "5px 0 0 5px" }}
                         mb={3}
@@ -2274,7 +2291,7 @@ export default inject(
                       set(true, "on_connecting")
                       const res = await fn(deployDB)({
                         port: port,
-                        owner: $.temp_current_all,
+                        owner: $.temp_current_all.addr,
                         network: newNetwork,
                         secure,
                         canEvolve,
@@ -2472,9 +2489,9 @@ export default inject(
                     onClick={async () => {
                       set(true, "signing_in")
                       if ($.owner_signing_in_modal) {
-                        await fn(connectAddress)({})
+                        await fn(connectAddress)({ network: newNetwork })
                       } else {
-                        await fn(createTempAddress)({ contractTxId })
+                        await fn(createTempAddress)({ contractTxId, network })
                       }
                       set(false, "signing_in")
                       set(false, "signing_in_modal")
@@ -2501,9 +2518,12 @@ export default inject(
                     onClick={async () => {
                       set(true, "signing_in")
                       if ($.owner_signing_in_modal) {
-                        await fn(connectAddressWithII)({})
+                        await fn(connectAddressWithII)({ network: newNetwork })
                       } else {
-                        await fn(createTempAddressWithII)({ contractTxId })
+                        await fn(createTempAddressWithII)({
+                          contractTxId,
+                          network,
+                        })
                       }
                       set(false, "signing_in")
                       set(false, "signing_in_modal")
@@ -2530,9 +2550,12 @@ export default inject(
                     onClick={async () => {
                       set(true, "signing_in")
                       if ($.owner_signing_in_modal) {
-                        await fn(connectAddressWithAR)({})
+                        await fn(connectAddressWithAR)({ network: newNetwork })
                       } else {
-                        await fn(createTempAddressWithAR)({ contractTxId })
+                        await fn(createTempAddressWithAR)({
+                          contractTxId,
+                          network,
+                        })
                       }
                       set(false, "signing_in")
                       set(false, "signing_in_modal")
