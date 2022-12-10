@@ -8,6 +8,7 @@ Arweave = Arweave.default || Arweave
 class SDK extends Base {
   constructor({ rpc, contractTxId, wallet, name, version, EthWallet, web3 }) {
     super()
+    this.contractTxId = contractTxId
     this.arweave = Arweave.init()
     this.client = new DBClient(rpc)
     if (typeof window === "object") {
@@ -26,7 +27,7 @@ class SDK extends Base {
 
   async _request(func, query) {
     const request = new WeaveDBRequest()
-    request.setMethod(func)
+    request.setMethod(`${func}@${this.contractTxId}`)
     request.setQuery(JSON.stringify(query))
     const _query = () =>
       new Promise(ret => {
