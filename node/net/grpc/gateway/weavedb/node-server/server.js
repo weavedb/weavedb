@@ -1,3 +1,4 @@
+const md5 = require("md5")
 const config = require("./weavedb.config.js")
 const PROTO_PATH = __dirname + "/../weavedb.proto"
 let sdk = null
@@ -20,8 +21,7 @@ let _cache = {}
 async function query(call, callback) {
   const { method, query, nocache } = call.request
   const start = Date.now()
-  const key = `${query}`
-
+  const key = `${md5(query)}`
   let result = null
   let err = null
   let end
