@@ -77,7 +77,6 @@ class SDK extends Base {
       let dryState = await this.db.dryWrite(param)
       if (dryState.type === "error") return { err: dryState }
     }
-    console.log(param)
     return await this.send(param, bundle)
   }
 
