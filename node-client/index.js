@@ -25,6 +25,7 @@ class SDK extends Base {
     arweave,
   }) {
     super()
+    this.contractTxId = contractTxId
     this.arweave = Arweave.init(arweave)
     this.client = new weavedb_proto.DB(rpc, grpc.credentials.createInsecure())
     if (typeof window === "object") {
@@ -43,7 +44,7 @@ class SDK extends Base {
 
   async _request(func, query) {
     const request = {
-      method: func,
+      method: `${func}@${this.contractTxId}`,
       query: JSON.stringify(query),
     }
     const _query = () =>
