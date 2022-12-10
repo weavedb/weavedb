@@ -7531,10 +7531,10 @@ weavedb-client@^0.2.1:
     grpc-web "^1.3.1"
     ramda "^0.28.0"
 
-weavedb-sdk@^0.7.13:
-  version "0.7.14"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.7.14.tgz#7ec4dfd5011d6b0b04d28f3012cc17b8234615bb"
-  integrity sha512-PvegHD26k6Ip4wE5+FGPgf/8kA79IDrvv3aswfigOAjv/szIOk63jPrYylCeMDKaf2+nTCxJjMUc7gnlA3Aagg==
+weavedb-sdk@^0.7.15:
+  version "0.7.15"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.7.15.tgz#1196bf5551f8cda08d52718538cf10b8462283e9"
+  integrity sha512-hqvdIYD8IQJh83rRXsXDAWb9lHATBTOe1oRY/Jnn6tzGUYqCTCkWxwog2d6UkYp/lGiyJWggSYOdd7aGWls9Xw==
   dependencies:
     "@metamask/legacy-web3" "^2.0.0"
     arweave "^1.11.4"

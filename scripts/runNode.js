@@ -110,20 +110,6 @@ async function init() {
     EthWallet: _wallet,
   })
   await sdk.mineBlock()
-  const metadata = {
-    ethereum: {
-      privateKey: _wallet.getPrivateKeyString(),
-      publicKey: _wallet.getPublicKeyString(),
-      address: _wallet.getAddressString(),
-    },
-    port,
-    arweave: arweave_wallet,
-    weavedb: { ...contract, name, version },
-  }
-  fs.writeFileSync(
-    path.resolve(__dirname, "../console/lib/weavedb.json"),
-    JSON.stringify(metadata)
-  )
   waitForCommand()
 }
 

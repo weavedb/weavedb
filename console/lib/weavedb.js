@@ -30,7 +30,6 @@ const intmaxSrcTxId = "OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94"
 const dfinitySrcTxId = "RQpDSz3PSyYSn6LRzWnX85bu6iGqCZKLxkdwQVoKzTI"
 const ethereumSrcTxId = "dtLqn4y5fFD5xyiRCzaYjWxz5k8I6VxoVeARFphhuY4"
 import weavedb from "./weavedb.json"
-
 export const connectLocalhost = async ({ conf, set, val: { port } }) => {
   const arweave = Arweave.init({
     host: "localhost",
