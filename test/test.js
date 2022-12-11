@@ -31,13 +31,8 @@ describe("WeaveDB", function () {
   after(async () => await stop())
 
   beforeEach(async () => {
-    ;({
-      arweave_wallet,
-      intmaxSrcTxId,
-      walletAddress,
-      wallet,
-      wallet2,
-    } = await initBeforeEach())
+    ;({ arweave_wallet, intmaxSrcTxId, walletAddress, wallet, wallet2 } =
+      await initBeforeEach())
   })
 
   it("should get version", async () => {
@@ -70,6 +65,27 @@ describe("WeaveDB", function () {
     expect(await db.get("ppl", "Bob")).to.eql(data)
     await db.set(data2, "ppl", "Bob")
     expect(await db.get("ppl", "Bob")).to.eql(data2)
+  })
+
+  it("should subscribe to state changes with on", async () => {
+    const data = { name: "Bob", age: 20 }
+    const data2 = { name: "Alice", height: 160 }
+    const check = () =>
+      new Promise(async res => {
+        let count = 0
+        const off = await db.on("ppl", async ppl => {
+          if (count === 1) {
+            expect(await db.get("ppl", "Bob")).to.eql(data)
+            await db.set(data2, "ppl", "Bob")
+          } else if (count === 2) {
+            expect(await db.get("ppl", "Bob")).to.eql(data2)
+            res()
+          }
+          count++
+        })
+        await db.set(data, "ppl", "Bob")
+      })
+    await check()
   })
 
   it("should cget & pagenate", async () => {
