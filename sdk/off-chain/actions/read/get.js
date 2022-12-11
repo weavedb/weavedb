@@ -1,4 +1,4 @@
-import {
+const {
   hasPath,
   uniq,
   pluck,
@@ -30,10 +30,11 @@ import {
   slice,
   filter,
   map,
-} from "ramda"
+} = require("ramda")
 
-import { getDoc, getCol, err } from "../../lib/utils"
-import { getIndex } from "../../lib/index"
+const SmartWeave = { block: {}, transaction: {} }
+const { getDoc, getCol, err } = require("../../lib/utils")
+const { getIndex } = require("../../lib/index")
 
 const parseQuery = (state, action) => {
   const { data } = state
@@ -238,7 +239,7 @@ const bsearch = function (arr, x, sort, db, start = 0, end = arr.length - 1) {
   }
 }
 
-export const get = async (state, action, cursor = false) => {
+const get = async (state, action, cursor = false, SmartWeave) => {
   const {
     path,
     _limit,
@@ -262,6 +263,7 @@ export const get = async (state, action, cursor = false) => {
             setter: _data.setter,
             data: _data.__data || null,
             block: {
+              id: SmartWeave.block.id,
               height: SmartWeave.block.height,
               timestamp: SmartWeave.block.timestamp,
             },
@@ -414,6 +416,7 @@ export const get = async (state, action, cursor = false) => {
                 setter: docs[v].setter,
                 data: docs[v].__data,
                 block: {
+                  id: SmartWeave.block.id,
                   height: SmartWeave.block.height,
                   timestamp: SmartWeave.block.timestamp,
                 },
@@ -424,3 +427,5 @@ export const get = async (state, action, cursor = false) => {
     }
   }
 }
+
+module.exports = { get }
