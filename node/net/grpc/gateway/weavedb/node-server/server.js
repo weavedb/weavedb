@@ -110,12 +110,11 @@ async function initSDK(v) {
   let _config = clone(config)
   _config.contractTxId = v
   sdks[v] = new SDK(_config)
-  await sdks[v].get("conf")
+  await sdks[v].db.readState()
   return
 }
 
 async function main() {
-  sdk = new SDK(config)
   const contracts = isNil(config.contractTxId)
     ? []
     : is(Array, config.contractTxId)
@@ -123,12 +122,9 @@ async function main() {
     : [config.contractTxId]
 
   for (let v of contracts) {
-    let _config = clone(config)
-    _config.contractTxId = v
-    sdks[v] = new SDK(_config)
     initSDK(v)
       .then(() => console.log(`sdk(${v}) ready!`))
-      .catch(() => {
+      .catch(e => {
         console.log(`sdk(${v}) error!`)
       })
   }
