@@ -1,12 +1,13 @@
-const { equals, all, complement, isNil } = require("ramda")
+const { equals, all, complement, isNil, pluck } = require("ramda")
 const shortid = require("shortid")
 let Arweave = require("arweave")
 Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
 const Base = require("weavedb-base")
 const { WarpFactory, LoggerFactory } = require("warp-contracts")
 const { WarpSubscriptionPlugin } = require("warp-contracts-plugin-subscription")
-const { get } = require("./off-chain/actions/read/get")
+const { get, parseQuery } = require("./off-chain/actions/read/get")
 const md5 = require("md5")
+
 let states = {}
 let dbs = {}
 let subs = {}
@@ -15,30 +16,49 @@ let submap = {}
 const _on = async (state, contractTxId, block = {}) => {
   if (!isNil(state)) {
     states[contractTxId] = state
-    for (const cid in subs) {
-      for (const q in subs[cid]) {
-        const query = subs[cid][q].query
+    for (const txid in subs) {
+      for (const hash in subs[txid]) {
+        const query = subs[txid][hash].query
         try {
           const res = await get(
             state,
             {
               input: { query },
             },
-            null,
+            true,
             { block }
           )
           if (!isNil(res)) {
-            if (subs[cid][q].height < block.height) {
-              subs[cid][q].height = block.height
-              if (!equals(res.result, subs[cid][q].prev)) {
-                for (const k in subs[cid][q].subs) {
+            if (subs[txid][hash].height < block.height) {
+              subs[txid][hash].height = block.height
+              let prev = isNil(subs[txid][hash].prev)
+                ? subs[txid][hash].prev
+                : subs[txid][hash].doc
+                ? subs[txid][hash].prev.data
+                : pluck("data", subs[txid][hash].prev)
+              let current = isNil(res.result)
+                ? res.result
+                : subs[txid][hash].doc
+                ? res.result.data
+                : pluck("data", res.result)
+              if (!equals(current, prev)) {
+                for (const k in subs[txid][hash].subs) {
                   try {
-                    if (!isNil(res)) subs[cid][q].subs[k].cb(res.result)
+                    if (!isNil(res))
+                      subs[txid][hash].subs[k].cb(
+                        subs[txid][hash].subs[k].con
+                          ? res.result
+                          : subs[txid][hash].doc
+                          ? isNil(res.result)
+                            ? null
+                            : res.result.data
+                          : pluck("data", res.result)
+                      )
                   } catch (e) {
                     console.log(e)
                   }
                 }
-                subs[cid][q].prev = res.result
+                subs[txid][hash].prev = res.result
               }
             }
           }
@@ -139,8 +159,9 @@ class SDK extends Base {
       }, 1000)
     }
   }
-
-  async on(...query) {
+  async subscribe(isCon, ...query) {
+    const { path } = parseQuery(query)
+    const isDoc = path.length % 2 === 0
     subs[this.contractTxId] ||= {}
     const cb = query.pop()
     const hash = md5(JSON.stringify(query))
@@ -150,23 +171,37 @@ class SDK extends Base {
       subs: {},
       query,
       height: 0,
+      doc: isDoc,
     }
-    subs[this.contractTxId][hash].subs[id] = { cb, once: false }
+    subs[this.contractTxId][hash].subs[id] = { cb, con: isCon }
     submap[id] = hash
-    this.get(...query).then(v => {
-      if (
-        !isNil(subs[this.contractTxId][hash].subs[id]) &&
-        subs[this.contractTxId][hash].height === 0
-      ) {
-        subs[this.contractTxId][hash].prev = v
-        cb(v)
-      }
-    })
+    this.cget(...query)
+      .then(v => {
+        if (
+          !isNil(subs[this.contractTxId][hash].subs[id]) &&
+          subs[this.contractTxId][hash].height === 0
+        ) {
+          subs[this.contractTxId][hash].prev = v
+          cb(isCon ? v : isDoc ? (isNil(v) ? null : v.data) : pluck("data", v))
+        }
+      })
+      .catch(e => {
+        console.log("cget error")
+      })
     return () => {
       try {
         delete subs[this.contractTxId][hash].subs[id]
+        delete submap[id]
       } catch (e) {}
     }
+  }
+
+  async on(...query) {
+    return await this.subscribe(false, ...query)
+  }
+
+  async con(...query) {
+    return await this.subscribe(true, ...query)
   }
 
   async request(func, ...query) {
