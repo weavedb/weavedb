@@ -88,6 +88,27 @@ describe("WeaveDB", function () {
     await check()
   })
 
+  it("should subscribe to state changes with con", async () => {
+    const data = { name: "Bob", age: 20 }
+    const data2 = { name: "Alice", height: 160 }
+    const check = () =>
+      new Promise(async res => {
+        let count = 0
+        const off = await db.con("ppl", async ppl => {
+          if (count === 1) {
+            expect(ppl[0].data).to.eql(data)
+            await db.set(data2, "ppl", "Bob")
+          } else if (count === 2) {
+            expect(ppl[0].data).to.eql(data2)
+            res()
+          }
+          count++
+        })
+        await db.set(data, "ppl", "Bob")
+      })
+    await check()
+  })
+
   it("should cget & pagenate", async () => {
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Alice", age: 160 }
