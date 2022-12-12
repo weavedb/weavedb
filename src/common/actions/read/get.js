@@ -35,9 +35,8 @@ import {
 import { getDoc, getCol, err } from "../../lib/utils"
 import { getIndex } from "../../lib/index"
 
-const parseQuery = (state, action) => {
-  const { data } = state
-  const [path, opt] = splitWhen(complement(is)(String), action.input.query)
+const parseQuery = query => {
+  const [path, opt] = splitWhen(complement(is)(String), query)
   let _limit = null
   let _filter = null
   let _sort = null
@@ -248,7 +247,7 @@ export const get = async (state, action, cursor = false) => {
     _endAt,
     _startAfter,
     _endBefore,
-  } = parseQuery(state, action)
+  } = parseQuery(action.input.query)
   const { data } = state
   if (path.length % 2 === 0) {
     if (any(complement(isNil))([_limit, _sort, _filter])) err()
