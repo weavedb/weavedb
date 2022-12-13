@@ -15,6 +15,7 @@ const Account = require("intmax").Account
 const shajs = require("sha.js")
 const { readFileSync } = require("fs")
 const { resolve } = require("path")
+
 describe("WeaveDB", function () {
   let wallet, walletAddress, wallet2, db, intmaxSrcTxId, arweave_wallet
   const _ii = [
@@ -106,6 +107,21 @@ describe("WeaveDB", function () {
         })
         await db.set(data, "ppl", "Bob")
       })
+    await check()
+  })
+
+  it("should get/cget from cached state", async () => {
+    const data = { name: "Bob", age: 20 }
+    await db.set(data, "ppl", "Bob")
+    const check = () =>
+      new Promise(async res => {
+        setTimeout(async () => {
+          expect(await db.getCache("ppl", "Bob")).to.eql(data)
+          expect((await db.cgetCache("ppl", "Bob")).data).to.eql(data)
+          res()
+        }, 1000)
+      })
+    expect(await db.get("ppl", "Bob")).to.eql(data)
     await check()
   })
 
