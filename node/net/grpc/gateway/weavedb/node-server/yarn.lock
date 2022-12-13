@@ -4118,10 +4118,10 @@ weavedb-base@^0.7.3:
     ethereumjs-util "^7.1.5"
     ramda "^0.28.0"
 
-weavedb-sdk@^0.7.16:
-  version "0.7.16"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.7.16.tgz#ff26b6caa66b5338f9c721ac5684a5090d18f736"
-  integrity sha512-3EElrEFEZuOfZkycOMjp5bLOsSNKkwsEbfbMbjsjRj/raTZO+qfrEq16yGjjWoBDJrpl94c/HitV0coO7xqQBQ==
+weavedb-sdk@^0.7.18:
+  version "0.7.18"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.7.18.tgz#16350b3d9d5a1010fa214bc48cf8d18329d2a50e"
+  integrity sha512-tO3s+8uNMfcwjGu+YjjqgDrQTs8exERjKF41qRd3WHMLK+F7aWbMd77+gHzDoBY+QhFqvg3xzxJktghFqNjCBw==
   dependencies:
     "@metamask/legacy-web3" "^2.0.0"
     arweave "^1.11.4"
