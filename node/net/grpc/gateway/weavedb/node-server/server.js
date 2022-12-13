@@ -24,7 +24,6 @@ const reads = [
   "getCrons",
   "getSchema",
   "getRules",
-  "getNonce",
   "getIds",
   "getOwner",
   "getAddressLink",
@@ -80,8 +79,13 @@ async function query(call, callback) {
   }
 
   const sendQuery = async () => {
+    const nameMap = { get: "getCache", cget: "cgetCache" }
     try {
-      if (includes(func)(reads)) {
+      if (includes(func)(["get", "cget", "getNonce"])) {
+        result = await sdks[contractTxId][nameMap[func] || func](
+          ...JSON.parse(query)
+        )
+      } else if (includes(func)(reads)) {
         result = await sdks[contractTxId][func](...JSON.parse(query))
         _cache[contractTxId][key] = { date: Date.now(), result }
       } else {
