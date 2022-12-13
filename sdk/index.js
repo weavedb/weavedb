@@ -137,6 +137,10 @@ class SDK extends Base {
     if (!isNil(EthWallet)) this.setEthWallet(EthWallet)
     if (this.network !== "localhost") {
       this.warp.use(new CustomSubscriptionPlugin(contractTxId, this.warp))
+      this.db
+        .readState()
+        .then(data => (states[this.contractTxId] = data.cachedValue.state))
+        .catch(() => {})
     } else {
       setInterval(() => {
         this.db
@@ -145,6 +149,7 @@ class SDK extends Base {
             const state = v.cachedValue.state
             if (!equals(state, this.state)) {
               this.state = state
+              states[this.contractTxId] = state
               const info = await this.arweave.network.getInfo()
               await _on(state, this.contractTxId, {
                 height: info.height,
@@ -159,6 +164,7 @@ class SDK extends Base {
       }, 1000)
     }
   }
+
   async subscribe(isCon, ...query) {
     const { path } = parseQuery(query)
     const isDoc = path.length % 2 === 0
@@ -194,6 +200,34 @@ class SDK extends Base {
         delete submap[id]
       } catch (e) {}
     }
+  }
+
+  async getCache(...query) {
+    if (isNil(states[this.contractTxId])) return null
+    return (
+      await get(
+        states[this.contractTxId],
+        {
+          input: { query },
+        },
+        false,
+        { block: {} }
+      )
+    ).result
+  }
+
+  async cgetCache(...query) {
+    if (isNil(states[this.contractTxId])) return null
+    return (
+      await get(
+        states[this.contractTxId],
+        {
+          input: { query },
+        },
+        true,
+        { block: {} }
+      )
+    ).result
   }
 
   async on(...query) {
