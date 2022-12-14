@@ -1,0 +1,20 @@
+version: '3'
+services:
+  node-server:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile.node-server
+    image: weavedb/node-server
+    ports:
+      - "9090:9090"
+      
+  envoy:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile.envoy
+    image: weavedb/envoy
+    ports:
+      - "8080:8080"
+      - "9901:9901" # for envoy admin 
+    links:
+      - node-server

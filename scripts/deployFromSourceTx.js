@@ -25,6 +25,7 @@ const deploy = async () => {
     port: 443,
     protocol: "https",
   })
+
   LoggerFactory.INST.logLevel("error")
   warp = WarpFactory.forMainnet()
   const wallet_path = path.resolve(
@@ -37,7 +38,6 @@ const deploy = async () => {
   }
   _wallet = JSON.parse(fs.readFileSync(wallet_path, "utf8"))
   walletAddress = await arweave.wallets.jwkToAddress(_wallet)
-
   const stateFromFile = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "../dist/warp/initial-state.json"),
@@ -54,13 +54,29 @@ const deploy = async () => {
   initialState.contracts.intmax = contractTxId_Intmax
   initialState.contracts.dfinity = contractTxId_II
   initialState.contracts.ethereum = contractTxId_ETH
-
   const res = await warp.createContract.deployFromSourceTx({
     wallet: _wallet,
     initState: JSON.stringify(initialState),
     srcTxId,
   })
   console.log(res)
+
+  // generate weavedb config
+  const weavedbConfig = {
+    name: "weavedb", 
+    version: "1", 
+    contractTxId: res.contractTxId, 
+    arweave: {
+      host: "arweave.net",
+      port: 443,
+      protocol: "https"
+    }, 
+    wallet: wallet, 
+  }
+
+  const weavedbConfigPath = path.join(__dirname, "../weavedb-node/node-server/weavedb.config.js");
+  fs.writeFileSync(weavedbConfigPath, "module.exports = " + JSON.stringify(weavedbConfig))
+  
   process.exit()
 }
 
