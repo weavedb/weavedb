@@ -5,7 +5,8 @@ const path = require("path")
 const wallet_name = process.argv[2]
 const contractTxId = process.argv[3] || process.env.CONTRACT_TX_ID
 const newContractSrcTxId = process.argv[4] || process.env.NEW_SOURCE_TX_ID
-const name = process.argv[5] || process.env.APP_NAME
+const newIntmaxTxId = process.argv[5] || process.env.INTMAX_CONTRACT_TX_ID
+const name = process.argv[6] || process.env.APP_NAME
 const { isNil } = require("ramda")
 const SDK = require("../sdk")
 
@@ -43,11 +44,9 @@ const setup = async () => {
       timeout: 200000,
     },
   })
-
   console.log("evolve WeaveDB..." + contractTxId + " to " + newContractSrcTxId)
-  await sdk.db.evolve(newContractSrcTxId, true)
+  await sdk.evolve(newContractSrcTxId, { ar: wallet })
   console.log("evolved!")
-
   process.exit()
 }
 

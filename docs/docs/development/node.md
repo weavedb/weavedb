@@ -62,7 +62,7 @@ Deploying a WeaveDB node on your local machine is much easier than on a cloud se
 ##### 1. Clone the WeaveDB monorepo
 
 ```bash
-git clone https://github.com/asteroid-dao/weavedb.git
+git clone https://github.com/weavedb/weavedb.git
 cd weavedb
 yarn
 ```
@@ -79,13 +79,34 @@ Now you have a new wallet at `/scripts/.wallets/wallet-mainnet.json`.
 
 You can copy the newly generated wallet from the previous step to `wallet`.
 
-For the `contractTxId`, you can run [a local instance](/docs/development/repl) and copy the displayed `contractTxId`, or use [our public demo contract](https://sonar.warp.cc/?#/app/contract/2ohyMxM2Z2exV4dVLgRNa9jMnEY09H_I-5WkkZBR0Ns) (`2ohyMxM2Z2exV4dVLgRNa9jMnEY09H_I-5WkkZBR0Ns`).
+For the `contractTxId`, you can run [a local instance](/docs/development/repl) and copy the displayed `contractTxId`.
+
+Use `host.docker.internal` as `host` to internally connect from the docker container.
 
 ```js
 module.exports = {
   name: "weavedb",
   version: "1",
-  contractTxId: "xxxxxxxx...",
+  contractTxId: "xxxxx...",
+  arweave: {
+    host: "host.docker.internal",
+    port: 1820,
+    protocol: "http"
+  },
+  wallet: {
+    kty: "RSA",
+    n: ...
+  }
+}
+```
+
+Or use [our public demo contract](https://sonar.warp.cc/?#/app/contract/2ohyMxM2Z2exV4dVLgRNa9jMnEY09H_I-5WkkZBR0Ns).
+
+```js
+module.exports = {
+  name: "weavedb",
+  version: "1",
+  contractTxId: "2ohyMxM2Z2exV4dVLgRNa9jMnEY09H_I-5WkkZBR0Ns",
   arweave: {
     host: "arweave.net",
     port: 443,
@@ -103,9 +124,7 @@ module.exports = {
 ##### 5. Run Docker Conompose
 
 ```bash
-cd weavedb/node
-docker-compose pull prereqs node-server envoy
-docker-compose up --build -d node-server envoy
+yarn run-node
 ```
 
 ##### 6. Set the instance IP address to the Light Client
@@ -171,14 +190,14 @@ sudo apt-get install docker.io
 - Install Docker Compose
 
 ```bash
-sudo curl -L "https://github.com/docker/compose/releases/download/v2.2.3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/bin/docker-compose
+sudo curl -L "https://github.com/docker/compose/releases/download/v2.2.3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 ```
 
 - Clone the WeaveDB monorepo
 
 ```bash
-git clone https://github.com/asteroid-dao/weavedb.git
+git clone https://github.com/weavedb/weavedb.git
 ```
 
 - Create and edit `weavedb.config.js` with your favorite editor such as Emacs

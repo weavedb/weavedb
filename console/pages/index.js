@@ -11,6 +11,10 @@ import {
   Textarea,
 } from "@chakra-ui/react"
 import {
+  without,
+  trim,
+  reject,
+  propEq,
   concat,
   last,
   init as _init,
@@ -29,33 +33,51 @@ import {
   hasPath,
   includes,
   append,
+  indexBy,
+  prop,
   addIndex as _addIndex,
 } from "ramda"
-import { bind } from "nd"
-import weavedb from "lib/weavedb.json"
-let db
-export default bind(
-  ({ set, init, router, conf, $ }) => {
-    const fn = init([
-      "checkTempAddress",
-      "setupWeaveDB",
-      "createTempAddress",
-      "createTempAddressWithII",
-      "createTempAddressWithAR",
-      "logoutTemp",
-      "queryDB",
-    ])
+import lf from "localforage"
+import { inject } from "roidjs"
+import {
+  connectAddress,
+  connectAddressWithII,
+  connectAddressWithAR,
+  connectLocalhost,
+  deployDB,
+  checkTempAddress,
+  switchTempAddress,
+  setupWeaveDB,
+  createTempAddress,
+  createTempAddressWithII,
+  createTempAddressWithAR,
+  logoutTemp,
+  queryDB,
+} from "../lib/weavedb.js"
+
+let db, iv
+export default inject(
+  [
+    "temp_current_all",
+    "temp_current",
+    "initWDB",
+    "signing_in",
+    "signing_in_modal",
+    "owner_signing_in_modal",
+    "on_connecting",
+  ],
+  ({ set, init, router, conf, fn, $ }) => {
     const [result, setResult] = useState("")
-    const [admin_address, setAdminAddress] = useState("")
     const [state, setState] = useState(null)
     const [doc_path, setDocPath] = useState([])
-    const [tab, setTab] = useState("Data")
+    const [tab, setTab] = useState("DB")
     const [cron, setCron] = useState(null)
     const [method, setMethod] = useState("get")
     const [query, setQuery] = useState("")
-    const tabs = ["Data", "Schemas", "Rules", "Indexes", "Crons", "Auth"]
-    const [network, setNetwork] = useState("Localhost")
-    const [newNetwork, setNewNetwork] = useState("Localhost")
+    const tabs = ["DB", "Data", "Schemas", "Rules", "Indexes", "Crons"]
+    const [port, setPort] = useState(null)
+    const [network, setNetwork] = useState("Mainnet")
+    const [newNetwork, setNewNetwork] = useState("Mainnet")
     const [newRules, setNewRules] = useState(`{"allow write": true}`)
     const [newRules2, setNewRules2] = useState(`{"allow write": true}`)
     const [newData, setNewData] = useState(`{}`)
@@ -67,7 +89,7 @@ export default bind(
     const [newFieldVal, setNewFieldVal] = useState("")
     const [newFieldBool, setNewFieldBool] = useState(true)
     const [editNetwork, setEditNetwork] = useState(false)
-    const networks = ["Mainnet", "Testnet", "Localhost"]
+    const networks = ["Mainnet", "Localhost"]
     const [initDB, setInitDB] = useState(false)
     const [networkErr, setNetworkErr] = useState(false)
     const [newCollection, setNewCollection] = useState("")
@@ -78,12 +100,8 @@ export default bind(
     const [newStart, setNewStart] = useState("")
     const [newEnd, setNewEnd] = useState("")
     const [newTimes, setNewTimes] = useState("")
-    const [contractTxId, setContractTxId] = useState(
-      weavedb.weavedb.contractTxId
-    )
-    const [newContractTxId, setNewContractTxId] = useState(
-      weavedb.weavedb.contractTxId
-    )
+    const [contractTxId, setContractTxId] = useState(null)
+    const [newContractTxId, setNewContractTxId] = useState("")
     const [addCollection, setAddCollection] = useState(false)
     const [addSchemas, setAddSchemas] = useState(false)
     const [addDoc, setAddDoc] = useState(false)
@@ -91,29 +109,72 @@ export default bind(
     const [addRules, setAddRules] = useState(false)
     const [addCron, setAddCron] = useState(false)
     const [addIndex, setAddIndex] = useState(false)
+    const [addInstance, setAddInstance] = useState(false)
+    const [deployMode, setDeployMode] = useState("Connect")
+    const [dbs, setDBs] = useState([])
+    const [connect, setConnect] = useState(false)
+    const [newPort, setNewPort] = useState(1820)
+    const [auths, setAuths] = useState(["Arweave", "EVM", "DFINITY", "Intmax"])
+    const [secure, setSecure] = useState(true)
+    const [canEvolve, setCanEvolve] = useState(true)
+
+    const addDB = async _db => {
+      const dbmap = indexBy(prop("contractTxId"), dbs)
+      if (isNil(dbmap[_db.contractTxId])) {
+        const _dbs = append(_db, dbs)
+        setDBs(_dbs)
+        await lf.setItem(`my_dbs`, _dbs)
+      }
+    }
+    const removeDB = async _db => {
+      const dbmap = indexBy(prop("contractTxId"), dbs)
+      if (!isNil(dbmap[_db.contractTxId])) {
+        const _dbs = reject(propEq("contractTxId", _db.contractTxId), dbs)
+        setDBs(_dbs)
+        await lf.setItem(`my_dbs`, _dbs)
+      }
+    }
 
     useEffect(() => {
       ;(async () => {
-        db = await fn.setupWeaveDB({ network, contractTxId })
-        setAdminAddress(await db.arweave.wallets.jwkToAddress(weavedb.arweave))
+        let _dbs = (await lf.getItem(`my_dbs`)) || []
+        const dbmap = indexBy(prop("contractTxId"), _dbs)
+        setDBs(_dbs)
+      })()
+    }, [])
+
+    useEffect(() => {
+      ;(async () => {
+        if (!isNil(contractTxId)) {
+          db = await fn(setupWeaveDB)({ network, contractTxId, port })
+          setState((await db.db.readState()).cachedValue.state)
+          fn(switchTempAddress)({ contractTxId })
+        } else {
+          db = await fn(setupWeaveDB)({ network: "Mainnet" })
+        }
         setInitDB(true)
       })()
-    }, [contractTxId, network])
+    }, [contractTxId])
+
     useEffect(() => {
       ;(async () => {
         if (initDB) {
-          fn.checkTempAddress({ contractTxId })
-          setInterval(async () => {
+          fn(checkTempAddress)({ contractTxId })
+          clearInterval(iv)
+          iv = setInterval(async () => {
             try {
-              setState(await db.db.currentState())
-              setNetworkErr(false)
+              if (!isNil(db.db)) {
+                setState((await db.db.readState()).cachedValue.state)
+                setNetworkErr(false)
+              }
             } catch (e) {
+              console.log(e)
               setNetworkErr(true)
             }
           }, 1000)
         }
       })()
-    }, [initDB])
+    }, [initDB, contractTxId])
 
     const getCol = (data, path) => {
       const [col, id] = path
@@ -195,7 +256,7 @@ export default bind(
       <Flex
         py={2}
         px={6}
-        bg="#333"
+        bg={isNil(contractTxId) ? "#F50057" : "#333"}
         color="white"
         sx={{
           borderRadius: "25px",
@@ -204,24 +265,32 @@ export default bind(
         }}
         justifyContent="center"
         onClick={async () => {
-          if (isNil($.temp_current)) {
+          if (isNil(contractTxId)) {
+            setAddInstance(true)
+          } else if (isNil($.temp_current)) {
             set(true, "signing_in_modal")
           } else {
             if (confirm("Would you like to sign out?")) {
-              fn.logoutTemp()
+              fn(logoutTemp)()
             }
           }
         }}
       >
-        {isNil($.temp_current) ? (
+        {isNil(contractTxId) ? (
+          "Connect"
+        ) : isNil($.temp_current) ? (
           "Sign In"
         ) : (
           <Flex align="center">
             <Image
               boxSize="25px"
               src={
-                $.temp_current.length < 88
-                  ? "/static/images/metamask.png"
+                $.temp_wallet === "intmax"
+                  ? "/static/images/intmax.png"
+                  : $.temp_current.length < 88
+                  ? /^0x/.test($.temp_current)
+                    ? "/static/images/metamask.png"
+                    : "/static/images/arconnect.png"
                   : "/static/images/dfinity.png"
               }
               mr={3}
@@ -237,6 +306,7 @@ export default bind(
         state.indexes[path.join(".")] = {}
       return state.indexes[path.join(".")]
     }
+
     const scanIndexes = ind => {
       let indexes = []
       for (let k in ind) {
@@ -253,6 +323,7 @@ export default bind(
       }
       return indexes
     }
+
     let indexes = []
     let rules = {}
     let schema = {}
@@ -266,6 +337,32 @@ export default bind(
       indexes = scanIndexes(getIndex(state, append(col, base_path)))
       ;({ rules, schema } = getCol(state.data, append(col, base_path)))
     }
+
+    useEffect(() => {
+      ;(async () => {
+        const _port = await fn(connectLocalhost)({ port: newPort })
+        if (!isNil(_port)) {
+          setPort(_port)
+          setConnect(false)
+        }
+      })()
+    }, [])
+
+    useEffect(() => {
+      if (isNil(port)) setNewNetwork("Localhost")
+    }, [port])
+
+    useEffect(() => {
+      if (
+        addInstance &&
+        !isNil($.temp_current_all) &&
+        $.temp_current_all.type === "ii" &&
+        $.temp_current_all.network !== newNetwork
+      ) {
+        set(null, "temp_current_all")
+      }
+    }, [newNetwork, addInstance])
+
     useEffect(() => {
       ;(async () => {
         if (isNil(col)) {
@@ -277,6 +374,7 @@ export default bind(
         }
       })()
     }, [doc_path])
+
     return (
       <ChakraProvider>
         <style global jsx>{`
@@ -298,79 +396,49 @@ export default bind(
           }}
           align="center"
         >
-          <Flex px={5} justify="center" align="center" w="160px">
+          <Flex
+            px={5}
+            justify="flex-start"
+            align="center"
+            fontSize="16px"
+            w="250px"
+          >
             <Image
               boxSize="40px"
-              src="/static/images/logo.svg"
+              src="/static/images/logo.png"
               sx={{ borderRadius: "50%" }}
               mr={2}
             />
             WeaveDB
           </Flex>
-          {editNetwork ? (
-            <Flex flex={1} justify="center" fontSize="10px">
-              <Flex maxW="750px" width="100%">
-                <Select
-                  w="150px"
-                  value={newNetwork}
-                  onChange={e => setNewNetwork(e.target.value)}
-                  sx={{ borderRadius: "5px 0 0 5px" }}
-                >
-                  {map(v => <option value={v}>{v}</option>)(networks)}
-                </Select>
-                <Input
-                  flex={1}
-                  value={newContractTxId}
-                  onChange={e => setNewContractTxId(e.target.value)}
-                  sx={{ borderRadius: 0 }}
-                />
-                <Flex
-                  py={2}
-                  px={6}
-                  bg="#333"
-                  color="white"
-                  sx={{
-                    borderRadius: "0 5px 5px 0",
-                    cursor: "pointer",
-                    ":hover": { opacity: 0.75 },
-                  }}
-                  justifyContent="center"
-                  align="center"
-                  fontSize="16px"
-                  onClick={async () => {
-                    if (!/^\s*$/.test(newContractTxId)) {
-                      setNetwork(newNetwork)
-                      setContractTxId(newContractTxId)
-                      setEditNetwork(false)
-                    }
-                  }}
-                >
-                  Change
-                </Flex>
+          <Flex flex={1} justify="center" fontSize="12px">
+            {isNil(port) ? (
+              <Flex onClick={() => setConnect(true)} sx={{ cursor: "pointer" }}>
+                Connect with Localhost
               </Flex>
-            </Flex>
-          ) : (
-            <Flex
-              flex={1}
-              justify="center"
-              fontSize="10px"
-              onClick={() => setEditNetwork(true)}
-              sx={{ cursor: "pointer" }}
-            >
-              <Box px={2}>{network}</Box>
-              <Flex px={2}>
-                contractTxId:{" "}
-                {networkErr ? (
-                  <Box ml={2} color="#F50057">
-                    Network Error
-                  </Box>
-                ) : (
-                  contractTxId
-                )}
+            ) : (
+              <Flex
+                sx={{ cursor: "pointer" }}
+                onClick={() => {
+                  if (confirm("Would you like to disconnect?")) {
+                    setPort(null)
+                  }
+                }}
+              >
+                Connected with port{" "}
+                <Box ml={2} color="#F50057">
+                  {port}
+                </Box>
               </Flex>
-            </Flex>
-          )}
-          <Flex justify="center" align="center" justifySelf="flex-end" px={5}>
+            )}
+          </Flex>
+          <Flex
+            w="250px"
+            justify="flex-end"
+            align="center"
+            justifySelf="flex-end"
+            px={5}
+          >
             <ConnectWallet />
           </Flex>
         </Flex>
@@ -393,7 +461,7 @@ export default bind(
               })(tabs)}
             </Flex>
             <Flex mb={3} align="center">
-              WeaveDB
+              WeaveDB ({isNil(contractTxId) ? "" : contractTxId.slice(0, 4)})
               {_addIndex(map)((v, i) => (
                 <>
                   <Box mx={2} as="i" className="fas fa-angle-right" />
@@ -415,7 +483,7 @@ export default bind(
               sx={{ border: "1px solid #333" }}
             >
               <Flex h="535px" w="100%">
-                {includes(tab)(["Auth", "Crons"]) ? null : (
+                {includes(tab)(["DB", "Crons"]) ? null : (
                   <Box
                     flex={1}
                     sx={{ border: "1px solid #555" }}
@@ -426,7 +494,10 @@ export default bind(
                       <Box flex={1} />
                       <Box
                         onClick={() => setAddCollection(true)}
-                        sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
+                        sx={{
+                          cursor: "pointer",
+                          ":hover": { opacity: 0.75 },
+                        }}
                       >
                         <Box as="i" className="fas fa-plus" />
                       </Box>
@@ -439,7 +510,10 @@ export default bind(
                         bg={col === v ? "#ddd" : ""}
                         py={2}
                         px={3}
-                        sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
+                        sx={{
+                          cursor: "pointer",
+                          ":hover": { opacity: 0.75 },
+                        }}
                       >
                         {v}
                       </Flex>
@@ -538,7 +612,10 @@ export default bind(
                                 color="#999"
                                 sx={{
                                   cursor: "pointer",
-                                  ":hover": { opacity: 0.75, color: "#F50057" },
+                                  ":hover": {
+                                    opacity: 0.75,
+                                    color: "#F50057",
+                                  },
                                 }}
                                 onClick={async e => {
                                   e.stopPropagation()
@@ -548,7 +625,7 @@ export default bind(
                                       "Would you like to remove the cron?"
                                     )
                                   ) {
-                                    const res = await fn.queryDB({
+                                    const res = await fn(queryDB)({
                                       method: "removeCron",
                                       query,
                                       contractTxId,
@@ -750,7 +827,7 @@ export default bind(
                       </Box>
                     </Flex>
                   </>
-                ) : tab === "Auth" ? (
+                ) : tab === "DB" ? (
                   <>
                     <Flex
                       flex={1}
@@ -758,7 +835,93 @@ export default bind(
                       direction="column"
                     >
                       <Flex py={2} px={3} color="white" bg="#333" h="35px">
-                        Authentication
+                        WeaveDB Instances
+                        <Box flex={1} />
+                        <Box
+                          onClick={() => setAddInstance(true)}
+                          sx={{
+                            cursor: "pointer",
+                            ":hover": { opacity: 0.75 },
+                          }}
+                        >
+                          <Box as="i" className="fas fa-plus" />
+                        </Box>
+                      </Flex>
+                      <Box height="500px" sx={{ overflowY: "auto" }}>
+                        {compose(
+                          map(v => (
+                            <Flex
+                              onClick={() => {
+                                if (v.network === "Localhost" && isNil(port)) {
+                                  alert("not connected with localhost")
+                                  return
+                                }
+                                setState(null)
+                                setNetwork(v.network)
+                                setContractTxId(v.contractTxId)
+                              }}
+                              p={2}
+                              px={3}
+                              bg={contractTxId === v.contractTxId ? "#ddd" : ""}
+                              sx={{
+                                cursor: "pointer",
+                                ":hover": { opacity: 0.75 },
+                              }}
+                            >
+                              <Box
+                                mr={2}
+                                px={3}
+                                w="80px"
+                                textAlign="center"
+                                bg={
+                                  v.network === "Mainnet" ? "#F50057" : "#333"
+                                }
+                                color="white"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                {v.network}
+                              </Box>
+                              <Box flex={1}>{v.contractTxId}</Box>
+                              <Box
+                                color="#999"
+                                sx={{
+                                  cursor: "pointer",
+                                  ":hover": {
+                                    opacity: 0.75,
+                                    color: "#F50057",
+                                  },
+                                }}
+                                onClick={async e => {
+                                  e.stopPropagation()
+                                  if (
+                                    confirm(
+                                      "Would you like to remove the link to this instance?"
+                                    )
+                                  ) {
+                                    removeDB(v)
+                                    console.log(contractTxId, v.contractTxId)
+                                    if (contractTxId === v.contractTxId) {
+                                      setState(null)
+                                      setNetwork("Mainnet")
+                                      setContractTxId(null)
+                                    }
+                                  }
+                                }}
+                              >
+                                <Box as="i" className="fas fa-trash" />
+                              </Box>
+                            </Flex>
+                          ))
+                        )(dbs)}
+                      </Box>
+                    </Flex>
+                    <Flex
+                      flex={1}
+                      sx={{ border: "1px solid #555" }}
+                      direction="column"
+                    >
+                      <Flex py={2} px={3} color="white" bg="#333" h="35px">
+                        Settings
                         <Box flex={1} />
                       </Flex>
                       <Box height="500px" sx={{ overflowY: "auto" }}>
@@ -771,31 +934,28 @@ export default bind(
                                 bg="#ddd"
                                 sx={{ borderRadius: "3px" }}
                               >
-                                Name
+                                contractTxId
                               </Box>
-                              {state.auth.name}
-                            </Flex>
-                            <Flex align="center" p={2} px={3}>
                               <Box
-                                mr={2}
-                                px={3}
-                                bg="#ddd"
-                                sx={{ borderRadius: "3px" }}
+                                as="a"
+                                target="_blank"
+                                color={
+                                  network === "Mainnet" ? "#F50057" : "#333"
+                                }
+                                sx={{
+                                  textDecoration:
+                                    network === "Mainnet"
+                                      ? "underline"
+                                      : "none",
+                                }}
+                                href={
+                                  network === "Mainnet"
+                                    ? `https://sonar.warp.cc/?#/app/contract/${contractTxId}`
+                                    : null
+                                }
                               >
-                                Version
+                                {contractTxId}
                               </Box>
-                              {state.auth.version}
-                            </Flex>
-                            <Flex align="center" p={2} px={3}>
-                              <Box
-                                mr={2}
-                                px={3}
-                                bg="#ddd"
-                                sx={{ borderRadius: "3px" }}
-                              >
-                                Owner
-                              </Box>
-                              {state.owner}
                             </Flex>
                             <Flex align="center" p={2} px={3}>
                               <Box
@@ -815,9 +975,9 @@ export default bind(
                                 bg="#ddd"
                                 sx={{ borderRadius: "3px" }}
                               >
-                                contractTxId
+                                DB Version
                               </Box>
-                              {contractTxId}
+                              {state.version || "less than 0.7.0"}
                             </Flex>
                             <Flex align="center" p={2} px={3}>
                               <Box
@@ -826,31 +986,86 @@ export default bind(
                                 bg="#ddd"
                                 sx={{ borderRadius: "3px" }}
                               >
-                                Admin Arweave Address
+                                EIP712 Name
                               </Box>
-                              {admin_address}
-                              {state.owner !== admin_address ? (
-                                <Box as="span" ml={2} color="#F50057">
-                                  (not the owner)
-                                </Box>
-                              ) : (
-                                ""
+                              {state.auth.name}
+                            </Flex>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#ddd"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                EIP712 Version
+                              </Box>
+                              {state.auth.version}
+                            </Flex>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg={
+                                  $.temp_current === state.owner
+                                    ? "#F50057"
+                                    : "#ddd"
+                                }
+                                color={
+                                  $.temp_current === state.owner
+                                    ? "white"
+                                    : "#333"
+                                }
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                Owner{" "}
+                              </Box>
+                              {state.owner}
+                            </Flex>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#ddd"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                canEvolve
+                              </Box>
+                              {state.canEvolve ? "true" : "false"}
+                            </Flex>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#ddd"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                evolve
+                              </Box>
+                              {isNil(state.evolve) ? "null" : state.evolve}
+                            </Flex>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#ddd"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                secure
+                              </Box>
+                              {state.secure ? "true" : "false"}
+                            </Flex>
+                            <Flex align="center" p={2} px={3}>
+                              <Box
+                                mr={2}
+                                px={3}
+                                bg="#ddd"
+                                sx={{ borderRadius: "3px" }}
+                              >
+                                Authentication
+                              </Box>
+                              {map(v => <Box mr={2}>{v}</Box>)(
+                                state.algorithms || []
                               )}
-                            </Flex>
-                            <Flex align="center" p={2} px={3}>
-                              <Box
-                                mr={2}
-                                px={3}
-                                bg="#ddd"
-                                sx={{ borderRadius: "3px" }}
-                              >
-                                Logged In{" "}
-                                {isNil($.temp_current) ||
-                                $.temp_current.length < 88
-                                  ? "ETH Address"
-                                  : "Internet Identity"}
-                              </Box>
-                              {$.temp_current || "Not Logged In"}
                             </Flex>
                           </>
                         )}
@@ -861,7 +1076,7 @@ export default bind(
                   <>
                     <Flex
                       flex={1}
-                      sx={{ border: "1px solid #555" }}
+                      sx={{ border: "1px solid #555", overflowX: "hidden" }}
                       direction="column"
                     >
                       <Flex py={2} px={3} color="white" bg="#333" h="35px">
@@ -893,7 +1108,7 @@ export default bind(
                               ":hover": { opacity: 0.75 },
                             }}
                           >
-                            <Box mr={3} flex={1}>
+                            <Box mr={3} flex={1} sx={{ overflowX: "hidden" }}>
                               {v}
                             </Box>
                             <Box
@@ -917,7 +1132,7 @@ export default bind(
                                 if (
                                   confirm("Would you like to delete the doc?")
                                 ) {
-                                  const res = await fn.queryDB({
+                                  const res = await fn(queryDB)({
                                     method: "delete",
                                     query,
                                     contractTxId,
@@ -936,7 +1151,7 @@ export default bind(
                     </Flex>
                     <Box
                       flex={1}
-                      sx={{ border: "1px solid #555" }}
+                      sx={{ border: "1px solid #555", overflowX: "hidden" }}
                       direction="column"
                     >
                       <Flex py={2} px={3} color="white" bg="#333" h="35px">
@@ -1001,7 +1216,7 @@ export default bind(
                               >
                                 {k}
                               </Box>
-                              <Box flex={1}>
+                              <Box flex={1} sx={{ overflowX: "hidden" }} mr={2}>
                                 {is(Object)(v)
                                   ? JSON.stringify(v)
                                   : is(Boolean)(v)
@@ -1014,7 +1229,10 @@ export default bind(
                                 color="#999"
                                 sx={{
                                   cursor: "pointer",
-                                  ":hover": { opacity: 0.75, color: "#F50057" },
+                                  ":hover": {
+                                    opacity: 0.75,
+                                    color: "#F50057",
+                                  },
                                 }}
                                 onClick={async e => {
                                   e.stopPropagation()
@@ -1027,7 +1245,7 @@ export default bind(
                                     return
                                   }
                                   let query = ""
-                                  method = "update"
+                                  const method = "update"
                                   let _doc_path = compose(
                                     join(", "),
                                     map(v => `"${v}"`),
@@ -1041,7 +1259,7 @@ export default bind(
                                       "Would you like to delete the field?"
                                     )
                                   ) {
-                                    const res = await fn.queryDB({
+                                    const res = await fn(queryDB)({
                                       method,
                                       query,
                                       contractTxId,
@@ -1094,7 +1312,7 @@ export default bind(
                 bg="#333"
                 onClick={async () => {
                   try {
-                    const res = await fn.queryDB({
+                    const res = await fn(queryDB)({
                       query,
                       method,
                       contractTxId,
@@ -1196,7 +1414,7 @@ export default bind(
                     return
                   }
 
-                  const res = await fn.queryDB({
+                  const res = await fn(queryDB)({
                     method: "setRules",
                     query: `${newRules}, ${compose(
                       join(", "),
@@ -1282,7 +1500,7 @@ export default bind(
                   )(base_path)
                   let query = `${newData}, ${col_path}`
                   if (exID) query += `, "${newDoc}"`
-                  const res = await fn.queryDB({
+                  const res = await fn(queryDB)({
                     method: exID ? "set" : "add",
                     query,
                     contractTxId,
@@ -1457,7 +1675,7 @@ export default bind(
                     )([col, doc])
                     query = `{ "${newField}": ${val}}, ${_doc_path}`
                   }
-                  const res = await fn.queryDB({
+                  const res = await fn(queryDB)({
                     method,
                     query,
                     contractTxId,
@@ -1528,7 +1746,7 @@ export default bind(
                     append(col)
                   )(base_path)
                   let query = `${newSchemas}, ${col_path}`
-                  const res = await fn.queryDB({
+                  const res = await fn(queryDB)({
                     method: "setSchema",
                     query,
                     contractTxId,
@@ -1689,7 +1907,7 @@ export default bind(
                   }, end: ${newEnd || null},do: ${
                     newDo ? "true" : "false"
                   }, span: ${newSpan * 1}, jobs: ${newCron}}, "${newCronName}"`
-                  const res = await fn.queryDB({
+                  const res = await fn(queryDB)({
                     method: "addCron",
                     query,
                     contractTxId,
@@ -1763,7 +1981,7 @@ export default bind(
                     append(col)
                   )(base_path)
                   let query = `${newRules2}, ${col_path}`
-                  const res = await fn.queryDB({
+                  const res = await fn(queryDB)({
                     method: "setRules",
                     query,
                     contractTxId,
@@ -1858,7 +2076,7 @@ export default bind(
                     append(col)
                   )(base_path)
                   let query = `${newIndex}, ${col_path}`
-                  const res = await fn.queryDB({
+                  const res = await fn(queryDB)({
                     method: "addIndex",
                     query,
                     contractTxId,
@@ -1874,8 +2092,332 @@ export default bind(
               </Flex>
             </Box>
           </Flex>
+        ) : addInstance !== false ? (
+          <Flex
+            w="100%"
+            h="100%"
+            position="fixed"
+            sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+            bg="rgba(0,0,0,0.5)"
+            onClick={() => setAddInstance(false)}
+            justify="center"
+            align="center"
+          >
+            <Box
+              bg="white"
+              width="500px"
+              p={3}
+              sx={{ borderRadius: "5px", cursor: "default" }}
+              onClick={e => e.stopPropagation()}
+            >
+              <Flex>
+                {map(v => {
+                  return (
+                    <Flex
+                      justify="center"
+                      align="center"
+                      onClick={() => setDeployMode(v)}
+                      mb={3}
+                      mr={2}
+                      px={3}
+                      py={1}
+                      bg={deployMode === v ? "#333" : "#ddd"}
+                      sx={{
+                        borderRadius: "3px",
+                        fontSize: "12px",
+                        ":hover": { opacity: 0.75 },
+                        cursor: "pointer",
+                        color: deployMode === v ? "#ddd" : "#333",
+                      }}
+                    >
+                      {v}
+                    </Flex>
+                  )
+                })(["Connect", "Deploy"])}
+              </Flex>
+              <Flex fontSize="10px" m={1}>
+                Network
+              </Flex>
+              <Select
+                w="100%"
+                value={newNetwork}
+                onChange={e => setNewNetwork(e.target.value)}
+                sx={{ borderRadius: "5px 0 0 5px" }}
+                mb={3}
+              >
+                {map(v => <option value={v}>{v}</option>)(
+                  isNil(port) ? ["Localhost"] : networks
+                )}
+              </Select>
+              {deployMode === "Deploy" ? (
+                <>
+                  <Flex fontSize="10px" m={1}>
+                    <Box>Contract Owner</Box>
+                    <Box flex={1} />
+                    {isNil($.temp_current_all) ? null : (
+                      <Box
+                        sx={{ textDecoration: "underline", cursor: "pointer" }}
+                        mr={2}
+                        onClick={() => {
+                          set(true, "owner_signing_in_modal")
+                        }}
+                        color="#F50057"
+                      >
+                        change
+                      </Box>
+                    )}
+                  </Flex>
+                  {isNil($.temp_current_all) ? (
+                    <Flex
+                      sx={{
+                        borderRadius: "3px",
+                        border: "1px solid #333",
+                        cursor: "pointer",
+                        ":hover": { opacity: 0.75 },
+                      }}
+                      p={2}
+                      justify="center"
+                      align="center"
+                      color="#333"
+                      onClick={async () => {
+                        set(true, "owner_signing_in_modal")
+                      }}
+                    >
+                      Connect Owner Wallet
+                    </Flex>
+                  ) : (
+                    <Input
+                      flex={1}
+                      disabled={true}
+                      value={$.temp_current_all.addr || ""}
+                      sx={{ borderRadius: 0 }}
+                    />
+                  )}
+                  <Flex mt={3}>
+                    <Box flex={1}>
+                      <Flex fontSize="10px" mx={1} my={1}>
+                        Secure
+                      </Flex>
+                      <Select
+                        w="100%"
+                        value={secure ? "True" : "False"}
+                        onChange={e => setSecure(e.target.value === "True")}
+                        sx={{ borderRadius: "5px 0 0 5px" }}
+                        mb={3}
+                      >
+                        {map(v => <option value={v}>{v}</option>)([
+                          "True",
+                          "False",
+                        ])}
+                      </Select>
+                    </Box>
+                    <Box flex={1} ml={1}>
+                      <Flex fontSize="10px" mx={1} my={1}>
+                        canEvolve
+                      </Flex>
+                      <Select
+                        w="100%"
+                        value={canEvolve ? "True" : "False"}
+                        onChange={e => setCanEvolve(e.target.value === "True")}
+                        sx={{ borderRadius: "5px 0 0 5px" }}
+                        mb={3}
+                      >
+                        {map(v => <option value={v}>{v}</option>)([
+                          "True",
+                          "False",
+                        ])}
+                      </Select>
+                    </Box>
+                  </Flex>
+                  <Flex fontSize="10px" mx={1} my={1}>
+                    Authentication
+                  </Flex>
+                  <Flex>
+                    {map(v => (
+                      <Box mx={3}>
+                        <Box
+                          onClick={() => {
+                            if (includes(v)(auths)) {
+                              setAuths(without([v], auths))
+                            } else {
+                              setAuths(append(v, auths))
+                            }
+                          }}
+                          className={
+                            includes(v)(auths)
+                              ? "fas fa-check-square"
+                              : "far fa-square"
+                          }
+                          mr={2}
+                          sx={{
+                            cursor: "pointer",
+                            ":hover": { opacity: 0.75 },
+                          }}
+                        />
+                        {v}
+                      </Box>
+                    ))(["Arweave", "EVM", "DFINITY", "Intmax"])}
+                  </Flex>
+                </>
+              ) : (
+                <>
+                  <Flex fontSize="10px" m={1}>
+                    ContractTxId
+                  </Flex>
+                  <Input
+                    flex={1}
+                    value={newContractTxId}
+                    onChange={e => setNewContractTxId(trim(e.target.value))}
+                    sx={{ borderRadius: 0 }}
+                  />
+                </>
+              )}
+
+              {deployMode === "Deploy" ? (
+                <Flex
+                  mt={4}
+                  sx={{
+                    borderRadius: "3px",
+                    cursor: "pointer",
+                    ":hover": { opacity: 0.75 },
+                  }}
+                  p={2}
+                  justify="center"
+                  align="center"
+                  color="white"
+                  bg="#333"
+                  onClick={async () => {
+                    if (!$.on_connecting) {
+                      set(true, "on_connecting")
+                      const res = await fn(deployDB)({
+                        port: port,
+                        owner: $.temp_current_all.addr,
+                        network: newNetwork,
+                        secure,
+                        canEvolve,
+                        auths,
+                      })
+                      if (!isNil(res.contractTxId)) {
+                        addDB(res)
+                        setAddInstance(false)
+                        if (isNil(contractTxId)) {
+                          setState(null)
+                          setNetwork(res.network)
+                          setContractTxId(res.contractTxId)
+                        }
+                      }
+                      set(false, "on_connecting")
+                    }
+                  }}
+                >
+                  {$.on_connecting ? (
+                    <Box as="i" className="fas fa-spin fa-circle-notch" />
+                  ) : (
+                    "Deploy DB Instance"
+                  )}
+                </Flex>
+              ) : (
+                <Flex
+                  mt={4}
+                  sx={{
+                    borderRadius: "3px",
+                    cursor: "pointer",
+                    ":hover": { opacity: 0.75 },
+                  }}
+                  p={2}
+                  justify="center"
+                  align="center"
+                  color="white"
+                  bg="#333"
+                  onClick={async () => {
+                    if (!$.on_connecting) {
+                      if (!/^\s*$/.test(newContractTxId)) {
+                        set(true, "on_connecting")
+                        setNetwork(newNetwork)
+                        setContractTxId(newContractTxId)
+                        setEditNetwork(false)
+                        addDB({
+                          network: newNetwork,
+                          port: newNetwork === "Localhost" ? port : 443,
+                          contractTxId: newContractTxId,
+                        })
+                        setAddInstance(false)
+                        setNewContractTxId("")
+                        set(false, "on_connecting")
+                      }
+                    }
+                  }}
+                >
+                  {$.on_connecting ? (
+                    <Box as="i" className="fas fa-spin fa-circle-notch" />
+                  ) : (
+                    "Connect to DB"
+                  )}
+                </Flex>
+              )}
+            </Box>
+          </Flex>
+        ) : connect !== false ? (
+          <Flex
+            w="100%"
+            h="100%"
+            position="fixed"
+            sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+            bg="rgba(0,0,0,0.5)"
+            onClick={() => setConnect(false)}
+            justify="center"
+            align="center"
+          >
+            <Box
+              bg="white"
+              width="500px"
+              p={3}
+              sx={{ borderRadius: "5px", cursor: "default" }}
+              onClick={e => e.stopPropagation()}
+            >
+              <>
+                <Flex fontSize="10px" m={1}>
+                  Port
+                </Flex>
+                <Input
+                  flex={1}
+                  value={newPort}
+                  sx={{ borderRadius: 0 }}
+                  onChange={e => {
+                    if (!Number.isNaN(e.target.value * 1)) {
+                      setNewPort(e.target.value * 1)
+                    }
+                  }}
+                />
+              </>
+              <Flex
+                mt={4}
+                sx={{
+                  borderRadius: "3px",
+                  cursor: "pointer",
+                  ":hover": { opacity: 0.75 },
+                }}
+                p={2}
+                justify="center"
+                align="center"
+                color="white"
+                bg="#333"
+                onClick={async () => {
+                  const _port = await fn(connectLocalhost)({ port: newPort })
+                  if (isNil(_port)) {
+                    alert("couldn't connect with the port")
+                  } else {
+                    setPort(_port)
+                    setConnect(false)
+                  }
+                }}
+              >
+                Connect
+              </Flex>
+            </Box>
+          </Flex>
         ) : null}
-        {$.signing_in_modal ? (
+        {$.signing_in_modal || $.owner_signing_in_modal ? (
           <Flex
             align="center"
             justify="center"
@@ -1889,7 +2431,10 @@ export default bind(
               left: 0,
               cursor: "pointer",
             }}
-            onClick={() => set(false, "signing_in_modal")}
+            onClick={() => {
+              set(false, "signing_in_modal")
+              set(false, "owner_signing_in_modal")
+            }}
           >
             <Flex
               width="580px"
@@ -1900,83 +2445,132 @@ export default bind(
               sx={{ borderRadius: "10px", cursor: "default" }}
               onClick={e => e.stopPropagation()}
             >
-              <Flex
-                justify="center"
-                align="center"
-                direction="column"
-                boxSize="150px"
-                p={4}
-                m={4}
-                bg="#333"
-                color="white"
-                sx={{
-                  borderRadius: "10px",
-                  cursor: "pointer",
-                  ":hover": { opacity: 0.75 },
-                }}
-                onClick={async () => {
-                  set(true, "signing_in")
-                  await fn.createTempAddress({ contractTxId })
-                  set(false, "signing_in")
-                  set(false, "signing_in_modal")
-                }}
-              >
-                <Image height="100px" src="/static/images/metamask.png" />
-                <Box textAlign="center">MetaMask</Box>
-              </Flex>
-              <Flex
-                p={4}
-                m={4}
-                boxSize="150px"
-                bg="#333"
-                color="white"
-                justify="center"
-                align="center"
-                direction="column"
-                sx={{
-                  borderRadius: "10px",
-                  cursor: "pointer",
-                  ":hover": { opacity: 0.75 },
-                }}
-                onClick={async () => {
-                  set(true, "signing_in")
-                  await fn.createTempAddressWithII({ contractTxId })
-                  set(false, "signing_in")
-                  set(false, "signing_in_modal")
-                }}
-              >
-                <Image height="100px" src="/static/images/dfinity.png" />
-                <Box textAlign="center">Internet Identity</Box>
-              </Flex>
-              <Flex
-                p={4}
-                m={4}
-                boxSize="150px"
-                bg="#333"
-                color="white"
-                justify="center"
-                align="center"
-                direction="column"
-                sx={{
-                  borderRadius: "10px",
-                  cursor: "pointer",
-                  ":hover": { opacity: 0.75 },
-                }}
-                onClick={async () => {
-                  set(true, "signing_in")
-                  await fn.createTempAddressWithAR({ contractTxId })
-                  set(false, "signing_in")
-                  set(false, "signing_in_modal")
-                }}
-              >
-                <Image height="100px" src="/static/images/arconnect.png" />
-                <Box textAlign="center">ArConnect</Box>
-              </Flex>
+              {$.signing_in ? (
+                <Flex
+                  justify="center"
+                  align="center"
+                  direction="column"
+                  boxSize="150px"
+                  p={4}
+                  m={4}
+                  color="#333"
+                  bg="white"
+                  sx={{
+                    borderRadius: "10px",
+                    cursor: "pointer",
+                    ":hover": { opacity: 0.75 },
+                  }}
+                  onClick={async () => set(false, "signing_in")}
+                >
+                  <Box
+                    fontSize="50px"
+                    mb={3}
+                    as="i"
+                    className="fas fa-spin fa-circle-notch"
+                  />
+                  <Box textAlign="center">cancel sign-in</Box>
+                </Flex>
+              ) : (
+                <>
+                  <Flex
+                    justify="center"
+                    align="center"
+                    direction="column"
+                    boxSize="150px"
+                    p={4}
+                    m={4}
+                    bg="#333"
+                    color="white"
+                    sx={{
+                      borderRadius: "10px",
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                    onClick={async () => {
+                      set(true, "signing_in")
+                      if ($.owner_signing_in_modal) {
+                        await fn(connectAddress)({ network: newNetwork })
+                      } else {
+                        await fn(createTempAddress)({ contractTxId, network })
+                      }
+                      set(false, "signing_in")
+                      set(false, "signing_in_modal")
+                      set(false, "owner_signing_in_modal")
+                    }}
+                  >
+                    <Image height="100px" src="/static/images/metamask.png" />
+                    <Box textAlign="center">MetaMask</Box>
+                  </Flex>
+                  <Flex
+                    p={4}
+                    m={4}
+                    boxSize="150px"
+                    bg="#333"
+                    color="white"
+                    justify="center"
+                    align="center"
+                    direction="column"
+                    sx={{
+                      borderRadius: "10px",
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                    onClick={async () => {
+                      set(true, "signing_in")
+                      if ($.owner_signing_in_modal) {
+                        await fn(connectAddressWithII)({ network: newNetwork })
+                      } else {
+                        await fn(createTempAddressWithII)({
+                          contractTxId,
+                          network,
+                        })
+                      }
+                      set(false, "signing_in")
+                      set(false, "signing_in_modal")
+                      set(false, "owner_signing_in_modal")
+                    }}
+                  >
+                    <Image height="100px" src="/static/images/dfinity.png" />
+                    <Box textAlign="center">Internet Identity</Box>
+                  </Flex>
+                  <Flex
+                    p={4}
+                    m={4}
+                    boxSize="150px"
+                    bg="#333"
+                    color="white"
+                    justify="center"
+                    align="center"
+                    direction="column"
+                    sx={{
+                      borderRadius: "10px",
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                    onClick={async () => {
+                      set(true, "signing_in")
+                      if ($.owner_signing_in_modal) {
+                        await fn(connectAddressWithAR)({ network: newNetwork })
+                      } else {
+                        await fn(createTempAddressWithAR)({
+                          contractTxId,
+                          network,
+                        })
+                      }
+                      set(false, "signing_in")
+                      set(false, "signing_in_modal")
+                      set(false, "owner_signing_in_modal")
+                    }}
+                  >
+                    <Image height="100px" src="/static/images/arconnect.png" />
+                    <Box textAlign="center">ArConnect</Box>
+                  </Flex>
+                </>
+              )}
             </Flex>
           </Flex>
         ) : null}
       </ChakraProvider>
     )
-  },
-  ["temp_current", "initWDB", "signing_in", "signing_in_modal"]
+  }
 )

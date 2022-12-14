@@ -4,18 +4,22 @@
 
 ## About This Repo
 
-[WeaveDB](https://github.com/asteroid-dao/weavedb) is a monorepo that contains
+[WeaveDB](https://github.com/weavedb/weavedb) is a monorepo that contains
 
 - [Warp Contracts](/src/contracts)
 - [Tests](/test)
 - [SDK](/sdk)
-- [Light Client](/client)
+- [Web Light Client](/web-client)
+- [Node Light Client](/node-client)
+- [SDK for EXM](/sdk-exm)
+- [Web Client for EXM](/sdk-exm-web)
 - [gRPC Node](/node)
 - [REPL](/scripts/runNode.js)
 - [Web Console](/console)
 - [Docs](/docs)
 
-You can view the docs at [weavedb.asteroid.ac](https://weavedb.asteroid.ac).
+You can view the docs at [docs.weavedb.dev](https://docs.weavedb.dev).
+
 ## What is WeaveDB?
 
 WeaveDB is a NoSQL database powered by [Warp Contracts](https://warp.cc/) (SmartWeave) on the [Arweave](https://www.arweave.org/) blockchain.
@@ -36,11 +40,11 @@ WeaveDB allows JSON-based functional programming on data, which opens up possibi
 
 ## Demo Dapps
 
-The v0.4 contract is deployed on the Warp mainnet at [DL6Jyvf_5o2qS_lgHJki76Ydx2FN5vb2MEvPkF00rqM](https://sonar.warp.cc/?#/app/contract/DL6Jyvf_5o2qS_lgHJki76Ydx2FN5vb2MEvPkF00rqM).
+The v0.7 contract is deployed on the Warp mainnet at [PliTJIFuE-mC0R1qivwV4Prh7B5OMDLfkL4qk6MbeUw](https://sonar.warp.cc/#/app/source/PliTJIFuE-mC0R1qivwV4Prh7B5OMDLfkL4qk6MbeUw).
 
 ### The Wall 2 on DEFINITY
 
-A v0.4 demo dapp (The Wall 2) is deployed at [xdiw4-hiaaa-aaaai-qnnbq-cai.ic0.app](https://xdiw4-hiaaa-aaaai-qnnbq-cai.ic0.app).
+A v0.5 demo dapp (The Wall 2) is deployed at [xdiw4-hiaaa-aaaai-qnnbq-cai.ic0.app](https://xdiw4-hiaaa-aaaai-qnnbq-cai.ic0.app).
 
 ### Todo Manager
 

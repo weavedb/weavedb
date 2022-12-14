@@ -1,11 +1,11 @@
 {
   "name": "weavedb-sdk",
-  "version": "0.4.2",
+  "version": "0.7.18",
   "description": "A decentralized NoSQL database powered by Arweave.",
-  "homepage": "https://weavedb.asteroid.ac",
+  "homepage": "https://weavedb.dev",
   "repository": {
     "type": "git",
-    "url": "https://github.com/asteroid-dao/weavedb"
+    "url": "https://github.com/weavedb/weavedb"
   },
   "main": "index.js",
   "license": "MIT",
@@ -13,14 +13,14 @@
     "node": "16"
   },
   "dependencies": {
-    "@metamask/eth-sig-util": "^4.0.1",
     "@metamask/legacy-web3": "^2.0.0",
     "arweave": "^1.11.4",
-    "eth-crypto": "^2.3.0",
-    "ethereumjs-util": "^7.1.5",
+    "md5": "^2.3.0",
     "ramda": "^0.28.0",
-    "text-encoding": "^0.7.0",
-    "warp-contracts": "1.1.14"
+    "shortid": "^2.2.16",
+    "warp-contracts": "1.2.24",
+    "warp-contracts-plugin-subscription": "^1.0.5",
+    "weavedb-base": "^0.7.3"
   },
   "devDependencies": {
     "esbuild": "^0.14.50",

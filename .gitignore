@@ -1,4 +1,6 @@
+cache
 scripts/.wallets
+scripts/.db
 packages
 !node/packages
 

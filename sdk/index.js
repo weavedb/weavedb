@@ -1,26 +1,88 @@
-const EthCrypto = require("eth-crypto")
-const { all, complement, init, is, last, isNil } = require("ramda")
+const { equals, all, complement, isNil, pluck } = require("ramda")
+const shortid = require("shortid")
 let Arweave = require("arweave")
 Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
-const ethSigUtil = require("@metamask/eth-sig-util")
-const { privateToAddress } = require("ethereumjs-util")
-const {
-  Warp,
-  WarpNodeFactory,
-  WarpWebFactory,
-  LoggerFactory,
-} = require("warp-contracts")
+const Base = require("weavedb-base")
+const { WarpFactory, LoggerFactory } = require("warp-contracts")
+const { WarpSubscriptionPlugin } = require("warp-contracts-plugin-subscription")
+const { get, parseQuery } = require("./off-chain/actions/read/get")
+const md5 = require("md5")
 
-const EIP712Domain = [
-  { name: "name", type: "string" },
-  { name: "version", type: "string" },
-  { name: "verifyingContract", type: "string" },
-]
+let states = {}
+let dbs = {}
+let subs = {}
+let submap = {}
 
-const encoding = require("text-encoding")
-const encoder = new encoding.TextEncoder()
+const _on = async (state, contractTxId, block = {}) => {
+  if (!isNil(state)) {
+    states[contractTxId] = state
+    for (const txid in subs) {
+      for (const hash in subs[txid]) {
+        const query = subs[txid][hash].query
+        try {
+          const res = await get(
+            state,
+            {
+              input: { query },
+            },
+            true,
+            { block }
+          )
+          if (!isNil(res)) {
+            if (subs[txid][hash].height < block.height) {
+              subs[txid][hash].height = block.height
+              let prev = isNil(subs[txid][hash].prev)
+                ? subs[txid][hash].prev
+                : subs[txid][hash].doc
+                ? subs[txid][hash].prev.data
+                : pluck("data", subs[txid][hash].prev)
+              let current = isNil(res.result)
+                ? res.result
+                : subs[txid][hash].doc
+                ? res.result.data
+                : pluck("data", res.result)
+              if (!equals(current, prev)) {
+                for (const k in subs[txid][hash].subs) {
+                  try {
+                    if (!isNil(res))
+                      subs[txid][hash].subs[k].cb(
+                        subs[txid][hash].subs[k].con
+                          ? res.result
+                          : subs[txid][hash].doc
+                          ? isNil(res.result)
+                            ? null
+                            : res.result.data
+                          : pluck("data", res.result)
+                      )
+                  } catch (e) {
+                    console.log(e)
+                  }
+                }
+                subs[txid][hash].prev = res.result
+              }
+            }
+          }
+        } catch (e) {
+          console.log(e)
+        }
+      }
+    }
+  }
+}
 
-class SDK {
+class CustomSubscriptionPlugin extends WarpSubscriptionPlugin {
+  async process(input) {
+    try {
+      let data = await dbs[this.contractTxId].db.readState(
+        input.interaction.block.height
+      )
+      const state = data.cachedValue.state
+      await _on(state, this.contractTxId, input.interaction.block)
+    } catch (e) {}
+  }
+}
+
+class SDK extends Base {
   constructor({
     arweave,
     contractTxId,
@@ -30,6 +92,7 @@ class SDK {
     EthWallet,
     web3,
   }) {
+    super()
     this.arweave = Arweave.init(arweave)
     LoggerFactory.INST.logLevel("error")
     if (typeof window === "object") {
@@ -37,23 +100,23 @@ class SDK {
       this.web3 = window.web3
     }
     this.network =
-      arweave.host === "localhost"
+      arweave.host === "host.docker.internal"
+        ? "localhost"
+        : arweave.host === "localhost"
         ? "localhost"
         : arweave.host === "arweave.net"
         ? "mainnet"
         : "testnet"
-    if (this.network === "localhost") {
-      this.warp = WarpNodeFactory.forTesting(this.arweave)
+    if (!isNil(arweave) && arweave.host === "host.docker.internal") {
+      this.warp = WarpFactory.custom(this.arweave, {}, "local")
+        .useArweaveGateway()
+        .build()
+    } else if (this.network === "localhost") {
+      this.warp = WarpFactory.forLocal(
+        isNil(arweave) || isNil(arweave.port) ? 1820 : arweave.port
+      )
     } else {
-      if (isNil(web3)) {
-        this.warp = WarpNodeFactory.memCachedBased(this.arweave)
-          .useWarpGateway()
-          .build()
-      } else {
-        this.warp = WarpWebFactory.memCachedBased(this.arweave)
-          .useWarpGateway()
-          .build()
-      }
+      this.warp = WarpFactory.forMainnet()
     }
     if (all(complement(isNil))([contractTxId, wallet, name, version])) {
       this.initialize({ contractTxId, wallet, name, version, EthWallet })
@@ -61,21 +124,121 @@ class SDK {
   }
 
   initialize({ contractTxId, wallet, name, version, EthWallet }) {
-    this.arweave_wallet = wallet
-    this.db = this.warp.pst(contractTxId).connect(wallet)
+    this.contractTxId = contractTxId
+    if (isNil(contractTxId)) throw Error("contractTxId missing")
+    this.db = this.warp
+      .contract(contractTxId)
+      .connect(wallet)
+      .setEvaluationOptions({
+        allowBigInt: true,
+      })
+    dbs[contractTxId] = this
     this.domain = { name, version, verifyingContract: contractTxId }
     if (!isNil(EthWallet)) this.setEthWallet(EthWallet)
+    if (this.network !== "localhost") {
+      this.warp.use(new CustomSubscriptionPlugin(contractTxId, this.warp))
+      this.db
+        .readState()
+        .then(data => (states[this.contractTxId] = data.cachedValue.state))
+        .catch(() => {})
+    } else {
+      setInterval(() => {
+        this.db
+          .readState()
+          .then(async v => {
+            const state = v.cachedValue.state
+            if (!equals(state, this.state)) {
+              this.state = state
+              states[this.contractTxId] = state
+              const info = await this.arweave.network.getInfo()
+              await _on(state, this.contractTxId, {
+                height: info.height,
+                timestamp: Math.round(Date.now() / 1000),
+                id: info.current,
+              })
+            }
+          })
+          .catch(v => {
+            console.log("readState error")
+          })
+      }, 1000)
+    }
   }
 
-  setEthWallet(wallet) {
-    this.wallet = wallet
+  async subscribe(isCon, ...query) {
+    const { path } = parseQuery(query)
+    const isDoc = path.length % 2 === 0
+    subs[this.contractTxId] ||= {}
+    const cb = query.pop()
+    const hash = md5(JSON.stringify(query))
+    const id = shortid()
+    subs[this.contractTxId][hash] ||= {
+      prev: undefined,
+      subs: {},
+      query,
+      height: 0,
+      doc: isDoc,
+    }
+    subs[this.contractTxId][hash].subs[id] = { cb, con: isCon }
+    submap[id] = hash
+    this.cget(...query)
+      .then(v => {
+        if (
+          !isNil(subs[this.contractTxId][hash].subs[id]) &&
+          subs[this.contractTxId][hash].height === 0
+        ) {
+          subs[this.contractTxId][hash].prev = v
+          cb(isCon ? v : isDoc ? (isNil(v) ? null : v.data) : pluck("data", v))
+        }
+      })
+      .catch(e => {
+        console.log("cget error")
+      })
+    return () => {
+      try {
+        delete subs[this.contractTxId][hash].subs[id]
+        delete submap[id]
+      } catch (e) {}
+    }
   }
 
-  async mineBlock() {
-    await this.arweave.api.get("mine")
+  async getCache(...query) {
+    if (isNil(states[this.contractTxId])) return null
+    return (
+      await get(
+        states[this.contractTxId],
+        {
+          input: { query },
+        },
+        false,
+        { block: {} }
+      )
+    ).result
   }
 
-  async read(func, ...query) {
+  async cgetCache(...query) {
+    if (isNil(states[this.contractTxId])) return null
+    return (
+      await get(
+        states[this.contractTxId],
+        {
+          input: { query },
+        },
+        true,
+        { block: {} }
+      )
+    ).result
+  }
+
+  async on(...query) {
+    return await this.subscribe(false, ...query)
+  }
+
+  async con(...query) {
+    return await this.subscribe(true, ...query)
+  }
+
+  async request(func, ...query) {
     return this.viewState({
       function: func,
       query,
@@ -87,372 +250,7 @@ class SDK {
     return res.result
   }
 
-  async get(...query) {
-    return this.read("get", ...query)
-  }
-
-  async cget(...query) {
-    return this.read("cget", ...query)
-  }
-
-  async getIndexes(...query) {
-    return this.read("getIndexes", ...query)
-  }
-
-  async getCrons(...query) {
-    return this.read("getCrons", ...query)
-  }
-
-  async getSchema(...query) {
-    return this.read("getSchema", ...query)
-  }
-
-  async getRules(...query) {
-    return this.read("getRules", ...query)
-  }
-
-  async getNonce(addr) {
-    return (
-      (await this.viewState({
-        function: "nonce",
-        address: addr,
-      })) + 1
-    )
-  }
-
-  async getIds(tx) {
-    return this.viewState({
-      function: "ids",
-      tx,
-    })
-  }
-
-  async _write(func, ...query) {
-    let opt = null
-    if (is(Object, last(query)) && !is(Array, last(query))) {
-      opt = last(query)
-      query = init(query)
-    }
-    if (func === "batch") query = query[0]
-    return await this._write2(func, query, opt)
-  }
-
-  async _write2(func, query, opt) {
-    let nonce, privateKey, overwrite, wallet, dryWrite, bundle, ii, ar
-    if (!isNil(opt)) {
-      ;({
-        nonce,
-        privateKey,
-        overwrite,
-        wallet,
-        dryWrite,
-        bundle,
-        ii,
-        ar,
-      } = opt)
-    }
-    return !isNil(ii)
-      ? await this.writeWithII(ii, func, query, nonce, dryWrite, bundle)
-      : !isNil(ar)
-      ? await this.writeWithAR(ar, func, query, nonce, dryWrite, bundle)
-      : await this.write(
-          wallet || this.wallet,
-          func,
-          query,
-          nonce,
-          privateKey,
-          overwrite,
-          dryWrite,
-          bundle
-        )
-  }
-
-  async createTempAddressWithII(ii) {
-    let addr = ii.toJSON()[0]
-    return this._createTempAddress(addr, {
-      ii,
-    })
-  }
-
-  async createTempAddressWithAR(ar) {
-    const wallet = is(Object, ar) && ar.walletName === "ArConnect" ? ar : null
-    let addr = null
-    if (!isNil(wallet)) {
-      await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
-      addr = await wallet.getActiveAddress()
-    } else {
-      addr = await this.arweave.wallets.jwkToAddress(ar)
-    }
-    return this._createTempAddress(addr, {
-      ar,
-    })
-  }
-
-  async createTempAddress(addr) {
-    return this._createTempAddress(addr.toLowerCase(), {
-      wallet: this.wallet || addr.toLowerCase(),
-    })
-  }
-
-  async _createTempAddress(addr, opt) {
-    const identity = EthCrypto.createIdentity()
-    const nonce = await this.getNonce(addr)
-    const message = {
-      nonce,
-      query: JSON.stringify({
-        func: "auth",
-        query: { address: addr },
-      }),
-    }
-    const data = {
-      types: {
-        EIP712Domain,
-        Query: [
-          { name: "query", type: "string" },
-          { name: "nonce", type: "uint256" },
-        ],
-      },
-      domain: this.domain,
-      primaryType: "Query",
-      message,
-    }
-    const signature = ethSigUtil.signTypedData({
-      privateKey: Buffer.from(identity.privateKey.replace(/^0x/, ""), "hex"),
-      data,
-      version: "V4",
-    })
-    const tx = await this.addAddressLink(
-      { signature, address: identity.address.toLowerCase() },
-      { nonce, ...opt }
-    )
-    return isNil(tx.err) ? { tx, identity } : null
-  }
-
-  async addAddressLink(query, opt) {
-    return await this._write2("addAddressLink", query, opt)
-  }
-
-  async removeAddressLink(query, opt) {
-    return await this._write2("removeAddressLink", query, opt)
-  }
-
-  async set(...query) {
-    return this._write("set", ...query)
-  }
-
-  async delete(...query) {
-    return this._write("delete", ...query)
-  }
-
-  async add(...query) {
-    return this._write("add", ...query)
-  }
-
-  async addIndex(...query) {
-    return this._write("addIndex", ...query)
-  }
-
-  async addCron(...query) {
-    return this._write("addCron", ...query)
-  }
-
-  async removeCron(...query) {
-    return this._write("removeCron", ...query)
-  }
-
-  async removeIndex(...query) {
-    return this._write("removeIndex", ...query)
-  }
-
-  async update(...query) {
-    return this._write("update", ...query)
-  }
-
-  async upsert(...query) {
-    return this._write("upsert", ...query)
-  }
-
-  async setSchema(...query) {
-    return this._write("setSchema", ...query)
-  }
-
-  async setRules(...query) {
-    return this._write("setRules", ...query)
-  }
-
-  async batch(...query) {
-    return this._write("batch", ...query)
-  }
-
-  async writeWithII(ii, func, query, nonce, dryWrite = true, bundle) {
-    let addr = ii.toJSON()[0]
-    const isaddr = !isNil(addr)
-    addr = addr.toLowerCase()
-    let result
-    nonce ||= await this.getNonce(addr)
-    bundle ||= this.network === "mainnet"
-    const message = {
-      nonce,
-      query: JSON.stringify({ func, query }),
-    }
-    const data = {
-      types: {
-        EIP712Domain,
-        Query: [
-          { name: "query", type: "string" },
-          { name: "nonce", type: "uint256" },
-        ],
-      },
-      domain: this.domain,
-      primaryType: "Query",
-      message,
-    }
-
-    function toHexString(bytes) {
-      return new Uint8Array(bytes).reduce(
-        (str, byte) => str + byte.toString(16).padStart(2, "0"),
-        ""
-      )
-    }
-    const _data = Buffer.from(JSON.stringify(data))
-    const signature = toHexString(await ii.sign(_data))
-    const param = {
-      function: func,
-      query,
-      signature,
-      nonce,
-      caller: addr,
-      type: "ed25519",
-    }
-    if (dryWrite) {
-      let dryState = await this.db.dryWrite(param)
-      if (dryState.type === "error") return { err: dryState }
-    }
-    return await this.send(param, bundle)
-  }
-
-  async writeWithAR(ar, func, query, nonce, dryWrite = true, bundle) {
-    const wallet = is(Object, ar) && ar.walletName === "ArConnect" ? ar : null
-    let addr = null
-    let pubKey = null
-    if (!isNil(wallet)) {
-      await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
-      addr = await wallet.getActiveAddress()
-      pubKey = await wallet.getActivePublicKey()
-    } else {
-      addr = await this.arweave.wallets.jwkToAddress(ar)
-      pubKey = ar.n
-    }
-    const isaddr = !isNil(addr)
-    let result
-    nonce ||= await this.getNonce(addr)
-    bundle ||= this.network === "mainnet"
-    const message = {
-      nonce,
-      query: JSON.stringify({ func, query }),
-    }
-    const data = {
-      types: {
-        EIP712Domain,
-        Query: [
-          { name: "query", type: "string" },
-          { name: "nonce", type: "uint256" },
-        ],
-      },
-      domain: this.domain,
-      primaryType: "Query",
-      message,
-    }
-    const encoded = encoder.encode(JSON.stringify(data))
-    const signature = isNil(wallet)
-      ? (await this.arweave.wallets.crypto.sign(ar, encoded)).toString("hex")
-      : Buffer.from(
-          await wallet.signature(encoded, {
-            name: "RSA-PSS",
-            saltLength: 32,
-          })
-        ).toString("hex")
-    const param = {
-      function: func,
-      query,
-      signature,
-      nonce,
-      caller: addr,
-      pubKey,
-      type: "rsa256",
-    }
-    if (dryWrite) {
-      let dryState = await this.db.dryWrite(param)
-      if (dryState.type === "error") return { err: dryState }
-    }
-    return await this.send(param, bundle)
-  }
-
-  async write(
-    wallet,
-    func,
-    query,
-    nonce,
-    privateKey,
-    overwrite,
-    dryWrite = true,
-    bundle
-  ) {
-    let addr = isNil(privateKey)
-      ? null
-      : `0x${privateToAddress(
-          Buffer.from(privateKey.replace(/^0x/, ""), "hex")
-        ).toString("hex")}`
-    const isaddr = !isNil(addr)
-    if (isNil(addr)) {
-      addr = is(String, wallet) ? wallet : wallet.getAddressString()
-    }
-    addr = addr.toLowerCase()
-    let result
-    nonce ||= await this.getNonce(addr)
-    bundle ||= this.network === "mainnet"
-    const message = {
-      nonce,
-      query: JSON.stringify({ func, query }),
-    }
-    const data = {
-      types: {
-        EIP712Domain,
-        Query: [
-          { name: "query", type: "string" },
-          { name: "nonce", type: "uint256" },
-        ],
-      },
-      domain: this.domain,
-      primaryType: "Query",
-      message,
-    }
-    const signature =
-      !isaddr && !isNil(this.web3)
-        ? await this.web3.currentProvider.request({
-            method: "eth_signTypedData_v4",
-            params: [addr, JSON.stringify(data)],
-          })
-        : ethSigUtil.signTypedData({
-            privateKey: !isNil(privateKey)
-              ? Buffer.from(privateKey.replace(/^0x/, ""), "hex")
-              : wallet.getPrivateKey(),
-            data,
-            version: "V4",
-          })
-
-    const param = {
-      function: func,
-      query,
-      signature,
-      nonce,
-      caller:
-        overwrite || isNil(wallet)
-          ? addr
-          : is(String, wallet)
-          ? wallet
-          : wallet.getAddressString(),
-    }
+  async _request(func, param, dryWrite, bundle) {
     if (dryWrite) {
       let dryState = await this.db.dryWrite(param)
       if (dryState.type === "error") return { err: dryState }
@@ -461,35 +259,13 @@ class SDK {
   }
 
   async send(param, bundle) {
-    let tx = await this.db[bundle ? "bundleInteraction" : "writeInteraction"](
-      param
-    )
+    let tx = await this.db[
+      bundle && this.network !== "localhost"
+        ? "bundleInteraction"
+        : "writeInteraction"
+    ](param, {})
     if (this.network === "localhost") await this.mineBlock()
     return tx
-  }
-
-  signer() {
-    return { __op: "signer" }
-  }
-
-  ts() {
-    return { __op: "ts" }
-  }
-
-  del() {
-    return { __op: "del" }
-  }
-
-  inc(n) {
-    return { __op: "inc", n }
-  }
-
-  union(...args) {
-    return { __op: "arrayUnion", arr: args }
-  }
-
-  remove(...args) {
-    return { __op: "arrayRemove", arr: args }
   }
 }
 

@@ -1,2 +1,0 @@
-// nextdapp-start
-// nextdapp-end

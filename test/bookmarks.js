@@ -16,7 +16,14 @@ const {
 const { init, stop, initBeforeEach, addFunds } = require("./util")
 
 describe("Bookmarks Example", function () {
-  let arlocal, wallet, walletAddress, wallet2, db, wallet3, wallet4
+  let arlocal,
+    wallet,
+    walletAddress,
+    wallet2,
+    db,
+    wallet3,
+    wallet4,
+    arweave_wallet
   this.timeout(0)
 
   before(async () => {
@@ -29,6 +36,7 @@ describe("Bookmarks Example", function () {
 
   beforeEach(async () => {
     ;({
+      arweave_wallet,
       walletAddress,
       wallet,
       wallet2,
@@ -53,7 +61,7 @@ describe("Bookmarks Example", function () {
         },
       },
     }
-    await db.setSchema(schema, "bookmarks")
+    await db.setSchema(schema, "bookmarks", { ar: arweave_wallet })
     const rules = {
       let: {
         id: [
@@ -91,7 +99,7 @@ describe("Bookmarks Example", function () {
         ],
       },
     }
-    await db.setRules(rules, "bookmarks")
+    await db.setRules(rules, "bookmarks", { ar: arweave_wallet })
     const conf_rules = {
       "allow write": {
         in: [{ var: "request.auth.signer" }, [wallet.getAddressString(), true]],
@@ -106,9 +114,9 @@ describe("Bookmarks Example", function () {
         },
       },
     }
-    await db.setRules(conf_rules, "conf")
-    await db.setRules(conf_rules, "mirror")
-    await db.setSchema(conf_schema, "conf")
+    await db.setRules(conf_rules, "conf", { ar: arweave_wallet })
+    await db.setRules(conf_rules, "mirror", { ar: arweave_wallet })
+    await db.setSchema(conf_schema, "conf", { ar: arweave_wallet })
   }
 
   const bookmark = async () => {

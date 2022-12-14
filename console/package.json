@@ -1,16 +1,26 @@
 {
   "name": "weavedb-console",
   "version": "0.2.0",
-  "main": "index.js",
-  "license": "MIT",
-  "_type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "engines": {
+    "node": ">=16.0.0 <17.0.0"
+  },
   "dependencies": {
-    "@bit/warashibe.nextdapp.core": "file:./nd/core",
     "@chakra-ui/react": "^2.2.4",
+    "@dfinity/agent": "^0.14.1",
     "@dfinity/auth-client": "^0.13.2",
     "@dfinity/authentication": "^0.13.2",
+    "@dfinity/candid": "^0.14.1",
+    "@dfinity/identity": "^0.14.1",
+    "@dfinity/principal": "^0.14.1",
     "@emotion/react": "^11",
     "@emotion/styled": "^11",
+    "crypto-browserify": "^3.12.0",
     "framer-motion": "^6",
     "isomorphic-fetch": "^3.0.0",
     "localforage": "^1.10.0",
@@ -22,17 +32,9 @@
     "react-dom": "^18.2.0",
     "react-json-pretty": "^2.2.0",
     "recoil": "^0.5.2",
+    "roidjs": "^0.1.6",
+    "warp-contracts": "1.2.24",
     "weavedb-client": "^0.2.1",
-    "weavedb-sdk": "^0.4.2"
-  },
-  "scripts": {
-    "dev": "next",
-    "build": "next build",
-    "start": "next start"
-  },
-  "bit": {
-    "env": {},
-    "componentsDefaultDirectory": "nd/{name}",
-    "packageManager": "npm"
+    "weavedb-sdk": "^0.7.15"
   }
 }

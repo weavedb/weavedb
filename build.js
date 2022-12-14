@@ -1,6 +1,14 @@
 const { build } = require("esbuild")
 const replace = require("replace-in-file")
-const contracts = ["/contracts/contract.js"]
+const contracts = [
+  "/warp/contract.js",
+  "/intmax/intmax.js",
+  "/internet-identity/ii.js",
+  "/ethereum/eth.js",
+  "/ethereum/eth-exm.js",
+  "/poseidon/poseidonConstants.js",
+  "/exm/exm.js",
+]
 
 build({
   entryPoints: contracts.map(source => {
