@@ -5,7 +5,7 @@ sidebar_position: 4
 
 ## Initial States
 
-Modify [initial-state.json](https://github.com/asteroid-dao/weavedb/blob/master/src/contracts/initial-state.json) if necessary.
+Modify [initial-state.json](https://github.com/weavedb/weavedb/blob/master/src/contracts/initial-state.json) if necessary.
 
 Setting `secure` `false` will let anyone write anything to your DB, which only makes sense for test purposes during development.
 
@@ -40,13 +40,8 @@ Deploy on the Warp mainnet.
 node scripts/generate-wallet.js mainnet
 yarn deploy
 ```
-or on the testnet
 
-```bash
-node scripts/generate-wallet.js testnet
-node scripts/add-funds.js testnet
-yarn deploy-testnet
-```
+Testnet deployment has been deprecated as it's not so stable. You can test on the mainnet for free, or we are going to develop a local test environment soon.
 
 ## Buffer Dependency
 In the client app, you will need to install `buffer` package and expose it to `window.Buffer` to resolve the Buffer dependency for crypto authentications. This will be removed in future releases.

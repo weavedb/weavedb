@@ -5,6 +5,14 @@ sidebar_position: 3
 
 WeaveDB queries cover most of the things Firestore can do with syntactic sugar inspired by [Firestore Sweet](https://warashibe.github.io/firestore-sweet/).
 
+### getNonce
+
+To get the next nonce for an address. Nonces are internally used for signature verification to write data.
+
+```js
+await db.getNonce("address")
+```
+
 ### get / cget
 
 `get` only returns data, whereas `cget` returns metadata of the docs too.
@@ -72,6 +80,24 @@ const docs_page1 = db.cget("collection_name", [ "age" ])
 const docs_page2 = db.cget("collection_name", [ "age" ], ["startAfter", docs_page1[docs_page1.length - 1]])
 ```
 
+### add
+
+Add a doc
+
+```js
+await db.add({ "age": 20, "name": "Bob" }, "collection_name")
+```
+The doc id will be randomly yet deterministically assigned.
+
+### getIds
+
+To get the last added doc id, use `getIds`.
+
+```js
+const tx = await db.add({ "age": 20, "name": "Bob" }, "collection_name")
+const doc_id = await db.getIds(tx))[0]
+```
+
 ### set
 
 Set a doc
@@ -79,6 +105,7 @@ Set a doc
 ```js
 await db.set({ "age": 20, "name": "Bob" }, "collection_name", "doc_id")
 ```
+
 ### upsert
 
 Upsert a doc

@@ -22,11 +22,11 @@ Other types of crypto accounts will be supported in the future such as Arweave a
 
 ## Demo Dapps
 
-The v0.4 contract is deployed on the Warp mainnet at [DL6Jyvf_5o2qS_lgHJki76Ydx2FN5vb2MEvPkF00rqM](https://sonar.warp.cc/?#/app/contract/DL6Jyvf_5o2qS_lgHJki76Ydx2FN5vb2MEvPkF00rqM).
+The v0.7 contract is deployed on the Warp mainnet at [PliTJIFuE-mC0R1qivwV4Prh7B5OMDLfkL4qk6MbeUw](https://sonar.warp.cc/#/app/source/PliTJIFuE-mC0R1qivwV4Prh7B5OMDLfkL4qk6MbeUw).
 
 ### The Wall 2 on DEFINITY
 
-A v0.4 demo dapp (The Wall 2) is deployed at [xdiw4-hiaaa-aaaai-qnnbq-cai.ic0.app](https://xdiw4-hiaaa-aaaai-qnnbq-cai.ic0.app).
+A v0.5 demo dapp (The Wall 2) is deployed at [xdiw4-hiaaa-aaaai-qnnbq-cai.ic0.app](https://xdiw4-hiaaa-aaaai-qnnbq-cai.ic0.app).
 
 ### Todo Manager
 

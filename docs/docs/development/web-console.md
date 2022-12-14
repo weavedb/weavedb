@@ -26,7 +26,7 @@ To test II with the console, run local canisters first.
 
 ```bash
 git clone https://github.com/dfinity/internet-identity.git
-cd internet-identity
+cd internet-identity # or cd internet-identity/demos/using-dev-build
 dfx start --background --clean
 npm ci
 dfx deploy --no-wallet --argument `(null)`

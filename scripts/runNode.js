@@ -1,3 +1,12 @@
+let {
+  wallet = null,
+  contractTxId,
+  port = 1820,
+  dbPath = null,
+  persist = false,
+  secure = false,
+} = require("yargs")(process.argv.slice(2)).argv
+const Constants = require("../src/intmax/lib/circomlibjs/poseidon_constants_opt.js")
 const readline = require("readline")
 const { stdin: input, stdout: output } = require("process")
 const rl = readline.createInterface({ input, output })
@@ -7,6 +16,7 @@ const path = require("path")
 const { expect } = require("chai")
 const ethSigUtil = require("@metamask/eth-sig-util")
 const Wallet = require("ethereumjs-wallet").default
+const { deployContracts } = require("../test/util")
 const {
   PstContract,
   PstState,
@@ -27,72 +37,82 @@ let arlocal, arweave, warp, arweave_wallet, walletAddress, contractSrc, sdk
 
 let isInit = false
 let stopto = null
+
 async function init() {
-  arlocal = new ArLocal(1820, false)
+  dbPath = isNil(dbPath)
+    ? path.resolve(__dirname, ".db")
+    : /^\//.test(dbPath)
+    ? dbPath
+    : path.resolve(process.cwd(), dbPath)
+  if (persist) {
+    console.log(`dbPath: ${dbPath}`)
+  }
+  arlocal = new ArLocal(port, false, dbPath, persist)
   await arlocal.start()
   sdk = new SDK({
     arweave: {
       host: "localhost",
-      port: 1820,
+      port,
       protocol: "http",
     },
   })
   arweave = sdk.arweave
   warp = sdk.warp
-  const wallet = Wallet.generate()
-  arweave_wallet = await arweave.wallets.generate()
-  await addFunds(arweave, arweave_wallet)
-  walletAddress = await arweave.wallets.jwkToAddress(arweave_wallet)
-  console.log(`Arweave wallet generated: ` + walletAddress)
-  console.log(`Ethereum wallet generated: ` + wallet.getAddressString())
-  contractSrc = fs.readFileSync(
-    path.join(__dirname, "../dist/contract.js"),
-    "utf8"
-  )
-  const stateFromFile = JSON.parse(
-    fs.readFileSync(
-      path.join(__dirname, "../dist/contracts/initial-state.json"),
-      "utf8"
+  let _wallet = Wallet.generate()
+  let _arweave_wallet = null
+  if (!isNil(wallet)) {
+    const wallet_path = path.resolve(
+      __dirname,
+      ".wallets",
+      `wallet-${wallet}.json`
     )
-  )
-  const initialState = {
-    ...stateFromFile,
-    ...{
-      secure: true,
-      owner: walletAddress,
-    },
+    if (!fs.existsSync(wallet_path)) {
+      console.log("wallet doesn't exist: " + wallet_path)
+      process.exit()
+    }
+    _arweave_wallet = JSON.parse(fs.readFileSync(wallet_path, "utf8"))
   }
-  const contract = await warp.createContract.deploy({
-    wallet: arweave_wallet,
-    initState: JSON.stringify(initialState),
-    src: contractSrc,
+  const {
+    contract,
+    intmaxSrcTxId,
+    dfinitySrcTxId,
+    ethereumSrcTxId,
+    poseidon1TxId,
+    poseidon2TxId,
+    arweave_wallet,
+    walletAddress,
+  } = await deployContracts({
+    secure,
+    warp,
+    arweave,
+    contractTxId,
+    arweave_wallet: _arweave_wallet,
   })
-  console.log(contract)
+
+  console.log()
+  console.log(`Arweave wallet generated: ` + walletAddress)
+  console.log(`Ethereum wallet generated: ` + _wallet.getAddressString())
+
+  if (isNil(contractTxId)) {
+    console.log()
+    console.log(`New DB instance deployed (secure: ${secure})`)
+    console.log(contract)
+    ;({ contractTxId } = contract)
+  }
+
   const name = "weavedb"
   const version = "1"
   sdk.initialize({
-    contractTxId: contract.contractTxId,
+    contractTxId,
     wallet: arweave_wallet,
     name,
     version,
-    EthWallet: wallet,
+    EthWallet: _wallet,
   })
   await sdk.mineBlock()
-  const metadata = {
-    ethereum: {
-      privateKey: wallet.getPrivateKeyString(),
-      publicKey: wallet.getPublicKeyString(),
-      address: wallet.getAddressString(),
-    },
-    arweave: arweave_wallet,
-    weavedb: { ...contract, name, version },
-  }
-  fs.writeFileSync(
-    path.resolve(__dirname, "../console/lib/weavedb.json"),
-    JSON.stringify(metadata)
-  )
   waitForCommand()
 }
+
 function waitForCommand() {
   const methods = [
     "add",
@@ -114,6 +134,7 @@ function waitForCommand() {
     "batch",
     "evolve",
   ]
+  console.log()
   rl.question("> ", async method => {
     try {
       let pr = eval(`sdk.${method}`)
