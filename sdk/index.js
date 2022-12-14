@@ -246,7 +246,7 @@ class SDK extends Base {
   }
 
   async viewState(opt) {
-    let res = await this.db.viewState(opt, 3)
+    let res = await this.db.viewState(opt)
     return res.result
   }
 

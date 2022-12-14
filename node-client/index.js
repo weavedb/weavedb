@@ -1,4 +1,4 @@
-const { all, complement, isNil } = require("ramda")
+const { init, all, complement, isNil, is, last, includes } = require("ramda")
 const Base = require("weavedb-base")
 const PROTO_PATH = __dirname + "/weavedb.proto"
 const grpc = require("@grpc/grpc-js")
@@ -12,6 +12,22 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 })
 const weavedb_proto = grpc.loadPackageDefinition(packageDefinition).weavedb
 let Arweave = require("arweave")
+
+const reads = [
+  "get",
+  "cget",
+  "getIndexes",
+  "getCrons",
+  "getSchema",
+  "getRules",
+  "getIds",
+  "getOwner",
+  "getAddressLink",
+  "getAlgorithms",
+  "getLinkedContract",
+  "getEvolve",
+  "getVersion",
+]
 
 class SDK extends Base {
   constructor({
@@ -42,10 +58,22 @@ class SDK extends Base {
     if (!isNil(EthWallet)) this.setEthWallet(EthWallet)
   }
 
-  async _request(func, query) {
+  parseQuery(func, query) {
+    let nocache = false
+    if (includes(func)(reads) && is(Boolean, last(query))) {
+      nocache = last(query)
+      query = init(query)
+    }
+
+    return { nocache, query }
+  }
+
+  async _request(func, query, nocache = false) {
+    if (!includes(func)(reads)) nocache = false
     const request = {
       method: `${func}@${this.contractTxId}`,
       query: JSON.stringify(query),
+      nocache,
     }
     const _query = () =>
       new Promise(ret => {
@@ -71,7 +99,9 @@ class SDK extends Base {
   }
 
   async request(func, ...query) {
-    return await this._request(func, query)
+    let nocache = false
+    ;({ nocache, query } = this.parseQuery(func, query))
+    return await this._request(func, query, nocache)
   }
 
   async getNonce(addr) {
