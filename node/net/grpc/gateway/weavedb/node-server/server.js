@@ -3,7 +3,8 @@ const config = require("./weavedb.config.js")
 const PROTO_PATH = __dirname + "/../weavedb.proto"
 let sdk = null
 const { is, isNil, includes, clone } = require("ramda")
-const SDK = require("weavedb-sdk")
+//const SDK = require("weavedb-sdk")
+const SDK = require("../../../../../../sdk")
 const grpc = require("@grpc/grpc-js")
 const protoLoader = require("@grpc/proto-loader")
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
@@ -82,9 +83,13 @@ async function query(call, callback) {
     const nameMap = { get: "getCache", cget: "cgetCache" }
     try {
       if (includes(func)(["get", "cget", "getNonce"])) {
-        result = await sdks[contractTxId][nameMap[func] || func](
-          ...JSON.parse(query)
-        )
+        if (nocache && includes(func)(["get", "cget"])) {
+          result = await sdks[contractTxId][func](...JSON.parse(query))
+        } else {
+          result = await sdks[contractTxId][nameMap[func] || func](
+            ...JSON.parse(query)
+          )
+        }
       } else if (includes(func)(reads)) {
         result = await sdks[contractTxId][func](...JSON.parse(query))
         _cache[contractTxId][key] = { date: Date.now(), result }
