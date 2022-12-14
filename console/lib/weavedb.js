@@ -73,6 +73,16 @@ export const setupWeaveDB = async ({
     contractTxId: contractTxId,
     arweave: arweave[network],
   })
+
+  // light = new client({
+  //   wallet: weavedb.arweave,
+  //   name: weavedb.weavedb.name,
+  //   version: weavedb.weavedb.version,
+  //   contractTxId: contractTxId,
+  //   arweave: arweave[network],
+  // })
+  // const a = await light.get("asfa", 1)
+  // console.log("a: ", a)
   window.Buffer = Buffer
   set(true, "initWDB")
   return sdk
