@@ -9,8 +9,10 @@ Run ArLocal and WeaveDB at `http://localhost:1820`.
 
 This will start a REPL in your command line terminal where you can interactively test DB queries.
 
+To execute write queries, `--wallet` needs to be set.
+
 ```bash
-yarn repl
+yarn repl --wallet mainnet
 ```
 
 The REPL starts a new WeaveDB instance, so the first thing you need to do is to set some rules to collections.
