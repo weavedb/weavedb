@@ -49,7 +49,6 @@ async function init() {
   }
   arlocal = new ArLocal(port, false, dbPath, persist)
   await arlocal.start()
-  let _wallet = Wallet.generate()
   let _arweave_wallet = null
   if (!isNil(wallet)) {
     const wallet_path = path.resolve(
@@ -92,8 +91,7 @@ async function init() {
   })
 
   console.log()
-  console.log(`Arweave wallet generated: ` + walletAddress)
-  console.log(`Ethereum wallet generated: ` + _wallet.getAddressString())
+  console.log(`Arweave Wallet: ` + walletAddress)
 
   if (isNil(contractTxId)) {
     console.log()
