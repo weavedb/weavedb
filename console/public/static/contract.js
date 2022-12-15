@@ -14816,9 +14816,8 @@ ${build()}`)(...vals);
   };
 
   // src/common/actions/read/get.js
-  var parseQuery = (state, action) => {
-    const { data } = state;
-    const [path3, opt] = splitWhen_default(complement_default(is_default)(String), action.input.query);
+  var parseQuery = (query) => {
+    const [path3, opt] = splitWhen_default(complement_default(is_default)(String), query);
     let _limit = null;
     let _filter2 = null;
     let _sort2 = null;
@@ -15039,7 +15038,7 @@ ${build()}`)(...vals);
       _endAt,
       _startAfter,
       _endBefore
-    } = parseQuery(state, action);
+    } = parseQuery(action.input.query);
     const { data } = state;
     if (path3.length % 2 === 0) {
       if (any_default(complement_default(isNil_default))([_limit, _sort2, _filter2]))
