@@ -2726,6 +2726,13 @@ form-data@^4.0.0:
     combined-stream "^1.0.8"
     mime-types "^2.1.12"
 
+fpjson-lang@^0.1.1:
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/fpjson-lang/-/fpjson-lang-0.1.1.tgz#dba2aebd78a2b4c9376818f85cc3d4b13db6304a"
+  integrity sha512-X8vcJxzDbXRm5Wf2BXWztT+Fo87ole3nBIjnnWyhWDvC3MQd3P53XYNJ6MXLprvVNQ4zke+3m91yNSaBL40omA==
+  dependencies:
+    ramda "^0.28.0"
+
 fs-constants@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/fs-constants/-/fs-constants-1.0.0.tgz#6be0de9be998ce16af8afc24497b9ee9b7ccd9ad"
@@ -3207,6 +3214,11 @@ json-bigint@^1.0.0:
   integrity sha512-SiPv/8VpZuWbvLSMtTDU8hEfrZWg/mH/nV/b4o0CYbSxu1UIQPLdwKOCIyLQX+VIPO5vrLX3i8qtqFyhdPSUSQ==
   dependencies:
     bignumber.js "^9.0.0"
+
+json-logic-js@^2.0.2:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/json-logic-js/-/json-logic-js-2.0.2.tgz#b613e095f5e598cb78f7b9a2bbf638e74cf98158"
+  integrity sha512-ZBtBdMJieqQcH7IX/LaBsr5pX+Y5JIW+EhejtM3Ffg2jdN9Iwf+Ht6TbHnvAZ/YtwyuhPaCBlnvzrwVeWdvGDQ==
 
 jwa@^2.0.0:
   version "2.0.0"
@@ -4118,13 +4130,15 @@ weavedb-base@^0.7.3:
     ethereumjs-util "^7.1.5"
     ramda "^0.28.0"
 
-weavedb-sdk@^0.7.18:
-  version "0.7.18"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.7.18.tgz#16350b3d9d5a1010fa214bc48cf8d18329d2a50e"
-  integrity sha512-tO3s+8uNMfcwjGu+YjjqgDrQTs8exERjKF41qRd3WHMLK+F7aWbMd77+gHzDoBY+QhFqvg3xzxJktghFqNjCBw==
+weavedb-sdk@^0.7.19:
+  version "0.7.19"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.7.19.tgz#98a63d619c02003b523916196783a673a36e0f05"
+  integrity sha512-sO3K8hFLrwCNaCg5P2cpdSLxmSGpUvByYiWcjTry0/VWd/SLSB8I4XlOOtia2s7jpbn5UMyb1veFa0eAufnCIQ==
   dependencies:
     "@metamask/legacy-web3" "^2.0.0"
     arweave "^1.11.4"
+    fpjson-lang "^0.1.1"
+    json-logic-js "^2.0.2"
     md5 "^2.3.0"
     ramda "^0.28.0"
     shortid "^2.2.16"
