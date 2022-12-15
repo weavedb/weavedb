@@ -64,7 +64,6 @@ class SDK extends Base {
       nocache = last(query)
       query = init(query)
     }
-
     return { nocache, query }
   }
 
