@@ -349,7 +349,7 @@ export default inject(
     }, [])
 
     useEffect(() => {
-      if (isNil(port)) setNewNetwork("Localhost")
+      if (isNil(port)) setNewNetwork("Mainnet")
     }, [port])
 
     useEffect(() => {
@@ -2146,7 +2146,7 @@ export default inject(
                 mb={3}
               >
                 {map(v => <option value={v}>{v}</option>)(
-                  isNil(port) ? ["Localhost"] : networks
+                  isNil(port) ? ["Mainnet"] : networks
                 )}
               </Select>
               {deployMode === "Deploy" ? (
