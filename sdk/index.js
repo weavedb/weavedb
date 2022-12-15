@@ -85,6 +85,7 @@ class CustomSubscriptionPlugin extends WarpSubscriptionPlugin {
 class SDK extends Base {
   constructor({
     arweave,
+    arweave_wallet,
     contractTxId,
     wallet,
     name,
@@ -93,6 +94,7 @@ class SDK extends Base {
     web3,
   }) {
     super()
+    this.arweave_wallet = arweave_wallet
     this.arweave = Arweave.init(arweave)
     LoggerFactory.INST.logLevel("error")
     if (typeof window === "object") {
