@@ -95,7 +95,7 @@ To get the last added doc id, use `getIds`.
 
 ```js
 const tx = await db.add({ "age": 20, "name": "Bob" }, "collection_name")
-const doc_id = await db.getIds(tx))[0]
+const doc_id = (await db.getIds(tx))[0]
 ```
 
 ### set
