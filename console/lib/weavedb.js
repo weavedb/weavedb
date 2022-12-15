@@ -29,7 +29,14 @@ const weavedbSrcTxId = "PliTJIFuE-mC0R1qivwV4Prh7B5OMDLfkL4qk6MbeUw"
 const intmaxSrcTxId = "OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94"
 const dfinitySrcTxId = "RQpDSz3PSyYSn6LRzWnX85bu6iGqCZKLxkdwQVoKzTI"
 const ethereumSrcTxId = "dtLqn4y5fFD5xyiRCzaYjWxz5k8I6VxoVeARFphhuY4"
-import weavedb from "./weavedb.json"
+let arweave_wallet
+let funded = false
+async function addFunds(arweave, wallet) {
+  const walletAddress = await arweave.wallets.getAddress(wallet)
+  console.log(await arweave.api.get(`/mint/${walletAddress}/1000000000000000`))
+  await arweave.api.get("mine")
+}
+
 export const connectLocalhost = async ({ conf, set, val: { port } }) => {
   const arweave = Arweave.init({
     host: "localhost",
@@ -37,7 +44,7 @@ export const connectLocalhost = async ({ conf, set, val: { port } }) => {
     protocol: "http",
   })
   try {
-    await arweave.network.getInfo()
+    const info = await arweave.network.getInfo()
     return port
   } catch (e) {
     return null
@@ -67,22 +74,26 @@ export const setupWeaveDB = async ({
     },
   }
   sdk = new SDK({
-    wallet: weavedb.arweave,
     name: "weavedb",
     version: "1",
     contractTxId: contractTxId,
     arweave: arweave[network],
   })
-
-  // light = new client({
-  //   wallet: weavedb.arweave,
-  //   name: weavedb.weavedb.name,
-  //   version: weavedb.weavedb.version,
-  //   contractTxId: contractTxId,
-  //   arweave: arweave[network],
-  // })
-  // const a = await light.get("asfa", 1)
-  // console.log("a: ", a)
+  if (isNil(arweave_wallet)) {
+    const arweave = Arweave.init({
+      host: "localhost",
+      port: port || 1820,
+      protocol: "http",
+    })
+    arweave_wallet ||= await arweave.wallets.generate()
+    await addFunds(arweave, arweave_wallet)
+  }
+  sdk.initialize({
+    name: "weavedb",
+    version: "1",
+    contractTxId: contractTxId,
+    wallet: arweave_wallet,
+  })
   window.Buffer = Buffer
   set(true, "initWDB")
   return sdk
