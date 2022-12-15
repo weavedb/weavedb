@@ -1,9 +1,25 @@
 const { DBClient } = require("./weavedb_grpc_web_pb")
 const { WeaveDBRequest } = require("./weavedb_pb")
-const { all, complement, last, isNil } = require("ramda")
+const { includes, all, complement, last, isNil, is, init } = require("ramda")
 const Base = require("weavedb-base")
 let Arweave = require("arweave")
 Arweave = Arweave.default || Arweave
+
+const reads = [
+  "get",
+  "cget",
+  "getIndexes",
+  "getCrons",
+  "getSchema",
+  "getRules",
+  "getIds",
+  "getOwner",
+  "getAddressLink",
+  "getAlgorithms",
+  "getLinkedContract",
+  "getEvolve",
+  "getVersion",
+]
 
 class SDK extends Base {
   constructor({ rpc, contractTxId, wallet, name, version, EthWallet, web3 }) {
@@ -25,10 +41,12 @@ class SDK extends Base {
     if (!isNil(EthWallet)) this.setEthWallet(EthWallet)
   }
 
-  async _request(func, query) {
+  async _request(func, query, nocache) {
+    if (!includes(func)(reads)) nocache = false
     const request = new WeaveDBRequest()
     request.setMethod(`${func}@${this.contractTxId}`)
     request.setQuery(JSON.stringify(query))
+    request.setNocache(nocache)
     const _query = () =>
       new Promise(ret => {
         this.client.query(request, {}, (err, response) => {
@@ -46,7 +64,18 @@ class SDK extends Base {
     return q.result
   }
 
+  parseQuery(func, query) {
+    let nocache = false
+    if (includes(func)(reads) && is(Boolean, last(query))) {
+      nocache = last(query)
+      query = init(query)
+    }
+    return { nocache, query }
+  }
+
   async request(func, ...query) {
+    let nocache = false
+    ;({ nocache, query } = this.parseQuery(func, query))
     return await this._request(func, query)
   }
 
