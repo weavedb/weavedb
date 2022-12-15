@@ -25,7 +25,7 @@ cd node/net/grpc/gateway/weavedb/node-server
 touch weavedb.config.js
 ```
 
-`weavedb.config.js`
+#### weavedb.config.js
 
 ```js
 module.exports = {
@@ -45,12 +45,22 @@ module.exports = {
 
 ```
 
+#### contractTxId
+
+There are 3 ways to specify the `contractTxId` in the config file.
+
+- single contract - set one string id to allow single DB instance.  
+`contractTxId: "xxxxx..."`
+- multiple contracts - set an array of ids to allow multiple DB instances.  
+`contractTxId: [ "xxxxx...", "yyyyy...", "zzzzz..." ]`
+- any contracts - omit this field to allow any DB instance on the node.
+
 Then build and run the docker container.
 
 ```bash
 cd ..
-docker-compose pull prereqs node-server envoy
-docker-compose up -d node-server envoy
+sudo docker-compose pull node-server envoy
+sudo docker-compose up -d node-server envoy
 ```
 
 Now you can interact with the node using the [Light Client](/docs/sdk/client).
@@ -228,7 +238,7 @@ module.exports = {
 
 ```bash
 cd weavedb/node
-sudo docker-compose pull prereqs node-server envoy
+sudo docker-compose pull node-server envoy
 sudo docker-compose up --build -d node-server envoy
 ```
 
