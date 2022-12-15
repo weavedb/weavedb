@@ -39,9 +39,11 @@ class SDK extends Base {
     EthWallet,
     web3,
     arweave,
+    arweave_wallet,
   }) {
     super()
     this.contractTxId = contractTxId
+    this.arweave_wallet = arweave_wallet
     this.arweave = Arweave.init(arweave)
     this.client = new weavedb_proto.DB(rpc, grpc.credentials.createInsecure())
     if (typeof window === "object") {

@@ -49,15 +49,6 @@ async function init() {
   }
   arlocal = new ArLocal(port, false, dbPath, persist)
   await arlocal.start()
-  sdk = new SDK({
-    arweave: {
-      host: "localhost",
-      port,
-      protocol: "http",
-    },
-  })
-  arweave = sdk.arweave
-  warp = sdk.warp
   let _wallet = Wallet.generate()
   let _arweave_wallet = null
   if (!isNil(wallet)) {
@@ -72,6 +63,17 @@ async function init() {
     }
     _arweave_wallet = JSON.parse(fs.readFileSync(wallet_path, "utf8"))
   }
+  sdk = new SDK({
+    arweave_wallet: _arweave_wallet,
+    arweave: {
+      host: "localhost",
+      port,
+      protocol: "http",
+    },
+  })
+  arweave = sdk.arweave
+  warp = sdk.warp
+
   const {
     contract,
     intmaxSrcTxId,
@@ -99,15 +101,14 @@ async function init() {
     console.log(contract)
     ;({ contractTxId } = contract)
   }
-
   const name = "weavedb"
   const version = "1"
+
   sdk.initialize({
     contractTxId,
     wallet: arweave_wallet,
     name,
     version,
-    EthWallet: _wallet,
   })
   await sdk.mineBlock()
   waitForCommand()
