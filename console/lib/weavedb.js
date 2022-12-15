@@ -33,7 +33,7 @@ let arweave_wallet
 let funded = false
 async function addFunds(arweave, wallet) {
   const walletAddress = await arweave.wallets.getAddress(wallet)
-  console.log(await arweave.api.get(`/mint/${walletAddress}/1000000000000000`))
+  await arweave.api.get(`/mint/${walletAddress}/1000000000000000`)
   await arweave.api.get("mine")
 }
 
@@ -88,12 +88,14 @@ export const setupWeaveDB = async ({
     arweave_wallet ||= await arweave.wallets.generate()
     await addFunds(arweave, arweave_wallet)
   }
-  sdk.initialize({
-    name: "weavedb",
-    version: "1",
-    contractTxId: contractTxId,
-    wallet: arweave_wallet,
-  })
+  if (!isNil(contractTxId)) {
+    sdk.initialize({
+      name: "weavedb",
+      version: "1",
+      contractTxId: contractTxId,
+      wallet: arweave_wallet,
+    })
+  }
   window.Buffer = Buffer
   set(true, "initWDB")
   return sdk
