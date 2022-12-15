@@ -1,6 +1,6 @@
 {
   "name": "weavedb-client",
-  "version": "0.7.10",
+  "version": "0.7.12",
   "main": "index.js",
   "license": "MIT",
   "engines": {

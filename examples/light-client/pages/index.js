@@ -9,8 +9,8 @@ export default function Home() {
       const db = new client({
         name: "weavedb",
         version: "1",
-        contractTxId: "7VqqosbKTwK7A1oeb4BNu2Aou--o5csFn4uzzN9fMz0",
-        rpc: "https://grpc.asteroid.ac",
+        contractTxId: "2ohyMxM2Z2exV4dVLgRNa9jMnEY09H_I-5WkkZBR0Ns",
+        rpc: "http://localhost:8080",
       })
       setPosts(await db.get("wall", ["date", "desc"], 5))
     })()
