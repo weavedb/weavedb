@@ -163,7 +163,7 @@ export default inject(
           clearInterval(iv)
           iv = setInterval(async () => {
             try {
-              if (!isNil(db.db)) {
+              if (!isNil(db.db) && !isNil(contractTxId)) {
                 setState((await db.db.readState()).cachedValue.state)
                 setNetworkErr(false)
               }
