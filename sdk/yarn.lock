@@ -2707,6 +2707,13 @@ form-data@^4.0.0:
     combined-stream "^1.0.8"
     mime-types "^2.1.12"
 
+fpjson-lang@^0.1.1:
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/fpjson-lang/-/fpjson-lang-0.1.1.tgz#dba2aebd78a2b4c9376818f85cc3d4b13db6304a"
+  integrity sha512-X8vcJxzDbXRm5Wf2BXWztT+Fo87ole3nBIjnnWyhWDvC3MQd3P53XYNJ6MXLprvVNQ4zke+3m91yNSaBL40omA==
+  dependencies:
+    ramda "^0.28.0"
+
 fs-constants@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/fs-constants/-/fs-constants-1.0.0.tgz#6be0de9be998ce16af8afc24497b9ee9b7ccd9ad"
@@ -3113,6 +3120,11 @@ js-yaml@4.0.0:
   integrity sha512-pqon0s+4ScYUvX30wxQi3PogGFAlUyH0awepWvwkj4jD4v+ova3RiYw8bmA6x2rDrEaj8i/oWKoRxpVNW+Re8Q==
   dependencies:
     argparse "^2.0.1"
+
+json-logic-js@^2.0.2:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/json-logic-js/-/json-logic-js-2.0.2.tgz#b613e095f5e598cb78f7b9a2bbf638e74cf98158"
+  integrity sha512-ZBtBdMJieqQcH7IX/LaBsr5pX+Y5JIW+EhejtM3Ffg2jdN9Iwf+Ht6TbHnvAZ/YtwyuhPaCBlnvzrwVeWdvGDQ==
 
 keccak@^3.0.0:
   version "3.0.2"
