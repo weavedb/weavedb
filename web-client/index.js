@@ -22,10 +22,20 @@ const reads = [
 ]
 
 class SDK extends Base {
-  constructor({ rpc, contractTxId, wallet, name, version, EthWallet, web3 }) {
+  constructor({
+    rpc,
+    contractTxId,
+    wallet,
+    name,
+    version,
+    EthWallet,
+    web3,
+    arweave_wallet,
+  }) {
     super()
     this.contractTxId = contractTxId
     this.arweave = Arweave.init()
+    this.arweave_wallet = arweave_wallet
     this.client = new DBClient(rpc)
     if (typeof window === "object") {
       require("@metamask/legacy-web3")
