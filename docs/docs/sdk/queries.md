@@ -85,7 +85,7 @@ const docs_page2 = db.cget("collection_name", [ "age" ], ["startAfter", docs_pag
 
 You can subscribe to state changes with `on` and `con`. They are the counterparts of `get` and `cget` respectively.
 
-These only work with `weavedb-sdk` for now.
+These only work with `weavedb-sdk-node` for now.
 
 ```js
 const unsubscribe = await on.("collection_name", "doc_id", (data) => {
@@ -98,7 +98,7 @@ const unsubscribe = await on.("collection_name", "doc_id", (data) => {
 
 They are the same as `get` / `cget`, but get values from the cached state, which is faster but may not be the most up-to-date values.
 
-These only work with `weavedb-sdk` for now.
+These only work with `weavedb-sdk-node` for now.
 
 ```js
 await db.getCache("collection_name", "doc_id")
