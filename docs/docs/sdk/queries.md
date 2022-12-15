@@ -36,6 +36,7 @@ Get a collection
 await db.get("collection_name")
 await db.cget("collection_name")
 ```
+
 Arbitrary length of document nesting is possible.
 
 ```js
@@ -78,6 +79,43 @@ Pagination
 ```js
 const docs_page1 = db.cget("collection_name", [ "age" ])
 const docs_page2 = db.cget("collection_name", [ "age" ], ["startAfter", docs_page1[docs_page1.length - 1]])
+```
+
+### on / con
+
+You can subscribe to state changes with `on` and `con`. They are the counterparts of `get` and `cget` respectively.
+
+These only work with `weavedb-sdk` for now.
+
+```js
+const unsubscribe = await on.("collection_name", "doc_id", (data) => {
+  console.log(data)
+  unsubscribe()
+})
+```
+
+### getCache / cgetCache
+
+They are the same as `get` / `cget`, but get values from the cached state, which is faster but may not be the most up-to-date values.
+
+These only work with `weavedb-sdk` for now.
+
+```js
+await db.getCache("collection_name", "doc_id")
+await db.cgetCache("collection_name", "doc_id")
+```
+
+### nocache
+
+With `weavedb-client` and `weavedb-node-client`, if the last argument is boolean, it's recognized as `nocache` option.
+
+gRPC nodes use `getCache` / `cgetCache` to get data by default, but the up-to-date values can be obtained with `nocache` option set `true`.
+
+You would use `nocache` after updating data to get the latest values.
+
+```js
+await db.set({ field : "value"}, "collection_name", "doc_id")
+await db.get("collection_name", "doc_id", true) // without true, the data might be old
 ```
 
 ### add
