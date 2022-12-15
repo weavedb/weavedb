@@ -1,4 +1,4 @@
-FROM node:16.18.1 AS copy-and-build
+FROM node:16.19.0-alpine AS copy-and-build
 WORKDIR /
 COPY ./net ./weavedb
 
