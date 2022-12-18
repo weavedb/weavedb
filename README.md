@@ -40,7 +40,7 @@ WeaveDB allows JSON-based functional programming on data, which opens up possibi
 
 ## Demo Dapps
 
-The v0.7 contract is deployed on the Warp mainnet at [PliTJIFuE-mC0R1qivwV4Prh7B5OMDLfkL4qk6MbeUw](https://sonar.warp.cc/#/app/source/PliTJIFuE-mC0R1qivwV4Prh7B5OMDLfkL4qk6MbeUw).
+The v0.8 contract is deployed on the Warp mainnet at [cvDUleFkH8v_hU-pBwInngotLszGpUGF-e_Ask6juwI](https://sonar.warp.cc/#/app/source/cvDUleFkH8v_hU-pBwInngotLszGpUGF-e_Ask6juwI).
 
 ### The Wall 2 on DEFINITY
 
