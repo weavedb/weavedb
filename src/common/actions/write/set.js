@@ -6,16 +6,8 @@ import { updateData, addData, getIndex } from "../../lib/index"
 
 export const set = async (state, action, signer, contractErr = true) => {
   signer ||= await validate(state, action, "set")
-  let {
-    _data,
-    data,
-    query,
-    new_data,
-    path,
-    schema,
-    col,
-    next_data,
-  } = await parse(state, action, "set", signer, 0, contractErr)
+  let { _data, data, query, new_data, path, schema, col, next_data } =
+    await parse(state, action, "set", signer, 0, contractErr)
   let prev = clone(_data.__data)
   validateSchema(schema, next_data, contractErr)
   let ind = getIndex(state, init(path))

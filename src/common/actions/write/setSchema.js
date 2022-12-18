@@ -2,7 +2,7 @@ import { isNil, mergeLeft } from "ramda"
 import { clone, parse, mergeData } from "../../lib/utils"
 import { err } from "../../lib/utils"
 import { validate } from "../../lib/validate"
-import { validator } from "@exodus/schemasafe"
+import { validate as validator } from "../../lib/jsonschema"
 
 export const setSchema = async (state, action, signer) => {
   signer ||= await validate(state, action, "setSchema")
@@ -13,6 +13,6 @@ export const setSchema = async (state, action, signer) => {
     signer
   )
   _data.schema = new_data
-  const _validate = validator(clone(_data.schema))
+  const _validate = validator(undefined, clone(_data.schema))
   return { state }
 }
