@@ -148,6 +148,7 @@ export default inject(
         if (!isNil(contractTxId)) {
           db = await fn(setupWeaveDB)({ network, contractTxId, port })
           setState((await db.db.readState()).cachedValue.state)
+          console.log(await db.db.readState())
           fn(switchTempAddress)({ contractTxId })
         } else {
           db = await fn(setupWeaveDB)({ network: "Mainnet" })
@@ -251,6 +252,12 @@ export default inject(
       "nonce",
       "ids",
       "evolve",
+      "getLinkedContract",
+      "getAddressLink",
+      "getEvolve",
+      "getAlgorithms",
+      "getOwner",
+      "getVersion",
     ]
     const ConnectWallet = () => (
       <Flex
@@ -899,7 +906,6 @@ export default inject(
                                     )
                                   ) {
                                     removeDB(v)
-                                    console.log(contractTxId, v.contractTxId)
                                     if (contractTxId === v.contractTxId) {
                                       setState(null)
                                       setNetwork("Mainnet")
