@@ -19,7 +19,7 @@ import {
 
 import fpjson from "fpjson-lang"
 import jsonLogic from "json-logic-js"
-import { validator } from "@exodus/schemasafe"
+import { validate as validator } from "./jsonschema"
 
 export const clone = state => JSON.parse(JSON.stringify(state))
 
@@ -198,8 +198,8 @@ export const getCol = (data, path, _signer) => {
 
 export const validateSchema = (schema, data, contractErr) => {
   if (!isNil(schema)) {
-    const _validate = validator(clone(schema))
-    if (!_validate(data)) err(null, contractErr)
+    const valid = validator(data, clone(schema)).valid
+    if (!valid) err(null, contractErr)
   }
 }
 
@@ -325,7 +325,6 @@ export const parse = async (
     ]) &&
     !includes(signer)(owner)
   ) {
-    console.log(signer, owner, action.caller)
     err("caller is not contract owner", contractErr)
   }
   return { data, query, new_data, path, _data, schema, col, next_data }

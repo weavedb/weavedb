@@ -67,7 +67,7 @@ describe("WeaveDB", function () {
     await db.set(data2, "ppl", "Bob")
     expect(await db.get("ppl", "Bob")).to.eql(data2)
   })
-
+  /*
   it("should subscribe to state changes with on", async () => {
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Alice", height: 160 }
@@ -88,7 +88,6 @@ describe("WeaveDB", function () {
       })
     await check()
   })
-
   it("should subscribe to state changes with con", async () => {
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Alice", height: 160 }
@@ -124,7 +123,7 @@ describe("WeaveDB", function () {
     expect(await db.get("ppl", "Bob")).to.eql(data)
     await check()
   })
-
+  */
   it("should cget & pagenate", async () => {
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Alice", age: 160 }
