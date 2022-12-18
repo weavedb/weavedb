@@ -88,7 +88,9 @@ export const validate = async (state, action, func) => {
     if (isValid) {
       signer = caller
     } else {
-      err(`The wrong signature`)
+      err(
+        `The wrong signature, pubkey: ${typeof pubKey}, encoded: ${typeof encoded_data}, sig: ${typeof signature}, te: ${typeof TextEncoder}`
+      )
     }
   } else if (type == "secp256k1") {
     signer = (

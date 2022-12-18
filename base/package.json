@@ -10,7 +10,7 @@
   "main": "index.js",
   "license": "MIT",
   "engines": {
-    "node": "16"
+    "node": ">=16.5"
   },
   "dependencies": {
     "@metamask/eth-sig-util": "^4.0.1",
