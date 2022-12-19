@@ -1,4 +1,6 @@
-const { recoverTypedSignature } = require("../../lib/eth-sig-util")
+const {
+  recoverTypedSignature,
+} = require("../../lib/eth-sig-util/sign-typed-data")
 
 export default async (state, action) => {
   const { data, signature } = action.input

@@ -23,12 +23,8 @@ async function deployContract() {
       "utf8"
     )
   )
-  const initialState = {
-    ...stateFromFile,
-    ...{
-      owner: walletAddress,
-    },
-  }
+  const initialState = stateFromFile
+
   const res = await warp.createContract.deploy({
     wallet: wallet,
     initState: JSON.stringify(initialState),
