@@ -1,18 +1,10 @@
-const { Signature, RSAKey, KEYUTIL } = require("jsrsasign")
-const Scalar = require("ffjavascript").Scalar
-const crypto = require("crypto")
 const { Ed25519KeyIdentity } = require("@dfinity/identity")
-const { providers, Wallet, utils } = require("ethers")
-const Arweave = require("arweave")
-const fs = require("fs")
-const path = require("path")
+const { providers, Wallet } = require("ethers")
 const { expect } = require("chai")
 const { isNil, range, pick } = require("ramda")
 const { init, stop, initBeforeEach, addFunds } = require("./util")
-const { Buffer } = require("buffer")
 const buildEddsa = require("circomlibjs").buildEddsa
 const Account = require("intmax").Account
-const shajs = require("sha.js")
 const { readFileSync } = require("fs")
 const { resolve } = require("path")
 
@@ -47,7 +39,7 @@ describe("WeaveDB", function () {
     )
   })
 
-  it("should get nonce", async () => {
+  it.only("should get nonce", async () => {
     expect(await db.getNonce(wallet.getAddressString())).to.equal(1)
     await db.set({ id: 1 }, "col", "doc")
     expect(await db.getNonce(wallet.getAddressString())).to.equal(2)

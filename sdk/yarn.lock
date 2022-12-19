@@ -1119,10 +1119,10 @@ argparse@^2.0.1:
   resolved "https://registry.yarnpkg.com/argparse/-/argparse-2.0.1.tgz#246f50f3ca78a3240f6c997e8a9bd1eac49e4b38"
   integrity sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==
 
-arweave@1.11.6:
-  version "1.11.6"
-  resolved "https://registry.yarnpkg.com/arweave/-/arweave-1.11.6.tgz#5afcded201c6f123dd62e5bfae1b72ca793ec7c2"
-  integrity sha512-D6N6e2z7oZoxFhu/qElLwQ2T8DxZ8xIqDB+Y16KHvZbassIrrS9iALwxLdaFYNInuyElg6i7qotBMcShWbFSTw==
+arweave@1.11.8:
+  version "1.11.8"
+  resolved "https://registry.yarnpkg.com/arweave/-/arweave-1.11.8.tgz#09376e0c6cec40a661cbb27a306cb11c0a663cd8"
+  integrity sha512-58ODeNPIC4OjaOCl2bXjKbOFGsiVZFs+DkQg3BvQGvFWNqw1zTJ4Jp01xGUz+GbdOaDyJcCC0g3l0HwdJfFPyw==
   dependencies:
     arconnect "^0.4.2"
     asn1.js "^5.4.1"
@@ -3103,15 +3103,15 @@ vm2@3.9.11:
     acorn "^8.7.0"
     acorn-walk "^8.2.0"
 
-warp-contracts@1.2.27:
-  version "1.2.27"
-  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.2.27.tgz#d18e5318fd8f06005415200532f5bd200ed2e6f7"
-  integrity sha512-Wbs4MLP0E0e0F13RRA0MvrGQkuILr1wHYGyj0ba/QPtWs/iy6tuMA4QzGgpTmNydx1XZkTGatCkV0QFkdT2NdA==
+warp-contracts@^1.2.35:
+  version "1.2.35"
+  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.2.35.tgz#c0c1e47e1ca1dce0877c51e61a678dc5a78f55a6"
+  integrity sha512-P2T28hdZq40+p/qTKiQDDSjdIn2SgIG5nGayqknGMLPt99iaYNN8MFh1Lvnmiaq9DbntFqA7mBFdrr0WdpC/tw==
   dependencies:
     "@assemblyscript/loader" "^0.19.23"
     "@idena/vrf-js" "^1.0.1"
     archiver "^5.3.0"
-    arweave "1.11.6"
+    arweave "1.11.8"
     elliptic "^6.5.4"
     events "3.3.0"
     fast-copy "^3.0.0"
