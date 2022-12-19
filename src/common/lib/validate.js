@@ -11,7 +11,6 @@ export const validate = async (state, action, func) => {
     type = "secp256k1",
     pubKey,
   } = action.input
-
   if (
     !includes(type)(
       state.auth.algorithms || [
