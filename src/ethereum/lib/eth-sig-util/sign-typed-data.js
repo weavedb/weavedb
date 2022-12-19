@@ -191,7 +191,3 @@ export function recoverTypedSignature({ data, signature, version }) {
   const sender = publicToAddress(publicKey)
   return bufferToHex(sender)
 }
-
-module.exports = {
-  recoverTypedSignature,
-}
