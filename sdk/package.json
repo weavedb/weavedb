@@ -16,7 +16,7 @@
     "@metamask/legacy-web3": "^2.0.0",
     "arweave": "^1.11.4",
     "ramda": "^0.28.0",
-    "warp-contracts": "^1.2.35",
+    "warp-contracts": "https://github.com/weavedb/warp#dcd902f06e01c060c34cfb9184fb71ea90deddbe",
     "weavedb-base": "^0.7.3"
   },
   "devDependencies": {
