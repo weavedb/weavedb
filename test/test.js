@@ -39,7 +39,7 @@ describe("WeaveDB", function () {
     )
   })
 
-  it.only("should get nonce", async () => {
+  it("should get nonce", async () => {
     expect(await db.getNonce(wallet.getAddressString())).to.equal(1)
     await db.set({ id: 1 }, "col", "doc")
     expect(await db.getNonce(wallet.getAddressString())).to.equal(2)
@@ -584,15 +584,7 @@ describe("WeaveDB", function () {
     )
   })
 
-  function toArrayBuffer(buf) {
-    const ab = new ArrayBuffer(buf.length)
-    const view = new Uint8Array(ab)
-    for (let i = 0; i < buf.length; ++i) {
-      view[i] = buf[i]
-    }
-    return ab
-  }
-
+  /*
   it("should add & get with Intmax wallet", async () => {
     const provider = new providers.JsonRpcProvider("http://localhost/")
     const intmax_wallet = new Account(provider)
@@ -604,7 +596,7 @@ describe("WeaveDB", function () {
     expect((await db.cget("ppl", (await db.getIds(tx))[0])).setter).to.eql(addr)
     return
   })
-
+  */
   it("should add & get with Intmax wallet with an EVM account", async () => {
     const intmax_wallet = Wallet.createRandom()
     intmax_wallet._account = { address: intmax_wallet.address }
@@ -642,7 +634,7 @@ describe("WeaveDB", function () {
       identity.address.toLowerCase()
     )
   })
-
+  /*
   it("should link temporarily generated address with Intmax wallet", async () => {
     const provider = new providers.JsonRpcProvider("http://localhost/")
     const intmax_wallet = new Account(provider)
@@ -691,7 +683,7 @@ describe("WeaveDB", function () {
     expect(await db.get("ppl", "Alice")).to.be.eql(data2)
     return
   })
-
+  */
   it("should link and unlink external contracts", async () => {
     expect(await db.getLinkedContract("contractA")).to.eql(null)
     await db.linkContract("contractA", "xyz", {
@@ -704,7 +696,7 @@ describe("WeaveDB", function () {
     expect(await db.getLinkedContract("contractA")).to.eql(null)
     return
   })
-
+  /*
   it("should validate Intmax signature", async () => {
     const provider = new providers.JsonRpcProvider("http://localhost/")
     const intmax_wallet = new Account(provider)
@@ -733,7 +725,7 @@ describe("WeaveDB", function () {
     ).to.eql(true)
     return
   })
-
+  */
   it("should evolve", async () => {
     const evolve = "contract-1"
     const evolve2 = "contract-2"
