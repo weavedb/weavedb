@@ -3103,27 +3103,6 @@ vm2@3.9.11:
     acorn "^8.7.0"
     acorn-walk "^8.2.0"
 
-warp-contracts@^1.2.35:
-  version "1.2.35"
-  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.2.35.tgz#c0c1e47e1ca1dce0877c51e61a678dc5a78f55a6"
-  integrity sha512-P2T28hdZq40+p/qTKiQDDSjdIn2SgIG5nGayqknGMLPt99iaYNN8MFh1Lvnmiaq9DbntFqA7mBFdrr0WdpC/tw==
-  dependencies:
-    "@assemblyscript/loader" "^0.19.23"
-    "@idena/vrf-js" "^1.0.1"
-    archiver "^5.3.0"
-    arweave "1.11.8"
-    elliptic "^6.5.4"
-    events "3.3.0"
-    fast-copy "^3.0.0"
-    level "^8.0.0"
-    memory-level "^1.0.0"
-    redstone-isomorphic "1.1.8"
-    redstone-wasm-metering "1.0.3"
-    safe-stable-stringify "2.4.1"
-    stream-buffers "^3.0.2"
-    unzipit "^1.4.0"
-    vm2 "3.9.11"
-
 "warp-contracts@https://github.com/weavedb/warp#dcd902f06e01c060c34cfb9184fb71ea90deddbe":
   version "1.2.35"
   resolved "https://github.com/weavedb/warp#dcd902f06e01c060c34cfb9184fb71ea90deddbe"
