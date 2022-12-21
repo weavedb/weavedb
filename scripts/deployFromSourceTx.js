@@ -51,7 +51,7 @@ const deploy = async () => {
       owner: walletAddress,
     },
   }
-  initialState.contracts.intmax = contractTxId_Intmax
+  // initialState.contracts.intmax = contractTxId_Intmax
   initialState.contracts.dfinity = contractTxId_II
   initialState.contracts.ethereum = contractTxId_ETH
   const res = await warp.createContract.deployFromSourceTx({
@@ -60,28 +60,6 @@ const deploy = async () => {
     srcTxId,
   })
   console.log(res)
-
-  // generate weavedb config
-  const weavedbConfig = {
-    name: "weavedb",
-    version: "1",
-    contractTxId: res.contractTxId,
-    arweave: {
-      host: "arweave.net",
-      port: 443,
-      protocol: "https",
-    },
-    wallet: wallet,
-  }
-
-  const weavedbConfigPath = path.join(
-    __dirname,
-    "../weavedb-node/node-server/weavedb.config.js"
-  )
-  fs.writeFileSync(
-    weavedbConfigPath,
-    "module.exports = " + JSON.stringify(weavedbConfig)
-  )
 
   process.exit()
 }
