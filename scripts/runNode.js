@@ -141,7 +141,7 @@ function waitForCommand() {
       if (!isNil(res.err)) {
         console.log(`error: ${res.err.errorMessage}`)
       } else {
-        console.log(res)
+        console.log(JSON.parse(JSON.stringify(res)))
       }
     } catch (e) {
       console.log(e)

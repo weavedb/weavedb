@@ -1,4 +1,4 @@
-const SDK = require("../sdk")
+const SDK = require("../sdk-node")
 const fs = require("fs")
 const path = require("path")
 const { expect } = require("chai")
@@ -85,7 +85,7 @@ async function deployContracts({
         owner: walletAddress,
       },
     }
-    initialState.contracts.intmax = contractTxIdIntmax
+    //initialState.contracts.intmax = contractTxIdIntmax
     initialState.contracts.dfinity = contractTxIdDfinity
     initialState.contracts.ethereum = contractTxIdEthereum
     const contract = await warp.createContract.deploy({
