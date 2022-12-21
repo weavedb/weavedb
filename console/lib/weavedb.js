@@ -56,28 +56,12 @@ export const setupWeaveDB = async ({
   set,
   val: { network, contractTxId, port },
 }) => {
-  let arweave = {
-    Localhost: {
-      host: "localhost",
-      port: port || 1820,
-      protocol: "http",
-    },
-    Testnet: {
-      host: "testnet.redstone.tools",
-      port: 443,
-      protocol: "https",
-    },
-    Mainnet: {
-      host: "arweave.net",
-      port: 443,
-      protocol: "https",
-    },
-  }
   sdk = new SDK({
+    network: network.toLowerCase(),
+    port,
     name: "weavedb",
     version: "1",
     contractTxId: contractTxId,
-    arweave: arweave[network],
   })
   if (isNil(arweave_wallet)) {
     const arweave = Arweave.init({
