@@ -60,6 +60,12 @@ describe("Ethereum", function () {
     }
   })
 
+  afterEach(async () => {
+    try {
+      clearInterval(db.interval)
+    } catch (e) {}
+  })
+
   it("should verify personal signatures", async () => {
     const identity = EthCrypto.createIdentity()
     const signature = ethSigUtil.personalSign({

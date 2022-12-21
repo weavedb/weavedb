@@ -525,7 +525,7 @@ describe("WeaveDB", function () {
     expect((await db.getCrons()).crons).to.eql({})
   })
 
-  it.only("should link temporarily generated address with internet identity", async () => {
+  it("should link temporarily generated address with internet identity", async () => {
     const ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(_ii))
     const addr = ii.toJSON()[0]
     const { identity } = await db.createTempAddressWithII(ii)
