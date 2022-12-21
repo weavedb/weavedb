@@ -14,9 +14,26 @@ class SDK extends Base {
     version,
     EthWallet,
     web3,
+    network = "mainnet",
+    port = 1820,
   }) {
     super()
     this.arweave_wallet = arweave_wallet
+    if (isNil(arweave)) {
+      if (network === "localhost") {
+        arweave = {
+          host: "localhost",
+          port,
+          protocol: "http",
+        }
+      } else {
+        arweave = {
+          host: "arweave.net",
+          port: 443,
+          protocol: "https",
+        }
+      }
+    }
     this.arweave = Arweave.init(arweave)
     LoggerFactory.INST.logLevel("error")
     if (typeof window === "object") {
@@ -24,14 +41,13 @@ class SDK extends Base {
       this.web3 = window.web3
     }
     this.network =
-      arweave.host === "host.docker.internal"
+      network ||
+      arweave.host === "host.docker.internal" ||
+      arweave.host === "localhost"
         ? "localhost"
-        : arweave.host === "localhost"
-        ? "localhost"
-        : arweave.host === "arweave.net"
-        ? "mainnet"
-        : "testnet"
-    if (!isNil(arweave) && arweave.host === "host.docker.internal") {
+        : "mainnet"
+
+    if (arweave.host === "host.docker.internal") {
       this.warp = WarpFactory.custom(this.arweave, {}, "local")
         .useArweaveGateway()
         .build()
@@ -39,6 +55,8 @@ class SDK extends Base {
       this.warp = WarpFactory.forLocal(
         isNil(arweave) || isNil(arweave.port) ? 1820 : arweave.port
       )
+    } else if (this.network === "testnet") {
+      this.warp = WarpFactory.forTestnet()
     } else {
       this.warp = WarpFactory.forMainnet()
     }
