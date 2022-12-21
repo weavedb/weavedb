@@ -136,6 +136,7 @@ function waitForCommand() {
   console.log()
   rl.question("> ", async method => {
     try {
+      if (method === "exit") process.exit()
       let pr = eval(`sdk.${method}`)
       const res = await pr
       if (!isNil(res.err)) {
