@@ -2,9 +2,9 @@ const fs = require("fs")
 const path = require("path")
 const Arweave = require("arweave")
 const wallet_name = process.argv[2]
-const contractTxIdIntmax = process.argv[3]
-const contractTxIdInternetIdentity = process.argv[4]
-const contractTxIdEthereum = process.argv[5]
+//const contractTxIdIntmax = process.argv[3]
+const contractTxIdInternetIdentity = process.argv[3]
+const contractTxIdEthereum = process.argv[4]
 const { isNil } = require("ramda")
 const { WarpFactory, LoggerFactory } = require("warp-contracts")
 
@@ -34,7 +34,7 @@ async function deployContract(secure) {
       owner: walletAddress,
     },
   }
-  initialState.contracts.intmax = contractTxIdIntmax
+  //initialState.contracts.intmax = contractTxIdIntmax
   initialState.contracts.dfinity = contractTxIdInternetIdentity
   initialState.contracts.ethereum = contractTxIdEthereum
   const res = await warp.createContract.deploy({

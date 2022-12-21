@@ -180,13 +180,13 @@ WeaveDB defaults to use all algorithms, but you can specify authentication algor
 - `secp256k1` : for EVM-based accounts ( Metamask )
 - `ed25519` : for DFINITY ( Internet Identity )
 - `rsa256` : for Arweave ( ArConnect )
-- `poseidon` : for IntmaxWallet with Zero Knowledge Proof
+- `poseidon` : for IntmaxWallet with Zero Knowledge Proof ( temporaliry disabled )
 - `secp256k1-2` : for IntmaxWallet with EVM-based accounts
 
 ### Set Algorithms
 
-To enable Intmax Wallet, and disable the others.
+To enable Arweave, and disable the others.
 
 ```javascript
-await db.setAlgorithms([ "poseidon", "secp256k1-2" ])
+await db.setAlgorithms([ "rsa256" ])
 ```
