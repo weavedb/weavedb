@@ -25,10 +25,10 @@ import {
 } from "ramda"
 import { Buffer } from "buffer"
 let sdk
-const weavedbSrcTxId = "cvDUleFkH8v_hU-pBwInngotLszGpUGF-e_Ask6juwI"
-const intmaxSrcTxId = "OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94"
-const dfinitySrcTxId = "RQpDSz3PSyYSn6LRzWnX85bu6iGqCZKLxkdwQVoKzTI"
-const ethereumSrcTxId = "dtLqn4y5fFD5xyiRCzaYjWxz5k8I6VxoVeARFphhuY4"
+const weavedbSrcTxId = "H3-tXcgU5YW6S_SM1Ail-1M8_nLEnJLaAMRdiivgn68"
+//const intmaxSrcTxId = "OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94"
+const dfinitySrcTxId = "3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8"
+const ethereumSrcTxId = "Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w"
 let arweave_wallet
 let funded = false
 async function addFunds(arweave, wallet) {
@@ -385,7 +385,7 @@ export const deployDB = async ({
         break
       case "Intmax":
         algorithms.push("secp256k1-2")
-        algorithms.push("poseidon")
+        //algorithms.push("poseidon")
         break
       case "DFINITY":
         algorithms.push("ed25519")
@@ -409,7 +409,7 @@ export const deployDB = async ({
         secure: false,
         owner,
         contracts: {
-          intmax: intmaxSrcTxId,
+          //          intmax: intmaxSrcTxId,
           dfinity: dfinitySrcTxId,
           ethereum: ethereumSrcTxId,
         },
@@ -421,6 +421,7 @@ export const deployDB = async ({
     return { contractTxId, network, port }
   } else {
     const warp = WarpFactory.forLocal(port)
+    /*
     const poseidon1TxId = await deploy({
       src: "poseidonConstants",
       init: "initial-state-poseidon-constants",
@@ -459,7 +460,7 @@ export const deployDB = async ({
           poseidonConstants2: poseidon2TxId,
         },
       },
-    })
+    })*/
     const dfinitySrcTxId = await deploy({
       src: "ii",
       init: "initial-state-ii",
@@ -487,7 +488,7 @@ export const deployDB = async ({
         secure: false,
         owner,
         contracts: {
-          intmax: intmaxSrcTxId,
+          //intmax: intmaxSrcTxId,
           dfinity: dfinitySrcTxId,
           ethereum: ethereumSrcTxId,
         },
