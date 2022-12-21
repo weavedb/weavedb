@@ -35,11 +35,7 @@ async function init() {
     clearTimeout(stopto)
   }
   sdk = new SDK({
-    arweave: {
-      host: "localhost",
-      port: 1820,
-      protocol: "http",
-    },
+    network: "localhost",
   })
   arweave = sdk.arweave
   warp = sdk.warp
