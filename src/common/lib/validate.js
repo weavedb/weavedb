@@ -1,6 +1,5 @@
 import { is, includes, isNil } from "ramda"
 import { err, read } from "./utils"
-import { Buffer } from "./buffer"
 
 export const validate = async (state, action, func) => {
   const {
@@ -13,13 +12,7 @@ export const validate = async (state, action, func) => {
   } = action.input
   if (
     !includes(type)(
-      state.auth.algorithms || [
-        "secp256k1",
-        "secp256k1-2",
-        "ed25519",
-        "rsa256",
-        "poseidon",
-      ]
+      state.auth.algorithms || ["secp256k1", "secp256k1-2", "ed25519", "rsa256"]
     )
   ) {
     err(`The wrong algorithm`)
@@ -87,9 +80,7 @@ export const validate = async (state, action, func) => {
     if (isValid) {
       signer = caller
     } else {
-      err(
-        `The wrong signature, pubkey: ${typeof pubKey}, encoded: ${typeof encoded_data}, sig: ${typeof signature}, te: ${typeof TextEncoder}`
-      )
+      err(`The wrong signature`)
     }
   } else if (type == "secp256k1") {
     signer = (
@@ -107,21 +98,9 @@ export const validate = async (state, action, func) => {
         signature,
       })
     ).signer
-  } else if (type == "poseidon") {
-    const { isValid } = await read(state.contracts.intmax, {
-      function: "verify",
-      data: _data,
-      signature,
-      pubKey,
-    })
-    if (isValid) {
-      signer = caller
-    } else {
-      err(`The wrong signature`)
-    }
   }
 
-  if (includes(type)(["secp256k1", "secp256k1-2", "poseidon"])) {
+  if (includes(type)(["secp256k1", "secp256k1-2"])) {
     if (/^0x/.test(signer)) signer = signer.toLowerCase()
     if (/^0x/.test(_caller)) _caller = _caller.toLowerCase()
   }

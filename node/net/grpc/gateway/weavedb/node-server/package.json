@@ -11,6 +11,6 @@
     "google-protobuf": "~3.14.0",
     "md5": "^2.3.0",
     "ramda": "^0.28.0",
-    "weavedb-sdk-node": "^0.7.20"
+    "weavedb-sdk-node": "^0.7.22"
   }
 }

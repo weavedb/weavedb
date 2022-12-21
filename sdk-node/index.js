@@ -92,8 +92,10 @@ class SDK extends Base {
     version,
     EthWallet,
     web3,
+    subscribe = true,
   }) {
     super()
+    this.subscribe = subscribe
     this.arweave_wallet = arweave_wallet
     this.arweave = Arweave.init(arweave)
     LoggerFactory.INST.logLevel("error")
@@ -121,11 +123,19 @@ class SDK extends Base {
       this.warp = WarpFactory.forMainnet()
     }
     if (all(complement(isNil))([contractTxId, wallet, name, version])) {
-      this.initialize({ contractTxId, wallet, name, version, EthWallet })
+      this.initialize({
+        contractTxId,
+        wallet,
+        name,
+        version,
+        EthWallet,
+        subscribe,
+      })
     }
   }
 
-  initialize({ contractTxId, wallet, name, version, EthWallet }) {
+  initialize({ contractTxId, wallet, name, version, EthWallet, subscribe }) {
+    if (!isNil(subscribe)) this.subscribe = subscribe
     this.contractTxId = contractTxId
     if (isNil(contractTxId)) throw Error("contractTxId missing")
     this.db = this.warp
@@ -133,37 +143,43 @@ class SDK extends Base {
       .connect(wallet)
       .setEvaluationOptions({
         allowBigInt: true,
+        useVM2: true,
       })
     dbs[contractTxId] = this
     this.domain = { name, version, verifyingContract: contractTxId }
     if (!isNil(EthWallet)) this.setEthWallet(EthWallet)
     if (this.network !== "localhost") {
-      this.warp.use(new CustomSubscriptionPlugin(contractTxId, this.warp))
+      if (this.subscribe) {
+        this.warp.use(new CustomSubscriptionPlugin(contractTxId, this.warp))
+      }
       this.db
         .readState()
         .then(data => (states[this.contractTxId] = data.cachedValue.state))
         .catch(() => {})
     } else {
-      setInterval(() => {
-        this.db
-          .readState()
-          .then(async v => {
-            const state = v.cachedValue.state
-            if (!equals(state, this.state)) {
-              this.state = state
-              states[this.contractTxId] = state
-              const info = await this.arweave.network.getInfo()
-              await _on(state, this.contractTxId, {
-                height: info.height,
-                timestamp: Math.round(Date.now() / 1000),
-                id: info.current,
-              })
-            }
-          })
-          .catch(v => {
-            console.log("readState error")
-          })
-      }, 1000)
+      if (this.subscribe) {
+        this.interval = setInterval(() => {
+          this.db
+            .readState()
+            .then(async v => {
+              const state = v.cachedValue.state
+              if (!equals(state, this.state)) {
+                this.state = state
+                states[this.contractTxId] = state
+                const info = await this.arweave.network.getInfo()
+                await _on(state, this.contractTxId, {
+                  height: info.height,
+                  timestamp: Math.round(Date.now() / 1000),
+                  id: info.current,
+                })
+              }
+            })
+            .catch(v => {
+              console.log("readState error")
+              clearInterval(this.interval)
+            })
+        }, 1000)
+      }
     }
   }
 

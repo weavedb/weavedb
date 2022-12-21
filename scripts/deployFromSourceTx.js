@@ -7,9 +7,9 @@ const Arweave = require("arweave")
 const { isNil } = require("ramda")
 const wallet_name = process.argv[2]
 const srcTxId = process.argv[3] || process.env.SOURCE_TX_ID
-const contractTxId_Intmax = process.argv[4] || process.env.INTMAX_SOURCE_TX_ID
-const contractTxId_II = process.argv[5] || process.env.II_SOURCE_TX_ID
-const contractTxId_ETH = process.argv[6] || process.env.ETH_SOURCE_TX_ID
+//const contractTxId_Intmax = process.argv[4] || process.env.INTMAX_SOURCE_TX_ID
+const contractTxId_II = process.argv[4] || process.env.II_SOURCE_TX_ID
+const contractTxId_ETH = process.argv[5] || process.env.ETH_SOURCE_TX_ID
 
 const { Warp, WarpFactory, LoggerFactory } = require("warp-contracts")
 
@@ -63,20 +63,26 @@ const deploy = async () => {
 
   // generate weavedb config
   const weavedbConfig = {
-    name: "weavedb", 
-    version: "1", 
-    contractTxId: res.contractTxId, 
+    name: "weavedb",
+    version: "1",
+    contractTxId: res.contractTxId,
     arweave: {
       host: "arweave.net",
       port: 443,
-      protocol: "https"
-    }, 
-    wallet: wallet, 
+      protocol: "https",
+    },
+    wallet: wallet,
   }
 
-  const weavedbConfigPath = path.join(__dirname, "../weavedb-node/node-server/weavedb.config.js");
-  fs.writeFileSync(weavedbConfigPath, "module.exports = " + JSON.stringify(weavedbConfig))
-  
+  const weavedbConfigPath = path.join(
+    __dirname,
+    "../weavedb-node/node-server/weavedb.config.js"
+  )
+  fs.writeFileSync(
+    weavedbConfigPath,
+    "module.exports = " + JSON.stringify(weavedbConfig)
+  )
+
   process.exit()
 }
 

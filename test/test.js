@@ -9,7 +9,7 @@ const { readFileSync } = require("fs")
 const { resolve } = require("path")
 
 describe("WeaveDB", function () {
-  let wallet, walletAddress, wallet2, db, intmaxSrcTxId, arweave_wallet
+  let wallet, walletAddress, wallet2, db, arweave_wallet
   const _ii = [
     "302a300506032b6570032100ccd1d1f725fc35a681d8ef5d563a3c347829bf3f0fe822b4a4b004ee0224fc0d",
     "010925abb4cf8ccb7accbcfcbf0a6adf1bbdca12644694bb47afc7182a4ade66ccd1d1f725fc35a681d8ef5d563a3c347829bf3f0fe822b4a4b004ee0224fc0d",
@@ -24,8 +24,14 @@ describe("WeaveDB", function () {
   after(async () => await stop())
 
   beforeEach(async () => {
-    ;({ arweave_wallet, intmaxSrcTxId, walletAddress, wallet, wallet2 } =
+    ;({ arweave_wallet, walletAddress, wallet, wallet2 } =
       await initBeforeEach())
+  })
+
+  afterEach(async () => {
+    try {
+      clearInterval(db.interval)
+    } catch (e) {}
   })
 
   it("should get version", async () => {
@@ -59,7 +65,7 @@ describe("WeaveDB", function () {
     await db.set(data2, "ppl", "Bob")
     expect(await db.get("ppl", "Bob")).to.eql(data2)
   })
-  /*
+
   it("should subscribe to state changes with on", async () => {
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Alice", height: 160 }
@@ -80,6 +86,7 @@ describe("WeaveDB", function () {
       })
     await check()
   })
+
   it("should subscribe to state changes with con", async () => {
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Alice", height: 160 }
@@ -115,7 +122,7 @@ describe("WeaveDB", function () {
     expect(await db.get("ppl", "Bob")).to.eql(data)
     await check()
   })
-  */
+
   it("should cget & pagenate", async () => {
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Alice", age: 160 }
@@ -518,7 +525,7 @@ describe("WeaveDB", function () {
     expect((await db.getCrons()).crons).to.eql({})
   })
 
-  it("should link temporarily generated address with internet identity", async () => {
+  it.only("should link temporarily generated address with internet identity", async () => {
     const ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(_ii))
     const addr = ii.toJSON()[0]
     const { identity } = await db.createTempAddressWithII(ii)
@@ -585,82 +592,6 @@ describe("WeaveDB", function () {
   })
 
   /*
-  it("should add & get with Intmax wallet", async () => {
-    const provider = new providers.JsonRpcProvider("http://localhost/")
-    const intmax_wallet = new Account(provider)
-    await intmax_wallet.activate()
-    const data = { name: "Bob", age: 20 }
-    const tx = (await db.add(data, "ppl", { intmax: intmax_wallet }))
-      .originalTxId
-    const addr = intmax_wallet._address
-    expect((await db.cget("ppl", (await db.getIds(tx))[0])).setter).to.eql(addr)
-    return
-  })
-  */
-  it("should add & get with Intmax wallet with an EVM account", async () => {
-    const intmax_wallet = Wallet.createRandom()
-    intmax_wallet._account = { address: intmax_wallet.address }
-    const data = { name: "Bob", age: 20 }
-    const tx = (await db.add(data, "ppl", { intmax: intmax_wallet }))
-      .originalTxId
-    const addr = intmax_wallet.address
-    expect((await db.cget("ppl", (await db.getIds(tx))[0])).setter).to.eql(
-      addr.toLowerCase()
-    )
-    return
-  })
-
-  it("should link temporarily generated address with Intmax wallet with EVM account", async () => {
-    const intmax_wallet = Wallet.createRandom()
-    intmax_wallet._account = { address: intmax_wallet.address }
-    const addr = intmax_wallet._account.address
-    const { identity } = await db.createTempAddressWithIntmax(intmax_wallet)
-    await db.set({ name: "Beth", age: 10 }, "ppl", "Beth", {
-      wallet: addr,
-      privateKey: identity.privateKey,
-    })
-    expect((await db.cget("ppl", "Beth")).setter).to.eql(addr.toLowerCase())
-    await db.removeAddressLink(
-      {
-        address: identity.address,
-      },
-      { intmax: intmax_wallet }
-    )
-    await db.set({ name: "Bob", age: 20 }, "ppl", "Bob", {
-      privateKey: identity.privateKey,
-      overwrite: true,
-    })
-    expect((await db.cget("ppl", "Bob")).setter).to.eql(
-      identity.address.toLowerCase()
-    )
-  })
-  /*
-  it("should link temporarily generated address with Intmax wallet", async () => {
-    const provider = new providers.JsonRpcProvider("http://localhost/")
-    const intmax_wallet = new Account(provider)
-    await intmax_wallet.activate()
-    const addr = intmax_wallet._address
-    const { identity } = await db.createTempAddressWithIntmax(intmax_wallet)
-    await db.set({ name: "Beth", age: 10 }, "ppl", "Beth", {
-      wallet: addr,
-      privateKey: identity.privateKey,
-    })
-    expect((await db.cget("ppl", "Beth")).setter).to.eql(addr)
-    await db.removeAddressLink(
-      {
-        address: identity.address,
-      },
-      { intmax: intmax_wallet }
-    )
-    await db.set({ name: "Bob", age: 20 }, "ppl", "Bob", {
-      privateKey: identity.privateKey,
-      overwrite: true,
-    })
-    expect((await db.cget("ppl", "Bob")).setter).to.eql(
-      identity.address.toLowerCase()
-    )
-  })
-
   it("should set algorithms", async () => {
     const provider = new providers.JsonRpcProvider("http://localhost/")
     const intmax_wallet = new Account(provider)
@@ -696,36 +627,6 @@ describe("WeaveDB", function () {
     expect(await db.getLinkedContract("contractA")).to.eql(null)
     return
   })
-  /*
-  it("should validate Intmax signature", async () => {
-    const provider = new providers.JsonRpcProvider("http://localhost/")
-    const intmax_wallet = new Account(provider)
-    await intmax_wallet.activate()
-    const intmax = db.warp
-      .pst(intmaxSrcTxId)
-      .connect(arweave_wallet)
-      .setEvaluationOptions({
-        allowBigInt: true,
-      })
-    const data = { test: 1 }
-    const signature = await intmax_wallet.sign(JSON.stringify(data))
-    const _publicKey = intmax_wallet._publicKey
-    const eddsa = await buildEddsa()
-    const packedPublicKey = eddsa.babyJub.packPoint(_publicKey)
-    const pubKey = "0x" + Buffer.from(packedPublicKey).toString("hex")
-    expect(
-      (
-        await intmax.viewState({
-          function: "verify",
-          data,
-          signature,
-          pubKey,
-        })
-      ).result.isValid
-    ).to.eql(true)
-    return
-  })
-  */
   it("should evolve", async () => {
     const evolve = "contract-1"
     const evolve2 = "contract-2"
