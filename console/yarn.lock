@@ -7482,26 +7482,6 @@ warp-contracts@1.2.36:
     unzipit "^1.4.0"
     vm2 "3.9.11"
 
-"warp-contracts@https://github.com/weavedb/warp#dcd902f06e01c060c34cfb9184fb71ea90deddbe":
-  version "1.2.35"
-  resolved "https://github.com/weavedb/warp#dcd902f06e01c060c34cfb9184fb71ea90deddbe"
-  dependencies:
-    "@assemblyscript/loader" "^0.19.23"
-    "@idena/vrf-js" "^1.0.1"
-    archiver "^5.3.0"
-    arweave "1.11.8"
-    elliptic "^6.5.4"
-    events "3.3.0"
-    fast-copy "^3.0.0"
-    level "^8.0.0"
-    memory-level "^1.0.0"
-    redstone-isomorphic "1.1.8"
-    redstone-wasm-metering "1.0.3"
-    safe-stable-stringify "2.4.1"
-    stream-buffers "^3.0.2"
-    unzipit "^1.4.0"
-    vm2 "3.9.11"
-
 wasmbuilder@0.0.16:
   version "0.0.16"
   resolved "https://registry.yarnpkg.com/wasmbuilder/-/wasmbuilder-0.0.16.tgz#f34c1f2c047d2f6e1065cbfec5603988f16d8549"
@@ -7539,15 +7519,15 @@ weavedb-client@^0.2.1:
     grpc-web "^1.3.1"
     ramda "^0.28.0"
 
-weavedb-sdk@^0.7.24:
-  version "0.7.24"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.7.24.tgz#8a64cc4e6063b9d1845a2d843cdbb4f7253dea8b"
-  integrity sha512-zEhl/IKSJE7FyPqaVWCpUPChxlbeuf3h0mAJJcWkj1L5732tRci6CudKr3qBqBj9aDwJKUO1txrzeAXAXYzlSg==
+weavedb-sdk@^0.7.26:
+  version "0.7.26"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.7.26.tgz#2b8de1388c716e78fc1151451a0502451575923c"
+  integrity sha512-O7ylkAQrU4XcV6LKeHgvhB197HGbiGrRlaCPWUQ79OKrRB0kaBG91377HZvkgvm5lJetyO13H5q8++7sGhhIIQ==
   dependencies:
     "@metamask/legacy-web3" "^2.0.0"
     arweave "^1.11.4"
     ramda "^0.28.0"
-    warp-contracts "https://github.com/weavedb/warp#dcd902f06e01c060c34cfb9184fb71ea90deddbe"
+    warp-contracts "1.2.36"
     weavedb-base "^0.7.3"
 
 web-worker@^1.2.0:
