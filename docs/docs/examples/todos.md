@@ -150,14 +150,9 @@ We will implement these queries in the frontend code.
 
 Set up a next.js project with the app name `todos`.
 
-:::caution
-You need to downgrade `next` package to `12.0` for compatibility with `warp-contracts`.
-:::
-
 ```bash
 yarn create next-app todos
 cd todos
-yarn add next@12.0
 yarn dev
 ```
 
@@ -199,20 +194,10 @@ import { Box, Flex, Input, ChakraProvider } from "@chakra-ui/react"
 ```js
 let db
 const contractTxId = WEAVEDB_CONTRACT_TX_ID
-const arweave_wallet = ARWEAVE_WALLET_JSON
 ```
 
 - `db` - to assign the WeaveDB instance later
 - `contractTxID` - WeaveDB contract tx id
-- `arweave_wallet` - JSON object generated at `/weavedb/scripts/.wallets/wallet-mainnet.json`
-
-:::caution
-Note that this is not a secure way to insert a wallet. Don't deploy this code to production environments.
-
-We generated a disposal wallet for this tutorial and never funded it.
-
-The correct approach is to set up a remote gRPC node and use the light client for browsers.
-:::
 
 ### Define React States
 
@@ -244,16 +229,9 @@ export default function App() {
   const setupWeaveDB = async () => {
     window.Buffer = Buffer
     db = new SDK({
-      wallet: arweave_wallet,
-      name: "weavedb",
-      version: "1",
-      contractTxId,
-      arweave: {
-        host: "arweave.net",
-        port: 443,
-        protocol: "https",
-      },
+      contractTxId
     })
+	await db.initializeWithoutWallet()
     setInitDB(true)
   }
 ```
@@ -340,6 +318,10 @@ We will generate a disposal account the first time a user logs in, link it with 
     let err
     if (isNil(identity)) {
       ;({ tx, identity, err } = await db.createTempAddress(wallet_address))
+	  if (isNil(linked)) {
+        alert("something went wrong")
+        return
+	  }
     } else {
       await lf.setItem("temp_address:current", wallet_address)
       setUser({
@@ -844,3 +826,5 @@ export default function App() {
 Congrats! You have built a fully-decentralized Todo Manager Dapp from scratch using WeaveDB.
 
 Go to [localhost:3000](http://localhost:3000) and see how it works.
+
+You can also access the entire dapp code at [/examples/todos](https://github.com/weavedb/weavedb/tree/master/examples/todos).

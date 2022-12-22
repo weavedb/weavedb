@@ -34,6 +34,14 @@ const db = new WeaveDB({
   wallet: ADMIN_ARWEAVE_WALLET_JSON,
   contractTxId: WEAVEDB_CONTRACT_TX_ID
 })
+
+// In case the wallet is not set, you can run initializeWithoutWallet() after the instantiation.
+await db.initializeWithoutWallet()
+
+// Or you can assign the wallet later. Note initialize() is not an async-function.
+db.initialize({
+  wallet: ADMIN_ARWEAVE_WALLET_JSON
+})
 ```
 
 ### Optional Parameters

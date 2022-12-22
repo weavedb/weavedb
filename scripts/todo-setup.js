@@ -5,7 +5,7 @@ const path = require("path")
 const wallet_name = process.argv[2]
 const contractTxId = process.argv[3] || process.env.CONTRACT_TX_ID_TODOS
 const { isNil } = require("ramda")
-const SDK = require("../sdk")
+const SDK = require("weavedb-sdk")
 
 if (isNil(wallet_name)) {
   console.log("no wallet name given")
@@ -90,31 +90,20 @@ const setup = async () => {
   const wallet = JSON.parse(fs.readFileSync(wallet_path, "utf8"))
   const sdk = new SDK({
     wallet,
-    name: "weavedb",
-    version: "1",
     contractTxId,
-    arweave: {
-      host:
-        wallet_name === "mainnet" ? "arweave.net" : "testnet.redstone.tools",
-      port: 443,
-      protocol: "https",
-      timeout: 200000,
-    },
   })
 
   console.log("init WeaveDB..." + contractTxId)
   const walletAddress = await sdk.arweave.wallets.jwkToAddress(wallet)
-  const identity = EthCrypto.createIdentity()
   await sdk.setSchema(schemas, "tasks", {
-    privateKey: identity.privateKey,
+    ar: wallet,
   })
   console.log("tasks schema set!")
 
   await sdk.setRules(rules, "tasks", {
-    privateKey: identity.privateKey,
+    ar: wallet,
   })
   console.log(`tasks rules set!`)
-
   process.exit()
 }
 
