@@ -29,14 +29,7 @@ touch weavedb.config.js
 
 ```js
 module.exports = {
-  name: "weavedb",
-  version: "1",
   contractTxId: "xxxxxxxx...",
-  arweave: {
-    host: "arweave.net",
-    port: 443,
-    protocol: "https"
-  },
   wallet: {
     kty: "RSA",
     n: ...
