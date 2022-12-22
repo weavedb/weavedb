@@ -77,5 +77,5 @@ Take note of the `contractTxId` displayed in the console.
 Then specify the `contractTxId` when running REPL next time.
 
 ```bash
-yarn repl --persist --dbPath /script/.db --contractTxId Mw7Q1LF3uC9cYgyr5dM860HGlwNfxILNXkcg0RNXIFc
+yarn repl --persist --dbPath scripts/.db --contractTxId Mw7Q1LF3uC9cYgyr5dM860HGlwNfxILNXkcg0RNXIFc
 ```

@@ -1,9 +1,14 @@
 const { equals, all, complement, isNil, pluck } = require("ramda")
+const { LmdbCache } = require("warp-contracts-lmdb")
 const shortid = require("shortid")
 let Arweave = require("arweave")
 Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
 const Base = require("weavedb-base")
-const { WarpFactory, LoggerFactory } = require("warp-contracts")
+const {
+  WarpFactory,
+  LoggerFactory,
+  defaultCacheOptions,
+} = require("warp-contracts")
 const { WarpSubscriptionPlugin } = require("warp-contracts-plugin-subscription")
 const { get, parseQuery } = require("./off-chain/actions/read/get")
 const md5 = require("md5")
@@ -95,8 +100,12 @@ class SDK extends Base {
     subscribe = true,
     network = "mainnet",
     port = 1820,
+    cache = "leveldb",
+    lmdb = {},
   }) {
     super()
+    this.cache = cache
+    this.lmdb = lmdb
     this.arweave_wallet = arweave_wallet
     if (isNil(arweave)) {
       if (network === "localhost") {
@@ -121,10 +130,9 @@ class SDK extends Base {
     }
     this.network =
       network ||
-      arweave.host === "host.docker.internal" ||
-      arweave.host === "localhost"
+      (arweave.host === "host.docker.internal" || arweave.host === "localhost"
         ? "localhost"
-        : "mainnet"
+        : "mainnet")
 
     if (arweave.host === "host.docker.internal") {
       this.warp = WarpFactory.custom(this.arweave, {}, "local")
@@ -138,6 +146,23 @@ class SDK extends Base {
       this.warp = WarpFactory.forTestnet()
     } else {
       this.warp = WarpFactory.forMainnet()
+    }
+    if (this.cache === "lmdb") {
+      this.warp
+        .useStateCache(
+          new LmdbCache({
+            ...defaultCacheOptions,
+            dbLocation: `./cache/warp/state`,
+            ...(lmdb.state || {}),
+          })
+        )
+        .useContractCache(
+          new LmdbCache({
+            ...defaultCacheOptions,
+            dbLocation: `./cache/warp/contracts`,
+            ...(lmdb.contract || {}),
+          })
+        )
     }
     if (all(complement(isNil))([contractTxId, wallet, name, version])) {
       this.initialize({
