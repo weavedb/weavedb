@@ -24,15 +24,15 @@ describe("Todos Example", function () {
     await stop()
   })
 
+  afterEach(async () => {
+    try {
+      clearInterval(db.interval)
+    } catch (e) {}
+  })
+
   beforeEach(async () => {
-    ;({
-      walletAddress,
-      wallet,
-      wallet2,
-      wallet3,
-      wallet4,
-      arweave_wallet,
-    } = await initBeforeEach())
+    ;({ walletAddress, wallet, wallet2, wallet3, wallet4, arweave_wallet } =
+      await initBeforeEach())
   })
 
   const initDB = async () => {
