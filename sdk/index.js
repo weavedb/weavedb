@@ -59,9 +59,21 @@ class SDK extends Base {
     } else {
       this.warp = WarpFactory.forMainnet()
     }
+    this.contractTxId = contractTxId
     if (all(complement(isNil))([contractTxId, wallet, name, version])) {
-      this.initialize({ contractTxId, wallet, name, version, EthWallet })
+      this.initialize({ wallet, name, version, EthWallet })
     }
+  }
+  async addFunds(wallet) {
+    const walletAddress = await this.arweave.wallets.getAddress(wallet)
+    await this.arweave.api.get(`/mint/${walletAddress}/1000000000000000`)
+    await this.arweave.api.get("mine")
+  }
+
+  async initializeWithoutWallet(params = {}) {
+    const wallet = await this.arweave.wallets.generate()
+    if (this.network === "localhost") await this.addFunds(wallet)
+    this.initialize({ wallet, ...params })
   }
 
   initialize({
@@ -71,15 +83,17 @@ class SDK extends Base {
     version = "1",
     EthWallet,
   }) {
-    this.contractTxId = contractTxId
-    if (isNil(contractTxId)) throw Error("contractTxId missing")
+    if (!isNil(contractTxId)) this.contractTxId = contractTxId
+    if (isNil(wallet)) throw Error("wallet missing")
+    if (isNil(this.contractTxId)) throw Error("contractTxId missing")
+    this.wallet = wallet
     this.db = this.warp
-      .contract(contractTxId)
+      .contract(this.contractTxId)
       .connect(wallet)
       .setEvaluationOptions({
         allowBigInt: true,
       })
-    this.domain = { name, version, verifyingContract: contractTxId }
+    this.domain = { name, version, verifyingContract: this.contractTxId }
     if (!isNil(EthWallet)) this.setEthWallet(EthWallet)
   }
 
