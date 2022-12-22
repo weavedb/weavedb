@@ -86,7 +86,6 @@ class SDK extends Base {
     if (!isNil(contractTxId)) this.contractTxId = contractTxId
     if (isNil(wallet)) throw Error("wallet missing")
     if (isNil(this.contractTxId)) throw Error("contractTxId missing")
-    this.wallet = wallet
     this.db = this.warp
       .contract(this.contractTxId)
       .connect(wallet)
