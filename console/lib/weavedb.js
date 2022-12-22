@@ -59,8 +59,6 @@ export const setupWeaveDB = async ({
   sdk = new SDK({
     network: network.toLowerCase(),
     port,
-    name: "weavedb",
-    version: "1",
     contractTxId: contractTxId,
   })
   if (isNil(arweave_wallet)) {
@@ -74,8 +72,6 @@ export const setupWeaveDB = async ({
   }
   if (!isNil(contractTxId)) {
     sdk.initialize({
-      name: "weavedb",
-      version: "1",
       contractTxId: contractTxId,
       wallet: arweave_wallet,
     })
