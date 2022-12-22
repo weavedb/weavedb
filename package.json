@@ -39,6 +39,7 @@
     "url-polyfill": "^1.1.12",
     "url-shim": "^1.0.1",
     "warp-contracts": "1.2.36",
+    "warp-contracts-lmdb": "^1.1.6",
     "wasmbuilder": "^0.0.16",
     "wasmcurves": "^0.2.0",
     "weavedb-base": "^0.7.3",
@@ -64,6 +65,7 @@
     "chai": "^4.3.6",
     "copyfiles": "^2.4.1",
     "esbuild": "^0.14.46",
-    "mocha": "^10.0.0"
+    "mocha": "^10.0.0",
+    "rimraf": "^3.0.2"
   }
 }

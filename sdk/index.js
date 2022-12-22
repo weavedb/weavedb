@@ -42,10 +42,9 @@ class SDK extends Base {
     }
     this.network =
       network ||
-      arweave.host === "host.docker.internal" ||
-      arweave.host === "localhost"
+      (arweave.host === "host.docker.internal" || arweave.host === "localhost"
         ? "localhost"
-        : "mainnet"
+        : "mainnet")
 
     if (arweave.host === "host.docker.internal") {
       this.warp = WarpFactory.custom(this.arweave, {}, "local")
