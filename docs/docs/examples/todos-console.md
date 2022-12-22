@@ -54,7 +54,6 @@ const schemas = {
     },
   },
 }
-await db.setSchema(schemas, "tasks")
 ```
 
 - `tasks` collection must have 4 fields (`task`, `date`, `user_address`, `done`).
@@ -102,7 +101,6 @@ const rules = {
     ],
   },
 }
-await db.setRules(rules, "tasks")
 ```
 
 - `user_address` must be set `signer`
