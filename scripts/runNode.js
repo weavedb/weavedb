@@ -10,7 +10,7 @@ const Constants = require("../src/intmax/lib/circomlibjs/poseidon_constants_opt.
 const readline = require("readline")
 const { stdin: input, stdout: output } = require("process")
 const rl = readline.createInterface({ input, output })
-const SDK = require("../sdk-node")
+const SDK = require("weavedb-sdk-node")
 const fs = require("fs")
 const path = require("path")
 const { expect } = require("chai")
@@ -64,11 +64,7 @@ async function init() {
   }
   sdk = new SDK({
     arweave_wallet: _arweave_wallet,
-    arweave: {
-      host: "localhost",
-      port,
-      protocol: "http",
-    },
+    network: "localhost",
   })
   arweave = sdk.arweave
   warp = sdk.warp
