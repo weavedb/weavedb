@@ -528,6 +528,26 @@ When the page is loaded, check if the user is logged in.
   )
 ```
 
+#### Transactions
+
+```jsx
+  const Transactions = () => {
+    return (
+      <Flex justify="center" p={4}>
+        <Box
+          as="a"
+          target="_blank"
+          href={`https://sonar.warp.cc/?#/app/contract/${contractTxId}`}
+          sx={{ textDecoration: "underline" }}
+        >
+          view transactions
+        </Box>
+      </Flex>
+    )
+  }
+
+```
+
 ### Return Components
 
 ```jsx
@@ -804,6 +824,21 @@ export default function App() {
       </Flex>
     </Flex>
   )
+  
+  const Transactions = () => {
+    return (
+      <Flex justify="center" p={4}>
+        <Box
+          as="a"
+          target="_blank"
+          href={`https://sonar.warp.cc/?#/app/contract/${contractTxId}`}
+          sx={{ textDecoration: "underline" }}
+        >
+          view transactions
+        </Box>
+      </Flex>
+    )
+  }
 
   return (
     <ChakraProvider>
@@ -815,6 +850,7 @@ export default function App() {
           <Tasks />
         </Box>
       </Flex>
+	  <Transactions />
     </ChakraProvider>
   )
 }
