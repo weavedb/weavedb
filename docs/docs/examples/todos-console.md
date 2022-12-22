@@ -1,31 +1,39 @@
 ---
-sidebar_position: 1
+sidebar_position: 2
 ---
-# Todo Manager
+# Todo Manager (Web Console)
 
-How to build the simplest todo dapp with WeaveDB and [Next.js](https://nextjs.org/).
+How to build the simplest todo dapp with WeaveDB and [Next.js](https://nextjs.org/) using [Web Console](https://console.weavedb.dev).
 
 ## Deploy WeaveDB Contracts
 
-```bash
-git clone https://github.com/weavedb/weavedb.git
-cd weavedb
-yarn
-node scripts/generate-wallet.js mainnet
-yarn deploy
-```
-A new wallet is stored at `/scripts/.wallets/wallet-mainnet.json`.
+Go to the [cloud Web Console](https://console.weavedb.dev) or you can also use your [local Web Console](/docs/development/web-console).
 
-`yarn deploy` returns `contractTxId` and `srcTxId`.
+Click `DB` then `+` to open up the contract deploy dialog.
 
-```js
-{ contractTxId, srcTxId }
-```
+![](/img/todo-1.png)
+
+Click `Deploy` then `Connect Owner Wallet`.
+
+![](/img/todo-2.png)
+
+Connect with one of your crypto wallets. This is going to be the owner of the contract.
+
+![](/img/todo-3.png)
+
+Then click `Deploy DB Instance`.
+
+![](/img/todo-4.png)
+
+Now a new WeaveDB contract is deployed on the mainnet. Click `Sign In` to authenticate the owner wallet.
+
+![](/img/todo-5.png)
+
 ## Database Structure
 
 We will only use one collection `tasks` to keep it simple.
 
-## Set up Data Schemas
+## Data Schemas
 
 ```js
 const schemas = {
@@ -51,7 +59,7 @@ await db.setSchema(schemas, "tasks")
 
 - `tasks` collection must have 4 fields (`task`, `date`, `user_address`, `done`).
 
-## Set up Access Control Rules
+## Access Control Rules
 
 ```js
 const rules = {
@@ -103,13 +111,23 @@ await db.setRules(rules, "tasks")
 - Only `done` can be updated to `true` by the task owner (`user_address`)
 - Only the task owner (`user_address`) can delete the task
 
-To set up the schemas and the rules, you can simply run the pre-defined script in the repo.
+## Configure DB
 
-Replace `CONTRACT_TX_ID` with the `contractTxId` returned when deplying the WeaveDB contract.
+First, set up `tasks` collection. Click `Data` then `+` to open up a dialog. Enter `tasks` in the name box and copy the following access control rules to the textarea. Then click `Add`.
 
-```bash
-node scripts/todo-setup.js mainnet CONTRACT_TX_ID
+```json
+{"allow create":{"and":[{"==":[{"var":"request.auth.signer"},{"var":"resource.newData.user_address"}]},{"==":[{"var":"request.block.timestamp"},{"var":"resource.newData.date"}]},{"==":[{"var":"resource.newData.done"},false]}]},"allow update":{"and":[{"==":[{"var":"request.auth.signer"},{"var":"resource.newData.user_address"}]},{"==":[{"var":"resource.newData.done"},true]}]},"allow delete":{"==":[{"var":"request.auth.signer"},{"var":"resource.data.user_address"}]}}
 ```
+
+![](/img/todo-6.png)
+
+Next, set up data schemas to `task` collection. Click `Schemas` then `+` to open up a dialog. Enter `tasks` in the name box and copy the following data schemas to the textarea. Then click `Add"
+
+```json
+{"type":"object","required":["task","date","user_address","done"],"properties":{"task":{"type":"string"},"user_address":{"type":"string"},"date":{"type":"number"},"done":{"type":"boolean"}}}
+```
+
+![](/img/todo-7.png)
 
 Now the DB setup is all done!
 

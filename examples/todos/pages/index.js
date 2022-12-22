@@ -253,6 +253,21 @@ export default function App() {
     </Flex>
   )
 
+  const Transactions = () => {
+    return (
+      <Flex justify="center" p={4}>
+        <Box
+          as="a"
+          target="_blank"
+          href={`https://sonar.warp.cc/?#/app/contract/${contractTxId}`}
+          sx={{ textDecoration: "underline" }}
+        >
+          view transactions
+        </Box>
+      </Flex>
+    )
+  }
+
   return (
     <ChakraProvider>
       <NavBar />
@@ -263,6 +278,7 @@ export default function App() {
           <Tasks />
         </Box>
       </Flex>
+      <Transactions />
     </ChakraProvider>
   )
 }
