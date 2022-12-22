@@ -7,7 +7,7 @@ import { ethers } from "ethers"
 import { Box, Flex, Input, ChakraProvider } from "@chakra-ui/react"
 
 let db
-const contractTxId = "Vk3U6bM5sKKtLpll3y3uy6fu_qkvFCtowFl91LXPJOc"
+const contractTxId = WEAVEDB_CONTRACT_TX_ID
 
 export default function App() {
   const [user, setUser] = useState(null)
