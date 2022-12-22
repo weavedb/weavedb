@@ -10,8 +10,8 @@ class SDK extends Base {
     arweave_wallet,
     contractTxId,
     wallet,
-    name,
-    version,
+    name = "weavedb",
+    version = "1",
     EthWallet,
     web3,
     network = "mainnet",
@@ -64,7 +64,13 @@ class SDK extends Base {
     }
   }
 
-  initialize({ contractTxId, wallet, name, version, EthWallet }) {
+  initialize({
+    contractTxId,
+    wallet,
+    name = "weavedb",
+    version = "1",
+    EthWallet,
+  }) {
     this.contractTxId = contractTxId
     if (isNil(contractTxId)) throw Error("contractTxId missing")
     this.db = this.warp

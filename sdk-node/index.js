@@ -93,8 +93,8 @@ class SDK extends Base {
     arweave_wallet,
     contractTxId,
     wallet,
-    name,
-    version,
+    name = "weavedb",
+    version = "1",
     EthWallet,
     web3,
     subscribe = true,
@@ -176,7 +176,14 @@ class SDK extends Base {
     }
   }
 
-  initialize({ contractTxId, wallet, name, version, EthWallet, subscribe }) {
+  initialize({
+    contractTxId,
+    wallet,
+    name = "weavedb",
+    version = "1",
+    EthWallet,
+    subscribe,
+  }) {
     if (!isNil(subscribe)) this.subscribe = subscribe
     this.contractTxId = contractTxId
     if (isNil(contractTxId)) throw Error("contractTxId missing")
