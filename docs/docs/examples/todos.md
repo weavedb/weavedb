@@ -318,10 +318,11 @@ We will generate a disposal account the first time a user logs in, link it with 
     let err
     if (isNil(identity)) {
       ;({ tx, identity, err } = await db.createTempAddress(wallet_address))
-	  if (isNil(linked)) {
+	  const linked = await db.getAddressLink(identity.address)
+      if (isNil(linked)) {
         alert("something went wrong")
         return
-	  }
+      }
     } else {
       await lf.setItem("temp_address:current", wallet_address)
       setUser({
@@ -557,7 +558,6 @@ import { Box, Flex, Input, ChakraProvider } from "@chakra-ui/react"
 
 let db
 const contractTxId = WEAVEDB_CONTRACT_TX_ID
-const arweave_wallet = ARWEAVE_WALLET_JSON
 
 export default function App() {
   const [user, setUser] = useState(null)
@@ -570,17 +570,9 @@ export default function App() {
   const setupWeaveDB = async () => {
     window.Buffer = Buffer
     db = new SDK({
-      web3: web3,
-      wallet: arweave_wallet,
-      name: "weavedb",
-      version: "1",
-      contractTxId,
-      arweave: {
-        host: "arweave.net",
-        port: 443,
-        protocol: "https",
-      },
+      contractTxId
     })
+	await db.initializeWithoutWallet()
     setInitDB(true)
   }
 
@@ -640,6 +632,12 @@ export default function App() {
     let err
     if (isNil(identity)) {
       ;({ tx, identity, err } = await db.createTempAddress(wallet_address))
+	  const linked = await db.getAddressLink(identity.address)
+      if (isNil(linked)) {
+        alert("something went wrong")
+        return
+      }
+
     } else {
       await lf.setItem("temp_address:current", wallet_address)
       setUser({
