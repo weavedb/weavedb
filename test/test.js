@@ -685,7 +685,6 @@ describe("WeaveDB", function () {
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Bob", age: 20, height: 182 }
     const param = await db.sign("set", data, "ppl", "Bob", {
-      relay: true,
       jobID: "test-job",
     })
     await db.relay(
