@@ -11,6 +11,7 @@ import { getAlgorithms } from "../common/actions/read/getAlgorithms"
 import { getLinkedContract } from "../common/actions/read/getLinkedContract"
 import { getOwner } from "../common/actions/read/getOwner"
 import { getAddressLink } from "../common/actions/read/getAddressLink"
+import { getRelayerJob } from "../common/actions/read/getRelayerJob"
 import { getEvolve } from "../common/actions/read/getEvolve"
 import { version } from "../common/actions/read/version"
 
@@ -29,6 +30,8 @@ import { cron } from "../common/lib/cron"
 import { addCron } from "../common/actions/write/addCron"
 import { removeCron } from "../common/actions/write/removeCron"
 import { setAlgorithms } from "../common/actions/write/setAlgorithms"
+import { addRelayerJob } from "../common/actions/write/addRelayerJob"
+import { removeRelayerJob } from "../common/actions/write/removeRelayerJob"
 import { linkContract } from "../common/actions/write/linkContract"
 import { unlinkContract } from "../common/actions/write/unlinkContract"
 import { evolve } from "../common/warp/actions/write/evolve"
@@ -77,6 +80,12 @@ export async function handle(state, action) {
       return await getLinkedContract(state, action)
     case "setAlgorithms":
       return await setAlgorithms(state, action)
+    case "getRelayerJob":
+      return await getRelayerJob(state, action)
+    case "addRelayerJob":
+      return await addRelayerJob(state, action)
+    case "removeRelayerJob":
+      return await removeRelayerJob(state, action)
     case "linkContract":
       return await linkContract(state, action)
     case "unlinkContract":

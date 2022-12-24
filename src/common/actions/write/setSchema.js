@@ -13,6 +13,10 @@ export const setSchema = async (state, action, signer) => {
     signer
   )
   _data.schema = new_data
-  const _validate = validator(undefined, clone(_data.schema))
+  try {
+    validator(undefined, clone(_data.schema))
+  } catch (e) {
+    err("schema error")
+  }
   return { state }
 }
