@@ -654,7 +654,7 @@ describe("WeaveDB", function () {
     return
   })
 
-  it("should relay queries", async () => {
+  it.only("should relay queries", async () => {
     const identity = EthCrypto.createIdentity()
     const job = {
       relayers: [identity.address],
@@ -684,7 +684,10 @@ describe("WeaveDB", function () {
 
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Bob", age: 20, height: 182 }
-    const param = await db.sign("set", data, "ppl", "Bob", { relay: true })
+    const param = await db.sign("set", data, "ppl", "Bob", {
+      relay: true,
+      jobID: "test-job",
+    })
     await db.relay(
       "test-job",
       param,

@@ -80,9 +80,11 @@ class Base {
       ar,
       intmax,
       extra,
-      relay
+      relay,
+      jobID
     if (!isNil(opt)) {
       ;({
+        jobID,
         relay,
         nonce,
         privateKey,
@@ -96,42 +98,16 @@ class Base {
         extra,
       } = opt)
     }
-
     if (all(isNil)([wallet, ii, intmax, ar]) && !isNil(this.arweave_wallet)) {
       ar = this.arweave_wallet
     }
+    const params = [func, query, nonce, dryWrite, bundle, extra, relay, jobID]
     return !isNil(intmax)
-      ? await this.writeWithIntmax(
-          intmax,
-          func,
-          query,
-          nonce,
-          dryWrite,
-          bundle,
-          extra
-        )
+      ? await this.writeWithIntmax(intmax, ...params)
       : !isNil(ii)
-      ? await this.writeWithII(
-          ii,
-          func,
-          query,
-          nonce,
-          dryWrite,
-          bundle,
-          extra,
-          relay
-        )
+      ? await this.writeWithII(ii, ...params)
       : !isNil(ar)
-      ? await this.writeWithAR(
-          ar,
-          func,
-          query,
-          nonce,
-          dryWrite,
-          bundle,
-          extra,
-          relay
-        )
+      ? await this.writeWithAR(ar, ...params)
       : await this.write(
           wallet || this.wallet,
           func,
@@ -142,7 +118,8 @@ class Base {
           dryWrite,
           bundle,
           extra,
-          relay
+          relay,
+          jobID
         )
   }
 
@@ -339,7 +316,8 @@ class Base {
     dryWrite = true,
     bundle,
     extra = {},
-    relay
+    relay,
+    jobID
   ) {
     let addr = isNil(privateKey)
       ? null
@@ -384,7 +362,7 @@ class Base {
             version: "V4",
           })
 
-    const param = mergeLeft(extra, {
+    let param = mergeLeft(extra, {
       function: func,
       query,
       signature,
@@ -396,6 +374,7 @@ class Base {
           ? wallet
           : wallet.getAddressString(),
     })
+    if (!isNil(jobID)) param.jobID = jobID
     return await this._request(func, param, dryWrite, bundle, relay)
   }
 
@@ -407,7 +386,8 @@ class Base {
     dryWrite = true,
     bundle,
     extra,
-    relay
+    relay,
+    jobID
   ) {
     let addr = ii.toJSON()[0]
     const isaddr = !isNil(addr)
@@ -440,7 +420,7 @@ class Base {
     }
     const _data = Buffer.from(JSON.stringify(data))
     const signature = toHexString(await ii.sign(_data))
-    const param = mergeLeft(extra, {
+    let param = mergeLeft(extra, {
       function: func,
       query,
       signature,
@@ -448,6 +428,7 @@ class Base {
       caller: addr,
       type: "ed25519",
     })
+    if (!isNil(jobID)) param.jobID = jobID
     return await this._request(func, param, dryWrite, bundle, relay)
   }
 
@@ -459,7 +440,8 @@ class Base {
     dryWrite = true,
     bundle,
     extra,
-    relay
+    relay,
+    jobID
   ) {
     const wallet = is(Object, ar) && ar.walletName === "ArConnect" ? ar : null
     let addr = null
@@ -502,7 +484,7 @@ class Base {
             saltLength: 32,
           })
         ).toString("hex")
-    const param = mergeLeft(extra, {
+    let param = mergeLeft(extra, {
       function: func,
       query,
       signature,
@@ -511,6 +493,7 @@ class Base {
       pubKey,
       type: "rsa256",
     })
+    if (!isNil(jobID)) param.jobID = jobID
     return await this._request(func, param, dryWrite, bundle, relay)
   }
 
@@ -522,7 +505,8 @@ class Base {
     dryWrite = true,
     bundle,
     extra,
-    relay
+    relay,
+    jobID
   ) {
     const eddsa = await buildEddsa()
     const wallet = is(Object, intmax) ? intmax : null
@@ -564,7 +548,7 @@ class Base {
     const signature = !isNil(wallet._account)
       ? await intmax.signMessage(JSON.stringify(data))
       : await intmax.sign(JSON.stringify(data))
-    const param = mergeLeft(
+    let param = mergeLeft(
       extra,
       !isNil(pubKey) && pubKey.length === 66
         ? {
@@ -585,6 +569,7 @@ class Base {
             type: "secp256k1-2",
           }
     )
+    if (!isNil(jobID)) param.jobID = jobID
     return await this._request(func, param, dryWrite, bundle, relay)
   }
 
