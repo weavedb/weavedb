@@ -61,7 +61,17 @@ export const mergeData = (_data, new_data, overwrite = false, signer) => {
   return _data
 }
 
-export const getDoc = (data, path, _signer, func, new_data, secure = false) => {
+export const getDoc = (
+  data,
+  path,
+  _signer,
+  func,
+  new_data,
+  secure = false,
+  relayer,
+  jobID,
+  extra
+) => {
   const [_col, id] = path
   data[_col] ||= { __docs: {} }
   const col = data[_col]
@@ -95,7 +105,7 @@ export const getDoc = (data, path, _signer, func, new_data, secure = false) => {
     let rule_data = {
       request: {
         method: op,
-        auth: { signer: _signer },
+        auth: { signer: _signer, relayer, jobID, extra },
         block: {
           height: SmartWeave.block.height,
           timestamp: SmartWeave.block.timestamp,
@@ -168,7 +178,17 @@ export const getDoc = (data, path, _signer, func, new_data, secure = false) => {
     if (!allowed) err("operation not allowed")
   }
   return path.length >= 4
-    ? getDoc(doc.subs, slice(2, path.length, path), _signer, func, null, secure)
+    ? getDoc(
+        doc.subs,
+        slice(2, path.length, path),
+        _signer,
+        func,
+        null,
+        secure,
+        relayer,
+        jobID,
+        extra
+      )
     : {
         doc,
         schema,
@@ -246,6 +266,7 @@ export const parse = async (
 ) => {
   const { data } = state
   const { query } = action.input
+  const { relayer, jobID, extra } = action
   let new_data = null
   let path = null
   let col
@@ -328,7 +349,17 @@ export const parse = async (
       "unlinkContract",
     ])
   ) {
-    const doc = getDoc(data, path, signer, func, new_data, state.secure)
+    const doc = getDoc(
+      data,
+      path,
+      signer,
+      func,
+      new_data,
+      state.secure,
+      relayer,
+      jobID,
+      extra
+    )
     _data = doc.doc
     ;({ next_data, schema, rules, col } = doc)
   }
