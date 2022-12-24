@@ -14,6 +14,7 @@ export const relay = async (state, action, signer, contractErr = true) => {
   let jobID = head(action.input.query)
   let input = nth(1, action.input.query)
   let query = nth(2, action.input.query)
+  if (input.jobID !== jobID) err("the wrong jobID")
   let action2 = { input, relayer: signer, extra: query, jobID }
   const relayers = state.relayers || {}
   if (isNil(relayers[jobID])) err("relayer jobID doesn't exist")

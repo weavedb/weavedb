@@ -85,8 +85,6 @@ describe("Ethereum", function () {
 
   it("should verify typed signatures", async () => {
     const identity = EthCrypto.createIdentity()
-    const pkey =
-      "0x46cd24eb01d9a6a230b66bf5ab86b54ab0af52fd19d7d2130bf2c7538e56d712"
     const signature = ethSigUtil.signTypedData({
       privateKey: Buffer.from(identity.privateKey.replace(/^0x/, ""), "hex"),
       data,
