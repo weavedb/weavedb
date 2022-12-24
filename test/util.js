@@ -1,4 +1,4 @@
-const SDK = require("../sdk-node")
+const SDK = require("../sdk")
 const fs = require("fs")
 const path = require("path")
 const { expect } = require("chai")

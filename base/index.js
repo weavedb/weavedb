@@ -75,9 +75,11 @@ class Base {
       ii,
       ar,
       intmax,
-      extra
+      extra,
+      relay
     if (!isNil(opt)) {
       ;({
+        relay,
         nonce,
         privateKey,
         overwrite,
@@ -105,9 +107,27 @@ class Base {
           extra
         )
       : !isNil(ii)
-      ? await this.writeWithII(ii, func, query, nonce, dryWrite, bundle, extra)
+      ? await this.writeWithII(
+          ii,
+          func,
+          query,
+          nonce,
+          dryWrite,
+          bundle,
+          extra,
+          relay
+        )
       : !isNil(ar)
-      ? await this.writeWithAR(ar, func, query, nonce, dryWrite, bundle, extra)
+      ? await this.writeWithAR(
+          ar,
+          func,
+          query,
+          nonce,
+          dryWrite,
+          bundle,
+          extra,
+          relay
+        )
       : await this.write(
           wallet || this.wallet,
           func,
@@ -117,7 +137,8 @@ class Base {
           overwrite,
           dryWrite,
           bundle,
-          extra
+          extra,
+          relay
         )
   }
 
@@ -206,6 +227,10 @@ class Base {
 
   async removeAddressLink(query, opt) {
     return await this._write2("removeAddressLink", query, opt)
+  }
+
+  async relay(...query) {
+    return this._write("relay", ...query)
   }
 
   async set(...query) {
@@ -301,7 +326,8 @@ class Base {
     overwrite,
     dryWrite = true,
     bundle,
-    extra = {}
+    extra = {},
+    relay
   ) {
     let addr = isNil(privateKey)
       ? null
@@ -358,10 +384,19 @@ class Base {
           ? wallet
           : wallet.getAddressString(),
     })
-    return await this._request(func, param, dryWrite, bundle)
+    return await this._request(func, param, dryWrite, bundle, relay)
   }
 
-  async writeWithII(ii, func, query, nonce, dryWrite = true, bundle, extra) {
+  async writeWithII(
+    ii,
+    func,
+    query,
+    nonce,
+    dryWrite = true,
+    bundle,
+    extra,
+    relay
+  ) {
     let addr = ii.toJSON()[0]
     const isaddr = !isNil(addr)
     addr = addr.toLowerCase()
@@ -401,10 +436,19 @@ class Base {
       caller: addr,
       type: "ed25519",
     })
-    return await this._request(func, param, dryWrite, bundle)
+    return await this._request(func, param, dryWrite, bundle, relay)
   }
 
-  async writeWithAR(ar, func, query, nonce, dryWrite = true, bundle, extra) {
+  async writeWithAR(
+    ar,
+    func,
+    query,
+    nonce,
+    dryWrite = true,
+    bundle,
+    extra,
+    relay
+  ) {
     const wallet = is(Object, ar) && ar.walletName === "ArConnect" ? ar : null
     let addr = null
     let pubKey = null
@@ -455,7 +499,7 @@ class Base {
       pubKey,
       type: "rsa256",
     })
-    return await this._request(func, param, dryWrite, bundle)
+    return await this._request(func, param, dryWrite, bundle, relay)
   }
 
   async writeWithIntmax(
@@ -465,7 +509,8 @@ class Base {
     nonce,
     dryWrite = true,
     bundle,
-    extra
+    extra,
+    relay
   ) {
     const eddsa = await buildEddsa()
     const wallet = is(Object, intmax) ? intmax : null
@@ -528,7 +573,7 @@ class Base {
             type: "secp256k1-2",
           }
     )
-    return await this._request(func, param, dryWrite, bundle)
+    return await this._request(func, param, dryWrite, bundle, relay)
   }
 
   async getOwner() {
