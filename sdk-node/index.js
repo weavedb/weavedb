@@ -1,4 +1,4 @@
-const { equals, all, complement, isNil, pluck } = require("ramda")
+const { equals, all, complement, isNil, pluck, is, last } = require("ramda")
 const { LmdbCache } = require("warp-contracts-lmdb")
 const shortid = require("shortid")
 let Arweave = require("arweave")
@@ -333,12 +333,24 @@ class SDK extends Base {
     return res.result
   }
 
-  async _request(func, param, dryWrite, bundle) {
-    if (dryWrite) {
-      let dryState = await this.db.dryWrite(param)
-      if (dryState.type === "error") return { err: dryState }
+  async sign(func, ...query) {
+    if (is(Object, last(query)) && !is(Array, last(query))) {
+      query[query.length - 1].relay = true
+    } else {
+      query.push({ relay: true })
     }
-    return await this.send(param, bundle)
+    return await this[func](...query)
+  }
+  async _request(func, param, dryWrite, bundle, relay = false) {
+    if (relay) {
+      return param
+    } else {
+      if (dryWrite) {
+        let dryState = await this.db.dryWrite(param)
+        if (dryState.type === "error") return { err: dryState }
+      }
+      return await this.send(param, bundle)
+    }
   }
 
   async send(param, bundle) {

@@ -7,6 +7,7 @@ const buildEddsa = require("circomlibjs").buildEddsa
 const Account = require("intmax").Account
 const { readFileSync } = require("fs")
 const { resolve } = require("path")
+const EthCrypto = require("eth-crypto")
 
 describe("WeaveDB", function () {
   let wallet, walletAddress, wallet2, db, arweave_wallet
@@ -650,6 +651,21 @@ describe("WeaveDB", function () {
     await db.removeOwner(addr2, { ar: arweave_wallet })
     await db.removeOwner(addr, { ar: arweave_wallet })
     expect(await db.getOwner()).to.eql([])
+    return
+  })
+
+  it.only("should relay queries", async () => {
+    const data = { name: "Bob", age: 20 }
+    const param = await db.sign("set", data, "ppl", "Bob", { relay: true })
+    const identity = EthCrypto.createIdentity()
+    await db.relay(param, {
+      privateKey: identity.privateKey,
+      wallet: identity.address,
+    })
+    const addr = wallet.getAddressString()
+    const doc = await db.cget("ppl", "Bob")
+    expect(doc.setter).to.equal(addr)
+    expect(doc.data).to.eql(data)
     return
   })
 })

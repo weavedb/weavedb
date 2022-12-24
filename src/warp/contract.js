@@ -14,6 +14,7 @@ import { getAddressLink } from "../common/actions/read/getAddressLink"
 import { getEvolve } from "../common/actions/read/getEvolve"
 import { version } from "../common/actions/read/version"
 
+import { relay } from "../common/actions/write/relay"
 import { set } from "../common/actions/write/set"
 import { setSchema } from "../common/actions/write/setSchema"
 import { setRules } from "../common/actions/write/setRules"
@@ -43,8 +44,9 @@ export async function handle(state, action) {
   } catch (e) {
     console.log(e)
   }
-
   switch (action.input.function) {
+    case "relay":
+      return await relay(state, action)
     case "getAddressLink":
       return await getAddressLink(state, action)
     case "addAddressLink":
