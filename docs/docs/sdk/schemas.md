@@ -5,7 +5,7 @@ sidebar_position: 4
 
 It's essential to set a presice data schema and access controls to each collection as otherwise WeaveDB is permissionless and anyone can put arbitrary data.
 
-To validate write data, WeaveDB uses [@exodus/schemasafe](https://github.com/ExodusMovement/schemasafe) with a restriction that you cannot pass valiator functions.
+To validate write data, WeaveDB uses [jsonschema](https://github.com/tdegrunt/jsonschema) with a restriction that you cannot pass valiator functions.
 
 Set a schema to a collection
 
