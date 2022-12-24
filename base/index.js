@@ -43,6 +43,10 @@ class Base {
     return this.request("getAlgorithms", ...query)
   }
 
+  async getRelayerJob(...query) {
+    return this.request("getRelayerJob", ...query)
+  }
+
   async getLinkedContract(...query) {
     return this.request("getLinkedContract", ...query)
   }
@@ -275,6 +279,14 @@ class Base {
 
   async setAlgorithms(...query) {
     return this._write("setAlgorithms", ...query)
+  }
+
+  async addRelayerJob(...query) {
+    return this._write("addRelayerJob", ...query)
+  }
+
+  async removeRelayerJob(...query) {
+    return this._write("removeRelayerJob", ...query)
   }
 
   async linkContract(...query) {

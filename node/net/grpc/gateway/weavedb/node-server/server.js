@@ -31,6 +31,7 @@ const reads = [
   "getLinkedContract",
   "getEvolve",
   "getVersion",
+  "getRelayerJob",
 ]
 
 async function query(call, callback) {

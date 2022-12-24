@@ -249,7 +249,16 @@ export const parse = async (
   let new_data = null
   let path = null
   let col
-  if (includes(func)(["delete", "getSchema", "getRules", "getAlgorithms"])) {
+  if (
+    includes(func)([
+      "delete",
+      "getSchema",
+      "getRules",
+      "getAlgorithms",
+      "removeRelayerJob",
+      "getRelayerJob",
+    ])
+  ) {
     path = query
   } else {
     ;[new_data, ...path] = query
@@ -264,10 +273,21 @@ export const parse = async (
   }
   if (
     (isNil(new_data) &&
-      !includes(func)(["delete", "getSchema", "getRules", "getAlgorithms"])) ||
+      !includes(func)([
+        "delete",
+        "getSchema",
+        "getRules",
+        "getAlgorithms",
+        "getRelayerJob",
+        "removeRelayerJob",
+        "getRelayerJob",
+      ])) ||
     (path.length === 0 && !includes(func)(["setAlgorithms"])) ||
     (path.length % 2 !== 0 &&
       !includes(func)([
+        "addRelayerJob",
+        "removeRelayerJob",
+        "getRelayerJob",
         "addIndex",
         "removeIndex",
         "setSchema",
@@ -279,7 +299,7 @@ export const parse = async (
         "unlinkContract",
       ]))
   ) {
-    err(null, contractErr)
+    err(`the wrong query length[${query.length}] for ${func}`, contractErr)
   }
   let _data = null
   let schema = null
@@ -301,6 +321,8 @@ export const parse = async (
   } else if (
     !includes(func)([
       "setAlgorithms",
+      "addRelayerJob",
+      "removeRelayerJob",
       "getAlgorithms",
       "linkContract",
       "unlinkContract",
@@ -314,6 +336,8 @@ export const parse = async (
   if (is(String)(owner)) owner = of(owner)
   if (
     includes(func)([
+      "addRelayerJob",
+      "removeRelayerJob",
       "addIndex",
       "removeIndex",
       "setSchema",

@@ -654,18 +654,41 @@ describe("WeaveDB", function () {
     return
   })
 
-  it.only("should relay queries", async () => {
+  it("should relay queries", async () => {
+    const identity = EthCrypto.createIdentity()
+    const job = {
+      relayers: [identity.address],
+      schema: {
+        type: "object",
+        required: ["height"],
+        properties: {
+          height: {
+            type: "number",
+          },
+        },
+      },
+    }
+    await db.addRelayerJob("test-job", job, {
+      ar: arweave_wallet,
+    })
+    expect(await db.getRelayerJob("test-job")).to.eql(job)
     const data = { name: "Bob", age: 20 }
     const param = await db.sign("set", data, "ppl", "Bob", { relay: true })
-    const identity = EthCrypto.createIdentity()
-    await db.relay(param, {
-      privateKey: identity.privateKey,
-      wallet: identity.address,
-    })
+    await db.relay(
+      "test-job",
+      param,
+      { height: 182 },
+      {
+        privateKey: identity.privateKey,
+        wallet: identity.address,
+      }
+    )
     const addr = wallet.getAddressString()
     const doc = await db.cget("ppl", "Bob")
     expect(doc.setter).to.equal(addr)
     expect(doc.data).to.eql(data)
+    await db.removeRelayerJob("test-job", { ar: arweave_wallet })
+    expect(await db.getRelayerJob("test-job")).to.eql(null)
     return
   })
 })
