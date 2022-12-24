@@ -672,7 +672,18 @@ describe("WeaveDB", function () {
       ar: arweave_wallet,
     })
     expect(await db.getRelayerJob("test-job")).to.eql(job)
+    const rules = {
+      let: {
+        "resource.newData.height": { var: "request.auth.extra.height" },
+      },
+      "allow write": true,
+    }
+    await db.setRules(rules, "ppl", {
+      ar: arweave_wallet,
+    })
+
     const data = { name: "Bob", age: 20 }
+    const data2 = { name: "Bob", age: 20, height: 182 }
     const param = await db.sign("set", data, "ppl", "Bob", { relay: true })
     await db.relay(
       "test-job",
@@ -686,7 +697,7 @@ describe("WeaveDB", function () {
     const addr = wallet.getAddressString()
     const doc = await db.cget("ppl", "Bob")
     expect(doc.setter).to.equal(addr)
-    expect(doc.data).to.eql(data)
+    expect(doc.data).to.eql(data2)
     await db.removeRelayerJob("test-job", { ar: arweave_wallet })
     expect(await db.getRelayerJob("test-job")).to.eql(null)
     return
