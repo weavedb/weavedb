@@ -35,6 +35,8 @@ We will only use one collection `tasks` to keep it simple.
 
 ## Data Schemas
 
+WeaveDB utilized [JSON Schema](https://json-schema.org/) to validate incoming data.
+
 ```js
 const schemas = {
   type: "object",
@@ -59,6 +61,8 @@ const schemas = {
 - `tasks` collection must have 4 fields (`task`, `date`, `user_address`, `done`).
 
 ## Access Control Rules
+
+[Access control rules](/docs/sdk/rules) are defined by [JSONLogic](https://jsonlogic.com/).
 
 ```js
 const rules = {
