@@ -1,16 +1,9 @@
-const { Ed25519KeyIdentity } = require("@dfinity/identity")
-const { providers, Wallet } = require("ethers")
 const { expect } = require("chai")
-const { isNil, range, pick } = require("ramda")
-const { init, stop, initBeforeEach, addFunds } = require("./util")
-const buildEddsa = require("circomlibjs").buildEddsa
-const Account = require("intmax").Account
-const { readFileSync } = require("fs")
-const { resolve } = require("path")
+const { init, stop, initBeforeEach } = require("./util")
 const EthCrypto = require("eth-crypto")
 
 describe("WeaveDB with cross-chain NFT authentication", function () {
-  let wallet, walletAddress, wallet2, db, arweave_wallet
+  let wallet, walletAddress, db, arweave_wallet
 
   this.timeout(0)
 
@@ -21,8 +14,7 @@ describe("WeaveDB with cross-chain NFT authentication", function () {
   after(async () => await stop())
 
   beforeEach(async () => {
-    ;({ arweave_wallet, walletAddress, wallet, wallet2 } =
-      await initBeforeEach())
+    ;({ arweave_wallet, walletAddress, wallet } = await initBeforeEach())
   })
 
   afterEach(async () => {
