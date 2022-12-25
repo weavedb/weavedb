@@ -499,15 +499,17 @@ export default inject(
                     <Flex py={2} px={3} color="white" bg="#333" h="35px">
                       <Box>Collections</Box>
                       <Box flex={1} />
-                      <Box
-                        onClick={() => setAddCollection(true)}
-                        sx={{
-                          cursor: "pointer",
-                          ":hover": { opacity: 0.75 },
-                        }}
-                      >
-                        <Box as="i" className="fas fa-plus" />
-                      </Box>
+                      {!includes(tab, ["Data"]) ? null : (
+                        <Box
+                          onClick={() => setAddCollection(true)}
+                          sx={{
+                            cursor: "pointer",
+                            ":hover": { opacity: 0.75 },
+                          }}
+                        >
+                          <Box as="i" className="fas fa-plus" />
+                        </Box>
+                      )}
                     </Flex>
                     {map(v => (
                       <Flex
@@ -1718,7 +1720,7 @@ export default inject(
               <Textarea
                 mt={3}
                 value={newSchemas}
-                placeholder="Access Control Rules"
+                placeholder="JSON Schema"
                 onChange={e => setNewSchemas(e.target.value)}
                 sx={{
                   borderRadius: "3px",
