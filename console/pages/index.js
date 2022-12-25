@@ -1434,6 +1434,8 @@ export default inject(
                   if (/^Error:/.test(res)) {
                     alert("Something went wrong")
                   } else {
+                    setNewCollection("")
+                    setNewRules(`{"allow write": true}`)
                     setAddCollection(false)
                   }
                 }}
@@ -1516,6 +1518,8 @@ export default inject(
                   if (/^Error:/.test(res)) {
                     alert("Something went wrong")
                   } else {
+                    setNewDoc("")
+                    setNewData(`{}`)
                     setAddDoc(false)
                   }
                 }}
@@ -1691,6 +1695,8 @@ export default inject(
                   if (/^Error:/.test(res)) {
                     alert("Something went wrong")
                   } else {
+                    setNewField("")
+                    setNewFieldVal("")
                     setAddData(false)
                   }
                 }}
@@ -1762,6 +1768,7 @@ export default inject(
                   if (/^Error:/.test(res)) {
                     alert("Something went wrong")
                   } else {
+                    setNewSchemas("")
                     setAddSchemas(false)
                   }
                 }}
@@ -1923,6 +1930,12 @@ export default inject(
                   if (/^Error:/.test(res)) {
                     alert("Something went wrong")
                   } else {
+                    setNewCron("")
+                    setNewStart("")
+                    setNewCronName("")
+                    setNewEnd("")
+                    setNewTimes("")
+                    setNewSpan("")
                     setAddCron(false)
                   }
                 }}
@@ -1997,6 +2010,7 @@ export default inject(
                   if (/^Error:/.test(res)) {
                     alert("Something went wrong")
                   } else {
+                    setNewRules2(`{"allow write": true}`)
                     setAddRules(false)
                   }
                 }}
@@ -2092,6 +2106,7 @@ export default inject(
                   if (/^Error:/.test(res)) {
                     alert("Something went wrong")
                   } else {
+                    setNewIndex("[]")
                     setAddIndex(false)
                   }
                 }}
