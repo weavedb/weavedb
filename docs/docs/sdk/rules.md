@@ -59,7 +59,7 @@ You can access to various data within the validation blocks.
 ```js
 const data = {
   request: {
-    auth: { signer },
+    auth: { signer, relayer, jobID, extra },
     block: { height, timestamp },
     transaction: { id },
     resource: { data },
