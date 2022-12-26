@@ -21,8 +21,8 @@ export default async (req, res) => {
 
   const sdk = new SDK({
     contractTxId,
-    network: process.env.WEAVEDB_NETWORK,
-    rpc: process.env.EVM_RPC,
+    network: process.env.NEXT_PUBLIC_WEAVEDB_NETWORK,
+    rpc: process.env.WEAVEDB_RPC,
   })
 
   const tx = await sdk.relay(params.jobID, params, owner, {
