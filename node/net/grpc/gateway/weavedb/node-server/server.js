@@ -2,7 +2,7 @@ const md5 = require("md5")
 const config = require("./weavedb.config.js")
 const PROTO_PATH = __dirname + "/../weavedb.proto"
 let sdk = null
-const { is, isNil, includes, clone } = require("ramda")
+const { is, isNil, includes, clone, map } = require("ramda")
 const SDK = require("weavedb-sdk-node")
 const grpc = require("@grpc/grpc-js")
 const protoLoader = require("@grpc/proto-loader")
@@ -37,14 +37,18 @@ const reads = [
 async function query(call, callback) {
   const { method, query, nocache } = call.request
   let [func, contractTxId] = method.split("@")
-  const allowed_contracts = isNil(config.contractTxId)
-    ? null
-    : is(Array, config.contractTxId)
-    ? config.contractTxId
-    : [config.contractTxId]
-  contractTxId ||= is(Array, config.contractTxId)
-    ? config.contractTxId[0]
-    : config.contractTxId
+  const allowed_contracts = map(v => v.split("@")[0])(
+    isNil(config.contractTxId)
+      ? null
+      : is(Array, config.contractTxId)
+      ? config.contractTxId
+      : [config.contractTxId]
+  )
+  contractTxId ||= (
+    is(Array, config.contractTxId)
+      ? config.contractTxId[0]
+      : config.contractTxId
+  ).split("@")[0]
   if (!isNil(allowed_contracts) && !includes(contractTxId)(allowed_contracts)) {
     callback(null, {
       result: null,
@@ -53,6 +57,7 @@ async function query(call, callback) {
     return
   }
   if (isNil(sdks[contractTxId])) {
+    console.log("initializing contract..." + contractTxId)
     try {
       await initSDK(contractTxId)
       console.log(`sdk(${contractTxId}) ready!`)
