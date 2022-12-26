@@ -14,6 +14,7 @@ import {
 let sdk
 const contractTxId = process.env.NEXT_PUBLIC_WEAVEDB_CONTRACT_TX_ID
 const nftContractAddr = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDR
+const network = process.env.NEXT_PUBLIC_WEAVEDB_NETWORK
 
 export default function Home() {
   const [nfts, setNFTs] = useState([])
@@ -21,7 +22,7 @@ export default function Home() {
     ;(async () => {
       const _sdk = new SDK({
         contractTxId,
-        network: "localhost",
+        network,
       })
       await _sdk.initializeWithoutWallet()
       sdk = _sdk
