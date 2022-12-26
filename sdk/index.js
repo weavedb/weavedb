@@ -14,7 +14,7 @@ class SDK extends Base {
     version = "1",
     EthWallet,
     web3,
-    network = "mainnet",
+    network,
     port = 1820,
   }) {
     super()
@@ -107,14 +107,7 @@ class SDK extends Base {
     let res = await this.db.viewState(opt)
     return res.result
   }
-  async sign(func, ...query) {
-    if (is(Object, last(query)) && !is(Array, last(query))) {
-      query[query.length - 1].relay = true
-    } else {
-      query.push({ relay: true })
-    }
-    return await this[func](...query)
-  }
+
   async _request(func, param, dryWrite, bundle, relay = false) {
     if (relay) {
       return param
