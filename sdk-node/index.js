@@ -98,7 +98,7 @@ class SDK extends Base {
     EthWallet,
     web3,
     subscribe = true,
-    network = "mainnet",
+    network,
     port = 1820,
     cache = "leveldb",
     lmdb = {},
@@ -333,14 +333,6 @@ class SDK extends Base {
     return res.result
   }
 
-  async sign(func, ...query) {
-    if (is(Object, last(query)) && !is(Array, last(query))) {
-      query[query.length - 1].relay = true
-    } else {
-      query.push({ relay: true })
-    }
-    return await this[func](...query)
-  }
   async _request(func, param, dryWrite, bundle, relay = false) {
     if (relay) {
       return param

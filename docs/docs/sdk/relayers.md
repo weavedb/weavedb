@@ -3,7 +3,7 @@ sidebar_position: 10
 ---
 # Relayers
 
-Relayers can execute queries on behalf of you using your [eip-721 signatures](https://eips.ethereum.org/EIPS/eip-712).
+Relayers can execute queries on behalf of you using your [eip-712 signatures](https://eips.ethereum.org/EIPS/eip-712).
 
 This comes in handy, when making cross-chain state verifications with off-chain oracles.
 

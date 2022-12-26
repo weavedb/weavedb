@@ -116,8 +116,11 @@ export const validate = async (state, action, func) => {
     }
   }
   if (_signer !== _caller) err(`signer is not caller`)
-  if ((state.nonces[original_signer] || 0) + 1 !== nonce) {
-    err(`The wrong nonce`)
+  let next_nonce = (state.nonces[original_signer] || 0) + 1
+  if (next_nonce !== nonce) {
+    err(
+      `The wrong nonce[${nonce}] for ${original_signer}: expected ${next_nonce}`
+    )
   }
   if (isNil(state.nonces[original_signer])) state.nonces[original_signer] = 0
   state.nonces[original_signer] += 1
