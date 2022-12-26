@@ -4,6 +4,11 @@ Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
 const Base = require("weavedb-base")
 const { WarpFactory, LoggerFactory } = require("warp-contracts")
 
+const {
+  WarpFactory: WarpFactory_old,
+  LoggerFactory: LoggerFactory_old,
+} = require("warp-contracts-old")
+
 class SDK extends Base {
   constructor({
     arweave,
@@ -16,8 +21,19 @@ class SDK extends Base {
     web3,
     network,
     port = 1820,
+    old = false,
   }) {
     super()
+    this.old = old
+    if (!this.old) {
+      this.Warp = { WarpFactory, LoggerFactory }
+    } else {
+      this.Warp = {
+        WarpFactory: WarpFactory_old,
+        LoggerFactory: LoggerFactory_old,
+      }
+    }
+
     this.arweave_wallet = arweave_wallet
     if (isNil(arweave)) {
       if (network === "localhost") {
@@ -35,7 +51,7 @@ class SDK extends Base {
       }
     }
     this.arweave = Arweave.init(arweave)
-    LoggerFactory.INST.logLevel("error")
+    this.LoggerFactory.INST.logLevel("error")
     if (typeof window === "object") {
       require("@metamask/legacy-web3")
       this.web3 = window.web3
@@ -47,17 +63,17 @@ class SDK extends Base {
         : "mainnet")
 
     if (arweave.host === "host.docker.internal") {
-      this.warp = WarpFactory.custom(this.arweave, {}, "local")
+      this.warp = this.WarpFactory.custom(this.arweave, {}, "local")
         .useArweaveGateway()
         .build()
     } else if (this.network === "localhost") {
-      this.warp = WarpFactory.forLocal(
+      this.warp = this.WarpFactory.forLocal(
         isNil(arweave) || isNil(arweave.port) ? 1820 : arweave.port
       )
     } else if (this.network === "testnet") {
-      this.warp = WarpFactory.forTestnet()
+      this.warp = this.WarpFactory.forTestnet()
     } else {
-      this.warp = WarpFactory.forMainnet()
+      this.warp = this.WarpFactory.forMainnet()
     }
     this.contractTxId = contractTxId
     if (all(complement(isNil))([contractTxId, wallet, name, version])) {

@@ -9,6 +9,13 @@ const {
   LoggerFactory,
   defaultCacheOptions,
 } = require("warp-contracts")
+
+const {
+  WarpFactory: WarpFactory_old,
+  LoggerFactory: LoggerFactory_old,
+  defaultCacheOptions: defaultCacheOptions_old,
+} = require("warp-contracts-old")
+
 const { WarpSubscriptionPlugin } = require("warp-contracts-plugin-subscription")
 const { get, parseQuery } = require("./off-chain/actions/read/get")
 const md5 = require("md5")
@@ -102,8 +109,19 @@ class SDK extends Base {
     port = 1820,
     cache = "leveldb",
     lmdb = {},
+    old = false,
   }) {
     super()
+    this.old = old
+    if (!this.old) {
+      this.Warp = { WarpFactory, LoggerFactory, defaultCacheOptions }
+    } else {
+      this.Warp = {
+        WarpFactory: WarpFactory_old,
+        LoggerFactory: LoggerFactory_old,
+        defaultCacheOptions: defaultCacheOptions_old,
+      }
+    }
     this.cache = cache
     this.lmdb = lmdb
     this.arweave_wallet = arweave_wallet
@@ -123,7 +141,7 @@ class SDK extends Base {
       }
     }
     this.arweave = Arweave.init(arweave)
-    LoggerFactory.INST.logLevel("error")
+    this.Warp.LoggerFactory.INST.logLevel("error")
     if (typeof window === "object") {
       require("@metamask/legacy-web3")
       this.web3 = window.web3
@@ -135,30 +153,30 @@ class SDK extends Base {
         : "mainnet")
 
     if (arweave.host === "host.docker.internal") {
-      this.warp = WarpFactory.custom(this.arweave, {}, "local")
+      this.warp = this.Warp.WarpFactory.custom(this.arweave, {}, "local")
         .useArweaveGateway()
         .build()
     } else if (this.network === "localhost") {
-      this.warp = WarpFactory.forLocal(
+      this.warp = this.Warp.WarpFactory.forLocal(
         isNil(arweave) || isNil(arweave.port) ? 1820 : arweave.port
       )
     } else if (this.network === "testnet") {
-      this.warp = WarpFactory.forTestnet()
+      this.warp = this.Warp.WarpFactory.forTestnet()
     } else {
-      this.warp = WarpFactory.forMainnet()
+      this.warp = this.Warp.WarpFactory.forMainnet()
     }
     if (this.cache === "lmdb") {
       this.warp
         .useStateCache(
           new LmdbCache({
-            ...defaultCacheOptions,
+            ...this.Warp.defaultCacheOptions,
             dbLocation: `./cache/warp/state`,
             ...(lmdb.state || {}),
           })
         )
         .useContractCache(
           new LmdbCache({
-            ...defaultCacheOptions,
+            ...this.Warp.defaultCacheOptions,
             dbLocation: `./cache/warp/contracts`,
             ...(lmdb.contract || {}),
           })
@@ -206,7 +224,7 @@ class SDK extends Base {
       .connect(wallet)
       .setEvaluationOptions({
         allowBigInt: true,
-        useVM2: true,
+        useVM2: !this.old,
       })
     dbs[this.contractTxId] = this
     this.domain = { name, version, verifyingContract: this.contractTxId }
