@@ -1363,6 +1363,18 @@ arrify@^2.0.0:
   resolved "https://registry.yarnpkg.com/arrify/-/arrify-2.0.1.tgz#c9655e9331e0abcd588d2a7cad7e9956f66701fa"
   integrity sha512-3duEwti880xqi4eAMN8AyR4a0ByT90zoYdLlevfrvU43vb0YZwZVfxOgxWrLXXXpyugL0hNZc9G6BiB5B3nUug==
 
+arweave@1.11.6:
+  version "1.11.6"
+  resolved "https://registry.yarnpkg.com/arweave/-/arweave-1.11.6.tgz#5afcded201c6f123dd62e5bfae1b72ca793ec7c2"
+  integrity sha512-D6N6e2z7oZoxFhu/qElLwQ2T8DxZ8xIqDB+Y16KHvZbassIrrS9iALwxLdaFYNInuyElg6i7qotBMcShWbFSTw==
+  dependencies:
+    arconnect "^0.4.2"
+    asn1.js "^5.4.1"
+    axios "^0.27.2"
+    base64-js "^1.5.1"
+    bignumber.js "^9.0.2"
+    util "^0.12.4"
+
 arweave@1.11.8, arweave@^1.10.13, arweave@^1.11.4:
   version "1.11.8"
   resolved "https://registry.yarnpkg.com/arweave/-/arweave-1.11.8.tgz#09376e0c6cec40a661cbb27a306cb11c0a663cd8"
@@ -3311,6 +3323,27 @@ warp-contracts-lmdb@^1.1.6:
   dependencies:
     lmdb "2.7.3"
 
+"warp-contracts-old@npm:warp-contracts@1.2.26":
+  version "1.2.26"
+  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.2.26.tgz#9aaefeaa6139c5bf5d203d182d96c4337086ad52"
+  integrity sha512-ElXnd32XksclrHHmw5u0w2U4VVu1UHxyOwcymq15Kw27ijIHjxZXi3UKH5QjgcksxmzqpXtC6duuMYc/0Gzypg==
+  dependencies:
+    "@assemblyscript/loader" "^0.19.23"
+    "@idena/vrf-js" "^1.0.1"
+    archiver "^5.3.0"
+    arweave "1.11.6"
+    elliptic "^6.5.4"
+    events "3.3.0"
+    fast-copy "^3.0.0"
+    level "^8.0.0"
+    memory-level "^1.0.0"
+    redstone-isomorphic "1.1.8"
+    redstone-wasm-metering "1.0.3"
+    safe-stable-stringify "2.4.1"
+    stream-buffers "^3.0.2"
+    unzipit "^1.4.0"
+    vm2 "3.9.11"
+
 warp-contracts-plugin-subscription@^1.0.5:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/warp-contracts-plugin-subscription/-/warp-contracts-plugin-subscription-1.0.5.tgz#f94c6169a9513d366791e0168790d3e3237980bd"
@@ -3366,10 +3399,10 @@ weavedb-base@^0.9.5:
     ethereumjs-util "^7.1.5"
     ramda "^0.28.0"
 
-weavedb-sdk-node@^0.9.6:
-  version "0.9.6"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk-node/-/weavedb-sdk-node-0.9.6.tgz#e12488540af7ccaa4d0bbd4a2cc4adf6fa9fe5cf"
-  integrity sha512-GB098wsPpEzE+bkRsgQzVD5n0cCSh8weBsKL5eUpd1v9jkboSJm7rn6Uq62swvpGiq1VcORviQAAlkVtnKBhzg==
+weavedb-sdk-node@^0.9.7:
+  version "0.9.7"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk-node/-/weavedb-sdk-node-0.9.7.tgz#de0bb015cccba3e4d73519902cb8f6c076680980"
+  integrity sha512-bBYZr/2BuoZxbz1AfJ0YBC9o+D6SSA/mSNbIG/wGWDyQ7o5Q2H+veVr6SBckMBRSZse/bIUSdIjn46EO0oUnaw==
   dependencies:
     "@metamask/legacy-web3" "^2.0.0"
     arweave "^1.11.4"
@@ -3380,6 +3413,7 @@ weavedb-sdk-node@^0.9.6:
     shortid "^2.2.16"
     warp-contracts "1.2.36"
     warp-contracts-lmdb "^1.1.6"
+    warp-contracts-old "npm:warp-contracts@1.2.26"
     warp-contracts-plugin-subscription "^1.0.5"
     weavedb-base "^0.9.5"
 
