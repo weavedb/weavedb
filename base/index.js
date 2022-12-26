@@ -1,5 +1,5 @@
 const EthCrypto = require("eth-crypto")
-const buildEddsa = require("circomlibjs").buildEddsa
+//const buildEddsa = require("circomlibjs").buildEddsa
 const {
   includes,
   all,
@@ -508,7 +508,6 @@ class Base {
     relay,
     jobID
   ) {
-    const eddsa = await buildEddsa()
     const wallet = is(Object, intmax) ? intmax : null
     let addr = null
     let pubKey = null
@@ -517,9 +516,14 @@ class Base {
         pubKey = wallet._account.publicKey
         addr = wallet._account.address
       } else {
-        const packedPublicKey = eddsa.babyJub.packPoint(intmax._publicKey)
-        pubKey = "0x" + Buffer.from(packedPublicKey).toString("hex")
-        addr = intmax._address
+        throw new Error("Intmax Network is disabled.")
+        return
+        /*
+          const eddsa = await buildEddsa()
+          const packedPublicKey = eddsa.babyJub.packPoint(intmax._publicKey)
+          pubKey = "0x" + Buffer.from(packedPublicKey).toString("hex")
+          addr = intmax._address
+        */
       }
     } else {
       throw Error("No Intmax wallet")
@@ -627,6 +631,15 @@ class Base {
 
   async mineBlock() {
     await this.arweave.api.get("mine")
+  }
+
+  async sign(func, ...query) {
+    if (is(Object, last(query)) && !is(Array, last(query))) {
+      query[query.length - 1].relay = true
+    } else {
+      query.push({ relay: true })
+    }
+    return await this[func](...query)
   }
 }
 
