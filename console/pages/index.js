@@ -536,7 +536,7 @@ export default inject(
                     direction="column"
                   >
                     <Flex py={2} px={3} color="white" bg="#333" h="35px">
-                      <Box>Schamas</Box>
+                      <Box>Schemas</Box>
                       <Box flex={1} />
                       {isNil(col) ? null : (
                         <Box
