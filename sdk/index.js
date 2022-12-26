@@ -51,7 +51,7 @@ class SDK extends Base {
       }
     }
     this.arweave = Arweave.init(arweave)
-    this.LoggerFactory.INST.logLevel("error")
+    this.Warp.LoggerFactory.INST.logLevel("error")
     if (typeof window === "object") {
       require("@metamask/legacy-web3")
       this.web3 = window.web3
@@ -63,17 +63,17 @@ class SDK extends Base {
         : "mainnet")
 
     if (arweave.host === "host.docker.internal") {
-      this.warp = this.WarpFactory.custom(this.arweave, {}, "local")
+      this.warp = this.Warp.WarpFactory.custom(this.arweave, {}, "local")
         .useArweaveGateway()
         .build()
     } else if (this.network === "localhost") {
-      this.warp = this.WarpFactory.forLocal(
+      this.warp = this.Warp.WarpFactory.forLocal(
         isNil(arweave) || isNil(arweave.port) ? 1820 : arweave.port
       )
     } else if (this.network === "testnet") {
-      this.warp = this.WarpFactory.forTestnet()
+      this.warp = this.Warp.WarpFactory.forTestnet()
     } else {
-      this.warp = this.WarpFactory.forMainnet()
+      this.warp = this.Warp.WarpFactory.forMainnet()
     }
     this.contractTxId = contractTxId
     if (all(complement(isNil))([contractTxId, wallet, name, version])) {
