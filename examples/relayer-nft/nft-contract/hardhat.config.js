@@ -1,7 +1,6 @@
 require("dotenv").config()
 require("@nomicfoundation/hardhat-toolbox")
-console.log(process.env)
-process.exit()
+
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: "0.8.17",
