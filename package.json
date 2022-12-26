@@ -43,15 +43,15 @@
     "wasmbuilder": "^0.0.16",
     "wasmcurves": "^0.2.0",
     "weavedb-base": "^0.7.3",
-    "weavedb-sdk": "^0.9.2",
-    "weavedb-sdk-node": "^0.7.26",
+    "weavedb-sdk": "^0.9.4",
+    "weavedb-sdk-node": "^0.9.6",
     "yargs": "^17.6.2"
   },
   "engines": {
     "node": ">=16.5"
   },
   "scripts": {
-    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet H3-tXcgU5YW6S_SM1Ail-1M8_nLEnJLaAMRdiivgn68 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w",
+    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet 2d_T249d1bx0w528NQXliPoY1SH-C-IyCt090CxkHLc 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w",
     "deploy-exm": "yarn build && node scripts/deployEXM.js mainnet",
     "test": "yarn build && mocha",
     "build": "yarn clean && node build.js && npm run cp && node scripts/mod.js",

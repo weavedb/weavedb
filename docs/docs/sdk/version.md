@@ -15,6 +15,17 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.9.0 (Dec 26, 2022)
+
+#### Source Transaction Id
+
+[2d_T249d1bx0w528NQXliPoY1SH-C-IyCt090CxkHLc](https://sonar.warp.cc/#/app/source/2d_T249d1bx0w528NQXliPoY1SH-C-IyCt090CxkHLc)
+
+#### Added Features
+
+- [relayers](/docs/sdk/relayers) : `getRelayerJob`, `setRelayerJob`, `removeRelayerJob`
+- `sign` and `relay` added to [the SDKs](/docs/sdk/setup)
+
 ### v0.8.0 (Dec 18, 2022)
 
 #### Source Transaction Id
