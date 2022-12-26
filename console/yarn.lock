@@ -3146,6 +3146,18 @@ array-uniq@^1.0.1:
   resolved "https://registry.yarnpkg.com/array-uniq/-/array-uniq-1.0.3.tgz#af6ac877a25cc7f74e058894753858dfdb24fdb6"
   integrity sha512-MNha4BWQ6JbwhFhj03YK552f7cb3AzoE8SzeljgChvL1dl3IcvggXVz1DilzySZkCja+CXuZbdW7yATchWn8/Q==
 
+arweave@1.11.6:
+  version "1.11.6"
+  resolved "https://registry.yarnpkg.com/arweave/-/arweave-1.11.6.tgz#5afcded201c6f123dd62e5bfae1b72ca793ec7c2"
+  integrity sha512-D6N6e2z7oZoxFhu/qElLwQ2T8DxZ8xIqDB+Y16KHvZbassIrrS9iALwxLdaFYNInuyElg6i7qotBMcShWbFSTw==
+  dependencies:
+    arconnect "^0.4.2"
+    asn1.js "^5.4.1"
+    axios "^0.27.2"
+    base64-js "^1.5.1"
+    bignumber.js "^9.0.2"
+    util "^0.12.4"
+
 arweave@1.11.8, arweave@^1.10.13, arweave@^1.11.4, arweave@^1.11.8:
   version "1.11.8"
   resolved "https://registry.yarnpkg.com/arweave/-/arweave-1.11.8.tgz#09376e0c6cec40a661cbb27a306cb11c0a663cd8"
@@ -3766,9 +3778,9 @@ cipher-base@^1.0.0, cipher-base@^1.0.1, cipher-base@^1.0.3:
     inherits "^2.0.1"
     safe-buffer "^5.0.1"
 
-"circomlibjs@git+https://github.com/InternetMaximalism/circomlibjs.git#fc534a12d9b34f2694ed0f75a686d080fc7a92d6":
+"circomlibjs@git+https://github.com/InternetMaximalism/circomlibjs#fc534a12d9b34f2694ed0f75a686d080fc7a92d6":
   version "0.1.7"
-  resolved "git+https://github.com/InternetMaximalism/circomlibjs.git#fc534a12d9b34f2694ed0f75a686d080fc7a92d6"
+  resolved "git+https://github.com/InternetMaximalism/circomlibjs#fc534a12d9b34f2694ed0f75a686d080fc7a92d6"
   dependencies:
     blake-hash "^2.0.0"
     blake2b "^2.1.3"
@@ -7461,6 +7473,27 @@ walker@^1.0.8:
   dependencies:
     makeerror "1.0.12"
 
+"warp-contracts-old@npm:warp-contracts@1.2.26":
+  version "1.2.26"
+  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.2.26.tgz#9aaefeaa6139c5bf5d203d182d96c4337086ad52"
+  integrity sha512-ElXnd32XksclrHHmw5u0w2U4VVu1UHxyOwcymq15Kw27ijIHjxZXi3UKH5QjgcksxmzqpXtC6duuMYc/0Gzypg==
+  dependencies:
+    "@assemblyscript/loader" "^0.19.23"
+    "@idena/vrf-js" "^1.0.1"
+    archiver "^5.3.0"
+    arweave "1.11.6"
+    elliptic "^6.5.4"
+    events "3.3.0"
+    fast-copy "^3.0.0"
+    level "^8.0.0"
+    memory-level "^1.0.0"
+    redstone-isomorphic "1.1.8"
+    redstone-wasm-metering "1.0.3"
+    safe-stable-stringify "2.4.1"
+    stream-buffers "^3.0.2"
+    unzipit "^1.4.0"
+    vm2 "3.9.11"
+
 warp-contracts@1.2.36:
   version "1.2.36"
   resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.2.36.tgz#fa83224ca1268c3ebb4739b65b583639e9ef847a"
@@ -7529,15 +7562,16 @@ weavedb-client@^0.7.13:
     ramda "^0.28.0"
     weavedb-base "^0.7.3"
 
-weavedb-sdk@^0.9.5:
-  version "0.9.5"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.9.5.tgz#9fcb3b80001bf8d124f10e7cbe2063d0776db420"
-  integrity sha512-MomordkIknIWHyWYak05sbb+zghHI4ZdghzftU3SBg848EFZa1r6Dst51GFna9kOo82BtW8CTA9O/Aq/E9MAkQ==
+weavedb-sdk@^0.9.6:
+  version "0.9.6"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.9.6.tgz#6ab5fa54dcd1a3e1e480dfa12c9da77537a24e3e"
+  integrity sha512-6buGC0mhcJ8BP348JZ6PD9Alv5jV9q8L7U9QQCdN3JPqYxYp4Got2JAc9rIJJjs+YfU4U56oxgoEWjQVHBpXWA==
   dependencies:
     "@metamask/legacy-web3" "^2.0.0"
     arweave "^1.11.4"
     ramda "^0.28.0"
     warp-contracts "1.2.36"
+    warp-contracts-old "npm:warp-contracts@1.2.26"
     weavedb-base "^0.9.5"
 
 web-worker@^1.2.0:
