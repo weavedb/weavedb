@@ -34,17 +34,40 @@ class SDK extends Base {
     rpc,
     contractTxId,
     wallet,
-    name,
-    version,
+    name = "weavedb",
+    version = "1",
     EthWallet,
     web3,
     arweave,
     arweave_wallet,
+    network,
+    port = 1820,
   }) {
     super()
     this.contractTxId = contractTxId
     this.arweave_wallet = arweave_wallet
+    if (isNil(arweave)) {
+      if (network === "localhost") {
+        arweave = {
+          host: "localhost",
+          port,
+          protocol: "http",
+        }
+      } else {
+        arweave = {
+          host: "arweave.net",
+          port: 443,
+          protocol: "https",
+        }
+      }
+    }
     this.arweave = Arweave.init(arweave)
+    this.network =
+      network ||
+      (arweave.host === "host.docker.internal" || arweave.host === "localhost"
+        ? "localhost"
+        : "mainnet")
+
     this.client = new weavedb_proto.DB(rpc, grpc.credentials.createInsecure())
     if (typeof window === "object") {
       require("@metamask/legacy-web3")

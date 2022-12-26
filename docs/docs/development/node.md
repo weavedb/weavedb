@@ -127,7 +127,9 @@ module.exports = {
 ##### 5. Run Docker Conompose
 
 ```bash
-yarn run-node
+cd node
+sudo docker-compose pull node-server envoy
+sudo docker-compose up --build -d node-server envoy
 ```
 
 ##### 6. Set the instance IP address to the Light Client
