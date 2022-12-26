@@ -411,10 +411,10 @@ export default inject(
             w="250px"
           >
             <Image
-              boxSize="40px"
+              boxSize="30px"
               src="/static/images/logo.png"
               sx={{ borderRadius: "50%" }}
-              mr={2}
+              mr={3}
             />
             WeaveDB
           </Flex>
