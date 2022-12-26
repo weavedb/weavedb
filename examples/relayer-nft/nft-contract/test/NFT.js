@@ -8,14 +8,10 @@ describe("NFT", function () {
     const nft = await NFT.deploy()
     return { nft, owner }
   }
-
-  describe("Deployment", function () {
-    it("Should set the right unlockTime", async function () {
-      const { nft, owner } = await deploy()
-      const tx = await nft.mint()
-      await tx.wait()
-      console.log(await nft.getTokenURI(0))
-      expect(await nft.ownerOf(0)).to.equal(owner.address)
-    })
+  it("Should mint", async function () {
+    const { nft, owner } = await deploy()
+    const tx = await nft.mint()
+    await tx.wait()
+    expect(await nft.ownerOf(0)).to.equal(owner.address)
   })
 })
