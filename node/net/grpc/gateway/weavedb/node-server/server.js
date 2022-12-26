@@ -117,9 +117,11 @@ async function query(call, callback) {
 
 async function initSDK(v) {
   let _config = clone(config)
-  _config.contractTxId = v
-  sdks[v] = new SDK(_config)
-  await sdks[v].db.readState()
+  let [txid, old] = v.split("@")
+  _config.contractTxId = txid
+  if (old === "old") _config.old = true
+  sdks[txid] = new SDK(_config)
+  await sdks[txid].db.readState()
   return
 }
 
@@ -135,6 +137,7 @@ async function main() {
       .then(() => console.log(`sdk(${v}) ready!`))
       .catch(e => {
         console.log(`sdk(${v}) error!`)
+        console.log(e)
       })
   }
 
