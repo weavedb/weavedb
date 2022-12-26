@@ -1734,6 +1734,18 @@ aria-hidden@^1.1.1:
   dependencies:
     tslib "^2.0.0"
 
+arweave@1.11.6:
+  version "1.11.6"
+  resolved "https://registry.yarnpkg.com/arweave/-/arweave-1.11.6.tgz#5afcded201c6f123dd62e5bfae1b72ca793ec7c2"
+  integrity sha512-D6N6e2z7oZoxFhu/qElLwQ2T8DxZ8xIqDB+Y16KHvZbassIrrS9iALwxLdaFYNInuyElg6i7qotBMcShWbFSTw==
+  dependencies:
+    arconnect "^0.4.2"
+    asn1.js "^5.4.1"
+    axios "^0.27.2"
+    base64-js "^1.5.1"
+    bignumber.js "^9.0.2"
+    util "^0.12.4"
+
 arweave@1.11.8, arweave@^1.10.13, arweave@^1.11.4:
   version "1.11.8"
   resolved "https://registry.yarnpkg.com/arweave/-/arweave-1.11.8.tgz#09376e0c6cec40a661cbb27a306cb11c0a663cd8"
@@ -3801,6 +3813,27 @@ vm2@3.9.11:
     acorn "^8.7.0"
     acorn-walk "^8.2.0"
 
+"warp-contracts-old@npm:warp-contracts@1.2.26":
+  version "1.2.26"
+  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.2.26.tgz#9aaefeaa6139c5bf5d203d182d96c4337086ad52"
+  integrity sha512-ElXnd32XksclrHHmw5u0w2U4VVu1UHxyOwcymq15Kw27ijIHjxZXi3UKH5QjgcksxmzqpXtC6duuMYc/0Gzypg==
+  dependencies:
+    "@assemblyscript/loader" "^0.19.23"
+    "@idena/vrf-js" "^1.0.1"
+    archiver "^5.3.0"
+    arweave "1.11.6"
+    elliptic "^6.5.4"
+    events "3.3.0"
+    fast-copy "^3.0.0"
+    level "^8.0.0"
+    memory-level "^1.0.0"
+    redstone-isomorphic "1.1.8"
+    redstone-wasm-metering "1.0.3"
+    safe-stable-stringify "2.4.1"
+    stream-buffers "^3.0.2"
+    unzipit "^1.4.0"
+    vm2 "3.9.11"
+
 warp-contracts@1.2.36:
   version "1.2.36"
   resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.2.36.tgz#fa83224ca1268c3ebb4739b65b583639e9ef847a"
@@ -3833,25 +3866,26 @@ weavedb-base@^0.9.5:
     ethereumjs-util "^7.1.5"
     ramda "^0.28.0"
 
-weavedb-node-client@^0.9.0:
-  version "0.9.0"
-  resolved "https://registry.yarnpkg.com/weavedb-node-client/-/weavedb-node-client-0.9.0.tgz#938e74619bfbf5c685e96264e6cd5bb8c619f689"
-  integrity sha512-6hQM+I3/kDzNZSOkK135tJ41uTTkSh/cXxPQF10yrdVql27Bo0eshhzZ6Mv5CckbMcjI8VIbwEjFm0l7RvEDsQ==
+weavedb-node-client@^0.9.2:
+  version "0.9.2"
+  resolved "https://registry.yarnpkg.com/weavedb-node-client/-/weavedb-node-client-0.9.2.tgz#bbb7cf244333499fcbb67e9b028555a133cc3b66"
+  integrity sha512-LhMpT/u6Ss9Vg9Z/wkh/wd4imZ2knhavB8dzmZr12wJkBEPsjrnidd4P5//qziyvqbl2daYckZvMsIm/wX9YNA==
   dependencies:
     "@grpc/grpc-js" "^1.1.0"
     "@grpc/proto-loader" "^0.5.0"
     ramda "^0.28.0"
     weavedb-base "^0.9.5"
 
-weavedb-sdk@^0.9.4:
-  version "0.9.4"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.9.4.tgz#e06beac8b1e2195781076ff371e66174798046cb"
-  integrity sha512-F1nXRhUwkJPjKV/zFXik6U2dgUbdFbUKj2+Zkv5lRDHF5ACWKcog3BQjzshHxIEDi0oiUqtAgyhZqNhbzvYBYw==
+weavedb-sdk@^0.9.8:
+  version "0.9.8"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.9.8.tgz#e4254d72387fc881c7f7bb0bcbe9880bc1be797d"
+  integrity sha512-Ht+eRVdq8Oa4pSI2kbDoVtZ2rmBToo1zIOAf3QyH/4AucUVgcANjQa6G7syR3eJS3a2mLzH1IHfmnAhj2k/hdQ==
   dependencies:
     "@metamask/legacy-web3" "^2.0.0"
     arweave "^1.11.4"
     ramda "^0.28.0"
     warp-contracts "1.2.36"
+    warp-contracts-old "npm:warp-contracts@1.2.26"
     weavedb-base "^0.9.5"
 
 which-typed-array@^1.1.2:

@@ -18,6 +18,8 @@ const network = process.env.NEXT_PUBLIC_WEAVEDB_NETWORK
 
 export default function Home() {
   const [nfts, setNFTs] = useState([])
+  const [posting, setPosting] = useState(false)
+
   useEffect(() => {
     ;(async () => {
       const _sdk = new SDK({
@@ -32,7 +34,11 @@ export default function Home() {
 
   const Header = () => (
     <Flex justify="center" width="500px" p={3}>
-      <Box flex={1}>Mint NFT and post a Message with your tokenID!</Box>
+      <Box flex={1}>
+        {posting
+          ? "posting..."
+          : "Mint NFT and post a Message with your tokenID!"}
+      </Box>
       <Box
         as="a"
         target="_blank"
@@ -43,12 +49,25 @@ export default function Home() {
       </Box>
     </Flex>
   )
+  const Footer = () => (
+    <Flex justify="center" width="500px" p={3}>
+      <Box
+        as="a"
+        target="_blank"
+        sx={{ textDecoration: "underline" }}
+        href={`https://sonar.warp.cc/?#/app/contract/${contractTxId}`}
+      >
+        Contract Transactions
+      </Box>
+    </Flex>
+  )
   const Post = () => {
     const [message, setMessage] = useState("")
     const [tokenID, setTokenID] = useState("")
     return (
       <Flex justify="center" width="500px" mb={5}>
         <Input
+          disabled={posting}
           w="100px"
           placeholder="tokenID"
           sx={{ borderRadius: "3px 0 0 3px" }}
@@ -60,6 +79,7 @@ export default function Home() {
           }}
         />
         <Input
+          disabled={posting}
           flex={1}
           placeholder="Message"
           sx={{ borderRadius: "0" }}
@@ -71,45 +91,49 @@ export default function Home() {
         <Button
           sx={{ borderRadius: "0 3px 3px 0" }}
           onClick={async () => {
-            if (tokenID === "") {
-              alert("enter your tokenID")
-              return
-            }
-            if (/^\s*$/.test(message)) {
-              alert("enter message")
-              return
-            }
-            const provider = new ethers.providers.Web3Provider(
-              window.ethereum,
-              "any"
-            )
-            await provider.send("eth_requestAccounts", [])
-            const addr = await provider.getSigner().getAddress()
-            const params = await sdk.sign(
-              "set",
-              { tokenID: +tokenID, text: message },
-              "nft",
-              tokenID,
-              {
-                wallet: addr,
-                jobID: "nft",
+            if (!posting) {
+              if (tokenID === "") {
+                alert("enter your tokenID")
+                return
               }
-            )
-            const res = await fetch("/api/ownerOf", {
-              method: "POST",
-              body: JSON.stringify(params),
-            }).then(v => v.json())
-            if (
-              !res.success ||
-              (await sdk.db.readState()).cachedValue.validity[
-                res.tx.originalTxId
-              ] !== true
-            ) {
-              alert("Something went wrong")
-            } else {
-              setMessage("")
-              setTokenID("")
-              setNFTs(await sdk.get("nft", ["tokenID", "desc"]))
+              if (/^\s*$/.test(message)) {
+                alert("enter message")
+                return
+              }
+              setPosting(true)
+              const provider = new ethers.providers.Web3Provider(
+                window.ethereum,
+                "any"
+              )
+              await provider.send("eth_requestAccounts", [])
+              const addr = await provider.getSigner().getAddress()
+              const params = await sdk.sign(
+                "set",
+                { tokenID: +tokenID, text: message },
+                "nft",
+                tokenID,
+                {
+                  wallet: addr,
+                  jobID: "nft",
+                }
+              )
+              const res = await fetch("/api/ownerOf", {
+                method: "POST",
+                body: JSON.stringify(params),
+              }).then(v => v.json())
+              if (
+                !res.success ||
+                (await sdk.db.readState()).cachedValue.validity[
+                  res.tx.originalTxId
+                ] !== true
+              ) {
+                alert("Something went wrong")
+              } else {
+                setMessage("")
+                setTokenID("")
+                setNFTs(await sdk.get("nft", ["tokenID", "desc"]))
+              }
+              setPosting(false)
             }
           }}
         >
@@ -155,6 +179,7 @@ export default function Home() {
             </Flex>
           ))(nfts)}
         </Box>
+        <Footer />
       </Flex>
     </ChakraProvider>
   )
