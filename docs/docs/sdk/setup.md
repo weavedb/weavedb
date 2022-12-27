@@ -55,6 +55,9 @@ db.initialize({
 - **arweave** : custom [arweave-js](https://github.com/ArweaveTeam/arweave-js) settings  
 e.g. `{host: "arweave.net", port: 443, protocol: "https"}`
 
+- **old** : `true` | `false` (default : `false`)  
+WeaveDB contracts v0.7 and less are not compatible with the latest warp SDK. Set this `true` to make it work with old DB instances.
+
 #### weavedb-sdk-node only parameters
 
 - **subscribe** : `true` | `false` (default : `true`)  
