@@ -434,7 +434,7 @@ export default inject(
               <Flex align="center" fontSize="20px" fontWeight="bold" mb={3}>
                 Community
               </Flex>
-              <Box {...linkStyle} href="https://docs.weavedb.dev">
+              <Box {...linkStyle} href="https://twitter.com/weave_db">
                 <Box as="i" className="fab fa-twitter" mr={2} />
                 Twitter
               </Box>
