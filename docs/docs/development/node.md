@@ -88,14 +88,7 @@ Use `host.docker.internal` as `host` to internally connect from the docker conta
 
 ```js
 module.exports = {
-  name: "weavedb",
-  version: "1",
   contractTxId: "xxxxx...",
-  arweave: {
-    host: "host.docker.internal",
-    port: 1820,
-    protocol: "http"
-  },
   wallet: {
     kty: "RSA",
     n: ...
@@ -107,14 +100,7 @@ Or use [our public demo contract](https://sonar.warp.cc/?#/app/contract/2ohyMxM2
 
 ```js
 module.exports = {
-  name: "weavedb",
-  version: "1",
   contractTxId: "2ohyMxM2Z2exV4dVLgRNa9jMnEY09H_I-5WkkZBR0Ns",
-  arweave: {
-    host: "arweave.net",
-    port: 443,
-    protocol: "https"
-  },
   wallet: {
     kty: "RSA",
     n: ...
@@ -135,12 +121,11 @@ sudo docker-compose up --build -d node-server envoy
 ##### 6. Set the instance IP address to the Light Client
 
 - Create an Next.js app and install `weavedb-client`
-- For now, you need `next@12.0` for compatibility
 
 ```bash
 npx create-next-app@latest test-node
 cd test-node
-yarn add next@12.0 weavedb-client
+yarn add weavedb-client
 yarn dev
 ```
 
@@ -157,8 +142,6 @@ export default function Home() {
   useEffect(() => {
     ;(async () => {
       const db = new client({
-        name: "weavedb",
-        version: "1",
         contractTxId: "2ohyMxM2Z2exV4dVLgRNa9jMnEY09H_I-5WkkZBR0Ns",
         rpc: "http://localhost:8080",
       })
@@ -214,14 +197,7 @@ emacs weavedb/node/net/grpc/gateway/weavedb/node-server/weavedb.config.js
 
 ```javascript
 module.exports = {
-  name: "weavedb",
-  version: "1",
   contractTxId: "xxxxxxxx...",
-  arweave: {
-    host: "arweave.net",
-    port: 443,
-    protocol: "https"
-  },
   wallet: {
     kty: "RSA",
     n: ...

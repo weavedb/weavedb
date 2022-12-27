@@ -21,8 +21,6 @@ yarn add weavedb-client
 import WeaveDB from "weavedb-client"
 
 const db = new WeaveDB({
-  name: "weavedb", // for EIP-712 signature
-  version: "1", // for EIP-712 signature
   contractTxId: WEAVEDB_CONTRACT_TX_ID,
   rpc: "http://xxx.yyy.zzz.aaa:8080" // gRPC node URL
 })
@@ -40,12 +38,12 @@ yarn add weavedb-node-client
 
 The node client only works with ip addresses for now. It also doesn't work with secure ports such as `443`.
 
+To access a remote node, you could set `rpc` field to something like `example.com:8080`.
+
 ```js
 const WeaveDB = require("weavedb-node-client")
 
 const db = new WeaveDB({
-  name: "weavedb", // for EIP-712 signature
-  version: "1", // for EIP-712 signature
   contractTxId: WEAVEDB_CONTRACT_TX_ID,
   rpc: "0.0.0.0:8080" // gRPC node IP:port
 })
