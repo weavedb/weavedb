@@ -143,22 +143,15 @@ class SDK extends Base {
       return param
     } else {
       const start = Date.now()
-      let state
       if (dryWrite) {
         let dryState = await this.db.dryWrite(param)
-        if (dryState.type !== "ok") {
+        if (dryState.type === "error")
           return {
             success: false,
             duration: Date.now() - start,
-            error: {
-              message: "dryWrite failed",
-              dryWrite: dryState,
-              function: param.function,
-              query: param.query,
-            },
+            error: { message: "dryWrite failed", dryWrite: dryState },
             function: param.function,
           }
-        }
       }
       return await this.send(param, bundle, start)
     }
@@ -170,7 +163,6 @@ class SDK extends Base {
         ? "bundleInteraction"
         : "writeInteraction"
     ](param, {})
-
     if (this.network === "localhost") await this.mineBlock()
     let state
     if (isNil(tx.originalTxId)) {
@@ -179,7 +171,6 @@ class SDK extends Base {
         duration: Date.now() - start,
         error: { message: "tx didn't go through" },
         function: param.function,
-        query: param.query,
       }
     } else {
       state = await this.db.readState()
@@ -190,7 +181,6 @@ class SDK extends Base {
           duration: Date.now() - start,
           error: { message: "tx not valid" },
           function: param.function,
-          query: param.query,
           ...tx,
         }
       } else if (isNil(valid)) {
@@ -199,7 +189,6 @@ class SDK extends Base {
           duration: Date.now() - start,
           error: { message: "tx validity missing" },
           function: param.function,
-          query: param.query,
           ...tx,
         }
       }
@@ -212,18 +201,25 @@ class SDK extends Base {
       query: param.query,
       ...tx,
     }
-
-    if (includes(param.function, ["add", "update", "upsert", "set"])) {
+    let func = param.function
+    let query = param.query
+    if (param.function === "relay") {
+      func = query[1].function
+      query = query[1].query
+      res.relayedFunc = func
+      res.relayedQuery = query
+    }
+    if (includes(func, ["add", "update", "upsert", "set"])) {
       try {
-        if (param.function === "add") {
+        if (func === "add") {
           res.docID = (
             await ids(state.cachedValue.state, {
               input: { tx: tx.originalTxId },
             })
           ).result[0]
-          res.path = o(append(res.docID), tail)(param.query)
+          res.path = o(append(res.docID), tail)(query)
         } else {
-          res.path = tail(param.query)
+          res.path = tail(query)
           res.docId = last(res.path)
         }
         res.doc = (
@@ -231,7 +227,9 @@ class SDK extends Base {
             input: { query: res.path },
           })
         ).result
-      } catch (e) {}
+      } catch (e) {
+        console.log(e)
+      }
     }
     res.duration = Date.now() - start
     return res
