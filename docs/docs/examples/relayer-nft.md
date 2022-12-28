@@ -6,6 +6,21 @@ sidebar_position: 4
 In this tutorial, we will build a simple dapp with cross-chain NFT authentication using the [relayer](/docs/sdk/relayers) feature.
 An off-chain relayer will validate NFT ownerships from another blockchain, and only NFT owners can write to WeaveDB. By default, WeaveDB authenticates users with crypto accounts, but in this dapp, cross-chain NFTs will be used for the authentication.
 
+![](/img/relayer-nft-2.png)
+
+1. A relayer job is preset on the WeaveDB instance with `jobId`, `allowed_relayers`, `extra data schema`. All the conditions must meet before relayed queries go through.
+2. The NFT owner mints an NFT.
+3. The owner signs query data (`tokenID`, `Message`) with eip712 and send it to the relayer with `jobID`. The `signer address` can be obtained by verifying the eip712 signatrue.
+4. The relayer checks the owner of `tokenID` and add the `owner` address to the signed query, then signs it with eip712 and send the transaction to the WeaveDB contracct on Warp.
+5. The WeaveDB contract verifies the eip712 signatures and validates `jobID`, `allowed relayers` and `extra data schema`. `owner` is the extra data to be validated.
+6. The original query data (`tokenID`, `Message`) can be modified with access control rules on the collection. We will check if the `signer` is `owner`, and if so, add `owner` field to the original data.
+
+:::caution
+
+In practice, the relayer could/should be decentralized. But we are going to set up a centralized relayer for this demo.
+
+:::
+
 A demo dapp with [a test NFT on Goerli testnet](https://goerli.etherscan.io/token/0xfF2914F36A25B5E1732F4F62C840b1534Cc3cD68) is deployed at [relayer-one.vercel.app](https://relayer-one.vercel.app/) where you can free-mint NFTs and post messages via WeaveDB by authenticate with your Goerli NFTs.
 
 :::note Frontend Dapp
