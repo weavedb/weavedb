@@ -8,12 +8,12 @@ An off-chain relayer will validate NFT ownerships from another blockchain, and o
 
 ![](/img/relayer-nft-2.png)
 
-1. A relayer job is preset on the WeaveDB instance with `jobId`, `allowed_relayers`, `extra data schema`. All the conditions must meet before relayed queries go through.
+1. A relayer job can be preset on the WeaveDB instance with `jobId`, `allowed_relayers`, `extra data schema`. All the conditions must be met before relayed queries go through.
 2. The NFT owner mints an NFT.
-3. The owner signs query data (`tokenID`, `Message`) with eip712 and send it to the relayer with `jobID`. The `signer address` can be obtained by verifying the eip712 signatrue.
-4. The relayer checks the owner of `tokenID` and add the `owner` address to the signed query, then signs it with eip712 and send the transaction to the WeaveDB contracct on Warp.
+3. The owner signs query data (`tokenID`, `Message`) with eip712 and sends it to the relayer with `jobID`. The `signer address` can be later obtained by verifying the eip712 signatrue.
+4. The relayer checks the owner of the `tokenID` and add the `owner` address to the signed query, then signs it with eip712 and send the transaction to the WeaveDB contracct on Warp.
 5. The WeaveDB contract verifies the eip712 signatures and validates `jobID`, `allowed relayers` and `extra data schema`. `owner` is the extra data to be validated.
-6. The original query data (`tokenID`, `Message`) can be modified with access control rules on the collection. We will check if the `signer` is `owner`, and if so, add `owner` field to the original data.
+6. The original query data (`tokenID`, `Message`) can be modified with access control rules on the collection. We will check if the `signer` is the `owner`, and if so, add the `owner` field to the original data.
 
 :::caution
 
