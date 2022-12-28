@@ -128,6 +128,7 @@ async function initSDK(v) {
   _config.contractTxId = txid
   if (old === "old") _config.old = true
   sdks[txid] = new SDK(_config)
+  if (isNil(_config.wallet)) await sdks[txid].initializeWithoutWallet()
   await sdks[txid].db.readState()
   return
 }
