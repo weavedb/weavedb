@@ -355,22 +355,72 @@ class SDK extends Base {
     if (relay) {
       return param
     } else {
+      const start = Date.now()
       if (dryWrite) {
         let dryState = await this.db.dryWrite(param)
-        if (dryState.type === "error") return { err: dryState }
+        if (dryState.type === "error")
+          return {
+            success: false,
+            duration: Date.now() - start,
+            error: { message: "dryWrite failed", dryWrite: dryState },
+            function: param.function,
+          }
       }
-      return await this.send(param, bundle)
+      return await this.send(param, bundle, start)
     }
   }
 
-  async send(param, bundle) {
+  async send(param, bundle, start) {
     let tx = await this.db[
       bundle && this.network !== "localhost"
         ? "bundleInteraction"
         : "writeInteraction"
     ](param, {})
     if (this.network === "localhost") await this.mineBlock()
-    return tx
+    let state
+    if (isNil(tx.originalTxId)) {
+      return {
+        success: false,
+        duration: Date.now() - start,
+        error: { message: "tx didn't go through" },
+        function: param.function,
+      }
+    } else {
+      state = await this.db.readState()
+      const valid = state.cachedValue.validity[tx.originalTxId]
+      if (valid === false) {
+        return {
+          success: false,
+          duration: Date.now() - start,
+          error: { message: "tx not valid" },
+          function: param.function,
+          ...tx,
+        }
+      } else if (isNil(valid)) {
+        return {
+          success: false,
+          duration: Date.now() - start,
+          error: { message: "tx validity missing" },
+          function: param.function,
+          ...tx,
+        }
+      }
+    }
+    let res = {
+      success: true,
+      error: null,
+      function: param.function,
+      ...tx,
+    }
+    /*
+    if (param.function === "add") {
+      res.docID = (await this.getIds(tx.originalTxId))[0]
+      res.path = o(append(res.docID), tail)(param.query)
+      res.doc = await this.get(...res.path)
+      res.query = param.query
+      }*/
+    res.duration = Date.now() - start
+    return res
   }
 }
 
