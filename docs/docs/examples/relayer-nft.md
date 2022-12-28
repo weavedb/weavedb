@@ -8,6 +8,12 @@ An off-chain relayer will validate NFT ownerships from another blockchain, and o
 
 A demo dapp with [a test NFT on Goerli testnet](https://goerli.etherscan.io/token/0xfF2914F36A25B5E1732F4F62C840b1534Cc3cD68) is deployed at [relayer-one.vercel.app](https://relayer-one.vercel.app/) where you can free-mint NFTs and post messages via WeaveDB by authenticate with your Goerli NFTs.
 
+:::note Frontend Dapp
+
+![](/img/relayer-nft-1.png)
+
+:::
+
 ## Clone the Repo
 
 ```bash
@@ -185,7 +191,7 @@ To set up everything with one command, run the following.
 node scripts/nft-setup.js mainnet mainnet YOUR_CONTRACT_TX_ID RELAYER_EVM_ADDRESS
 ```
 
-## Set up Loca gRPC Node
+## Set up Local gRPC Node
 
 For a better performance for the relayer, you would want to set up a local grpc node.
 
@@ -245,14 +251,14 @@ Open a new terminal and move to the root directry to continue depelopment.
 
 We use these minimum dependencies.
 
-- [WeaveDB SDK](/docs/sdk/setup) - to connect with WeaveDB
+- [WeaveDB Client](/docs/sdk/client) - to connect with the gRPC node from browsers
 - [WeaveDB Node Client](/docs/sdk/client) - to connect with the gRPC node from the serverless api
 - [Ramda.js](https://ramdajs.com/) - functional programming utilities
 - [Chakra UI](https://chakra-ui.com/) - UI library
 - [Ethers.js](https://docs.ethers.org/v5/) - to connect with Metamask
 
 ```bash
-yarn add ramda weavedb-sdk weavedb-node-client ethers @chakra-ui/react @emotion/react@^11 @emotion/styled@^11 framer-motion@^6
+yarn add ramda weavedb-client weavedb-node-client ethers @chakra-ui/react @emotion/react@^11 @emotion/styled@^11 framer-motion@^6
 ```
 
 ### Copy NFT ABI
@@ -355,13 +361,30 @@ export default async (req, res) => {
 
 The app page `/pages/index.js` is rather simple.
 
-```jsx
-import SDK from "weavedb-sdk"
-import { ethers } from "ethers"
-import { useRef, useEffect, useState } from "react"
-import { map } from "ramda"
-import { Button, Box, Flex, Input, ChakraProvider } from "@chakra-ui/react"
+#### Import Libraries
 
+Import necessary libraries. We are going to use a bunch of [RamdaJS](https://ramdajs.com/) functions for utilities and [Chakra](https://ramdajs.com/) for UI.
+
+```jsx
+import SDK from "weavedb-client"
+import { ethers } from "ethers"
+import { useEffect, useState } from "react"
+import {
+  reverse,
+  compose,
+  sortBy,
+  values,
+  assoc,
+  map,
+  indexBy,
+  prop,
+} from "ramda"
+import { Button, Box, Flex, Input, ChakraProvider } from "@chakra-ui/react"
+```
+
+#### Define Variables
+
+```jsx
 let sdk
 const contractTxId = process.env.NEXT_PUBLIC_WEAVEDB_CONTRACT_TX_ID
 const nftContractAddr = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDR
@@ -369,19 +392,40 @@ const nftContractAddr = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDR
 export default function Home() {
   const [nfts, setNFTs] = useState([])
   const [posting, setPosting] = useState(false)
+}
+```
+- `nfts` : to store messages from NFT holders
+- `posting` : to set a flag when message posting is ongoing
 
+#### Set up Reactive Effect
+
+Initialize the SDK and fetch messages from the gRPC node.
+
+```jsx
   useEffect(() => {
     ;(async () => {
       const _sdk = new SDK({
         contractTxId,
-        network,
+        rpc: process.env.NEXT_PUBLIC_WEAVEDB_RPC_WEB,
       })
-      await _sdk.initializeWithoutWallet()
       sdk = _sdk
       setNFTs(await _sdk.get("nft", ["tokenID", "desc"]))
     })()
   }, [])
+```
 
+#### Header
+
+:::note Header View
+
+![](/img/relayer-nft-header.png)
+
+:::
+
+
+The Header is just a link to the NFT contract on Etherscan and shows posting status when posting a message.
+
+```jsx
   const Header = () => (
     <Flex justify="center" width="500px" p={3}>
       <Box flex={1}>
@@ -399,6 +443,18 @@ export default function Home() {
       </Box>
     </Flex>
   )
+```
+#### Footer
+
+:::note Footer View
+
+![](/img/relayer-nft-footer.png)
+
+:::
+
+The Footer is just a link to the Warp contract page on Sonar. So users can view transactions. Nothing special.
+
+```jsx
   const Footer = () => (
     <Flex justify="center" width="500px" p={3}>
       <Box
@@ -411,6 +467,20 @@ export default function Home() {
       </Box>
     </Flex>
   )
+
+```
+
+#### Post
+
+:::note Post View
+
+![](/img/relayer-nft-post.png)
+
+:::
+
+The Post component lets you post a message with your tokenIDs, and this is where the business takes place.
+
+```jsx
   const Post = () => {
     const [message, setMessage] = useState("")
     const [tokenID, setTokenID] = useState("")
@@ -451,37 +521,47 @@ export default function Home() {
                 return
               }
               setPosting(true)
-              const provider = new ethers.providers.Web3Provider(
-                window.ethereum,
-                "any"
-              )
-              await provider.send("eth_requestAccounts", [])
-              const addr = await provider.getSigner().getAddress()
-              const params = await sdk.sign(
-                "set",
-                { tokenID: +tokenID, text: message },
-                "nft",
-                tokenID,
-                {
-                  wallet: addr,
-                  jobID: "nft",
+              try {
+                const provider = new ethers.providers.Web3Provider(
+                  window.ethereum,
+                  "any"
+                )
+                await provider.send("eth_requestAccounts", [])
+                const addr = await provider.getSigner().getAddress()
+				
+                const params = await sdk.sign(
+                  "set",
+                  { tokenID: +tokenID, text: message },
+                  "nft",
+                  tokenID,
+                  {
+                    wallet: addr,
+                    jobID: "nft",
+                  }
+                )
+				
+                const res = await fetch("/api/ownerOf", {
+                  method: "POST",
+                  body: JSON.stringify(params),
+                }).then(v => v.json())
+				
+                if (!res.success) {
+                  alert("Something went wrong")
+                } else {
+                  setMessage("")
+                  setTokenID("")
+                  setNFTs(
+                    compose(
+                      reverse,
+                      sortBy(prop("tokenID")),
+                      values,
+                      assoc(res.docID, res.doc),
+                      indexBy(prop("tokenID"))
+                    )(nfts)
+                  )
                 }
-              )
-              const res = await fetch("/api/ownerOf", {
-                method: "POST",
-                body: JSON.stringify(params),
-              }).then(v => v.json())
-              if (
-                !res.success ||
-                (await sdk.db.readState()).cachedValue.validity[
-                  res.tx.originalTxId
-                ] !== true
-              ) {
-                alert("Something went wrong")
-              } else {
-                setMessage("")
-                setTokenID("")
-                setNFTs(await sdk.get("nft", ["tokenID", "desc"]))
+              } catch (e) {
+                alert("something went wrong")
               }
               setPosting(false)
             }
@@ -492,7 +572,261 @@ export default function Home() {
       </Flex>
     )
   }
+```
 
+##### Inside onClick Function
+
+There are 2 key parts inside the onClick function.
+
+`sign` method signs a query and creates an object(`param`) ready to be sent to the relayer. In this code, we are setting the object `{ tokenID: +tokenID, text: message }` to `tokenID` doc of `nft` collection. `jobID` also needs to be specified when signing to relay a query.
+
+```js
+const params = await sdk.sign(
+  "set",
+  { tokenID: +tokenID, text: message },
+  "nft",
+  tokenID,
+  {
+    wallet: addr,
+    jobID: "nft",
+  }
+)
+```
+Now send the signed object to the relayer we set up at `/api/ownerOf`. The relayer is going to check the owner of the `tokenID` and relay the query with an additional `owner` data.
+
+The [access control rules](/docs/examples/relayer-nft#set-up-access-control-rules) previously set will make sure the signer is the owner, and only let messages posted if it's true.
+
+```js
+const res = await fetch("/api/ownerOf", {
+  method: "POST",
+  body: JSON.stringify(params),
+}).then(v => v.json())
+```
+
+#### Messages
+
+:::note Messages View
+
+![](/img/relayer-nft-messages.png)
+
+:::
+
+
+The Messages component loops through `nfts` and list the messages with a link to the owner page on Etherscan.
+
+```jsx
+  const Messages = () => (
+    <Box>
+      <Flex bg="#EDF2F7" w="500px">
+        <Flex justify="center" p={2} w="75px">
+          tokenID
+        </Flex>
+        <Flex justify="center" p={2} w="100px">
+          Owner
+        </Flex>
+        <Box p={2} flex={1}>
+          Message
+        </Box>
+      </Flex>
+      {map(v => (
+        <Flex
+          sx={{ ":hover": { bg: "#EDF2F7" } }}
+          w="500px"
+          as="a"
+          target="_blank"
+          href={`https://goerli.etherscan.io/token/${nftContractAddr}?a=${v.owner}`}
+        >
+          <Flex justify="center" p={2} w="75px">
+            {v.tokenID}
+          </Flex>
+          <Flex justify="center" p={2} w="100px">
+            {v.owner.slice(0, 5)}...{v.owner.slice(-3)}
+          </Flex>
+          <Box p={2} flex={1}>
+            {v.text}
+          </Box>
+        </Flex>
+      ))(nfts)}
+    </Box>
+  )
+```
+#### Return Components
+
+Now return all the components wrapped by `<ChakraProvider>` tag for UI.
+
+```jsx
+  return (
+    <ChakraProvider>
+      <Flex direction="column" align="center" fontSize="12px">
+        <Header />
+        <Post />
+        <Messages />
+        <Footer />
+      </Flex>
+    </ChakraProvider>
+  )
+```
+
+
+#### The Complete Code
+
+You can also access the entire code [on Github](https://github.com/weavedb/weavedb/blob/master/examples/relayer-nft/pages/index.js).
+
+```jsx
+import SDK from "weavedb-client"
+import { ethers } from "ethers"
+import { useEffect, useState } from "react"
+import {
+  reverse,
+  compose,
+  sortBy,
+  values,
+  assoc,
+  map,
+  indexBy,
+  prop,
+} from "ramda"
+import { Button, Box, Flex, Input, ChakraProvider } from "@chakra-ui/react"
+
+let sdk
+const contractTxId = process.env.NEXT_PUBLIC_WEAVEDB_CONTRACT_TX_ID
+const nftContractAddr = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDR
+
+export default function Home() {
+  const [nfts, setNFTs] = useState([])
+  const [posting, setPosting] = useState(false)
+
+  useEffect(() => {
+    ;(async () => {
+      const _sdk = new SDK({
+        contractTxId,
+        rpc: process.env.NEXT_PUBLIC_WEAVEDB_RPC_WEB,
+      })
+      sdk = _sdk
+      setNFTs(await _sdk.get("nft", ["tokenID", "desc"]))
+    })()
+  }, [])
+
+  const Header = () => (
+    <Flex justify="center" width="500px" p={3}>
+      <Box flex={1}>
+        {posting
+          ? "posting..."
+          : "Mint NFT and post a Message with your tokenID!"}
+      </Box>
+      <Box
+        as="a"
+        target="_blank"
+        sx={{ textDecoration: "underline" }}
+        href={`https://goerli.etherscan.io/token/${nftContractAddr}#writeContract`}
+      >
+        mint
+      </Box>
+    </Flex>
+  )
+
+  const Footer = () => (
+    <Flex justify="center" width="500px" p={3}>
+      <Box
+        as="a"
+        target="_blank"
+        sx={{ textDecoration: "underline" }}
+        href={`https://sonar.warp.cc/?#/app/contract/${contractTxId}`}
+      >
+        Contract Transactions
+      </Box>
+    </Flex>
+  )
+
+  const Post = () => {
+    const [message, setMessage] = useState("")
+    const [tokenID, setTokenID] = useState("")
+    return (
+      <Flex justify="center" width="500px" mb={5}>
+        <Input
+          disabled={posting}
+          w="100px"
+          placeholder="tokenID"
+          sx={{ borderRadius: "3px 0 0 3px" }}
+          value={tokenID}
+          onChange={e => {
+            if (!Number.isNaN(+e.target.value)) {
+              setTokenID(e.target.value)
+            }
+          }}
+        />
+        <Input
+          disabled={posting}
+          flex={1}
+          placeholder="Message"
+          sx={{ borderRadius: "0" }}
+          value={message}
+          onChange={e => {
+            setMessage(e.target.value)
+          }}
+        />
+        <Button
+          sx={{ borderRadius: "0 3px 3px 0" }}
+          onClick={async () => {
+            if (!posting) {
+              if (tokenID === "") {
+                alert("enter your tokenID")
+                return
+              }
+              if (/^\s*$/.test(message)) {
+                alert("enter message")
+                return
+              }
+              setPosting(true)
+              try {
+                const provider = new ethers.providers.Web3Provider(
+                  window.ethereum,
+                  "any"
+                )
+                await provider.send("eth_requestAccounts", [])
+                const addr = await provider.getSigner().getAddress()
+                const params = await sdk.sign(
+                  "set",
+                  { tokenID: +tokenID, text: message },
+                  "nft",
+                  tokenID,
+                  {
+                    wallet: addr,
+                    jobID: "nft",
+                  }
+                )
+                const res = await fetch("/api/ownerOf", {
+                  method: "POST",
+                  body: JSON.stringify(params),
+                }).then(v => v.json())
+                if (!res.success) {
+                  alert("Something went wrong")
+                } else {
+                  setMessage("")
+                  setTokenID("")
+                  setNFTs(
+                    compose(
+                      reverse,
+                      sortBy(prop("tokenID")),
+                      values,
+                      assoc(res.docID, res.doc),
+                      indexBy(prop("tokenID"))
+                    )(nfts)
+                  )
+                }
+              } catch (e) {
+                alert("something went wrong")
+              }
+              setPosting(false)
+            }
+          }}
+        >
+          Post
+        </Button>
+      </Flex>
+    )
+  }
+  
   const Messages = () => (
     <Box>
       <Flex bg="#EDF2F7" w="500px">
