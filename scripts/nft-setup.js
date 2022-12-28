@@ -20,66 +20,6 @@ if (isNil(contractTxId)) {
   process.exit()
 }
 
-const schemas = {
-  type: "object",
-  required: ["task", "date", "user_address", "done"],
-  properties: {
-    task: {
-      type: "string",
-    },
-    user_address: {
-      type: "string",
-    },
-    date: {
-      type: "number",
-    },
-    done: {
-      type: "boolean",
-    },
-  },
-}
-
-const rules = {
-  "allow create": {
-    and: [
-      {
-        "==": [
-          { var: "request.auth.signer" },
-          { var: "resource.newData.user_address" },
-        ],
-      },
-      {
-        "==": [
-          { var: "request.block.timestamp" },
-          { var: "resource.newData.date" },
-        ],
-      },
-      {
-        "==": [{ var: "resource.newData.done" }, false],
-      },
-    ],
-  },
-  "allow update": {
-    and: [
-      {
-        "==": [
-          { var: "request.auth.signer" },
-          { var: "resource.newData.user_address" },
-        ],
-      },
-      {
-        "==": [{ var: "resource.newData.done" }, true],
-      },
-    ],
-  },
-  "allow delete": {
-    "==": [
-      { var: "request.auth.signer" },
-      { var: "resource.data.user_address" },
-    ],
-  },
-}
-
 const setup = async () => {
   const wallet_path = path.resolve(
     __dirname,
@@ -98,6 +38,24 @@ const setup = async () => {
   })
 
   console.log("init WeaveDB..." + contractTxId)
+
+  const schema = {
+    type: "object",
+    required: ["owner", "text", "tokenID"],
+    properties: {
+      owner: {
+        type: "string",
+      },
+      text: {
+        type: "string",
+      },
+      tokenID: {
+        type: "number",
+      },
+    },
+  }
+  await sdk.setSchema(schema, "nft", { ar: wallet })
+  console.log("nft schema set!")
 
   const job = {
     relayers: [relayerAddress],

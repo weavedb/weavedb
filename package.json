@@ -43,7 +43,7 @@
     "wasmbuilder": "^0.0.16",
     "wasmcurves": "^0.2.0",
     "weavedb-base": "^0.7.3",
-    "weavedb-sdk": "^0.9.7",
+    "weavedb-sdk": "^0.9.8",
     "weavedb-sdk-node": "^0.9.6",
     "yargs": "^17.6.2"
   },

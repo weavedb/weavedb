@@ -1,20 +1,12 @@
-import SDK from "weavedb-sdk"
+import SDK from "weavedb-client"
 import { ethers } from "ethers"
 import { useRef, useEffect, useState } from "react"
 import { map } from "ramda"
-import {
-  Button,
-  Box,
-  Flex,
-  Input,
-  Textarea,
-  ChakraProvider,
-} from "@chakra-ui/react"
+import { Button, Box, Flex, Input, ChakraProvider } from "@chakra-ui/react"
 
 let sdk
 const contractTxId = process.env.NEXT_PUBLIC_WEAVEDB_CONTRACT_TX_ID
 const nftContractAddr = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDR
-const network = process.env.NEXT_PUBLIC_WEAVEDB_NETWORK
 
 export default function Home() {
   const [nfts, setNFTs] = useState([])
@@ -24,9 +16,8 @@ export default function Home() {
     ;(async () => {
       const _sdk = new SDK({
         contractTxId,
-        network,
+        rpc: process.env.NEXT_PUBLIC_WEAVEDB_RPC_WEB,
       })
-      await _sdk.initializeWithoutWallet()
       sdk = _sdk
       setNFTs(await _sdk.get("nft", ["tokenID", "desc"]))
     })()
@@ -49,6 +40,7 @@ export default function Home() {
       </Box>
     </Flex>
   )
+
   const Footer = () => (
     <Flex justify="center" width="500px" p={3}>
       <Box
@@ -61,6 +53,7 @@ export default function Home() {
       </Box>
     </Flex>
   )
+
   const Post = () => {
     const [message, setMessage] = useState("")
     const [tokenID, setTokenID] = useState("")
@@ -121,17 +114,13 @@ export default function Home() {
                 method: "POST",
                 body: JSON.stringify(params),
               }).then(v => v.json())
-              if (
-                !res.success ||
-                (await sdk.db.readState()).cachedValue.validity[
-                  res.tx.originalTxId
-                ] !== true
-              ) {
+              console.log(res)
+              if (!res.success) {
                 alert("Something went wrong")
               } else {
                 setMessage("")
                 setTokenID("")
-                setNFTs(await sdk.get("nft", ["tokenID", "desc"]))
+                setNFTs(await sdk.get("nft", ["tokenID", "desc"], true))
               }
               setPosting(false)
             }
@@ -142,43 +131,48 @@ export default function Home() {
       </Flex>
     )
   }
+
+  const Messages = () => (
+    <Box>
+      <Flex bg="#EDF2F7" w="500px">
+        <Flex justify="center" p={2} w="75px">
+          tokenID
+        </Flex>
+        <Flex justify="center" p={2} w="100px">
+          Owner
+        </Flex>
+        <Box p={2} flex={1}>
+          Message
+        </Box>
+      </Flex>
+      {map(v => (
+        <Flex
+          sx={{ ":hover": { bg: "#EDF2F7" } }}
+          w="500px"
+          as="a"
+          target="_blank"
+          href={`https://goerli.etherscan.io/token/${nftContractAddr}?a=${v.owner}`}
+        >
+          <Flex justify="center" p={2} w="75px">
+            {v.tokenID}
+          </Flex>
+          <Flex justify="center" p={2} w="100px">
+            {v.owner.slice(0, 5)}...{v.owner.slice(-3)}
+          </Flex>
+          <Box p={2} flex={1}>
+            {v.text}
+          </Box>
+        </Flex>
+      ))(nfts)}
+    </Box>
+  )
+
   return (
     <ChakraProvider>
       <Flex direction="column" align="center" fontSize="12px">
         <Header />
         <Post />
-        <Box>
-          <Flex bg="#EDF2F7" w="500px">
-            <Flex justify="center" p={2} w="75px">
-              tokenID
-            </Flex>
-            <Flex justify="center" p={2} w="100px">
-              Owner
-            </Flex>
-            <Box p={2} flex={1}>
-              Message
-            </Box>
-          </Flex>
-          {map(v => (
-            <Flex
-              sx={{ ":hover": { bg: "#EDF2F7" } }}
-              w="500px"
-              as="a"
-              target="_blank"
-              href={`https://goerli.etherscan.io/token/${nftContractAddr}?a=${v.owner}`}
-            >
-              <Flex justify="center" p={2} w="75px">
-                {v.tokenID}
-              </Flex>
-              <Flex justify="center" p={2} w="100px">
-                {v.owner.slice(0, 5)}...{v.owner.slice(-3)}
-              </Flex>
-              <Box p={2} flex={1}>
-                {v.text}
-              </Box>
-            </Flex>
-          ))(nfts)}
-        </Box>
+        <Messages />
         <Footer />
       </Flex>
     </ChakraProvider>

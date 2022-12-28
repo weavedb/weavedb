@@ -3,7 +3,7 @@ const provider = new providers.JsonRpcProvider(process.env.EVM_RPC)
 const contractTxId = process.env.NEXT_PUBLIC_WEAVEDB_CONTRACT_TX_ID
 const nftContractAddr = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDR
 const SDK = require("weavedb-node-client")
-const abi = require("../../lib/NFT.json").abi
+const abi = require("../../lib/NFT.json")
 
 export default async (req, res) => {
   const params = JSON.parse(req.body)
@@ -21,8 +21,7 @@ export default async (req, res) => {
 
   const sdk = new SDK({
     contractTxId,
-    network: process.env.NEXT_PUBLIC_WEAVEDB_NETWORK,
-    rpc: process.env.WEAVEDB_RPC,
+    rpc: process.env.WEAVEDB_RPC_NODE,
   })
 
   const tx = await sdk.relay(params.jobID, params, owner, {
