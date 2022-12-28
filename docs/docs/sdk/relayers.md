@@ -7,6 +7,10 @@ Relayers can execute queries on behalf of you using your [eip-712 signatures](ht
 
 This comes in handy, when making cross-chain state verifications with off-chain oracles.
 
+See an example use case to authenticate NFT owners [here](/docs/examples/relayer-nft).
+
+![](/img/relayer-nft-2.png)
+
 ## Add Relayer Jobs
 
 Before relayers can relay queries, relayer jobs need to be defined in the WeaveDB contract.
