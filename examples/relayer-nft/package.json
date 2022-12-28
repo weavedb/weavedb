@@ -20,8 +20,6 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "weavedb-client": "^0.9.5",
-    "weavedb-node-client": "^0.9.4",
-    "weavedb-sdk": "^0.9.13",
-    "weavedb-sdk-node": "^0.9.13"
+    "weavedb-node-client": "^0.9.4"
   }
 }
