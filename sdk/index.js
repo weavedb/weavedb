@@ -1,5 +1,6 @@
 const {
   o,
+  includes,
   append,
   equals,
   all,
@@ -14,6 +15,8 @@ let Arweave = require("arweave")
 Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
 const Base = require("weavedb-base")
 const { WarpFactory, LoggerFactory } = require("warp-contracts")
+const { get, parseQuery } = require("./off-chain/actions/read/get")
+const { ids } = require("./off-chain/actions/read/ids")
 
 const {
   WarpFactory: WarpFactory_old,
@@ -140,15 +143,22 @@ class SDK extends Base {
       return param
     } else {
       const start = Date.now()
+      let state
       if (dryWrite) {
         let dryState = await this.db.dryWrite(param)
-        if (dryState.type === "error")
+        if (dryState.type !== "ok") {
           return {
             success: false,
             duration: Date.now() - start,
-            error: { message: "dryWrite failed", dryWrite: dryState },
+            error: {
+              message: "dryWrite failed",
+              dryWrite: dryState,
+              function: param.function,
+              query: param.query,
+            },
             function: param.function,
           }
+        }
       }
       return await this.send(param, bundle, start)
     }
@@ -160,6 +170,7 @@ class SDK extends Base {
         ? "bundleInteraction"
         : "writeInteraction"
     ](param, {})
+
     if (this.network === "localhost") await this.mineBlock()
     let state
     if (isNil(tx.originalTxId)) {
@@ -168,6 +179,7 @@ class SDK extends Base {
         duration: Date.now() - start,
         error: { message: "tx didn't go through" },
         function: param.function,
+        query: param.query,
       }
     } else {
       state = await this.db.readState()
@@ -178,6 +190,7 @@ class SDK extends Base {
           duration: Date.now() - start,
           error: { message: "tx not valid" },
           function: param.function,
+          query: param.query,
           ...tx,
         }
       } else if (isNil(valid)) {
@@ -186,23 +199,40 @@ class SDK extends Base {
           duration: Date.now() - start,
           error: { message: "tx validity missing" },
           function: param.function,
+          query: param.query,
           ...tx,
         }
       }
     }
+
     let res = {
       success: true,
       error: null,
       function: param.function,
+      query: param.query,
       ...tx,
     }
-    /*
-    if (param.function === "add") {
-      res.docID = (await this.getIds(tx.originalTxId))[0]
-      res.path = o(append(res.docID), tail)(param.query)
-      res.doc = await this.get(...res.path)
-      res.query = param.query
-      }*/
+
+    if (includes(param.function, ["add", "update", "upsert", "set"])) {
+      try {
+        if (param.function === "add") {
+          res.docID = (
+            await ids(state.cachedValue.state, {
+              input: { tx: tx.originalTxId },
+            })
+          ).result[0]
+          res.path = o(append(res.docID), tail)(param.query)
+        } else {
+          res.path = tail(param.query)
+          res.docId = last(res.path)
+        }
+        res.doc = (
+          await get(state.cachedValue.state, {
+            input: { query: res.path },
+          })
+        ).result
+      } catch (e) {}
+    }
     res.duration = Date.now() - start
     return res
   }
