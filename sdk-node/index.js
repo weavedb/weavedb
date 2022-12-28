@@ -427,13 +427,13 @@ class SDK extends Base {
       query: param.query,
       ...tx,
     }
-    const func = param.function
-    const query = param.query
+    let func = param.function
+    let query = param.query
     if (param.function === "relay") {
-      func = param[1][0]
-      query = param[1][1]
-      res.relayedFunc = param[1][0]
-      res.relayedQuery = param[1][1]
+      func = query[1].function
+      query = query[1].query
+      res.relayedFunc = func
+      res.relayedQuery = query
     }
     if (includes(func, ["add", "update", "upsert", "set"])) {
       try {
@@ -446,7 +446,7 @@ class SDK extends Base {
           res.path = o(append(res.docID), tail)(query)
         } else {
           res.path = tail(query)
-          res.docId = last(res.path)
+          res.docID = last(res.path)
         }
         res.doc = (
           await get(state.cachedValue.state, {

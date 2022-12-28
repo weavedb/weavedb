@@ -30,8 +30,5 @@ export default async (req, res) => {
     wallet: process.env.RELAYER_ADDRESS,
   })
 
-  res.status(200).json({
-    success: true,
-    tx,
-  })
+  res.status(200).json(tx)
 }
