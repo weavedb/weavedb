@@ -1,4 +1,16 @@
-const { equals, all, complement, isNil, pluck, is, last } = require("ramda")
+const {
+  o,
+  includes,
+  append,
+  equals,
+  all,
+  complement,
+  isNil,
+  pluck,
+  is,
+  last,
+  tail,
+} = require("ramda")
 const { LmdbCache } = require("warp-contracts-lmdb")
 const shortid = require("shortid")
 let Arweave = require("arweave")
@@ -18,6 +30,7 @@ const {
 
 const { WarpSubscriptionPlugin } = require("warp-contracts-plugin-subscription")
 const { get, parseQuery } = require("./off-chain/actions/read/get")
+const { ids } = require("./off-chain/actions/read/ids")
 const md5 = require("md5")
 
 let states = {}
@@ -406,19 +419,35 @@ class SDK extends Base {
         }
       }
     }
+
     let res = {
       success: true,
       error: null,
       function: param.function,
+      query: param.query,
       ...tx,
     }
-    /*
-    if (param.function === "add") {
-      res.docID = (await this.getIds(tx.originalTxId))[0]
-      res.path = o(append(res.docID), tail)(param.query)
-      res.doc = await this.get(...res.path)
-      res.query = param.query
-      }*/
+
+    if (includes(param.function, ["add", "update", "upsert", "set"])) {
+      try {
+        if (param.function === "add") {
+          res.docID = (
+            await ids(state.cachedValue.state, {
+              input: { tx: tx.originalTxId },
+            })
+          ).result[0]
+          res.path = o(append(res.docID), tail)(param.query)
+        } else {
+          res.path = tail(param.query)
+          res.docId = last(res.path)
+        }
+        res.doc = (
+          await get(state.cachedValue.state, {
+            input: { query: res.path },
+          })
+        ).result
+      } catch (e) {}
+    }
     res.duration = Date.now() - start
     return res
   }
