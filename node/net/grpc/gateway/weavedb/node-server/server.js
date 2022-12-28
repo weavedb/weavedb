@@ -99,10 +99,12 @@ async function query(call, callback) {
         result = await sdks[contractTxId][func](...JSON.parse(query))
         _cache[contractTxId][key] = { date: Date.now(), result }
       } else {
-        let dryState = await sdks[contractTxId].db.dryWrite(JSON.parse(query))
-        if (dryState.type === "error")
-          return { result: null, err: dryState.errorMessage }
-        result = await sdks[contractTxId].send(JSON.parse(query), true)
+        result = await sdks[contractTxId]._request(
+          func,
+          JSON.parse(query),
+          true,
+          true
+        )
       }
     } catch (e) {
       err = e.message
