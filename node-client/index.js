@@ -27,6 +27,7 @@ const reads = [
   "getLinkedContract",
   "getEvolve",
   "getVersion",
+  "getRelayerJob",
 ]
 
 class SDK extends Base {
