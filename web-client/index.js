@@ -52,8 +52,14 @@ class SDK extends Base {
     if (!isNil(EthWallet)) this.setEthWallet(EthWallet)
   }
 
-  async _request(func, query, nocache) {
-    if (!includes(func)(reads)) nocache = false
+  async _request(func, query, nocache, bundle, relay = false) {
+    if (!includes(func)(reads)) {
+      nocache = false
+      if (relay) {
+        return query
+      }
+    }
+
     const request = new WeaveDBRequest()
     request.setMethod(`${func}@${this.contractTxId}`)
     request.setQuery(JSON.stringify(query))

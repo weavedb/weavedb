@@ -93,8 +93,13 @@ class SDK extends Base {
     return { nocache, query }
   }
 
-  async _request(func, query, nocache = false) {
-    if (!includes(func)(reads)) nocache = false
+  async _request(func, query, nocache, bundle, relay = false) {
+    if (!includes(func)(reads)) {
+      nocache = false
+      if (relay) {
+        return query
+      }
+    }
     const request = {
       method: `${func}@${this.contractTxId}`,
       query: JSON.stringify(query),
