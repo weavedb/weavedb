@@ -114,7 +114,6 @@ export default function Home() {
                 method: "POST",
                 body: JSON.stringify(params),
               }).then(v => v.json())
-              console.log(res)
               if (!res.success) {
                 alert("Something went wrong")
               } else {
