@@ -654,7 +654,7 @@ describe("WeaveDB", function () {
     return
   })
 
-  it.only("should relay queries", async () => {
+  it("should relay queries", async () => {
     const identity = EthCrypto.createIdentity()
     const job = {
       relayers: [identity.address],
