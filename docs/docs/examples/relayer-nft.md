@@ -255,6 +255,45 @@ We use these minimum dependencies.
 yarn add ramda weavedb-sdk weavedb-node-client ethers @chakra-ui/react @emotion/react@^11 @emotion/styled@^11 framer-motion@^6
 ```
 
+### Copy NFT ABI
+
+Copy and save the minimum ABI for the NFT contract to `/lib/NFT.json`.
+
+The relayer needs this ABI to access the Ethereum blockchain.
+
+```json
+[
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "ownerOf",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]
+```
+
+You need to make `/lib` directory.
+
+```bash
+mkdir lib
+touch lib/NFT.json
+```
+
+Then copy the content above to `NFT.json`.
+
 ### Set up Environment Variables
 
 Create `.env.local` file and set the following variables.

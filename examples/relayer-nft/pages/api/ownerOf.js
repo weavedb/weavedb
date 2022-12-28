@@ -23,12 +23,10 @@ export default async (req, res) => {
     contractTxId,
     rpc: process.env.WEAVEDB_RPC_NODE,
   })
-
   const tx = await sdk.relay(params.jobID, params, owner, {
     jobID: params.jobID,
     privateKey: process.env.RELAYER_PRIVATEKEY,
     wallet: process.env.RELAYER_ADDRESS,
   })
-
   res.status(200).json(tx)
 }
