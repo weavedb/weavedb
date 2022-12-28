@@ -1,6 +1,6 @@
 import SDK from "weavedb-client"
 import { ethers } from "ethers"
-import { useRef, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import {
   reverse,
   compose,
@@ -110,6 +110,7 @@ export default function Home() {
                 )
                 await provider.send("eth_requestAccounts", [])
                 const addr = await provider.getSigner().getAddress()
+
                 const params = await sdk.sign(
                   "set",
                   { tokenID: +tokenID, text: message },
@@ -120,10 +121,12 @@ export default function Home() {
                     jobID: "nft",
                   }
                 )
+
                 const res = await fetch("/api/ownerOf", {
                   method: "POST",
                   body: JSON.stringify(params),
                 }).then(v => v.json())
+
                 if (!res.success) {
                   alert("Something went wrong")
                 } else {
@@ -151,6 +154,7 @@ export default function Home() {
       </Flex>
     )
   }
+
   const Messages = () => (
     <Box>
       <Flex bg="#EDF2F7" w="500px">
