@@ -29,11 +29,7 @@ touch weavedb.config.js
 
 ```js
 module.exports = {
-  contractTxId: "xxxxxxxx...",
-  wallet: {
-    kty: "RSA",
-    n: ...
-  }
+  contractTxId: "xxxxxxxx..."
 }
 ```
 
@@ -69,15 +65,7 @@ cd weavedb
 yarn
 ```
 
-##### 2. If you have no Arweave wallet, generate one for the test
-
-```bash
-node scripts/generate-wallet.js mainnet
-```
-
-Now you have a new wallet at `/scripts/.wallets/wallet-mainnet.json`.
-
-##### 3. Create a configuration file at `/node/net/grpc/gateway/weavedb/node-server/weavedb.config.js`.
+##### 2. Create a configuration file at `/node/net/grpc/gateway/weavedb/node-server/weavedb.config.js`.
 
 You can copy the newly generated wallet from the previous step to `wallet`.
 
@@ -92,10 +80,6 @@ module.exports = {
     host: "host.docker.internal"
     port: 1820,
     protocol: "http"
-  },
-  wallet: {
-    kty: "RSA",
-    n: ...
   }
 }
 ```
@@ -104,17 +88,13 @@ Or use [our public demo contract](https://sonar.warp.cc/?#/app/contract/2ohyMxM2
 
 ```js
 module.exports = {
-  contractTxId: "2ohyMxM2Z2exV4dVLgRNa9jMnEY09H_I-5WkkZBR0Ns",
-  wallet: {
-    kty: "RSA",
-    n: ...
-  }
+  contractTxId: "2ohyMxM2Z2exV4dVLgRNa9jMnEY09H_I-5WkkZBR0Ns"
 }
 ```
 
-##### 4. Install Docker and Docker Compose according to your environment
+##### 3. Install Docker and Docker Compose according to your environment
 
-##### 5. Run Docker Conompose
+##### 4. Run Docker Conompose
 
 ```bash
 cd node
@@ -122,7 +102,7 @@ sudo docker-compose pull node-server envoy
 sudo docker-compose up --build -d node-server envoy
 ```
 
-##### 6. Set the instance IP address to the Light Client
+##### 5. Set the instance IP address to the Light Client
 
 - Create an Next.js app and install `weavedb-client`
 
@@ -201,11 +181,7 @@ emacs weavedb/node/net/grpc/gateway/weavedb/node-server/weavedb.config.js
 
 ```javascript
 module.exports = {
-  contractTxId: "xxxxxxxx...",
-  wallet: {
-    kty: "RSA",
-    n: ...
-  }
+  contractTxId: "xxxxxxxx..."
 }
 ```
 
