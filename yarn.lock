@@ -9703,18 +9703,6 @@ weak-lru-cache@^1.2.2:
   resolved "https://registry.yarnpkg.com/weak-lru-cache/-/weak-lru-cache-1.2.2.tgz#fdbb6741f36bae9540d12f480ce8254060dccd19"
   integrity sha512-DEAoo25RfSYMuTGc9vPJzZcZullwIqRDSI9LOy+fkCJPi6hykCnfKaXTuPBDuXAUcqHXyOgFtHNp/kB2FjYHbw==
 
-weavedb-base@^0.7.3:
-  version "0.7.3"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.7.3.tgz#f7172f01e80a5dd5da6606c9637cc4208b048975"
-  integrity sha512-QYCvvRzueZdxSoP20GzYIVDjm+bZaYMrR4t0lqYVPBocsrWtHFs0xpUyp3SENUnAR9Kh/d1snIPdsHUeg5Xxhw==
-  dependencies:
-    "@metamask/eth-sig-util" "^4.0.1"
-    "@metamask/legacy-web3" "^2.0.0"
-    circomlibjs "git+https://github.com/InternetMaximalism/circomlibjs#fc534a12d9b34f2694ed0f75a686d080fc7a92d6"
-    eth-crypto "^2.3.0"
-    ethereumjs-util "^7.1.5"
-    ramda "^0.28.0"
-
 weavedb-base@^0.9.5:
   version "0.9.5"
   resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.9.5.tgz#25063b37ea5eebab194279967b6f25507da4d27d"
