@@ -19,6 +19,7 @@ const reads = [
   "getLinkedContract",
   "getEvolve",
   "getVersion",
+  "getRelayerJob",
 ]
 
 class SDK extends Base {
@@ -26,8 +27,8 @@ class SDK extends Base {
     rpc,
     contractTxId,
     wallet,
-    name,
-    version,
+    name = "weavedb",
+    version = "1",
     EthWallet,
     web3,
     arweave_wallet,

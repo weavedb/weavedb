@@ -9743,10 +9743,10 @@ weavedb-sdk-node@^0.9.6:
     warp-contracts-plugin-subscription "^1.0.5"
     weavedb-base "^0.9.5"
 
-weavedb-sdk@^0.9.7:
-  version "0.9.7"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.9.7.tgz#8048abfbb586bd5ef04eb39332ed2f9ce99d9105"
-  integrity sha512-EYrIpy+xyPBNBhU9QAvDMOCdeeMjSOtT0O8ao/7K+cxnD95pbQ6qpnrt1qs6v7GjORzOxjY8BIFfZYrCWmn2CA==
+weavedb-sdk@^0.9.8:
+  version "0.9.8"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.9.8.tgz#e4254d72387fc881c7f7bb0bcbe9880bc1be797d"
+  integrity sha512-Ht+eRVdq8Oa4pSI2kbDoVtZ2rmBToo1zIOAf3QyH/4AucUVgcANjQa6G7syR3eJS3a2mLzH1IHfmnAhj2k/hdQ==
   dependencies:
     "@metamask/legacy-web3" "^2.0.0"
     arweave "^1.11.4"

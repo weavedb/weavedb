@@ -35,7 +35,6 @@ module.exports = {
     n: ...
   }
 }
-
 ```
 
 #### contractTxId
@@ -89,6 +88,11 @@ Use `host.docker.internal` as `host` to internally connect from the docker conta
 ```js
 module.exports = {
   contractTxId: "xxxxx...",
+  arweave:{
+    host: "host.docker.internal"
+    port: 1820,
+    protocol: "http"
+  },
   wallet: {
     kty: "RSA",
     n: ...
@@ -283,8 +287,6 @@ sudo nginx -t && sudo nginx -s reload
 import client from "weavedb-client"
 
 const db = new client({
-  name: "weavedb", // for EIP-712 signature
-  version: "1", // for EIP-712 signature
   contractTxId: WEAVEDB_CONTRACT_TX_ID,
   rpc: "https://grpc.example.com" // gRPC node URL
 })
