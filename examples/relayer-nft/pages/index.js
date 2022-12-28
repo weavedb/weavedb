@@ -1,7 +1,16 @@
 import SDK from "weavedb-client"
 import { ethers } from "ethers"
 import { useRef, useEffect, useState } from "react"
-import { map } from "ramda"
+import {
+  reverse,
+  compose,
+  sortBy,
+  values,
+  assoc,
+  map,
+  indexBy,
+  prop,
+} from "ramda"
 import { Button, Box, Flex, Input, ChakraProvider } from "@chakra-ui/react"
 
 let sdk
@@ -119,7 +128,15 @@ export default function Home() {
               } else {
                 setMessage("")
                 setTokenID("")
-                setNFTs(await sdk.get("nft", ["tokenID", "desc"], true))
+                setNFTs(
+                  compose(
+                    reverse,
+                    sortBy(prop("tokenID")),
+                    values,
+                    assoc(res.docID, res.doc),
+                    indexBy(prop("tokenID"))
+                  )(nfts)
+                )
               }
               setPosting(false)
             }
@@ -130,7 +147,6 @@ export default function Home() {
       </Flex>
     )
   }
-
   const Messages = () => (
     <Box>
       <Flex bg="#EDF2F7" w="500px">
