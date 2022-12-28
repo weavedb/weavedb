@@ -220,7 +220,7 @@ class SDK extends Base {
           res.path = o(append(res.docID), tail)(query)
         } else {
           res.path = tail(query)
-          res.docId = last(res.path)
+          res.docID = last(res.path)
         }
         res.doc = (
           await get(state.cachedValue.state, {
