@@ -411,7 +411,10 @@ export default inject(
               <Box {...linkStyle} href="https://weavedb.mirror.xyz">
                 Mirror Blog
               </Box>
-              <Box {...linkStyle} href="https://docs.weavedb.dev">
+              <Box
+                {...linkStyle}
+                href="https://docs.weavedb.dev/docs/category/example-dapps"
+              >
                 Demo Dapps
               </Box>
             </Box>
