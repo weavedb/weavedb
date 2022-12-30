@@ -36,8 +36,6 @@ yarn add weavedb-node-client
 
 ### Instantiate WeaveDB
 
-The node client only works with ip addresses for now. It also doesn't work with secure ports such as `443`.
-
 To access a remote node, you could set `rpc` field to something like `example.com:8080`.
 
 ```js
@@ -48,3 +46,29 @@ const db = new WeaveDB({
   rpc: "0.0.0.0:8080" // gRPC node IP:port
 })
 ```
+
+It also with remote secure ports such as `example.com:443`.
+
+```js
+const WeaveDB = require("weavedb-node-client")
+
+const db = new WeaveDB({
+  contractTxId: WEAVEDB_CONTRACT_TX_ID,
+  rpc: "example.com:443"
+})
+```
+
+or
+
+
+```js
+const WeaveDB = require("weavedb-node-client")
+
+const db = new WeaveDB({
+  contractTxId: WEAVEDB_CONTRACT_TX_ID,
+  rpc: "example.com",
+  secure: true, // optional
+  cert: YOUR_CERT // optional
+})
+```
+
