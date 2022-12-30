@@ -47,7 +47,7 @@ const db = new WeaveDB({
 })
 ```
 
-It also with remote secure ports such as `example.com:443`.
+It also works with remote secure ports such as `example.com:443`.
 
 ```js
 const WeaveDB = require("weavedb-node-client")
