@@ -43,6 +43,8 @@ class SDK extends Base {
     arweave_wallet,
     network,
     port = 1820,
+    secure,
+    cert = null,
   }) {
     super()
     this.contractTxId = contractTxId
@@ -69,7 +71,14 @@ class SDK extends Base {
         ? "localhost"
         : "mainnet")
 
-    this.client = new weavedb_proto.DB(rpc, grpc.credentials.createInsecure())
+    const [rpc_host, rpc_port] = rpc.split(":")
+    this.secure = +rpc_port === 443 && isNil(secure) ? true : secure || false
+    this.client = new weavedb_proto.DB(
+      rpc,
+      this.secure
+        ? grpc.ChannelCredentials.createSsl()
+        : grpc.credentials.createInsecure()
+    )
     if (typeof window === "object") {
       require("@metamask/legacy-web3")
       this.web3 = window.web3
