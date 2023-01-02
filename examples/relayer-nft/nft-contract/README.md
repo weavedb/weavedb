@@ -1,13 +1,4 @@
-# Sample Hardhat Project
+## Goerli Deployment
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
-
-Try running some of the following tasks:
-
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.js
-```
+- [NFT](https://goerli.etherscan.io/token/0xff2914f36a25b5e1732f4f62c840b1534cc3cd68)
+- [ACL](https://goerli.etherscan.io/address/0x09e3e065b93460c6cf4ca0b480bfddb871e335be)
