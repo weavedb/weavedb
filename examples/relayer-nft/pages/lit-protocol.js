@@ -3,6 +3,7 @@ import Jdenticon from "react-jdenticon"
 import { ethers } from "ethers"
 import { useEffect, useState } from "react"
 import {
+  intersection,
   append,
   pluck,
   trim,
@@ -16,13 +17,22 @@ import {
   prop,
   isNil,
 } from "ramda"
-import { Button, Box, Flex, Input, ChakraProvider } from "@chakra-ui/react"
+import {
+  Spinner,
+  Box,
+  Flex,
+  Textarea,
+  Input,
+  ChakraProvider,
+} from "@chakra-ui/react"
 import lf from "localforage"
 let sdk, lit
 const contractTxId = process.env.NEXT_PUBLIC_WEAVEDB_CONTRACT_TX_ID
 const nftContractAddr = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDR
 import LitJsSdk from "@lit-protocol/sdk-browser"
-import moment from "moment"
+import dayjs from "dayjs"
+dayjs.extend(require("dayjs/plugin/relativeTime"))
+
 export default function Home() {
   const [messages, setMessages] = useState([])
   const [authSig, setAuthSig] = useState(null)
@@ -184,14 +194,17 @@ export default function Home() {
           </>
         )}
       </Flex>
-      <Flex justify="center" width="600px">
-        <Box flex={1}>Your Token: {userTokenIDs.join(",")}</Box>
-      </Flex>
+
       <Flex justify="center" width="600px" py={3}>
         <Box flex={1}>
-          {posting
-            ? "posting..."
-            : "Mint NFT and post encrypted group messages to tokenIDs! (e.g. 1,2,3)"}
+          {posting ? (
+            <Flex align="center">
+              <Spinner boxSize="18px" mr={3} />
+              posting...
+            </Flex>
+          ) : (
+            "Mint NFT and post encrypted group messages to tokenIDs! (e.g. 1,2,3)"
+          )}
         </Box>
         <Box
           as="a"
@@ -223,184 +236,217 @@ export default function Home() {
     const [message, setMessage] = useState("")
     const [tokenIDs, setTokenIDs] = useState("")
     return (
-      <Flex
-        justify="center"
-        width="600px"
-        mb={5}
-        sx={{ boxShadow: "10px 10px 14px 1px rgb(0 0 0 / 20%)" }}
-      >
-        <Input
-          bg="white"
-          color="#1E1930"
-          disabled={posting}
-          w="150px"
-          placeholder="tokenIDs"
-          sx={{ borderRadius: "3px 0 0 3px" }}
-          value={tokenIDs}
-          onChange={e => setTokenIDs(e.target.value)}
-        />
-        <Input
-          bg="white"
-          color="#1E1930"
-          disabled={posting}
-          flex={1}
-          placeholder="Message"
-          sx={{ borderRadius: "0" }}
-          value={message}
-          onChange={e => {
-            setMessage(e.target.value)
-          }}
-        />
+      <Flex width="600px">
         <Flex
-          px={4}
-          align="center"
-          justify="center"
-          width="75px"
-          bg="#1E1930"
-          color="#F893F6"
-          fontSize="16px"
+          width="100%"
+          bg="rgba(255,255,255,0.25)"
+          direction="column"
+          p={4}
+          mb={5}
           sx={{
-            borderRadius: "0 3px 3px 0",
-            cursor: "pointer",
-            ":hover": { opacity: 0.75 },
-          }}
-          onClick={async () => {
-            if (!posting) {
-              setPosting(true)
-              if (tokenIDs === "") {
-                alert("enter your tokenID")
-                return
-              }
-              if (/^\s*$/.test(message)) {
-                alert("enter message")
-                return
-              }
-
-              let isNaN = false
-              const _tokenIDs = map(v => {
-                if (Number.isNaN(+trim(v))) isNaN = true
-                return +trim(v)
-              })(tokenIDs.split(","))
-
-              if (isNaN) {
-                alert("Enter numbers")
-                return
-              }
-              let evmContractConditions = [
-                {
-                  contractAddress: process.env.NEXT_PUBLIC_ACL_CONTRACT_ADDR,
-                  functionName: "isOwner",
-                  functionParams: [":userAddress", JSON.stringify(_tokenIDs)],
-                  functionAbi: {
-                    inputs: [
-                      {
-                        internalType: "address",
-                        name: "addr",
-                        type: "address",
-                      },
-                      {
-                        internalType: "uint256[]",
-                        name: "tokens",
-                        type: "uint256[]",
-                      },
-                    ],
-                    name: "isOwner",
-                    outputs: [
-                      {
-                        internalType: "bool",
-                        name: "",
-                        type: "bool",
-                      },
-                    ],
-                    stateMutability: "view",
-                    type: "function",
-                  },
-                  chain: "goerli",
-                  returnValueTest: {
-                    key: "",
-                    comparator: "=",
-                    value: "true",
-                  },
-                },
-              ]
-              lit = new LitJsSdk.LitNodeClient()
-              await lit.connect()
-              const authSig = await LitJsSdk.checkAndSignAuthMessage({
-                chain: "goerli",
-              })
-              await lf.setItem("lit-authSig", authSig)
-              const { encryptedString, symmetricKey } =
-                await LitJsSdk.encryptString(message)
-              const encryptedSymmetricKey = await lit.saveEncryptionKey({
-                evmContractConditions,
-                symmetricKey,
-                authSig,
-                chain: "goerli",
-              })
-              const blobToDataURI = blob => {
-                return new Promise((resolve, reject) => {
-                  var reader = new FileReader()
-
-                  reader.onload = e => {
-                    var data = e.target.result
-                    resolve(data)
-                  }
-                  reader.readAsDataURL(blob)
-                })
-              }
-              const encryptedData = await blobToDataURI(encryptedString)
-              const packaged = {
-                encryptedData,
-                encryptedSymmetricKey: Array.from(encryptedSymmetricKey),
-                evmContractConditions,
-              }
-              try {
-                const provider = new ethers.providers.Web3Provider(
-                  window.ethereum,
-                  "any"
-                )
-                await provider.send("eth_requestAccounts", [])
-                const addr = await provider.getSigner().getAddress()
-
-                const params = await sdk.sign(
-                  "add",
-                  { date: sdk.ts() },
-                  "lit_messages",
-                  {
-                    wallet: addr,
-                    jobID: "lit",
-                  }
-                )
-                const res = await fetch("/api/isOwner", {
-                  method: "POST",
-                  body: JSON.stringify({ params, lit: packaged }),
-                }).then(v => v.json())
-                if (res.success === false) {
-                  alert("Something went wrong")
-                } else {
-                  setMessage("")
-                  setTokenIDs("")
-                  setMessages(
-                    compose(
-                      reverse,
-                      sortBy(prop("date")),
-                      append({
-                        tokenIDs: _tokenIDs,
-                        date: Math.round(Date.now() / 1000),
-                        text: message,
-                        owner: authSig.address,
-                      })
-                    )(messages)
-                  )
-                }
-              } catch (e) {
-                alert("something went wrong")
-              }
-              setPosting(false)
-            }
+            boxShadow: "10px 10px 14px 1px rgb(0 0 0 / 20%)",
+            borderRadius: "10px",
           }}
         >
-          Post
+          <Textarea
+            mb={3}
+            height="200px"
+            bg="white"
+            color="#1E1930"
+            disabled={posting}
+            flex={1}
+            placeholder="Message"
+            sx={{ borderRadius: "3px" }}
+            value={message}
+            onChange={e => {
+              setMessage(e.target.value)
+            }}
+          />
+
+          <Flex justify="center" width="100%" align="center">
+            <Input
+              bg="white"
+              color="#1E1930"
+              disabled={posting}
+              w="150px"
+              placeholder="tokenIDs"
+              sx={{ borderRadius: "3px" }}
+              value={tokenIDs}
+              onChange={e => setTokenIDs(e.target.value)}
+            />
+            <Box ml={3}>
+              Your Token: {userTokenIDs.join(",")} (include at least one)
+            </Box>
+            <Box flex={1} />
+            <Flex
+              px={14}
+              align="center"
+              justify="center"
+              width="75px"
+              height="40px"
+              bg="#1E1930"
+              color="#F893F6"
+              fontSize="16px"
+              sx={{
+                borderRadius: "3px",
+                cursor: "pointer",
+                ":hover": { opacity: 0.75 },
+              }}
+              onClick={async () => {
+                if (!posting) {
+                  setPosting(true)
+                  if (tokenIDs === "") {
+                    alert("enter your tokenID")
+                    setPosting(false)
+                    return
+                  }
+                  if (/^\s*$/.test(message)) {
+                    alert("enter message")
+                    setPosting(false)
+                    return
+                  }
+
+                  let isNaN = false
+                  let packaged = null
+                  const _tokenIDs = map(v => {
+                    if (Number.isNaN(+trim(v))) isNaN = true
+                    return +trim(v)
+                  })(tokenIDs.split(","))
+                  if (intersection(_tokenIDs, userTokenIDs).length === 0) {
+                    alert("include at least one of your tokens")
+                    setPosting(false)
+                    return
+                  }
+                  if (isNaN) {
+                    alert("Enter numbers")
+                    setPosting(false)
+                    return
+                  }
+                  let evmContractConditions = [
+                    {
+                      contractAddress:
+                        process.env.NEXT_PUBLIC_ACL_CONTRACT_ADDR,
+                      functionName: "isOwner",
+                      functionParams: [
+                        ":userAddress",
+                        JSON.stringify(_tokenIDs),
+                      ],
+                      functionAbi: {
+                        inputs: [
+                          {
+                            internalType: "address",
+                            name: "addr",
+                            type: "address",
+                          },
+                          {
+                            internalType: "uint256[]",
+                            name: "tokens",
+                            type: "uint256[]",
+                          },
+                        ],
+                        name: "isOwner",
+                        outputs: [
+                          {
+                            internalType: "bool",
+                            name: "",
+                            type: "bool",
+                          },
+                        ],
+                        stateMutability: "view",
+                        type: "function",
+                      },
+                      chain: "goerli",
+                      returnValueTest: {
+                        key: "",
+                        comparator: "=",
+                        value: "true",
+                      },
+                    },
+                  ]
+                  try {
+                    lit = new LitJsSdk.LitNodeClient()
+                    await lit.connect()
+                    const authSig = await LitJsSdk.checkAndSignAuthMessage({
+                      chain: "goerli",
+                    })
+                    await lf.setItem("lit-authSig", authSig)
+                    const { encryptedString, symmetricKey } =
+                      await LitJsSdk.encryptString(message)
+                    const encryptedSymmetricKey = await lit.saveEncryptionKey({
+                      evmContractConditions,
+                      symmetricKey,
+                      authSig,
+                      chain: "goerli",
+                    })
+                    const blobToDataURI = blob => {
+                      return new Promise((resolve, reject) => {
+                        var reader = new FileReader()
+
+                        reader.onload = e => {
+                          var data = e.target.result
+                          resolve(data)
+                        }
+                        reader.readAsDataURL(blob)
+                      })
+                    }
+                    const encryptedData = await blobToDataURI(encryptedString)
+                    packaged = {
+                      encryptedData,
+                      encryptedSymmetricKey: Array.from(encryptedSymmetricKey),
+                      evmContractConditions,
+                    }
+                  } catch (e) {
+                    alert("something went wrong")
+                  }
+                  try {
+                    const provider = new ethers.providers.Web3Provider(
+                      window.ethereum,
+                      "any"
+                    )
+                    await provider.send("eth_requestAccounts", [])
+                    const addr = await provider.getSigner().getAddress()
+
+                    const params = await sdk.sign(
+                      "add",
+                      { date: sdk.ts() },
+                      "lit_messages",
+                      {
+                        wallet: addr,
+                        jobID: "lit",
+                      }
+                    )
+                    const res = await fetch("/api/isOwner", {
+                      method: "POST",
+                      body: JSON.stringify({ params, lit: packaged }),
+                    }).then(v => v.json())
+                    if (res.success === false) {
+                      alert("Something went wrong")
+                    } else {
+                      setMessage("")
+                      setTokenIDs("")
+                      setMessages(
+                        compose(
+                          reverse,
+                          sortBy(prop("date")),
+                          append({
+                            tokenIDs: _tokenIDs,
+                            date: Math.round(Date.now() / 1000),
+                            text: message,
+                            owner: authSig.address,
+                          })
+                        )(messages)
+                      )
+                    }
+                  } catch (e) {
+                    alert("something went wrong")
+                  }
+                  setPosting(false)
+                }
+              }}
+            >
+              Post
+            </Flex>
+          </Flex>
         </Flex>
       </Flex>
     )
@@ -435,7 +481,7 @@ export default function Home() {
             <Flex fontSize="12px" color="#F893F6">
               <Box>To: {v.tokenIDs.join(", ")}</Box>
               <Box flex={1} />
-              <Box>{moment(v.date * 1000).fromNow()}</Box>
+              <Box>{dayjs(v.date * 1000).fromNow()}</Box>
             </Flex>
           </Flex>
         </Flex>
