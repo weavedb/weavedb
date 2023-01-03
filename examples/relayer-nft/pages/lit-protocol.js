@@ -1,4 +1,5 @@
 import SDK from "weavedb-client"
+import Jdenticon from "react-jdenticon"
 import { ethers } from "ethers"
 import { useEffect, useState } from "react"
 import {
@@ -21,7 +22,7 @@ let sdk, lit
 const contractTxId = process.env.NEXT_PUBLIC_WEAVEDB_CONTRACT_TX_ID
 const nftContractAddr = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDR
 import LitJsSdk from "@lit-protocol/sdk-browser"
-
+import moment from "moment"
 export default function Home() {
   const [messages, setMessages] = useState([])
   const [authSig, setAuthSig] = useState(null)
@@ -71,7 +72,7 @@ export default function Home() {
         )(data.data.user.tokens)
         setUserTokenIDs(tokenIDs)
         const res = await sdk.get(
-          "lit_message",
+          "lit_messages",
           ["tokenIDs", "array-contains-any", tokenIDs],
           ["date", "desc"]
         )
@@ -119,45 +120,78 @@ export default function Home() {
 
   const Header = () => (
     <>
-      <Flex justify="center" width="500px" p={3}>
-        <Box flex={1}>{isNil(authSig) ? "" : authSig.address}</Box>
+      <Flex justify="center" width="600px" py={3} align="center">
         {!isNil(authSig) ? (
-          <Box
-            sx={{ cursor: "pointer", textDecoration: "underline" }}
-            onClick={async () => {
-              LitJsSdk.disconnectWeb3()
-              setAuthSig(null)
-              await lf.removeItem("lit-authSig")
-              setUserTokenIDs([])
-            }}
-          >
-            Disconnect
-          </Box>
+          <>
+            <Flex
+              flex={1}
+              align="center"
+              as="a"
+              target="_blank"
+              href={`https://goerli.etherscan.io/address/${authSig.address}`}
+              sx={{ ":hover": { opacity: 0.75 } }}
+            >
+              <Box mr={3}>
+                <Jdenticon size="30px" value={authSig.address} />
+              </Box>
+              <Box flex={1}>{isNil(authSig) ? "" : authSig.address}</Box>
+            </Flex>
+            <Flex
+              bg="#1E1930"
+              color="#F893F6"
+              p={3}
+              sx={{
+                borderRadius: "5px",
+                cursor: "pointer",
+                ":hover": { opacity: 0.75 },
+                boxShadow: "10px 10px 14px 1px rgb(0 0 0 / 20%)",
+              }}
+              onClick={async () => {
+                LitJsSdk.disconnectWeb3()
+                setAuthSig(null)
+                await lf.removeItem("lit-authSig")
+                setUserTokenIDs([])
+              }}
+            >
+              Disconnect
+            </Flex>
+          </>
         ) : (
-          <Box
-            sx={{ cursor: "pointer", textDecoration: "underline" }}
-            onClick={async () => {
-              lit = new LitJsSdk.LitNodeClient()
-              await lit.connect()
-              const authSig = await LitJsSdk.checkAndSignAuthMessage({
-                chain: "goerli",
-              })
-              setAuthSig(authSig)
-              await lf.setItem("lit-authSig", authSig)
-            }}
-          >
-            Connect
-          </Box>
+          <>
+            <Box flex={1} />
+            <Box
+              bg="#1E1930"
+              color="#F893F6"
+              p={3}
+              sx={{
+                borderRadius: "5px",
+                cursor: "pointer",
+                ":hover": { opacity: 0.75 },
+                boxShadow: "10px 10px 14px 1px rgb(0 0 0 / 20%)",
+              }}
+              onClick={async () => {
+                lit = new LitJsSdk.LitNodeClient()
+                await lit.connect()
+                const authSig = await LitJsSdk.checkAndSignAuthMessage({
+                  chain: "goerli",
+                })
+                setAuthSig(authSig)
+                await lf.setItem("lit-authSig", authSig)
+              }}
+            >
+              Connect with Lit Protocol
+            </Box>
+          </>
         )}
       </Flex>
-      <Flex justify="center" width="500px" px={3}>
+      <Flex justify="center" width="600px">
         <Box flex={1}>Your Token: {userTokenIDs.join(",")}</Box>
       </Flex>
-      <Flex justify="center" width="500px" p={3}>
+      <Flex justify="center" width="600px" py={3}>
         <Box flex={1}>
           {posting
             ? "posting..."
-            : "Mint NFT and post a group message with your tokenID!"}
+            : "Mint NFT and post encrypted group messages to tokenIDs! (e.g. 1,2,3)"}
         </Box>
         <Box
           as="a"
@@ -165,22 +199,23 @@ export default function Home() {
           sx={{ textDecoration: "underline" }}
           href={`https://goerli.etherscan.io/token/${nftContractAddr}#writeContract`}
         >
-          mint
+          Mint NFT
         </Box>
       </Flex>
     </>
   )
 
   const Footer = () => (
-    <Flex justify="center" width="500px" p={3}>
-      <Box
-        as="a"
-        target="_blank"
-        sx={{ textDecoration: "underline" }}
-        href={`https://sonar.warp.cc/?#/app/contract/${contractTxId}`}
-      >
-        Contract Transactions
-      </Box>
+    <Flex w="100%" justify="center" p={4} bg="#1E1930" color="#F893F6">
+      <Flex>
+        <Box
+          as="a"
+          target="_blank"
+          href={`https://sonar.warp.cc/?#/app/contract/${contractTxId}`}
+        >
+          Contract Transactions
+        </Box>
+      </Flex>
     </Flex>
   )
 
@@ -188,16 +223,25 @@ export default function Home() {
     const [message, setMessage] = useState("")
     const [tokenIDs, setTokenIDs] = useState("")
     return (
-      <Flex justify="center" width="500px" mb={5}>
+      <Flex
+        justify="center"
+        width="600px"
+        mb={5}
+        sx={{ boxShadow: "10px 10px 14px 1px rgb(0 0 0 / 20%)" }}
+      >
         <Input
+          bg="white"
+          color="#1E1930"
           disabled={posting}
-          w="200px"
-          placeholder="tokenIDs (e.g. 1,2,3)"
+          w="150px"
+          placeholder="tokenIDs"
           sx={{ borderRadius: "3px 0 0 3px" }}
           value={tokenIDs}
           onChange={e => setTokenIDs(e.target.value)}
         />
         <Input
+          bg="white"
+          color="#1E1930"
           disabled={posting}
           flex={1}
           placeholder="Message"
@@ -207,8 +251,19 @@ export default function Home() {
             setMessage(e.target.value)
           }}
         />
-        <Button
-          sx={{ borderRadius: "0 3px 3px 0" }}
+        <Flex
+          px={4}
+          align="center"
+          justify="center"
+          width="75px"
+          bg="#1E1930"
+          color="#F893F6"
+          fontSize="16px"
+          sx={{
+            borderRadius: "0 3px 3px 0",
+            cursor: "pointer",
+            ":hover": { opacity: 0.75 },
+          }}
           onClick={async () => {
             if (!posting) {
               setPosting(true)
@@ -310,7 +365,7 @@ export default function Home() {
                 const params = await sdk.sign(
                   "add",
                   { date: sdk.ts() },
-                  "lit_message",
+                  "lit_messages",
                   {
                     wallet: addr,
                     jobID: "lit",
@@ -331,7 +386,7 @@ export default function Home() {
                       sortBy(prop("date")),
                       append({
                         tokenIDs: _tokenIDs,
-                        date: Date.now(),
+                        date: Math.round(Date.now() / 1000),
                         text: message,
                         owner: authSig.address,
                       })
@@ -346,41 +401,43 @@ export default function Home() {
           }}
         >
           Post
-        </Button>
+        </Flex>
       </Flex>
     )
   }
 
   const Messages = () => (
     <Box>
-      <Flex bg="#EDF2F7" w="500px">
-        <Flex justify="center" p={2} w="75px">
-          tokenIDs
-        </Flex>
-        <Flex justify="center" p={2} w="100px">
-          Owner
-        </Flex>
-        <Box p={2} flex={1}>
-          Message
-        </Box>
-      </Flex>
       {map(v => (
         <Flex
-          sx={{ ":hover": { bg: "#EDF2F7" } }}
-          w="500px"
-          as="a"
-          target="_blank"
-          href={`https://goerli.etherscan.io/token/${nftContractAddr}?a=${v.owner}`}
+          p={2}
+          bg="#4C2471"
+          color="white"
+          m={4}
+          sx={{
+            borderRadius: "10px",
+            boxShadow: "10px 10px 14px 1px rgb(0 0 0 / 20%)",
+          }}
+          w="600px"
         >
-          <Flex justify="center" p={2} w="75px">
-            {v.tokenIDs.join(",")}
+          <Flex justify="center" py={2} px={4}>
+            <Flex direction="column">
+              <Flex bg="white" sx={{ borderRadius: "50%" }} p={2}>
+                <Jdenticon size="30px" value={v.owner} />
+              </Flex>
+              <Flex justify="center" mt={2} fontSize="12px">
+                {v.owner.slice(0, 7)}
+              </Flex>
+            </Flex>
           </Flex>
-          <Flex justify="center" p={2} w="100px">
-            {v.owner.slice(0, 5)}...{v.owner.slice(-3)}
+          <Flex p={2} flex={1} mx={2} fontSize="16px" direction="column">
+            <Box flex={1}>{v.text}</Box>
+            <Flex fontSize="12px" color="#F893F6">
+              <Box>To: {v.tokenIDs.join(", ")}</Box>
+              <Box flex={1} />
+              <Box>{moment(v.date * 1000).fromNow()}</Box>
+            </Flex>
           </Flex>
-          <Box p={2} flex={1}>
-            {v.text}
-          </Box>
         </Flex>
       ))(messages)}
     </Box>
@@ -388,14 +445,32 @@ export default function Home() {
 
   return (
     <ChakraProvider>
-      <Flex direction="column" align="center" fontSize="12px">
-        <Header />
-        {isNil(authSig) ? null : (
-          <>
-            <Post />
-            <Messages />
-          </>
-        )}
+      <style jsx global>{`
+        html,
+        #__next,
+        body {
+          color: white;
+          height: 100%;
+          background-image: radial-gradient(
+            circle,
+            #b51da6,
+            #94259a,
+            #75288c,
+            #58277b,
+            #3e2368
+          );
+        }
+      `}</style>
+      <Flex direction="column" minHeight="100%" justify="center" align="center">
+        <Flex direction="column" align="center" fontSize="12px" flex={1}>
+          <Header />
+          {isNil(authSig) ? null : (
+            <>
+              <Post />
+              <Messages />
+            </>
+          )}
+        </Flex>
         <Footer />
       </Flex>
     </ChakraProvider>
