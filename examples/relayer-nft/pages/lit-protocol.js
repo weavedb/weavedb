@@ -26,12 +26,13 @@ import {
   ChakraProvider,
 } from "@chakra-ui/react"
 import lf from "localforage"
-let sdk, lit
-const contractTxId = process.env.NEXT_PUBLIC_WEAVEDB_CONTRACT_TX_ID
-const nftContractAddr = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDR
 import LitJsSdk from "@lit-protocol/sdk-browser"
 import dayjs from "dayjs"
 dayjs.extend(require("dayjs/plugin/relativeTime"))
+
+let sdk, lit
+const contractTxId = process.env.NEXT_PUBLIC_WEAVEDB_CONTRACT_TX_ID
+const nftContractAddr = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDR
 
 export default function Home() {
   const [messages, setMessages] = useState([])
@@ -58,7 +59,6 @@ export default function Home() {
         const query = `
 {
   user (id: "${authSig.address}"){
-    id
     tokens{
      id
     }
@@ -495,8 +495,10 @@ export default function Home() {
         html,
         #__next,
         body {
-          color: white;
           height: 100%;
+        }
+        body {
+          color: white;
           background-image: radial-gradient(
             circle,
             #b51da6,

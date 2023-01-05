@@ -64,6 +64,7 @@ const setup = async () => {
   }
   await sdk.setSchema(schema, "lit_messages", { ar: wallet })
   console.log("lit_message schema set!")
+
   const job = {
     relayers: [relayerAddress],
     schema: {
