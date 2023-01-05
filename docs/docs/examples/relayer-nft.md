@@ -11,7 +11,7 @@ An off-chain relayer will validate NFT ownerships from another blockchain, and o
 1. A relayer job can be preset on the WeaveDB instance with `jobId`, `allowed_relayers`, `extra data schema`. All the conditions must be met before relayed queries go through.
 2. The NFT owner mints an NFT.
 3. The owner signs query data (`tokenID`, `Message`) with eip712 and sends it to the relayer with `jobID`. The `signer address` can be later obtained by verifying the eip712 signatrue.
-4. The relayer checks the owner of the `tokenID` and add the `owner` address to the signed query, then signs it with eip712 and send the transaction to the WeaveDB contracct on Warp.
+4. The relayer checks the owner of the `tokenID` and add the `owner` address to the signed query, then signs it with eip712 and send the transaction to the WeaveDB contract on Warp.
 5. The WeaveDB contract verifies the eip712 signatures and validates `jobID`, `allowed relayers` and `extra data schema`. `owner` is the extra data to be validated.
 6. The original query data (`tokenID`, `Message`) can be modified with access control rules on the collection. We will check if the `signer` is the `owner`, and if so, add the `owner` field to the original data.
 
@@ -21,7 +21,7 @@ In practice, the relayer could/should be decentralized. But we are going to set 
 
 :::
 
-A demo dapp with [a test NFT on Goerli testnet](https://goerli.etherscan.io/token/0xfF2914F36A25B5E1732F4F62C840b1534Cc3cD68) is deployed at [relayer-one.vercel.app](https://relayer-one.vercel.app/) where you can free-mint NFTs and post messages via WeaveDB by authenticate with your Goerli NFTs.
+A demo dapp with [a test NFT contract on Goerli testnet](https://goerli.etherscan.io/token/0xfF2914F36A25B5E1732F4F62C840b1534Cc3cD68) is deployed at [relayer-one.vercel.app](https://relayer-one.vercel.app/) where you can free-mint NFTs and post messages via WeaveDB by authenticate with your Goerli NFTs.
 
 :::note Frontend Dapp
 
@@ -378,7 +378,7 @@ The app page `/pages/index.js` is rather simple.
 
 #### Import Libraries
 
-Import necessary libraries. We are going to use a bunch of [RamdaJS](https://ramdajs.com/) functions for utilities and [Chakra](https://ramdajs.com/) for UI.
+Import necessary libraries. We are going to use a bunch of [RamdaJS](https://ramdajs.com/) functions for utilities and [Chakra](https://chakra-ui.com/) for UI.
 
 ```jsx
 import SDK from "weavedb-client"
