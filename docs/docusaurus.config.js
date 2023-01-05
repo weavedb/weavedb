@@ -7,7 +7,7 @@ const darkCodeTheme = require("prism-react-renderer/themes/dracula")
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: "WeaveDB",
-  tagline: "Decentralized NoSQL Database on Arweave",
+  tagline: "NoSQL Database as a Smart Contract on Arweave",
   url: "https://weavedb.dev",
   baseUrl: "/",
   onBrokenLinks: "throw",
@@ -69,6 +69,16 @@ const config = {
             label: "GitHub",
             position: "right",
           },
+          {
+            href: "https://fpjson.weavedb.dev/",
+            label: "FPJSON",
+            position: "right",
+          },
+          {
+            href: "https://weavedb.mirror.xyz/",
+            label: "Blog",
+            position: "right",
+          },
         ],
       },
       footer: {
@@ -84,6 +94,10 @@ const config = {
               {
                 label: "Demo Dapps",
                 to: "/docs/category/example-dapps",
+              },
+              {
+                label: "Mirror Blog",
+                to: "https://weavedb.mirror.xyz",
               },
             ],
           },
