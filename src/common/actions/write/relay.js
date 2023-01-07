@@ -1,5 +1,17 @@
-import { includes, map, toLower, init, last, isNil, head, nth } from "ramda"
-import { err, validateSchema } from "../../lib/utils"
+import {
+  intersection,
+  is,
+  uniq,
+  includes,
+  map,
+  toLower,
+  init,
+  last,
+  isNil,
+  head,
+  nth,
+} from "ramda"
+import { err, read, validateSchema } from "../../lib/utils"
 import { validate } from "../../lib/validate"
 
 import { add } from "./add"
@@ -17,10 +29,41 @@ export const relay = async (state, action, signer, contractErr = true) => {
   if (input.jobID !== jobID) err("the wrong jobID")
   let action2 = { input, relayer: signer, extra: query, jobID }
   const relayers = state.relayers || {}
+  let signers = [signer]
   if (isNil(relayers[jobID])) err("relayer jobID doesn't exist")
+  if (is(Array)(action.input.multisigs)) {
+    const data = {
+      extra: action2.extra,
+      jobID,
+      lit_ipfsId: relayers[jobID].lit_ipfsId,
+      param: input,
+    }
+    for (const signature of action.input.multisigs) {
+      const _signer = (
+        await read(state.contracts.ethereum, {
+          function: "verify",
+          data,
+          signature,
+        })
+      ).signer
+      signers.push(_signer)
+    }
+  }
   const allowed_relayers = map(toLower)(relayers[jobID].relayers || [])
-  if (!includes(signer)(allowed_relayers)) {
-    err(`relayer is not allowed for the job[${jobID}]`)
+  const matched_relayers = intersection(allowed_relayers, signers)
+  let min = 1
+  if (relayers[jobID].multisig_type === "percent") {
+    min = Math.ceil(
+      (relayers[jobID].relayers.length * (relayers[jobID].multisig || 100)) /
+        100
+    )
+  } else {
+    min = relayers[jobID].multisig || 1
+  }
+  if (matched_relayers.length < min) {
+    err(
+      `not enough number of allowed relayers [${matched_relayers.length}/${min}] for the job[${jobID}]`
+    )
   }
   if (!isNil(relayers[jobID].schema)) {
     try {
