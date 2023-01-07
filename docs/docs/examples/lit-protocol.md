@@ -189,7 +189,7 @@ For example, a query to get the `tokenIDs` of `0x078694d69426112c7df330732e28F51
 
 ## Deploy ACL Contract on EVM
 
-You can set up a complex access control conditions with Lit Protocol using multiple smart contract functions.
+You can set up complex access control conditions with Lit Protocol using multiple smart contract functions.
 
 But you can also make it easiler by deploying a simple real-only ACL contract and using only one aggregator function.
 
@@ -216,9 +216,9 @@ contract ACL {
     for(uint i = 0; i < tokenIds.length; i++){
       try nft.ownerOf(tokenIds[i]) returns (address owner) {
         if(addr == owner){
-	  is_owner = true;
-	  break;
-	}
+          is_owner = true;
+		  break;
+        }
       } catch {}
     }
     return is_owner;
@@ -1087,7 +1087,7 @@ The Post component lets you post a message with your tokenIDs, and this is where
 :::
 
 
-The Messages component loops through and display the `messages`.
+The Messages component loops through and displays the `messages`.
 
 ```jsx
   const Messages = () => (

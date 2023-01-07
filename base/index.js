@@ -81,7 +81,8 @@ class Base {
       intmax,
       extra,
       relay,
-      jobID
+      jobID,
+      multisigs
     if (!isNil(opt)) {
       ;({
         jobID,
@@ -96,12 +97,23 @@ class Base {
         ar,
         intmax,
         extra,
+        multisigs,
       } = opt)
     }
     if (all(isNil)([wallet, ii, intmax, ar]) && !isNil(this.arweave_wallet)) {
       ar = this.arweave_wallet
     }
-    const params = [func, query, nonce, dryWrite, bundle, extra, relay, jobID]
+    const params = [
+      func,
+      query,
+      nonce,
+      dryWrite,
+      bundle,
+      extra,
+      relay,
+      jobID,
+      multisigs,
+    ]
     return !isNil(intmax)
       ? await this.writeWithIntmax(intmax, ...params)
       : !isNil(ii)
@@ -119,7 +131,8 @@ class Base {
           bundle,
           extra,
           relay,
-          jobID
+          jobID,
+          multisigs
         )
   }
 
@@ -317,7 +330,8 @@ class Base {
     bundle,
     extra = {},
     relay,
-    jobID
+    jobID,
+    multisigs
   ) {
     let addr = isNil(privateKey)
       ? null
@@ -375,6 +389,7 @@ class Base {
           : wallet.getAddressString(),
     })
     if (!isNil(jobID)) param.jobID = jobID
+    if (!isNil(multisigs)) param.multisigs = multisigs
     return await this._request(func, param, dryWrite, bundle, relay)
   }
 
@@ -387,7 +402,8 @@ class Base {
     bundle,
     extra,
     relay,
-    jobID
+    jobID,
+    multisigs
   ) {
     let addr = ii.toJSON()[0]
     const isaddr = !isNil(addr)
@@ -429,6 +445,7 @@ class Base {
       type: "ed25519",
     })
     if (!isNil(jobID)) param.jobID = jobID
+    if (!isNil(multisigs)) param.multisigs = multisigs
     return await this._request(func, param, dryWrite, bundle, relay)
   }
 
@@ -441,7 +458,8 @@ class Base {
     bundle,
     extra,
     relay,
-    jobID
+    jobID,
+    multisigs
   ) {
     const wallet = is(Object, ar) && ar.walletName === "ArConnect" ? ar : null
     let addr = null
@@ -494,6 +512,7 @@ class Base {
       type: "rsa256",
     })
     if (!isNil(jobID)) param.jobID = jobID
+    if (!isNil(multisigs)) param.multisigs = multisigs
     return await this._request(func, param, dryWrite, bundle, relay)
   }
 
@@ -506,7 +525,8 @@ class Base {
     bundle,
     extra,
     relay,
-    jobID
+    jobID,
+    multisigs
   ) {
     const wallet = is(Object, intmax) ? intmax : null
     let addr = null
@@ -574,6 +594,7 @@ class Base {
           }
     )
     if (!isNil(jobID)) param.jobID = jobID
+    if (!isNil(multisigs)) param.multisigs = multisigs
     return await this._request(func, param, dryWrite, bundle, relay)
   }
 
