@@ -27,6 +27,7 @@
     "json-logic-js": "^2.0.2",
     "jsonschema": "^1.4.1",
     "jsrsasign": "^10.5.27",
+    "lit-js-sdk": "^1.2.57",
     "ramda": "^0.28.0",
     "readable-stream": "^4.2.0",
     "replace-in-file": "^6.3.5",
