@@ -2757,10 +2757,10 @@ warp-contracts@1.2.36:
     unzipit "^1.4.0"
     vm2 "3.9.11"
 
-weavedb-base@^0.9.5:
-  version "0.9.5"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.9.5.tgz#25063b37ea5eebab194279967b6f25507da4d27d"
-  integrity sha512-ZQh2anjbrYzgBQnCnJ+CzUWfJAeOTNkcDQMuNU5lSvdjdZvPSg4LYCvU/hMsxN2jaGt75qM3R4QvU7m5rBeMWw==
+weavedb-base@^0.9.6:
+  version "0.9.6"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.9.6.tgz#f9b20aacc50cce19791664c062a694e80a83e16e"
+  integrity sha512-rZQsxihnaqYw/pHnwAWnBt5WklVe9q7hpJqSUEpCUJWyNPGDEbQ9PuePJh2kVx9lR1g0u6FfUlaErn/KMANeEw==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"

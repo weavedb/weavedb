@@ -1,5 +1,5 @@
 const { Ed25519KeyIdentity } = require("@dfinity/identity")
-const { providers, Wallet } = require("ethers")
+const { providers, Wallet, utils } = require("ethers")
 const { expect } = require("chai")
 const { isNil, range, pick } = require("ramda")
 const { init, stop, initBeforeEach, addFunds } = require("./util")
@@ -696,6 +696,73 @@ describe("WeaveDB", function () {
         wallet: identity.address,
       }
     )
+    const addr = wallet.getAddressString()
+    const doc = await db.cget("ppl", "Bob")
+    expect(doc.setter).to.equal(addr)
+    expect(doc.data).to.eql(data2)
+    await db.removeRelayerJob("test-job", { ar: arweave_wallet })
+    expect(await db.getRelayerJob("test-job")).to.eql(null)
+    return
+  })
+
+  it("should relay queries with multisig", async () => {
+    const identity = EthCrypto.createIdentity()
+    const identity2 = EthCrypto.createIdentity()
+    const identity3 = EthCrypto.createIdentity()
+    const wallet2 = new Wallet(identity2.privateKey)
+    const wallet3 = new Wallet(identity3.privateKey)
+    const jobID = "test-job"
+    const lit_ipfsId = "test-ipfs"
+    const job = {
+      relayers: [identity.address, identity2.address, identity3.address],
+      multisig: 50,
+      multisig_type: "percent",
+      lit_ipfsId,
+      schema: {
+        type: "object",
+        required: ["height"],
+        properties: {
+          height: {
+            type: "number",
+          },
+        },
+      },
+    }
+
+    await db.addRelayerJob("test-job", job, {
+      ar: arweave_wallet,
+    })
+    expect(await db.getRelayerJob("test-job")).to.eql(job)
+
+    const rules = {
+      let: {
+        "resource.newData.height": { var: "request.auth.extra.height" },
+      },
+      "allow write": true,
+    }
+    await db.setRules(rules, "ppl", {
+      ar: arweave_wallet,
+    })
+
+    const data = { name: "Bob", age: 20 }
+    const data2 = { name: "Bob", age: 20, height: 182 }
+    const param = await db.sign("set", data, "ppl", "Bob", {
+      jobID,
+    })
+    const extra = { height: 182 }
+    const multisig_data = {
+      extra,
+      jobID,
+      lit_ipfsId,
+      param,
+    }
+    const sig2 = await wallet2.signMessage(JSON.stringify(multisig_data))
+    const sig3 = await wallet3.signMessage(JSON.stringify(multisig_data))
+    await db.relay("test-job", param, extra, {
+      privateKey: identity.privateKey,
+      wallet: identity.address,
+      multisigs: [sig2, sig3],
+    })
     const addr = wallet.getAddressString()
     const doc = await db.cget("ppl", "Bob")
     expect(doc.setter).to.equal(addr)
