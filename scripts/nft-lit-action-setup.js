@@ -1,10 +1,12 @@
 const EthCrypto = require("eth-crypto")
-require("dotenv").config()
 const fs = require("fs")
 const path = require("path")
 const wallet_name = process.argv[2]
-const contractTxId = process.argv[3] || process.env.CONTRACT_TX_ID
-const newContractSrcTxId = process.argv[4] || process.env.NEW_SOURCE_TX_ID
+const network = process.argv[3]
+const contractTxId = process.argv[4]
+const relayerAddresses = process.argv[5]
+const lit_ipfsId = process.argv[6]
+
 const { isNil } = require("ramda")
 const SDK = require("../sdk")
 
@@ -32,10 +34,26 @@ const setup = async () => {
   const sdk = new SDK({
     wallet,
     contractTxId,
+    network,
   })
-  console.log("evolve WeaveDB..." + contractTxId + " to " + newContractSrcTxId)
-  await sdk.evolve(newContractSrcTxId, { ar: wallet })
-  console.log("evolved!")
+
+  console.log("init WeaveDB..." + contractTxId)
+
+  const job = {
+    relayers: relayerAddresses.split(","),
+    multisig: 3,
+    lit_ipfsId,
+    schema: {
+      type: "string",
+    },
+  }
+
+  await sdk.addRelayerJob("nft-lit-action", job, {
+    ar: wallet,
+  })
+
+  console.log("relayer job set!")
+
   process.exit()
 }
 
