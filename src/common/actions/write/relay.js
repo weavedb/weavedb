@@ -36,7 +36,7 @@ export const relay = async (state, action, signer, contractErr = true) => {
       extra: action2.extra,
       jobID,
       lit_ipfsId: relayers[jobID].lit_ipfsId,
-      param: input,
+      params: input,
     }
     for (const signature of action.input.multisigs) {
       const _signer = (
