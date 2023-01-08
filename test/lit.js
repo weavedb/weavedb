@@ -36,6 +36,33 @@ describe("WeaveDB", function () {
     } catch (e) {}
   })
 
+  it.only("should relay queries with multisig", async () => {
+    const code = readFileSync(
+      resolve(__dirname, "../examples/relayer-nft/lit-actions/ownerOf.js"),
+      "utf-8"
+    )
+    const litNodeClient = new LitJsSdk.LitNodeClient({ litNetwork: "serrano" })
+    await litNodeClient.connect()
+    const authSig = {
+      sig: process.env.AUTHSIG_SIG,
+      derivedVia: process.env.AUTHSIG_DERIVEDVIA,
+      signedMessage: process.env.AUTHSIG_SIGNEDMESSAGE,
+      address: process.env.AUTHSIG_ADDRESS,
+    }
+    const res = await litNodeClient.executeJs({
+      code,
+      authSig,
+      jsParams: {
+        jobID: "test",
+        lit_ipfsId: "test",
+        infura_key: "a2028129b6a7437ea8f0e138f2895f30",
+        params: { query: [{ tokenID: 4 }], jobID: "test" },
+        publicKey: process.env.LIT_PUBLICKEY1,
+        sigName: "sig1",
+      },
+    })
+    console.log(res)
+  })
   it("should relay queries with multisig", async () => {
     const code = readFileSync(resolve(__dirname, "litAction.js"), "utf-8")
     const litNodeClient = new LitJsSdk.LitNodeClient({ litNetwork: "serrano" })
@@ -82,7 +109,7 @@ describe("WeaveDB", function () {
 
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Bob", age: 20, height: 182 }
-    const param = await db.sign("set", data, "ppl", "Bob", {
+    const params = await db.sign("set", data, "ppl", "Bob", {
       jobID,
     })
     const extra = { height: 182 }
@@ -90,7 +117,7 @@ describe("WeaveDB", function () {
       extra,
       jobID,
       lit_ipfsId,
-      param,
+      params,
     }
     const res = await litNodeClient.executeJs({
       code,
@@ -123,7 +150,7 @@ describe("WeaveDB", function () {
       s: "0x" + _sig3.s,
       v: _sig3.recid,
     })
-    await db.relay("test-job", param, extra, {
+    await db.relay("test-job", params, extra, {
       privateKey: identity.privateKey,
       wallet: identity.address,
       multisigs: [sig2, sig3],

@@ -339,7 +339,10 @@ class Base {
           Buffer.from(privateKey.replace(/^0x/, ""), "hex")
         ).toString("hex")}`
     const isaddr = !isNil(addr)
-    if (isNil(addr)) {
+    if (isNil(wallet) && !isNil(this.web3)) {
+      const accounts = await ethereum.request({ method: "eth_accounts" })
+      addr = accounts[0]
+    } else {
       addr = is(String, wallet) ? wallet : wallet.getAddressString()
     }
     addr = addr.toLowerCase()

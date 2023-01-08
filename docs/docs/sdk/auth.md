@@ -151,7 +151,7 @@ You can also write to the DB without a temporary address, which requires a manua
 ### MetaMask (EVM)
 
 ```js
-await db.add({ name: "Bob", age: 20 }, "ppl", { wallet: signer })
+await db.add({ name: "Bob", age: 20 }, "ppl")
 ```
 
 ### Internet Identity (DFINITY)
