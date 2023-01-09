@@ -4,8 +4,7 @@ const path = require("path")
 const wallet_name = process.argv[2]
 const network = process.argv[3]
 const contractTxId = process.argv[4]
-const relayerAddresses = process.argv[5]
-const lit_ipfsId = process.argv[6]
+const signerAddress = process.argv[5]
 
 const { isNil } = require("ramda")
 const SDK = require("../sdk")
@@ -40,9 +39,9 @@ const setup = async () => {
   console.log("init WeaveDB..." + contractTxId)
 
   const job = {
-    relayers: relayerAddresses.split(","),
-    multisig: 3,
-    lit_ipfsId,
+    signers: [signerAddress],
+    multisig_type: "number",
+    multisig: 1,
     schema: {
       type: "string",
     },

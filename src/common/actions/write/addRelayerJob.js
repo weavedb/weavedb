@@ -13,7 +13,12 @@ export const addRelayerJob = async (state, action, signer) => {
     signer
   )
   const [jobID, job] = query
-  if (!is(Array, job.relayers)) err("relayers must be Array")
+  if (!isNil(job.relayers) && !is(Array, job.relayers)) {
+    err("relayers must be Array")
+  }
+  if (!isNil(job.signers) && !is(Array, job.signers)) {
+    err("signers must be Array")
+  }
   if (!isNil(job.schema)) {
     try {
       validator(undefined, clone(job.schema))
