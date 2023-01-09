@@ -26,11 +26,9 @@ export default async (req, res) => {
       code,
       authSig,
       jsParams: {
-        lit_ipfsId: process.env.LIT_ACTION_IPFSID,
         infura_key: process.env.INFURA_KEY,
         params,
         publicKey: process.env.LIT_PUBLICKEY1,
-        sigName: "sig1",
       },
     })
     const _sig = _res.signatures.sig1

@@ -10,7 +10,6 @@ const code = readFileSync(
 export default async (req, res) => {
   const params = JSON.parse(req.body)
   const tokenID = params.query[0].tokenID
-  let owner = "0x"
   try {
     const litNodeClient = new LitJsSdk.LitNodeClient({ litNetwork: "serrano" })
     await litNodeClient.connect()
@@ -24,7 +23,6 @@ export default async (req, res) => {
       code,
       authSig,
       jsParams: {
-        lit_ipfsId: process.env.LIT_ACTION_IPFSID,
         infura_key: process.env.INFURA_KEY,
         params,
         publicKey: process.env.LIT_PUBLICKEY3,
