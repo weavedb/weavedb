@@ -124,11 +124,11 @@ export default function Home() {
                   }
                 )
 
-                const res = await fetch("/api/lit-action-ownerOf", {
+                const res = await fetch("/api/lit-action", {
                   method: "POST",
                   body: JSON.stringify(params),
                 }).then(v => v.json())
-
+                console.log(res)
                 if (!res.success) {
                   alert("Something went wrong")
                 } else {
@@ -139,7 +139,7 @@ export default function Home() {
                       reverse,
                       sortBy(prop("tokenID")),
                       values,
-                      assoc(res.docID, res.doc),
+                      assoc(res.tx.docID, res.tx.doc),
                       indexBy(prop("tokenID"))
                     )(nfts)
                   )
