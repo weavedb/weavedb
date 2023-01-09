@@ -22,7 +22,7 @@ export default async (req, res) => {
       jsParams: {
         infura_key: process.env.INFURA_KEY,
         params,
-        publicKey: process.env.LIT_PUBLICKEY1,
+        publicKey: process.env.LIT_PUBLICKEY4,
       },
     })
     const _sig = _res.signatures.sig1
@@ -31,17 +31,7 @@ export default async (req, res) => {
       s: "0x" + _sig.s,
       v: _sig.recid,
     })
-    let multisigs = []
-    const prs = map(v =>
-      fetch(v, {
-        method: "POST",
-        body: JSON.stringify(params),
-      }).then(v => v.json())
-    )(process.env.VALIDATORS.split(","))
-    multisigs = compose(
-      pluck("signature"),
-      filter(v => v.success)
-    )(await Promise.all(prs))
+    let multisigs = [sig]
     const sdk = new SDK({
       contractTxId,
       rpc: process.env.WEAVEDB_RPC_NODE,
