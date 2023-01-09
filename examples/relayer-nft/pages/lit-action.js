@@ -30,7 +30,7 @@ export default function Home() {
         rpc: process.env.NEXT_PUBLIC_WEAVEDB_RPC_WEB,
       })
       sdk = _sdk
-      setNFTs(await _sdk.get("nft", ["tokenID", "desc"]))
+      setNFTs((await _sdk.get("nft", ["tokenID", "desc"])) || [])
     })()
   }, [])
 
