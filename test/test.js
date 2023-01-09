@@ -712,12 +712,10 @@ describe("WeaveDB", function () {
     const wallet2 = new Wallet(identity2.privateKey)
     const wallet3 = new Wallet(identity3.privateKey)
     const jobID = "test-job"
-    const lit_ipfsId = "test-ipfs"
     const job = {
       relayers: [identity.address, identity2.address, identity3.address],
       multisig: 50,
       multisig_type: "percent",
-      lit_ipfsId,
       schema: {
         type: "object",
         required: ["height"],
@@ -746,19 +744,18 @@ describe("WeaveDB", function () {
 
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Bob", age: 20, height: 182 }
-    const param = await db.sign("set", data, "ppl", "Bob", {
+    const params = await db.sign("set", data, "ppl", "Bob", {
       jobID,
     })
     const extra = { height: 182 }
     const multisig_data = {
       extra,
       jobID,
-      lit_ipfsId,
-      param,
+      params,
     }
     const sig2 = await wallet2.signMessage(JSON.stringify(multisig_data))
     const sig3 = await wallet3.signMessage(JSON.stringify(multisig_data))
-    await db.relay("test-job", param, extra, {
+    await db.relay("test-job", params, extra, {
       privateKey: identity.privateKey,
       wallet: identity.address,
       multisigs: [sig2, sig3],

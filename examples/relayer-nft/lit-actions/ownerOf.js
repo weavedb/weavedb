@@ -1,12 +1,5 @@
 const go = async () => {
-  for (const v of [
-    lit_ipfsId,
-    infura_key,
-    params,
-    params.jobID,
-    publicKey,
-    sigName,
-  ]) {
+  for (const v of [infura_key, params, params.jobID, publicKey]) {
     if (v === null || typeof v === "undefined") return
   }
 
@@ -46,14 +39,13 @@ const go = async () => {
     const data = {
       extra: owner,
       jobID: params.jobID,
-      lit_ipfsId,
       params,
     }
 
     const sigShare = await LitActions.ethPersonalSignMessageEcdsa({
       message: JSON.stringify(data),
       publicKey,
-      sigName,
+      sigName: "sig1",
     })
     LitActions.setResponse({
       response: JSON.stringify({ message: data }),

@@ -24,7 +24,6 @@ export default async (req, res) => {
       code,
       authSig,
       jsParams: {
-        lit_ipfsId: process.env.LIT_ACTION_IPFSID,
         infura_key: process.env.INFURA_KEY,
         params,
         publicKey: process.env.LIT_PUBLICKEY2,
