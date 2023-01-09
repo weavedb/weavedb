@@ -54,7 +54,6 @@ describe("WeaveDB", function () {
       authSig,
       jsParams: {
         jobID: "test",
-        lit_ipfsId: "test",
         infura_key: "a2028129b6a7437ea8f0e138f2895f30",
         params: { query: [{ tokenID: 4 }], jobID: "test" },
         publicKey: process.env.LIT_PUBLICKEY1,
@@ -75,12 +74,10 @@ describe("WeaveDB", function () {
     }
     const identity = EthCrypto.createIdentity()
     const jobID = "test-job"
-    const lit_ipfsId = "test-ipfs"
     const job = {
       relayers: [process.env.LIT_ADDRESS1, process.env.LIT_ADDRESS2],
       multisig: 2,
       multisig_type: "number",
-      lit_ipfsId,
       schema: {
         type: "object",
         required: ["height"],
@@ -116,7 +113,6 @@ describe("WeaveDB", function () {
     const multisig_data = {
       extra,
       jobID,
-      lit_ipfsId,
       params,
     }
     const res = await litNodeClient.executeJs({
