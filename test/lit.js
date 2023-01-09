@@ -75,7 +75,7 @@ describe("WeaveDB", function () {
     const identity = EthCrypto.createIdentity()
     const jobID = "test-job"
     const job = {
-      relayers: [process.env.LIT_ADDRESS1, process.env.LIT_ADDRESS2],
+      signers: [process.env.LIT_ADDRESS1, process.env.LIT_ADDRESS2],
       multisig: 2,
       multisig_type: "number",
       schema: {

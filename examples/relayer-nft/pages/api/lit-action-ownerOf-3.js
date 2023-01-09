@@ -1,11 +1,5 @@
 const { utils } = require("ethers")
 const LitJsSdk = require("lit-js-sdk/build/index.node.js")
-const { readFileSync } = require("fs")
-const { resolve } = require("path")
-const code = readFileSync(
-  resolve(process.cwd(), "../../examples/relayer-nft/lit-actions/ownerOf.js"),
-  "utf-8"
-)
 
 export default async (req, res) => {
   const params = JSON.parse(req.body)
@@ -20,7 +14,7 @@ export default async (req, res) => {
       address: process.env.AUTHSIG_ADDRESS3,
     }
     const _res = await litNodeClient.executeJs({
-      code,
+      ipfsId: process.env.LIT_IPFSID,
       authSig,
       jsParams: {
         infura_key: process.env.INFURA_KEY,

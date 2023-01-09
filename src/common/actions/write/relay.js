@@ -31,10 +31,13 @@ export const relay = async (state, action, signer, contractErr = true) => {
   const relayers = state.relayers || {}
   if (isNil(relayers[jobID])) err("relayer jobID doesn't exist")
 
-  const allowed_relayers = map(toLower)(relayers[jobID].relayers || [])
-  if (!includes(signer)(allowed_relayers)) err("relayer is now allowed")
+  if (!isNil(relayers[jobID].relayers)) {
+    const allowed_relayers = map(toLower)(relayers[jobID].relayers || [])
+    if (!includes(signer)(allowed_relayers)) err("relayer is now allowed")
+  }
 
   if (includes(relayers[jobID].multisig_type)(["number", "percent"])) {
+    const allowed_signers = map(toLower)(relayers[jobID].signers || [])
     let signers = []
     if (is(Array)(action.input.multisigs)) {
       const data = {
@@ -53,22 +56,23 @@ export const relay = async (state, action, signer, contractErr = true) => {
         signers.push(_signer)
       }
     }
-    const matched_relayers = intersection(allowed_relayers, signers)
+    const matched_signers = intersection(allowed_signers, signers)
     let min = 1
     if (relayers[jobID].multisig_type === "percent") {
       min = Math.ceil(
-        (relayers[jobID].relayers.length * (relayers[jobID].multisig || 100)) /
+        (relayers[jobID].signers.length * (relayers[jobID].multisig || 100)) /
           100
       )
     } else if (relayers[jobID].multisig_type === "number") {
       min = relayers[jobID].multisig || 1
     }
-    if (matched_relayers.length < min) {
+    if (matched_signers.length < min) {
       err(
-        `not enough number of allowed relayers [${matched_relayers.length}/${min}] for the job[${jobID}]`
+        `not enough number of allowed signers [${matched_signers.length}/${min}] for the job[${jobID}]`
       )
     }
   }
+
   if (!isNil(relayers[jobID].schema)) {
     try {
       validateSchema(relayers[jobID].schema, query)
@@ -76,6 +80,7 @@ export const relay = async (state, action, signer, contractErr = true) => {
       err("relayer data validation error")
     }
   }
+
   switch (action2.input.function) {
     case "add":
       return await add(state, action2)

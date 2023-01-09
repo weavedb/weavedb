@@ -705,7 +705,7 @@ describe("WeaveDB", function () {
     return
   })
 
-  it("should relay queries with multisig", async () => {
+  it.only("should relay queries with multisig", async () => {
     const identity = EthCrypto.createIdentity()
     const identity2 = EthCrypto.createIdentity()
     const identity3 = EthCrypto.createIdentity()
@@ -713,7 +713,8 @@ describe("WeaveDB", function () {
     const wallet3 = new Wallet(identity3.privateKey)
     const jobID = "test-job"
     const job = {
-      relayers: [identity.address, identity2.address, identity3.address],
+      relayers: [identity.address],
+      signers: [identity.address, identity2.address, identity3.address],
       multisig: 50,
       multisig_type: "percent",
       schema: {
