@@ -120,7 +120,7 @@ You could use [Lit Explorer](https://explorer.litprotocol.com/) to mint PKPs and
 
 You can use [Pinata](https://www.pinata.cloud/) to upload your Lit Action files to IPFS and they will be immediately available through [the Cloudflare gateway](https://developers.cloudflare.com/web3/how-to/use-ipfs-gateway/). The IPFS `CID` will be used in the next step. So take note when you upload Lit Actions.
 
-This example Lit Action will check the owner of specified `tokenID` in the query and add the `owner` as extra data, then create a valid signature for multisig relayer verification with WeaveDB.
+This example Lit Action will check the owner of a specified `tokenID` in the query and add the `owner` as extra data, then create a valid signature for multisig relayer verification with WeaveDB.
 
 ```js
 const go = async () => {
@@ -192,7 +192,7 @@ go()
 
 Now, you need to manually call the `mintGrantAndBurnNext` function at [the PKPNFT contract](https://mumbai.polygonscan.com/token/0x86062b7a01b8b2e22619dbe0c15cbe3f7ebd0e92) on Mumbai Polygon testnet.
 
-This function mint a PKP and assign it to an ipfsCid then burn it in a single transaction, which is [the only way to verify the PKP signatures come from only single Lit Action](https://developer.litprotocol.com/coreconcepts/litactionsandpkps/intro/#how-can-i-know-that-a-given-pkp-wasnt-used-to-sign-a-bunch-of-stuff-before-it-was-granted-approval-to-use-a-lit-action-what-is-mintgrantburn). If PKPNFT is burnt after being assigned to an ipfsCid, no one else but the code at the ipfsCid can sign with the PKP.
+This function mints a PKP and assigns it to an ipfsCid then burn it in a single transaction, which is [the only way to verify the PKP signatures come from only single Lit Action](https://developer.litprotocol.com/coreconcepts/litactionsandpkps/intro/#how-can-i-know-that-a-given-pkp-wasnt-used-to-sign-a-bunch-of-stuff-before-it-was-granted-approval-to-use-a-lit-action-what-is-mintgrantburn). If PKPNFT is burnt after being assigned to an ipfsCid, no one else but the code at the ipfsCid can sign with the PKP.
 
 ```js
 const bs58 = require("bs58")
@@ -267,7 +267,7 @@ const LitJsSdk = require("lit-js-sdk")
 const authSig = await LitJsSdk.checkAndSignAuthMessage({ chain: "mumbai" });
 ```
 
-Relayers can be a simple serverless function. The following is a serverless function using the NestJS api directory.
+Relayers can be a simple serverless function. The following is a serverless function using the NestJS `pages/api` directory.
 
 ```js
 const { utils } = require("ethers")
@@ -332,7 +332,7 @@ export default async (req, res) => {
 
 ## Use Relayer Extra Data
 
-You can access the relayer data via `request.auth` in access control rules. For example, the following rules will set the height field to the data.
+You can access the relayer data via `request.auth.extra` in access control rules. For example, the following rules will set the `height` field to the new data to be written.
 
 ```javascript
 // request.auth = { signer, relayer, jobID, extra }

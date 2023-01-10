@@ -191,7 +191,7 @@ class SDK extends Base {
           new LmdbCache({
             ...this.Warp.defaultCacheOptions,
             dbLocation: `./cache/warp/contracts`,
-            ...(lmdb.contract || {}),
+            ...(lmdb.contracts || {}),
           })
         )
     }
