@@ -148,7 +148,6 @@ export default inject(
         if (!isNil(contractTxId)) {
           db = await fn(setupWeaveDB)({ network, contractTxId, port })
           setState((await db.db.readState()).cachedValue.state)
-          console.log(await db.db.readState())
           fn(switchTempAddress)({ contractTxId })
         } else {
           db = await fn(setupWeaveDB)({ network: "Mainnet" })
@@ -470,6 +469,8 @@ export default inject(
         </Flex>
       </Flex>
     )
+    const isOwner = isNil(state) ? false : $.temp_current === state.owner
+
     return (
       <ChakraProvider>
         <style global jsx>{`
@@ -1101,21 +1102,13 @@ export default inject(
                               <Box
                                 mr={2}
                                 px={3}
-                                bg={
-                                  $.temp_current === state.owner
-                                    ? "#F50057"
-                                    : "#ddd"
-                                }
-                                color={
-                                  $.temp_current === state.owner
-                                    ? "white"
-                                    : "#333"
-                                }
+                                bg={isOwner ? "#F50057" : "#ddd"}
+                                color={isOwner ? "white" : "#333"}
                                 sx={{ borderRadius: "3px" }}
                               >
-                                Owner{" "}
+                                Owner
                               </Box>
-                              {state.owner}
+                              <Box flex={1}>{state.owner}</Box>
                             </Flex>
                             <Flex align="center" p={2} px={3}>
                               <Box
@@ -1126,7 +1119,9 @@ export default inject(
                               >
                                 canEvolve
                               </Box>
-                              {state.canEvolve ? "true" : "false"}
+                              <Flex flex={1}>
+                                {state.canEvolve ? "true" : "false"}
+                              </Flex>
                             </Flex>
                             <Flex align="center" p={2} px={3}>
                               <Box
@@ -1159,9 +1154,41 @@ export default inject(
                               >
                                 Authentication
                               </Box>
-                              {map(v => <Box mr={2}>{v}</Box>)(
-                                state.algorithms || []
-                              )}
+                              <Flex flex={1}>
+                                {map(v => <Box mr={2}>{v}</Box>)(
+                                  state.algorithms || []
+                                )}
+                              </Flex>
+                            </Flex>
+                            <Flex align="center" p={2} px={3}>
+                              <Flex
+                                sx={{ borderBottom: "1px solid #333" }}
+                                w="100%"
+                              >
+                                <Box sx={{ borderRadius: "3px" }}>
+                                  Plugin Contracts
+                                </Box>
+                              </Flex>
+                            </Flex>
+                            <Flex direction="column" align="center">
+                              {compose(
+                                values,
+                                mapObjIndexed((v, k, i) => (
+                                  <Flex w="100%" px={3} py={2}>
+                                    <Flex
+                                      mr={2}
+                                      px={3}
+                                      bg="#ddd"
+                                      sx={{ borderRadius: "3px" }}
+                                    >
+                                      {k}
+                                    </Flex>
+                                    <Box flex={1} mr={2}>
+                                      {v}
+                                    </Box>
+                                  </Flex>
+                                ))
+                              )(state.contracts || [])}
                             </Flex>
                           </>
                         )}
