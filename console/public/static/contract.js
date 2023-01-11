@@ -15108,39 +15108,45 @@
       err("the wrong jobID");
     let action2 = { input, relayer: signer, extra: query, jobID };
     const relayers = state.relayers || {};
-    let signers = [signer];
     if (isNil_default(relayers[jobID]))
       err("relayer jobID doesn't exist");
-    if (is_default(Array)(action.input.multisigs)) {
-      const data = {
-        extra: action2.extra,
-        jobID,
-        lit_ipfsId: relayers[jobID].lit_ipfsId,
-        params: input
-      };
-      for (const signature of action.input.multisigs) {
-        const _signer = (await read(state.contracts.ethereum, {
-          function: "verify",
-          data,
-          signature
-        })).signer;
-        signers.push(_signer);
+    if (!isNil_default(relayers[jobID].relayers)) {
+      const allowed_relayers = map_default(toLower_default)(relayers[jobID].relayers || []);
+      if (!includes_default(signer)(allowed_relayers))
+        err("relayer is now allowed");
+    }
+    if (includes_default(relayers[jobID].multisig_type)(["number", "percent"])) {
+      const allowed_signers = map_default(toLower_default)(relayers[jobID].signers || []);
+      let signers = [];
+      if (is_default(Array)(action.input.multisigs)) {
+        const data = {
+          extra: action2.extra,
+          jobID,
+          params: input
+        };
+        for (const signature of action.input.multisigs) {
+          const _signer = (await read(state.contracts.ethereum, {
+            function: "verify",
+            data,
+            signature
+          })).signer;
+          signers.push(_signer);
+        }
       }
-    }
-    const allowed_relayers = map_default(toLower_default)(relayers[jobID].relayers || []);
-    const matched_relayers = intersection_default(allowed_relayers, signers);
-    let min3 = 1;
-    if (relayers[jobID].multisig_type === "percent") {
-      min3 = Math.ceil(
-        relayers[jobID].relayers.length * (relayers[jobID].multisig || 100) / 100
-      );
-    } else {
-      min3 = relayers[jobID].multisig || 1;
-    }
-    if (matched_relayers.length < min3) {
-      err(
-        `not enough number of allowed relayers [${matched_relayers.length}/${min3}] for the job[${jobID}]`
-      );
+      const matched_signers = intersection_default(allowed_signers, signers);
+      let min3 = 1;
+      if (relayers[jobID].multisig_type === "percent") {
+        min3 = Math.ceil(
+          relayers[jobID].signers.length * (relayers[jobID].multisig || 100) / 100
+        );
+      } else if (relayers[jobID].multisig_type === "number") {
+        min3 = relayers[jobID].multisig || 1;
+      }
+      if (matched_signers.length < min3) {
+        err(
+          `not enough number of allowed signers [${matched_signers.length}/${min3}] for the job[${jobID}]`
+        );
+      }
     }
     if (!isNil_default(relayers[jobID].schema)) {
       try {
@@ -15418,8 +15424,12 @@
       signer
     );
     const [jobID, job] = query;
-    if (!is_default(Array, job.relayers))
+    if (!isNil_default(job.relayers) && !is_default(Array, job.relayers)) {
       err("relayers must be Array");
+    }
+    if (!isNil_default(job.signers) && !is_default(Array, job.signers)) {
+      err("signers must be Array");
+    }
     if (!isNil_default(job.schema)) {
       try {
         (0, import_jsonschema3.validate)(void 0, clone3(job.schema));
