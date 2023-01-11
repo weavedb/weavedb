@@ -67,5 +67,5 @@ WeaveDB contracts v0.7 and less are not compatible with the latest warp SDK. Set
 [LMDB has better performance than LevelDB](https://mozilla.github.io/firefox-browser-architecture/text/0017-lmdb-vs-leveldb.html) and also is capable of concurrency, but only available with NodeJS
 
 - **lmdb** : lmdb settings to merge with the default settings  
-e.g. `{state: {dbLocation: "xyz"}, contract: {dbLocation: "xyz2"}}`
+e.g. `{state: {dbLocation: "xyz"}, contracts: {dbLocation: "xyz2"}}`
 
