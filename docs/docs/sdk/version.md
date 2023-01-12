@@ -15,6 +15,17 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.10.0 (Jan 12, 2023)
+
+#### Source Transaction Id
+
+[F-nDTtI50sJYDJyPq3cqnQg2UApu9_bBoy8NItEPPQI](https://sonar.warp.cc/#/app/source/F-nDTtI50sJYDJyPq3cqnQg2UApu9_bBoy8NItEPPQI)
+
+#### Added Features
+
+- [multisig relayers](/docs/sdk/relayers#multisig-relayer)
+- [Lit Protocol Integration](/docs/sdk/relayers#verifiable-oracles-with-lit-protocol)
+
 ### v0.9.0 (Dec 26, 2022)
 
 #### Source Transaction Id
