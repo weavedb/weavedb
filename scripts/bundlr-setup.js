@@ -56,7 +56,7 @@ const setup = async () => {
       },
     },
   }
-  await sdk.setSchema(schema, "bundlr-test", { ar: wallet })
+  await sdk.setSchema(schema, "bundlr", { ar: wallet })
   console.log("schema set!")
 
   const job = {
@@ -78,26 +78,29 @@ const setup = async () => {
     },
   }
 
-  await sdk.addRelayerJob("bundlr-test", job, {
+  await sdk.addRelayerJob("bundlr", job, {
     ar: wallet,
   })
 
   console.log("relayer job set!")
 
   const rules = {
-    let: {
+    "let create,update": {
       "resource.newData.author": { var: "request.auth.extra.author" },
       "resource.newData.date": { var: "request.auth.extra.date" },
       "resource.newData.id": { var: "request.auth.extra.id" },
     },
-    "allow write": {
+    "allow create": {
       "==": [
         { var: "request.auth.signer" },
         { var: "resource.newData.author" },
       ],
     },
+    "allow update,delete": {
+      "==": [{ var: "request.auth.signer" }, { var: "resource.data.author" }],
+    },
   }
-  await sdk.setRules(rules, "bundlr-test", {
+  await sdk.setRules(rules, "bundlr", {
     ar: wallet,
   })
 
