@@ -1,12 +1,8 @@
 const Bundlr = require("@bundlr-network/client")
-const { Contract, providers } = require("ethers")
-const provider = new providers.JsonRpcProvider(process.env.EVM_RPC)
 const contractTxId = process.env.NEXT_PUBLIC_WEAVEDB_CONTRACT_TX_ID
-const aclContractAddr = process.env.NEXT_PUBLIC_ACL_CONTRACT_ADDR
 const privateKey = process.env.BUNDLR_PRIVATEKEY
 const { isNil } = require("ramda")
 const SDK = require("weavedb-node-client")
-const abi = require("../../lib/ACL.json")
 
 export default async (req, res) => {
   const { body, params } = JSON.parse(req.body)
