@@ -31,10 +31,11 @@ export default function Home() {
   const [account, setAccount] = useState(null)
   const [posting, setPosting] = useState(false)
   const [initSDK, setInitSDK] = useState(false)
-  const [articles, setArticles] = useState([])
+  const [notes, setNotes] = useState([])
   const [note, setNote] = useState(null)
   const [_title, _setTitle] = useState("")
-  const [_message, _setMessage] = useState("")
+  const [_note, _setNote] = useState("")
+
   useEffect(() => {
     ;(async () => {
       const _sdk = new SDK({
@@ -49,9 +50,16 @@ export default function Home() {
   useEffect(() => {
     ;(async () => {
       if (initSDK && !isNil(account)) {
-        setArticles(await sdk.cget("bundlr", true))
+        setNotes(
+          await sdk.cget(
+            "bundlr",
+            ["author", "=", account],
+            ["date", "desc"],
+            true
+          )
+        )
       } else {
-        setArticles([])
+        setNotes([])
       }
     })()
   }, [initSDK, account])
@@ -123,9 +131,9 @@ export default function Home() {
     </Flex>
   )
 
-  const Post = ({ _title, _message }) => {
+  const Post = ({ _title, _note }) => {
     const [title, setTitle] = useState(_title || "")
-    const [value, setValue] = useState(_message || "")
+    const [value, setValue] = useState(_note || "")
     return (
       <>
         <Flex justify="center" width="600px" mb={5}>
@@ -190,17 +198,17 @@ export default function Home() {
                       data: res.tx.doc,
                       id: res.tx.docID,
                     }
-                    _setMessage(value)
+                    _setNote(value)
                     _setTitle(new_note.data.title)
                     setNote(new_note)
-                    setArticles(
+                    setNotes(
                       compose(
                         reverse,
                         sortBy(path(["data", "date"])),
                         values,
                         assoc(res.tx.docID, new_note),
                         indexBy(prop("id"))
-                      )(articles)
+                      )(notes)
                     )
                   }
                 } catch (e) {
@@ -241,16 +249,16 @@ export default function Home() {
                     if (!res.success) {
                       alert("Something went wrong")
                     } else {
-                      _setMessage("")
+                      _setNote("")
                       _setTitle("")
-                      setArticles(
+                      setNotes(
                         compose(
                           reverse,
                           sortBy(path(["data", "date"])),
                           values,
                           dissoc(note.id),
                           indexBy(prop("id"))
-                        )(articles)
+                        )(notes)
                       )
                       setNote(null)
                     }
@@ -276,10 +284,9 @@ export default function Home() {
     )
   }
 
-  const Messages = () => (
+  const Notes = () => (
     <Box mb={5}>
       {map(doc => {
-        const v = doc.data
         const selected = !isNil(note) && note.id === doc.id
         return (
           <>
@@ -299,16 +306,16 @@ export default function Home() {
                 if (!isNil(note) && note.id === doc.id) {
                   setNote(null)
                   _setTitle("")
-                  _setMessage("")
+                  _setNote("")
                 } else {
                   try {
                     const note = await fetch(
-                      `https://arweave.net/${v.id}`
+                      `https://arweave.net/${doc.data.id}`
                     ).then(v => v.json())
                     if (!isNil(note)) {
                       setNote(doc)
-                      _setTitle(v.title)
-                      _setMessage(note.body)
+                      _setTitle(doc.data.title)
+                      _setNote(note.body)
                     }
                   } catch (e) {}
                 }
@@ -321,22 +328,22 @@ export default function Home() {
                     sx={{ borderRadius: "50%", bg: "#4C2471" }}
                     p={2}
                   >
-                    <Jdenticon size="30px" value={v.author} />
+                    <Jdenticon size="30px" value={doc.data.author} />
                   </Flex>
                 </Flex>
               </Flex>
               <Flex p={2} flex={1} mx={2} fontSize="16px" direction="column">
-                <Box flex={1}>{v.title}</Box>
+                <Box flex={1}>{doc.data.title}</Box>
                 <Flex fontSize="12px" color="#F893F6">
-                  <Box>{v.id}</Box>
+                  <Box>{doc.data.id}</Box>
                   <Box flex={1} />
-                  <Box>{dayjs(v.date).fromNow()}</Box>
+                  <Box>{dayjs(doc.data.date).fromNow()}</Box>
                 </Flex>
               </Flex>
             </Flex>
           </>
         )
-      })(articles)}
+      })(notes)}
     </Box>
   )
 
@@ -371,8 +378,8 @@ export default function Home() {
             <Header />
             {isNil(account) ? null : (
               <>
-                <Post {...{ _title, _message }} />
-                <Messages />
+                <Post {...{ _title, _note }} />
+                <Notes />
               </>
             )}
           </Flex>
