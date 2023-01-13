@@ -22,7 +22,6 @@ import { Button, Box, Flex, Input, ChakraProvider } from "@chakra-ui/react"
 
 let sdk
 const contractTxId = process.env.NEXT_PUBLIC_WEAVEDB_CONTRACT_TX_ID
-const nftContractAddr = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDR
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false })
 import dayjs from "dayjs"
