@@ -33,7 +33,7 @@ export const relay = async (state, action, signer, contractErr = true) => {
 
   if (!isNil(relayers[jobID].relayers)) {
     const allowed_relayers = map(toLower)(relayers[jobID].relayers || [])
-    if (!includes(signer)(allowed_relayers)) err("relayer is now allowed")
+    if (!includes(signer)(allowed_relayers)) err("relayer is not allowed")
   }
 
   if (includes(relayers[jobID].multisig_type)(["number", "percent"])) {
