@@ -4,6 +4,7 @@ import dynamic from "next/dynamic"
 import SDK from "weavedb-client"
 import { ethers } from "ethers"
 import { useEffect, useState } from "react"
+import Jdenticon from "react-jdenticon"
 import {
   dissoc,
   path,
@@ -49,14 +50,16 @@ export default function Home() {
   useEffect(() => {
     ;(async () => {
       if (initSDK && !isNil(account)) {
-        setArticles(await sdk.cget("bundlr-test", true))
+        setArticles(await sdk.cget("bundlr", true))
+      } else {
+        setArticles([])
       }
     })()
   }, [initSDK, account])
 
   const Header = () => (
     <Flex align="center" justify="center" width="600px" py={3}>
-      <Box flex={1}>
+      <Box flex={1} pl={2}>
         {posting
           ? "posting..."
           : isNil(account)
@@ -65,15 +68,14 @@ export default function Home() {
       </Box>
       {isNil(account) ? (
         <Box
-          bg="#333"
-          px={6}
-          py={2}
-          color="white"
+          bg="#1E1930"
+          color="#F893F6"
+          p={3}
           sx={{
-            border: "1px solid #333",
             borderRadius: "5px",
             cursor: "pointer",
             ":hover": { opacity: 0.75 },
+            boxShadow: "10px 10px 14px 1px rgb(0 0 0 / 20%)",
           }}
           onClick={async () => {
             const wallet = window.arweaveWallet
@@ -86,19 +88,18 @@ export default function Home() {
             setAccount(addr)
           }}
         >
-          Connect
+          Connect Arweave Wallet
         </Box>
       ) : (
         <Box
-          white="#333"
-          px={6}
-          py={2}
-          bg="white"
+          bg="#1E1930"
+          color="#F893F6"
+          p={3}
           sx={{
-            border: "1px solid #333",
             borderRadius: "5px",
             cursor: "pointer",
             ":hover": { opacity: 0.75 },
+            boxShadow: "10px 10px 14px 1px rgb(0 0 0 / 20%)",
           }}
           onClick={async () => setAccount(null)}
         >
@@ -109,15 +110,17 @@ export default function Home() {
   )
 
   const Footer = () => (
-    <Flex justify="center" width="600px" p={3}>
-      <Box
-        as="a"
-        target="_blank"
-        sx={{ textDecoration: "underline" }}
-        href={`https://sonar.warp.cc/?#/app/contract/${contractTxId}`}
-      >
-        Contract Transactions
-      </Box>
+    <Flex w="100%" justify="center" p={4} bg="#1E1930" color="#F893F6">
+      <Flex>
+        <Box
+          as="a"
+          target="_blank"
+          href={`https://sonar.warp.cc/?#/app/contract/${contractTxId}`}
+          sx={{ textDecoration: "underline" }}
+        >
+          Contract Transactions
+        </Box>
+      </Flex>
     </Flex>
   )
 
@@ -128,6 +131,8 @@ export default function Home() {
       <>
         <Flex justify="center" width="600px" mb={5}>
           <Input
+            bg="white"
+            color="#4C2471"
             disabled={posting}
             w="100px"
             placeholder="title"
@@ -137,9 +142,15 @@ export default function Home() {
             flex={1}
           />
           <Button
+            color="rgb(78,38,115)"
             sx={{ borderRadius: "0 3px 3px 0" }}
             onClick={async () => {
-              if (!posting) {
+              if (
+                !posting &&
+                confirm(
+                  "Your note will be public and stored permanently on Arweave."
+                )
+              ) {
                 if (/^\s*$/.test(title)) {
                   alert("enter title")
                   return
@@ -158,17 +169,17 @@ export default function Home() {
                   ])
                   const conf = {
                     ar: wallet,
-                    jobID: "bundlr-test",
+                    jobID: "bundlr",
                   }
                   const params = !isNil(note)
                     ? await sdk.sign(
                         "update",
                         { title },
-                        "bundlr-test",
+                        "bundlr",
                         note.id,
                         conf
                       )
-                    : await sdk.sign("add", { title }, "bundlr-test", conf)
+                    : await sdk.sign("add", { title }, "bundlr", conf)
                   const res = await fetch("/api/bundlr", {
                     method: "POST",
                     body: JSON.stringify({ params, body: value }),
@@ -202,10 +213,14 @@ export default function Home() {
           >
             {isNil(note) ? "Publish" : "Update"}
           </Button>
-          {true || isNil(note) ? null : (
+          {isNil(note) ? null : (
             <Button
               ml={2}
-              sx={{ bg: "salmon", color: "white", borderRadius: "3px" }}
+              sx={{
+                bg: "SlateBlue",
+                color: "white",
+                borderRadius: "3px",
+              }}
               onClick={async () => {
                 if (
                   !posting &&
@@ -221,9 +236,9 @@ export default function Home() {
                     ])
                     const conf = {
                       ar: wallet,
-                      jobID: "bundlr-test",
+                      jobID: "bundlr",
                     }
-                    const res = await sdk.delete("bundlr-test", note.id, conf)
+                    const res = await sdk.delete("bundlr", note.id, conf)
                     if (!res.success) {
                       alert("Something went wrong")
                     } else {
@@ -234,7 +249,7 @@ export default function Home() {
                           reverse,
                           sortBy(path(["data", "date"])),
                           values,
-                          dissoc(res.tx.docID),
+                          dissoc(note.id),
                           indexBy(prop("id"))
                         )(articles)
                       )
@@ -263,54 +278,108 @@ export default function Home() {
   }
 
   const Messages = () => (
-    <Box>
+    <Box mb={5}>
       {map(doc => {
         const v = doc.data
+        const selected = !isNil(note) && note.id === doc.id
         return (
-          <Flex
-            bg={!isNil(note) && note.id === doc.id ? "#EDF2F7" : ""}
-            sx={{ ":hover": { bg: "#EDF2F7" }, cursor: "pointer" }}
-            w="600px"
-            align="center"
-            onClick={async () => {
-              if (!isNil(note) && note.id === doc.id) {
-                setNote(null)
-                _setTitle("")
-                _setMessage("")
-              } else {
-                try {
-                  const note = await fetch(`https://arweave.net/${v.id}`).then(
-                    v => v.json()
-                  )
-                  if (!isNil(note)) {
-                    setNote(doc)
-                    _setTitle(v.title)
-                    _setMessage(note.body)
-                  }
-                } catch (e) {}
-              }
-            }}
-          >
-            <Box p={2} flex={1}>
-              {v.title}
-            </Box>
-            <Flex justify="center" p={2} w="100px" fontSize="10px">
-              {dayjs(v.date).fromNow()}
+          <>
+            <Flex
+              p={2}
+              bg={selected ? "white" : "#4C2471"}
+              color={selected ? "#4C2471" : "white"}
+              m={4}
+              sx={{
+                borderRadius: "10px",
+                boxShadow: "10px 10px 14px 1px rgb(0 0 0 / 20%)",
+                cursor: "pointer",
+                ":hover": { opacity: 0.75 },
+              }}
+              w="600px"
+              onClick={async () => {
+                if (!isNil(note) && note.id === doc.id) {
+                  setNote(null)
+                  _setTitle("")
+                  _setMessage("")
+                } else {
+                  try {
+                    const note = await fetch(
+                      `https://arweave.net/${v.id}`
+                    ).then(v => v.json())
+                    if (!isNil(note)) {
+                      setNote(doc)
+                      _setTitle(v.title)
+                      _setMessage(note.body)
+                    }
+                  } catch (e) {}
+                }
+              }}
+            >
+              <Flex justify="center" py={2} px={4}>
+                <Flex direction="column">
+                  <Flex
+                    bg="white"
+                    sx={{ borderRadius: "50%", bg: "#4C2471" }}
+                    p={2}
+                  >
+                    <Jdenticon size="30px" value={v.author} />
+                  </Flex>
+                </Flex>
+              </Flex>
+              <Flex p={2} flex={1} mx={2} fontSize="16px" direction="column">
+                <Box flex={1}>{v.title}</Box>
+                <Flex fontSize="12px" color="#F893F6">
+                  <Box>{v.id}</Box>
+                  <Box flex={1} />
+                  <Box>{dayjs(v.date).fromNow()}</Box>
+                </Flex>
+              </Flex>
             </Flex>
-          </Flex>
+          </>
         )
       })(articles)}
     </Box>
   )
 
   return (
-    <ChakraProvider>
-      <Flex direction="column" align="center" fontSize="12px">
-        <Header />
-        <Post {...{ _title, _message }} />
-        <Messages />
-        <Footer />
-      </Flex>
-    </ChakraProvider>
+    <>
+      <style jsx global>{`
+        html,
+        #__next,
+        body {
+          height: 100%;
+        }
+        body.chakra-ui-light {
+          color: white;
+          background-image: radial-gradient(
+            circle,
+            #b51da6,
+            #94259a,
+            #75288c,
+            #58277b,
+            #3e2368
+          );
+        }
+      `}</style>
+      <ChakraProvider>
+        <Flex
+          direction="column"
+          minHeight="100%"
+          justify="center"
+          align="center"
+        >
+          <Flex direction="column" align="center" fontSize="12px" flex={1}>
+            <Header />
+            {isNil(account) ? null : (
+              <>
+                <Post {...{ _title, _message }} />
+                <Messages />
+              </>
+            )}
+          </Flex>
+          <Footer />
+        </Flex>
+      </ChakraProvider>
+    </>
   )
 }
