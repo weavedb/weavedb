@@ -23,7 +23,7 @@ export default async (req, res) => {
   }
   const tags = [
     { name: "Content-Type", value: "application/json" },
-    { name: "appName", value: "weavedb-test" },
+    { name: "appName", value: "weavedb-bundlr-test" },
   ]
   let error = null
   let success = false
