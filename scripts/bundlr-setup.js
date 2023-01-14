@@ -56,7 +56,7 @@ const setup = async () => {
       },
     },
   }
-  await sdk.setSchema(schema, "bundlr", { ar: wallet })
+  await sdk.setSchema(schema, "notes", { ar: wallet })
   console.log("schema set!")
 
   const job = {
@@ -100,7 +100,7 @@ const setup = async () => {
       "==": [{ var: "request.auth.signer" }, { var: "resource.data.author" }],
     },
   }
-  await sdk.setRules(rules, "bundlr", {
+  await sdk.setRules(rules, "notes", {
     ar: wallet,
   })
 
