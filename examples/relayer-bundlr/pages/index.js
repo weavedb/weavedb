@@ -52,7 +52,7 @@ export default function Home() {
       if (initSDK && !isNil(account)) {
         setNotes(
           await sdk.cget(
-            "bundlr",
+            "notes",
             ["author", "=", account],
             ["date", "desc"],
             true
@@ -182,11 +182,11 @@ export default function Home() {
                     ? await sdk.sign(
                         "update",
                         { title },
-                        "bundlr",
+                        "notes",
                         note.id,
                         conf
                       )
-                    : await sdk.sign("add", { title }, "bundlr", conf)
+                    : await sdk.sign("add", { title }, "notes", conf)
                   const res = await fetch("/api/bundlr", {
                     method: "POST",
                     body: JSON.stringify({ params, body: value }),
@@ -245,7 +245,7 @@ export default function Home() {
                       ar: wallet,
                       jobID: "bundlr",
                     }
-                    const res = await sdk.delete("bundlr", note.id, conf)
+                    const res = await sdk.delete("notes", note.id, conf)
                     if (!res.success) {
                       alert("Something went wrong")
                     } else {
