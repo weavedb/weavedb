@@ -1,6 +1,5 @@
 const Bundlr = require("@bundlr-network/client")
 const contractTxId = process.env.NEXT_PUBLIC_WEAVEDB_CONTRACT_TX_ID
-const privateKey = process.env.BUNDLR_PRIVATEKEY
 const { isNil } = require("ramda")
 const SDK = require("weavedb-node-client")
 
@@ -9,9 +8,9 @@ export default async (req, res) => {
   const bundlr = new Bundlr.default(
     "http://node1.bundlr.network",
     "matic",
-    privateKey
+    process.env.BUNDLR_PRIVATEKEY
   )
-  const article = {
+  const note = {
     title: params.query[0].title,
     body,
     author: params.caller,
@@ -23,35 +22,35 @@ export default async (req, res) => {
   ]
   let error = null
   let success = false
-  let tx = null
+  let relay_tx = null
   try {
-    const tx2 = await bundlr.upload(JSON.stringify(article), { tags })
-    if (!isNil(tx2.id)) {
+    const bundlr_tx = await bundlr.upload(JSON.stringify(note), { tags })
+    if (!isNil(bundlr_tx.id)) {
       const sdk = new SDK({
         contractTxId,
         rpc: process.env.WEAVEDB_RPC_NODE,
       })
-      tx = await sdk.relay(
+      relay_tx = await sdk.relay(
         params.jobID,
         params,
-        { id: tx2.id, author: article.author, date: article.date },
+        { id: bundlr_tx.id, author: note.author, date: note.date },
         {
           jobID: params.jobID,
           privateKey: process.env.RELAYER_PRIVATEKEY,
           wallet: process.env.RELAYER_ADDRESS,
         }
       )
-      if (tx.success) {
+      if (relay_tx.success) {
         success = true
       } else {
-        error = tx.error
+        error = relay_tx.error
       }
     } else {
-      error = tx
+      error = relay_tx
     }
   } catch (e) {
     console.log(e)
     error = e
   }
-  res.status(200).json({ success, error, tx })
+  res.status(200).json({ success, error, tx: relay_tx })
 }
