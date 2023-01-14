@@ -285,4 +285,14 @@ export default async (req, res) => {
 
 ### Frontend Page
 
+This is how you would get a note in the frontend code.
+
+```js
+// getting 5 notes of the account in descending order by published date
+const notes = await db.get("notes", ["author", "=", account], ["date", "desc"], 5)
+
+// fetching the body of the first note
+const note = await fetch(`https://arweave.net/${notes[0].id}`).then(v => v.json())
+```
+
 The rest of the frontend code will be omitted as it's not the primary focus of this tutorial. You can access the entire code [here](https://github.com/weavedb/weavedb/tree/master/examples/relayer-bundlr).
