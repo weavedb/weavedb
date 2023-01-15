@@ -93,7 +93,7 @@ await sdk.setSchema(schema, "notes", { ar: wallet })
 
 Set a simple relayer job.
 
-- `relayerAddress` : an EVM address of the relayer to check the Ethereum blockchain and relay WeaveDB queries.
+- `relayerAddress` : an EVM address of the relayer to sign and relay WeaveDB queries.
 - `schema` : JSON schema for the additional data to be attached by the relayer. The relayer will attach 3 pieces of extra data, `date`, `id`, and `author`.
 - `jobID` : our arbitrary jobID will be `bundlr`.
 
