@@ -55,6 +55,14 @@ import {
   queryDB,
 } from "../lib/weavedb.js"
 
+const tabmap = {
+  DB: { name: "DB Instances" },
+  Data: { name: "Data Collections" },
+  Schemas: { name: "Schemas" },
+  Rules: { name: "Access Control Rules" },
+  Indexes: { name: "Indexes" },
+  Crons: { name: "Crons" },
+}
 let db, iv
 export default inject(
   [
@@ -262,7 +270,7 @@ export default inject(
       <Flex
         py={2}
         px={6}
-        bg={isNil(contractTxId) ? "#F50057" : "#333"}
+        bg={isNil(contractTxId) ? "#6441AF" : "#333"}
         color="white"
         sx={{
           borderRadius: "25px",
@@ -283,9 +291,9 @@ export default inject(
         }}
       >
         {isNil(contractTxId) ? (
-          "Connect"
+          "Connect with DB"
         ) : isNil($.temp_current) ? (
-          "Sign In"
+          "Sign Into DB"
         ) : (
           <Flex align="center">
             <Image
@@ -397,11 +405,12 @@ export default inject(
         align="center"
         flex={1}
         direction="column"
+        fontSize="12px"
       >
         <Flex maxW="900px" w="100%" justify="center">
           <Flex maxW="900px" w="100%">
             <Box flex={1} py={2} px={6}>
-              <Flex align="center" fontSize="20px" fontWeight="bold" mb={3}>
+              <Flex align="center" fontSize="18px" fontWeight="bold" mb={3}>
                 WeaveDB
               </Flex>
               <Box {...linkStyle} href="https://weavedb.dev">
@@ -418,7 +427,7 @@ export default inject(
               </Box>
             </Box>
             <Box flex={1} py={2} px={6}>
-              <Flex align="center" fontSize="20px" fontWeight="bold" mb={3}>
+              <Flex align="center" fontSize="18px" fontWeight="bold" mb={3}>
                 Developer
               </Flex>
               <Box href="https://docs.weavedb.dev" {...linkStyle}>
@@ -433,7 +442,7 @@ export default inject(
               </Box>
             </Box>
             <Box flex={1} py={2} px={6}>
-              <Flex align="center" fontSize="20px" fontWeight="bold" mb={3}>
+              <Flex align="center" fontSize="18px" fontWeight="bold" mb={3}>
                 Community
               </Flex>
               <Box {...linkStyle} href="https://twitter.com/weave_db">
@@ -453,20 +462,6 @@ export default inject(
             </Box>
           </Flex>
         </Flex>
-        <Flex maxW="900px" w="100%" justify="center">
-          <Flex
-            my={3}
-            px={6}
-            py={2}
-            color="white"
-            bg="#6441AF"
-            w="100%"
-            justify="center"
-            sx={{ borderRadius: "5px" }}
-          >
-            WeaveDB is still in alpha. Please use it with discretion.
-          </Flex>
-        </Flex>
       </Flex>
     )
     const isOwner = isNil(state) ? false : $.temp_current === state.owner
@@ -478,8 +473,50 @@ export default inject(
           #__next,
           body {
             height: 100%;
+            background: #333;
           }
         `}</style>
+        <Flex
+          h="100%"
+          w="250px"
+          bg="#eee"
+          sx={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+          }}
+          pt="56px"
+          direction="column"
+        >
+          {_addIndex(map)((v, i) => {
+            return (
+              <Flex
+                onClick={() => setTab(v)}
+                bg={v === tab ? "#6441AF" : "#eee"}
+                color={v === tab ? "white" : "#333"}
+                py={3}
+                px={4}
+                sx={{
+                  cursor: "pointer",
+                  ":hover": { opacity: 0.75 },
+                }}
+              >
+                {tabmap[v].name}
+              </Flex>
+            )
+          })(tabs)}
+          <Flex flex={1} />
+          <Flex
+            fontSize="12px"
+            p={4}
+            bg="#6441AF"
+            color="white"
+            m={4}
+            sx={{ borderRadius: "5px" }}
+          >
+            WeaveDB is still in alpha. Please use it with discretion.
+          </Flex>
+        </Flex>
         <Flex
           bg="white"
           width="100%"
@@ -489,6 +526,7 @@ export default inject(
             top: 0,
             left: 0,
             borderBottom: "1px solid #ddd",
+            boxShadow: "0px 2px 10px 0px rgba(0,0,0,0.75)",
           }}
           align="center"
         >
@@ -497,7 +535,7 @@ export default inject(
             justify="flex-start"
             align="center"
             fontSize="16px"
-            w="250px"
+            w="500px"
           >
             <Image
               boxSize="30px"
@@ -521,8 +559,8 @@ export default inject(
                   }
                 }}
               >
-                Connected with port{" "}
-                <Box ml={2} color="#F50057">
+                Connected with local port{" "}
+                <Box ml={2} color="#6441AF">
                   {port}
                 </Box>
               </Flex>
@@ -538,2177 +576,2249 @@ export default inject(
             <ConnectWallet />
           </Flex>
         </Flex>
-        <Flex align="center" direction="column" fontSize="12px" pt="50px">
-          <Flex maxW="960px" w="100%" direction="column" p={3}>
-            <Flex w="100%" justify="center" my={3}>
-              {map(v => {
-                return (
-                  <Box
-                    onClick={() => setTab(v)}
-                    bg={v === tab ? "#333" : "#ddd"}
-                    color={v === tab ? "white" : "#333"}
-                    px={4}
-                    py={1}
-                    sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
-                  >
-                    {v}
-                  </Box>
-                )
-              })(tabs)}
-            </Flex>
-            <Flex mb={3} align="center">
-              WeaveDB ({isNil(contractTxId) ? "" : contractTxId.slice(0, 4)})
-              {_addIndex(map)((v, i) => (
-                <>
-                  <Box mx={2} as="i" className="fas fa-angle-right" />
-                  <Box
-                    onClick={() => setDocPath(take(i + 1, doc_path))}
-                    sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
-                    as="span"
-                    color={i === doc_path.length - 1 ? "#F50057" : ""}
-                  >
-                    {v}
-                  </Box>
-                </>
-              ))(doc_path)}
-            </Flex>
-            <Flex
-              height="535px"
-              maxW="960px"
-              w="100%"
-              sx={{ border: "1px solid #333" }}
-            >
-              <Flex h="535px" w="100%">
-                {includes(tab)(["DB", "Crons"]) ? null : (
-                  <Box
-                    flex={1}
-                    sx={{ border: "1px solid #555" }}
-                    direction="column"
-                  >
-                    <Flex py={2} px={3} color="white" bg="#333" h="35px">
-                      <Box>Collections</Box>
-                      <Box flex={1} />
-                      {!includes(tab, ["Data"]) ? null : (
-                        <Box
-                          onClick={() => setAddCollection(true)}
-                          sx={{
-                            cursor: "pointer",
-                            ":hover": { opacity: 0.75 },
-                          }}
-                        >
-                          <Box as="i" className="fas fa-plus" />
-                        </Box>
-                      )}
-                    </Flex>
-                    {map(v => (
-                      <Flex
-                        onClick={() => {
-                          setDocPath([...base_path, v])
-                        }}
-                        bg={col === v ? "#ddd" : ""}
-                        py={2}
-                        px={3}
-                        sx={{
-                          cursor: "pointer",
-                          ":hover": { opacity: 0.75 },
-                        }}
+
+        <Flex
+          sx={{
+            backgroundImage:
+              "radial-gradient(circle, #ffffff, #eeeeee, #dddddd, #cccccc, #bbbbbb)",
+          }}
+        >
+          <Flex w="250px"></Flex>
+          <Box flex={1}>
+            <Flex align="center" direction="column" fontSize="12px" pt="60px">
+              <Flex maxW="1200px" w="100%" direction="column" py={4} px={10}>
+                <Flex mb={3} align="center" fontSize="14px">
+                  WeaveDB (
+                  {isNil(contractTxId) ? "-" : contractTxId.slice(0, 7)})
+                  {_addIndex(map)((v, i) => (
+                    <>
+                      <Box mx={2} as="i" className="fas fa-angle-right" />
+                      <Box
+                        onClick={() => setDocPath(take(i + 1, doc_path))}
+                        sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
+                        as="span"
+                        color={i === doc_path.length - 1 ? "#6441AF" : ""}
                       >
                         {v}
-                      </Flex>
-                    ))(cols)}
-                  </Box>
-                )}
-                {tab === "Schemas" ? (
-                  <Flex
-                    flex={1}
-                    sx={{ border: "1px solid #555" }}
-                    direction="column"
-                  >
-                    <Flex py={2} px={3} color="white" bg="#333" h="35px">
-                      <Box>Schemas</Box>
-                      <Box flex={1} />
-                      {isNil(col) ? null : (
-                        <Box
-                          onClick={() => setAddSchemas(true)}
-                          sx={{
-                            cursor: "pointer",
-                            ":hover": { opacity: 0.75 },
-                          }}
-                        >
-                          <Box as="i" className="fas fa-plus" />
-                        </Box>
-                      )}
-                    </Flex>
-                    <Box height="500px" sx={{ overflowY: "auto" }} p={3}>
-                      <JSONPretty id="json-pretty" data={schema}></JSONPretty>
-                    </Box>
-                  </Flex>
-                ) : tab === "Rules" ? (
-                  <Flex
-                    flex={1}
-                    sx={{ border: "1px solid #555" }}
-                    direction="column"
-                  >
-                    <Flex py={2} px={3} color="white" bg="#333" h="35px">
-                      <Box>Rules</Box>
-                      <Box flex={1} />
-                      {isNil(col) ? null : (
-                        <Box
-                          onClick={() => setAddRules(true)}
-                          sx={{
-                            cursor: "pointer",
-                            ":hover": { opacity: 0.75 },
-                          }}
-                        >
-                          <Box as="i" className="fas fa-plus" />
-                        </Box>
-                      )}
-                    </Flex>
-                    <Box height="500px" sx={{ overflowY: "auto" }} p={3}>
-                      <JSONPretty id="json-pretty" data={rules}></JSONPretty>
-                    </Box>
-                  </Flex>
-                ) : tab === "Crons" ? (
-                  <>
-                    <Flex
-                      flex={1}
-                      sx={{ border: "1px solid #555" }}
-                      direction="column"
-                    >
-                      <Flex py={2} px={3} color="white" bg="#333" h="35px">
-                        Crons
-                        <Box flex={1} />
-                        <Box
-                          onClick={() => setAddCron(true)}
-                          sx={{
-                            cursor: "pointer",
-                            ":hover": { opacity: 0.75 },
-                          }}
-                        >
-                          <Box as="i" className="fas fa-plus" />
-                        </Box>
-                      </Flex>
-                      <Box height="500px" sx={{ overflowY: "auto" }}>
-                        {compose(
-                          map(v => (
-                            <Flex
-                              onClick={() => {
-                                setCron(v)
-                              }}
-                              bg={cron === v ? "#ddd" : ""}
-                              py={2}
-                              px={3}
+                      </Box>
+                    </>
+                  ))(doc_path)}
+                </Flex>
+                <Flex height="550px" maxW="1200px" w="100%">
+                  <Flex h="550px" w="100%" bg="white">
+                    {includes(tab)(["DB", "Crons"]) ? null : (
+                      <Box
+                        flex={1}
+                        sx={{ border: "1px solid #555" }}
+                        direction="column"
+                      >
+                        <Flex py={2} px={3} color="white" bg="#333" h="35px">
+                          <Box>Collections</Box>
+                          <Box flex={1} />
+                          {!includes(tab, ["Data"]) ? null : (
+                            <Box
+                              onClick={() => setAddCollection(true)}
                               sx={{
                                 cursor: "pointer",
                                 ":hover": { opacity: 0.75 },
                               }}
                             >
-                              <Box mr={3} flex={1}>
-                                {v}
-                              </Box>
-                              <Box
-                                color="#999"
-                                sx={{
-                                  cursor: "pointer",
-                                  ":hover": {
-                                    opacity: 0.75,
-                                    color: "#F50057",
-                                  },
-                                }}
-                                onClick={async e => {
-                                  e.stopPropagation()
-                                  let query = `"${v}"`
-                                  if (
-                                    confirm(
-                                      "Would you like to remove the cron?"
-                                    )
-                                  ) {
-                                    const res = await fn(queryDB)({
-                                      method: "removeCron",
-                                      query,
-                                      contractTxId,
-                                    })
-                                    if (/^Error:/.test(res)) {
-                                      alert("Something went wrong")
-                                    }
-                                  }
-                                }}
-                              >
-                                <Box as="i" className="fas fa-trash" />
-                              </Box>
-                            </Flex>
-                          )),
-                          keys
-                        )(crons)}
-                      </Box>
-                    </Flex>
-                    <Flex
-                      flex={1}
-                      sx={{ border: "1px solid #555" }}
-                      direction="column"
-                    >
-                      <Flex py={2} px={3} color="white" bg="#333" h="35px">
-                        Settings
-                        <Box flex={1} />
-                      </Flex>
-                      <Box height="500px" sx={{ overflowY: "auto" }}>
-                        {isNil(_cron) ? null : (
-                          <>
-                            <Flex align="center" p={2} px={3}>
-                              <Box
-                                mr={2}
-                                px={3}
-                                bg="#ddd"
-                                sx={{ borderRadius: "3px" }}
-                              >
-                                Name
-                              </Box>
-                              <Box flex={1}>{cron}</Box>
-                            </Flex>
-                            <Flex align="center" p={2} px={3}>
-                              <Box
-                                mr={2}
-                                px={3}
-                                bg="#ddd"
-                                sx={{ borderRadius: "3px" }}
-                              >
-                                Start
-                              </Box>
-                              <Box flex={1}>{_cron.start}</Box>
-                            </Flex>
-                            <Flex align="center" p={2} px={3}>
-                              <Box
-                                mr={2}
-                                px={3}
-                                bg="#ddd"
-                                sx={{ borderRadius: "3px" }}
-                              >
-                                End
-                              </Box>
-                              <Box flex={1}>{_cron.end || "-"}</Box>
-                            </Flex>
-                            <Flex align="center" p={2} px={3}>
-                              <Box
-                                mr={2}
-                                px={3}
-                                bg="#ddd"
-                                sx={{ borderRadius: "3px" }}
-                              >
-                                Do
-                              </Box>
-                              <Box flex={1}>{_cron.do ? "true" : "false"}</Box>
-                            </Flex>
-                            <Flex align="center" p={2} px={3}>
-                              <Box
-                                mr={2}
-                                px={3}
-                                bg="#ddd"
-                                sx={{ borderRadius: "3px" }}
-                              >
-                                Span
-                              </Box>
-                              <Box flex={1}>{_cron.span}</Box>
-                            </Flex>
-                            <Flex align="center" p={2} px={3}>
-                              <Box
-                                mr={2}
-                                px={3}
-                                bg="#ddd"
-                                sx={{ borderRadius: "3px" }}
-                              >
-                                Times
-                              </Box>
-                              <Box flex={1}>{_cron.times || "-"}</Box>
-                            </Flex>
-                          </>
-                        )}
-                      </Box>
-                    </Flex>
-                    <Flex
-                      flex={1}
-                      sx={{ border: "1px solid #555" }}
-                      direction="column"
-                    >
-                      <Flex py={2} px={3} color="white" bg="#333" h="35px">
-                        Jobs
-                      </Flex>
-                      <Box height="500px" sx={{ overflowY: "auto" }} p={3}>
-                        {isNil(_cron) ? null : (
-                          <JSONPretty
-                            id="json-pretty"
-                            data={_cron.jobs}
-                          ></JSONPretty>
-                        )}
-                      </Box>
-                    </Flex>
-                  </>
-                ) : tab === "Indexes" ? (
-                  <>
-                    <Flex
-                      flex={1}
-                      sx={{ border: "1px solid #555" }}
-                      direction="column"
-                    >
-                      <Flex py={2} px={3} color="white" bg="#333" h="35px">
-                        Compound Indexes
-                        <Box flex={1} />
-                        {isNil(col) ? null : (
-                          <Box
-                            onClick={() => setAddIndex(true)}
-                            sx={{
-                              cursor: "pointer",
-                              ":hover": { opacity: 0.75 },
-                            }}
-                          >
-                            <Box as="i" className="fas fa-plus" />
-                          </Box>
-                        )}
-                      </Flex>
-                      <Box height="500px" sx={{ overflowY: "auto" }}>
-                        {compose(
-                          map(v => (
-                            <Flex p={2} px={3}>
-                              {map(v2 => {
-                                let ind = v2
-                                if (v2.length === 1) {
-                                  ind.push("asc")
-                                }
-                                return (
-                                  <Box
-                                    px={3}
-                                    mr={2}
-                                    bg="#ddd"
-                                    sx={{ borderRadius: "3px" }}
-                                  >
-                                    {v2.join(" : ")}
-                                  </Box>
-                                )
-                              })(v)}
-                            </Flex>
-                          )),
-                          filter(v => v.length > 1)
-                        )(indexes)}
-                      </Box>
-                    </Flex>
-                    <Flex
-                      flex={1}
-                      sx={{ border: "1px solid #555" }}
-                      direction="column"
-                    >
-                      <Flex py={2} px={3} color="white" bg="#333" h="35px">
-                        Single Indexes
-                      </Flex>
-                      <Box height="500px" sx={{ overflowY: "auto" }}>
-                        {compose(
-                          map(v => (
-                            <Flex p={2} px={3}>
-                              {map(v2 => {
-                                let ind = v2
-                                if (v2.length === 1) {
-                                  ind.push("asc")
-                                }
-                                return (
-                                  <Box
-                                    px={3}
-                                    mr={2}
-                                    bg="#ddd"
-                                    sx={{ borderRadius: "3px" }}
-                                  >
-                                    {v2.join(" : ")}
-                                  </Box>
-                                )
-                              })(v)}
-                            </Flex>
-                          )),
-                          filter(v => v.length === 1)
-                        )(indexes)}
-                      </Box>
-                    </Flex>
-                  </>
-                ) : tab === "DB" ? (
-                  <>
-                    <Flex
-                      flex={1}
-                      sx={{ border: "1px solid #555" }}
-                      direction="column"
-                    >
-                      <Flex py={2} px={3} color="white" bg="#333" h="35px">
-                        WeaveDB Instances
-                        <Box flex={1} />
-                        <Box
-                          onClick={() => setAddInstance(true)}
-                          sx={{
-                            cursor: "pointer",
-                            ":hover": { opacity: 0.75 },
-                          }}
-                        >
-                          <Box as="i" className="fas fa-plus" />
-                        </Box>
-                      </Flex>
-                      <Box height="500px" sx={{ overflowY: "auto" }}>
-                        {compose(
-                          map(v => (
-                            <Flex
-                              onClick={() => {
-                                if (v.network === "Localhost" && isNil(port)) {
-                                  alert("not connected with localhost")
-                                  return
-                                }
-                                setState(null)
-                                setNetwork(v.network)
-                                setContractTxId(v.contractTxId)
-                              }}
-                              p={2}
-                              px={3}
-                              bg={contractTxId === v.contractTxId ? "#ddd" : ""}
-                              sx={{
-                                cursor: "pointer",
-                                ":hover": { opacity: 0.75 },
-                              }}
-                            >
-                              <Box
-                                mr={2}
-                                px={3}
-                                w="80px"
-                                textAlign="center"
-                                bg={
-                                  v.network === "Mainnet" ? "#F50057" : "#333"
-                                }
-                                color="white"
-                                sx={{ borderRadius: "3px" }}
-                              >
-                                {v.network}
-                              </Box>
-                              <Box flex={1}>{v.contractTxId}</Box>
-                              <Box
-                                color="#999"
-                                sx={{
-                                  cursor: "pointer",
-                                  ":hover": {
-                                    opacity: 0.75,
-                                    color: "#F50057",
-                                  },
-                                }}
-                                onClick={async e => {
-                                  e.stopPropagation()
-                                  if (
-                                    confirm(
-                                      "Would you like to remove the link to this instance?"
-                                    )
-                                  ) {
-                                    removeDB(v)
-                                    if (contractTxId === v.contractTxId) {
-                                      setState(null)
-                                      setNetwork("Mainnet")
-                                      setContractTxId(null)
-                                    }
-                                  }
-                                }}
-                              >
-                                <Box as="i" className="fas fa-trash" />
-                              </Box>
-                            </Flex>
-                          ))
-                        )(dbs)}
-                      </Box>
-                    </Flex>
-                    <Flex
-                      flex={1}
-                      sx={{ border: "1px solid #555" }}
-                      direction="column"
-                    >
-                      <Flex py={2} px={3} color="white" bg="#333" h="35px">
-                        Settings
-                        <Box flex={1} />
-                      </Flex>
-                      <Box height="500px" sx={{ overflowY: "auto" }}>
-                        {isNil(state) || isNil(state.auth) ? null : (
-                          <>
-                            <Flex align="center" p={2} px={3}>
-                              <Box
-                                mr={2}
-                                px={3}
-                                bg="#ddd"
-                                sx={{ borderRadius: "3px" }}
-                              >
-                                contractTxId
-                              </Box>
-                              <Box
-                                as="a"
-                                target="_blank"
-                                color={
-                                  network === "Mainnet" ? "#F50057" : "#333"
-                                }
-                                sx={{
-                                  textDecoration:
-                                    network === "Mainnet"
-                                      ? "underline"
-                                      : "none",
-                                }}
-                                href={
-                                  network === "Mainnet"
-                                    ? `https://sonar.warp.cc/?#/app/contract/${contractTxId}`
-                                    : null
-                                }
-                              >
-                                {contractTxId}
-                              </Box>
-                            </Flex>
-                            <Flex align="center" p={2} px={3}>
-                              <Box
-                                mr={2}
-                                px={3}
-                                bg="#ddd"
-                                sx={{ borderRadius: "3px" }}
-                              >
-                                Network
-                              </Box>
-                              {network}
-                            </Flex>
-                            <Flex align="center" p={2} px={3}>
-                              <Box
-                                mr={2}
-                                px={3}
-                                bg="#ddd"
-                                sx={{ borderRadius: "3px" }}
-                              >
-                                DB Version
-                              </Box>
-                              {state.version || "less than 0.7.0"}
-                            </Flex>
-                            <Flex align="center" p={2} px={3}>
-                              <Box
-                                mr={2}
-                                px={3}
-                                bg="#ddd"
-                                sx={{ borderRadius: "3px" }}
-                              >
-                                EIP712 Name
-                              </Box>
-                              {state.auth.name}
-                            </Flex>
-                            <Flex align="center" p={2} px={3}>
-                              <Box
-                                mr={2}
-                                px={3}
-                                bg="#ddd"
-                                sx={{ borderRadius: "3px" }}
-                              >
-                                EIP712 Version
-                              </Box>
-                              {state.auth.version}
-                            </Flex>
-                            <Flex align="center" p={2} px={3}>
-                              <Box
-                                mr={2}
-                                px={3}
-                                bg={isOwner ? "#F50057" : "#ddd"}
-                                color={isOwner ? "white" : "#333"}
-                                sx={{ borderRadius: "3px" }}
-                              >
-                                Owner
-                              </Box>
-                              <Box flex={1}>{state.owner}</Box>
-                            </Flex>
-                            <Flex align="center" p={2} px={3}>
-                              <Box
-                                mr={2}
-                                px={3}
-                                bg="#ddd"
-                                sx={{ borderRadius: "3px" }}
-                              >
-                                canEvolve
-                              </Box>
-                              <Flex flex={1}>
-                                {state.canEvolve ? "true" : "false"}
-                              </Flex>
-                            </Flex>
-                            <Flex align="center" p={2} px={3}>
-                              <Box
-                                mr={2}
-                                px={3}
-                                bg="#ddd"
-                                sx={{ borderRadius: "3px" }}
-                              >
-                                evolve
-                              </Box>
-                              {isNil(state.evolve) ? "null" : state.evolve}
-                            </Flex>
-                            <Flex align="center" p={2} px={3}>
-                              <Box
-                                mr={2}
-                                px={3}
-                                bg="#ddd"
-                                sx={{ borderRadius: "3px" }}
-                              >
-                                secure
-                              </Box>
-                              {state.secure ? "true" : "false"}
-                            </Flex>
-                            <Flex align="center" p={2} px={3}>
-                              <Box
-                                mr={2}
-                                px={3}
-                                bg="#ddd"
-                                sx={{ borderRadius: "3px" }}
-                              >
-                                Authentication
-                              </Box>
-                              <Flex flex={1}>
-                                {map(v => <Box mr={2}>{v}</Box>)(
-                                  state.algorithms || []
-                                )}
-                              </Flex>
-                            </Flex>
-                            <Flex align="center" p={2} px={3}>
-                              <Flex
-                                sx={{ borderBottom: "1px solid #333" }}
-                                w="100%"
-                              >
-                                <Box sx={{ borderRadius: "3px" }}>
-                                  Plugin Contracts
-                                </Box>
-                              </Flex>
-                            </Flex>
-                            <Flex direction="column" align="center">
-                              {compose(
-                                values,
-                                mapObjIndexed((v, k, i) => (
-                                  <Flex w="100%" px={3} py={2}>
-                                    <Flex
-                                      mr={2}
-                                      px={3}
-                                      bg="#ddd"
-                                      sx={{ borderRadius: "3px" }}
-                                    >
-                                      {k}
-                                    </Flex>
-                                    <Box flex={1} mr={2}>
-                                      {v}
-                                    </Box>
-                                  </Flex>
-                                ))
-                              )(state.contracts || [])}
-                            </Flex>
-                          </>
-                        )}
-                      </Box>
-                    </Flex>
-                  </>
-                ) : (
-                  <>
-                    <Flex
-                      flex={1}
-                      sx={{ border: "1px solid #555", overflowX: "hidden" }}
-                      direction="column"
-                    >
-                      <Flex py={2} px={3} color="white" bg="#333" h="35px">
-                        <Box>Docs</Box>
-                        <Box flex={1} />
-                        {isNil(col) ? null : (
-                          <Box
-                            onClick={() => setAddDoc(true)}
-                            sx={{
-                              cursor: "pointer",
-                              ":hover": { opacity: 0.75 },
-                            }}
-                          >
-                            <Box as="i" className="fas fa-plus" />
-                          </Box>
-                        )}
-                      </Flex>
-                      <Box height="500px" sx={{ overflowY: "auto" }}>
+                              <Box as="i" className="fas fa-plus" />
+                            </Box>
+                          )}
+                        </Flex>
                         {map(v => (
                           <Flex
-                            onClick={() =>
-                              setDocPath(concat(base_path, [col, v]))
-                            }
-                            bg={doc === v ? "#ddd" : ""}
-                            p={2}
+                            onClick={() => {
+                              setDocPath([...base_path, v])
+                            }}
+                            bg={col === v ? "#ddd" : ""}
+                            py={2}
                             px={3}
                             sx={{
                               cursor: "pointer",
                               ":hover": { opacity: 0.75 },
                             }}
                           >
-                            <Box mr={3} flex={1} sx={{ overflowX: "hidden" }}>
-                              {v}
-                            </Box>
-                            <Box
-                              color="#999"
-                              sx={{
-                                cursor: "pointer",
-                                ":hover": { opacity: 0.75, color: "#F50057" },
-                              }}
-                              onClick={async e => {
-                                e.stopPropagation()
-                                if (!hasPath([col, "__docs", v])(base)) {
-                                  alert("Doc doesn't exist")
-                                  return
-                                }
-                                let col_path = compose(
-                                  join(", "),
-                                  map(v2 => `"${v2}"`),
-                                  append(col)
-                                )(base_path)
-                                let query = `${col_path}, "${v}"`
-                                if (
-                                  confirm("Would you like to delete the doc?")
-                                ) {
-                                  const res = await fn(queryDB)({
-                                    method: "delete",
-                                    query,
-                                    contractTxId,
-                                  })
-                                  if (/^Error:/.test(res)) {
-                                    alert("Something went wrong")
-                                  }
-                                }
-                              }}
-                            >
-                              <Box as="i" className="fas fa-trash" />
-                            </Box>
+                            {v}
                           </Flex>
-                        ))(docs)}
+                        ))(cols)}
                       </Box>
-                    </Flex>
-                    <Box
-                      flex={1}
-                      sx={{ border: "1px solid #555", overflowX: "hidden" }}
-                      direction="column"
-                    >
-                      <Flex py={2} px={3} color="white" bg="#333" h="35px">
-                        <Box>Data</Box>
-                        <Box flex={1} />
-                        {isNil(col) ||
-                        isNil(doc) ||
-                        !hasPath(["data", doc_path[0], "__docs", doc_path[1]])(
-                          state
-                        ) ? null : (
-                          <Box
-                            onClick={() => setAddData(true)}
-                            sx={{
-                              cursor: "pointer",
-                              ":hover": { opacity: 0.75 },
-                            }}
-                          >
-                            <Box as="i" className="fas fa-plus" />
-                          </Box>
-                        )}
-                      </Flex>
-                      {compose(
-                        values,
-                        mapObjIndexed((v, k) => {
-                          return (
-                            <Flex
-                              align="center"
-                              p={2}
-                              px={3}
+                    )}
+                    {tab === "Schemas" ? (
+                      <Flex
+                        flex={1}
+                        sx={{ border: "1px solid #555" }}
+                        direction="column"
+                      >
+                        <Flex py={2} px={3} color="white" bg="#333" h="35px">
+                          <Box>Schemas</Box>
+                          <Box flex={1} />
+                          {isNil(col) ? null : (
+                            <Box
+                              onClick={() => setAddSchemas(true)}
                               sx={{
                                 cursor: "pointer",
                                 ":hover": { opacity: 0.75 },
                               }}
-                              onClick={() => {
-                                setDocPath(append(k)(doc_path))
+                            >
+                              <Box as="i" className="fas fa-plus" />
+                            </Box>
+                          )}
+                        </Flex>
+                        <Box height="500px" sx={{ overflowY: "auto" }} p={3}>
+                          <JSONPretty
+                            id="json-pretty"
+                            data={schema}
+                          ></JSONPretty>
+                        </Box>
+                      </Flex>
+                    ) : tab === "Rules" ? (
+                      <Flex
+                        flex={1}
+                        sx={{ border: "1px solid #555" }}
+                        direction="column"
+                      >
+                        <Flex py={2} px={3} color="white" bg="#333" h="35px">
+                          <Box>Rules</Box>
+                          <Box flex={1} />
+                          {isNil(col) ? null : (
+                            <Box
+                              onClick={() => setAddRules(true)}
+                              sx={{
+                                cursor: "pointer",
+                                ":hover": { opacity: 0.75 },
                               }}
                             >
+                              <Box as="i" className="fas fa-plus" />
+                            </Box>
+                          )}
+                        </Flex>
+                        <Box height="500px" sx={{ overflowY: "auto" }} p={3}>
+                          <JSONPretty
+                            id="json-pretty"
+                            data={rules}
+                          ></JSONPretty>
+                        </Box>
+                      </Flex>
+                    ) : tab === "Crons" ? (
+                      <>
+                        <Flex
+                          flex={1}
+                          sx={{ border: "1px solid #555" }}
+                          direction="column"
+                        >
+                          <Flex py={2} px={3} color="white" bg="#333" h="35px">
+                            Crons
+                            <Box flex={1} />
+                            <Box
+                              onClick={() => setAddCron(true)}
+                              sx={{
+                                cursor: "pointer",
+                                ":hover": { opacity: 0.75 },
+                              }}
+                            >
+                              <Box as="i" className="fas fa-plus" />
+                            </Box>
+                          </Flex>
+                          <Box height="500px" sx={{ overflowY: "auto" }}>
+                            {compose(
+                              map(v => (
+                                <Flex
+                                  onClick={() => {
+                                    setCron(v)
+                                  }}
+                                  bg={cron === v ? "#ddd" : ""}
+                                  py={2}
+                                  px={3}
+                                  sx={{
+                                    cursor: "pointer",
+                                    ":hover": { opacity: 0.75 },
+                                  }}
+                                >
+                                  <Box mr={3} flex={1}>
+                                    {v}
+                                  </Box>
+                                  <Box
+                                    color="#999"
+                                    sx={{
+                                      cursor: "pointer",
+                                      ":hover": {
+                                        opacity: 0.75,
+                                        color: "#F50057",
+                                      },
+                                    }}
+                                    onClick={async e => {
+                                      e.stopPropagation()
+                                      let query = `"${v}"`
+                                      if (
+                                        confirm(
+                                          "Would you like to remove the cron?"
+                                        )
+                                      ) {
+                                        const res = await fn(queryDB)({
+                                          method: "removeCron",
+                                          query,
+                                          contractTxId,
+                                        })
+                                        if (/^Error:/.test(res)) {
+                                          alert("Something went wrong")
+                                        }
+                                      }
+                                    }}
+                                  >
+                                    <Box as="i" className="fas fa-trash" />
+                                  </Box>
+                                </Flex>
+                              )),
+                              keys
+                            )(crons)}
+                          </Box>
+                        </Flex>
+                        <Flex
+                          flex={1}
+                          sx={{ border: "1px solid #555" }}
+                          direction="column"
+                        >
+                          <Flex py={2} px={3} color="white" bg="#333" h="35px">
+                            Settings
+                            <Box flex={1} />
+                          </Flex>
+                          <Box height="500px" sx={{ overflowY: "auto" }}>
+                            {isNil(_cron) ? null : (
+                              <>
+                                <Flex align="center" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#ddd"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    Name
+                                  </Box>
+                                  <Box flex={1}>{cron}</Box>
+                                </Flex>
+                                <Flex align="center" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#ddd"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    Start
+                                  </Box>
+                                  <Box flex={1}>{_cron.start}</Box>
+                                </Flex>
+                                <Flex align="center" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#ddd"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    End
+                                  </Box>
+                                  <Box flex={1}>{_cron.end || "-"}</Box>
+                                </Flex>
+                                <Flex align="center" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#ddd"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    Do
+                                  </Box>
+                                  <Box flex={1}>
+                                    {_cron.do ? "true" : "false"}
+                                  </Box>
+                                </Flex>
+                                <Flex align="center" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#ddd"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    Span
+                                  </Box>
+                                  <Box flex={1}>{_cron.span}</Box>
+                                </Flex>
+                                <Flex align="center" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#ddd"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    Times
+                                  </Box>
+                                  <Box flex={1}>{_cron.times || "-"}</Box>
+                                </Flex>
+                              </>
+                            )}
+                          </Box>
+                        </Flex>
+                        <Flex
+                          flex={1}
+                          sx={{ border: "1px solid #555" }}
+                          direction="column"
+                        >
+                          <Flex py={2} px={3} color="white" bg="#333" h="35px">
+                            Jobs
+                          </Flex>
+                          <Box height="500px" sx={{ overflowY: "auto" }} p={3}>
+                            {isNil(_cron) ? null : (
+                              <JSONPretty
+                                id="json-pretty"
+                                data={_cron.jobs}
+                              ></JSONPretty>
+                            )}
+                          </Box>
+                        </Flex>
+                      </>
+                    ) : tab === "Indexes" ? (
+                      <>
+                        <Flex
+                          flex={1}
+                          sx={{ border: "1px solid #555" }}
+                          direction="column"
+                        >
+                          <Flex py={2} px={3} color="white" bg="#333" h="35px">
+                            Compound Indexes
+                            <Box flex={1} />
+                            {isNil(col) ? null : (
                               <Box
-                                mr={2}
-                                px={3}
-                                bg="#333"
-                                color="white"
-                                sx={{ borderRadius: "3px" }}
-                              >
-                                Sub Collection
-                              </Box>
-                              {k}
-                            </Flex>
-                          )
-                        })
-                      )(subs)}
-                      {compose(
-                        values,
-                        mapObjIndexed((v, k) => {
-                          return (
-                            <Flex align="center" p={2} px={3}>
-                              <Box
-                                mr={2}
-                                px={3}
-                                bg="#ddd"
-                                sx={{ borderRadius: "3px" }}
-                              >
-                                {k}
-                              </Box>
-                              <Box flex={1} sx={{ overflowX: "hidden" }} mr={2}>
-                                {is(Object)(v)
-                                  ? JSON.stringify(v)
-                                  : is(Boolean)(v)
-                                  ? v
-                                    ? "true"
-                                    : "false"
-                                  : v}
-                              </Box>
-                              <Box
-                                color="#999"
+                                onClick={() => setAddIndex(true)}
                                 sx={{
                                   cursor: "pointer",
-                                  ":hover": {
-                                    opacity: 0.75,
-                                    color: "#F50057",
-                                  },
-                                }}
-                                onClick={async e => {
-                                  e.stopPropagation()
-                                  if (
-                                    !hasPath([col, "__docs", doc, "__data", k])(
-                                      base
-                                    )
-                                  ) {
-                                    alert("Field doesn't exist")
-                                    return
-                                  }
-                                  let query = ""
-                                  const method = "update"
-                                  let _doc_path = compose(
-                                    join(", "),
-                                    map(v => `"${v}"`),
-                                    concat(base_path)
-                                  )([col, doc])
-                                  query = `{ "${k}": ${JSON.stringify(
-                                    db.del()
-                                  )}}, ${_doc_path}`
-                                  if (
-                                    confirm(
-                                      "Would you like to delete the field?"
-                                    )
-                                  ) {
-                                    const res = await fn(queryDB)({
-                                      method,
-                                      query,
-                                      contractTxId,
-                                    })
-                                    if (/^Error:/.test(res)) {
-                                      alert("Something went wrong")
-                                    }
-                                  }
+                                  ":hover": { opacity: 0.75 },
                                 }}
                               >
-                                <Box as="i" className="fas fa-trash" />
+                                <Box as="i" className="fas fa-plus" />
                               </Box>
-                            </Flex>
-                          )
+                            )}
+                          </Flex>
+                          <Box height="500px" sx={{ overflowY: "auto" }}>
+                            {compose(
+                              map(v => (
+                                <Flex p={2} px={3}>
+                                  {map(v2 => {
+                                    let ind = v2
+                                    if (v2.length === 1) {
+                                      ind.push("asc")
+                                    }
+                                    return (
+                                      <Box
+                                        px={3}
+                                        mr={2}
+                                        bg="#ddd"
+                                        sx={{ borderRadius: "3px" }}
+                                      >
+                                        {v2.join(" : ")}
+                                      </Box>
+                                    )
+                                  })(v)}
+                                </Flex>
+                              )),
+                              filter(v => v.length > 1)
+                            )(indexes)}
+                          </Box>
+                        </Flex>
+                        <Flex
+                          flex={1}
+                          sx={{ border: "1px solid #555" }}
+                          direction="column"
+                        >
+                          <Flex py={2} px={3} color="white" bg="#333" h="35px">
+                            Single Indexes
+                          </Flex>
+                          <Box height="500px" sx={{ overflowY: "auto" }}>
+                            {compose(
+                              map(v => (
+                                <Flex p={2} px={3}>
+                                  {map(v2 => {
+                                    let ind = v2
+                                    if (v2.length === 1) {
+                                      ind.push("asc")
+                                    }
+                                    return (
+                                      <Box
+                                        px={3}
+                                        mr={2}
+                                        bg="#ddd"
+                                        sx={{ borderRadius: "3px" }}
+                                      >
+                                        {v2.join(" : ")}
+                                      </Box>
+                                    )
+                                  })(v)}
+                                </Flex>
+                              )),
+                              filter(v => v.length === 1)
+                            )(indexes)}
+                          </Box>
+                        </Flex>
+                      </>
+                    ) : tab === "DB" ? (
+                      <>
+                        <Flex
+                          flex={1}
+                          sx={{ border: "1px solid #555" }}
+                          direction="column"
+                        >
+                          <Flex py={2} px={3} color="white" bg="#333" h="35px">
+                            WeaveDB Instances
+                            <Box flex={1} />
+                            <Box
+                              onClick={() => setAddInstance(true)}
+                              sx={{
+                                cursor: "pointer",
+                                ":hover": { opacity: 0.75 },
+                              }}
+                            >
+                              <Box as="i" className="fas fa-plus" />
+                            </Box>
+                          </Flex>
+                          <Box height="500px" sx={{ overflowY: "auto" }}>
+                            {compose(
+                              map(v => (
+                                <Flex
+                                  onClick={() => {
+                                    if (
+                                      v.network === "Localhost" &&
+                                      isNil(port)
+                                    ) {
+                                      alert("not connected with localhost")
+                                      return
+                                    }
+                                    setState(null)
+                                    setNetwork(v.network)
+                                    setContractTxId(v.contractTxId)
+                                  }}
+                                  p={2}
+                                  px={3}
+                                  bg={
+                                    contractTxId === v.contractTxId
+                                      ? "#ddd"
+                                      : ""
+                                  }
+                                  sx={{
+                                    cursor: "pointer",
+                                    ":hover": { opacity: 0.75 },
+                                  }}
+                                >
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    w="80px"
+                                    textAlign="center"
+                                    bg={
+                                      v.network === "Mainnet"
+                                        ? "#F50057"
+                                        : "#333"
+                                    }
+                                    color="white"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    {v.network}
+                                  </Box>
+                                  <Box flex={1}>{v.contractTxId}</Box>
+                                  <Box
+                                    color="#999"
+                                    sx={{
+                                      cursor: "pointer",
+                                      ":hover": {
+                                        opacity: 0.75,
+                                        color: "#F50057",
+                                      },
+                                    }}
+                                    onClick={async e => {
+                                      e.stopPropagation()
+                                      if (
+                                        confirm(
+                                          "Would you like to remove the link to this instance?"
+                                        )
+                                      ) {
+                                        removeDB(v)
+                                        if (contractTxId === v.contractTxId) {
+                                          setState(null)
+                                          setNetwork("Mainnet")
+                                          setContractTxId(null)
+                                        }
+                                      }
+                                    }}
+                                  >
+                                    <Box as="i" className="fas fa-trash" />
+                                  </Box>
+                                </Flex>
+                              ))
+                            )(dbs)}
+                          </Box>
+                        </Flex>
+                        <Flex
+                          flex={1}
+                          sx={{ border: "1px solid #555" }}
+                          direction="column"
+                        >
+                          <Flex py={2} px={3} color="white" bg="#333" h="35px">
+                            Settings
+                            <Box flex={1} />
+                          </Flex>
+                          <Box height="500px" sx={{ overflowY: "auto" }}>
+                            {isNil(state) || isNil(state.auth) ? null : (
+                              <>
+                                <Flex align="center" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#ddd"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    contractTxId
+                                  </Box>
+                                  <Box
+                                    as="a"
+                                    target="_blank"
+                                    color={
+                                      network === "Mainnet" ? "#F50057" : "#333"
+                                    }
+                                    sx={{
+                                      textDecoration:
+                                        network === "Mainnet"
+                                          ? "underline"
+                                          : "none",
+                                    }}
+                                    href={
+                                      network === "Mainnet"
+                                        ? `https://sonar.warp.cc/?#/app/contract/${contractTxId}`
+                                        : null
+                                    }
+                                  >
+                                    {contractTxId}
+                                  </Box>
+                                </Flex>
+                                <Flex align="center" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#ddd"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    Network
+                                  </Box>
+                                  {network}
+                                </Flex>
+                                <Flex align="center" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#ddd"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    DB Version
+                                  </Box>
+                                  {state.version || "less than 0.7.0"}
+                                </Flex>
+                                <Flex align="center" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#ddd"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    EIP712 Name
+                                  </Box>
+                                  {state.auth.name}
+                                </Flex>
+                                <Flex align="center" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#ddd"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    EIP712 Version
+                                  </Box>
+                                  {state.auth.version}
+                                </Flex>
+                                <Flex align="center" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg={isOwner ? "#F50057" : "#ddd"}
+                                    color={isOwner ? "white" : "#333"}
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    Owner
+                                  </Box>
+                                  <Box flex={1}>{state.owner}</Box>
+                                </Flex>
+                                <Flex align="center" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#ddd"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    canEvolve
+                                  </Box>
+                                  <Flex flex={1}>
+                                    {state.canEvolve ? "true" : "false"}
+                                  </Flex>
+                                </Flex>
+                                <Flex align="center" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#ddd"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    evolve
+                                  </Box>
+                                  {isNil(state.evolve) ? "null" : state.evolve}
+                                </Flex>
+                                <Flex align="center" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#ddd"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    secure
+                                  </Box>
+                                  {state.secure ? "true" : "false"}
+                                </Flex>
+                                <Flex align="center" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#ddd"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    Authentication
+                                  </Box>
+                                  <Flex flex={1}>
+                                    {map(v => <Box mr={2}>{v}</Box>)(
+                                      state.algorithms || []
+                                    )}
+                                  </Flex>
+                                </Flex>
+                                <Flex align="center" p={2} px={3}>
+                                  <Flex
+                                    sx={{ borderBottom: "1px solid #333" }}
+                                    w="100%"
+                                  >
+                                    <Box sx={{ borderRadius: "3px" }}>
+                                      Plugin Contracts
+                                    </Box>
+                                  </Flex>
+                                </Flex>
+                                <Flex direction="column" align="center">
+                                  {compose(
+                                    values,
+                                    mapObjIndexed((v, k, i) => (
+                                      <Flex w="100%" px={3} py={2}>
+                                        <Flex
+                                          mr={2}
+                                          px={3}
+                                          bg="#ddd"
+                                          sx={{ borderRadius: "3px" }}
+                                        >
+                                          {k}
+                                        </Flex>
+                                        <Box flex={1} mr={2}>
+                                          {v}
+                                        </Box>
+                                      </Flex>
+                                    ))
+                                  )(state.contracts || [])}
+                                </Flex>
+                              </>
+                            )}
+                          </Box>
+                        </Flex>
+                      </>
+                    ) : (
+                      <>
+                        <Flex
+                          flex={1}
+                          sx={{ border: "1px solid #555", overflowX: "hidden" }}
+                          direction="column"
+                        >
+                          <Flex py={2} px={3} color="white" bg="#333" h="35px">
+                            <Box>Docs</Box>
+                            <Box flex={1} />
+                            {isNil(col) ? null : (
+                              <Box
+                                onClick={() => setAddDoc(true)}
+                                sx={{
+                                  cursor: "pointer",
+                                  ":hover": { opacity: 0.75 },
+                                }}
+                              >
+                                <Box as="i" className="fas fa-plus" />
+                              </Box>
+                            )}
+                          </Flex>
+                          <Box height="500px" sx={{ overflowY: "auto" }}>
+                            {map(v => (
+                              <Flex
+                                onClick={() =>
+                                  setDocPath(concat(base_path, [col, v]))
+                                }
+                                bg={doc === v ? "#ddd" : ""}
+                                p={2}
+                                px={3}
+                                sx={{
+                                  cursor: "pointer",
+                                  ":hover": { opacity: 0.75 },
+                                }}
+                              >
+                                <Box
+                                  mr={3}
+                                  flex={1}
+                                  sx={{ overflowX: "hidden" }}
+                                >
+                                  {v}
+                                </Box>
+                                <Box
+                                  color="#999"
+                                  sx={{
+                                    cursor: "pointer",
+                                    ":hover": {
+                                      opacity: 0.75,
+                                      color: "#F50057",
+                                    },
+                                  }}
+                                  onClick={async e => {
+                                    e.stopPropagation()
+                                    if (!hasPath([col, "__docs", v])(base)) {
+                                      alert("Doc doesn't exist")
+                                      return
+                                    }
+                                    let col_path = compose(
+                                      join(", "),
+                                      map(v2 => `"${v2}"`),
+                                      append(col)
+                                    )(base_path)
+                                    let query = `${col_path}, "${v}"`
+                                    if (
+                                      confirm(
+                                        "Would you like to delete the doc?"
+                                      )
+                                    ) {
+                                      const res = await fn(queryDB)({
+                                        method: "delete",
+                                        query,
+                                        contractTxId,
+                                      })
+                                      if (/^Error:/.test(res)) {
+                                        alert("Something went wrong")
+                                      }
+                                    }
+                                  }}
+                                >
+                                  <Box as="i" className="fas fa-trash" />
+                                </Box>
+                              </Flex>
+                            ))(docs)}
+                          </Box>
+                        </Flex>
+                        <Box
+                          flex={1}
+                          sx={{ border: "1px solid #555", overflowX: "hidden" }}
+                          direction="column"
+                        >
+                          <Flex py={2} px={3} color="white" bg="#333" h="35px">
+                            <Box>Data</Box>
+                            <Box flex={1} />
+                            {isNil(col) ||
+                            isNil(doc) ||
+                            !hasPath([
+                              "data",
+                              doc_path[0],
+                              "__docs",
+                              doc_path[1],
+                            ])(state) ? null : (
+                              <Box
+                                onClick={() => setAddData(true)}
+                                sx={{
+                                  cursor: "pointer",
+                                  ":hover": { opacity: 0.75 },
+                                }}
+                              >
+                                <Box as="i" className="fas fa-plus" />
+                              </Box>
+                            )}
+                          </Flex>
+                          {compose(
+                            values,
+                            mapObjIndexed((v, k) => {
+                              return (
+                                <Flex
+                                  align="center"
+                                  p={2}
+                                  px={3}
+                                  sx={{
+                                    cursor: "pointer",
+                                    ":hover": { opacity: 0.75 },
+                                  }}
+                                  onClick={() => {
+                                    setDocPath(append(k)(doc_path))
+                                  }}
+                                >
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#333"
+                                    color="white"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    Sub Collection
+                                  </Box>
+                                  {k}
+                                </Flex>
+                              )
+                            })
+                          )(subs)}
+                          {compose(
+                            values,
+                            mapObjIndexed((v, k) => {
+                              return (
+                                <Flex align="center" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#ddd"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    {k}
+                                  </Box>
+                                  <Box
+                                    flex={1}
+                                    sx={{ overflowX: "hidden" }}
+                                    mr={2}
+                                  >
+                                    {is(Object)(v)
+                                      ? JSON.stringify(v)
+                                      : is(Boolean)(v)
+                                      ? v
+                                        ? "true"
+                                        : "false"
+                                      : v}
+                                  </Box>
+                                  <Box
+                                    color="#999"
+                                    sx={{
+                                      cursor: "pointer",
+                                      ":hover": {
+                                        opacity: 0.75,
+                                        color: "#F50057",
+                                      },
+                                    }}
+                                    onClick={async e => {
+                                      e.stopPropagation()
+                                      if (
+                                        !hasPath([
+                                          col,
+                                          "__docs",
+                                          doc,
+                                          "__data",
+                                          k,
+                                        ])(base)
+                                      ) {
+                                        alert("Field doesn't exist")
+                                        return
+                                      }
+                                      let query = ""
+                                      const method = "update"
+                                      let _doc_path = compose(
+                                        join(", "),
+                                        map(v => `"${v}"`),
+                                        concat(base_path)
+                                      )([col, doc])
+                                      query = `{ "${k}": ${JSON.stringify(
+                                        db.del()
+                                      )}}, ${_doc_path}`
+                                      if (
+                                        confirm(
+                                          "Would you like to delete the field?"
+                                        )
+                                      ) {
+                                        const res = await fn(queryDB)({
+                                          method,
+                                          query,
+                                          contractTxId,
+                                        })
+                                        if (/^Error:/.test(res)) {
+                                          alert("Something went wrong")
+                                        }
+                                      }
+                                    }}
+                                  >
+                                    <Box as="i" className="fas fa-trash" />
+                                  </Box>
+                                </Flex>
+                              )
+                            })
+                          )(data)}
+                        </Box>
+                      </>
+                    )}
+                  </Flex>
+                </Flex>
+                <Flex
+                  w="100%"
+                  justify="center"
+                  mb={3}
+                  mt={3}
+                  bg="white"
+                  sx={{
+                    border: "1px solid #333",
+                    borderRadius: "5px",
+                  }}
+                >
+                  <Select
+                    w="200px"
+                    value={method}
+                    onChange={e => setMethod(e.target.value)}
+                    sx={{
+                      borderRadius: "5px 0 0 5px",
+                    }}
+                  >
+                    {map(v => <option value={v}>{v}</option>)(methods)}
+                  </Select>
+                  <Input
+                    flex={1}
+                    sx={{
+                      border: "",
+                      borderLeft: "1px solid #333",
+                      borderRadius: "0px",
+                    }}
+                    placeholder="query"
+                    value={query}
+                    onChange={e => setQuery(e.target.value)}
+                  />
+                  <Flex
+                    sx={{
+                      borderRadius: "0 5px 5px 0",
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                    w="150px"
+                    justify="center"
+                    align="center"
+                    color="white"
+                    bg="#333"
+                    onClick={async () => {
+                      try {
+                        const res = await fn(queryDB)({
+                          query,
+                          method,
+                          contractTxId,
                         })
-                      )(data)}
-                    </Box>
-                  </>
-                )}
-              </Flex>
-            </Flex>
-            <Flex w="100%" justify="center" mb={3} mt={1} pt={2}>
-              <Select
-                w="200px"
-                value={method}
-                onChange={e => setMethod(e.target.value)}
-                sx={{
-                  borderRadius: "3px 0 0 3px",
-                }}
-              >
-                {map(v => <option value={v}>{v}</option>)(methods)}
-              </Select>
-              <Input
-                flex={1}
-                sx={{ borderRadius: "0px" }}
-                placeholder="query"
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-              />
-              <Flex
-                sx={{
-                  borderRadius: "0 3px 3px 0",
-                  cursor: "pointer",
-                  ":hover": { opacity: 0.75 },
-                }}
-                w="150px"
-                justify="center"
-                align="center"
-                color="white"
-                bg="#333"
-                onClick={async () => {
-                  try {
-                    const res = await fn(queryDB)({
-                      query,
-                      method,
-                      contractTxId,
-                    })
-                    setResult(res)
-                  } catch (e) {
-                    console.log(e)
-                    setResult("Error: The wrong query")
-                  }
-                }}
-              >
-                Execute
-              </Flex>
-            </Flex>
-            <Flex
-              w="100%"
-              justify="center"
-              mb={4}
-              sx={{ border: "1px solid #111", borderRadius: "3px" }}
-            >
-              <Flex
-                width="200px"
-                justify="center"
-                p={2}
-                sx={{ borderRight: "1px solid #111" }}
-              >
-                {method}({query})
-              </Flex>
-              <Flex
-                flex={1}
-                px={2}
-                color={/^Error:/.test(result) ? "#F50057" : "#333"}
-                p={2}
-              >
-                {result}
-              </Flex>
-            </Flex>
-          </Flex>
-        </Flex>
-        <Footer />
-        {addCollection !== false ? (
-          <Flex
-            w="100%"
-            h="100%"
-            position="fixed"
-            sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
-            bg="rgba(0,0,0,0.5)"
-            onClick={() => setAddCollection(false)}
-            justify="center"
-            align="center"
-          >
-            <Box
-              bg="white"
-              width="500px"
-              p={3}
-              sx={{ borderRadius: "5px", cursor: "default" }}
-              onClick={e => e.stopPropagation()}
-            >
-              <Input
-                value={newCollection}
-                placeholder="Collection ID"
-                onChange={e => setNewCollection(e.target.value)}
-                sx={{
-                  borderRadius: "3px",
-                }}
-              />
-              <Textarea
-                mt={3}
-                value={newRules}
-                placeholder="Access Control Rules"
-                onChange={e => setNewRules(e.target.value)}
-                sx={{
-                  borderRadius: "3px",
-                }}
-              />
-              <Flex
-                mt={4}
-                sx={{
-                  borderRadius: "3px",
-                  cursor: "pointer",
-                  ":hover": { opacity: 0.75 },
-                }}
-                p={2}
-                justify="center"
-                align="center"
-                color="white"
-                bg="#333"
-                onClick={async () => {
-                  if (/^\s*$/.test(newCollection)) {
-                    alert("Enter Collection ID")
-                    return
-                  } else if (hasPath([newCollection])(base)) {
-                    alert("Collection exists")
-                    return
-                  }
-                  try {
-                    JSON.parse(newRules)
-                  } catch (e) {
-                    alert("Wrong JSON format")
-                    return
-                  }
-
-                  const res = await fn(queryDB)({
-                    method: "setRules",
-                    query: `${newRules}, ${compose(
-                      join(", "),
-                      map(v => `"${v}"`),
-                      append(newCollection)
-                    )(base_path)}`,
-                    contractTxId,
-                  })
-                  if (/^Error:/.test(res)) {
-                    alert("Something went wrong")
-                  } else {
-                    setNewCollection("")
-                    setNewRules(`{"allow write": true}`)
-                    setAddCollection(false)
-                  }
-                }}
-              >
-                Add
-              </Flex>
-            </Box>
-          </Flex>
-        ) : addDoc !== false ? (
-          <Flex
-            w="100%"
-            h="100%"
-            position="fixed"
-            sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
-            bg="rgba(0,0,0,0.5)"
-            onClick={() => setAddDoc(false)}
-            justify="center"
-            align="center"
-          >
-            <Box
-              bg="white"
-              width="500px"
-              p={3}
-              sx={{ borderRadius: "5px", cursor: "default" }}
-              onClick={e => e.stopPropagation()}
-            >
-              <Input
-                value={newDoc}
-                placeholder="Doc ID - leave it empty for random generation"
-                onChange={e => setNewDoc(e.target.value)}
-                sx={{
-                  borderRadius: "3px",
-                }}
-              />
-              <Textarea
-                mt={3}
-                value={newData}
-                placeholder="JSON Data"
-                onChange={e => setNewData(e.target.value)}
-                sx={{
-                  borderRadius: "3px",
-                }}
-              />
-              <Flex
-                mt={4}
-                sx={{
-                  borderRadius: "3px",
-                  cursor: "pointer",
-                  ":hover": { opacity: 0.75 },
-                }}
-                p={2}
-                justify="center"
-                align="center"
-                color="white"
-                bg="#333"
-                onClick={async () => {
-                  const exID = !/^\s*$/.test(newDoc)
-                  if (exID && hasPath([col, "__docs", newDoc])(base)) {
-                    alert("Doc exists")
-                    return
-                  }
-                  try {
-                    JSON.parse(newData)
-                  } catch (e) {
-                    alert("Wrong JSON format")
-                    return
-                  }
-                  let col_path = compose(
-                    join(", "),
-                    map(v => `"${v}"`),
-                    append(col)
-                  )(base_path)
-                  let query = `${newData}, ${col_path}`
-                  if (exID) query += `, "${newDoc}"`
-                  const res = await fn(queryDB)({
-                    method: exID ? "set" : "add",
-                    query,
-                    contractTxId,
-                  })
-                  if (/^Error:/.test(res)) {
-                    alert("Something went wrong")
-                  } else {
-                    setNewDoc("")
-                    setNewData(`{}`)
-                    setAddDoc(false)
-                  }
-                }}
-              >
-                Add
-              </Flex>
-            </Box>
-          </Flex>
-        ) : addData !== false ? (
-          <Flex
-            w="100%"
-            h="100%"
-            position="fixed"
-            sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
-            bg="rgba(0,0,0,0.5)"
-            onClick={() => setAddData(false)}
-            justify="center"
-            align="center"
-          >
-            <Box
-              bg="white"
-              width="500px"
-              p={3}
-              sx={{ borderRadius: "5px", cursor: "default" }}
-              onClick={e => e.stopPropagation()}
-            >
-              <Flex>
-                <Select
-                  value={newFieldType}
-                  onChange={e => setNewFieldType(e.target.value)}
-                >
-                  {map(v => <option value={v}>{v}</option>)([
-                    "string",
-                    "bool",
-                    "number",
-                    "object",
-                    "null",
-                    "sub collection",
-                  ])}
-                </Select>
-                <Input
-                  value={newField}
-                  placeholder={
-                    newFieldType === "sub collection"
-                      ? "Collection ID"
-                      : "Field Key"
-                  }
-                  onChange={e => setNewField(e.target.value)}
-                  sx={{
-                    borderRadius: "3px",
-                  }}
-                />
-              </Flex>
-              {newFieldType === "bool" ? (
-                <Select
-                  mt={3}
-                  value={newFieldBool}
-                  onChange={e => setNewFieldBool(eval(e.target.value))}
-                >
-                  {map(v => <option value={v}>{v ? "true" : "false"}</option>)([
-                    true,
-                    false,
-                  ])}
-                </Select>
-              ) : (
-                <Textarea
-                  mt={3}
-                  value={newFieldType === "null" ? "null" : newFieldVal}
-                  placeholder={
-                    newFieldType === "sub collection"
-                      ? "Access Control Rules"
-                      : "Field Value"
-                  }
-                  onChange={e => setNewFieldVal(e.target.value)}
-                  disabled={newFieldType === "null"}
-                  sx={{
-                    borderRadius: "3px",
-                  }}
-                />
-              )}
-              <Flex
-                mt={4}
-                sx={{
-                  borderRadius: "3px",
-                  cursor: "pointer",
-                  ":hover": { opacity: 0.75 },
-                }}
-                p={2}
-                justify="center"
-                align="center"
-                color="white"
-                bg="#333"
-                onClick={async () => {
-                  const exID = !/^\s*$/.test(newField)
-                  const exVal =
-                    includes(newFieldType)(["bool", "null"]) ||
-                    !/^\s*$/.test(newFieldVal)
-                  if (!exVal) alert("Enter a value")
-                  if (!exID) alert("Enter field key")
-                  if (
-                    exID &&
-                    hasPath([col, "__docs", doc, "__data", newField])(base)
-                  ) {
-                    alert("Field exists")
-                    return
-                  }
-                  let val = null
-                  switch (newFieldType) {
-                    case "number":
-                      if (Number.isNaN(newFieldVal * 1)) {
-                        alert("Enter a number")
-                        return
-                      }
-                      val = newFieldVal * 1
-                      break
-                    case "string":
-                      val = `"${newFieldVal}"`
-                      break
-                    case "bool":
-                      val = eval(newFieldBool)
-                      break
-                    case "object":
-                      try {
-                        eval(`const obj = ${newFieldVal}`)
-                        val = newFieldVal
+                        setResult(res)
                       } catch (e) {
-                        alert("Wrong JSON format")
-                        return
+                        console.log(e)
+                        setResult("Error: The wrong query")
                       }
-                      break
-                    case "sub collection":
-                      if (/^\s*$/.test(newField)) {
-                        alert("Enter Collection ID")
-                        return
-                      } else if (
-                        hasPath([col, "__docs", doc, "subs", newField])(base)
-                      ) {
-                        alert("Collection exists")
-                        return
-                      }
-                      try {
-                        JSON.parse(newFieldVal)
-                        val = newFieldVal
-                      } catch (e) {
-                        alert("Wrong JSON format")
-                        return
-                      }
-                      break
-                  }
-                  let query = ""
-                  let method = ""
-                  if (newFieldType === "sub collection") {
-                    method = "setRules"
-                    query = `${val}, ${compose(
-                      join(", "),
-                      map(v => `"${v}"`),
-                      append(newField)
-                    )(doc_path)}`
-                  } else {
-                    method = "update"
-                    let _doc_path = compose(
-                      join(", "),
-                      map(v => `"${v}"`),
-                      concat(base_path)
-                    )([col, doc])
-                    query = `{ "${newField}": ${val}}, ${_doc_path}`
-                  }
-                  const res = await fn(queryDB)({
-                    method,
-                    query,
-                    contractTxId,
-                  })
-                  if (/^Error:/.test(res)) {
-                    alert("Something went wrong")
-                  } else {
-                    setNewField("")
-                    setNewFieldVal("")
-                    setAddData(false)
-                  }
-                }}
-              >
-                Add
+                    }}
+                  >
+                    Execute
+                  </Flex>
+                </Flex>
+                <Flex
+                  bg="white"
+                  w="100%"
+                  justify="center"
+                  mb={3}
+                  sx={{ border: "1px solid #111", borderRadius: "5px" }}
+                >
+                  <Flex
+                    width="200px"
+                    justify="center"
+                    p={2}
+                    sx={{ borderRight: "1px solid #111" }}
+                  >
+                    {method}({query})
+                  </Flex>
+                  <Flex
+                    flex={1}
+                    px={2}
+                    color={/^Error:/.test(result) ? "#F50057" : "#333"}
+                    p={2}
+                  >
+                    {result}
+                  </Flex>
+                </Flex>
               </Flex>
-            </Box>
-          </Flex>
-        ) : addSchemas !== false ? (
-          <Flex
-            w="100%"
-            h="100%"
-            position="fixed"
-            sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
-            bg="rgba(0,0,0,0.5)"
-            onClick={() => setAddSchemas(false)}
-            justify="center"
-            align="center"
-          >
-            <Box
-              bg="white"
-              width="500px"
-              p={3}
-              sx={{ borderRadius: "5px", cursor: "default" }}
-              onClick={e => e.stopPropagation()}
-            >
-              <Textarea
-                mt={3}
-                value={newSchemas}
-                placeholder="JSON Schema"
-                onChange={e => setNewSchemas(e.target.value)}
-                sx={{
-                  borderRadius: "3px",
-                }}
-              />
+            </Flex>
+            <Footer />
+            {addCollection !== false ? (
               <Flex
-                mt={4}
-                sx={{
-                  borderRadius: "3px",
-                  cursor: "pointer",
-                  ":hover": { opacity: 0.75 },
-                }}
-                p={2}
+                w="100%"
+                h="100%"
+                position="fixed"
+                sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+                bg="rgba(0,0,0,0.5)"
+                onClick={() => setAddCollection(false)}
                 justify="center"
                 align="center"
-                color="white"
-                bg="#333"
-                onClick={async () => {
-                  const exID = !/^\s*$/.test(newSchemas)
-                  let val = null
-                  try {
-                    eval(`const obj = ${newSchemas}`)
-                    val = newSchemas
-                  } catch (e) {
-                    alert("Wrong JSON format")
-                    return
-                  }
-                  let col_path = compose(
-                    join(", "),
-                    map(v => `"${v}"`),
-                    append(col)
-                  )(base_path)
-                  let query = `${newSchemas}, ${col_path}`
-                  const res = await fn(queryDB)({
-                    method: "setSchema",
-                    query,
-                    contractTxId,
-                  })
-                  if (/^Error:/.test(res)) {
-                    alert("Something went wrong")
-                  } else {
-                    setNewSchemas("")
-                    setAddSchemas(false)
-                  }
-                }}
               >
-                Add
-              </Flex>
-            </Box>
-          </Flex>
-        ) : addCron !== false ? (
-          <Flex
-            w="100%"
-            h="100%"
-            position="fixed"
-            sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
-            bg="rgba(0,0,0,0.5)"
-            onClick={() => setAddCron(false)}
-            justify="center"
-            align="center"
-          >
-            <Box
-              bg="white"
-              width="500px"
-              p={3}
-              sx={{ borderRadius: "5px", cursor: "default" }}
-              onClick={e => e.stopPropagation()}
-            >
-              <Flex>
-                <Input
-                  value={newCronName}
-                  placeholder="Cron Name"
-                  onChange={e => setNewCronName(e.target.value)}
-                  sx={{
-                    borderRadius: "3px",
-                  }}
-                />
-              </Flex>
-              <Flex mt={4}>
-                <Input
-                  mr={2}
-                  value={newStart}
-                  placeholder="Start"
-                  onChange={e => {
-                    if (!Number.isNaN(e.target.value * 1)) {
-                      setNewStart(e.target.value)
-                    }
-                  }}
-                  sx={{
-                    borderRadius: "3px",
-                  }}
-                />
-                <Input
-                  ml={2}
-                  value={newEnd}
-                  placeholder="End"
-                  onChange={e => {
-                    if (!Number.isNaN(e.target.value * 1)) {
-                      setNewEnd(e.target.value)
-                    }
-                  }}
-                  sx={{
-                    borderRadius: "3px",
-                  }}
-                />
-              </Flex>
-              <Flex mt={4}>
-                <Flex mx={2} align="center" flex={1}>
-                  <Checkbox
-                    mr={2}
-                    checked={newDo}
-                    onClick={e => setNewDo(!newDo)}
+                <Box
+                  bg="white"
+                  width="500px"
+                  p={3}
+                  sx={{ borderRadius: "5px", cursor: "default" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Input
+                    value={newCollection}
+                    placeholder="Collection ID"
+                    onChange={e => setNewCollection(e.target.value)}
                     sx={{
                       borderRadius: "3px",
                     }}
                   />
-                  Do at Start
-                </Flex>
-                <Input
-                  flex={1}
-                  mr={2}
-                  value={newSpan}
-                  placeholder="Span"
-                  onChange={e => {
-                    if (!Number.isNaN(e.target.value * 1)) {
-                      setNewSpan(e.target.value)
-                    }
-                  }}
-                  sx={{
-                    borderRadius: "3px",
-                  }}
-                />
-                <Input
-                  flex={1}
-                  ml={2}
-                  value={newTimes}
-                  placeholder="Times"
-                  onChange={e => {
-                    if (!Number.isNaN(e.target.value * 1)) {
-                      setNewTimes(e.target.value)
-                    }
-                  }}
-                  sx={{
-                    borderRadius: "3px",
-                  }}
-                />
-              </Flex>
-              <Textarea
-                mt={3}
-                value={newCron}
-                placeholder="Cron Jobs"
-                onChange={e => setNewCron(e.target.value)}
-                sx={{
-                  borderRadius: "3px",
-                }}
-              />
-              <Flex
-                mt={4}
-                sx={{
-                  borderRadius: "3px",
-                  cursor: "pointer",
-                  ":hover": { opacity: 0.75 },
-                }}
-                p={2}
-                justify="center"
-                align="center"
-                color="white"
-                bg="#333"
-                onClick={async () => {
-                  const exID = !/^\s*$/.test(newCronName)
-                  if (!exID) {
-                    alert("Enter Cron Name")
-                    return
-                  }
-                  if (newSpan * 1 === 0) {
-                    alert("Span must be greater than 0")
-                  }
-                  let val = null
-                  try {
-                    let obj = null
-                    eval(`obj = ${newCron}`)
-                    val = newCron
-                    if (!is(Array)(obj)) {
-                      alert("Jobs should be an array.")
-                      return
-                    }
-                  } catch (e) {
-                    alert("Wrong JSON format")
-                    return
-                  }
-                  let query = `{times: ${newTimes || null}, start: ${
-                    newStart || null
-                  }, end: ${newEnd || null},do: ${
-                    newDo ? "true" : "false"
-                  }, span: ${newSpan * 1}, jobs: ${newCron}}, "${newCronName}"`
-                  const res = await fn(queryDB)({
-                    method: "addCron",
-                    query,
-                    contractTxId,
-                  })
-                  if (/^Error:/.test(res)) {
-                    alert("Something went wrong")
-                  } else {
-                    setNewCron("")
-                    setNewStart("")
-                    setNewCronName("")
-                    setNewEnd("")
-                    setNewTimes("")
-                    setNewSpan("")
-                    setAddCron(false)
-                  }
-                }}
-              >
-                Add
-              </Flex>
-            </Box>
-          </Flex>
-        ) : addRules !== false ? (
-          <Flex
-            w="100%"
-            h="100%"
-            position="fixed"
-            sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
-            bg="rgba(0,0,0,0.5)"
-            onClick={() => setAddRules(false)}
-            justify="center"
-            align="center"
-          >
-            <Box
-              bg="white"
-              width="500px"
-              p={3}
-              sx={{ borderRadius: "5px", cursor: "default" }}
-              onClick={e => e.stopPropagation()}
-            >
-              <Textarea
-                mt={3}
-                value={newRules2}
-                placeholder="Access Control Rules"
-                onChange={e => setNewRules2(e.target.value)}
-                sx={{
-                  borderRadius: "3px",
-                }}
-              />
-              <Flex
-                mt={4}
-                sx={{
-                  borderRadius: "3px",
-                  cursor: "pointer",
-                  ":hover": { opacity: 0.75 },
-                }}
-                p={2}
-                justify="center"
-                align="center"
-                color="white"
-                bg="#333"
-                onClick={async () => {
-                  const exRules = !/^\s*$/.test(newRules2)
-                  if (!exRules) {
-                    alert("Enter rules")
-                  }
-                  let val = null
-                  try {
-                    eval(`const obj = ${newRules2}`)
-                    val = newRules2
-                  } catch (e) {
-                    alert("Wrong JSON format")
-                    return
-                  }
-                  let col_path = compose(
-                    join(", "),
-                    map(v => `"${v}"`),
-                    append(col)
-                  )(base_path)
-                  let query = `${newRules2}, ${col_path}`
-                  const res = await fn(queryDB)({
-                    method: "setRules",
-                    query,
-                    contractTxId,
-                  })
-                  if (/^Error:/.test(res)) {
-                    alert("Something went wrong")
-                  } else {
-                    setNewRules2(`{"allow write": true}`)
-                    setAddRules(false)
-                  }
-                }}
-              >
-                Add
-              </Flex>
-            </Box>
-          </Flex>
-        ) : addIndex !== false ? (
-          <Flex
-            w="100%"
-            h="100%"
-            position="fixed"
-            sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
-            bg="rgba(0,0,0,0.5)"
-            onClick={() => setAddIndex(false)}
-            justify="center"
-            align="center"
-          >
-            <Box
-              bg="white"
-              width="500px"
-              p={3}
-              sx={{ borderRadius: "5px", cursor: "default" }}
-              onClick={e => e.stopPropagation()}
-            >
-              <Textarea
-                mt={3}
-                value={newIndex}
-                placeholder="Compound Index"
-                onChange={e => setNewIndex(e.target.value)}
-                sx={{
-                  borderRadius: "3px",
-                }}
-              />
-              <Flex
-                mt={4}
-                sx={{
-                  borderRadius: "3px",
-                  cursor: "pointer",
-                  ":hover": { opacity: 0.75 },
-                }}
-                p={2}
-                justify="center"
-                align="center"
-                color="white"
-                bg="#333"
-                onClick={async () => {
-                  const exIndex = !/^\s*$/.test(newIndex)
-                  if (!exIndex) {
-                    alert("Enter rules")
-                  }
-                  let val = null
-                  let obj
-                  try {
-                    eval(`obj = ${newIndex}`)
-                    if (!is(Array, obj)) {
-                      alert("Index must be an array")
-                      return
-                    }
-                    if (obj.length < 2) {
-                      alert("Compound Index must have at least 2 fields")
-                      return
-                    }
-                    val = newIndex
-                  } catch (e) {
-                    alert("Wrong JSON format")
-                    return
-                  }
-                  const serialize = v =>
-                    map(v2 => {
-                      let v3 = clone(v2)
-                      if (v3.length < 2) v3.push("asc")
-                      return join(":")(v2)
-                    })(v).join(",")
-                  if (
-                    compose(includes(serialize(obj)), map(serialize))(indexes)
-                  ) {
-                    alert("Index exists")
-                    return
-                  }
-                  let col_path = compose(
-                    join(", "),
-                    map(v => `"${v}"`),
-                    append(col)
-                  )(base_path)
-                  let query = `${newIndex}, ${col_path}`
-                  const res = await fn(queryDB)({
-                    method: "addIndex",
-                    query,
-                    contractTxId,
-                  })
-                  if (/^Error:/.test(res)) {
-                    alert("Something went wrong")
-                  } else {
-                    setNewIndex("[]")
-                    setAddIndex(false)
-                  }
-                }}
-              >
-                Add
-              </Flex>
-            </Box>
-          </Flex>
-        ) : addInstance !== false ? (
-          <Flex
-            w="100%"
-            h="100%"
-            position="fixed"
-            sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
-            bg="rgba(0,0,0,0.5)"
-            onClick={() => setAddInstance(false)}
-            justify="center"
-            align="center"
-          >
-            <Box
-              bg="white"
-              width="500px"
-              p={3}
-              sx={{ borderRadius: "5px", cursor: "default" }}
-              onClick={e => e.stopPropagation()}
-            >
-              <Flex>
-                {map(v => {
-                  return (
-                    <Flex
-                      justify="center"
-                      align="center"
-                      onClick={() => setDeployMode(v)}
-                      mb={3}
-                      mr={2}
-                      px={3}
-                      py={1}
-                      bg={deployMode === v ? "#333" : "#ddd"}
-                      sx={{
-                        borderRadius: "3px",
-                        fontSize: "12px",
-                        ":hover": { opacity: 0.75 },
-                        cursor: "pointer",
-                        color: deployMode === v ? "#ddd" : "#333",
-                      }}
-                    >
-                      {v}
-                    </Flex>
-                  )
-                })(["Connect", "Deploy"])}
-              </Flex>
-              <Flex fontSize="10px" m={1}>
-                Network
-              </Flex>
-              <Select
-                w="100%"
-                value={newNetwork}
-                onChange={e => setNewNetwork(e.target.value)}
-                sx={{ borderRadius: "5px 0 0 5px" }}
-                mb={3}
-              >
-                {map(v => <option value={v}>{v}</option>)(
-                  isNil(port) ? ["Mainnet"] : networks
-                )}
-              </Select>
-              {deployMode === "Deploy" ? (
-                <>
-                  <Flex fontSize="10px" m={1}>
-                    <Box>Contract Owner</Box>
-                    <Box flex={1} />
-                    {isNil($.temp_current_all) ? null : (
-                      <Box
-                        sx={{ textDecoration: "underline", cursor: "pointer" }}
-                        mr={2}
-                        onClick={() => {
-                          set(true, "owner_signing_in_modal")
-                        }}
-                        color="#F50057"
-                      >
-                        change
-                      </Box>
-                    )}
+                  <Textarea
+                    mt={3}
+                    value={newRules}
+                    placeholder="Access Control Rules"
+                    onChange={e => setNewRules(e.target.value)}
+                    sx={{
+                      borderRadius: "3px",
+                    }}
+                  />
+                  <Flex
+                    mt={4}
+                    sx={{
+                      borderRadius: "3px",
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                    p={2}
+                    justify="center"
+                    align="center"
+                    color="white"
+                    bg="#333"
+                    onClick={async () => {
+                      if (/^\s*$/.test(newCollection)) {
+                        alert("Enter Collection ID")
+                        return
+                      } else if (hasPath([newCollection])(base)) {
+                        alert("Collection exists")
+                        return
+                      }
+                      try {
+                        JSON.parse(newRules)
+                      } catch (e) {
+                        alert("Wrong JSON format")
+                        return
+                      }
+
+                      const res = await fn(queryDB)({
+                        method: "setRules",
+                        query: `${newRules}, ${compose(
+                          join(", "),
+                          map(v => `"${v}"`),
+                          append(newCollection)
+                        )(base_path)}`,
+                        contractTxId,
+                      })
+                      if (/^Error:/.test(res)) {
+                        alert("Something went wrong")
+                      } else {
+                        setNewCollection("")
+                        setNewRules(`{"allow write": true}`)
+                        setAddCollection(false)
+                      }
+                    }}
+                  >
+                    Add
                   </Flex>
-                  {isNil($.temp_current_all) ? (
-                    <Flex
+                </Box>
+              </Flex>
+            ) : addDoc !== false ? (
+              <Flex
+                w="100%"
+                h="100%"
+                position="fixed"
+                sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+                bg="rgba(0,0,0,0.5)"
+                onClick={() => setAddDoc(false)}
+                justify="center"
+                align="center"
+              >
+                <Box
+                  bg="white"
+                  width="500px"
+                  p={3}
+                  sx={{ borderRadius: "5px", cursor: "default" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Input
+                    value={newDoc}
+                    placeholder="Doc ID - leave it empty for random generation"
+                    onChange={e => setNewDoc(e.target.value)}
+                    sx={{
+                      borderRadius: "3px",
+                    }}
+                  />
+                  <Textarea
+                    mt={3}
+                    value={newData}
+                    placeholder="JSON Data"
+                    onChange={e => setNewData(e.target.value)}
+                    sx={{
+                      borderRadius: "3px",
+                    }}
+                  />
+                  <Flex
+                    mt={4}
+                    sx={{
+                      borderRadius: "3px",
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                    p={2}
+                    justify="center"
+                    align="center"
+                    color="white"
+                    bg="#333"
+                    onClick={async () => {
+                      const exID = !/^\s*$/.test(newDoc)
+                      if (exID && hasPath([col, "__docs", newDoc])(base)) {
+                        alert("Doc exists")
+                        return
+                      }
+                      try {
+                        JSON.parse(newData)
+                      } catch (e) {
+                        alert("Wrong JSON format")
+                        return
+                      }
+                      let col_path = compose(
+                        join(", "),
+                        map(v => `"${v}"`),
+                        append(col)
+                      )(base_path)
+                      let query = `${newData}, ${col_path}`
+                      if (exID) query += `, "${newDoc}"`
+                      const res = await fn(queryDB)({
+                        method: exID ? "set" : "add",
+                        query,
+                        contractTxId,
+                      })
+                      if (/^Error:/.test(res)) {
+                        alert("Something went wrong")
+                      } else {
+                        setNewDoc("")
+                        setNewData(`{}`)
+                        setAddDoc(false)
+                      }
+                    }}
+                  >
+                    Add
+                  </Flex>
+                </Box>
+              </Flex>
+            ) : addData !== false ? (
+              <Flex
+                w="100%"
+                h="100%"
+                position="fixed"
+                sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+                bg="rgba(0,0,0,0.5)"
+                onClick={() => setAddData(false)}
+                justify="center"
+                align="center"
+              >
+                <Box
+                  bg="white"
+                  width="500px"
+                  p={3}
+                  sx={{ borderRadius: "5px", cursor: "default" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Flex>
+                    <Select
+                      value={newFieldType}
+                      onChange={e => setNewFieldType(e.target.value)}
+                    >
+                      {map(v => <option value={v}>{v}</option>)([
+                        "string",
+                        "bool",
+                        "number",
+                        "object",
+                        "null",
+                        "sub collection",
+                      ])}
+                    </Select>
+                    <Input
+                      value={newField}
+                      placeholder={
+                        newFieldType === "sub collection"
+                          ? "Collection ID"
+                          : "Field Key"
+                      }
+                      onChange={e => setNewField(e.target.value)}
                       sx={{
                         borderRadius: "3px",
-                        border: "1px solid #333",
+                      }}
+                    />
+                  </Flex>
+                  {newFieldType === "bool" ? (
+                    <Select
+                      mt={3}
+                      value={newFieldBool}
+                      onChange={e => setNewFieldBool(eval(e.target.value))}
+                    >
+                      {map(v => (
+                        <option value={v}>{v ? "true" : "false"}</option>
+                      ))([true, false])}
+                    </Select>
+                  ) : (
+                    <Textarea
+                      mt={3}
+                      value={newFieldType === "null" ? "null" : newFieldVal}
+                      placeholder={
+                        newFieldType === "sub collection"
+                          ? "Access Control Rules"
+                          : "Field Value"
+                      }
+                      onChange={e => setNewFieldVal(e.target.value)}
+                      disabled={newFieldType === "null"}
+                      sx={{
+                        borderRadius: "3px",
+                      }}
+                    />
+                  )}
+                  <Flex
+                    mt={4}
+                    sx={{
+                      borderRadius: "3px",
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                    p={2}
+                    justify="center"
+                    align="center"
+                    color="white"
+                    bg="#333"
+                    onClick={async () => {
+                      const exID = !/^\s*$/.test(newField)
+                      const exVal =
+                        includes(newFieldType)(["bool", "null"]) ||
+                        !/^\s*$/.test(newFieldVal)
+                      if (!exVal) alert("Enter a value")
+                      if (!exID) alert("Enter field key")
+                      if (
+                        exID &&
+                        hasPath([col, "__docs", doc, "__data", newField])(base)
+                      ) {
+                        alert("Field exists")
+                        return
+                      }
+                      let val = null
+                      switch (newFieldType) {
+                        case "number":
+                          if (Number.isNaN(newFieldVal * 1)) {
+                            alert("Enter a number")
+                            return
+                          }
+                          val = newFieldVal * 1
+                          break
+                        case "string":
+                          val = `"${newFieldVal}"`
+                          break
+                        case "bool":
+                          val = eval(newFieldBool)
+                          break
+                        case "object":
+                          try {
+                            eval(`const obj = ${newFieldVal}`)
+                            val = newFieldVal
+                          } catch (e) {
+                            alert("Wrong JSON format")
+                            return
+                          }
+                          break
+                        case "sub collection":
+                          if (/^\s*$/.test(newField)) {
+                            alert("Enter Collection ID")
+                            return
+                          } else if (
+                            hasPath([col, "__docs", doc, "subs", newField])(
+                              base
+                            )
+                          ) {
+                            alert("Collection exists")
+                            return
+                          }
+                          try {
+                            JSON.parse(newFieldVal)
+                            val = newFieldVal
+                          } catch (e) {
+                            alert("Wrong JSON format")
+                            return
+                          }
+                          break
+                      }
+                      let query = ""
+                      let method = ""
+                      if (newFieldType === "sub collection") {
+                        method = "setRules"
+                        query = `${val}, ${compose(
+                          join(", "),
+                          map(v => `"${v}"`),
+                          append(newField)
+                        )(doc_path)}`
+                      } else {
+                        method = "update"
+                        let _doc_path = compose(
+                          join(", "),
+                          map(v => `"${v}"`),
+                          concat(base_path)
+                        )([col, doc])
+                        query = `{ "${newField}": ${val}}, ${_doc_path}`
+                      }
+                      const res = await fn(queryDB)({
+                        method,
+                        query,
+                        contractTxId,
+                      })
+                      if (/^Error:/.test(res)) {
+                        alert("Something went wrong")
+                      } else {
+                        setNewField("")
+                        setNewFieldVal("")
+                        setAddData(false)
+                      }
+                    }}
+                  >
+                    Add
+                  </Flex>
+                </Box>
+              </Flex>
+            ) : addSchemas !== false ? (
+              <Flex
+                w="100%"
+                h="100%"
+                position="fixed"
+                sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+                bg="rgba(0,0,0,0.5)"
+                onClick={() => setAddSchemas(false)}
+                justify="center"
+                align="center"
+              >
+                <Box
+                  bg="white"
+                  width="500px"
+                  p={3}
+                  sx={{ borderRadius: "5px", cursor: "default" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Textarea
+                    mt={3}
+                    value={newSchemas}
+                    placeholder="JSON Schema"
+                    onChange={e => setNewSchemas(e.target.value)}
+                    sx={{
+                      borderRadius: "3px",
+                    }}
+                  />
+                  <Flex
+                    mt={4}
+                    sx={{
+                      borderRadius: "3px",
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                    p={2}
+                    justify="center"
+                    align="center"
+                    color="white"
+                    bg="#333"
+                    onClick={async () => {
+                      const exID = !/^\s*$/.test(newSchemas)
+                      let val = null
+                      try {
+                        eval(`const obj = ${newSchemas}`)
+                        val = newSchemas
+                      } catch (e) {
+                        alert("Wrong JSON format")
+                        return
+                      }
+                      let col_path = compose(
+                        join(", "),
+                        map(v => `"${v}"`),
+                        append(col)
+                      )(base_path)
+                      let query = `${newSchemas}, ${col_path}`
+                      const res = await fn(queryDB)({
+                        method: "setSchema",
+                        query,
+                        contractTxId,
+                      })
+                      if (/^Error:/.test(res)) {
+                        alert("Something went wrong")
+                      } else {
+                        setNewSchemas("")
+                        setAddSchemas(false)
+                      }
+                    }}
+                  >
+                    Add
+                  </Flex>
+                </Box>
+              </Flex>
+            ) : addCron !== false ? (
+              <Flex
+                w="100%"
+                h="100%"
+                position="fixed"
+                sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+                bg="rgba(0,0,0,0.5)"
+                onClick={() => setAddCron(false)}
+                justify="center"
+                align="center"
+              >
+                <Box
+                  bg="white"
+                  width="500px"
+                  p={3}
+                  sx={{ borderRadius: "5px", cursor: "default" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Flex>
+                    <Input
+                      value={newCronName}
+                      placeholder="Cron Name"
+                      onChange={e => setNewCronName(e.target.value)}
+                      sx={{
+                        borderRadius: "3px",
+                      }}
+                    />
+                  </Flex>
+                  <Flex mt={4}>
+                    <Input
+                      mr={2}
+                      value={newStart}
+                      placeholder="Start"
+                      onChange={e => {
+                        if (!Number.isNaN(e.target.value * 1)) {
+                          setNewStart(e.target.value)
+                        }
+                      }}
+                      sx={{
+                        borderRadius: "3px",
+                      }}
+                    />
+                    <Input
+                      ml={2}
+                      value={newEnd}
+                      placeholder="End"
+                      onChange={e => {
+                        if (!Number.isNaN(e.target.value * 1)) {
+                          setNewEnd(e.target.value)
+                        }
+                      }}
+                      sx={{
+                        borderRadius: "3px",
+                      }}
+                    />
+                  </Flex>
+                  <Flex mt={4}>
+                    <Flex mx={2} align="center" flex={1}>
+                      <Checkbox
+                        mr={2}
+                        checked={newDo}
+                        onClick={e => setNewDo(!newDo)}
+                        sx={{
+                          borderRadius: "3px",
+                        }}
+                      />
+                      Do at Start
+                    </Flex>
+                    <Input
+                      flex={1}
+                      mr={2}
+                      value={newSpan}
+                      placeholder="Span"
+                      onChange={e => {
+                        if (!Number.isNaN(e.target.value * 1)) {
+                          setNewSpan(e.target.value)
+                        }
+                      }}
+                      sx={{
+                        borderRadius: "3px",
+                      }}
+                    />
+                    <Input
+                      flex={1}
+                      ml={2}
+                      value={newTimes}
+                      placeholder="Times"
+                      onChange={e => {
+                        if (!Number.isNaN(e.target.value * 1)) {
+                          setNewTimes(e.target.value)
+                        }
+                      }}
+                      sx={{
+                        borderRadius: "3px",
+                      }}
+                    />
+                  </Flex>
+                  <Textarea
+                    mt={3}
+                    value={newCron}
+                    placeholder="Cron Jobs"
+                    onChange={e => setNewCron(e.target.value)}
+                    sx={{
+                      borderRadius: "3px",
+                    }}
+                  />
+                  <Flex
+                    mt={4}
+                    sx={{
+                      borderRadius: "3px",
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                    p={2}
+                    justify="center"
+                    align="center"
+                    color="white"
+                    bg="#333"
+                    onClick={async () => {
+                      const exID = !/^\s*$/.test(newCronName)
+                      if (!exID) {
+                        alert("Enter Cron Name")
+                        return
+                      }
+                      if (newSpan * 1 === 0) {
+                        alert("Span must be greater than 0")
+                      }
+                      let val = null
+                      try {
+                        let obj = null
+                        eval(`obj = ${newCron}`)
+                        val = newCron
+                        if (!is(Array)(obj)) {
+                          alert("Jobs should be an array.")
+                          return
+                        }
+                      } catch (e) {
+                        alert("Wrong JSON format")
+                        return
+                      }
+                      let query = `{times: ${newTimes || null}, start: ${
+                        newStart || null
+                      }, end: ${newEnd || null},do: ${
+                        newDo ? "true" : "false"
+                      }, span: ${
+                        newSpan * 1
+                      }, jobs: ${newCron}}, "${newCronName}"`
+                      const res = await fn(queryDB)({
+                        method: "addCron",
+                        query,
+                        contractTxId,
+                      })
+                      if (/^Error:/.test(res)) {
+                        alert("Something went wrong")
+                      } else {
+                        setNewCron("")
+                        setNewStart("")
+                        setNewCronName("")
+                        setNewEnd("")
+                        setNewTimes("")
+                        setNewSpan("")
+                        setAddCron(false)
+                      }
+                    }}
+                  >
+                    Add
+                  </Flex>
+                </Box>
+              </Flex>
+            ) : addRules !== false ? (
+              <Flex
+                w="100%"
+                h="100%"
+                position="fixed"
+                sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+                bg="rgba(0,0,0,0.5)"
+                onClick={() => setAddRules(false)}
+                justify="center"
+                align="center"
+              >
+                <Box
+                  bg="white"
+                  width="500px"
+                  p={3}
+                  sx={{ borderRadius: "5px", cursor: "default" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Textarea
+                    mt={3}
+                    value={newRules2}
+                    placeholder="Access Control Rules"
+                    onChange={e => setNewRules2(e.target.value)}
+                    sx={{
+                      borderRadius: "3px",
+                    }}
+                  />
+                  <Flex
+                    mt={4}
+                    sx={{
+                      borderRadius: "3px",
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                    p={2}
+                    justify="center"
+                    align="center"
+                    color="white"
+                    bg="#333"
+                    onClick={async () => {
+                      const exRules = !/^\s*$/.test(newRules2)
+                      if (!exRules) {
+                        alert("Enter rules")
+                      }
+                      let val = null
+                      try {
+                        eval(`const obj = ${newRules2}`)
+                        val = newRules2
+                      } catch (e) {
+                        alert("Wrong JSON format")
+                        return
+                      }
+                      let col_path = compose(
+                        join(", "),
+                        map(v => `"${v}"`),
+                        append(col)
+                      )(base_path)
+                      let query = `${newRules2}, ${col_path}`
+                      const res = await fn(queryDB)({
+                        method: "setRules",
+                        query,
+                        contractTxId,
+                      })
+                      if (/^Error:/.test(res)) {
+                        alert("Something went wrong")
+                      } else {
+                        setNewRules2(`{"allow write": true}`)
+                        setAddRules(false)
+                      }
+                    }}
+                  >
+                    Add
+                  </Flex>
+                </Box>
+              </Flex>
+            ) : addIndex !== false ? (
+              <Flex
+                w="100%"
+                h="100%"
+                position="fixed"
+                sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+                bg="rgba(0,0,0,0.5)"
+                onClick={() => setAddIndex(false)}
+                justify="center"
+                align="center"
+              >
+                <Box
+                  bg="white"
+                  width="500px"
+                  p={3}
+                  sx={{ borderRadius: "5px", cursor: "default" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Textarea
+                    mt={3}
+                    value={newIndex}
+                    placeholder="Compound Index"
+                    onChange={e => setNewIndex(e.target.value)}
+                    sx={{
+                      borderRadius: "3px",
+                    }}
+                  />
+                  <Flex
+                    mt={4}
+                    sx={{
+                      borderRadius: "3px",
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                    p={2}
+                    justify="center"
+                    align="center"
+                    color="white"
+                    bg="#333"
+                    onClick={async () => {
+                      const exIndex = !/^\s*$/.test(newIndex)
+                      if (!exIndex) {
+                        alert("Enter rules")
+                      }
+                      let val = null
+                      let obj
+                      try {
+                        eval(`obj = ${newIndex}`)
+                        if (!is(Array, obj)) {
+                          alert("Index must be an array")
+                          return
+                        }
+                        if (obj.length < 2) {
+                          alert("Compound Index must have at least 2 fields")
+                          return
+                        }
+                        val = newIndex
+                      } catch (e) {
+                        alert("Wrong JSON format")
+                        return
+                      }
+                      const serialize = v =>
+                        map(v2 => {
+                          let v3 = clone(v2)
+                          if (v3.length < 2) v3.push("asc")
+                          return join(":")(v2)
+                        })(v).join(",")
+                      if (
+                        compose(
+                          includes(serialize(obj)),
+                          map(serialize)
+                        )(indexes)
+                      ) {
+                        alert("Index exists")
+                        return
+                      }
+                      let col_path = compose(
+                        join(", "),
+                        map(v => `"${v}"`),
+                        append(col)
+                      )(base_path)
+                      let query = `${newIndex}, ${col_path}`
+                      const res = await fn(queryDB)({
+                        method: "addIndex",
+                        query,
+                        contractTxId,
+                      })
+                      if (/^Error:/.test(res)) {
+                        alert("Something went wrong")
+                      } else {
+                        setNewIndex("[]")
+                        setAddIndex(false)
+                      }
+                    }}
+                  >
+                    Add
+                  </Flex>
+                </Box>
+              </Flex>
+            ) : addInstance !== false ? (
+              <Flex
+                w="100%"
+                h="100%"
+                position="fixed"
+                sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+                bg="rgba(0,0,0,0.5)"
+                onClick={() => setAddInstance(false)}
+                justify="center"
+                align="center"
+              >
+                <Box
+                  bg="white"
+                  width="500px"
+                  p={3}
+                  sx={{ borderRadius: "5px", cursor: "default" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Flex>
+                    {map(v => {
+                      return (
+                        <Flex
+                          justify="center"
+                          align="center"
+                          onClick={() => setDeployMode(v)}
+                          mb={3}
+                          mr={2}
+                          px={3}
+                          py={1}
+                          bg={deployMode === v ? "#333" : "#ddd"}
+                          sx={{
+                            borderRadius: "3px",
+                            fontSize: "12px",
+                            ":hover": { opacity: 0.75 },
+                            cursor: "pointer",
+                            color: deployMode === v ? "#ddd" : "#333",
+                          }}
+                        >
+                          {v}
+                        </Flex>
+                      )
+                    })(["Connect", "Deploy"])}
+                  </Flex>
+                  <Flex fontSize="10px" m={1}>
+                    Network
+                  </Flex>
+                  <Select
+                    w="100%"
+                    value={newNetwork}
+                    onChange={e => setNewNetwork(e.target.value)}
+                    sx={{ borderRadius: "5px 0 0 5px" }}
+                    mb={3}
+                  >
+                    {map(v => <option value={v}>{v}</option>)(
+                      isNil(port) ? ["Mainnet"] : networks
+                    )}
+                  </Select>
+                  {deployMode === "Deploy" ? (
+                    <>
+                      <Flex fontSize="10px" m={1}>
+                        <Box>Contract Owner</Box>
+                        <Box flex={1} />
+                        {isNil($.temp_current_all) ? null : (
+                          <Box
+                            sx={{
+                              textDecoration: "underline",
+                              cursor: "pointer",
+                            }}
+                            mr={2}
+                            onClick={() => {
+                              set(true, "owner_signing_in_modal")
+                            }}
+                            color="#F50057"
+                          >
+                            change
+                          </Box>
+                        )}
+                      </Flex>
+                      {isNil($.temp_current_all) ? (
+                        <Flex
+                          sx={{
+                            borderRadius: "3px",
+                            border: "1px solid #333",
+                            cursor: "pointer",
+                            ":hover": { opacity: 0.75 },
+                          }}
+                          p={2}
+                          justify="center"
+                          align="center"
+                          color="#333"
+                          onClick={async () => {
+                            set(true, "owner_signing_in_modal")
+                          }}
+                        >
+                          Connect Owner Wallet
+                        </Flex>
+                      ) : (
+                        <Input
+                          flex={1}
+                          disabled={true}
+                          value={$.temp_current_all.addr || ""}
+                          sx={{ borderRadius: 0 }}
+                        />
+                      )}
+                      <Flex mt={3}>
+                        <Box flex={1}>
+                          <Flex fontSize="10px" mx={1} my={1}>
+                            Secure
+                          </Flex>
+                          <Select
+                            w="100%"
+                            value={secure ? "True" : "False"}
+                            onChange={e => setSecure(e.target.value === "True")}
+                            sx={{ borderRadius: "5px 0 0 5px" }}
+                            mb={3}
+                          >
+                            {map(v => <option value={v}>{v}</option>)([
+                              "True",
+                              "False",
+                            ])}
+                          </Select>
+                        </Box>
+                        <Box flex={1} ml={1}>
+                          <Flex fontSize="10px" mx={1} my={1}>
+                            canEvolve
+                          </Flex>
+                          <Select
+                            w="100%"
+                            value={canEvolve ? "True" : "False"}
+                            onChange={e =>
+                              setCanEvolve(e.target.value === "True")
+                            }
+                            sx={{ borderRadius: "5px 0 0 5px" }}
+                            mb={3}
+                          >
+                            {map(v => <option value={v}>{v}</option>)([
+                              "True",
+                              "False",
+                            ])}
+                          </Select>
+                        </Box>
+                      </Flex>
+                      <Flex fontSize="10px" mx={1} my={1}>
+                        Authentication
+                      </Flex>
+                      <Flex>
+                        {map(v => (
+                          <Box mx={3}>
+                            <Box
+                              onClick={() => {
+                                if (includes(v)(auths)) {
+                                  setAuths(without([v], auths))
+                                } else {
+                                  setAuths(append(v, auths))
+                                }
+                              }}
+                              className={
+                                includes(v)(auths)
+                                  ? "fas fa-check-square"
+                                  : "far fa-square"
+                              }
+                              mr={2}
+                              sx={{
+                                cursor: "pointer",
+                                ":hover": { opacity: 0.75 },
+                              }}
+                            />
+                            {v}
+                          </Box>
+                        ))(["Arweave", "EVM", "DFINITY", "Intmax"])}
+                      </Flex>
+                    </>
+                  ) : (
+                    <>
+                      <Flex fontSize="10px" m={1}>
+                        ContractTxId
+                      </Flex>
+                      <Input
+                        flex={1}
+                        value={newContractTxId}
+                        onChange={e => setNewContractTxId(trim(e.target.value))}
+                        sx={{ borderRadius: 0 }}
+                      />
+                    </>
+                  )}
+
+                  {deployMode === "Deploy" ? (
+                    <Flex
+                      mt={4}
+                      sx={{
+                        borderRadius: "3px",
                         cursor: "pointer",
                         ":hover": { opacity: 0.75 },
                       }}
                       p={2}
                       justify="center"
                       align="center"
-                      color="#333"
+                      color="white"
+                      bg="#333"
                       onClick={async () => {
-                        set(true, "owner_signing_in_modal")
+                        if (!$.on_connecting) {
+                          set(true, "on_connecting")
+                          const res = await fn(deployDB)({
+                            port: port,
+                            owner: $.temp_current_all.addr,
+                            network: newNetwork,
+                            secure,
+                            canEvolve,
+                            auths,
+                          })
+                          if (!isNil(res.contractTxId)) {
+                            addDB(res)
+                            setAddInstance(false)
+                            if (isNil(contractTxId)) {
+                              setState(null)
+                              setNetwork(res.network)
+                              setContractTxId(res.contractTxId)
+                            }
+                          }
+                          set(false, "on_connecting")
+                        }
                       }}
                     >
-                      Connect Owner Wallet
+                      {$.on_connecting ? (
+                        <Box as="i" className="fas fa-spin fa-circle-notch" />
+                      ) : (
+                        "Deploy DB Instance"
+                      )}
                     </Flex>
                   ) : (
-                    <Input
-                      flex={1}
-                      disabled={true}
-                      value={$.temp_current_all.addr || ""}
-                      sx={{ borderRadius: 0 }}
-                    />
-                  )}
-                  <Flex mt={3}>
-                    <Box flex={1}>
-                      <Flex fontSize="10px" mx={1} my={1}>
-                        Secure
-                      </Flex>
-                      <Select
-                        w="100%"
-                        value={secure ? "True" : "False"}
-                        onChange={e => setSecure(e.target.value === "True")}
-                        sx={{ borderRadius: "5px 0 0 5px" }}
-                        mb={3}
-                      >
-                        {map(v => <option value={v}>{v}</option>)([
-                          "True",
-                          "False",
-                        ])}
-                      </Select>
-                    </Box>
-                    <Box flex={1} ml={1}>
-                      <Flex fontSize="10px" mx={1} my={1}>
-                        canEvolve
-                      </Flex>
-                      <Select
-                        w="100%"
-                        value={canEvolve ? "True" : "False"}
-                        onChange={e => setCanEvolve(e.target.value === "True")}
-                        sx={{ borderRadius: "5px 0 0 5px" }}
-                        mb={3}
-                      >
-                        {map(v => <option value={v}>{v}</option>)([
-                          "True",
-                          "False",
-                        ])}
-                      </Select>
-                    </Box>
-                  </Flex>
-                  <Flex fontSize="10px" mx={1} my={1}>
-                    Authentication
-                  </Flex>
-                  <Flex>
-                    {map(v => (
-                      <Box mx={3}>
-                        <Box
-                          onClick={() => {
-                            if (includes(v)(auths)) {
-                              setAuths(without([v], auths))
-                            } else {
-                              setAuths(append(v, auths))
-                            }
-                          }}
-                          className={
-                            includes(v)(auths)
-                              ? "fas fa-check-square"
-                              : "far fa-square"
+                    <Flex
+                      mt={4}
+                      sx={{
+                        borderRadius: "3px",
+                        cursor: "pointer",
+                        ":hover": { opacity: 0.75 },
+                      }}
+                      p={2}
+                      justify="center"
+                      align="center"
+                      color="white"
+                      bg="#333"
+                      onClick={async () => {
+                        if (!$.on_connecting) {
+                          if (!/^\s*$/.test(newContractTxId)) {
+                            set(true, "on_connecting")
+                            setNetwork(newNetwork)
+                            setContractTxId(newContractTxId)
+                            setEditNetwork(false)
+                            addDB({
+                              network: newNetwork,
+                              port: newNetwork === "Localhost" ? port : 443,
+                              contractTxId: newContractTxId,
+                            })
+                            setAddInstance(false)
+                            setNewContractTxId("")
+                            set(false, "on_connecting")
                           }
-                          mr={2}
-                          sx={{
-                            cursor: "pointer",
-                            ":hover": { opacity: 0.75 },
-                          }}
-                        />
-                        {v}
-                      </Box>
-                    ))(["Arweave", "EVM", "DFINITY", "Intmax"])}
-                  </Flex>
-                </>
-              ) : (
-                <>
-                  <Flex fontSize="10px" m={1}>
-                    ContractTxId
-                  </Flex>
-                  <Input
-                    flex={1}
-                    value={newContractTxId}
-                    onChange={e => setNewContractTxId(trim(e.target.value))}
-                    sx={{ borderRadius: 0 }}
-                  />
-                </>
-              )}
-
-              {deployMode === "Deploy" ? (
-                <Flex
-                  mt={4}
-                  sx={{
-                    borderRadius: "3px",
-                    cursor: "pointer",
-                    ":hover": { opacity: 0.75 },
-                  }}
-                  p={2}
-                  justify="center"
-                  align="center"
-                  color="white"
-                  bg="#333"
-                  onClick={async () => {
-                    if (!$.on_connecting) {
-                      set(true, "on_connecting")
-                      const res = await fn(deployDB)({
-                        port: port,
-                        owner: $.temp_current_all.addr,
-                        network: newNetwork,
-                        secure,
-                        canEvolve,
-                        auths,
-                      })
-                      if (!isNil(res.contractTxId)) {
-                        addDB(res)
-                        setAddInstance(false)
-                        if (isNil(contractTxId)) {
-                          setState(null)
-                          setNetwork(res.network)
-                          setContractTxId(res.contractTxId)
                         }
-                      }
-                      set(false, "on_connecting")
-                    }
-                  }}
-                >
-                  {$.on_connecting ? (
-                    <Box as="i" className="fas fa-spin fa-circle-notch" />
-                  ) : (
-                    "Deploy DB Instance"
+                      }}
+                    >
+                      {$.on_connecting ? (
+                        <Box as="i" className="fas fa-spin fa-circle-notch" />
+                      ) : (
+                        "Connect to DB"
+                      )}
+                    </Flex>
                   )}
-                </Flex>
-              ) : (
-                <Flex
-                  mt={4}
-                  sx={{
-                    borderRadius: "3px",
-                    cursor: "pointer",
-                    ":hover": { opacity: 0.75 },
-                  }}
-                  p={2}
-                  justify="center"
-                  align="center"
-                  color="white"
-                  bg="#333"
-                  onClick={async () => {
-                    if (!$.on_connecting) {
-                      if (!/^\s*$/.test(newContractTxId)) {
-                        set(true, "on_connecting")
-                        setNetwork(newNetwork)
-                        setContractTxId(newContractTxId)
-                        setEditNetwork(false)
-                        addDB({
-                          network: newNetwork,
-                          port: newNetwork === "Localhost" ? port : 443,
-                          contractTxId: newContractTxId,
-                        })
-                        setAddInstance(false)
-                        setNewContractTxId("")
-                        set(false, "on_connecting")
-                      }
-                    }
-                  }}
-                >
-                  {$.on_connecting ? (
-                    <Box as="i" className="fas fa-spin fa-circle-notch" />
-                  ) : (
-                    "Connect to DB"
-                  )}
-                </Flex>
-              )}
-            </Box>
-          </Flex>
-        ) : connect !== false ? (
-          <Flex
-            w="100%"
-            h="100%"
-            position="fixed"
-            sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
-            bg="rgba(0,0,0,0.5)"
-            onClick={() => setConnect(false)}
-            justify="center"
-            align="center"
-          >
-            <Box
-              bg="white"
-              width="500px"
-              p={3}
-              sx={{ borderRadius: "5px", cursor: "default" }}
-              onClick={e => e.stopPropagation()}
-            >
-              <>
-                <Flex fontSize="10px" m={1}>
-                  Port
-                </Flex>
-                <Input
-                  flex={1}
-                  value={newPort}
-                  sx={{ borderRadius: 0 }}
-                  onChange={e => {
-                    if (!Number.isNaN(e.target.value * 1)) {
-                      setNewPort(e.target.value * 1)
-                    }
-                  }}
-                />
-              </>
+                </Box>
+              </Flex>
+            ) : connect !== false ? (
               <Flex
-                mt={4}
-                sx={{
-                  borderRadius: "3px",
-                  cursor: "pointer",
-                  ":hover": { opacity: 0.75 },
-                }}
-                p={2}
+                w="100%"
+                h="100%"
+                position="fixed"
+                sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+                bg="rgba(0,0,0,0.5)"
+                onClick={() => setConnect(false)}
                 justify="center"
                 align="center"
-                color="white"
-                bg="#333"
-                onClick={async () => {
-                  const _port = await fn(connectLocalhost)({ port: newPort })
-                  if (isNil(_port)) {
-                    alert("couldn't connect with the port")
-                  } else {
-                    setPort(_port)
-                    setConnect(false)
-                  }
+              >
+                <Box
+                  bg="white"
+                  width="500px"
+                  p={3}
+                  sx={{ borderRadius: "5px", cursor: "default" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <>
+                    <Flex fontSize="10px" m={1}>
+                      Port
+                    </Flex>
+                    <Input
+                      flex={1}
+                      value={newPort}
+                      sx={{ borderRadius: 0 }}
+                      onChange={e => {
+                        if (!Number.isNaN(e.target.value * 1)) {
+                          setNewPort(e.target.value * 1)
+                        }
+                      }}
+                    />
+                  </>
+                  <Flex
+                    mt={4}
+                    sx={{
+                      borderRadius: "3px",
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                    p={2}
+                    justify="center"
+                    align="center"
+                    color="white"
+                    bg="#333"
+                    onClick={async () => {
+                      const _port = await fn(connectLocalhost)({
+                        port: newPort,
+                      })
+                      if (isNil(_port)) {
+                        alert("couldn't connect with the port")
+                      } else {
+                        setPort(_port)
+                        setConnect(false)
+                      }
+                    }}
+                  >
+                    Connect
+                  </Flex>
+                </Box>
+              </Flex>
+            ) : null}
+            {$.signing_in_modal || $.owner_signing_in_modal ? (
+              <Flex
+                align="center"
+                justify="center"
+                sx={{
+                  bg: "rgba(0,0,0,.5)",
+                  position: "fixed",
+                  w: "100%",
+                  h: "100%",
+                  zIndex: 100,
+                  top: 0,
+                  left: 0,
+                  cursor: "pointer",
+                }}
+                onClick={() => {
+                  set(false, "signing_in_modal")
+                  set(false, "owner_signing_in_modal")
                 }}
               >
-                Connect
-              </Flex>
-            </Box>
-          </Flex>
-        ) : null}
-        {$.signing_in_modal || $.owner_signing_in_modal ? (
-          <Flex
-            align="center"
-            justify="center"
-            sx={{
-              bg: "rgba(0,0,0,.5)",
-              position: "fixed",
-              w: "100%",
-              h: "100%",
-              zIndex: 100,
-              top: 0,
-              left: 0,
-              cursor: "pointer",
-            }}
-            onClick={() => {
-              set(false, "signing_in_modal")
-              set(false, "owner_signing_in_modal")
-            }}
-          >
-            <Flex
-              width="580px"
-              wrap="wrap"
-              p={4}
-              justify="center"
-              bg="white"
-              sx={{ borderRadius: "10px", cursor: "default" }}
-              onClick={e => e.stopPropagation()}
-            >
-              {$.signing_in ? (
                 <Flex
-                  justify="center"
-                  align="center"
-                  direction="column"
-                  boxSize="150px"
+                  width="580px"
+                  wrap="wrap"
                   p={4}
-                  m={4}
-                  color="#333"
+                  justify="center"
                   bg="white"
-                  sx={{
-                    borderRadius: "10px",
-                    cursor: "pointer",
-                    ":hover": { opacity: 0.75 },
-                  }}
-                  onClick={async () => set(false, "signing_in")}
+                  sx={{ borderRadius: "10px", cursor: "default" }}
+                  onClick={e => e.stopPropagation()}
                 >
-                  <Box
-                    fontSize="50px"
-                    mb={3}
-                    as="i"
-                    className="fas fa-spin fa-circle-notch"
-                  />
-                  <Box textAlign="center">cancel sign-in</Box>
+                  {$.signing_in ? (
+                    <Flex
+                      justify="center"
+                      align="center"
+                      direction="column"
+                      boxSize="150px"
+                      p={4}
+                      m={4}
+                      color="#333"
+                      bg="white"
+                      sx={{
+                        borderRadius: "10px",
+                        cursor: "pointer",
+                        ":hover": { opacity: 0.75 },
+                      }}
+                      onClick={async () => set(false, "signing_in")}
+                    >
+                      <Box
+                        fontSize="50px"
+                        mb={3}
+                        as="i"
+                        className="fas fa-spin fa-circle-notch"
+                      />
+                      <Box textAlign="center">cancel sign-in</Box>
+                    </Flex>
+                  ) : (
+                    <>
+                      <Flex
+                        justify="center"
+                        align="center"
+                        direction="column"
+                        boxSize="150px"
+                        p={4}
+                        m={4}
+                        bg="#333"
+                        color="white"
+                        sx={{
+                          borderRadius: "10px",
+                          cursor: "pointer",
+                          ":hover": { opacity: 0.75 },
+                        }}
+                        onClick={async () => {
+                          set(true, "signing_in")
+                          if ($.owner_signing_in_modal) {
+                            await fn(connectAddress)({ network: newNetwork })
+                          } else {
+                            await fn(createTempAddress)({
+                              contractTxId,
+                              network,
+                            })
+                          }
+                          set(false, "signing_in")
+                          set(false, "signing_in_modal")
+                          set(false, "owner_signing_in_modal")
+                        }}
+                      >
+                        <Image
+                          height="100px"
+                          src="/static/images/metamask.png"
+                        />
+                        <Box textAlign="center">MetaMask</Box>
+                      </Flex>
+                      <Flex
+                        p={4}
+                        m={4}
+                        boxSize="150px"
+                        bg="#333"
+                        color="white"
+                        justify="center"
+                        align="center"
+                        direction="column"
+                        sx={{
+                          borderRadius: "10px",
+                          cursor: "pointer",
+                          ":hover": { opacity: 0.75 },
+                        }}
+                        onClick={async () => {
+                          set(true, "signing_in")
+                          if ($.owner_signing_in_modal) {
+                            await fn(connectAddressWithII)({
+                              network: newNetwork,
+                            })
+                          } else {
+                            await fn(createTempAddressWithII)({
+                              contractTxId,
+                              network,
+                            })
+                          }
+                          set(false, "signing_in")
+                          set(false, "signing_in_modal")
+                          set(false, "owner_signing_in_modal")
+                        }}
+                      >
+                        <Image
+                          height="100px"
+                          src="/static/images/dfinity.png"
+                        />
+                        <Box textAlign="center">Internet Identity</Box>
+                      </Flex>
+                      <Flex
+                        p={4}
+                        m={4}
+                        boxSize="150px"
+                        bg="#333"
+                        color="white"
+                        justify="center"
+                        align="center"
+                        direction="column"
+                        sx={{
+                          borderRadius: "10px",
+                          cursor: "pointer",
+                          ":hover": { opacity: 0.75 },
+                        }}
+                        onClick={async () => {
+                          set(true, "signing_in")
+                          if ($.owner_signing_in_modal) {
+                            await fn(connectAddressWithAR)({
+                              network: newNetwork,
+                            })
+                          } else {
+                            await fn(createTempAddressWithAR)({
+                              contractTxId,
+                              network,
+                            })
+                          }
+                          set(false, "signing_in")
+                          set(false, "signing_in_modal")
+                          set(false, "owner_signing_in_modal")
+                        }}
+                      >
+                        <Image
+                          height="100px"
+                          src="/static/images/arconnect.png"
+                        />
+                        <Box textAlign="center">ArConnect</Box>
+                      </Flex>
+                    </>
+                  )}
                 </Flex>
-              ) : (
-                <>
-                  <Flex
-                    justify="center"
-                    align="center"
-                    direction="column"
-                    boxSize="150px"
-                    p={4}
-                    m={4}
-                    bg="#333"
-                    color="white"
-                    sx={{
-                      borderRadius: "10px",
-                      cursor: "pointer",
-                      ":hover": { opacity: 0.75 },
-                    }}
-                    onClick={async () => {
-                      set(true, "signing_in")
-                      if ($.owner_signing_in_modal) {
-                        await fn(connectAddress)({ network: newNetwork })
-                      } else {
-                        await fn(createTempAddress)({ contractTxId, network })
-                      }
-                      set(false, "signing_in")
-                      set(false, "signing_in_modal")
-                      set(false, "owner_signing_in_modal")
-                    }}
-                  >
-                    <Image height="100px" src="/static/images/metamask.png" />
-                    <Box textAlign="center">MetaMask</Box>
-                  </Flex>
-                  <Flex
-                    p={4}
-                    m={4}
-                    boxSize="150px"
-                    bg="#333"
-                    color="white"
-                    justify="center"
-                    align="center"
-                    direction="column"
-                    sx={{
-                      borderRadius: "10px",
-                      cursor: "pointer",
-                      ":hover": { opacity: 0.75 },
-                    }}
-                    onClick={async () => {
-                      set(true, "signing_in")
-                      if ($.owner_signing_in_modal) {
-                        await fn(connectAddressWithII)({ network: newNetwork })
-                      } else {
-                        await fn(createTempAddressWithII)({
-                          contractTxId,
-                          network,
-                        })
-                      }
-                      set(false, "signing_in")
-                      set(false, "signing_in_modal")
-                      set(false, "owner_signing_in_modal")
-                    }}
-                  >
-                    <Image height="100px" src="/static/images/dfinity.png" />
-                    <Box textAlign="center">Internet Identity</Box>
-                  </Flex>
-                  <Flex
-                    p={4}
-                    m={4}
-                    boxSize="150px"
-                    bg="#333"
-                    color="white"
-                    justify="center"
-                    align="center"
-                    direction="column"
-                    sx={{
-                      borderRadius: "10px",
-                      cursor: "pointer",
-                      ":hover": { opacity: 0.75 },
-                    }}
-                    onClick={async () => {
-                      set(true, "signing_in")
-                      if ($.owner_signing_in_modal) {
-                        await fn(connectAddressWithAR)({ network: newNetwork })
-                      } else {
-                        await fn(createTempAddressWithAR)({
-                          contractTxId,
-                          network,
-                        })
-                      }
-                      set(false, "signing_in")
-                      set(false, "signing_in_modal")
-                      set(false, "owner_signing_in_modal")
-                    }}
-                  >
-                    <Image height="100px" src="/static/images/arconnect.png" />
-                    <Box textAlign="center">ArConnect</Box>
-                  </Flex>
-                </>
-              )}
-            </Flex>
-          </Flex>
-        ) : null}
+              </Flex>
+            ) : null}
+          </Box>
+        </Flex>
       </ChakraProvider>
     )
   }
