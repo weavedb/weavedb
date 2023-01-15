@@ -7504,6 +7504,17 @@ weavedb-base@^0.10.1:
     ethereumjs-util "^7.1.5"
     ramda "^0.28.0"
 
+weavedb-base@^0.10.3:
+  version "0.10.3"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.10.3.tgz#fa9de930a849a274694da012f446432782902a3d"
+  integrity sha512-esnVESN0ku5g6NPodTEL/G4McV7cydPf+VMidW3pXVwDA+ZeagaYMD0/lcCKnjwdkYjXi/clu9mD8s3XDJ6Ozg==
+  dependencies:
+    "@metamask/eth-sig-util" "^4.0.1"
+    "@metamask/legacy-web3" "^2.0.0"
+    eth-crypto "^2.3.0"
+    ethereumjs-util "^7.1.5"
+    ramda "^0.28.0"
+
 weavedb-client@^0.10.1:
   version "0.10.1"
   resolved "https://registry.yarnpkg.com/weavedb-client/-/weavedb-client-0.10.1.tgz#61d18e3a67de52069235e63faaa711da8de6ce8b"
@@ -7516,10 +7527,10 @@ weavedb-client@^0.10.1:
     ramda "^0.28.0"
     weavedb-base "^0.10.1"
 
-weavedb-sdk@^0.10.1:
-  version "0.10.1"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.10.1.tgz#8bb8c1cba8a151c96035f2c1be3eab23f6d8ce75"
-  integrity sha512-+++FOu+SdF70wLceKQvlVTH5Q+RLfI56ye3D+1iYpImkzHvKLOWoTNl5OUuNeBjpFkiD2midQFVFzCHQvXp5pw==
+weavedb-sdk@^0.10.3:
+  version "0.10.3"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.10.3.tgz#c9bb62e86f1a1202016ee8b9e1bf41c5e8fa4076"
+  integrity sha512-bgwN/Mad+Uk3ECvORof2FDhH5zoo0eCVlJg/HYuqN0baGdt0ORUj9l/kbYcXV+sbZXasIHdo5i2uzetXeS4b5w==
   dependencies:
     "@metamask/legacy-web3" "^2.0.0"
     arweave "^1.11.4"
@@ -7529,7 +7540,7 @@ weavedb-sdk@^0.10.1:
     ramda "^0.28.0"
     warp-contracts "1.2.36"
     warp-contracts-old "npm:warp-contracts@1.2.26"
-    weavedb-base "^0.10.1"
+    weavedb-base "^0.10.3"
 
 webcrypto-core@^1.7.4:
   version "1.7.5"

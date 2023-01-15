@@ -118,6 +118,7 @@ export default inject(
     const [addCron, setAddCron] = useState(false)
     const [addIndex, setAddIndex] = useState(false)
     const [addInstance, setAddInstance] = useState(false)
+    const [addOwner, setAddOwner] = useState(false)
     const [deployMode, setDeployMode] = useState("Connect")
     const [dbs, setDBs] = useState([])
     const [connect, setConnect] = useState(false)
@@ -745,7 +746,7 @@ export default inject(
                                       cursor: "pointer",
                                       ":hover": {
                                         opacity: 0.75,
-                                        color: "#F50057",
+                                        color: "#6441AF",
                                       },
                                     }}
                                     onClick={async e => {
@@ -1015,7 +1016,7 @@ export default inject(
                                     textAlign="center"
                                     bg={
                                       v.network === "Mainnet"
-                                        ? "#F50057"
+                                        ? "#6441AF"
                                         : "#333"
                                     }
                                     color="white"
@@ -1030,7 +1031,7 @@ export default inject(
                                       cursor: "pointer",
                                       ":hover": {
                                         opacity: 0.75,
-                                        color: "#F50057",
+                                        color: "#6441AF",
                                       },
                                     }}
                                     onClick={async e => {
@@ -1081,7 +1082,7 @@ export default inject(
                                     as="a"
                                     target="_blank"
                                     color={
-                                      network === "Mainnet" ? "#F50057" : "#333"
+                                      network === "Mainnet" ? "#6441AF" : "#333"
                                     }
                                     sx={{
                                       textDecoration:
@@ -1146,13 +1147,40 @@ export default inject(
                                   <Box
                                     mr={2}
                                     px={3}
-                                    bg={isOwner ? "#F50057" : "#ddd"}
+                                    bg={isOwner ? "#6441AF" : "#ddd"}
                                     color={isOwner ? "white" : "#333"}
                                     sx={{ borderRadius: "3px" }}
                                   >
                                     Owner
                                   </Box>
                                   <Box flex={1}>{state.owner}</Box>
+                                  <Box
+                                    color="#999"
+                                    sx={{
+                                      cursor: "pointer",
+                                      ":hover": {
+                                        opacity: 0.75,
+                                        color: "#6441AF",
+                                      },
+                                    }}
+                                    onClick={async e => {
+                                      e.stopPropagation()
+                                      let owners = state.owner
+                                      if (
+                                        !is(Array, owners) &&
+                                        is(String, state.woner)
+                                      ) {
+                                        owners = [state.owner]
+                                      }
+                                      if (!includes($.temp_current)(owners)) {
+                                        alert(`Sign in with the owner account.`)
+                                        return
+                                      }
+                                      setAddOwner(true)
+                                    }}
+                                  >
+                                    <Box as="i" className="fas fa-edit" />
+                                  </Box>
                                 </Flex>
                                 <Flex align="center" p={2} px={3}>
                                   <Box
@@ -1288,7 +1316,7 @@ export default inject(
                                     cursor: "pointer",
                                     ":hover": {
                                       opacity: 0.75,
-                                      color: "#F50057",
+                                      color: "#6441AF",
                                     },
                                   }}
                                   onClick={async e => {
@@ -1414,7 +1442,7 @@ export default inject(
                                       cursor: "pointer",
                                       ":hover": {
                                         opacity: 0.75,
-                                        color: "#F50057",
+                                        color: "#6441AF",
                                       },
                                     }}
                                     onClick={async e => {
@@ -1546,7 +1574,7 @@ export default inject(
                   <Flex
                     flex={1}
                     px={2}
-                    color={/^Error:/.test(result) ? "#F50057" : "#333"}
+                    color={/^Error:/.test(result) ? "#6441AF" : "#333"}
                     p={2}
                   >
                     {result}
@@ -2217,6 +2245,68 @@ export default inject(
                   </Flex>
                 </Box>
               </Flex>
+            ) : addOwner !== false ? (
+              <Flex
+                w="100%"
+                h="100%"
+                position="fixed"
+                sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+                bg="rgba(0,0,0,0.5)"
+                onClick={() => setAddOwner(false)}
+                justify="center"
+                align="center"
+              >
+                <Box
+                  bg="white"
+                  width="500px"
+                  p={3}
+                  fontSize="12px"
+                  sx={{ borderRadius: "5px", cursor: "default" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  {map(v => {
+                    return (
+                      <Flex mb={3} px={2} align="center">
+                        <Flex flex={1}>{v}</Flex>
+                        <Flex>
+                          <Box
+                            className="fas fa-trash"
+                            sx={{
+                              cursor: "pointer",
+                              ":hover": { opacity: 0.75 },
+                            }}
+                          />
+                        </Flex>
+                      </Flex>
+                    )
+                  })(
+                    isNil(state.owner)
+                      ? []
+                      : is(Array, state.owner)
+                      ? state.owner
+                      : [state.owner]
+                  )}
+                  <Flex align="center">
+                    <Input flex={1} />
+                    <Flex
+                      fontSize="12px"
+                      align="center"
+                      height="40px"
+                      bg="#333"
+                      color="white"
+                      justify="center"
+                      py={1}
+                      px={2}
+                      w="100px"
+                    >
+                      Add Owner
+                    </Flex>
+                  </Flex>
+                  <Flex bg="#333" color="white" justify="center" p={3} mt={3}>
+                    Save Change
+                  </Flex>
+                </Box>
+              </Flex>
             ) : addIndex !== false ? (
               <Flex
                 w="100%"
@@ -2388,7 +2478,7 @@ export default inject(
                             onClick={() => {
                               set(true, "owner_signing_in_modal")
                             }}
-                            color="#F50057"
+                            color="#6441AF"
                           >
                             change
                           </Box>
