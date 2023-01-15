@@ -181,9 +181,8 @@ class Base {
         throw Error("No address specified")
         return
       }
-    } else {
-      throw Error("No EVM wallet")
-      return
+    } else if (is(String, evm)) {
+      addr = evm
     }
     return this._createTempAddress(addr.toLowerCase(), expiry, {
       wallet,
