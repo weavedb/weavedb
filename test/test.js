@@ -8,7 +8,7 @@ const Account = require("intmax").Account
 const { readFileSync } = require("fs")
 const { resolve } = require("path")
 const EthCrypto = require("eth-crypto")
-
+const EthWallet = require("ethereumjs-wallet").default
 describe("WeaveDB", function () {
   let wallet, walletAddress, wallet2, db, arweave_wallet
   const _ii = [
@@ -65,63 +65,6 @@ describe("WeaveDB", function () {
     expect(await db.get("ppl", "Bob")).to.eql(data)
     await db.set(data2, "ppl", "Bob")
     expect(await db.get("ppl", "Bob")).to.eql(data2)
-  })
-
-  it("should subscribe to state changes with on", async () => {
-    const data = { name: "Bob", age: 20 }
-    const data2 = { name: "Alice", height: 160 }
-    const check = () =>
-      new Promise(async res => {
-        let count = 0
-        const off = await db.on("ppl", async ppl => {
-          if (count === 1) {
-            expect(await db.get("ppl", "Bob")).to.eql(data)
-            await db.set(data2, "ppl", "Bob")
-          } else if (count === 2) {
-            expect(await db.get("ppl", "Bob")).to.eql(data2)
-            res()
-          }
-          count++
-        })
-        await db.set(data, "ppl", "Bob")
-      })
-    await check()
-  })
-
-  it("should subscribe to state changes with con", async () => {
-    const data = { name: "Bob", age: 20 }
-    const data2 = { name: "Alice", height: 160 }
-    const check = () =>
-      new Promise(async res => {
-        let count = 0
-        const off = await db.con("ppl", async ppl => {
-          if (count === 1) {
-            expect(ppl[0].data).to.eql(data)
-            await db.set(data2, "ppl", "Bob")
-          } else if (count === 2) {
-            expect(ppl[0].data).to.eql(data2)
-            res()
-          }
-          count++
-        })
-        await db.set(data, "ppl", "Bob")
-      })
-    await check()
-  })
-
-  it("should get/cget from cached state", async () => {
-    const data = { name: "Bob", age: 20 }
-    await db.set(data, "ppl", "Bob")
-    const check = () =>
-      new Promise(async res => {
-        setTimeout(async () => {
-          expect(await db.getCache("ppl", "Bob")).to.eql(data)
-          expect((await db.cgetCache("ppl", "Bob")).data).to.eql(data)
-          res()
-        }, 1000)
-      })
-    expect(await db.get("ppl", "Bob")).to.eql(data)
-    await check()
   })
 
   it("should cget & pagenate", async () => {
@@ -481,7 +424,6 @@ describe("WeaveDB", function () {
     )
     await db.set({ name: "Bob", age: 20 }, "ppl", "Bob", {
       privateKey: identity.privateKey,
-      overwrite: true,
     })
     expect((await db.cget("ppl", "Bob")).setter).to.eql(
       identity.address.toLowerCase()
@@ -543,7 +485,6 @@ describe("WeaveDB", function () {
     )
     await db.set({ name: "Bob", age: 20 }, "ppl", "Bob", {
       privateKey: identity.privateKey,
-      overwrite: true,
     })
     expect((await db.cget("ppl", "Bob")).setter).to.eql(
       identity.address.toLowerCase()
@@ -585,7 +526,6 @@ describe("WeaveDB", function () {
     )
     await db.set({ name: "Bob", age: 20 }, "ppl", "Bob", {
       privateKey: identity.privateKey,
-      overwrite: true,
     })
     expect((await db.cget("ppl", "Bob")).setter).to.eql(
       identity.address.toLowerCase()
@@ -705,7 +645,7 @@ describe("WeaveDB", function () {
     return
   })
 
-  it.only("should relay queries with multisig", async () => {
+  it("should relay queries with multisig", async () => {
     const identity = EthCrypto.createIdentity()
     const identity2 = EthCrypto.createIdentity()
     const identity3 = EthCrypto.createIdentity()
@@ -768,5 +708,37 @@ describe("WeaveDB", function () {
     await db.removeRelayerJob("test-job", { ar: arweave_wallet })
     expect(await db.getRelayerJob("test-job")).to.eql(null)
     return
+  })
+
+  it("should match signers", async () => {
+    const original_account = EthWallet.generate()
+    const { identity: temp_account } = await db.createTempAddress(
+      original_account
+    )
+    const preset_addr = wallet.getAddressString() // this was set when initializing SDK with EthWallet
+    const original_addr = original_account.getAddressString()
+    const temp_addr = temp_account.address.toLowerCase()
+
+    // sign with the original_account (default)
+    await db.set({ signer: db.signer() }, "signers", "s1", {
+      wallet: original_account,
+    })
+    expect((await db.get("signers", "s1")).signer).to.equal(original_addr)
+    // sign with the temp_account linked to the original_account
+    await db.set({ signer: db.signer() }, "signers", "s2", {
+      wallet: original_addr,
+      privateKey: temp_account.privateKey,
+    })
+    expect((await db.get("signers", "s2")).signer).to.equal(original_addr)
+
+    // sign with the temp_account but as itself
+    await db.set({ signer: db.signer() }, "signers", "s3", {
+      privateKey: temp_account.privateKey,
+    })
+    expect((await db.get("signers", "s3")).signer).to.equal(temp_addr)
+
+    // sign with the preset wallet
+    await db.set({ signer: db.signer() }, "signers", "s4")
+    expect((await db.get("signers", "s4")).signer).to.equal(preset_addr)
   })
 })

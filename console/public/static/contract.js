@@ -14931,16 +14931,18 @@
     }
     let original_signer = signer;
     let _signer = signer;
-    const link = state.auth.links[_signer];
-    if (!isNil_default(link)) {
-      let _address = is_default(Object, link) ? link.address : link;
-      let _expiry = is_default(Object, link) ? link.expiry || 0 : 0;
-      if (_expiry === 0 || SmartWeave.block.timestamp <= _expiry) {
-        _signer = _address;
+    if (_signer !== _caller) {
+      const link = state.auth.links[_signer];
+      if (!isNil_default(link)) {
+        let _address = is_default(Object, link) ? link.address : link;
+        let _expiry = is_default(Object, link) ? link.expiry || 0 : 0;
+        if (_expiry === 0 || SmartWeave.block.timestamp <= _expiry) {
+          _signer = _address;
+        }
       }
     }
     if (_signer !== _caller)
-      err(`signer is not caller`);
+      err(`signer[${_signer}] is not caller[${_caller}]`);
     let next_nonce = (state.nonces[original_signer] || 0) + 1;
     if (next_nonce !== nonce2) {
       err(
@@ -15113,7 +15115,7 @@
     if (!isNil_default(relayers[jobID].relayers)) {
       const allowed_relayers = map_default(toLower_default)(relayers[jobID].relayers || []);
       if (!includes_default(signer)(allowed_relayers))
-        err("relayer is now allowed");
+        err("relayer is not allowed");
     }
     if (includes_default(relayers[jobID].multisig_type)(["number", "percent"])) {
       const allowed_signers = map_default(toLower_default)(relayers[jobID].signers || []);

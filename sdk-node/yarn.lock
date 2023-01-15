@@ -3684,10 +3684,10 @@ weak-lru-cache@^1.2.2:
   resolved "https://registry.yarnpkg.com/weak-lru-cache/-/weak-lru-cache-1.2.2.tgz#fdbb6741f36bae9540d12f480ce8254060dccd19"
   integrity sha512-DEAoo25RfSYMuTGc9vPJzZcZullwIqRDSI9LOy+fkCJPi6hykCnfKaXTuPBDuXAUcqHXyOgFtHNp/kB2FjYHbw==
 
-weavedb-base@^0.9.6:
-  version "0.9.6"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.9.6.tgz#f9b20aacc50cce19791664c062a694e80a83e16e"
-  integrity sha512-rZQsxihnaqYw/pHnwAWnBt5WklVe9q7hpJqSUEpCUJWyNPGDEbQ9PuePJh2kVx9lR1g0u6FfUlaErn/KMANeEw==
+weavedb-base@^0.10.1:
+  version "0.10.1"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.10.1.tgz#ce981541d6506c0883fed63cc021c1fd3237bb3a"
+  integrity sha512-bP9UtvgeKZEMqD40LHPt0lPaHAoDBogtIafvoYosmDCRQj0LM1fik6kdI5S7j26ZNrfTkIwo2qs25j5RLx/nGg==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"

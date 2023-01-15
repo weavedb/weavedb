@@ -13,9 +13,6 @@ const {
 } = require("ramda")
 const { LmdbCache } = require("warp-contracts-lmdb")
 const shortid = require("shortid")
-let Arweave = require("arweave")
-Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
-const Base = require("weavedb-base")
 const {
   WarpFactory,
   LoggerFactory,
@@ -37,6 +34,10 @@ let states = {}
 let dbs = {}
 let subs = {}
 let submap = {}
+
+let Arweave = require("arweave")
+Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
+const Base = require("weavedb-base")
 
 const _on = async (state, contractTxId, block = {}) => {
   if (!isNil(state)) {
@@ -243,7 +244,7 @@ class SDK extends Base {
     this.domain = { name, version, verifyingContract: this.contractTxId }
     if (!isNil(EthWallet)) this.setEthWallet(EthWallet)
     if (this.network !== "localhost") {
-      if (this.subscribe) {
+      if (subscribe) {
         this.warp.use(
           new CustomSubscriptionPlugin(this.contractTxId, this.warp)
         )
@@ -253,7 +254,7 @@ class SDK extends Base {
         .then(data => (states[this.contractTxId] = data.cachedValue.state))
         .catch(() => {})
     } else {
-      if (this.subscribe) {
+      if (subscribe) {
         this.interval = setInterval(() => {
           this.db
             .readState()
@@ -279,79 +280,6 @@ class SDK extends Base {
     }
   }
 
-  async subscribe(isCon, ...query) {
-    const { path } = parseQuery(query)
-    const isDoc = path.length % 2 === 0
-    subs[this.contractTxId] ||= {}
-    const cb = query.pop()
-    const hash = md5(JSON.stringify(query))
-    const id = shortid()
-    subs[this.contractTxId][hash] ||= {
-      prev: undefined,
-      subs: {},
-      query,
-      height: 0,
-      doc: isDoc,
-    }
-    subs[this.contractTxId][hash].subs[id] = { cb, con: isCon }
-    submap[id] = hash
-    this.cget(...query)
-      .then(v => {
-        if (
-          !isNil(subs[this.contractTxId][hash].subs[id]) &&
-          subs[this.contractTxId][hash].height === 0
-        ) {
-          subs[this.contractTxId][hash].prev = v
-          cb(isCon ? v : isDoc ? (isNil(v) ? null : v.data) : pluck("data", v))
-        }
-      })
-      .catch(e => {
-        console.log("cget error")
-      })
-    return () => {
-      try {
-        delete subs[this.contractTxId][hash].subs[id]
-        delete submap[id]
-      } catch (e) {}
-    }
-  }
-
-  async getCache(...query) {
-    if (isNil(states[this.contractTxId])) return null
-    return (
-      await get(
-        states[this.contractTxId],
-        {
-          input: { query },
-        },
-        false,
-        { block: {} }
-      )
-    ).result
-  }
-
-  async cgetCache(...query) {
-    if (isNil(states[this.contractTxId])) return null
-    return (
-      await get(
-        states[this.contractTxId],
-        {
-          input: { query },
-        },
-        true,
-        { block: {} }
-      )
-    ).result
-  }
-
-  async on(...query) {
-    return await this.subscribe(false, ...query)
-  }
-
-  async con(...query) {
-    return await this.subscribe(true, ...query)
-  }
-
   async request(func, ...query) {
     return this.viewState({
       function: func,
@@ -371,7 +299,7 @@ class SDK extends Base {
       const start = Date.now()
       if (dryWrite) {
         let dryState = await this.db.dryWrite(param)
-        if (dryState.type === "error")
+        if (dryState.type !== "ok")
           return {
             success: false,
             duration: Date.now() - start,
@@ -453,10 +381,84 @@ class SDK extends Base {
             input: { query: res.path },
           })
         ).result
-      } catch (e) {}
+      } catch (e) {
+        console.log(e)
+      }
     }
     res.duration = Date.now() - start
     return res
+  }
+  async subscribe(isCon, ...query) {
+    const { path } = parseQuery(query)
+    const isDoc = path.length % 2 === 0
+    subs[this.contractTxId] ||= {}
+    const cb = query.pop()
+    const hash = md5(JSON.stringify(query))
+    const id = shortid()
+    subs[this.contractTxId][hash] ||= {
+      prev: undefined,
+      subs: {},
+      query,
+      height: 0,
+      doc: isDoc,
+    }
+    subs[this.contractTxId][hash].subs[id] = { cb, con: isCon }
+    submap[id] = hash
+    this.cget(...query)
+      .then(v => {
+        if (
+          !isNil(subs[this.contractTxId][hash].subs[id]) &&
+          subs[this.contractTxId][hash].height === 0
+        ) {
+          subs[this.contractTxId][hash].prev = v
+          cb(isCon ? v : isDoc ? (isNil(v) ? null : v.data) : pluck("data", v))
+        }
+      })
+      .catch(e => {
+        console.log("cget error")
+      })
+    return () => {
+      try {
+        delete subs[this.contractTxId][hash].subs[id]
+        delete submap[id]
+      } catch (e) {}
+    }
+  }
+
+  async getCache(...query) {
+    if (isNil(states[this.contractTxId])) return null
+    return (
+      await get(
+        states[this.contractTxId],
+        {
+          input: { query },
+        },
+        false,
+        { block: {} }
+      )
+    ).result
+  }
+
+  async cgetCache(...query) {
+    if (isNil(states[this.contractTxId])) return null
+    return (
+      await get(
+        states[this.contractTxId],
+        {
+          input: { query },
+        },
+        true,
+        { block: {} }
+      )
+    ).result
+  }
+
+  async on(...query) {
+    return await this.subscribe(false, ...query)
+  }
+
+  async con(...query) {
+    return await this.subscribe(true, ...query)
   }
 }
 
