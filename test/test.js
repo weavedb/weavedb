@@ -724,6 +724,7 @@ describe("WeaveDB", function () {
       wallet: original_account,
     })
     expect((await db.get("signers", "s1")).signer).to.equal(original_addr)
+
     // sign with the temp_account linked to the original_account
     await db.set({ signer: db.signer() }, "signers", "s2", {
       wallet: original_addr,
