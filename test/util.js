@@ -1,4 +1,4 @@
-const SDK = require("../sdk")
+const SDK = require("../sdk-node")
 const fs = require("fs")
 const path = require("path")
 const { expect } = require("chai")
@@ -245,7 +245,8 @@ async function deployContracts({
     walletAddress,
   }
 }
-async function initBeforeEach(secure = false) {
+
+async function initBeforeEach(secure = false, subscribe = false) {
   wallet = Wallet.generate()
   wallet2 = Wallet.generate()
   wallet3 = Wallet.generate()
@@ -273,6 +274,7 @@ async function initBeforeEach(secure = false) {
     name,
     version,
     EthWallet: wallet,
+    subscribe,
   })
   await sdk.mineBlock()
 

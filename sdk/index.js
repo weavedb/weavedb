@@ -145,7 +145,7 @@ class SDK extends Base {
       const start = Date.now()
       if (dryWrite) {
         let dryState = await this.db.dryWrite(param)
-        if (dryState.type === "error")
+        if (dryState.type !== "ok")
           return {
             success: false,
             duration: Date.now() - start,
