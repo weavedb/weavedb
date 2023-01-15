@@ -72,7 +72,6 @@ class Base {
   async _write2(func, query, opt) {
     let nonce,
       privateKey,
-      overwrite,
       wallet,
       dryWrite,
       bundle,
@@ -89,7 +88,6 @@ class Base {
         relay,
         nonce,
         privateKey,
-        overwrite,
         wallet,
         dryWrite,
         bundle,
@@ -126,7 +124,6 @@ class Base {
           query,
           nonce,
           privateKey,
-          overwrite,
           dryWrite,
           bundle,
           extra,
@@ -171,9 +168,25 @@ class Base {
     })
   }
 
-  async createTempAddress(addr, expiry) {
+  async createTempAddress(evm, expiry) {
+    const wallet = is(Object, evm) ? evm : this.wallet
+    let addr = null
+    if (!isNil(wallet)) {
+      addr = is(String, evm)
+        ? evm
+        : is(Object, wallet)
+        ? wallet.getAddressString()
+        : null
+      if (isNil(addr)) {
+        throw Error("No address specified")
+        return
+      }
+    } else {
+      throw Error("No EVM wallet")
+      return
+    }
     return this._createTempAddress(addr.toLowerCase(), expiry, {
-      wallet: this.wallet || addr.toLowerCase(),
+      wallet,
     })
   }
 
@@ -325,7 +338,6 @@ class Base {
     query,
     nonce,
     privateKey,
-    overwrite,
     dryWrite = true,
     bundle,
     extra = {},
@@ -333,26 +345,34 @@ class Base {
     jobID,
     multisigs
   ) {
-    let addr = isNil(privateKey)
-      ? null
-      : `0x${privateToAddress(
-          Buffer.from(privateKey.replace(/^0x/, ""), "hex")
-        ).toString("hex")}`
-    const isaddr = !isNil(addr)
-    if (isNil(wallet) && !isNil(this.web3)) {
+    let signer, caller, pkey
+    if (!isNil(privateKey)) {
+      signer = `0x${privateToAddress(
+        Buffer.from(privateKey.replace(/^0x/, ""), "hex")
+      ).toString("hex")}`
+      pkey = Buffer.from(privateKey.replace(/^0x/, ""), "hex")
+    } else if (is(Object, wallet)) {
+      signer = wallet.getAddressString()
+      pkey = wallet.getPrivateKey()
+    } else if (!isNil(this.web3)) {
       const accounts = await ethereum.request({ method: "eth_accounts" })
-      addr = accounts[0]
-    } else {
-      addr = is(String, wallet) ? wallet : wallet.getAddressString()
+      signer = accounts[0]
     }
-    addr = addr.toLowerCase()
-    let result
-    nonce ||= await this.getNonce(addr)
-    bundle ||= this.network === "mainnet"
+    if (isNil(signer)) throw Error("No wallet to sign")
+    signer = signer.toLowerCase()
+
+    nonce ||= await this.getNonce(signer)
+    caller = is(String, wallet)
+      ? /^0x+$/.test(wallet)
+        ? wallet.toLowerCase()
+        : wallet
+      : signer
+
     const message = {
       nonce,
       query: JSON.stringify({ func, query }),
     }
+
     const data = {
       types: {
         EIP712Domain,
@@ -365,34 +385,29 @@ class Base {
       primaryType: "Query",
       message,
     }
-    const signature =
-      !isaddr && !isNil(this.web3)
-        ? await this.web3.currentProvider.request({
-            method: "eth_signTypedData_v4",
-            params: [addr, JSON.stringify(data)],
-          })
-        : ethSigUtil.signTypedData({
-            privateKey: !isNil(privateKey)
-              ? Buffer.from(privateKey.replace(/^0x/, ""), "hex")
-              : wallet.getPrivateKey(),
-            data,
-            version: "V4",
-          })
 
-    let param = mergeLeft(extra, {
+    const signature = isNil(pkey)
+      ? await this.web3.currentProvider.request({
+          method: "eth_signTypedData_v4",
+          params: [signer, JSON.stringify(data)],
+        })
+      : ethSigUtil.signTypedData({
+          privateKey: pkey,
+          data,
+          version: "V4",
+        })
+
+    const param = mergeLeft(extra, {
       function: func,
       query,
       signature,
       nonce,
-      caller:
-        overwrite || isNil(wallet)
-          ? addr
-          : is(String, wallet)
-          ? wallet
-          : wallet.getAddressString(),
+      caller,
     })
+
     if (!isNil(jobID)) param.jobID = jobID
     if (!isNil(multisigs)) param.multisigs = multisigs
+    bundle ||= this.network === "mainnet"
     return await this._request(func, param, dryWrite, bundle, relay)
   }
 
@@ -411,7 +426,6 @@ class Base {
     let addr = ii.toJSON()[0]
     const isaddr = !isNil(addr)
     addr = addr.toLowerCase()
-    let result
     nonce ||= await this.getNonce(addr)
     bundle ||= this.network === "mainnet"
     const message = {
@@ -476,7 +490,6 @@ class Base {
       pubKey = ar.n
     }
     const isaddr = !isNil(addr)
-    let result
     nonce ||= await this.getNonce(addr)
     bundle ||= this.network === "mainnet"
     const message = {
@@ -553,7 +566,6 @@ class Base {
       return
     }
     const isaddr = !isNil(addr)
-    let result
     nonce ||= await this.getNonce(addr)
     bundle ||= this.network === "mainnet"
     const message = {

@@ -15,6 +15,16 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.11.0 (Jan 15, 2023)
+
+#### Source Transaction Id
+
+[9vwjxsX0856iTRFsEMEXBC7UFJ3Utok_e6dFyB1s4TA](https://sonar.warp.cc/#/app/source/9vwjxsX0856iTRFsEMEXBC7UFJ3Utok_e6dFyB1s4TA)
+
+#### Added Features
+
+- [overwrite temporary address](/docs/sdk/auth)
+
 ### v0.10.0 (Jan 12, 2023)
 
 #### Source Transaction Id

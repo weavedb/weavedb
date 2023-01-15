@@ -107,15 +107,17 @@ export const validate = async (state, action, func) => {
 
   let original_signer = signer
   let _signer = signer
-  const link = state.auth.links[_signer]
-  if (!isNil(link)) {
-    let _address = is(Object, link) ? link.address : link
-    let _expiry = is(Object, link) ? link.expiry || 0 : 0
-    if (_expiry === 0 || SmartWeave.block.timestamp <= _expiry) {
-      _signer = _address
+  if (_signer !== _caller) {
+    const link = state.auth.links[_signer]
+    if (!isNil(link)) {
+      let _address = is(Object, link) ? link.address : link
+      let _expiry = is(Object, link) ? link.expiry || 0 : 0
+      if (_expiry === 0 || SmartWeave.block.timestamp <= _expiry) {
+        _signer = _address
+      }
     }
   }
-  if (_signer !== _caller) err(`signer is not caller`)
+  if (_signer !== _caller) err(`signer[${_signer}] is not caller[${_caller}]`)
   let next_nonce = (state.nonces[original_signer] || 0) + 1
   if (next_nonce !== nonce) {
     err(

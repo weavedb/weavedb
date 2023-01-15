@@ -30,7 +30,6 @@ export const relay = async (state, action, signer, contractErr = true) => {
   let action2 = { input, relayer: signer, extra: query, jobID }
   const relayers = state.relayers || {}
   if (isNil(relayers[jobID])) err("relayer jobID doesn't exist")
-
   if (!isNil(relayers[jobID].relayers)) {
     const allowed_relayers = map(toLower)(relayers[jobID].relayers || [])
     if (!includes(signer)(allowed_relayers)) err("relayer is not allowed")
@@ -45,6 +44,7 @@ export const relay = async (state, action, signer, contractErr = true) => {
         jobID,
         params: input,
       }
+
       for (const signature of action.input.multisigs) {
         const _signer = (
           await read(state.contracts.ethereum, {
