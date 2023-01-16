@@ -18,10 +18,10 @@ Install `docker` and `docker-compose` globally to your machine. And open port `8
 
 ### Run docker-compose
 
-Add `weavedb.config.js` to `/node/net/grpc/gateway/weavedb/node-server` directory.
+Add `weavedb.config.js` to `/docker/node-server` directory.
 
 ```bash
-cd node/net/grpc/gateway/weavedb/node-server
+cd docker/node-server
 touch weavedb.config.js
 ```
 
@@ -29,7 +29,26 @@ touch weavedb.config.js
 
 ```js
 module.exports = {
-  contractTxId: "xxxxxxxx..."
+  contractTxId: "xxxxxxxx...",
+    arweave:{
+      host: "arweave.net", 
+      port: 443,
+      protocol: "https"
+    },
+    arweave_wallet:
+      {
+        "kty":"RSA",
+        "n":"...",
+        "e":"...",
+        "d":"...",
+        "p":"...",
+        "q":"...",
+        "dp":"...",
+        "dq":"...",
+        "qi":"..."
+      },
+      subscribe:false,
+      cache: "lmdb",
 }
 ```
 
@@ -46,9 +65,9 @@ There are 3 ways to specify the `contractTxId` in the config file.
 Then build and run the docker container.
 
 ```bash
-cd ..
-sudo docker-compose pull node-server envoy
-sudo docker-compose up -d node-server envoy
+cd docker/node-server
+sudo DOCKER_BUILDKIT=0 docker-compose build
+sudo docker-compose up -d 
 ```
 
 Now you can interact with the node using the [Light Client](/docs/sdk/client).
@@ -65,7 +84,7 @@ cd weavedb
 yarn
 ```
 
-##### 2. Create a configuration file at `/node/net/grpc/gateway/weavedb/node-server/weavedb.config.js`.
+##### 2. Create a configuration file at `/docker/node-server/weavedb.config.js`.
 
 You can copy the newly generated wallet from the previous step to `wallet`.
 
@@ -97,9 +116,10 @@ module.exports = {
 ##### 4. Run Docker Conompose
 
 ```bash
-cd node
-sudo docker-compose pull node-server envoy
-sudo docker-compose up --build -d node-server envoy
+cd docker/node-server
+sudo DOCKER_BUILDKIT=0 docker-compose build
+sudo docker-compose up -d 
+
 ```
 
 ##### 5. Set the instance IP address to the Light Client
@@ -176,21 +196,25 @@ git clone https://github.com/weavedb/weavedb.git
 
 ```bash
 sudo apt-get install emacs
-emacs weavedb/node/net/grpc/gateway/weavedb/node-server/weavedb.config.js
+emacs weavedb/docker/node-server/weavedb.config.js
 ```
 
 ```javascript
 module.exports = {
-  contractTxId: "xxxxxxxx..."
+  contractTxId: "xxxxxxxx...",
+  arweave_wallet: {
+
+  }, 
 }
 ```
 
-- Move to `weavedb/node` and run docker-compose
+- Move to `weavedb/docker/node-server` and run docker-compose
 
 ```bash
-cd weavedb/node
-sudo docker-compose pull node-server envoy
-sudo docker-compose up --build -d node-server envoy
+cd docker/node-server
+sudo DOCKER_BUILDKIT=0 docker-compose build
+sudo docker-compose up -d 
+
 ```
 
 - Set up NGINX with SSL/TLS certificate using Certbot

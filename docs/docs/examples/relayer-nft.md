@@ -221,7 +221,7 @@ sudo curl -L "https://github.com/docker/compose/releases/download/v2.2.3/docker-
 sudo chmod +x /usr/local/bin/docker-compose
 ```
 
-Then create `weavedb.config.js` to `/node/net/grpc/gateway/weavedb/node-server` directory.
+Then create `weavedb.config.js` to `/docker/node-server` directory.
 
 ```js
 module.exports = {
@@ -236,9 +236,10 @@ module.exports = {
 Then run docker-compose.
 
 ```bash
-cd node
-sudo docker-compose pull node-server envoy
-sudo docker-compose up -d node-server envoy
+cd docker/node-server
+sudo DOCKER_BUILDKIT=0 docker-compose build
+sudo docker-compose up -d 
+
 ```
 
 Now you should be able to access the node at `localhost:8080`.
