@@ -30,25 +30,24 @@ touch weavedb.config.js
 ```js
 module.exports = {
   contractTxId: "xxxxxxxx...",
-    arweave:{
-      host: "arweave.net", 
-      port: 443,
-      protocol: "https"
-    },
-    arweave_wallet:
-      {
-        "kty":"RSA",
-        "n":"...",
-        "e":"...",
-        "d":"...",
-        "p":"...",
-        "q":"...",
-        "dp":"...",
-        "dq":"...",
-        "qi":"..."
-      },
-      subscribe:false,
-      cache: "lmdb",
+  arweave:{
+    host: "arweave.net", 
+    port: 443,
+    protocol: "https"
+  },
+  arweave_wallet: {
+      "kty":"RSA",
+      "n":"...",
+      "e":"...",
+      "d":"...",
+      "p":"...",
+      "q":"...",
+      "dp":"...",
+      "dq":"...",
+      "qi":"..."
+  },
+  subscribe:false,
+  cache: "lmdb",
 }
 ```
 
@@ -99,7 +98,20 @@ module.exports = {
     host: "host.docker.internal"
     port: 1820,
     protocol: "http"
-  }
+  },
+  arweave_wallet: {
+      "kty":"RSA",
+      "n":"...",
+      "e":"...",
+      "d":"...",
+      "p":"...",
+      "q":"...",
+      "dp":"...",
+      "dq":"...",
+      "qi":"..."
+  },
+  subscribe:false,
+  cache: "lmdb",
 }
 ```
 

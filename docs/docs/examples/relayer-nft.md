@@ -230,7 +230,20 @@ module.exports = {
     host: "host.docker.internal"
     port: 1820,
     protocol: "http"
-  }
+  },
+  arweave_wallet: {
+      "kty":"RSA",
+      "n":"...",
+      "e":"...",
+      "d":"...",
+      "p":"...",
+      "q":"...",
+      "dp":"...",
+      "dq":"...",
+      "qi":"..."
+  },
+  subscribe:false,
+  cache: "lmdb",
 }
 ```
 Then run docker-compose.
