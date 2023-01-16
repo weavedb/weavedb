@@ -35,18 +35,7 @@ module.exports = {
     port: 443,
     protocol: "https"
   },
-  arweave_wallet: {
-      "kty":"RSA",
-      "n":"...",
-      "e":"...",
-      "d":"...",
-      "p":"...",
-      "q":"...",
-      "dp":"...",
-      "dq":"...",
-      "qi":"..."
-  },
-  subscribe:false,
+  subscribe: true,
   cache: "lmdb",
 }
 ```
@@ -99,18 +88,7 @@ module.exports = {
     port: 1820,
     protocol: "http"
   },
-  arweave_wallet: {
-      "kty":"RSA",
-      "n":"...",
-      "e":"...",
-      "d":"...",
-      "p":"...",
-      "q":"...",
-      "dp":"...",
-      "dq":"...",
-      "qi":"..."
-  },
-  subscribe:false,
+  subscribe: false,
   cache: "lmdb",
 }
 ```
