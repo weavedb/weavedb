@@ -5,7 +5,7 @@ export const config = {
     port: 443,
     protocol: "https",
   },
-  
+
   arweave_wallet: {
     kty: "RSA",
     n: "..",
