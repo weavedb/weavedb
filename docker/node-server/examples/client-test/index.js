@@ -21,7 +21,7 @@ async function main() {
   console.log("ret: ", ret);
   console.log("add to test_messages ");
   const ret2 = await sdk.add(
-    { date_field_1: new Date().toString() },
+    { text: "date=" + new Date().toString() },
     "test_messages"
   );
   console.log("ret2: ", ret2);
@@ -30,12 +30,14 @@ async function main() {
   await sleep(10000);
 
   // console.log("get test_doc")
+
   // console.log('await db.get("test_doc", 10): ', await sdk.get("test_doc", 10))
   console.log("get test_messages");
   console.log(
     'await db.get("test_messages", 10): ',
-    await sdk.get("test_doc2", 10)
+    await sdk.get("test_messages", 10)
   );
+
   // console.log("get test_doc3")
   // console.log('await db.get("test_doc3", 10): ', await sdk.get("test_doc3", 10))
   process.exit();
