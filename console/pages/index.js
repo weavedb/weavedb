@@ -12,6 +12,7 @@ import {
   Textarea,
 } from "@chakra-ui/react"
 import {
+  uniq,
   without,
   trim,
   reject,
@@ -54,6 +55,8 @@ import {
   createTempAddressWithAR,
   logoutTemp,
   queryDB,
+  _addOwner,
+  _removeOwner,
 } from "../lib/weavedb.js"
 
 const tabmap = {
@@ -76,6 +79,7 @@ export default inject(
     "on_connecting",
   ],
   ({ set, init, router, conf, fn, $ }) => {
+    const [newOwner, setNewOwner] = useState("")
     const [result, setResult] = useState("")
     const [state, setState] = useState(null)
     const [doc_path, setDocPath] = useState([])
@@ -463,8 +467,14 @@ export default inject(
         </Flex>
       </Flex>
     )
-    const isOwner = isNil(state) ? false : $.temp_current === state.owner
-
+    const owners = isNil(state)
+      ? []
+      : is(Array, state.owner)
+      ? state.owner
+      : [state.owner]
+    const isOwner = isNil(state)
+      ? false
+      : includes(($.temp_current || "").toLowerCase(), state.owner)
     return (
       <ChakraProvider>
         <style global jsx>{`
@@ -1167,14 +1177,7 @@ export default inject(
                                     }}
                                     onClick={async e => {
                                       e.stopPropagation()
-                                      let owners = state.owner
-                                      if (
-                                        !is(Array, owners) &&
-                                        is(String, state.woner)
-                                      ) {
-                                        owners = [state.owner]
-                                      }
-                                      if (!includes($.temp_current)(owners)) {
+                                      if (!isOwner) {
                                         alert(`Sign in with the owner account.`)
                                         return
                                       }
@@ -2287,6 +2290,31 @@ export default inject(
                         <Flex flex={1}>{v}</Flex>
                         <Flex>
                           <Box
+                            onClick={async () => {
+                              if (owners.length === 1) {
+                                if (
+                                  !confirm(
+                                    `Would you like to remove ${v}? Removing the last owner will make the DB unconfigurable.`
+                                  )
+                                ) {
+                                  return
+                                }
+                              } else if (
+                                !confirm(`Would you like to remove ${v}?`)
+                              ) {
+                                return
+                              }
+                              const res = await fn(_removeOwner)({
+                                address: v,
+                                contractTxId,
+                              })
+                              if (/^Error:/.test(res)) {
+                                alert("Something went wrong")
+                              }
+                              setState(
+                                (await db.db.readState()).cachedValue.state
+                              )
+                            }}
                             className="fas fa-trash"
                             sx={{
                               cursor: "pointer",
@@ -2296,15 +2324,15 @@ export default inject(
                         </Flex>
                       </Flex>
                     )
-                  })(
-                    isNil(state.owner)
-                      ? []
-                      : is(Array, state.owner)
-                      ? state.owner
-                      : [state.owner]
-                  )}
+                  })(owners)}
                   <Flex align="center">
-                    <Input flex={1} />
+                    <Input
+                      flex={1}
+                      value={newOwner}
+                      onChange={e => {
+                        setNewOwner(e.target.value)
+                      }}
+                    />
                     <Flex
                       fontSize="12px"
                       align="center"
@@ -2315,12 +2343,20 @@ export default inject(
                       py={1}
                       px={2}
                       w="100px"
+                      onClick={async () => {
+                        const res = await fn(_addOwner)({
+                          address: newOwner,
+                          contractTxId,
+                        })
+                        if (/^Error:/.test(res)) {
+                          alert("Something went wrong")
+                        }
+                        setState((await db.db.readState()).cachedValue.state)
+                      }}
+                      sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
                     >
                       Add Owner
                     </Flex>
-                  </Flex>
-                  <Flex bg="#333" color="white" justify="center" p={3} mt={3}>
-                    Save Change
                   </Flex>
                 </Box>
               </Flex>
