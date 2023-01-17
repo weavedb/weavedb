@@ -1,14 +1,6 @@
-compose: 
-	DOCKER_BUILDKIT=0 docker-compose build
+build: 
+	docker build . -t weavedb/node-server 
 run: 
-	docker-compose up 
-build-node:
-	docker build  --platform linux/amd64 . -t weavedb/node-server 
-	# docker build   . -t weavedb/node-server 
-run-node:
-	docker run -it weavedb/node-server /bin/bash
-build-envoy:
-	docker build  --platform linux/amd64 . -t weavedb/envoy -f Dockerfile.envoy
-run-envoy:
-	docker run -it weavedb/envoy /bin/bash
+	docker container rm -f node-server
+	docker run  --name node-server  -p 9090:9090 -t weavedb/node-server 
 

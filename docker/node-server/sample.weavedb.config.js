@@ -7,5 +7,5 @@ module.exports = {
     protocol: "https",
   },
   subscribe: true,
-  cache: "lmdb",
+  cache: "leveldb",
 }

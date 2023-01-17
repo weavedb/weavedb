@@ -36,7 +36,7 @@ module.exports = {
     protocol: "https"
   },
   subscribe: true,
-  cache: "lmdb",
+  cache: "leveldb",
 }
 ```
 
@@ -89,7 +89,7 @@ module.exports = {
     protocol: "http"
   },
   subscribe: false,
-  cache: "lmdb",
+  cache: "leveldb",
 }
 ```
 
