@@ -45,13 +45,12 @@ export default function Home() {
   };
   useEffect(() => {
     console.log("useeffect");
-    const test = async () => {
+    ;(async () => {
       console.log("useeffect test ");
       const _messagess = await db.get("test_messages", 10);
       setMessages(_messagess);
       console.log("messages: ", _messagess);
-    };
-    test();
+    })()
   }, []);
 
   return (
