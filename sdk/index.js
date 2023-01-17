@@ -67,6 +67,7 @@ class SDK extends Base {
     this.arweave = Arweave.init(arweave)
     this.Warp.LoggerFactory.INST.logLevel("error")
     if (typeof window === "object") {
+      window.buffer = require("buffer")
       require("@metamask/legacy-web3")
       this.web3 = window.web3
     }

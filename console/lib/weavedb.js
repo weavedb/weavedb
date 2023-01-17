@@ -1,6 +1,5 @@
 const { Ed25519KeyIdentity } = require("@dfinity/identity")
 import Arweave from "arweave"
-import client from "weavedb-client"
 import lf from "localforage"
 import SDK from "weavedb-sdk"
 import { ethers } from "ethers"
