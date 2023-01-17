@@ -15,6 +15,16 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.12.0 (Jan 17, 2023)
+
+#### Source Transaction Id
+
+[8dUFGgl05GiunNN_5LMBYEorkS2Znr1-L2JYVb0Cpm4](https://sonar.warp.cc/#/app/source/8dUFGgl05GiunNN_5LMBYEorkS2Znr1-L2JYVb0Cpm4)
+
+#### Added Features
+
+- [secp256k1-2 algorithm for Intmax is now settable](/docs/sdk/auth#intmaxwallet-intmax)
+
 ### v0.11.0 (Jan 15, 2023)
 
 #### Source Transaction Id
