@@ -19,7 +19,7 @@ export const config = {
   },
 
   subscribe: true,
-  cache: "lmdb",
+  cache: "leveldb",
 };
 
 export default config;

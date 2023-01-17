@@ -1,7 +1,7 @@
 version: '3'
 services:
   node-server:
-    build: .
+    build: ./node-server
     ports:
       - "9090:9090"
     extra_hosts:
@@ -9,8 +9,7 @@ services:
     volumes: 
       - "./cache:/weavedb/cache"
   envoy:
-    build: 
-      dockerfile: Dockerfile.envoy
+    build: ./envoy
     ports:
       - "8080:8080"
     links:

@@ -232,7 +232,7 @@ module.exports = {
     protocol: "http"
   },
   subscribe: true,
-  cache: "lmdb",
+  cache: "leveldb",
 }
 ```
 Then run docker-compose.
