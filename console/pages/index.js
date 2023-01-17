@@ -57,6 +57,7 @@ import {
   queryDB,
   _addOwner,
   _removeOwner,
+  _setCanEvolve,
 } from "../lib/weavedb.js"
 
 const tabmap = {
@@ -79,6 +80,17 @@ export default inject(
     "on_connecting",
   ],
   ({ set, init, router, conf, fn, $ }) => {
+    const [addCollection, setAddCollection] = useState(false)
+    const [addSchemas, setAddSchemas] = useState(false)
+    const [addDoc, setAddDoc] = useState(false)
+    const [addData, setAddData] = useState(false)
+    const [addRules, setAddRules] = useState(false)
+    const [addCron, setAddCron] = useState(false)
+    const [addIndex, setAddIndex] = useState(false)
+    const [addInstance, setAddInstance] = useState(false)
+    const [addOwner, setAddOwner] = useState(false)
+    const [addCanEvolve, setAddCanEvolve] = useState(false)
+
     const [newOwner, setNewOwner] = useState("")
     const [result, setResult] = useState("")
     const [state, setState] = useState(null)
@@ -115,15 +127,6 @@ export default inject(
     const [newTimes, setNewTimes] = useState("")
     const [contractTxId, setContractTxId] = useState(null)
     const [newContractTxId, setNewContractTxId] = useState("")
-    const [addCollection, setAddCollection] = useState(false)
-    const [addSchemas, setAddSchemas] = useState(false)
-    const [addDoc, setAddDoc] = useState(false)
-    const [addData, setAddData] = useState(false)
-    const [addRules, setAddRules] = useState(false)
-    const [addCron, setAddCron] = useState(false)
-    const [addIndex, setAddIndex] = useState(false)
-    const [addInstance, setAddInstance] = useState(false)
-    const [addOwner, setAddOwner] = useState(false)
     const [deployMode, setDeployMode] = useState("Connect")
     const [dbs, setDBs] = useState([])
     const [connect, setConnect] = useState(false)
@@ -1199,6 +1202,26 @@ export default inject(
                                   <Flex flex={1}>
                                     {state.canEvolve ? "true" : "false"}
                                   </Flex>
+                                  <Box
+                                    color="#999"
+                                    sx={{
+                                      cursor: "pointer",
+                                      ":hover": {
+                                        opacity: 0.75,
+                                        color: "#6441AF",
+                                      },
+                                    }}
+                                    onClick={async e => {
+                                      e.stopPropagation()
+                                      if (!isOwner) {
+                                        alert(`Sign in with the owner account.`)
+                                        return
+                                      }
+                                      setAddCanEvolve(true)
+                                    }}
+                                  >
+                                    <Box as="i" className="fas fa-edit" />
+                                  </Box>
                                 </Flex>
                                 <Flex align="center" p={2} px={3}>
                                   <Box
@@ -2356,6 +2379,65 @@ export default inject(
                       sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
                     >
                       Add Owner
+                    </Flex>
+                  </Flex>
+                </Box>
+              </Flex>
+            ) : addCanEvolve !== false ? (
+              <Flex
+                w="100%"
+                h="100%"
+                position="fixed"
+                sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+                bg="rgba(0,0,0,0.5)"
+                onClick={() => setAddCanEvolve(false)}
+                justify="center"
+                align="center"
+              >
+                <Box
+                  bg="white"
+                  width="500px"
+                  p={3}
+                  fontSize="12px"
+                  sx={{ borderRadius: "5px", cursor: "default" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Flex align="center" mb={3} justify="center">
+                    canEvolve is{" "}
+                    <Box
+                      as="span"
+                      ml={2}
+                      fontSize="20px"
+                      fontWeight="bold"
+                      color={state.canEvolve ? "#6441AF" : ""}
+                    >
+                      {state.canEvolve ? "ON" : "OFF"}
+                    </Box>
+                  </Flex>
+                  <Flex align="center">
+                    <Flex
+                      fontSize="12px"
+                      align="center"
+                      height="40px"
+                      bg="#333"
+                      color="white"
+                      justify="center"
+                      py={2}
+                      px={2}
+                      w="100%"
+                      onClick={async () => {
+                        const res = await fn(_setCanEvolve)({
+                          value: !state.canEvolve,
+                          contractTxId,
+                        })
+                        if (/^Error:/.test(res)) {
+                          alert("Something went wrong")
+                        }
+                        setState((await db.db.readState()).cachedValue.state)
+                      }}
+                      sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
+                    >
+                      Switch canEvolve
                     </Flex>
                   </Flex>
                 </Box>
