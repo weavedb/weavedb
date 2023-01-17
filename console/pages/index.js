@@ -1,3 +1,4 @@
+import SDK from "weavedb-sdk"
 import { useEffect, Fragment, useState } from "react"
 import JSONPretty from "react-json-pretty"
 import {
@@ -135,6 +136,7 @@ export default inject(
         await lf.setItem(`my_dbs`, _dbs)
       }
     }
+
     const removeDB = async _db => {
       const dbmap = indexBy(prop("contractTxId"), dbs)
       if (!isNil(dbmap[_db.contractTxId])) {
@@ -143,6 +145,14 @@ export default inject(
         await lf.setItem(`my_dbs`, _dbs)
       }
     }
+    useEffect(() => {
+      ;(async () => {
+        const db = new SDK({
+          contractTxId: "4H85bexFaqZH6Eq1p3Q92eNocsV2PAfLu3JYIKHJOhk",
+        })
+        await db.initializeWithoutWallet()
+      })()
+    }, [])
 
     useEffect(() => {
       ;(async () => {
@@ -151,7 +161,6 @@ export default inject(
         setDBs(_dbs)
       })()
     }, [])
-
     useEffect(() => {
       ;(async () => {
         if (!isNil(contractTxId)) {
@@ -170,17 +179,6 @@ export default inject(
         if (initDB) {
           fn(checkTempAddress)({ contractTxId })
           clearInterval(iv)
-          iv = setInterval(async () => {
-            try {
-              if (!isNil(db.db) && !isNil(contractTxId)) {
-                setState((await db.db.readState()).cachedValue.state)
-                setNetworkErr(false)
-              }
-            } catch (e) {
-              console.log(e)
-              setNetworkErr(true)
-            }
-          }, 1000)
         }
       })()
     }, [initDB, contractTxId])
@@ -765,6 +763,10 @@ export default inject(
                                         if (/^Error:/.test(res)) {
                                           alert("Something went wrong")
                                         }
+                                        setState(
+                                          (await db.db.readState()).cachedValue
+                                            .state
+                                        )
                                       }
                                     }}
                                   >
@@ -1344,6 +1346,10 @@ export default inject(
                                       if (/^Error:/.test(res)) {
                                         alert("Something went wrong")
                                       }
+                                      setState(
+                                        (await db.db.readState()).cachedValue
+                                          .state
+                                      )
                                     }
                                   }}
                                 >
@@ -1482,6 +1488,10 @@ export default inject(
                                         if (/^Error:/.test(res)) {
                                           alert("Something went wrong")
                                         }
+                                        setState(
+                                          (await db.db.readState()).cachedValue
+                                            .state
+                                        )
                                       }
                                     }}
                                   >
@@ -1547,6 +1557,7 @@ export default inject(
                           contractTxId,
                         })
                         setResult(res)
+                        setState((await db.db.readState()).cachedValue.state)
                       } catch (e) {
                         console.log(e)
                         setResult("Error: The wrong query")
@@ -1661,6 +1672,7 @@ export default inject(
                         setNewRules(`{"allow write": true}`)
                         setAddCollection(false)
                       }
+                      setState((await db.db.readState()).cachedValue.state)
                     }}
                   >
                     Add
@@ -1745,6 +1757,7 @@ export default inject(
                         setNewData(`{}`)
                         setAddDoc(false)
                       }
+                      setState((await db.db.readState()).cachedValue.state)
                     }}
                   >
                     Add
@@ -1923,6 +1936,7 @@ export default inject(
                         setNewFieldVal("")
                         setAddData(false)
                       }
+                      setState((await db.db.readState()).cachedValue.state)
                     }}
                   >
                     Add
@@ -1995,6 +2009,7 @@ export default inject(
                         setNewSchemas("")
                         setAddSchemas(false)
                       }
+                      setState((await db.db.readState()).cachedValue.state)
                     }}
                   >
                     Add
@@ -2164,6 +2179,7 @@ export default inject(
                         setNewSpan("")
                         setAddCron(false)
                       }
+                      setState((await db.db.readState()).cachedValue.state)
                     }}
                   >
                     Add
@@ -2239,6 +2255,7 @@ export default inject(
                         setNewRules2(`{"allow write": true}`)
                         setAddRules(false)
                       }
+                      setState((await db.db.readState()).cachedValue.state)
                     }}
                   >
                     Add
@@ -2400,6 +2417,7 @@ export default inject(
                         setNewIndex("[]")
                         setAddIndex(false)
                       }
+                      setState((await db.db.readState()).cachedValue.state)
                     }}
                   >
                     Add
