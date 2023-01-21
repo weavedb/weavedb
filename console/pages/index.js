@@ -78,7 +78,7 @@ export default inject(
     "signing_in",
     "signing_in_modal",
     "owner_signing_in_modal",
-    "on_connecting",
+    "loading",
   ],
   ({ set, init, router, conf, fn, $ }) => {
     const [addCollection, setAddCollection] = useState(false)
@@ -166,6 +166,7 @@ export default inject(
         if (addAlgorithms) setNewAuths(state.auth.algorithms)
       })()
     }, [addAlgorithms])
+
     useEffect(() => {
       ;(async () => {
         const db = new SDK({
@@ -182,6 +183,7 @@ export default inject(
         setDBs(_dbs)
       })()
     }, [])
+
     useEffect(() => {
       ;(async () => {
         if (!isNil(contractTxId)) {
@@ -2854,26 +2856,22 @@ export default inject(
                       color="white"
                       bg="#333"
                       onClick={async () => {
-                        if (!$.on_connecting) {
-                          set(true, "on_connecting")
-                          const res = await fn(deployDB)({
-                            port: port,
-                            owner: $.temp_current_all.addr,
-                            network: newNetwork,
-                            secure,
-                            canEvolve,
-                            auths,
-                          })
-                          if (!isNil(res.contractTxId)) {
-                            addDB(res)
-                            setAddInstance(false)
-                            if (isNil(contractTxId)) {
-                              setState(null)
-                              setNetwork(res.network)
-                              setContractTxId(res.contractTxId)
-                            }
+                        const res = await fn(deployDB)({
+                          port: port,
+                          owner: $.temp_current_all.addr,
+                          network: newNetwork,
+                          secure,
+                          canEvolve,
+                          auths,
+                        })
+                        if (!isNil(res.contractTxId)) {
+                          addDB(res)
+                          setAddInstance(false)
+                          if (isNil(contractTxId)) {
+                            setState(null)
+                            setNetwork(res.network)
+                            setContractTxId(res.contractTxId)
                           }
-                          set(false, "on_connecting")
                         }
                       }}
                     >
@@ -2896,26 +2894,41 @@ export default inject(
                       align="center"
                       color="white"
                       bg="#333"
+                      height="40px"
                       onClick={async () => {
-                        if (!$.on_connecting) {
+                        if (isNil($.loading)) {
                           if (!/^\s*$/.test(newContractTxId)) {
-                            set(true, "on_connecting")
-                            setNetwork(newNetwork)
-                            setContractTxId(newContractTxId)
-                            setEditNetwork(false)
-                            addDB({
-                              network: newNetwork,
-                              port: newNetwork === "Localhost" ? port : 443,
-                              contractTxId: newContractTxId,
-                            })
-                            setAddInstance(false)
-                            setNewContractTxId("")
-                            set(false, "on_connecting")
+                            set("connect_to_db", "loading")
+                            try {
+                              const db = await fn(setupWeaveDB)({
+                                network: newNetwork,
+                                contractTxId: newContractTxId,
+                                port: newPort,
+                              })
+                              let state = await db.db.readState()
+                              if (!isNil(state.cachedValue)) {
+                                setNetwork(newNetwork)
+                                setContractTxId(newContractTxId)
+                                setEditNetwork(false)
+                                addDB({
+                                  network: newNetwork,
+                                  port: newNetwork === "Localhost" ? port : 443,
+                                  contractTxId: newContractTxId,
+                                })
+                                setAddInstance(false)
+                                setNewContractTxId("")
+                              } else {
+                                alert("couldn't connect to the contract")
+                              }
+                            } catch (e) {
+                              alert("couldn't connect to the contract")
+                            }
+                            set(null, "loading")
                           }
                         }
                       }}
                     >
-                      {$.on_connecting ? (
+                      {$.loading === "connect_to_db" ? (
                         <Box as="i" className="fas fa-spin fa-circle-notch" />
                       ) : (
                         "Connect to DB"
