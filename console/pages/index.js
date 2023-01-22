@@ -58,6 +58,7 @@ import {
   _addOwner,
   _removeOwner,
   _setCanEvolve,
+  _setAlgorithms,
 } from "../lib/weavedb.js"
 
 const tabmap = {
@@ -77,7 +78,7 @@ export default inject(
     "signing_in",
     "signing_in_modal",
     "owner_signing_in_modal",
-    "on_connecting",
+    "loading",
   ],
   ({ set, init, router, conf, fn, $ }) => {
     const [addCollection, setAddCollection] = useState(false)
@@ -90,6 +91,7 @@ export default inject(
     const [addInstance, setAddInstance] = useState(false)
     const [addOwner, setAddOwner] = useState(false)
     const [addCanEvolve, setAddCanEvolve] = useState(false)
+    const [addAlgorithms, setAddAlgorithms] = useState(false)
 
     const [newOwner, setNewOwner] = useState("")
     const [result, setResult] = useState("")
@@ -132,6 +134,12 @@ export default inject(
     const [connect, setConnect] = useState(false)
     const [newPort, setNewPort] = useState(1820)
     const [auths, setAuths] = useState(["Arweave", "EVM", "DFINITY", "Intmax"])
+    const [newAuths, setNewAuths] = useState([
+      "Arweave",
+      "EVM",
+      "DFINITY",
+      "Intmax",
+    ])
     const [secure, setSecure] = useState(true)
     const [canEvolve, setCanEvolve] = useState(true)
 
@@ -152,6 +160,13 @@ export default inject(
         await lf.setItem(`my_dbs`, _dbs)
       }
     }
+
+    useEffect(() => {
+      ;(async () => {
+        if (addAlgorithms) setNewAuths(state.auth.algorithms)
+      })()
+    }, [addAlgorithms])
+
     useEffect(() => {
       ;(async () => {
         const db = new SDK({
@@ -168,6 +183,7 @@ export default inject(
         setDBs(_dbs)
       })()
     }, [])
+
     useEffect(() => {
       ;(async () => {
         if (!isNil(contractTxId)) {
@@ -1158,7 +1174,7 @@ export default inject(
                                   </Box>
                                   {state.auth.version}
                                 </Flex>
-                                <Flex align="center" p={2} px={3}>
+                                <Flex align="flex-start" p={2} px={3}>
                                   <Box
                                     mr={2}
                                     px={3}
@@ -1168,7 +1184,9 @@ export default inject(
                                   >
                                     Owner
                                   </Box>
-                                  <Box flex={1}>{state.owner}</Box>
+                                  <Box flex={1}>
+                                    {map(v => <Box>{v}</Box>)(owners)}
+                                  </Box>
                                   <Box
                                     color="#999"
                                     sx={{
@@ -1256,9 +1274,29 @@ export default inject(
                                   </Box>
                                   <Flex flex={1}>
                                     {map(v => <Box mr={2}>{v}</Box>)(
-                                      state.algorithms || []
+                                      state.auth.algorithms || []
                                     )}
                                   </Flex>
+                                  <Box
+                                    color="#999"
+                                    sx={{
+                                      cursor: "pointer",
+                                      ":hover": {
+                                        opacity: 0.75,
+                                        color: "#6441AF",
+                                      },
+                                    }}
+                                    onClick={async e => {
+                                      e.stopPropagation()
+                                      if (!isOwner) {
+                                        alert(`Sign in with the owner account.`)
+                                        return
+                                      }
+                                      setAddAlgorithms(true)
+                                    }}
+                                  >
+                                    <Box as="i" className="fas fa-edit" />
+                                  </Box>
                                 </Flex>
                                 <Flex align="center" p={2} px={3}>
                                   <Flex
@@ -2383,6 +2421,82 @@ export default inject(
                   </Flex>
                 </Box>
               </Flex>
+            ) : addAlgorithms !== false ? (
+              <Flex
+                w="100%"
+                h="100%"
+                position="fixed"
+                sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+                bg="rgba(0,0,0,0.5)"
+                onClick={() => setAddAlgorithms(false)}
+                justify="center"
+                align="center"
+              >
+                <Box
+                  bg="white"
+                  width="500px"
+                  p={3}
+                  fontSize="12px"
+                  sx={{ borderRadius: "5px", cursor: "default" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Flex>
+                    {map(v => (
+                      <Box mx={3}>
+                        <Box
+                          onClick={() => {
+                            if (includes(v)(newAuths)) {
+                              setNewAuths(without([v], newAuths))
+                            } else {
+                              setNewAuths(append(v, newAuths))
+                            }
+                          }}
+                          className={
+                            includes(v)(newAuths)
+                              ? "fas fa-check-square"
+                              : "far fa-square"
+                          }
+                          mr={2}
+                          sx={{
+                            cursor: "pointer",
+                            ":hover": { opacity: 0.75 },
+                          }}
+                        />
+                        {v}
+                      </Box>
+                    ))(["secp256k1", "secp256k1-2", "ed25519", "rsa256"])}
+                  </Flex>
+                  <Flex
+                    mt={3}
+                    fontSize="12px"
+                    align="center"
+                    height="40px"
+                    bg="#333"
+                    color="white"
+                    justify="center"
+                    py={1}
+                    px={2}
+                    w="100%"
+                    onClick={async () => {
+                      const res = await fn(_setAlgorithms)({
+                        algorithms: newAuths,
+                        contractTxId,
+                      })
+                      if (/^Error:/.test(res)) {
+                        alert("Something went wrong")
+                      }
+                      setState((await db.db.readState()).cachedValue.state)
+                    }}
+                    sx={{
+                      borderRadius: "5px",
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                  >
+                    Save Changes
+                  </Flex>
+                </Box>
+              </Flex>
             ) : addCanEvolve !== false ? (
               <Flex
                 w="100%"
@@ -2742,26 +2856,22 @@ export default inject(
                       color="white"
                       bg="#333"
                       onClick={async () => {
-                        if (!$.on_connecting) {
-                          set(true, "on_connecting")
-                          const res = await fn(deployDB)({
-                            port: port,
-                            owner: $.temp_current_all.addr,
-                            network: newNetwork,
-                            secure,
-                            canEvolve,
-                            auths,
-                          })
-                          if (!isNil(res.contractTxId)) {
-                            addDB(res)
-                            setAddInstance(false)
-                            if (isNil(contractTxId)) {
-                              setState(null)
-                              setNetwork(res.network)
-                              setContractTxId(res.contractTxId)
-                            }
+                        const res = await fn(deployDB)({
+                          port: port,
+                          owner: $.temp_current_all.addr,
+                          network: newNetwork,
+                          secure,
+                          canEvolve,
+                          auths,
+                        })
+                        if (!isNil(res.contractTxId)) {
+                          addDB(res)
+                          setAddInstance(false)
+                          if (isNil(contractTxId)) {
+                            setState(null)
+                            setNetwork(res.network)
+                            setContractTxId(res.contractTxId)
                           }
-                          set(false, "on_connecting")
                         }
                       }}
                     >
@@ -2784,26 +2894,41 @@ export default inject(
                       align="center"
                       color="white"
                       bg="#333"
+                      height="40px"
                       onClick={async () => {
-                        if (!$.on_connecting) {
+                        if (isNil($.loading)) {
                           if (!/^\s*$/.test(newContractTxId)) {
-                            set(true, "on_connecting")
-                            setNetwork(newNetwork)
-                            setContractTxId(newContractTxId)
-                            setEditNetwork(false)
-                            addDB({
-                              network: newNetwork,
-                              port: newNetwork === "Localhost" ? port : 443,
-                              contractTxId: newContractTxId,
-                            })
-                            setAddInstance(false)
-                            setNewContractTxId("")
-                            set(false, "on_connecting")
+                            set("connect_to_db", "loading")
+                            try {
+                              const db = await fn(setupWeaveDB)({
+                                network: newNetwork,
+                                contractTxId: newContractTxId,
+                                port: newPort,
+                              })
+                              let state = await db.db.readState()
+                              if (!isNil(state.cachedValue)) {
+                                setNetwork(newNetwork)
+                                setContractTxId(newContractTxId)
+                                setEditNetwork(false)
+                                addDB({
+                                  network: newNetwork,
+                                  port: newNetwork === "Localhost" ? port : 443,
+                                  contractTxId: newContractTxId,
+                                })
+                                setAddInstance(false)
+                                setNewContractTxId("")
+                              } else {
+                                alert("couldn't connect to the contract")
+                              }
+                            } catch (e) {
+                              alert("couldn't connect to the contract")
+                            }
+                            set(null, "loading")
                           }
                         }
                       }}
                     >
-                      {$.on_connecting ? (
+                      {$.loading === "connect_to_db" ? (
                         <Box as="i" className="fas fa-spin fa-circle-notch" />
                       ) : (
                         "Connect to DB"

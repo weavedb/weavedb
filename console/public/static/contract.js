@@ -15408,7 +15408,7 @@
       "setAlgorithms",
       signer
     );
-    if (!is_default(Array)(new_data) || intersection_default(new_data)(["secp256k1", "ed25519", "rsa256", "poseidon"]).length !== new_data.length) {
+    if (!is_default(Array)(new_data) || intersection_default(new_data)(["secp256k1", "ed25519", "rsa256", "secp256k1-2"]).length !== new_data.length) {
       throw new ContractError(`The wrong algorithms`);
     }
     state.auth.algorithms = new_data;

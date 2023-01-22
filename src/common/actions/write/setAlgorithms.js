@@ -13,7 +13,7 @@ export const setAlgorithms = async (state, action, signer) => {
   )
   if (
     !is(Array)(new_data) ||
-    intersection(new_data)(["secp256k1", "ed25519", "rsa256", "poseidon"])
+    intersection(new_data)(["secp256k1", "ed25519", "rsa256", "secp256k1-2"])
       .length !== new_data.length
   ) {
     throw new ContractError(`The wrong algorithms`)
