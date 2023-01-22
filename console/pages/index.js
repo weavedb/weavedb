@@ -2853,29 +2853,34 @@ export default inject(
                       p={2}
                       justify="center"
                       align="center"
+                      height="40px"
                       color="white"
                       bg="#333"
                       onClick={async () => {
-                        const res = await fn(deployDB)({
-                          port: port,
-                          owner: $.temp_current_all.addr,
-                          network: newNetwork,
-                          secure,
-                          canEvolve,
-                          auths,
-                        })
-                        if (!isNil(res.contractTxId)) {
-                          addDB(res)
-                          setAddInstance(false)
-                          if (isNil(contractTxId)) {
-                            setState(null)
-                            setNetwork(res.network)
-                            setContractTxId(res.contractTxId)
+                        if ($.loading === null) {
+                          set("deploy", "loading")
+                          const res = await fn(deployDB)({
+                            port: port,
+                            owner: $.temp_current_all.addr,
+                            network: newNetwork,
+                            secure,
+                            canEvolve,
+                            auths,
+                          })
+                          if (!isNil(res.contractTxId)) {
+                            addDB(res)
+                            setAddInstance(false)
+                            if (isNil(contractTxId)) {
+                              setState(null)
+                              setNetwork(res.network)
+                              setContractTxId(res.contractTxId)
+                            }
                           }
+                          set(null, "loading")
                         }
                       }}
                     >
-                      {$.on_connecting ? (
+                      {$.loading === "deploy" ? (
                         <Box as="i" className="fas fa-spin fa-circle-notch" />
                       ) : (
                         "Deploy DB Instance"
