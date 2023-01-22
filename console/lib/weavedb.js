@@ -24,7 +24,7 @@ import {
 } from "ramda"
 import { Buffer } from "buffer"
 let sdk
-const weavedbSrcTxId = "9vwjxsX0856iTRFsEMEXBC7UFJ3Utok_e6dFyB1s4TA"
+const weavedbSrcTxId = "8dUFGgl05GiunNN_5LMBYEorkS2Znr1-L2JYVb0Cpm4"
 //const intmaxSrcTxId = "OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94"
 const dfinitySrcTxId = "3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8"
 const ethereumSrcTxId = "Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w"
@@ -592,6 +592,47 @@ export const _setCanEvolve = async ({
       return
     }
     const res = await sdk.setCanEvolve(value, opt)
+    if (!isNil(res.err)) {
+      return `Error: ${res.err.errorMessage}`
+    } else {
+      return JSON.stringify(res)
+    }
+  } catch (e) {
+    console.log(e)
+    return `Error: Something went wrong`
+  }
+}
+
+export const _setAlgorithms = async ({
+  val: { algorithms, contractTxId },
+  global,
+  set,
+  fn,
+  conf,
+  get,
+}) => {
+  try {
+    const current = get("temp_current")
+    const identity = isNil(current)
+      ? null
+      : await lf.getItem(`temp_address:${contractTxId}:${current}`)
+    let ii = null
+    if (is(Array)(identity)) {
+      ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(identity))
+    }
+    const opt = !isNil(ii)
+      ? { ii }
+      : !isNil(identity) && !isNil(identity.tx)
+      ? {
+          wallet: current,
+          privateKey: identity.privateKey,
+        }
+      : null
+    if (isNil(opt)) {
+      alert("not logged in")
+      return
+    }
+    const res = await sdk.setAlgorithms(algorithms, opt)
     if (!isNil(res.err)) {
       return `Error: ${res.err.errorMessage}`
     } else {
