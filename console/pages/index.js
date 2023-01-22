@@ -1705,41 +1705,50 @@ export default inject(
                     align="center"
                     color="white"
                     bg="#333"
+                    height="40px"
                     onClick={async () => {
-                      if (/^\s*$/.test(newCollection)) {
-                        alert("Enter Collection ID")
-                        return
-                      } else if (hasPath([newCollection])(base)) {
-                        alert("Collection exists")
-                        return
-                      }
-                      try {
-                        JSON.parse(newRules)
-                      } catch (e) {
-                        alert("Wrong JSON format")
-                        return
-                      }
+                      if (isNil($.loading)) {
+                        if (/^\s*$/.test(newCollection)) {
+                          alert("Enter Collection ID")
+                          return
+                        } else if (hasPath([newCollection])(base)) {
+                          alert("Collection exists")
+                          return
+                        }
+                        set("add_collection", "loading")
+                        try {
+                          JSON.parse(newRules)
+                        } catch (e) {
+                          alert("Wrong JSON format")
+                          return
+                        }
 
-                      const res = await fn(queryDB)({
-                        method: "setRules",
-                        query: `${newRules}, ${compose(
-                          join(", "),
-                          map(v => `"${v}"`),
-                          append(newCollection)
-                        )(base_path)}`,
-                        contractTxId,
-                      })
-                      if (/^Error:/.test(res)) {
-                        alert("Something went wrong")
-                      } else {
-                        setNewCollection("")
-                        setNewRules(`{"allow write": true}`)
-                        setAddCollection(false)
+                        const res = await fn(queryDB)({
+                          method: "setRules",
+                          query: `${newRules}, ${compose(
+                            join(", "),
+                            map(v => `"${v}"`),
+                            append(newCollection)
+                          )(base_path)}`,
+                          contractTxId,
+                        })
+                        if (/^Error:/.test(res)) {
+                          alert("Something went wrong")
+                        } else {
+                          setNewCollection("")
+                          setNewRules(`{"allow write": true}`)
+                          setAddCollection(false)
+                        }
+                        set(null, "loading")
+                        setState((await db.db.readState()).cachedValue.state)
                       }
-                      setState((await db.db.readState()).cachedValue.state)
                     }}
                   >
-                    Add
+                    {!isNil($.loading) ? (
+                      <Box as="i" className="fas fa-spin fa-circle-notch" />
+                    ) : (
+                      "Add"
+                    )}
                   </Flex>
                 </Box>
               </Flex>
@@ -1790,41 +1799,50 @@ export default inject(
                     align="center"
                     color="white"
                     bg="#333"
+                    height="40px"
                     onClick={async () => {
-                      const exID = !/^\s*$/.test(newDoc)
-                      if (exID && hasPath([col, "__docs", newDoc])(base)) {
-                        alert("Doc exists")
-                        return
+                      if (isNil($.loading)) {
+                        const exID = !/^\s*$/.test(newDoc)
+                        if (exID && hasPath([col, "__docs", newDoc])(base)) {
+                          alert("Doc exists")
+                          return
+                        }
+                        try {
+                          JSON.parse(newData)
+                        } catch (e) {
+                          alert("Wrong JSON format")
+                          return
+                        }
+                        set("add_doc", "loading")
+                        let col_path = compose(
+                          join(", "),
+                          map(v => `"${v}"`),
+                          append(col)
+                        )(base_path)
+                        let query = `${newData}, ${col_path}`
+                        if (exID) query += `, "${newDoc}"`
+                        const res = await fn(queryDB)({
+                          method: exID ? "set" : "add",
+                          query,
+                          contractTxId,
+                        })
+                        if (/^Error:/.test(res)) {
+                          alert("Something went wrong")
+                        } else {
+                          setNewDoc("")
+                          setNewData(`{}`)
+                          setAddDoc(false)
+                        }
+                        setState((await db.db.readState()).cachedValue.state)
+                        set(null, "loading")
                       }
-                      try {
-                        JSON.parse(newData)
-                      } catch (e) {
-                        alert("Wrong JSON format")
-                        return
-                      }
-                      let col_path = compose(
-                        join(", "),
-                        map(v => `"${v}"`),
-                        append(col)
-                      )(base_path)
-                      let query = `${newData}, ${col_path}`
-                      if (exID) query += `, "${newDoc}"`
-                      const res = await fn(queryDB)({
-                        method: exID ? "set" : "add",
-                        query,
-                        contractTxId,
-                      })
-                      if (/^Error:/.test(res)) {
-                        alert("Something went wrong")
-                      } else {
-                        setNewDoc("")
-                        setNewData(`{}`)
-                        setAddDoc(false)
-                      }
-                      setState((await db.db.readState()).cachedValue.state)
                     }}
                   >
-                    Add
+                    {!isNil($.loading) ? (
+                      <Box as="i" className="fas fa-spin fa-circle-notch" />
+                    ) : (
+                      "Add"
+                    )}
                   </Flex>
                 </Box>
               </Flex>
@@ -1911,99 +1929,110 @@ export default inject(
                     align="center"
                     color="white"
                     bg="#333"
+                    height="40px"
                     onClick={async () => {
-                      const exID = !/^\s*$/.test(newField)
-                      const exVal =
-                        includes(newFieldType)(["bool", "null"]) ||
-                        !/^\s*$/.test(newFieldVal)
-                      if (!exVal) alert("Enter a value")
-                      if (!exID) alert("Enter field key")
-                      if (
-                        exID &&
-                        hasPath([col, "__docs", doc, "__data", newField])(base)
-                      ) {
-                        alert("Field exists")
-                        return
+                      if (isNil($.loading)) {
+                        const exID = !/^\s*$/.test(newField)
+                        const exVal =
+                          includes(newFieldType)(["bool", "null"]) ||
+                          !/^\s*$/.test(newFieldVal)
+                        if (!exVal) alert("Enter a value")
+                        if (!exID) alert("Enter field key")
+                        if (
+                          exID &&
+                          hasPath([col, "__docs", doc, "__data", newField])(
+                            base
+                          )
+                        ) {
+                          alert("Field exists")
+                          return
+                        }
+                        let val = null
+                        switch (newFieldType) {
+                          case "number":
+                            if (Number.isNaN(newFieldVal * 1)) {
+                              alert("Enter a number")
+                              return
+                            }
+                            val = newFieldVal * 1
+                            break
+                          case "string":
+                            val = `"${newFieldVal}"`
+                            break
+                          case "bool":
+                            val = eval(newFieldBool)
+                            break
+                          case "object":
+                            try {
+                              eval(`const obj = ${newFieldVal}`)
+                              val = newFieldVal
+                            } catch (e) {
+                              alert("Wrong JSON format")
+                              return
+                            }
+                            break
+                          case "sub collection":
+                            if (/^\s*$/.test(newField)) {
+                              alert("Enter Collection ID")
+                              return
+                            } else if (
+                              hasPath([col, "__docs", doc, "subs", newField])(
+                                base
+                              )
+                            ) {
+                              alert("Collection exists")
+                              return
+                            }
+                            try {
+                              JSON.parse(newFieldVal)
+                              val = newFieldVal
+                            } catch (e) {
+                              alert("Wrong JSON format")
+                              return
+                            }
+                            break
+                        }
+                        set("add_data", "loading")
+                        let query = ""
+                        let method = ""
+                        if (newFieldType === "sub collection") {
+                          method = "setRules"
+                          query = `${val}, ${compose(
+                            join(", "),
+                            map(v => `"${v}"`),
+                            append(newField)
+                          )(doc_path)}`
+                        } else {
+                          method = "update"
+                          let _doc_path = compose(
+                            join(", "),
+                            map(v => `"${v}"`),
+                            concat(base_path)
+                          )([col, doc])
+                          query = `{ "${newField}": ${val}}, ${_doc_path}`
+                        }
+                        const res = await fn(queryDB)({
+                          method,
+                          query,
+                          contractTxId,
+                        })
+                        if (/^Error:/.test(res)) {
+                          alert("Something went wrong")
+                        } else {
+                          setNewField("")
+                          setNewFieldVal("")
+                          setAddData(false)
+                        }
+                        setState((await db.db.readState()).cachedValue.state)
+                        set(null, "loading")
                       }
-                      let val = null
-                      switch (newFieldType) {
-                        case "number":
-                          if (Number.isNaN(newFieldVal * 1)) {
-                            alert("Enter a number")
-                            return
-                          }
-                          val = newFieldVal * 1
-                          break
-                        case "string":
-                          val = `"${newFieldVal}"`
-                          break
-                        case "bool":
-                          val = eval(newFieldBool)
-                          break
-                        case "object":
-                          try {
-                            eval(`const obj = ${newFieldVal}`)
-                            val = newFieldVal
-                          } catch (e) {
-                            alert("Wrong JSON format")
-                            return
-                          }
-                          break
-                        case "sub collection":
-                          if (/^\s*$/.test(newField)) {
-                            alert("Enter Collection ID")
-                            return
-                          } else if (
-                            hasPath([col, "__docs", doc, "subs", newField])(
-                              base
-                            )
-                          ) {
-                            alert("Collection exists")
-                            return
-                          }
-                          try {
-                            JSON.parse(newFieldVal)
-                            val = newFieldVal
-                          } catch (e) {
-                            alert("Wrong JSON format")
-                            return
-                          }
-                          break
-                      }
-                      let query = ""
-                      let method = ""
-                      if (newFieldType === "sub collection") {
-                        method = "setRules"
-                        query = `${val}, ${compose(
-                          join(", "),
-                          map(v => `"${v}"`),
-                          append(newField)
-                        )(doc_path)}`
-                      } else {
-                        method = "update"
-                        let _doc_path = compose(
-                          join(", "),
-                          map(v => `"${v}"`),
-                          concat(base_path)
-                        )([col, doc])
-                        query = `{ "${newField}": ${val}}, ${_doc_path}`
-                      }
-                      const res = await fn(queryDB)({
-                        method,
-                        query,
-                        contractTxId,
-                      })
-                      if (/^Error:/.test(res)) {
-                        alert("Something went wrong")
-                      } else {
-                        setNewField("")
-                        setNewFieldVal("")
-                        setAddData(false)
-                      }
-                      setState((await db.db.readState()).cachedValue.state)
                     }}
                   >
-                    Add
+                    {!isNil($.loading) ? (
+                      <Box as="i" className="fas fa-spin fa-circle-notch" />
+                    ) : (
+                      "Add"
+                    )}
                   </Flex>
                 </Box>
               </Flex>
@@ -2047,36 +2076,44 @@ export default inject(
                     color="white"
                     bg="#333"
                     onClick={async () => {
-                      const exID = !/^\s*$/.test(newSchemas)
-                      let val = null
-                      try {
-                        eval(`const obj = ${newSchemas}`)
-                        val = newSchemas
-                      } catch (e) {
-                        alert("Wrong JSON format")
-                        return
+                      if (isNil($.loading)) {
+                        const exID = !/^\s*$/.test(newSchemas)
+                        let val = null
+                        try {
+                          eval(`const obj = ${newSchemas}`)
+                          val = newSchemas
+                        } catch (e) {
+                          alert("Wrong JSON format")
+                          return
+                        }
+                        set("add_schema", "loading")
+                        let col_path = compose(
+                          join(", "),
+                          map(v => `"${v}"`),
+                          append(col)
+                        )(base_path)
+                        let query = `${newSchemas}, ${col_path}`
+                        const res = await fn(queryDB)({
+                          method: "setSchema",
+                          query,
+                          contractTxId,
+                        })
+                        if (/^Error:/.test(res)) {
+                          alert("Something went wrong")
+                        } else {
+                          setNewSchemas("")
+                          setAddSchemas(false)
+                        }
+                        setState((await db.db.readState()).cachedValue.state)
+                        set(null, "loading")
                       }
-                      let col_path = compose(
-                        join(", "),
-                        map(v => `"${v}"`),
-                        append(col)
-                      )(base_path)
-                      let query = `${newSchemas}, ${col_path}`
-                      const res = await fn(queryDB)({
-                        method: "setSchema",
-                        query,
-                        contractTxId,
-                      })
-                      if (/^Error:/.test(res)) {
-                        alert("Something went wrong")
-                      } else {
-                        setNewSchemas("")
-                        setAddSchemas(false)
-                      }
-                      setState((await db.db.readState()).cachedValue.state)
                     }}
                   >
-                    Add
+                    {!isNil($.loading) ? (
+                      <Box as="i" className="fas fa-spin fa-circle-notch" />
+                    ) : (
+                      "Add"
+                    )}
                   </Flex>
                 </Box>
               </Flex>
@@ -2199,54 +2236,62 @@ export default inject(
                     color="white"
                     bg="#333"
                     onClick={async () => {
-                      const exID = !/^\s*$/.test(newCronName)
-                      if (!exID) {
-                        alert("Enter Cron Name")
-                        return
-                      }
-                      if (newSpan * 1 === 0) {
-                        alert("Span must be greater than 0")
-                      }
-                      let val = null
-                      try {
-                        let obj = null
-                        eval(`obj = ${newCron}`)
-                        val = newCron
-                        if (!is(Array)(obj)) {
-                          alert("Jobs should be an array.")
+                      if (isNil($.loading)) {
+                        const exID = !/^\s*$/.test(newCronName)
+                        if (!exID) {
+                          alert("Enter Cron Name")
                           return
                         }
-                      } catch (e) {
-                        alert("Wrong JSON format")
-                        return
+                        if (newSpan * 1 === 0) {
+                          alert("Span must be greater than 0")
+                        }
+                        let val = null
+                        try {
+                          let obj = null
+                          eval(`obj = ${newCron}`)
+                          val = newCron
+                          if (!is(Array)(obj)) {
+                            alert("Jobs should be an array.")
+                            return
+                          }
+                        } catch (e) {
+                          alert("Wrong JSON format")
+                          return
+                        }
+                        set("add_cron", "loading")
+                        let query = `{times: ${newTimes || null}, start: ${
+                          newStart || null
+                        }, end: ${newEnd || null},do: ${
+                          newDo ? "true" : "false"
+                        }, span: ${
+                          newSpan * 1
+                        }, jobs: ${newCron}}, "${newCronName}"`
+                        const res = await fn(queryDB)({
+                          method: "addCron",
+                          query,
+                          contractTxId,
+                        })
+                        if (/^Error:/.test(res)) {
+                          alert("Something went wrong")
+                        } else {
+                          setNewCron("")
+                          setNewStart("")
+                          setNewCronName("")
+                          setNewEnd("")
+                          setNewTimes("")
+                          setNewSpan("")
+                          setAddCron(false)
+                        }
+                        setState((await db.db.readState()).cachedValue.state)
+                        set(null, "loading")
                       }
-                      let query = `{times: ${newTimes || null}, start: ${
-                        newStart || null
-                      }, end: ${newEnd || null},do: ${
-                        newDo ? "true" : "false"
-                      }, span: ${
-                        newSpan * 1
-                      }, jobs: ${newCron}}, "${newCronName}"`
-                      const res = await fn(queryDB)({
-                        method: "addCron",
-                        query,
-                        contractTxId,
-                      })
-                      if (/^Error:/.test(res)) {
-                        alert("Something went wrong")
-                      } else {
-                        setNewCron("")
-                        setNewStart("")
-                        setNewCronName("")
-                        setNewEnd("")
-                        setNewTimes("")
-                        setNewSpan("")
-                        setAddCron(false)
-                      }
-                      setState((await db.db.readState()).cachedValue.state)
                     }}
                   >
-                    Add
+                    {!isNil($.loading) ? (
+                      <Box as="i" className="fas fa-spin fa-circle-notch" />
+                    ) : (
+                      "Add"
+                    )}
                   </Flex>
                 </Box>
               </Flex>
@@ -2290,39 +2335,47 @@ export default inject(
                     color="white"
                     bg="#333"
                     onClick={async () => {
-                      const exRules = !/^\s*$/.test(newRules2)
-                      if (!exRules) {
-                        alert("Enter rules")
+                      if (isNil($.loading)) {
+                        const exRules = !/^\s*$/.test(newRules2)
+                        if (!exRules) {
+                          alert("Enter rules")
+                        }
+                        let val = null
+                        try {
+                          eval(`const obj = ${newRules2}`)
+                          val = newRules2
+                        } catch (e) {
+                          alert("Wrong JSON format")
+                          return
+                        }
+                        set("add_rules", "loading")
+                        let col_path = compose(
+                          join(", "),
+                          map(v => `"${v}"`),
+                          append(col)
+                        )(base_path)
+                        let query = `${newRules2}, ${col_path}`
+                        const res = await fn(queryDB)({
+                          method: "setRules",
+                          query,
+                          contractTxId,
+                        })
+                        if (/^Error:/.test(res)) {
+                          alert("Something went wrong")
+                        } else {
+                          setNewRules2(`{"allow write": true}`)
+                          setAddRules(false)
+                        }
+                        setState((await db.db.readState()).cachedValue.state)
+                        set(null, "loading")
                       }
-                      let val = null
-                      try {
-                        eval(`const obj = ${newRules2}`)
-                        val = newRules2
-                      } catch (e) {
-                        alert("Wrong JSON format")
-                        return
-                      }
-                      let col_path = compose(
-                        join(", "),
-                        map(v => `"${v}"`),
-                        append(col)
-                      )(base_path)
-                      let query = `${newRules2}, ${col_path}`
-                      const res = await fn(queryDB)({
-                        method: "setRules",
-                        query,
-                        contractTxId,
-                      })
-                      if (/^Error:/.test(res)) {
-                        alert("Something went wrong")
-                      } else {
-                        setNewRules2(`{"allow write": true}`)
-                        setAddRules(false)
-                      }
-                      setState((await db.db.readState()).cachedValue.state)
                     }}
                   >
-                    Add
+                    {!isNil($.loading) ? (
+                      <Box as="i" className="fas fa-spin fa-circle-notch" />
+                    ) : (
+                      "Add"
+                    )}
                   </Flex>
                 </Box>
               </Flex>
@@ -2405,18 +2458,26 @@ export default inject(
                       px={2}
                       w="100px"
                       onClick={async () => {
-                        const res = await fn(_addOwner)({
-                          address: newOwner,
-                          contractTxId,
-                        })
-                        if (/^Error:/.test(res)) {
-                          alert("Something went wrong")
+                        if (isNil($.loading)) {
+                          set("add_owner", "loading")
+                          const res = await fn(_addOwner)({
+                            address: newOwner,
+                            contractTxId,
+                          })
+                          if (/^Error:/.test(res)) {
+                            alert("Something went wrong")
+                          }
+                          setState((await db.db.readState()).cachedValue.state)
+                          set(null, "loading")
                         }
-                        setState((await db.db.readState()).cachedValue.state)
                       }}
                       sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
                     >
-                      Add Owner
+                      {!isNil($.loading) ? (
+                        <Box as="i" className="fas fa-spin fa-circle-notch" />
+                      ) : (
+                        "Add Owner"
+                      )}
                     </Flex>
                   </Flex>
                 </Box>
@@ -2478,14 +2539,18 @@ export default inject(
                     px={2}
                     w="100%"
                     onClick={async () => {
-                      const res = await fn(_setAlgorithms)({
-                        algorithms: newAuths,
-                        contractTxId,
-                      })
-                      if (/^Error:/.test(res)) {
-                        alert("Something went wrong")
+                      if (isNil($.loading)) {
+                        set("set_algorithms", "loading")
+                        const res = await fn(_setAlgorithms)({
+                          algorithms: newAuths,
+                          contractTxId,
+                        })
+                        if (/^Error:/.test(res)) {
+                          alert("Something went wrong")
+                        }
+                        set(null, "loading")
+                        setState((await db.db.readState()).cachedValue.state)
                       }
-                      setState((await db.db.readState()).cachedValue.state)
                     }}
                     sx={{
                       borderRadius: "5px",
@@ -2493,7 +2558,11 @@ export default inject(
                       ":hover": { opacity: 0.75 },
                     }}
                   >
-                    Save Changes
+                    {!isNil($.loading) ? (
+                      <Box as="i" className="fas fa-spin fa-circle-notch" />
+                    ) : (
+                      "Save Changes"
+                    )}
                   </Flex>
                 </Box>
               </Flex>
@@ -2540,18 +2609,26 @@ export default inject(
                       px={2}
                       w="100%"
                       onClick={async () => {
-                        const res = await fn(_setCanEvolve)({
-                          value: !state.canEvolve,
-                          contractTxId,
-                        })
-                        if (/^Error:/.test(res)) {
-                          alert("Something went wrong")
+                        if (isNil($.loading)) {
+                          set("set_canevolve", "loading")
+                          const res = await fn(_setCanEvolve)({
+                            value: !state.canEvolve,
+                            contractTxId,
+                          })
+                          if (/^Error:/.test(res)) {
+                            alert("Something went wrong")
+                          }
+                          setState((await db.db.readState()).cachedValue.state)
+                          set(null, "loading")
                         }
-                        setState((await db.db.readState()).cachedValue.state)
                       }}
                       sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
                     >
-                      Switch canEvolve
+                      {!isNil($.loading) ? (
+                        <Box as="i" className="fas fa-spin fa-circle-notch" />
+                      ) : (
+                        "Switch canEvolve"
+                      )}
                     </Flex>
                   </Flex>
                 </Box>
@@ -2596,63 +2673,72 @@ export default inject(
                     color="white"
                     bg="#333"
                     onClick={async () => {
-                      const exIndex = !/^\s*$/.test(newIndex)
-                      if (!exIndex) {
-                        alert("Enter rules")
-                      }
-                      let val = null
-                      let obj
-                      try {
-                        eval(`obj = ${newIndex}`)
-                        if (!is(Array, obj)) {
-                          alert("Index must be an array")
+                      if (isNil($.loading)) {
+                        const exIndex = !/^\s*$/.test(newIndex)
+                        if (!exIndex) {
+                          alert("Enter rules")
                           return
                         }
-                        if (obj.length < 2) {
-                          alert("Compound Index must have at least 2 fields")
+                        let val = null
+                        let obj
+                        try {
+                          eval(`obj = ${newIndex}`)
+                          if (!is(Array, obj)) {
+                            alert("Index must be an array")
+                            return
+                          }
+                          if (obj.length < 2) {
+                            alert("Compound Index must have at least 2 fields")
+                            return
+                          }
+                          val = newIndex
+                        } catch (e) {
+                          alert("Wrong JSON format")
                           return
                         }
-                        val = newIndex
-                      } catch (e) {
-                        alert("Wrong JSON format")
-                        return
+                        const serialize = v =>
+                          map(v2 => {
+                            let v3 = clone(v2)
+                            if (v3.length < 2) v3.push("asc")
+                            return join(":")(v2)
+                          })(v).join(",")
+                        if (
+                          compose(
+                            includes(serialize(obj)),
+                            map(serialize)
+                          )(indexes)
+                        ) {
+                          alert("Index exists")
+                          return
+                        }
+                        set("add_index", "loading")
+                        let col_path = compose(
+                          join(", "),
+                          map(v => `"${v}"`),
+                          append(col)
+                        )(base_path)
+                        let query = `${newIndex}, ${col_path}`
+                        const res = await fn(queryDB)({
+                          method: "addIndex",
+                          query,
+                          contractTxId,
+                        })
+                        if (/^Error:/.test(res)) {
+                          alert("Something went wrong")
+                        } else {
+                          setNewIndex("[]")
+                          setAddIndex(false)
+                        }
+                        setState((await db.db.readState()).cachedValue.state)
+                        set(null, "loading")
                       }
-                      const serialize = v =>
-                        map(v2 => {
-                          let v3 = clone(v2)
-                          if (v3.length < 2) v3.push("asc")
-                          return join(":")(v2)
-                        })(v).join(",")
-                      if (
-                        compose(
-                          includes(serialize(obj)),
-                          map(serialize)
-                        )(indexes)
-                      ) {
-                        alert("Index exists")
-                        return
-                      }
-                      let col_path = compose(
-                        join(", "),
-                        map(v => `"${v}"`),
-                        append(col)
-                      )(base_path)
-                      let query = `${newIndex}, ${col_path}`
-                      const res = await fn(queryDB)({
-                        method: "addIndex",
-                        query,
-                        contractTxId,
-                      })
-                      if (/^Error:/.test(res)) {
-                        alert("Something went wrong")
-                      } else {
-                        setNewIndex("[]")
-                        setAddIndex(false)
-                      }
-                      setState((await db.db.readState()).cachedValue.state)
                     }}
                   >
-                    Add
+                    {!isNil($.loading) ? (
+                      <Box as="i" className="fas fa-spin fa-circle-notch" />
+                    ) : (
+                      "Add"
+                    )}
                   </Flex>
                 </Box>
               </Flex>
