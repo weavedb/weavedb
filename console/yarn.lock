@@ -3170,7 +3170,7 @@ arweave@1.11.8, arweave@^1.10.13:
     bignumber.js "^9.0.2"
     util "^0.12.4"
 
-arweave@^1.11.4:
+arweave@^1.11.4, arweave@^1.11.8:
   version "1.12.2"
   resolved "https://registry.yarnpkg.com/arweave/-/arweave-1.12.2.tgz#e99fb3db0529043ae0c67a89587751f8640058dd"
   integrity sha512-gm82sbUd3AqiRxZ9hWRBnC2mRff+kCuVw1cSdMwhUmVyeSgvDxi5GkdCKHUm1tMvu59f45OcZRiL1yEIvvJY2Q==
@@ -4731,6 +4731,11 @@ globby@^7.1.1:
     pify "^3.0.0"
     slash "^1.0.0"
 
+google-protobuf@^3.21.0:
+  version "3.21.2"
+  resolved "https://registry.yarnpkg.com/google-protobuf/-/google-protobuf-3.21.2.tgz#4580a2bea8bbb291ee579d1fefb14d6fa3070ea4"
+  integrity sha512-3MSOYFO5U9mPGikIYCzK0SaThypfGgS6bHqrUGXG3DPHCrb+txNqeEcns1W0lkGfk0rCyNXm7xB9rMxnCiZOoA==
+
 gopd@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/gopd/-/gopd-1.0.1.tgz#29ff76de69dac7489b7c0918a5788e56477c332c"
@@ -4747,6 +4752,11 @@ growl@1.10.5:
   version "1.10.5"
   resolved "https://registry.yarnpkg.com/growl/-/growl-1.10.5.tgz#f2735dc2283674fa67478b10181059355c369e5e"
   integrity sha512-qBr4OuELkhPenW6goKVXiv47US3clb3/IbuWF9KNKEijAy9oeHxU9IgzjvJhHkUzhaj7rOUD7+YGWqUjLp5oSA==
+
+grpc-web@^1.3.1:
+  version "1.4.2"
+  resolved "https://registry.yarnpkg.com/grpc-web/-/grpc-web-1.4.2.tgz#86995f76471ce6b2119106ec26f909b7b69e7d43"
+  integrity sha512-gUxWq42l5ldaRplcKb4Pw5O4XBONWZgz3vxIIXnfIeJj8Jc3wYiq2O4c9xzx/NGbbPEej4rhI62C9eTENwLGNw==
 
 hamt_plus@1.0.2:
   version "1.0.2"
@@ -7505,6 +7515,18 @@ weavedb-base@^0.10.3:
     eth-crypto "^2.3.0"
     ethereumjs-util "^7.1.5"
     ramda "^0.28.0"
+
+weavedb-client@^0.10.2:
+  version "0.10.2"
+  resolved "https://registry.yarnpkg.com/weavedb-client/-/weavedb-client-0.10.2.tgz#1a26a0ddb0e37547bc580375fe9b76b6720869a9"
+  integrity sha512-/D2Yb23mTze6i7qE2lFkoZB8IrS0p0qwFu+xkHR2NhdpIHuVYhYLyk/gXvJIQF9A4FEFr5o5NhmQeTqQ/uLLFw==
+  dependencies:
+    "@metamask/legacy-web3" "^2.0.0"
+    arweave "^1.11.8"
+    google-protobuf "^3.21.0"
+    grpc-web "^1.3.1"
+    ramda "^0.28.0"
+    weavedb-base "^0.10.3"
 
 weavedb-sdk@^0.10.4:
   version "0.10.4"

@@ -2,6 +2,7 @@ const { Ed25519KeyIdentity } = require("@dfinity/identity")
 import Arweave from "arweave"
 import lf from "localforage"
 import SDK from "weavedb-sdk"
+import Client from "weavedb-client"
 import { ethers } from "ethers"
 import { AuthClient } from "@dfinity/auth-client"
 import { WarpFactory } from "warp-contracts"
@@ -53,7 +54,7 @@ export const connectLocalhost = async ({ conf, set, val: { port } }) => {
 export const setupWeaveDB = async ({
   conf,
   set,
-  val: { network, contractTxId, port },
+  val: { network, contractTxId, port, rpc },
 }) => {
   sdk = new SDK({
     network: network.toLowerCase(),
