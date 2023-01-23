@@ -18,13 +18,13 @@ yarn repl --wallet mainnet
 The REPL starts a new WeaveDB instance, so the first thing you need to do is to set some rules to collections.
 
 ```bash
-> setRules({"allow write": true}, "collection_name")
+setRules({"allow write": true}, "collection_name")
 ```
 
 Then you can start adding docs.
 
 ```bash
-> add({field1: "val1", field2: "val2"}, "collection_name")
+add({field1: "val1", field2: "val2"}, "collection_name")
 ```
 
 If you also start the [web console](/docs/development/web-console), the REPL and the web console will be in sync, so you can manipulate the DB from both sides.
