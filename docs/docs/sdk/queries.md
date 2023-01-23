@@ -5,6 +5,14 @@ sidebar_position: 3
 
 WeaveDB queries cover most of the things Firestore can do with syntactic sugar inspired by [Firestore Sweet](https://warashibe.github.io/firestore-sweet/).
 
+### getInfo
+
+Get configurations
+
+```js
+await db.getInfo()
+```
+
 ### getNonce
 
 To get the next nonce for an address. Nonces are internally used for signature verification to write data.
@@ -103,6 +111,15 @@ These only work with `weavedb-sdk-node` for now.
 ```js
 await db.getCache("collection_name", "doc_id")
 await db.cgetCache("collection_name", "doc_id")
+```
+
+### listCollections
+
+List collection names
+
+```js
+await db.listCollections() // list root collections
+await db.listCollections("collection_name", "doc_id") // list sub collections
 ```
 
 ### nocache
