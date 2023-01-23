@@ -12,6 +12,7 @@ import {
   Textarea,
 } from "@chakra-ui/react"
 import {
+  assoc,
   uniq,
   without,
   trim,
@@ -79,6 +80,7 @@ export default inject(
     "signing_in_modal",
     "owner_signing_in_modal",
     "loading",
+    "loading_contract",
   ],
   ({ set, init, router, conf, fn, $ }) => {
     const [addCollection, setAddCollection] = useState(false)
@@ -92,6 +94,7 @@ export default inject(
     const [addOwner, setAddOwner] = useState(false)
     const [addCanEvolve, setAddCanEvolve] = useState(false)
     const [addAlgorithms, setAddAlgorithms] = useState(false)
+    const [addGRPC, setAddGRPC] = useState(false)
 
     const [newOwner, setNewOwner] = useState("")
     const [result, setResult] = useState("")
@@ -129,8 +132,11 @@ export default inject(
     const [newTimes, setNewTimes] = useState("")
     const [contractTxId, setContractTxId] = useState(null)
     const [newContractTxId, setNewContractTxId] = useState("")
+    const [newRPC, setNewRPC] = useState("")
+    const [newRPC2, setNewRPC2] = useState("")
     const [deployMode, setDeployMode] = useState("Connect")
     const [dbs, setDBs] = useState([])
+    const [currentDB, setCurrentDB] = useState(null)
     const [connect, setConnect] = useState(false)
     const [newPort, setNewPort] = useState(1820)
     const [auths, setAuths] = useState(["Arweave", "EVM", "DFINITY", "Intmax"])
@@ -152,6 +158,15 @@ export default inject(
       }
     }
 
+    const updateDB = async _db => {
+      const dbmap = indexBy(prop("contractTxId"), dbs)
+      if (!isNil(dbmap[_db.contractTxId])) {
+        dbmap[_db.contractTxId] = _db
+        const _dbs = values(dbmap)
+        setDBs(_dbs)
+        await lf.setItem(`my_dbs`, _dbs)
+      }
+    }
     const removeDB = async _db => {
       const dbmap = indexBy(prop("contractTxId"), dbs)
       if (!isNil(dbmap[_db.contractTxId])) {
@@ -184,18 +199,24 @@ export default inject(
       })()
     }, [])
 
-    useEffect(() => {
-      ;(async () => {
-        if (!isNil(contractTxId)) {
-          db = await fn(setupWeaveDB)({ network, contractTxId, port })
-          setState((await db.db.readState()).cachedValue.state)
-          fn(switchTempAddress)({ contractTxId })
-        } else {
-          db = await fn(setupWeaveDB)({ network: "Mainnet" })
-        }
-        setInitDB(true)
-      })()
-    }, [contractTxId])
+    const _setContractTxId = async (_contractTxId, network, rpc) => {
+      setContractTxId(_contractTxId)
+      if (!isNil(_contractTxId)) {
+        set(_contractTxId, "loading_contract")
+        db = await fn(setupWeaveDB)({
+          network,
+          contractTxId: _contractTxId,
+          port,
+          rpc,
+        })
+        setState((await db.db.readState()).cachedValue.state)
+        set(null, "loading_contract")
+        fn(switchTempAddress)({ contractTxId: _contractTxId })
+      } else {
+        db = await fn(setupWeaveDB)({ network: "Mainnet" })
+      }
+      setInitDB(true)
+    }
 
     useEffect(() => {
       ;(async () => {
@@ -1017,16 +1038,23 @@ export default inject(
                               map(v => (
                                 <Flex
                                   onClick={() => {
-                                    if (
-                                      v.network === "Localhost" &&
-                                      isNil(port)
-                                    ) {
-                                      alert("not connected with localhost")
-                                      return
+                                    if (contractTxId !== v.contractTxId) {
+                                      if (
+                                        v.network === "Localhost" &&
+                                        isNil(port)
+                                      ) {
+                                        alert("not connected with localhost")
+                                        return
+                                      }
+                                      setState(null)
+                                      setNetwork(v.network)
+                                      setCurrentDB(v)
+                                      _setContractTxId(
+                                        v.contractTxId,
+                                        v.network,
+                                        v.rpc
+                                      )
                                     }
-                                    setState(null)
-                                    setNetwork(v.network)
-                                    setContractTxId(v.contractTxId)
                                   }}
                                   p={2}
                                   px={3}
@@ -1098,8 +1126,61 @@ export default inject(
                             <Box flex={1} />
                           </Flex>
                           <Box height="500px" sx={{ overflowY: "auto" }}>
-                            {isNil(state) || isNil(state.auth) ? null : (
+                            {isNil(contractTxId) ? (
+                              <Flex
+                                justify="center"
+                                align="center"
+                                height="100%"
+                              >
+                                Please connect with a DB instance.
+                              </Flex>
+                            ) : contractTxId === $.loading_contract ? (
+                              <Flex
+                                justify="center"
+                                align="center"
+                                height="100%"
+                              >
+                                <Box
+                                  color="#6441AF"
+                                  as="i"
+                                  className="fas fa-spin fa-circle-notch"
+                                  fontSize="50px"
+                                />
+                              </Flex>
+                            ) : isNil(state) || isNil(state.auth) ? null : (
                               <>
+                                <Flex align="center" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#ddd"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    gRPC Node
+                                  </Box>
+                                  <Box flex={1}>
+                                    {(currentDB.rpc || "") === ""
+                                      ? "None (Browser SDK)"
+                                      : currentDB.rpc}
+                                  </Box>
+                                  <Box
+                                    color="#999"
+                                    sx={{
+                                      cursor: "pointer",
+                                      ":hover": {
+                                        opacity: 0.75,
+                                        color: "#6441AF",
+                                      },
+                                    }}
+                                    onClick={async e => {
+                                      e.stopPropagation()
+                                      setNewRPC2(currentDB.rpc || "")
+                                      setAddGRPC(true)
+                                    }}
+                                  >
+                                    <Box as="i" className="fas fa-edit" />
+                                  </Box>
+                                </Flex>
                                 <Flex align="center" p={2} px={3}>
                                   <Box
                                     mr={2}
@@ -2973,6 +3054,137 @@ export default inject(
                       )}
                     </Flex>
                   ) : (
+                    <>
+                      <Flex fontSize="10px" mx={1} mb={1} mt={3}>
+                        RPC URL (Optional)
+                      </Flex>
+                      <Input
+                        placeholder="https://grpc.example.com"
+                        flex={1}
+                        value={newRPC}
+                        onChange={e => setNewRPC(trim(e.target.value))}
+                        sx={{ borderRadius: 0 }}
+                      />
+                      <Flex
+                        mt={4}
+                        sx={{
+                          borderRadius: "3px",
+                          cursor: "pointer",
+                          ":hover": { opacity: 0.75 },
+                        }}
+                        p={2}
+                        justify="center"
+                        align="center"
+                        color="white"
+                        bg="#333"
+                        height="40px"
+                        onClick={async () => {
+                          if (isNil($.loading)) {
+                            if (!/^\s*$/.test(newContractTxId)) {
+                              set("connect_to_db", "loading")
+                              try {
+                                const db = await fn(setupWeaveDB)({
+                                  network: newNetwork,
+                                  contractTxId: newContractTxId,
+                                  port: newPort,
+                                  rpc: newRPC,
+                                })
+                                let state = await db.db.readState()
+                                if (!isNil(state.cachedValue)) {
+                                  setNetwork(newNetwork)
+                                  await _setContractTxId(
+                                    newContractTxId,
+                                    newRPC,
+                                    newNetwork
+                                  )
+                                  setEditNetwork(false)
+                                  addDB({
+                                    network: newNetwork,
+                                    port:
+                                      newNetwork === "Localhost" ? port : 443,
+                                    contractTxId: newContractTxId,
+                                    rpc: newRPC,
+                                  })
+                                  setAddInstance(false)
+                                  setNewContractTxId("")
+                                  setNewRPC("")
+                                } else {
+                                  alert("couldn't connect to the contract")
+                                }
+                              } catch (e) {
+                                alert("couldn't connect to the contract")
+                              }
+                              set(null, "loading")
+                            }
+                          }
+                        }}
+                      >
+                        {$.loading === "connect_to_db" ? (
+                          <Box as="i" className="fas fa-spin fa-circle-notch" />
+                        ) : (
+                          "Connect to DB"
+                        )}
+                      </Flex>
+                    </>
+                  )}
+                </Box>
+              </Flex>
+            ) : addGRPC !== false ? (
+              <Flex
+                w="100%"
+                h="100%"
+                position="fixed"
+                sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+                bg="rgba(0,0,0,0.5)"
+                onClick={() => setAddGRPC(false)}
+                justify="center"
+                align="center"
+              >
+                <Box
+                  bg="white"
+                  width="500px"
+                  p={3}
+                  sx={{ borderRadius: "5px", cursor: "default" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Flex fontSize="10px" m={1}>
+                    Network
+                  </Flex>
+                  <Select
+                    w="100%"
+                    disabled={true}
+                    value={currentDB.network}
+                    onChange={e => setNewNetwork(e.target.value)}
+                    sx={{ borderRadius: "5px 0 0 5px" }}
+                    mb={3}
+                  >
+                    {map(v => <option value={v}>{v}</option>)(
+                      isNil(port) ? ["Mainnet"] : networks
+                    )}
+                  </Select>
+                  <>
+                    <Flex fontSize="10px" m={1}>
+                      ContractTxId
+                    </Flex>
+                    <Input
+                      flex={1}
+                      value={currentDB.contractTxId}
+                      disabled={true}
+                      sx={{ borderRadius: 0 }}
+                    />
+                  </>
+
+                  <>
+                    <Flex fontSize="10px" mx={1} mb={1} mt={3}>
+                      RPC URL (Optional)
+                    </Flex>
+                    <Input
+                      placeholder="https://grpc.example.com"
+                      flex={1}
+                      value={newRPC2}
+                      onChange={e => setNewRPC2(trim(e.target.value))}
+                      sx={{ borderRadius: 0 }}
+                    />
                     <Flex
                       mt={4}
                       sx={{
@@ -2988,34 +3200,19 @@ export default inject(
                       height="40px"
                       onClick={async () => {
                         if (isNil($.loading)) {
-                          if (!/^\s*$/.test(newContractTxId)) {
-                            set("connect_to_db", "loading")
-                            try {
-                              const db = await fn(setupWeaveDB)({
-                                network: newNetwork,
-                                contractTxId: newContractTxId,
-                                port: newPort,
-                              })
-                              let state = await db.db.readState()
-                              if (!isNil(state.cachedValue)) {
-                                setNetwork(newNetwork)
-                                setContractTxId(newContractTxId)
-                                setEditNetwork(false)
-                                addDB({
-                                  network: newNetwork,
-                                  port: newNetwork === "Localhost" ? port : 443,
-                                  contractTxId: newContractTxId,
-                                })
-                                setAddInstance(false)
-                                setNewContractTxId("")
-                              } else {
-                                alert("couldn't connect to the contract")
-                              }
-                            } catch (e) {
-                              alert("couldn't connect to the contract")
-                            }
-                            set(null, "loading")
-                          }
+                          set("connect_to_db", "loading")
+                          const db = await fn(setupWeaveDB)({
+                            network: currentDB.network,
+                            contractTxId: currentDB.contractTxId,
+                            port: currentDB.port,
+                            rpc: newRPC,
+                          })
+                          const newDB = assoc("rpc", newRPC2, currentDB)
+                          updateDB(newDB)
+                          setCurrentDB(newDB)
+                          setAddGRPC(false)
+                          setNewRPC2("")
+                          set(null, "loading")
                         }
                       }}
                     >
@@ -3025,7 +3222,7 @@ export default inject(
                         "Connect to DB"
                       )}
                     </Flex>
-                  )}
+                  </>
                 </Box>
               </Flex>
             ) : connect !== false ? (
