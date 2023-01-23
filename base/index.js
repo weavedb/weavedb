@@ -59,6 +59,10 @@ class Base {
     return this.request("getRules", ...query)
   }
 
+  async getInfo() {
+    return this.request("getInfo")
+  }
+
   async listCollections(...query) {
     return this.request("listCollections", ...query)
   }
