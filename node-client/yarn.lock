@@ -1601,10 +1601,10 @@ util@^0.12.4:
     is-typed-array "^1.1.3"
     which-typed-array "^1.1.2"
 
-weavedb-base@^0.10.3:
-  version "0.10.3"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.10.3.tgz#fa9de930a849a274694da012f446432782902a3d"
-  integrity sha512-esnVESN0ku5g6NPodTEL/G4McV7cydPf+VMidW3pXVwDA+ZeagaYMD0/lcCKnjwdkYjXi/clu9mD8s3XDJ6Ozg==
+weavedb-base@^0.13.0:
+  version "0.13.0"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.13.0.tgz#e39a1ecf5b51e7eaf79d2ec12c7367aba06bf21b"
+  integrity sha512-lvQK7ef5pCAeOfVDq34iRkCqdA6CNudNmgeGDJD93BfLZV9LOSJSBFOQNjBaSOOXxlnt6hTC6VeVom3azc74Ig==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"

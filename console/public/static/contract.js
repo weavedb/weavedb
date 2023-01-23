@@ -7682,7 +7682,7 @@
   var require_pick = __commonJS({
     "node_modules/ramda/src/pick.js"(exports, module) {
       var _curry22 = require_curry2();
-      var pick3 = /* @__PURE__ */ _curry22(function pick4(names, obj) {
+      var pick4 = /* @__PURE__ */ _curry22(function pick5(names, obj) {
         var result = {};
         var idx = 0;
         while (idx < names.length) {
@@ -7693,7 +7693,7 @@
         }
         return result;
       });
-      module.exports = pick3;
+      module.exports = pick4;
     }
   });
 
@@ -13916,7 +13916,8 @@
       "getRules",
       "getAlgorithms",
       "removeRelayerJob",
-      "getRelayerJob"
+      "getRelayerJob",
+      "listCollections"
     ])) {
       path3 = query;
     } else {
@@ -13932,6 +13933,7 @@
       }
     }
     if (isNil_default(new_data) && !includes_default(func)([
+      "listCollections",
       "delete",
       "getSchema",
       "getRules",
@@ -13939,7 +13941,7 @@
       "getRelayerJob",
       "removeRelayerJob",
       "getRelayerJob"
-    ]) || path3.length === 0 && !includes_default(func)(["setAlgorithms"]) || path3.length % 2 !== 0 && !includes_default(func)([
+    ]) || path3.length === 0 && !includes_default(func)(["setAlgorithms", "listCollections"]) || path3.length % 2 !== 0 && !includes_default(func)([
       "addRelayerJob",
       "removeRelayerJob",
       "getRelayerJob",
@@ -13976,7 +13978,7 @@
       "getAlgorithms",
       "linkContract",
       "unlinkContract"
-    ])) {
+    ]) && path3.length !== 0) {
       const doc = getDoc(
         data,
         path3,
@@ -14838,6 +14840,40 @@
     return { result: version2 };
   };
 
+  // src/common/actions/read/listCollections.js
+  var listCollections = async (state, action) => {
+    let { _data, data, query, new_data, path: path3 } = await parse(
+      state,
+      action,
+      "listCollections"
+    );
+    return {
+      result: keys_default(path3.length === 0 ? data : data.subs)
+    };
+  };
+
+  // src/common/actions/read/getInfo.js
+  var { pick: pick3 } = require_src();
+  var getInfo = async (state, action) => {
+    let info = pick3(
+      [
+        "auth",
+        "canEvolve",
+        "contracts",
+        "evolve",
+        "secure",
+        "version",
+        "owner",
+        "contracts"
+      ],
+      state
+    );
+    delete info.auth.links;
+    return {
+      result: info
+    };
+  };
+
   // src/common/lib/validate.js
   var validate = async (state, action, func) => {
     const {
@@ -15677,6 +15713,10 @@
         return await get(state, action);
       case "cget":
         return await get(state, action, true);
+      case "listCollections":
+        return await listCollections(state, action);
+      case "getInfo":
+        return await getInfo(state, action);
       case "addCron":
         return await addCron(state, action);
       case "removeCron":
