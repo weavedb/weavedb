@@ -17,7 +17,7 @@ describe("Ethereum", function () {
     { name: "verifyingContract", type: "string" },
   ]
 
-  let eth, ethereumSrcTxId, domain, arweave_wallet, db, data
+  let eth, ethereumTxId, domain, arweave_wallet, db, data
   this.timeout(0)
 
   before(async () => {
@@ -27,14 +27,14 @@ describe("Ethereum", function () {
   after(async () => await stop())
 
   beforeEach(async () => {
-    ;({ arweave_wallet, ethereumSrcTxId } = await initBeforeEach())
+    ;({ arweave_wallet, ethereumTxId } = await initBeforeEach())
     domain = {
       name: "weavedb",
       version: "1",
-      verifyingContract: ethereumSrcTxId,
+      verifyingContract: ethereumTxId,
     }
     eth = db.warp
-      .contract(ethereumSrcTxId)
+      .contract(ethereumTxId)
       .connect(arweave_wallet)
       .setEvaluationOptions({
         allowBigInt: true,
