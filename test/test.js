@@ -568,6 +568,7 @@ describe("WeaveDB", function () {
     expect(await db.getLinkedContract("contractA")).to.eql(null)
     return
   })
+
   it("should evolve", async () => {
     const evolve = "contract-1"
     const evolve2 = "contract-2"
@@ -741,5 +742,13 @@ describe("WeaveDB", function () {
     // sign with the preset wallet
     await db.set({ signer: db.signer() }, "signers", "s4")
     expect((await db.get("signers", "s4")).signer).to.equal(preset_addr)
+  })
+
+  it("should list collections", async () => {
+    await db.set({}, "ppl", "Bob")
+    await db.set({}, "ppl2", "Bob")
+    expect(await db.listCollections()).to.eql(["ppl", "ppl2"])
+    expect(await db.listCollections("ppl", "Bob")).to.eql([])
+    return
   })
 })
