@@ -68,7 +68,9 @@ export const setupWeaveDB = async ({
       protocol: "http",
     })
     arweave_wallet ||= await arweave.wallets.generate()
-    await addFunds(arweave, arweave_wallet)
+    try {
+      await addFunds(arweave, arweave_wallet)
+    } catch (e) {}
   }
   if (!isNil(contractTxId)) {
     sdk.initialize({
