@@ -278,6 +278,7 @@ export const parse = async (
       "getAlgorithms",
       "removeRelayerJob",
       "getRelayerJob",
+      "listCollections",
     ])
   ) {
     path = query
@@ -295,6 +296,7 @@ export const parse = async (
   if (
     (isNil(new_data) &&
       !includes(func)([
+        "listCollections",
         "delete",
         "getSchema",
         "getRules",
@@ -303,7 +305,8 @@ export const parse = async (
         "removeRelayerJob",
         "getRelayerJob",
       ])) ||
-    (path.length === 0 && !includes(func)(["setAlgorithms"])) ||
+    (path.length === 0 &&
+      !includes(func)(["setAlgorithms", "listCollections"])) ||
     (path.length % 2 !== 0 &&
       !includes(func)([
         "addRelayerJob",
@@ -347,7 +350,8 @@ export const parse = async (
       "getAlgorithms",
       "linkContract",
       "unlinkContract",
-    ])
+    ]) &&
+    path.length !== 0
   ) {
     const doc = getDoc(
       data,

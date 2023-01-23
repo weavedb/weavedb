@@ -14,6 +14,7 @@ import { getAddressLink } from "../common/actions/read/getAddressLink"
 import { getRelayerJob } from "../common/actions/read/getRelayerJob"
 import { getEvolve } from "../common/actions/read/getEvolve"
 import { version } from "../common/actions/read/version"
+import { listCollections } from "../common/actions/read/listCollections"
 
 import { relay } from "../common/actions/write/relay"
 import { set } from "../common/actions/write/set"
@@ -68,6 +69,8 @@ export async function handle(state, action) {
       return await get(state, action)
     case "cget":
       return await get(state, action, true)
+    case "listCollections":
+      return await listCollections(state, action)
     case "addCron":
       return await addCron(state, action)
     case "removeCron":
