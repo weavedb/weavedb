@@ -3045,22 +3045,32 @@ export default inject(
                       onClick={async () => {
                         if ($.loading === null) {
                           set("deploy", "loading")
-                          const res = await fn(deployDB)({
-                            port: port,
-                            owner: $.temp_current_all.addr,
-                            network: newNetwork,
-                            secure,
-                            canEvolve,
-                            auths,
-                          })
-                          if (!isNil(res.contractTxId)) {
-                            addDB(res)
-                            setAddInstance(false)
-                            if (isNil(contractTxId)) {
-                              setState(null)
-                              setNetwork(res.network)
-                              setContractTxId(res.contractTxId)
+                          try {
+                            const res = await fn(deployDB)({
+                              port: port,
+                              owner: $.temp_current_all.addr,
+                              network: newNetwork,
+                              secure,
+                              canEvolve,
+                              auths,
+                            })
+                            if (!isNil(res.contractTxId)) {
+                              addDB(res)
+                              setAddInstance(false)
+                              if (isNil(contractTxId)) {
+                                setState(null)
+                                setNetwork(res.network)
+                                setCurrentDB(res)
+                                await _setContractTxId(
+                                  res.contractTxId,
+                                  res.network,
+                                  res.rpc
+                                )
+                              }
                             }
+                          } catch (e) {
+                            alert("something went wrong")
+                            console.log(e)
                           }
                           set(null, "loading")
                         }

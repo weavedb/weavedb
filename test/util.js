@@ -206,11 +206,7 @@ async function deployContracts({
     return contractTxId
   }
   let contract = {}
-  let intmaxSrcTxId,
-    dfinitySrcTxId,
-    ethereumSrcTxId,
-    poseidon1TxId,
-    poseidon2TxId
+  let intmaxTxId, dfinityTxId, ethereumTxId, poseidon1TxId, poseidon2TxId
   if (isNil(contractTxId)) {
     poseidon1TxId = await deployContractPoseidon({
       C: Constants.C,
@@ -220,14 +216,14 @@ async function deployContracts({
     poseidon2TxId = await deployContractPoseidon({
       S: Constants.S,
     })
-    intmaxSrcTxId = await deployContractIntmax(poseidon1TxId, poseidon2TxId)
-    dfinitySrcTxId = await deployContractDfinity()
-    ethereumSrcTxId = await deployContractEthereum()
+    intmaxTxId = await deployContractIntmax(poseidon1TxId, poseidon2TxId)
+    dfinityTxId = await deployContractDfinity()
+    ethereumTxId = await deployContractEthereum()
     contract = await deployContract(
       secure,
-      intmaxSrcTxId,
-      dfinitySrcTxId,
-      ethereumSrcTxId
+      intmaxTxId,
+      dfinityTxId,
+      ethereumTxId
     )
   } else {
     contract = { contractTxId }
@@ -236,9 +232,9 @@ async function deployContracts({
   return {
     contractTxId: contract.contractTxId,
     contract,
-    intmaxSrcTxId,
-    dfinitySrcTxId,
-    ethereumSrcTxId,
+    intmaxTxId,
+    dfinityTxId,
+    ethereumTxId,
     poseidon1TxId,
     poseidon2TxId,
     arweave_wallet,
@@ -254,9 +250,9 @@ async function initBeforeEach(secure = false, subscribe = false) {
   const {
     contractTxId,
     contract,
-    intmaxSrcTxId,
-    dfinitySrcTxId,
-    ethereumSrcTxId,
+    intmaxTxId,
+    dfinityTxId,
+    ethereumTxId,
     poseidon1TxId,
     poseidon2TxId,
     arweave_wallet,
@@ -286,9 +282,9 @@ async function initBeforeEach(secure = false, subscribe = false) {
     wallet3,
     wallet4,
     arweave_wallet,
-    intmaxSrcTxId,
-    dfinitySrcTxId,
-    ethereumSrcTxId,
+    intmaxTxId,
+    dfinityTxId,
+    ethereumTxId,
     contractTxId,
   }
 }
