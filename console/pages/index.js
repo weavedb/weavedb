@@ -1037,7 +1037,7 @@ export default inject(
                             {compose(
                               map(v => (
                                 <Flex
-                                  onClick={() => {
+                                  onClick={async () => {
                                     if (contractTxId !== v.contractTxId) {
                                       if (
                                         v.network === "Localhost" &&
@@ -1046,14 +1046,33 @@ export default inject(
                                         alert("not connected with localhost")
                                         return
                                       }
-                                      setState(null)
-                                      setNetwork(v.network)
-                                      setCurrentDB(v)
-                                      _setContractTxId(
-                                        v.contractTxId,
-                                        v.network,
-                                        v.rpc
-                                      )
+                                      try {
+                                        const db = await fn(setupWeaveDB)({
+                                          network: v.network,
+                                          contractTxId: v.contractTxId,
+                                          port: port || 1820,
+                                          rpc: v.rpc,
+                                        })
+                                        let state = await db.db.readState()
+                                        if (!isNil(state.cachedValue)) {
+                                          setState(null)
+                                          setNetwork(v.network)
+                                          setCurrentDB(v)
+                                          await _setContractTxId(
+                                            v.contractTxId,
+                                            v.network,
+                                            v.rpc
+                                          )
+                                        } else {
+                                          alert(
+                                            "couldn't connect to the contract"
+                                          )
+                                        }
+                                      } catch (e) {
+                                        alert(
+                                          "couldn't connect to the contract"
+                                        )
+                                      }
                                     }
                                   }}
                                   p={2}
@@ -1126,7 +1145,7 @@ export default inject(
                             <Box flex={1} />
                           </Flex>
                           <Box height="500px" sx={{ overflowY: "auto" }}>
-                            {isNil(contractTxId) ? (
+                            {isNil(contractTxId) || isNil(currentDB) ? (
                               <Flex
                                 justify="center"
                                 align="center"
@@ -3026,22 +3045,32 @@ export default inject(
                       onClick={async () => {
                         if ($.loading === null) {
                           set("deploy", "loading")
-                          const res = await fn(deployDB)({
-                            port: port,
-                            owner: $.temp_current_all.addr,
-                            network: newNetwork,
-                            secure,
-                            canEvolve,
-                            auths,
-                          })
-                          if (!isNil(res.contractTxId)) {
-                            addDB(res)
-                            setAddInstance(false)
-                            if (isNil(contractTxId)) {
-                              setState(null)
-                              setNetwork(res.network)
-                              setContractTxId(res.contractTxId)
+                          try {
+                            const res = await fn(deployDB)({
+                              port: port,
+                              owner: $.temp_current_all.addr,
+                              network: newNetwork,
+                              secure,
+                              canEvolve,
+                              auths,
+                            })
+                            if (!isNil(res.contractTxId)) {
+                              addDB(res)
+                              setAddInstance(false)
+                              if (isNil(contractTxId)) {
+                                setState(null)
+                                setNetwork(res.network)
+                                setCurrentDB(res)
+                                await _setContractTxId(
+                                  res.contractTxId,
+                                  res.network,
+                                  res.rpc
+                                )
+                              }
                             }
+                          } catch (e) {
+                            alert("something went wrong")
+                            console.log(e)
                           }
                           set(null, "loading")
                         }
@@ -3086,7 +3115,7 @@ export default inject(
                                 const db = await fn(setupWeaveDB)({
                                   network: newNetwork,
                                   contractTxId: newContractTxId,
-                                  port: newPort,
+                                  port: port || 1820,
                                   rpc: newRPC,
                                 })
                                 let state = await db.db.readState()
@@ -3094,8 +3123,8 @@ export default inject(
                                   setNetwork(newNetwork)
                                   await _setContractTxId(
                                     newContractTxId,
-                                    newRPC,
-                                    newNetwork
+                                    newNetwork,
+                                    newRPC
                                   )
                                   setEditNetwork(false)
                                   addDB({

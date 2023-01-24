@@ -9,7 +9,7 @@ const { readFileSync } = require("fs")
 const { resolve } = require("path")
 
 describe("WeaveDB", function () {
-  let wallet, walletAddress, wallet2, db, intmaxSrcTxId, arweave_wallet
+  let wallet, walletAddress, wallet2, db, intmaxTxId, arweave_wallet
   this.timeout(0)
 
   before(async () => {
@@ -19,7 +19,7 @@ describe("WeaveDB", function () {
   after(async () => await stop())
 
   beforeEach(async () => {
-    ;({ arweave_wallet, intmaxSrcTxId, walletAddress, wallet, wallet2 } =
+    ;({ arweave_wallet, intmaxTxId, walletAddress, wallet, wallet2 } =
       await initBeforeEach())
   })
 
@@ -130,7 +130,7 @@ describe("WeaveDB", function () {
     const intmax_wallet = new Account(provider)
     await intmax_wallet.activate()
     const intmax = db.warp
-      .pst(intmaxSrcTxId)
+      .pst(intmaxTxId)
       .connect(arweave_wallet)
       .setEvaluationOptions({
         allowBigInt: true,

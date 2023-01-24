@@ -7,6 +7,7 @@ import { ethers } from "ethers"
 import { AuthClient } from "@dfinity/auth-client"
 import { WarpFactory } from "warp-contracts"
 import {
+  assocPath,
   is,
   includes,
   difference,
@@ -25,7 +26,7 @@ import {
 } from "ramda"
 import { Buffer } from "buffer"
 let sdk
-const weavedbSrcTxId = "8dUFGgl05GiunNN_5LMBYEorkS2Znr1-L2JYVb0Cpm4"
+const weavedbSrcTxId = "4lSfFFQIpX37GMdab6c4ZdWli33b70qu_KJan5vB1ZI"
 //const intmaxSrcTxId = "OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94"
 const dfinitySrcTxId = "3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8"
 const ethereumSrcTxId = "Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w"
@@ -68,7 +69,9 @@ export const setupWeaveDB = async ({
       protocol: "http",
     })
     arweave_wallet ||= await arweave.wallets.generate()
-    await addFunds(arweave, arweave_wallet)
+    try {
+      await addFunds(arweave, arweave_wallet)
+    } catch (e) {}
   }
   if (!isNil(contractTxId)) {
     sdk.initialize({
@@ -415,13 +418,24 @@ async function deploy({ src, warp, init, extra, arweave }) {
   return contractTxId
 }
 
-async function deployFromSrc({ src, warp, init, extra }) {
+async function deployFromSrc({ src, warp, init, extra, algorithms }) {
   const stateFromFile = JSON.parse(
     await fetch(`/static/${init}.json`).then(v => v.text())
   )
-  const initialState = mergeLeft(extra, stateFromFile)
+  let initialState = mergeLeft(extra, stateFromFile)
+  if (!isNil(algorithms)) {
+    initialState = assocPath(["auth", "algorithms"], algorithms, initialState)
+  }
+  let wallet = arweave_wallet
+  if (isNil(wallet)) {
+    const arweave = Arweave.init({
+      host: "arweave.net",
+      protocol: "https",
+    })
+    wallet = await arweave.wallets.generate()
+  }
   const { contractTxId } = await warp.createContract.deployFromSourceTx({
-    wallet: arweave_wallet,
+    wallet,
     initState: JSON.stringify(initialState),
     srcTxId: src,
   })
@@ -467,6 +481,7 @@ export const deployDB = async ({
       src: weavedbSrcTxId,
       init: "initial-state",
       warp,
+      algorithms,
       extra: {
         secure: false,
         owner,
@@ -477,18 +492,22 @@ export const deployDB = async ({
         },
         secure,
         canEvolve,
-        algorithms,
       },
     })
     return { contractTxId, network, port }
   } else {
     const warp = WarpFactory.forLocal(port)
+    const arweave = Arweave.init({
+      host: "localhost",
+      port,
+      protocol: "http",
+    })
     /*
     const poseidon1TxId = await deploy({
       src: "poseidonConstants",
       init: "initial-state-poseidon-constants",
       warp,
-      arweave: sdk.arweave,
+      arweave,
       extra: {
         owner,
         poseidonConstants: {
@@ -502,7 +521,7 @@ export const deployDB = async ({
       src: "poseidonConstants",
       init: "initial-state-poseidon-constants",
       warp,
-      arweave: sdk.arweave,
+      arweave,
       extra: {
         owner,
         poseidonConstants: {
@@ -514,7 +533,7 @@ export const deployDB = async ({
       src: "intmax",
       init: "initial-state-intmax",
       warp,
-      arweave: sdk.arweave,
+      arweave,
       extra: {
         owner,
         contracts: {
@@ -522,12 +541,12 @@ export const deployDB = async ({
           poseidonConstants2: poseidon2TxId,
         },
       },
-    })*/
+      })*/
     const dfinitySrcTxId = await deploy({
       src: "ii",
       init: "initial-state-ii",
       warp,
-      arweave: sdk.arweave,
+      arweave,
       extra: {
         owner,
       },
@@ -536,18 +555,20 @@ export const deployDB = async ({
       src: "eth",
       init: "initial-state-eth",
       warp,
-      arweave: sdk.arweave,
+      arweave,
       extra: {
         owner,
       },
     })
+
     const contractTxId = await deploy({
       src: "contract",
       init: "initial-state",
       warp,
-      arweave: sdk.arweave,
+      arweave,
+      algorithms,
       extra: {
-        secure: false,
+        secure,
         owner,
         contracts: {
           //intmax: intmaxSrcTxId,
@@ -556,7 +577,6 @@ export const deployDB = async ({
         },
         secure,
         canEvolve,
-        algorithms,
       },
     })
     return { contractTxId, network, port }

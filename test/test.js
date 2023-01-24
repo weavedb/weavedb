@@ -10,7 +10,13 @@ const { resolve } = require("path")
 const EthCrypto = require("eth-crypto")
 const EthWallet = require("ethereumjs-wallet").default
 describe("WeaveDB", function () {
-  let wallet, walletAddress, wallet2, db, arweave_wallet
+  let wallet,
+    walletAddress,
+    wallet2,
+    db,
+    arweave_wallet,
+    dfinityTxId,
+    ethereumTxId
   const _ii = [
     "302a300506032b6570032100ccd1d1f725fc35a681d8ef5d563a3c347829bf3f0fe822b4a4b004ee0224fc0d",
     "010925abb4cf8ccb7accbcfcbf0a6adf1bbdca12644694bb47afc7182a4ade66ccd1d1f725fc35a681d8ef5d563a3c347829bf3f0fe822b4a4b004ee0224fc0d",
@@ -25,8 +31,14 @@ describe("WeaveDB", function () {
   after(async () => await stop())
 
   beforeEach(async () => {
-    ;({ arweave_wallet, walletAddress, wallet, wallet2 } =
-      await initBeforeEach())
+    ;({
+      arweave_wallet,
+      walletAddress,
+      wallet,
+      wallet2,
+      dfinityTxId,
+      ethereumTxId,
+    } = await initBeforeEach())
   })
 
   afterEach(async () => {
@@ -568,6 +580,7 @@ describe("WeaveDB", function () {
     expect(await db.getLinkedContract("contractA")).to.eql(null)
     return
   })
+
   it("should evolve", async () => {
     const evolve = "contract-1"
     const evolve2 = "contract-2"
@@ -741,5 +754,40 @@ describe("WeaveDB", function () {
     // sign with the preset wallet
     await db.set({ signer: db.signer() }, "signers", "s4")
     expect((await db.get("signers", "s4")).signer).to.equal(preset_addr)
+  })
+
+  it("should list collections", async () => {
+    await db.set({}, "ppl", "Bob")
+    await db.set({}, "ppl2", "Bob")
+    expect(await db.listCollections()).to.eql(["ppl", "ppl2"])
+    expect(await db.listCollections("ppl", "Bob")).to.eql([])
+    return
+  })
+
+  it("should get info", async () => {
+    const addr = await db.arweave.wallets.jwkToAddress(arweave_wallet)
+    const initial_state = JSON.parse(
+      readFileSync(
+        resolve(__dirname, "../dist/warp/initial-state.json"),
+        "utf8"
+      )
+    )
+    expect(await db.getInfo()).to.eql({
+      auth: {
+        algorithms: ["secp256k1", "secp256k1-2", "ed25519", "rsa256"],
+        name: "weavedb",
+        version: "1",
+      },
+      canEvolve: true,
+      contracts: {
+        dfinity: dfinityTxId,
+        ethereum: ethereumTxId,
+      },
+      evolve: null,
+      secure: false,
+      version: initial_state.version,
+      owner: addr,
+    })
+    return
   })
 })
