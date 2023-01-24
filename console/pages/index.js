@@ -12,6 +12,8 @@ import {
   Textarea,
 } from "@chakra-ui/react"
 import {
+  pluck,
+  toLower,
   assoc,
   uniq,
   without,
@@ -99,6 +101,10 @@ export default inject(
     const [newOwner, setNewOwner] = useState("")
     const [result, setResult] = useState("")
     const [state, setState] = useState(null)
+    const [collections, setCollections] = useState([])
+    const [subCollections, setSubCollections] = useState([])
+    const [documents, setDocuments] = useState([])
+    const [docdata, setDocdata] = useState(null)
     const [doc_path, setDocPath] = useState([])
     const [tab, setTab] = useState("DB")
     const [cron, setCron] = useState(null)
@@ -178,6 +184,13 @@ export default inject(
 
     useEffect(() => {
       ;(async () => {
+        if (tab === "Data") {
+          setCollections(await db.listCollections())
+        }
+      })()
+    }, [contractTxId, tab])
+    useEffect(() => {
+      ;(async () => {
         if (addAlgorithms) setNewAuths(state.auth.algorithms)
       })()
     }, [addAlgorithms])
@@ -209,7 +222,7 @@ export default inject(
           port,
           rpc,
         })
-        setState((await db.db.readState()).cachedValue.state)
+        setState(await db.getInfo())
         set(null, "loading_contract")
         fn(switchTempAddress)({ contractTxId: _contractTxId })
       } else {
@@ -247,6 +260,11 @@ export default inject(
     let doc = null
     let base_path = []
     if (!isNil(state)) {
+      if (doc_path.length !== 0) {
+        col = doc_path[0]
+        doc = doc_path[1]
+      }
+      /*
       base = state.data
       if (doc_path.length > 2) {
         base_path = take(
@@ -278,7 +296,8 @@ export default inject(
           data = base[col].__docs[doc].__data
           subs = base[col].__docs[doc].subs
         }
-      }
+        }
+      */
     }
     const methods = [
       "get",
@@ -390,11 +409,12 @@ export default inject(
       crons = state.crons.crons
       _cron = crons[cron]
     }
+    /*
     if (!isNil(col)) {
       indexes = scanIndexes(getIndex(state, append(col, base_path)))
       ;({ rules, schema } = getCol(state.data, append(col, base_path)))
     }
-
+    */
     useEffect(() => {
       ;(async () => {
         const _port = await fn(connectLocalhost)({ port: newPort })
@@ -425,9 +445,9 @@ export default inject(
         if (isNil(col)) {
           setNewSchemas(null)
         } else {
-          ;({ rules, schema } = getCol(state.data, append(col, base_path)))
+          /*;({ rules, schema } = getCol(state.data, append(col, base_path)))
           setNewSchemas(JSON.stringify(schema))
-          setNewRules2(JSON.stringify(rules))
+          setNewRules2(JSON.stringify(rules))*/
         }
       })()
     }, [doc_path])
@@ -512,9 +532,13 @@ export default inject(
       : is(Array, state.owner)
       ? state.owner
       : [state.owner]
-    const isOwner = isNil(state)
-      ? false
-      : includes(($.temp_current || "").toLowerCase(), state.owner)
+    const isOwner =
+      isNil(state) || isNil($.temp_current)
+        ? false
+        : includes(
+            ($.temp_current || "").toLowerCase(),
+            map(toLower)(is(Array, state.owner) ? state.owner : [state.owner])
+          )
     return (
       <ChakraProvider>
         <style global jsx>{`
@@ -540,13 +564,18 @@ export default inject(
           {_addIndex(map)((v, i) => {
             return (
               <Flex
-                onClick={() => setTab(v)}
+                onClick={() => {
+                  if (v === "DB" || !isNil(currentDB)) setTab(v)
+                }}
                 bg={v === tab ? "#6441AF" : "#eee"}
-                color={v === tab ? "white" : "#333"}
+                color={
+                  v === tab ? "white" : !isNil(currentDB) ? "#333" : "#999"
+                }
                 py={3}
                 px={4}
                 sx={{
-                  cursor: "pointer",
+                  cursor:
+                    !isNil(currentDB) || v === "DB" ? "pointer" : "not-allowed",
                   ":hover": { opacity: 0.75 },
                 }}
               >
@@ -678,8 +707,10 @@ export default inject(
                         </Flex>
                         {map(v => (
                           <Flex
-                            onClick={() => {
+                            onClick={async () => {
                               setDocPath([...base_path, v])
+                              setDocdata(null)
+                              setDocuments(await db.cget(v))
                             }}
                             bg={col === v ? "#ddd" : ""}
                             py={2}
@@ -691,7 +722,7 @@ export default inject(
                           >
                             {v}
                           </Flex>
-                        ))(cols)}
+                        ))(collections)}
                       </Box>
                     )}
                     {tab === "Schemas" ? (
@@ -813,10 +844,7 @@ export default inject(
                                         if (/^Error:/.test(res)) {
                                           alert("Something went wrong")
                                         }
-                                        setState(
-                                          (await db.db.readState()).cachedValue
-                                            .state
-                                        )
+                                        setState(await db.getInfo())
                                       }
                                     }}
                                   >
@@ -1053,8 +1081,8 @@ export default inject(
                                           port: port || 1820,
                                           rpc: v.rpc,
                                         })
-                                        let state = await db.db.readState()
-                                        if (!isNil(state.cachedValue)) {
+                                        let state = await db.getInfo()
+                                        if (!isNil(state.version)) {
                                           setState(null)
                                           setNetwork(v.network)
                                           setCurrentDB(v)
@@ -1458,9 +1486,19 @@ export default inject(
                           <Box height="500px" sx={{ overflowY: "auto" }}>
                             {map(v => (
                               <Flex
-                                onClick={() =>
+                                onClick={async () => {
                                   setDocPath(concat(base_path, [col, v]))
-                                }
+                                  setDocdata(
+                                    await db.cget(
+                                      ...concat(base_path, [col, v])
+                                    )
+                                  )
+                                  setSubCollections(
+                                    await db.listCollections(
+                                      ...concat(base_path, [col, v])
+                                    )
+                                  )
+                                }}
                                 bg={doc === v ? "#ddd" : ""}
                                 p={2}
                                 px={3}
@@ -1487,7 +1525,9 @@ export default inject(
                                   }}
                                   onClick={async e => {
                                     e.stopPropagation()
-                                    if (!hasPath([col, "__docs", v])(base)) {
+                                    if (
+                                      isNil(indexBy(prop("id"), documents)[v])
+                                    ) {
                                       alert("Doc doesn't exist")
                                       return
                                     }
@@ -1510,9 +1550,11 @@ export default inject(
                                       if (/^Error:/.test(res)) {
                                         alert("Something went wrong")
                                       }
-                                      setState(
-                                        (await db.db.readState()).cachedValue
-                                          .state
+                                      if (!isNil(docdata) && v === docdata.id) {
+                                        setDocdata(null)
+                                      }
+                                      setDocuments(
+                                        reject(propEq("id", v))(documents)
                                       )
                                     }
                                   }}
@@ -1520,7 +1562,7 @@ export default inject(
                                   <Box as="i" className="fas fa-trash" />
                                 </Box>
                               </Flex>
-                            ))(docs)}
+                            ))(pluck("id", documents))}
                           </Box>
                         </Flex>
                         <Box
@@ -1531,14 +1573,7 @@ export default inject(
                           <Flex py={2} px={3} color="white" bg="#333" h="35px">
                             <Box>Data</Box>
                             <Box flex={1} />
-                            {isNil(col) ||
-                            isNil(doc) ||
-                            !hasPath([
-                              "data",
-                              doc_path[0],
-                              "__docs",
-                              doc_path[1],
-                            ])(state) ? null : (
+                            {isNil(docdata) ? null : (
                               <Box
                                 onClick={() => setAddData(true)}
                                 sx={{
@@ -1551,8 +1586,7 @@ export default inject(
                             )}
                           </Flex>
                           {compose(
-                            values,
-                            mapObjIndexed((v, k) => {
+                            map(v => {
                               return (
                                 <Flex
                                   align="center"
@@ -1563,7 +1597,7 @@ export default inject(
                                     ":hover": { opacity: 0.75 },
                                   }}
                                   onClick={() => {
-                                    setDocPath(append(k)(doc_path))
+                                    setDocPath(append(v)(doc_path))
                                   }}
                                 >
                                   <Box
@@ -1575,11 +1609,11 @@ export default inject(
                                   >
                                     Sub Collection
                                   </Box>
-                                  {k}
+                                  {v}
                                 </Flex>
                               )
                             })
-                          )(subs)}
+                          )(subCollections)}
                           {compose(
                             values,
                             mapObjIndexed((v, k) => {
@@ -1617,15 +1651,7 @@ export default inject(
                                     }}
                                     onClick={async e => {
                                       e.stopPropagation()
-                                      if (
-                                        !hasPath([
-                                          col,
-                                          "__docs",
-                                          doc,
-                                          "__data",
-                                          k,
-                                        ])(base)
-                                      ) {
+                                      if (isNil(docdata.data[k])) {
                                         alert("Field doesn't exist")
                                         return
                                       }
@@ -1652,9 +1678,9 @@ export default inject(
                                         if (/^Error:/.test(res)) {
                                           alert("Something went wrong")
                                         }
-                                        setState(
-                                          (await db.db.readState()).cachedValue
-                                            .state
+                                        setDocdata(await db.cget(...doc_path))
+                                        setSubCollections(
+                                          await db.listCollections(...doc_path)
                                         )
                                       }
                                     }}
@@ -1664,7 +1690,7 @@ export default inject(
                                 </Flex>
                               )
                             })
-                          )(data)}
+                          )(isNil(docdata) ? {} : docdata.data)}
                         </Box>
                       </>
                     )}
@@ -1721,7 +1747,7 @@ export default inject(
                           contractTxId,
                         })
                         setResult(res)
-                        setState((await db.db.readState()).cachedValue.state)
+                        setState(await db.getInfo())
                       } catch (e) {
                         console.log(e)
                         setResult("Error: The wrong query")
@@ -1840,7 +1866,7 @@ export default inject(
                           setAddCollection(false)
                         }
                         set(null, "loading")
-                        setState((await db.db.readState()).cachedValue.state)
+                        setCollections(await db.listCollections())
                       }
                     }}
                   >
@@ -1933,7 +1959,7 @@ export default inject(
                           setNewData(`{}`)
                           setAddDoc(false)
                         }
-                        setState((await db.db.readState()).cachedValue.state)
+                        setDocuments(await db.cget(col))
                         set(null, "loading")
                       }
                     }}
@@ -2123,7 +2149,8 @@ export default inject(
                           setNewFieldVal("")
                           setAddData(false)
                         }
-                        setState((await db.db.readState()).cachedValue.state)
+                        setDocdata(await db.cget(...doc_path))
+                        setSubCollections(await db.listCollections(...doc_path))
                         set(null, "loading")
                       }
                     }}
@@ -2204,7 +2231,7 @@ export default inject(
                           setNewSchemas("")
                           setAddSchemas(false)
                         }
-                        setState((await db.db.readState()).cachedValue.state)
+                        setState(await db.getInfo())
                         set(null, "loading")
                       }
                     }}
@@ -2382,7 +2409,7 @@ export default inject(
                           setNewSpan("")
                           setAddCron(false)
                         }
-                        setState((await db.db.readState()).cachedValue.state)
+                        setState(await db.getInfo())
                         set(null, "loading")
                       }
                     }}
@@ -2466,7 +2493,7 @@ export default inject(
                           setNewRules2(`{"allow write": true}`)
                           setAddRules(false)
                         }
-                        setState((await db.db.readState()).cachedValue.state)
+                        setState(await db.getInfo())
                         set(null, "loading")
                       }
                     }}
@@ -2525,9 +2552,7 @@ export default inject(
                               if (/^Error:/.test(res)) {
                                 alert("Something went wrong")
                               }
-                              setState(
-                                (await db.db.readState()).cachedValue.state
-                              )
+                              setState(await db.getInfo())
                             }}
                             className="fas fa-trash"
                             sx={{
@@ -2567,7 +2592,7 @@ export default inject(
                           if (/^Error:/.test(res)) {
                             alert("Something went wrong")
                           }
-                          setState((await db.db.readState()).cachedValue.state)
+                          setState(await db.getInfo())
                           set(null, "loading")
                         }
                       }}
@@ -2649,7 +2674,7 @@ export default inject(
                           alert("Something went wrong")
                         }
                         set(null, "loading")
-                        setState((await db.db.readState()).cachedValue.state)
+                        setState(await db.getInfo())
                       }
                     }}
                     sx={{
@@ -2718,7 +2743,7 @@ export default inject(
                           if (/^Error:/.test(res)) {
                             alert("Something went wrong")
                           }
-                          setState((await db.db.readState()).cachedValue.state)
+                          setState(await db.getInfo())
                           set(null, "loading")
                         }
                       }}
@@ -2829,7 +2854,7 @@ export default inject(
                           setNewIndex("[]")
                           setAddIndex(false)
                         }
-                        setState((await db.db.readState()).cachedValue.state)
+                        setState(await db.getInfo())
                         set(null, "loading")
                       }
                     }}
@@ -3118,8 +3143,8 @@ export default inject(
                                   port: port || 1820,
                                   rpc: newRPC,
                                 })
-                                let state = await db.db.readState()
-                                if (!isNil(state.cachedValue)) {
+                                let state = await db.getInfo()
+                                if (!isNil(state.version)) {
                                   setNetwork(newNetwork)
                                   await _setContractTxId(
                                     newContractTxId,

@@ -15,6 +15,16 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.14.0 (Jan 24, 2023)
+
+#### Source Transaction Id
+
+[ThKJQwNBy2tdELecqmlG86bo9NacyMxquQef1DOLBPA](https://sonar.warp.cc/#/app/source/ThKJQwNBy2tdELecqmlG86bo9NacyMxquQef1DOLBPA)
+
+#### Added Features
+
+- [listCollections()](/docs/sdk/queries#listcollections) : list sub collections too
+
 ### v0.13.0 (Jan 23, 2023)
 
 #### Source Transaction Id

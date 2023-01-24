@@ -759,8 +759,10 @@ describe("WeaveDB", function () {
   it("should list collections", async () => {
     await db.set({}, "ppl", "Bob")
     await db.set({}, "ppl2", "Bob")
+    await db.set({ name: "toyota" }, "ppl", "Bob", "cars", "toyota")
+    await db.set({ name: "apple" }, "ppl", "Bob", "foods", "apple")
     expect(await db.listCollections()).to.eql(["ppl", "ppl2"])
-    expect(await db.listCollections("ppl", "Bob")).to.eql([])
+    expect(await db.listCollections("ppl", "Bob")).to.eql(["cars", "foods"])
     return
   })
 

@@ -57,10 +57,22 @@ export const setupWeaveDB = async ({
   set,
   val: { network, contractTxId, port, rpc },
 }) => {
+  /*
+  if (!isNil(rpc)) {
+    try {
+      const sdk = new Client({
+        rpc,
+        contractTxId,
+      })
+      console.log(await sdk.getInfo())
+    } catch (e) {
+      console.log(e)
+    }
+  }*/
   sdk = new SDK({
     network: network.toLowerCase(),
     port,
-    contractTxId: contractTxId,
+    contractTxId,
   })
   if (isNil(arweave_wallet)) {
     const arweave = Arweave.init({
