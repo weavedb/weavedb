@@ -80,7 +80,7 @@ export default function App() {
     let tx
     let err
     if (isNil(identity)) {
-      ;({ tx, identity, err } = await db.createTempAddress(wallet_address))
+      ({ tx, identity, err } = await db.createTempAddress(wallet_address))
       const linked = await db.getAddressLink(identity.address)
       if (isNil(linked)) {
         alert("something went wrong")
