@@ -32,6 +32,8 @@ const reads = [
   "getEvolve",
   "getVersion",
   "getRelayerJob",
+  "listCollections",
+  "getInfo",
 ]
 
 async function query(call, callback) {
