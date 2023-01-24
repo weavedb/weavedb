@@ -14848,7 +14848,7 @@
       "listCollections"
     );
     return {
-      result: keys_default(path3.length === 0 ? data : data.subs)
+      result: keys_default(path3.length === 0 ? data : _data.subs)
     };
   };
 

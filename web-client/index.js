@@ -20,6 +20,8 @@ const reads = [
   "getEvolve",
   "getVersion",
   "getRelayerJob",
+  "listCollections",
+  "getInfo",
 ]
 
 class SDK extends Base {

@@ -9,6 +9,6 @@ export const listCollections = async (state, action) => {
     "listCollections"
   )
   return {
-    result: keys(path.length === 0 ? data : data.subs),
+    result: keys(path.length === 0 ? data : _data.subs),
   }
 }
