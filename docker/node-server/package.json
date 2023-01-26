@@ -5,11 +5,17 @@
   "engines": {
     "node": ">=16.5"
   },
+  "scripts": {
+    "prettier": "npx prettier --write  . ",
+    "start": "node server.js",
+    "dev": "node-dev --respawn server.js"
+  },
   "dependencies": {
     "@grpc/grpc-js": "~1.1.8",
     "@grpc/proto-loader": "~0.5.0",
     "google-protobuf": "~3.14.0",
     "md5": "^2.3.0",
+    "node-dev": "^8.0.0",
     "ramda": "^0.28.0",
     "weavedb-sdk-node": "^0.13.0"
   }

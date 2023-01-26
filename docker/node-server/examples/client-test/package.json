@@ -1,0 +1,16 @@
+{
+  "name": "client-test",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "prettier": "npx prettier --write  . ",
+    "dev": "node-dev --respawn index.js"
+  },
+  "dependencies": {
+    "node-dev": "^8.0.0",
+    "prettier": "^2.8.3",
+    "weavedb-node-client": "^0.10.3"
+  }
+}
