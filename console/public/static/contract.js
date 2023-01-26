@@ -13841,7 +13841,7 @@
       slice_default(2, path3.length, path3),
       _signer,
       func,
-      null,
+      new_data,
       secure,
       relayer,
       jobID,

@@ -35,7 +35,6 @@ import {
   mapObjIndexed,
   is,
   slice,
-  hasPath,
   includes,
   append,
   indexBy,
@@ -71,6 +70,8 @@ const tabmap = {
   Rules: { name: "Access Control Rules" },
   Indexes: { name: "Indexes" },
   Crons: { name: "Crons" },
+  Relayers: { name: "Relayers" },
+  Nodes: { name: "gRPC Nodes" },
 }
 let db, iv
 export default inject(
@@ -87,6 +88,10 @@ export default inject(
   ({ set, init, router, conf, fn, $ }) => {
     const [addCollection, setAddCollection] = useState(false)
     const [addSchemas, setAddSchemas] = useState(false)
+    const [schema, setSchema] = useState(null)
+    const [rules, setRules] = useState(null)
+    const [indexes, setIndexes] = useState([])
+    const [crons, setCrons] = useState({})
     const [addDoc, setAddDoc] = useState(false)
     const [addData, setAddData] = useState(false)
     const [addRules, setAddRules] = useState(false)
@@ -110,7 +115,7 @@ export default inject(
     const [cron, setCron] = useState(null)
     const [method, setMethod] = useState("get")
     const [query, setQuery] = useState("")
-    const tabs = ["DB", "Data", "Schemas", "Rules", "Indexes", "Crons"]
+    const tabs = ["DB", "Data", "Schemas", "Rules", "Indexes"]
     const [port, setPort] = useState(null)
     const [network, setNetwork] = useState("Mainnet")
     const [newNetwork, setNewNetwork] = useState("Mainnet")
@@ -181,14 +186,74 @@ export default inject(
         await lf.setItem(`my_dbs`, _dbs)
       }
     }
+    let col = null
+    let doc = null
+    let base_path = []
+    if (!isNil(state)) {
+      if (doc_path.length !== 0) {
+        col =
+          doc_path[
+            doc_path.length % 2 === 0
+              ? doc_path.length - 2
+              : doc_path.length - 1
+          ]
+        doc = doc_path.length % 2 === 0 ? doc_path[doc_path.length - 1] : null
+      }
+      if (doc_path.length > 2) {
+        base_path = take(
+          doc_path.length % 2 === 0 ? doc_path.length - 2 : doc_path.length - 1,
+          doc_path
+        )
+      }
+    }
 
     useEffect(() => {
       ;(async () => {
-        if (tab === "Data") {
+        if (!isNil(currentDB)) {
           setCollections(await db.listCollections())
         }
       })()
-    }, [contractTxId, tab])
+    }, [contractTxId, currentDB])
+
+    useEffect(() => {
+      ;(async () => {
+        if (tab === "Schemas") {
+          if (!isNil(col)) {
+            setSchema(
+              await db.getSchema(
+                ...(doc_path.length % 2 === 0
+                  ? doc_path.slice(0, -1)
+                  : doc_path)
+              )
+            )
+          }
+        } else if (tab === "Rules") {
+          if (!isNil(col)) {
+            setRules(
+              await db.getRules(
+                ...(doc_path.length % 2 === 0
+                  ? doc_path.slice(0, -1)
+                  : doc_path)
+              )
+            )
+          }
+        } else if (tab === "Indexes") {
+          if (!isNil(col)) {
+            setIndexes(
+              await db.getIndexes(
+                ...(doc_path.length % 2 === 0
+                  ? doc_path.slice(0, -1)
+                  : doc_path)
+              )
+            )
+          }
+        } else if (tab === "Crons") {
+          console.log(await db.getCrons())
+          setCrons(await db.getCrons())
+        }
+      })()
+    }, [contractTxId, tab, doc_path])
+
     useEffect(() => {
       ;(async () => {
         if (addAlgorithms) setNewAuths(state.auth.algorithms)
@@ -240,65 +305,6 @@ export default inject(
       })()
     }, [initDB, contractTxId])
 
-    const getCol = (data, path) => {
-      const [col, id] = path
-      data[col] ||= { __docs: {} }
-      if (isNil(id)) {
-        return data[col]
-      } else {
-        data[col].__docs[id] ||= { __data: null, subs: {} }
-        return getCol(data[col].__docs[id].subs, slice(2, path.length, path))
-      }
-    }
-
-    let cols = []
-    let docs = []
-    let data = null
-    let subs = {}
-    let base = {}
-    let col = null
-    let doc = null
-    let base_path = []
-    if (!isNil(state)) {
-      if (doc_path.length !== 0) {
-        col = doc_path[0]
-        doc = doc_path[1]
-      }
-      /*
-      base = state.data
-      if (doc_path.length > 2) {
-        base_path = take(
-          doc_path.length % 2 === 0 ? doc_path.length - 2 : doc_path.length - 1,
-          doc_path
-        )
-        const len =
-          doc_path.length % 2 === 0 ? doc_path.length - 3 : doc_path.length - 2
-        const last_key =
-          doc_path.length % 2 === 0
-            ? doc_path[doc_path.length - 3]
-            : doc_path[doc_path.length - 2]
-        const _col = getCol(state.data, take(len)(doc_path))
-        base = _col.__docs[last_key].subs
-        if (doc_path.length % 2 === 0) {
-          doc = doc_path[doc_path.length - 1]
-          col = doc_path[doc_path.length - 2]
-        } else {
-          col = doc_path[doc_path.length - 1]
-        }
-      } else {
-        col = doc_path[0]
-        doc = doc_path[1]
-      }
-      cols = keys(base)
-      if (!isNil(col) && !isNil(base[col])) {
-        docs = keys(base[col].__docs)
-        if (!isNil(doc) && !isNil(base[col].__docs[doc])) {
-          data = base[col].__docs[doc].__data
-          subs = base[col].__docs[doc].subs
-        }
-        }
-      */
-    }
     const methods = [
       "get",
       "cget",
@@ -377,44 +383,10 @@ export default inject(
       </Flex>
     )
 
-    const getIndex = (state, path) => {
-      if (isNil(state.indexes[path.join(".")]))
-        state.indexes[path.join(".")] = {}
-      return state.indexes[path.join(".")]
-    }
-
-    const scanIndexes = ind => {
-      let indexes = []
-      for (let k in ind) {
-        for (let k2 in ind[k]) {
-          const _ind = [[k, k2]]
-          if (!isNil(ind[k][k2]._)) indexes.push(_ind)
-          if (!isNil(ind[k][k2].subs)) {
-            const sub_indexes = scanIndexes(ind[k][k2].subs)
-            for (let v of sub_indexes) {
-              indexes.push([..._ind, ...v])
-            }
-          }
-        }
-      }
-      return indexes
-    }
-
-    let indexes = []
-    let rules = {}
-    let schema = {}
-    let crons = {}
     let _cron = null
-    if (!isNil(state) && !isNil(state.crons)) {
-      crons = state.crons.crons
-      _cron = crons[cron]
+    if (!isNil(crons) && !isNil(crons.crons)) {
+      _cron = crons.crons[cron]
     }
-    /*
-    if (!isNil(col)) {
-      indexes = scanIndexes(getIndex(state, append(col, base_path)))
-      ;({ rules, schema } = getCol(state.data, append(col, base_path)))
-    }
-    */
     useEffect(() => {
       ;(async () => {
         const _port = await fn(connectLocalhost)({ port: newPort })
@@ -451,6 +423,7 @@ export default inject(
         }
       })()
     }, [doc_path])
+
     const linkStyle = {
       fontSize: "16px",
       display: "block",
@@ -672,7 +645,35 @@ export default inject(
                     <>
                       <Box mx={2} as="i" className="fas fa-angle-right" />
                       <Box
-                        onClick={() => setDocPath(take(i + 1, doc_path))}
+                        onClick={async () => {
+                          const dpath = doc_path.slice(0, i + 1)
+                          if (i !== doc_path.length - 1) {
+                            setDocPath(take(i + 1, dpath))
+                            setCollections(
+                              await db.listCollections(
+                                ...(dpath.length % 2 === 0
+                                  ? dpath.slice(0, -2)
+                                  : dpath.slice(0, -1))
+                              )
+                            )
+                            setDocuments(
+                              await db.cget(
+                                ...(dpath.length % 2 === 0
+                                  ? dpath.slice(0, -1)
+                                  : dpath)
+                              )
+                            )
+                            if (dpath.length % 2 === 0) {
+                              setDocdata(await db.cget(...dpath))
+                              setSubCollections(
+                                await db.listCollections(...dpath)
+                              )
+                            } else {
+                              setDocdata(null)
+                              setSubCollections([])
+                            }
+                          }
+                        }}
                         sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
                         as="span"
                         color={i === doc_path.length - 1 ? "#6441AF" : ""}
@@ -710,7 +711,8 @@ export default inject(
                             onClick={async () => {
                               setDocPath([...base_path, v])
                               setDocdata(null)
-                              setDocuments(await db.cget(v))
+                              setSubCollections([])
+                              setDocuments(await db.cget(...[...base_path, v]))
                             }}
                             bg={col === v ? "#ddd" : ""}
                             py={2}
@@ -747,10 +749,16 @@ export default inject(
                           )}
                         </Flex>
                         <Box height="500px" sx={{ overflowY: "auto" }} p={3}>
-                          <JSONPretty
-                            id="json-pretty"
-                            data={schema}
-                          ></JSONPretty>
+                          {isNil(schema) ? (
+                            <Flex justify="center" align="center" height="100%">
+                              Schema is not set.
+                            </Flex>
+                          ) : (
+                            <JSONPretty
+                              id="json-pretty"
+                              data={schema}
+                            ></JSONPretty>
+                          )}
                         </Box>
                       </Flex>
                     ) : tab === "Rules" ? (
@@ -853,7 +861,7 @@ export default inject(
                                 </Flex>
                               )),
                               keys
-                            )(crons)}
+                            )(crons.crons || [])}
                           </Box>
                         </Flex>
                         <Flex
@@ -1596,8 +1604,13 @@ export default inject(
                                     cursor: "pointer",
                                     ":hover": { opacity: 0.75 },
                                   }}
-                                  onClick={() => {
-                                    setDocPath(append(v)(doc_path))
+                                  onClick={async () => {
+                                    const _doc_path = append(v)(doc_path)
+                                    setDocPath(_doc_path)
+                                    setDocdata(null)
+                                    setSubCollections([])
+                                    setCollections(subCollections)
+                                    setDocuments(await db.cget(..._doc_path))
                                   }}
                                 >
                                   <Box
@@ -1837,7 +1850,9 @@ export default inject(
                         if (/^\s*$/.test(newCollection)) {
                           alert("Enter Collection ID")
                           return
-                        } else if (hasPath([newCollection])(base)) {
+                        } else if (
+                          !isNil(indexBy(prop("id"))(documents)[newCollection])
+                        ) {
                           alert("Collection exists")
                           return
                         }
@@ -1848,25 +1863,32 @@ export default inject(
                           alert("Wrong JSON format")
                           return
                         }
-
-                        const res = await fn(queryDB)({
-                          method: "setRules",
-                          query: `${newRules}, ${compose(
-                            join(", "),
-                            map(v => `"${v}"`),
-                            append(newCollection)
-                          )(base_path)}`,
-                          contractTxId,
-                        })
-                        if (/^Error:/.test(res)) {
+                        try {
+                          const res = JSON.parse(
+                            await fn(queryDB)({
+                              method: "setRules",
+                              query: `${newRules}, ${compose(
+                                join(", "),
+                                map(v => `"${v}"`),
+                                append(newCollection)
+                              )(base_path)}`,
+                              contractTxId,
+                            })
+                          )
+                          if (!res.success) {
+                            alert("Something went wrong")
+                          } else {
+                            setNewCollection("")
+                            setNewRules(`{"allow write": true}`)
+                            setAddCollection(false)
+                            setCollections(
+                              await db.listCollections(...base_path)
+                            )
+                          }
+                        } catch (e) {
                           alert("Something went wrong")
-                        } else {
-                          setNewCollection("")
-                          setNewRules(`{"allow write": true}`)
-                          setAddCollection(false)
                         }
                         set(null, "loading")
-                        setCollections(await db.listCollections())
                       }
                     }}
                   >
@@ -1929,7 +1951,8 @@ export default inject(
                     onClick={async () => {
                       if (isNil($.loading)) {
                         const exID = !/^\s*$/.test(newDoc)
-                        if (exID && hasPath([col, "__docs", newDoc])(base)) {
+                        const docmap = indexBy(prop("id"))(documents)
+                        if (exID && !isNil(docmap[newDoc])) {
                           alert("Doc exists")
                           return
                         }
@@ -1947,19 +1970,23 @@ export default inject(
                         )(base_path)
                         let query = `${newData}, ${col_path}`
                         if (exID) query += `, "${newDoc}"`
-                        const res = await fn(queryDB)({
-                          method: exID ? "set" : "add",
-                          query,
-                          contractTxId,
-                        })
-                        if (/^Error:/.test(res)) {
-                          alert("Something went wrong")
-                        } else {
-                          setNewDoc("")
-                          setNewData(`{}`)
-                          setAddDoc(false)
-                        }
-                        setDocuments(await db.cget(col))
+                        try {
+                          const res = JSON.parse(
+                            await fn(queryDB)({
+                              method: exID ? "set" : "add",
+                              query,
+                              contractTxId,
+                            })
+                          )
+                          if (!res.success) {
+                            alert("Something went wrong")
+                          } else {
+                            setNewDoc("")
+                            setNewData(`{}`)
+                            setAddDoc(false)
+                          }
+                          setDocuments(await db.cget(...[...base_path, col]))
+                        } catch (e) {}
                         set(null, "loading")
                       }
                     }}
@@ -2064,12 +2091,7 @@ export default inject(
                           !/^\s*$/.test(newFieldVal)
                         if (!exVal) alert("Enter a value")
                         if (!exID) alert("Enter field key")
-                        if (
-                          exID &&
-                          hasPath([col, "__docs", doc, "__data", newField])(
-                            base
-                          )
-                        ) {
+                        if (exID && !isNil(docdata.data[newField])) {
                           alert("Field exists")
                           return
                         }
@@ -2101,11 +2123,7 @@ export default inject(
                             if (/^\s*$/.test(newField)) {
                               alert("Enter Collection ID")
                               return
-                            } else if (
-                              hasPath([col, "__docs", doc, "subs", newField])(
-                                base
-                              )
-                            ) {
+                            } else if (!isNil(docdata.data[newField])) {
                               alert("Collection exists")
                               return
                             }
@@ -2137,20 +2155,24 @@ export default inject(
                           )([col, doc])
                           query = `{ "${newField}": ${val}}, ${_doc_path}`
                         }
-                        const res = await fn(queryDB)({
-                          method,
-                          query,
-                          contractTxId,
-                        })
-                        if (/^Error:/.test(res)) {
+                        const res = JSON.parse(
+                          await fn(queryDB)({
+                            method,
+                            query,
+                            contractTxId,
+                          })
+                        )
+                        if (!res.success) {
                           alert("Something went wrong")
                         } else {
                           setNewField("")
                           setNewFieldVal("")
                           setAddData(false)
+                          setDocdata(await db.cget(...doc_path))
+                          setSubCollections(
+                            await db.listCollections(...doc_path)
+                          )
                         }
-                        setDocdata(await db.cget(...doc_path))
-                        setSubCollections(await db.listCollections(...doc_path))
                         set(null, "loading")
                       }
                     }}
@@ -2201,6 +2223,7 @@ export default inject(
                     justify="center"
                     align="center"
                     color="white"
+                    height="40px"
                     bg="#333"
                     onClick={async () => {
                       if (isNil($.loading)) {
@@ -2220,18 +2243,28 @@ export default inject(
                           append(col)
                         )(base_path)
                         let query = `${newSchemas}, ${col_path}`
-                        const res = await fn(queryDB)({
-                          method: "setSchema",
-                          query,
-                          contractTxId,
-                        })
-                        if (/^Error:/.test(res)) {
+                        console.log(query)
+                        const res = JSON.parse(
+                          await fn(queryDB)({
+                            method: "setSchema",
+                            query,
+                            contractTxId,
+                          })
+                        )
+                        console.log(res)
+                        if (!res.success) {
                           alert("Something went wrong")
                         } else {
                           setNewSchemas("")
                           setAddSchemas(false)
+                          setSchema(
+                            await db.getSchema(
+                              ...(doc_path.length % 2 === 0
+                                ? doc_path.slice(0, -1)
+                                : doc_path)
+                            )
+                          )
                         }
-                        setState(await db.getInfo())
                         set(null, "loading")
                       }
                     }}
@@ -2362,6 +2395,7 @@ export default inject(
                     align="center"
                     color="white"
                     bg="#333"
+                    height="40px"
                     onClick={async () => {
                       if (isNil($.loading)) {
                         const exID = !/^\s*$/.test(newCronName)
@@ -2386,30 +2420,36 @@ export default inject(
                           return
                         }
                         set("add_cron", "loading")
-                        let query = `{times: ${newTimes || null}, start: ${
-                          newStart || null
-                        }, end: ${newEnd || null},do: ${
-                          newDo ? "true" : "false"
-                        }, span: ${
-                          newSpan * 1
-                        }, jobs: ${newCron}}, "${newCronName}"`
-                        const res = await fn(queryDB)({
-                          method: "addCron",
-                          query,
-                          contractTxId,
-                        })
-                        if (/^Error:/.test(res)) {
+                        try {
+                          let query = `{times: ${newTimes || null}, start: ${
+                            newStart || null
+                          }, end: ${newEnd || null},do: ${
+                            newDo ? "true" : "false"
+                          }, span: ${
+                            newSpan * 1
+                          }, jobs: ${newCron}}, "${newCronName}"`
+                          const res = JSON.parse(
+                            await fn(queryDB)({
+                              method: "addCron",
+                              query,
+                              contractTxId,
+                            })
+                          )
+                          if (!res.success) {
+                            alert("Something went wrong")
+                          } else {
+                            setNewCron("")
+                            setNewStart("")
+                            setNewCronName("")
+                            setNewEnd("")
+                            setNewTimes("")
+                            setNewSpan("")
+                            setAddCron(false)
+                            setCrons(await db.getCrons())
+                          }
+                        } catch (e) {
                           alert("Something went wrong")
-                        } else {
-                          setNewCron("")
-                          setNewStart("")
-                          setNewCronName("")
-                          setNewEnd("")
-                          setNewTimes("")
-                          setNewSpan("")
-                          setAddCron(false)
                         }
-                        setState(await db.getInfo())
                         set(null, "loading")
                       }
                     }}
@@ -2461,6 +2501,7 @@ export default inject(
                     align="center"
                     color="white"
                     bg="#333"
+                    height="40px"
                     onClick={async () => {
                       if (isNil($.loading)) {
                         const exRules = !/^\s*$/.test(newRules2)
@@ -2481,19 +2522,31 @@ export default inject(
                           map(v => `"${v}"`),
                           append(col)
                         )(base_path)
-                        let query = `${newRules2}, ${col_path}`
-                        const res = await fn(queryDB)({
-                          method: "setRules",
-                          query,
-                          contractTxId,
-                        })
-                        if (/^Error:/.test(res)) {
+                        try {
+                          let query = `${newRules2}, ${col_path}`
+                          const res = JSON.parse(
+                            await fn(queryDB)({
+                              method: "setRules",
+                              query,
+                              contractTxId,
+                            })
+                          )
+                          if (!res.success) {
+                            alert("Something went wrong")
+                          } else {
+                            setNewRules2(`{"allow write": true}`)
+                            setAddRules(false)
+                            setRules(
+                              await db.getRules(
+                                ...(doc_path.length % 2 === 0
+                                  ? doc_path.slice(0, -1)
+                                  : doc_path)
+                              )
+                            )
+                          }
+                        } catch (e) {
                           alert("Something went wrong")
-                        } else {
-                          setNewRules2(`{"allow write": true}`)
-                          setAddRules(false)
                         }
-                        setState(await db.getInfo())
                         set(null, "loading")
                       }
                     }}
@@ -2797,6 +2850,7 @@ export default inject(
                     align="center"
                     color="white"
                     bg="#333"
+                    height="40px"
                     onClick={async () => {
                       if (isNil($.loading)) {
                         const exIndex = !/^\s*$/.test(newIndex)
@@ -2843,18 +2897,26 @@ export default inject(
                           append(col)
                         )(base_path)
                         let query = `${newIndex}, ${col_path}`
-                        const res = await fn(queryDB)({
-                          method: "addIndex",
-                          query,
-                          contractTxId,
-                        })
-                        if (/^Error:/.test(res)) {
+                        const res = JSON.parse(
+                          await fn(queryDB)({
+                            method: "addIndex",
+                            query,
+                            contractTxId,
+                          })
+                        )
+                        if (!res.success) {
                           alert("Something went wrong")
                         } else {
                           setNewIndex("[]")
                           setAddIndex(false)
+                          setIndexes(
+                            await db.getIndexes(
+                              ...(doc_path.length % 2 === 0
+                                ? doc_path.slice(0, -1)
+                                : doc_path)
+                            )
+                          )
                         }
-                        setState(await db.getInfo())
                         set(null, "loading")
                       }
                     }}
@@ -3136,8 +3198,9 @@ export default inject(
                           if (isNil($.loading)) {
                             if (!/^\s*$/.test(newContractTxId)) {
                               set("connect_to_db", "loading")
+                              let db
                               try {
-                                const db = await fn(setupWeaveDB)({
+                                db = await fn(setupWeaveDB)({
                                   network: newNetwork,
                                   contractTxId: newContractTxId,
                                   port: port || 1820,
@@ -3163,10 +3226,14 @@ export default inject(
                                   setNewContractTxId("")
                                   setNewRPC("")
                                 } else {
-                                  alert("couldn't connect to the contract")
+                                  alert(
+                                    "couldn't connect to the contract. Web Console is only compatible with v0.15 and above."
+                                  )
                                 }
                               } catch (e) {
-                                alert("couldn't connect to the contract")
+                                alert(
+                                  "couldn't connect to the contract. Web Console is only compatible with v0.15 and above."
+                                )
                               }
                               set(null, "loading")
                             }

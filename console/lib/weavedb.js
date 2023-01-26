@@ -319,6 +319,7 @@ export const queryDB = async ({
       alert("not logged in")
       return
     }
+    console.log(method, q)
     const res = await sdk[method](...q, opt)
     if (!isNil(res.err)) {
       return `Error: ${res.err.errorMessage}`
@@ -511,9 +512,15 @@ export const deployDB = async ({
     const warp = WarpFactory.forLocal(port)
     const arweave = Arweave.init({
       host: "localhost",
-      port,
+      port: port || 1820,
       protocol: "http",
     })
+    if (isNil(arweave_wallet)) {
+      arweave_wallet ||= await arweave.wallets.generate()
+      try {
+        await addFunds(arweave, arweave_wallet)
+      } catch (e) {}
+    }
     /*
     const poseidon1TxId = await deploy({
       src: "poseidonConstants",
