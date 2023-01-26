@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package weavedb;
+
+service DB {
+  rpc query (WeaveDBRequest) returns (WeaveDBReply) {}
+}
+
+message WeaveDBRequest {
+  string method = 1;
+  string query = 2;
+  bool nocache = 3;
+}
+
+message WeaveDBReply {
+  string result = 1;
+  string err = 2;
+}
