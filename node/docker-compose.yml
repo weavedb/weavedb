@@ -1,0 +1,22 @@
+version: '3'
+services:
+  node-server:
+    build:
+      context: ./
+      dockerfile: ./net/grpc/gateway/docker/node_server/Dockerfile
+    image: grpcweb/node-server
+    ports:
+      - "9090:9090"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./net/grpc/gateway/weavedb/node-server/cache:/weavedb/grpc/gateway/weavedb/node-server/cache
+  envoy:
+    build:
+      context: ./
+      dockerfile: ./net/grpc/gateway/docker/envoy/Dockerfile
+    image: grpcweb/envoy
+    ports:
+      - "8080:8080"
+    links:
+      - node-server
