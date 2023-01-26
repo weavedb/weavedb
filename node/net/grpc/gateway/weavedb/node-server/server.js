@@ -72,9 +72,8 @@ async function query(call, callback) {
       return
     }
   }
-  _cache[contractTxId] ||= {}
   const start = Date.now()
-  const key = md5(`${method}:${query}`)
+  const key = md5(`${contractTxId}:${method}:${query}`)
   let result = null
   let err = null
   let end
@@ -99,7 +98,7 @@ async function query(call, callback) {
         }
       } else if (includes(func)(reads)) {
         result = await sdks[contractTxId][func](...JSON.parse(query))
-        _cache[contractTxId][key] = { date: Date.now(), result }
+        _cache[key] = { date: Date.now(), result }
       } else {
         result = await sdks[contractTxId]._request(
           func,
@@ -114,8 +113,8 @@ async function query(call, callback) {
     return { result, err }
   }
 
-  if (includes(func)(reads) && !isNil(_cache[contractTxId][key]) && !nocache) {
-    result = _cache[contractTxId][key].result
+  if (includes(func)(reads) && !isNil(_cache[key]) && !nocache) {
+    result = _cache[key].result
     cb(result, err)
     await sendQuery()
   } else {
