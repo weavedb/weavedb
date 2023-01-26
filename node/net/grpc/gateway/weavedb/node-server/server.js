@@ -73,7 +73,7 @@ async function query(call, callback) {
     }
   }
   const start = Date.now()
-  const key = md5(`${contractTxId}:${method}:${query}`)
+  const key = md5(`${contractTxId}:${func}:${query}`)
   let result = null
   let err = null
   let end
