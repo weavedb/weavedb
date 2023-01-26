@@ -57,23 +57,23 @@ export const setupWeaveDB = async ({
   set,
   val: { network, contractTxId, port, rpc },
 }) => {
-  /*
-  if (!isNil(rpc)) {
+  let isRPC = !isNil(rpc) && !/^\s*$/.test(rpc)
+  if (isRPC) {
     try {
-      const sdk = new Client({
+      sdk = new Client({
         rpc,
         contractTxId,
       })
-      console.log(await sdk.getInfo())
     } catch (e) {
       console.log(e)
     }
-  }*/
-  sdk = new SDK({
-    network: network.toLowerCase(),
-    port,
-    contractTxId,
-  })
+  } else {
+    sdk = new SDK({
+      network: network.toLowerCase(),
+      port,
+      contractTxId,
+    })
+  }
   if (isNil(arweave_wallet)) {
     const arweave = Arweave.init({
       host: "localhost",
@@ -85,7 +85,7 @@ export const setupWeaveDB = async ({
       await addFunds(arweave, arweave_wallet)
     } catch (e) {}
   }
-  if (!isNil(contractTxId)) {
+  if (!isRPC && !isNil(contractTxId)) {
     sdk.initialize({
       contractTxId: contractTxId,
       wallet: arweave_wallet,
@@ -319,7 +319,6 @@ export const queryDB = async ({
       alert("not logged in")
       return
     }
-    console.log(method, q)
     const res = await sdk[method](...q, opt)
     if (!isNil(res.err)) {
       return `Error: ${res.err.errorMessage}`

@@ -74,7 +74,7 @@ async function query(call, callback) {
   }
   _cache[contractTxId] ||= {}
   const start = Date.now()
-  const key = md5(query)
+  const key = md5(`${method}:${query}`)
   let result = null
   let err = null
   let end
