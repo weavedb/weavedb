@@ -792,4 +792,18 @@ describe("WeaveDB", function () {
     })
     return
   })
+
+  it("should update sub collections", async () => {
+    const data = { name: "Bob", age: 20 }
+    const data2 = { weight: 70 }
+    await db.set(data, "ppl", "Bob")
+    const rules = {
+      "allow write": true,
+    }
+    await db.setRules(rules, "ppl", "Bob", "foods", {
+      ar: arweave_wallet,
+    })
+    await db.set(data2, "ppl", "Bob", "foods", "apple")
+    expect(await db.get("ppl", "Bob", "foods", "apple")).to.eql(data2)
+  })
 })

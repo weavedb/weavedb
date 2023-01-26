@@ -183,7 +183,7 @@ export const getDoc = (
         slice(2, path.length, path),
         _signer,
         func,
-        null,
+        new_data,
         secure,
         relayer,
         jobID,
@@ -329,7 +329,6 @@ export const parse = async (
   let schema = null
   let rules = null
   let next_data
-
   if (
     includes(func)([
       "addIndex",
