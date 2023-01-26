@@ -13,3 +13,12 @@ target
 .settings
 zig-out
 zig-cache
+
+
+weavedb.config.js
+weavedb.config*
+/package-lock.json
+/node_modules
+
+
+

@@ -1,6 +1,6 @@
 const md5 = require("md5")
 const config = require("./weavedb.config.js")
-const PROTO_PATH = __dirname + "/../weavedb.proto"
+const PROTO_PATH = __dirname + "/weavedb.proto"
 let sdk = null
 const { is, isNil, includes, clone, map } = require("ramda")
 const SDK = require("weavedb-sdk-node")
@@ -129,6 +129,7 @@ async function initSDK(v) {
   _config.contractTxId = txid
   if (old === "old") _config.old = true
   sdks[txid] = new SDK(_config)
+
   if (isNil(_config.wallet)) await sdks[txid].initializeWithoutWallet()
   await sdks[txid].db.readState()
   return
