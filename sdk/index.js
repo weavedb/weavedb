@@ -1,4 +1,5 @@
 const {
+  init,
   o,
   includes,
   append,
@@ -128,6 +129,11 @@ class SDK extends Base {
   }
 
   async request(func, ...query) {
+    let nocache = false
+    if (is(Boolean, last(query))) {
+      nocache = last(query)
+      query = init(query)
+    }
     return this.viewState({
       function: func,
       query,

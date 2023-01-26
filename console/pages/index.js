@@ -209,11 +209,11 @@ export default inject(
 
     useEffect(() => {
       ;(async () => {
-        if (!isNil(currentDB)) {
-          setCollections(await db.listCollections())
+        if (!isNil(currentDB) && !$.loading_contract) {
+          setCollections(await db.listCollections(true))
         }
       })()
-    }, [contractTxId, currentDB])
+    }, [contractTxId, currentDB, $.loading_contract])
 
     useEffect(() => {
       ;(async () => {
@@ -223,7 +223,8 @@ export default inject(
               await db.getSchema(
                 ...(doc_path.length % 2 === 0
                   ? doc_path.slice(0, -1)
-                  : doc_path)
+                  : doc_path),
+                true
               )
             )
           }
@@ -233,7 +234,8 @@ export default inject(
               await db.getRules(
                 ...(doc_path.length % 2 === 0
                   ? doc_path.slice(0, -1)
-                  : doc_path)
+                  : doc_path),
+                true
               )
             )
           }
@@ -243,13 +245,13 @@ export default inject(
               await db.getIndexes(
                 ...(doc_path.length % 2 === 0
                   ? doc_path.slice(0, -1)
-                  : doc_path)
+                  : doc_path),
+                true
               )
             )
           }
         } else if (tab === "Crons") {
-          console.log(await db.getCrons())
-          setCrons(await db.getCrons())
+          setCrons(await db.getCrons(true))
         }
       })()
     }, [contractTxId, tab, doc_path])
@@ -287,7 +289,7 @@ export default inject(
           port,
           rpc,
         })
-        setState(await db.getInfo())
+        setState(await db.getInfo(true))
         set(null, "loading_contract")
         fn(switchTempAddress)({ contractTxId: _contractTxId })
       } else {
@@ -567,6 +569,27 @@ export default inject(
           >
             WeaveDB is still in alpha. Please use it with discretion.
           </Flex>
+          <Box
+            fontSize="12px"
+            p={4}
+            bg="#6441AF"
+            color="white"
+            mx={4}
+            mb={4}
+            sx={{ borderRadius: "5px" }}
+          >
+            For old contracts before v0.15, please use
+            <Box
+              sx={{ textDecoration: "underline" }}
+              ml={1}
+              as="a"
+              target="_blank"
+              href="https://old-console.weavedb.dev"
+            >
+              Old Console
+            </Box>
+            .
+          </Box>
         </Flex>
         <Flex
           bg="white"
@@ -654,19 +677,21 @@ export default inject(
                                 ...(dpath.length % 2 === 0
                                   ? dpath.slice(0, -2)
                                   : dpath.slice(0, -1))
-                              )
+                              ),
+                              true
                             )
                             setDocuments(
                               await db.cget(
                                 ...(dpath.length % 2 === 0
                                   ? dpath.slice(0, -1)
-                                  : dpath)
+                                  : dpath),
+                                true
                               )
                             )
                             if (dpath.length % 2 === 0) {
-                              setDocdata(await db.cget(...dpath))
+                              setDocdata(await db.cget(...dpath, true))
                               setSubCollections(
-                                await db.listCollections(...dpath)
+                                await db.listCollections(...dpath, true)
                               )
                             } else {
                               setDocdata(null)
@@ -712,7 +737,9 @@ export default inject(
                               setDocPath([...base_path, v])
                               setDocdata(null)
                               setSubCollections([])
-                              setDocuments(await db.cget(...[...base_path, v]))
+                              setDocuments(
+                                await db.cget(...[...base_path, v, true])
+                              )
                             }}
                             bg={col === v ? "#ddd" : ""}
                             py={2}
@@ -852,7 +879,7 @@ export default inject(
                                         if (/^Error:/.test(res)) {
                                           alert("Something went wrong")
                                         }
-                                        setState(await db.getInfo())
+                                        setState(await db.getInfo(true))
                                       }
                                     }}
                                   >
@@ -1089,7 +1116,7 @@ export default inject(
                                           port: port || 1820,
                                           rpc: v.rpc,
                                         })
-                                        let state = await db.getInfo()
+                                        let state = await db.getInfo(true)
                                         if (!isNil(state.version)) {
                                           setState(null)
                                           setNetwork(v.network)
@@ -1101,12 +1128,13 @@ export default inject(
                                           )
                                         } else {
                                           alert(
-                                            "couldn't connect to the contract"
+                                            "couldn't connect to the contract. Web Console is only compatible with v0.15 and above."
                                           )
                                         }
                                       } catch (e) {
+                                        console.log(e)
                                         alert(
-                                          "couldn't connect to the contract"
+                                          "couldn't connect to the contract. Web Console is only compatible with v0.15 and above."
                                         )
                                       }
                                     }
@@ -1498,12 +1526,12 @@ export default inject(
                                   setDocPath(concat(base_path, [col, v]))
                                   setDocdata(
                                     await db.cget(
-                                      ...concat(base_path, [col, v])
+                                      ...concat(base_path, [col, v, true])
                                     )
                                   )
                                   setSubCollections(
                                     await db.listCollections(
-                                      ...concat(base_path, [col, v])
+                                      ...concat(base_path, [col, v, true])
                                     )
                                   )
                                 }}
@@ -1610,7 +1638,9 @@ export default inject(
                                     setDocdata(null)
                                     setSubCollections([])
                                     setCollections(subCollections)
-                                    setDocuments(await db.cget(..._doc_path))
+                                    setDocuments(
+                                      await db.cget(..._doc_path, true)
+                                    )
                                   }}
                                 >
                                   <Box
@@ -1691,9 +1721,14 @@ export default inject(
                                         if (/^Error:/.test(res)) {
                                           alert("Something went wrong")
                                         }
-                                        setDocdata(await db.cget(...doc_path))
+                                        setDocdata(
+                                          await db.cget(...doc_path, true)
+                                        )
                                         setSubCollections(
-                                          await db.listCollections(...doc_path)
+                                          await db.listCollections(
+                                            ...doc_path,
+                                            true
+                                          )
                                         )
                                       }
                                     }}
@@ -1760,7 +1795,7 @@ export default inject(
                           contractTxId,
                         })
                         setResult(res)
-                        setState(await db.getInfo())
+                        setState(await db.getInfo(true))
                       } catch (e) {
                         console.log(e)
                         setResult("Error: The wrong query")
@@ -1882,7 +1917,7 @@ export default inject(
                             setNewRules(`{"allow write": true}`)
                             setAddCollection(false)
                             setCollections(
-                              await db.listCollections(...base_path)
+                              await db.listCollections(...base_path, true)
                             )
                           }
                         } catch (e) {
@@ -1985,7 +2020,9 @@ export default inject(
                             setNewData(`{}`)
                             setAddDoc(false)
                           }
-                          setDocuments(await db.cget(...[...base_path, col]))
+                          setDocuments(
+                            await db.cget(...[...base_path, col, true])
+                          )
                         } catch (e) {}
                         set(null, "loading")
                       }
@@ -2168,9 +2205,9 @@ export default inject(
                           setNewField("")
                           setNewFieldVal("")
                           setAddData(false)
-                          setDocdata(await db.cget(...doc_path))
+                          setDocdata(await db.cget(...doc_path, true))
                           setSubCollections(
-                            await db.listCollections(...doc_path)
+                            await db.listCollections(...doc_path, true)
                           )
                         }
                         set(null, "loading")
@@ -2243,7 +2280,6 @@ export default inject(
                           append(col)
                         )(base_path)
                         let query = `${newSchemas}, ${col_path}`
-                        console.log(query)
                         const res = JSON.parse(
                           await fn(queryDB)({
                             method: "setSchema",
@@ -2251,7 +2287,6 @@ export default inject(
                             contractTxId,
                           })
                         )
-                        console.log(res)
                         if (!res.success) {
                           alert("Something went wrong")
                         } else {
@@ -2261,7 +2296,8 @@ export default inject(
                             await db.getSchema(
                               ...(doc_path.length % 2 === 0
                                 ? doc_path.slice(0, -1)
-                                : doc_path)
+                                : doc_path),
+                              true
                             )
                           )
                         }
@@ -2445,7 +2481,7 @@ export default inject(
                             setNewTimes("")
                             setNewSpan("")
                             setAddCron(false)
-                            setCrons(await db.getCrons())
+                            setCrons(await db.getCrons(true))
                           }
                         } catch (e) {
                           alert("Something went wrong")
@@ -2540,7 +2576,8 @@ export default inject(
                               await db.getRules(
                                 ...(doc_path.length % 2 === 0
                                   ? doc_path.slice(0, -1)
-                                  : doc_path)
+                                  : doc_path),
+                                true
                               )
                             )
                           }
@@ -2605,7 +2642,7 @@ export default inject(
                               if (/^Error:/.test(res)) {
                                 alert("Something went wrong")
                               }
-                              setState(await db.getInfo())
+                              setState(await db.getInfo(true))
                             }}
                             className="fas fa-trash"
                             sx={{
@@ -2645,7 +2682,7 @@ export default inject(
                           if (/^Error:/.test(res)) {
                             alert("Something went wrong")
                           }
-                          setState(await db.getInfo())
+                          setState(await db.getInfo(true))
                           set(null, "loading")
                         }
                       }}
@@ -2727,7 +2764,7 @@ export default inject(
                           alert("Something went wrong")
                         }
                         set(null, "loading")
-                        setState(await db.getInfo())
+                        setState(await db.getInfo(true))
                       }
                     }}
                     sx={{
@@ -2796,7 +2833,7 @@ export default inject(
                           if (/^Error:/.test(res)) {
                             alert("Something went wrong")
                           }
-                          setState(await db.getInfo())
+                          setState(await db.getInfo(true))
                           set(null, "loading")
                         }
                       }}
@@ -2913,7 +2950,8 @@ export default inject(
                             await db.getIndexes(
                               ...(doc_path.length % 2 === 0
                                 ? doc_path.slice(0, -1)
-                                : doc_path)
+                                : doc_path),
+                              true
                             )
                           )
                         }
@@ -3206,31 +3244,48 @@ export default inject(
                                   port: port || 1820,
                                   rpc: newRPC,
                                 })
-                                let state = await db.getInfo()
+                                let state = await db.getInfo(true)
                                 if (!isNil(state.version)) {
-                                  setNetwork(newNetwork)
-                                  await _setContractTxId(
-                                    newContractTxId,
-                                    newNetwork,
-                                    newRPC
-                                  )
-                                  setEditNetwork(false)
-                                  addDB({
-                                    network: newNetwork,
-                                    port:
-                                      newNetwork === "Localhost" ? port : 443,
-                                    contractTxId: newContractTxId,
-                                    rpc: newRPC,
-                                  })
-                                  setAddInstance(false)
-                                  setNewContractTxId("")
-                                  setNewRPC("")
+                                  if (
+                                    !/^[0-9]+\.[0-9]+\.[0-9]+$/.test(
+                                      state.version
+                                    )
+                                  ) {
+                                    alert("version not compatible")
+                                  } else if (
+                                    +state.version.split(".")[1] < 15
+                                  ) {
+                                    alert(
+                                      "Web Console is only compatible with v0.15 and above."
+                                    )
+                                  } else {
+                                    setNetwork(newNetwork)
+                                    let newdb = {
+                                      network: newNetwork,
+                                      port:
+                                        newNetwork === "Localhost" ? port : 443,
+                                      contractTxId: newContractTxId,
+                                      rpc: newRPC,
+                                    }
+                                    setCurrentDB(newdb)
+                                    await _setContractTxId(
+                                      newContractTxId,
+                                      newNetwork,
+                                      newRPC
+                                    )
+                                    setEditNetwork(false)
+                                    addDB(newdb)
+                                    setAddInstance(false)
+                                    setNewContractTxId("")
+                                    setNewRPC("")
+                                  }
                                 } else {
                                   alert(
                                     "couldn't connect to the contract. Web Console is only compatible with v0.15 and above."
                                   )
                                 }
                               } catch (e) {
+                                console.log(e)
                                 alert(
                                   "couldn't connect to the contract. Web Console is only compatible with v0.15 and above."
                                 )
@@ -3328,11 +3383,25 @@ export default inject(
                             port: currentDB.port,
                             rpc: newRPC,
                           })
-                          const newDB = assoc("rpc", newRPC2, currentDB)
-                          updateDB(newDB)
-                          setCurrentDB(newDB)
-                          setAddGRPC(false)
-                          setNewRPC2("")
+                          let state = await db.getInfo(true)
+                          if (!isNil(state.version)) {
+                            setState(null)
+                            const newDB = assoc("rpc", newRPC2, currentDB)
+                            updateDB(newDB)
+                            setCurrentDB(newDB)
+                            setAddGRPC(false)
+                            setNewRPC2("")
+                            await _setContractTxId(
+                              currentDB.contractTxId,
+                              currentDB.network,
+                              newRPC2
+                            )
+                          } else {
+                            alert(
+                              "couldn't connect to the contract. Web Console is only compatible with v0.15 and above."
+                            )
+                          }
+
                           set(null, "loading")
                         }
                       }}
