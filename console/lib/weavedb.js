@@ -1,12 +1,13 @@
 const { Ed25519KeyIdentity } = require("@dfinity/identity")
 import Arweave from "arweave"
-import client from "weavedb-client"
 import lf from "localforage"
 import SDK from "weavedb-sdk"
+import Client from "weavedb-client"
 import { ethers } from "ethers"
 import { AuthClient } from "@dfinity/auth-client"
 import { WarpFactory } from "warp-contracts"
 import {
+  assocPath,
   is,
   includes,
   difference,
@@ -25,7 +26,7 @@ import {
 } from "ramda"
 import { Buffer } from "buffer"
 let sdk
-const weavedbSrcTxId = "9vwjxsX0856iTRFsEMEXBC7UFJ3Utok_e6dFyB1s4TA"
+const weavedbSrcTxId = "4lSfFFQIpX37GMdab6c4ZdWli33b70qu_KJan5vB1ZI"
 //const intmaxSrcTxId = "OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94"
 const dfinitySrcTxId = "3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8"
 const ethereumSrcTxId = "Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w"
@@ -54,13 +55,25 @@ export const connectLocalhost = async ({ conf, set, val: { port } }) => {
 export const setupWeaveDB = async ({
   conf,
   set,
-  val: { network, contractTxId, port },
+  val: { network, contractTxId, port, rpc },
 }) => {
-  sdk = new SDK({
-    network: network.toLowerCase(),
-    port,
-    contractTxId: contractTxId,
-  })
+  let isRPC = !isNil(rpc) && !/^\s*$/.test(rpc)
+  if (isRPC) {
+    try {
+      sdk = new Client({
+        rpc,
+        contractTxId,
+      })
+    } catch (e) {
+      console.log(e)
+    }
+  } else {
+    sdk = new SDK({
+      network: network.toLowerCase(),
+      port,
+      contractTxId,
+    })
+  }
   if (isNil(arweave_wallet)) {
     const arweave = Arweave.init({
       host: "localhost",
@@ -68,9 +81,11 @@ export const setupWeaveDB = async ({
       protocol: "http",
     })
     arweave_wallet ||= await arweave.wallets.generate()
-    await addFunds(arweave, arweave_wallet)
+    try {
+      await addFunds(arweave, arweave_wallet)
+    } catch (e) {}
   }
-  if (!isNil(contractTxId)) {
+  if (!isRPC && !isNil(contractTxId)) {
     sdk.initialize({
       contractTxId: contractTxId,
       wallet: arweave_wallet,
@@ -316,6 +331,88 @@ export const queryDB = async ({
   }
 }
 
+export const _addOwner = async ({
+  val: { address, contractTxId },
+  global,
+  set,
+  fn,
+  conf,
+  get,
+}) => {
+  try {
+    const current = get("temp_current")
+    const identity = isNil(current)
+      ? null
+      : await lf.getItem(`temp_address:${contractTxId}:${current}`)
+    let ii = null
+    if (is(Array)(identity)) {
+      ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(identity))
+    }
+    const opt = !isNil(ii)
+      ? { ii }
+      : !isNil(identity) && !isNil(identity.tx)
+      ? {
+          wallet: current,
+          privateKey: identity.privateKey,
+        }
+      : null
+    if (isNil(opt)) {
+      alert("not logged in")
+      return
+    }
+    const res = await sdk.addOwner(address, opt)
+    if (!isNil(res.err)) {
+      return `Error: ${res.err.errorMessage}`
+    } else {
+      return JSON.stringify(res)
+    }
+  } catch (e) {
+    console.log(e)
+    return `Error: Something went wrong`
+  }
+}
+
+export const _removeOwner = async ({
+  val: { address, contractTxId },
+  global,
+  set,
+  fn,
+  conf,
+  get,
+}) => {
+  try {
+    const current = get("temp_current")
+    const identity = isNil(current)
+      ? null
+      : await lf.getItem(`temp_address:${contractTxId}:${current}`)
+    let ii = null
+    if (is(Array)(identity)) {
+      ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(identity))
+    }
+    const opt = !isNil(ii)
+      ? { ii }
+      : !isNil(identity) && !isNil(identity.tx)
+      ? {
+          wallet: current,
+          privateKey: identity.privateKey,
+        }
+      : null
+    if (isNil(opt)) {
+      alert("not logged in")
+      return
+    }
+    const res = await sdk.removeOwner(address, opt)
+    if (!isNil(res.err)) {
+      return `Error: ${res.err.errorMessage}`
+    } else {
+      return JSON.stringify(res)
+    }
+  } catch (e) {
+    console.log(e)
+    return `Error: Something went wrong`
+  }
+}
+
 const Constants = require("./poseidon_constants_opt.js")
 
 async function deploy({ src, warp, init, extra, arweave }) {
@@ -333,13 +430,24 @@ async function deploy({ src, warp, init, extra, arweave }) {
   return contractTxId
 }
 
-async function deployFromSrc({ src, warp, init, extra }) {
+async function deployFromSrc({ src, warp, init, extra, algorithms }) {
   const stateFromFile = JSON.parse(
     await fetch(`/static/${init}.json`).then(v => v.text())
   )
-  const initialState = mergeLeft(extra, stateFromFile)
+  let initialState = mergeLeft(extra, stateFromFile)
+  if (!isNil(algorithms)) {
+    initialState = assocPath(["auth", "algorithms"], algorithms, initialState)
+  }
+  let wallet = arweave_wallet
+  if (isNil(wallet)) {
+    const arweave = Arweave.init({
+      host: "arweave.net",
+      protocol: "https",
+    })
+    wallet = await arweave.wallets.generate()
+  }
   const { contractTxId } = await warp.createContract.deployFromSourceTx({
-    wallet: arweave_wallet,
+    wallet,
     initState: JSON.stringify(initialState),
     srcTxId: src,
   })
@@ -385,6 +493,7 @@ export const deployDB = async ({
       src: weavedbSrcTxId,
       init: "initial-state",
       warp,
+      algorithms,
       extra: {
         secure: false,
         owner,
@@ -395,18 +504,28 @@ export const deployDB = async ({
         },
         secure,
         canEvolve,
-        algorithms,
       },
     })
     return { contractTxId, network, port }
   } else {
     const warp = WarpFactory.forLocal(port)
+    const arweave = Arweave.init({
+      host: "localhost",
+      port: port || 1820,
+      protocol: "http",
+    })
+    if (isNil(arweave_wallet)) {
+      arweave_wallet ||= await arweave.wallets.generate()
+      try {
+        await addFunds(arweave, arweave_wallet)
+      } catch (e) {}
+    }
     /*
     const poseidon1TxId = await deploy({
       src: "poseidonConstants",
       init: "initial-state-poseidon-constants",
       warp,
-      arweave: sdk.arweave,
+      arweave,
       extra: {
         owner,
         poseidonConstants: {
@@ -420,7 +539,7 @@ export const deployDB = async ({
       src: "poseidonConstants",
       init: "initial-state-poseidon-constants",
       warp,
-      arweave: sdk.arweave,
+      arweave,
       extra: {
         owner,
         poseidonConstants: {
@@ -432,7 +551,7 @@ export const deployDB = async ({
       src: "intmax",
       init: "initial-state-intmax",
       warp,
-      arweave: sdk.arweave,
+      arweave,
       extra: {
         owner,
         contracts: {
@@ -440,12 +559,12 @@ export const deployDB = async ({
           poseidonConstants2: poseidon2TxId,
         },
       },
-    })*/
+      })*/
     const dfinitySrcTxId = await deploy({
       src: "ii",
       init: "initial-state-ii",
       warp,
-      arweave: sdk.arweave,
+      arweave,
       extra: {
         owner,
       },
@@ -454,18 +573,20 @@ export const deployDB = async ({
       src: "eth",
       init: "initial-state-eth",
       warp,
-      arweave: sdk.arweave,
+      arweave,
       extra: {
         owner,
       },
     })
+
     const contractTxId = await deploy({
       src: "contract",
       init: "initial-state",
       warp,
-      arweave: sdk.arweave,
+      arweave,
+      algorithms,
       extra: {
-        secure: false,
+        secure,
         owner,
         contracts: {
           //intmax: intmaxSrcTxId,
@@ -474,9 +595,90 @@ export const deployDB = async ({
         },
         secure,
         canEvolve,
-        algorithms,
       },
     })
     return { contractTxId, network, port }
+  }
+}
+
+export const _setCanEvolve = async ({
+  val: { value, contractTxId },
+  global,
+  set,
+  fn,
+  conf,
+  get,
+}) => {
+  try {
+    const current = get("temp_current")
+    const identity = isNil(current)
+      ? null
+      : await lf.getItem(`temp_address:${contractTxId}:${current}`)
+    let ii = null
+    if (is(Array)(identity)) {
+      ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(identity))
+    }
+    const opt = !isNil(ii)
+      ? { ii }
+      : !isNil(identity) && !isNil(identity.tx)
+      ? {
+          wallet: current,
+          privateKey: identity.privateKey,
+        }
+      : null
+    if (isNil(opt)) {
+      alert("not logged in")
+      return
+    }
+    const res = await sdk.setCanEvolve(value, opt)
+    if (!isNil(res.err)) {
+      return `Error: ${res.err.errorMessage}`
+    } else {
+      return JSON.stringify(res)
+    }
+  } catch (e) {
+    console.log(e)
+    return `Error: Something went wrong`
+  }
+}
+
+export const _setAlgorithms = async ({
+  val: { algorithms, contractTxId },
+  global,
+  set,
+  fn,
+  conf,
+  get,
+}) => {
+  try {
+    const current = get("temp_current")
+    const identity = isNil(current)
+      ? null
+      : await lf.getItem(`temp_address:${contractTxId}:${current}`)
+    let ii = null
+    if (is(Array)(identity)) {
+      ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(identity))
+    }
+    const opt = !isNil(ii)
+      ? { ii }
+      : !isNil(identity) && !isNil(identity.tx)
+      ? {
+          wallet: current,
+          privateKey: identity.privateKey,
+        }
+      : null
+    if (isNil(opt)) {
+      alert("not logged in")
+      return
+    }
+    const res = await sdk.setAlgorithms(algorithms, opt)
+    if (!isNil(res.err)) {
+      return `Error: ${res.err.errorMessage}`
+    } else {
+      return JSON.stringify(res)
+    }
+  } catch (e) {
+    console.log(e)
+    return `Error: Something went wrong`
   }
 }

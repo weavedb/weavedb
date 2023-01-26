@@ -20,6 +20,8 @@ const reads = [
   "getEvolve",
   "getVersion",
   "getRelayerJob",
+  "listCollections",
+  "getInfo",
 ]
 
 class SDK extends Base {
@@ -93,7 +95,7 @@ class SDK extends Base {
   async request(func, ...query) {
     let nocache = false
     ;({ nocache, query } = this.parseQuery(func, query))
-    return await this._request(func, query)
+    return await this._request(func, query, nocache)
   }
 
   async getNonce(addr) {
@@ -102,6 +104,18 @@ class SDK extends Base {
 
   async getIds(tx) {
     return this.request("getIds", tx)
+  }
+
+  async getAddressLink(address) {
+    return this.request("getAddressLink", address)
+  }
+
+  async getVersion() {
+    return this.request("getAddressLink")
+  }
+
+  async getEvolve() {
+    return this.request("getEvolve")
   }
 }
 

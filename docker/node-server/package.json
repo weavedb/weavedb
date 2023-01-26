@@ -17,6 +17,6 @@
     "md5": "^2.3.0",
     "node-dev": "^8.0.0",
     "ramda": "^0.28.0",
-    "weavedb-sdk-node": "^0.10.2"
+    "weavedb-sdk-node": "^0.13.0"
   }
 }

@@ -1,3 +1,4 @@
+import SDK from "weavedb-sdk"
 import { useEffect, Fragment, useState } from "react"
 import JSONPretty from "react-json-pretty"
 import {
@@ -11,6 +12,10 @@ import {
   Textarea,
 } from "@chakra-ui/react"
 import {
+  pluck,
+  toLower,
+  assoc,
+  uniq,
   without,
   trim,
   reject,
@@ -30,7 +35,6 @@ import {
   mapObjIndexed,
   is,
   slice,
-  hasPath,
   includes,
   append,
   indexBy,
@@ -53,6 +57,10 @@ import {
   createTempAddressWithAR,
   logoutTemp,
   queryDB,
+  _addOwner,
+  _removeOwner,
+  _setCanEvolve,
+  _setAlgorithms,
 } from "../lib/weavedb.js"
 
 const tabmap = {
@@ -62,6 +70,8 @@ const tabmap = {
   Rules: { name: "Access Control Rules" },
   Indexes: { name: "Indexes" },
   Crons: { name: "Crons" },
+  Relayers: { name: "Relayers" },
+  Nodes: { name: "gRPC Nodes" },
 }
 let db, iv
 export default inject(
@@ -72,17 +82,40 @@ export default inject(
     "signing_in",
     "signing_in_modal",
     "owner_signing_in_modal",
-    "on_connecting",
+    "loading",
+    "loading_contract",
   ],
   ({ set, init, router, conf, fn, $ }) => {
+    const [addCollection, setAddCollection] = useState(false)
+    const [addSchemas, setAddSchemas] = useState(false)
+    const [schema, setSchema] = useState(null)
+    const [rules, setRules] = useState(null)
+    const [indexes, setIndexes] = useState([])
+    const [crons, setCrons] = useState({})
+    const [addDoc, setAddDoc] = useState(false)
+    const [addData, setAddData] = useState(false)
+    const [addRules, setAddRules] = useState(false)
+    const [addCron, setAddCron] = useState(false)
+    const [addIndex, setAddIndex] = useState(false)
+    const [addInstance, setAddInstance] = useState(false)
+    const [addOwner, setAddOwner] = useState(false)
+    const [addCanEvolve, setAddCanEvolve] = useState(false)
+    const [addAlgorithms, setAddAlgorithms] = useState(false)
+    const [addGRPC, setAddGRPC] = useState(false)
+
+    const [newOwner, setNewOwner] = useState("")
     const [result, setResult] = useState("")
     const [state, setState] = useState(null)
+    const [collections, setCollections] = useState([])
+    const [subCollections, setSubCollections] = useState([])
+    const [documents, setDocuments] = useState([])
+    const [docdata, setDocdata] = useState(null)
     const [doc_path, setDocPath] = useState([])
     const [tab, setTab] = useState("DB")
     const [cron, setCron] = useState(null)
     const [method, setMethod] = useState("get")
     const [query, setQuery] = useState("")
-    const tabs = ["DB", "Data", "Schemas", "Rules", "Indexes", "Crons"]
+    const tabs = ["DB", "Data", "Schemas", "Rules", "Indexes"]
     const [port, setPort] = useState(null)
     const [network, setNetwork] = useState("Mainnet")
     const [newNetwork, setNewNetwork] = useState("Mainnet")
@@ -110,20 +143,20 @@ export default inject(
     const [newTimes, setNewTimes] = useState("")
     const [contractTxId, setContractTxId] = useState(null)
     const [newContractTxId, setNewContractTxId] = useState("")
-    const [addCollection, setAddCollection] = useState(false)
-    const [addSchemas, setAddSchemas] = useState(false)
-    const [addDoc, setAddDoc] = useState(false)
-    const [addData, setAddData] = useState(false)
-    const [addRules, setAddRules] = useState(false)
-    const [addCron, setAddCron] = useState(false)
-    const [addIndex, setAddIndex] = useState(false)
-    const [addInstance, setAddInstance] = useState(false)
-    const [addOwner, setAddOwner] = useState(false)
+    const [newRPC, setNewRPC] = useState("")
+    const [newRPC2, setNewRPC2] = useState("")
     const [deployMode, setDeployMode] = useState("Connect")
     const [dbs, setDBs] = useState([])
+    const [currentDB, setCurrentDB] = useState(null)
     const [connect, setConnect] = useState(false)
     const [newPort, setNewPort] = useState(1820)
     const [auths, setAuths] = useState(["Arweave", "EVM", "DFINITY", "Intmax"])
+    const [newAuths, setNewAuths] = useState([
+      "Arweave",
+      "EVM",
+      "DFINITY",
+      "Intmax",
+    ])
     const [secure, setSecure] = useState(true)
     const [canEvolve, setCanEvolve] = useState(true)
 
@@ -131,6 +164,16 @@ export default inject(
       const dbmap = indexBy(prop("contractTxId"), dbs)
       if (isNil(dbmap[_db.contractTxId])) {
         const _dbs = append(_db, dbs)
+        setDBs(_dbs)
+        await lf.setItem(`my_dbs`, _dbs)
+      }
+    }
+
+    const updateDB = async _db => {
+      const dbmap = indexBy(prop("contractTxId"), dbs)
+      if (!isNil(dbmap[_db.contractTxId])) {
+        dbmap[_db.contractTxId] = _db
+        const _dbs = values(dbmap)
         setDBs(_dbs)
         await lf.setItem(`my_dbs`, _dbs)
       }
@@ -143,6 +186,90 @@ export default inject(
         await lf.setItem(`my_dbs`, _dbs)
       }
     }
+    let col = null
+    let doc = null
+    let base_path = []
+    if (!isNil(state)) {
+      if (doc_path.length !== 0) {
+        col =
+          doc_path[
+            doc_path.length % 2 === 0
+              ? doc_path.length - 2
+              : doc_path.length - 1
+          ]
+        doc = doc_path.length % 2 === 0 ? doc_path[doc_path.length - 1] : null
+      }
+      if (doc_path.length > 2) {
+        base_path = take(
+          doc_path.length % 2 === 0 ? doc_path.length - 2 : doc_path.length - 1,
+          doc_path
+        )
+      }
+    }
+
+    useEffect(() => {
+      ;(async () => {
+        if (!isNil(currentDB) && !$.loading_contract) {
+          setCollections(await db.listCollections(true))
+        }
+      })()
+    }, [contractTxId, currentDB, $.loading_contract])
+
+    useEffect(() => {
+      ;(async () => {
+        if (tab === "Schemas") {
+          if (!isNil(col)) {
+            setSchema(
+              await db.getSchema(
+                ...(doc_path.length % 2 === 0
+                  ? doc_path.slice(0, -1)
+                  : doc_path),
+                true
+              )
+            )
+          }
+        } else if (tab === "Rules") {
+          if (!isNil(col)) {
+            setRules(
+              await db.getRules(
+                ...(doc_path.length % 2 === 0
+                  ? doc_path.slice(0, -1)
+                  : doc_path),
+                true
+              )
+            )
+          }
+        } else if (tab === "Indexes") {
+          if (!isNil(col)) {
+            setIndexes(
+              await db.getIndexes(
+                ...(doc_path.length % 2 === 0
+                  ? doc_path.slice(0, -1)
+                  : doc_path),
+                true
+              )
+            )
+          }
+        } else if (tab === "Crons") {
+          setCrons(await db.getCrons(true))
+        }
+      })()
+    }, [contractTxId, tab, doc_path])
+
+    useEffect(() => {
+      ;(async () => {
+        if (addAlgorithms) setNewAuths(state.auth.algorithms)
+      })()
+    }, [addAlgorithms])
+
+    useEffect(() => {
+      ;(async () => {
+        const db = new SDK({
+          contractTxId: "4H85bexFaqZH6Eq1p3Q92eNocsV2PAfLu3JYIKHJOhk",
+        })
+        await db.initializeWithoutWallet()
+      })()
+    }, [])
 
     useEffect(() => {
       ;(async () => {
@@ -152,92 +279,34 @@ export default inject(
       })()
     }, [])
 
-    useEffect(() => {
-      ;(async () => {
-        if (!isNil(contractTxId)) {
-          db = await fn(setupWeaveDB)({ network, contractTxId, port })
-          setState((await db.db.readState()).cachedValue.state)
-          fn(switchTempAddress)({ contractTxId })
-        } else {
-          db = await fn(setupWeaveDB)({ network: "Mainnet" })
-        }
-        setInitDB(true)
-      })()
-    }, [contractTxId])
+    const _setContractTxId = async (_contractTxId, network, rpc) => {
+      setContractTxId(_contractTxId)
+      if (!isNil(_contractTxId)) {
+        set(_contractTxId, "loading_contract")
+        db = await fn(setupWeaveDB)({
+          network,
+          contractTxId: _contractTxId,
+          port,
+          rpc,
+        })
+        setState(await db.getInfo(true))
+        set(null, "loading_contract")
+        fn(switchTempAddress)({ contractTxId: _contractTxId })
+      } else {
+        db = await fn(setupWeaveDB)({ network: "Mainnet" })
+      }
+      setInitDB(true)
+    }
 
     useEffect(() => {
       ;(async () => {
         if (initDB) {
           fn(checkTempAddress)({ contractTxId })
           clearInterval(iv)
-          iv = setInterval(async () => {
-            try {
-              if (!isNil(db.db) && !isNil(contractTxId)) {
-                setState((await db.db.readState()).cachedValue.state)
-                setNetworkErr(false)
-              }
-            } catch (e) {
-              console.log(e)
-              setNetworkErr(true)
-            }
-          }, 1000)
         }
       })()
     }, [initDB, contractTxId])
 
-    const getCol = (data, path) => {
-      const [col, id] = path
-      data[col] ||= { __docs: {} }
-      if (isNil(id)) {
-        return data[col]
-      } else {
-        data[col].__docs[id] ||= { __data: null, subs: {} }
-        return getCol(data[col].__docs[id].subs, slice(2, path.length, path))
-      }
-    }
-
-    let cols = []
-    let docs = []
-    let data = null
-    let subs = {}
-    let base = {}
-    let col = null
-    let doc = null
-    let base_path = []
-    if (!isNil(state)) {
-      base = state.data
-      if (doc_path.length > 2) {
-        base_path = take(
-          doc_path.length % 2 === 0 ? doc_path.length - 2 : doc_path.length - 1,
-          doc_path
-        )
-        const len =
-          doc_path.length % 2 === 0 ? doc_path.length - 3 : doc_path.length - 2
-        const last_key =
-          doc_path.length % 2 === 0
-            ? doc_path[doc_path.length - 3]
-            : doc_path[doc_path.length - 2]
-        const _col = getCol(state.data, take(len)(doc_path))
-        base = _col.__docs[last_key].subs
-        if (doc_path.length % 2 === 0) {
-          doc = doc_path[doc_path.length - 1]
-          col = doc_path[doc_path.length - 2]
-        } else {
-          col = doc_path[doc_path.length - 1]
-        }
-      } else {
-        col = doc_path[0]
-        doc = doc_path[1]
-      }
-      cols = keys(base)
-      if (!isNil(col) && !isNil(base[col])) {
-        docs = keys(base[col].__docs)
-        if (!isNil(doc) && !isNil(base[col].__docs[doc])) {
-          data = base[col].__docs[doc].__data
-          subs = base[col].__docs[doc].subs
-        }
-      }
-    }
     const methods = [
       "get",
       "cget",
@@ -316,43 +385,10 @@ export default inject(
       </Flex>
     )
 
-    const getIndex = (state, path) => {
-      if (isNil(state.indexes[path.join(".")]))
-        state.indexes[path.join(".")] = {}
-      return state.indexes[path.join(".")]
-    }
-
-    const scanIndexes = ind => {
-      let indexes = []
-      for (let k in ind) {
-        for (let k2 in ind[k]) {
-          const _ind = [[k, k2]]
-          if (!isNil(ind[k][k2]._)) indexes.push(_ind)
-          if (!isNil(ind[k][k2].subs)) {
-            const sub_indexes = scanIndexes(ind[k][k2].subs)
-            for (let v of sub_indexes) {
-              indexes.push([..._ind, ...v])
-            }
-          }
-        }
-      }
-      return indexes
-    }
-
-    let indexes = []
-    let rules = {}
-    let schema = {}
-    let crons = {}
     let _cron = null
-    if (!isNil(state) && !isNil(state.crons)) {
-      crons = state.crons.crons
-      _cron = crons[cron]
+    if (!isNil(crons) && !isNil(crons.crons)) {
+      _cron = crons.crons[cron]
     }
-    if (!isNil(col)) {
-      indexes = scanIndexes(getIndex(state, append(col, base_path)))
-      ;({ rules, schema } = getCol(state.data, append(col, base_path)))
-    }
-
     useEffect(() => {
       ;(async () => {
         const _port = await fn(connectLocalhost)({ port: newPort })
@@ -383,12 +419,13 @@ export default inject(
         if (isNil(col)) {
           setNewSchemas(null)
         } else {
-          ;({ rules, schema } = getCol(state.data, append(col, base_path)))
+          /*;({ rules, schema } = getCol(state.data, append(col, base_path)))
           setNewSchemas(JSON.stringify(schema))
-          setNewRules2(JSON.stringify(rules))
+          setNewRules2(JSON.stringify(rules))*/
         }
       })()
     }, [doc_path])
+
     const linkStyle = {
       fontSize: "16px",
       display: "block",
@@ -465,8 +502,18 @@ export default inject(
         </Flex>
       </Flex>
     )
-    const isOwner = isNil(state) ? false : $.temp_current === state.owner
-
+    const owners = isNil(state)
+      ? []
+      : is(Array, state.owner)
+      ? state.owner
+      : [state.owner]
+    const isOwner =
+      isNil(state) || isNil($.temp_current)
+        ? false
+        : includes(
+            ($.temp_current || "").toLowerCase(),
+            map(toLower)(is(Array, state.owner) ? state.owner : [state.owner])
+          )
     return (
       <ChakraProvider>
         <style global jsx>{`
@@ -492,13 +539,18 @@ export default inject(
           {_addIndex(map)((v, i) => {
             return (
               <Flex
-                onClick={() => setTab(v)}
+                onClick={() => {
+                  if (v === "DB" || !isNil(currentDB)) setTab(v)
+                }}
                 bg={v === tab ? "#6441AF" : "#eee"}
-                color={v === tab ? "white" : "#333"}
+                color={
+                  v === tab ? "white" : !isNil(currentDB) ? "#333" : "#999"
+                }
                 py={3}
                 px={4}
                 sx={{
-                  cursor: "pointer",
+                  cursor:
+                    !isNil(currentDB) || v === "DB" ? "pointer" : "not-allowed",
                   ":hover": { opacity: 0.75 },
                 }}
               >
@@ -517,6 +569,27 @@ export default inject(
           >
             WeaveDB is still in alpha. Please use it with discretion.
           </Flex>
+          <Box
+            fontSize="12px"
+            p={4}
+            bg="#6441AF"
+            color="white"
+            mx={4}
+            mb={4}
+            sx={{ borderRadius: "5px" }}
+          >
+            For old contracts before v0.15, please use
+            <Box
+              sx={{ textDecoration: "underline" }}
+              ml={1}
+              as="a"
+              target="_blank"
+              href="https://old-console.weavedb.dev"
+            >
+              Old Console
+            </Box>
+            .
+          </Box>
         </Flex>
         <Flex
           bg="white"
@@ -595,7 +668,37 @@ export default inject(
                     <>
                       <Box mx={2} as="i" className="fas fa-angle-right" />
                       <Box
-                        onClick={() => setDocPath(take(i + 1, doc_path))}
+                        onClick={async () => {
+                          const dpath = doc_path.slice(0, i + 1)
+                          if (i !== doc_path.length - 1) {
+                            setDocPath(take(i + 1, dpath))
+                            setCollections(
+                              await db.listCollections(
+                                ...(dpath.length % 2 === 0
+                                  ? dpath.slice(0, -2)
+                                  : dpath.slice(0, -1))
+                              ),
+                              true
+                            )
+                            setDocuments(
+                              await db.cget(
+                                ...(dpath.length % 2 === 0
+                                  ? dpath.slice(0, -1)
+                                  : dpath),
+                                true
+                              )
+                            )
+                            if (dpath.length % 2 === 0) {
+                              setDocdata(await db.cget(...dpath, true))
+                              setSubCollections(
+                                await db.listCollections(...dpath, true)
+                              )
+                            } else {
+                              setDocdata(null)
+                              setSubCollections([])
+                            }
+                          }
+                        }}
                         sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
                         as="span"
                         color={i === doc_path.length - 1 ? "#6441AF" : ""}
@@ -630,8 +733,13 @@ export default inject(
                         </Flex>
                         {map(v => (
                           <Flex
-                            onClick={() => {
+                            onClick={async () => {
                               setDocPath([...base_path, v])
+                              setDocdata(null)
+                              setSubCollections([])
+                              setDocuments(
+                                await db.cget(...[...base_path, v, true])
+                              )
                             }}
                             bg={col === v ? "#ddd" : ""}
                             py={2}
@@ -643,7 +751,7 @@ export default inject(
                           >
                             {v}
                           </Flex>
-                        ))(cols)}
+                        ))(collections)}
                       </Box>
                     )}
                     {tab === "Schemas" ? (
@@ -668,10 +776,16 @@ export default inject(
                           )}
                         </Flex>
                         <Box height="500px" sx={{ overflowY: "auto" }} p={3}>
-                          <JSONPretty
-                            id="json-pretty"
-                            data={schema}
-                          ></JSONPretty>
+                          {isNil(schema) ? (
+                            <Flex justify="center" align="center" height="100%">
+                              Schema is not set.
+                            </Flex>
+                          ) : (
+                            <JSONPretty
+                              id="json-pretty"
+                              data={schema}
+                            ></JSONPretty>
+                          )}
                         </Box>
                       </Flex>
                     ) : tab === "Rules" ? (
@@ -765,6 +879,7 @@ export default inject(
                                         if (/^Error:/.test(res)) {
                                           alert("Something went wrong")
                                         }
+                                        setState(await db.getInfo(true))
                                       }
                                     }}
                                   >
@@ -773,7 +888,7 @@ export default inject(
                                 </Flex>
                               )),
                               keys
-                            )(crons)}
+                            )(crons.crons || [])}
                           </Box>
                         </Flex>
                         <Flex
@@ -985,17 +1100,44 @@ export default inject(
                             {compose(
                               map(v => (
                                 <Flex
-                                  onClick={() => {
-                                    if (
-                                      v.network === "Localhost" &&
-                                      isNil(port)
-                                    ) {
-                                      alert("not connected with localhost")
-                                      return
+                                  onClick={async () => {
+                                    if (contractTxId !== v.contractTxId) {
+                                      if (
+                                        v.network === "Localhost" &&
+                                        isNil(port)
+                                      ) {
+                                        alert("not connected with localhost")
+                                        return
+                                      }
+                                      try {
+                                        const db = await fn(setupWeaveDB)({
+                                          network: v.network,
+                                          contractTxId: v.contractTxId,
+                                          port: port || 1820,
+                                          rpc: v.rpc,
+                                        })
+                                        let state = await db.getInfo(true)
+                                        if (!isNil(state.version)) {
+                                          setState(null)
+                                          setNetwork(v.network)
+                                          setCurrentDB(v)
+                                          await _setContractTxId(
+                                            v.contractTxId,
+                                            v.network,
+                                            v.rpc
+                                          )
+                                        } else {
+                                          alert(
+                                            "couldn't connect to the contract. Web Console is only compatible with v0.15 and above."
+                                          )
+                                        }
+                                      } catch (e) {
+                                        console.log(e)
+                                        alert(
+                                          "couldn't connect to the contract. Web Console is only compatible with v0.15 and above."
+                                        )
+                                      }
                                     }
-                                    setState(null)
-                                    setNetwork(v.network)
-                                    setContractTxId(v.contractTxId)
                                   }}
                                   p={2}
                                   px={3}
@@ -1067,8 +1209,61 @@ export default inject(
                             <Box flex={1} />
                           </Flex>
                           <Box height="500px" sx={{ overflowY: "auto" }}>
-                            {isNil(state) || isNil(state.auth) ? null : (
+                            {isNil(contractTxId) || isNil(currentDB) ? (
+                              <Flex
+                                justify="center"
+                                align="center"
+                                height="100%"
+                              >
+                                Please connect with a DB instance.
+                              </Flex>
+                            ) : contractTxId === $.loading_contract ? (
+                              <Flex
+                                justify="center"
+                                align="center"
+                                height="100%"
+                              >
+                                <Box
+                                  color="#6441AF"
+                                  as="i"
+                                  className="fas fa-spin fa-circle-notch"
+                                  fontSize="50px"
+                                />
+                              </Flex>
+                            ) : isNil(state) || isNil(state.auth) ? null : (
                               <>
+                                <Flex align="center" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#ddd"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    gRPC Node
+                                  </Box>
+                                  <Box flex={1}>
+                                    {(currentDB.rpc || "") === ""
+                                      ? "None (Browser SDK)"
+                                      : currentDB.rpc}
+                                  </Box>
+                                  <Box
+                                    color="#999"
+                                    sx={{
+                                      cursor: "pointer",
+                                      ":hover": {
+                                        opacity: 0.75,
+                                        color: "#6441AF",
+                                      },
+                                    }}
+                                    onClick={async e => {
+                                      e.stopPropagation()
+                                      setNewRPC2(currentDB.rpc || "")
+                                      setAddGRPC(true)
+                                    }}
+                                  >
+                                    <Box as="i" className="fas fa-edit" />
+                                  </Box>
+                                </Flex>
                                 <Flex align="center" p={2} px={3}>
                                   <Box
                                     mr={2}
@@ -1143,7 +1338,7 @@ export default inject(
                                   </Box>
                                   {state.auth.version}
                                 </Flex>
-                                <Flex align="center" p={2} px={3}>
+                                <Flex align="flex-start" p={2} px={3}>
                                   <Box
                                     mr={2}
                                     px={3}
@@ -1153,7 +1348,9 @@ export default inject(
                                   >
                                     Owner
                                   </Box>
-                                  <Box flex={1}>{state.owner}</Box>
+                                  <Box flex={1}>
+                                    {map(v => <Box>{v}</Box>)(owners)}
+                                  </Box>
                                   <Box
                                     color="#999"
                                     sx={{
@@ -1165,14 +1362,7 @@ export default inject(
                                     }}
                                     onClick={async e => {
                                       e.stopPropagation()
-                                      let owners = state.owner
-                                      if (
-                                        !is(Array, owners) &&
-                                        is(String, state.woner)
-                                      ) {
-                                        owners = [state.owner]
-                                      }
-                                      if (!includes($.temp_current)(owners)) {
+                                      if (!isOwner) {
                                         alert(`Sign in with the owner account.`)
                                         return
                                       }
@@ -1194,6 +1384,26 @@ export default inject(
                                   <Flex flex={1}>
                                     {state.canEvolve ? "true" : "false"}
                                   </Flex>
+                                  <Box
+                                    color="#999"
+                                    sx={{
+                                      cursor: "pointer",
+                                      ":hover": {
+                                        opacity: 0.75,
+                                        color: "#6441AF",
+                                      },
+                                    }}
+                                    onClick={async e => {
+                                      e.stopPropagation()
+                                      if (!isOwner) {
+                                        alert(`Sign in with the owner account.`)
+                                        return
+                                      }
+                                      setAddCanEvolve(true)
+                                    }}
+                                  >
+                                    <Box as="i" className="fas fa-edit" />
+                                  </Box>
                                 </Flex>
                                 <Flex align="center" p={2} px={3}>
                                   <Box
@@ -1228,9 +1438,29 @@ export default inject(
                                   </Box>
                                   <Flex flex={1}>
                                     {map(v => <Box mr={2}>{v}</Box>)(
-                                      state.algorithms || []
+                                      state.auth.algorithms || []
                                     )}
                                   </Flex>
+                                  <Box
+                                    color="#999"
+                                    sx={{
+                                      cursor: "pointer",
+                                      ":hover": {
+                                        opacity: 0.75,
+                                        color: "#6441AF",
+                                      },
+                                    }}
+                                    onClick={async e => {
+                                      e.stopPropagation()
+                                      if (!isOwner) {
+                                        alert(`Sign in with the owner account.`)
+                                        return
+                                      }
+                                      setAddAlgorithms(true)
+                                    }}
+                                  >
+                                    <Box as="i" className="fas fa-edit" />
+                                  </Box>
                                 </Flex>
                                 <Flex align="center" p={2} px={3}>
                                   <Flex
@@ -1292,9 +1522,19 @@ export default inject(
                           <Box height="500px" sx={{ overflowY: "auto" }}>
                             {map(v => (
                               <Flex
-                                onClick={() =>
+                                onClick={async () => {
                                   setDocPath(concat(base_path, [col, v]))
-                                }
+                                  setDocdata(
+                                    await db.cget(
+                                      ...concat(base_path, [col, v, true])
+                                    )
+                                  )
+                                  setSubCollections(
+                                    await db.listCollections(
+                                      ...concat(base_path, [col, v, true])
+                                    )
+                                  )
+                                }}
                                 bg={doc === v ? "#ddd" : ""}
                                 p={2}
                                 px={3}
@@ -1321,7 +1561,9 @@ export default inject(
                                   }}
                                   onClick={async e => {
                                     e.stopPropagation()
-                                    if (!hasPath([col, "__docs", v])(base)) {
+                                    if (
+                                      isNil(indexBy(prop("id"), documents)[v])
+                                    ) {
                                       alert("Doc doesn't exist")
                                       return
                                     }
@@ -1344,13 +1586,19 @@ export default inject(
                                       if (/^Error:/.test(res)) {
                                         alert("Something went wrong")
                                       }
+                                      if (!isNil(docdata) && v === docdata.id) {
+                                        setDocdata(null)
+                                      }
+                                      setDocuments(
+                                        reject(propEq("id", v))(documents)
+                                      )
                                     }
                                   }}
                                 >
                                   <Box as="i" className="fas fa-trash" />
                                 </Box>
                               </Flex>
-                            ))(docs)}
+                            ))(pluck("id", documents))}
                           </Box>
                         </Flex>
                         <Box
@@ -1361,14 +1609,7 @@ export default inject(
                           <Flex py={2} px={3} color="white" bg="#333" h="35px">
                             <Box>Data</Box>
                             <Box flex={1} />
-                            {isNil(col) ||
-                            isNil(doc) ||
-                            !hasPath([
-                              "data",
-                              doc_path[0],
-                              "__docs",
-                              doc_path[1],
-                            ])(state) ? null : (
+                            {isNil(docdata) ? null : (
                               <Box
                                 onClick={() => setAddData(true)}
                                 sx={{
@@ -1381,8 +1622,7 @@ export default inject(
                             )}
                           </Flex>
                           {compose(
-                            values,
-                            mapObjIndexed((v, k) => {
+                            map(v => {
                               return (
                                 <Flex
                                   align="center"
@@ -1392,8 +1632,15 @@ export default inject(
                                     cursor: "pointer",
                                     ":hover": { opacity: 0.75 },
                                   }}
-                                  onClick={() => {
-                                    setDocPath(append(k)(doc_path))
+                                  onClick={async () => {
+                                    const _doc_path = append(v)(doc_path)
+                                    setDocPath(_doc_path)
+                                    setDocdata(null)
+                                    setSubCollections([])
+                                    setCollections(subCollections)
+                                    setDocuments(
+                                      await db.cget(..._doc_path, true)
+                                    )
                                   }}
                                 >
                                   <Box
@@ -1405,11 +1652,11 @@ export default inject(
                                   >
                                     Sub Collection
                                   </Box>
-                                  {k}
+                                  {v}
                                 </Flex>
                               )
                             })
-                          )(subs)}
+                          )(subCollections)}
                           {compose(
                             values,
                             mapObjIndexed((v, k) => {
@@ -1447,15 +1694,7 @@ export default inject(
                                     }}
                                     onClick={async e => {
                                       e.stopPropagation()
-                                      if (
-                                        !hasPath([
-                                          col,
-                                          "__docs",
-                                          doc,
-                                          "__data",
-                                          k,
-                                        ])(base)
-                                      ) {
+                                      if (isNil(docdata.data[k])) {
                                         alert("Field doesn't exist")
                                         return
                                       }
@@ -1482,6 +1721,15 @@ export default inject(
                                         if (/^Error:/.test(res)) {
                                           alert("Something went wrong")
                                         }
+                                        setDocdata(
+                                          await db.cget(...doc_path, true)
+                                        )
+                                        setSubCollections(
+                                          await db.listCollections(
+                                            ...doc_path,
+                                            true
+                                          )
+                                        )
                                       }
                                     }}
                                   >
@@ -1490,7 +1738,7 @@ export default inject(
                                 </Flex>
                               )
                             })
-                          )(data)}
+                          )(isNil(docdata) ? {} : docdata.data)}
                         </Box>
                       </>
                     )}
@@ -1547,6 +1795,7 @@ export default inject(
                           contractTxId,
                         })
                         setResult(res)
+                        setState(await db.getInfo(true))
                       } catch (e) {
                         console.log(e)
                         setResult("Error: The wrong query")
@@ -1630,40 +1879,59 @@ export default inject(
                     align="center"
                     color="white"
                     bg="#333"
+                    height="40px"
                     onClick={async () => {
-                      if (/^\s*$/.test(newCollection)) {
-                        alert("Enter Collection ID")
-                        return
-                      } else if (hasPath([newCollection])(base)) {
-                        alert("Collection exists")
-                        return
-                      }
-                      try {
-                        JSON.parse(newRules)
-                      } catch (e) {
-                        alert("Wrong JSON format")
-                        return
-                      }
-
-                      const res = await fn(queryDB)({
-                        method: "setRules",
-                        query: `${newRules}, ${compose(
-                          join(", "),
-                          map(v => `"${v}"`),
-                          append(newCollection)
-                        )(base_path)}`,
-                        contractTxId,
-                      })
-                      if (/^Error:/.test(res)) {
-                        alert("Something went wrong")
-                      } else {
-                        setNewCollection("")
-                        setNewRules(`{"allow write": true}`)
-                        setAddCollection(false)
+                      if (isNil($.loading)) {
+                        if (/^\s*$/.test(newCollection)) {
+                          alert("Enter Collection ID")
+                          return
+                        } else if (
+                          !isNil(indexBy(prop("id"))(documents)[newCollection])
+                        ) {
+                          alert("Collection exists")
+                          return
+                        }
+                        set("add_collection", "loading")
+                        try {
+                          JSON.parse(newRules)
+                        } catch (e) {
+                          alert("Wrong JSON format")
+                          return
+                        }
+                        try {
+                          const res = JSON.parse(
+                            await fn(queryDB)({
+                              method: "setRules",
+                              query: `${newRules}, ${compose(
+                                join(", "),
+                                map(v => `"${v}"`),
+                                append(newCollection)
+                              )(base_path)}`,
+                              contractTxId,
+                            })
+                          )
+                          if (!res.success) {
+                            alert("Something went wrong")
+                          } else {
+                            setNewCollection("")
+                            setNewRules(`{"allow write": true}`)
+                            setAddCollection(false)
+                            setCollections(
+                              await db.listCollections(...base_path, true)
+                            )
+                          }
+                        } catch (e) {
+                          alert("Something went wrong")
+                        }
+                        set(null, "loading")
                       }
                     }}
                   >
-                    Add
+                    {!isNil($.loading) ? (
+                      <Box as="i" className="fas fa-spin fa-circle-notch" />
+                    ) : (
+                      "Add"
+                    )}
                   </Flex>
                 </Box>
               </Flex>
@@ -1714,40 +1982,57 @@ export default inject(
                     align="center"
                     color="white"
                     bg="#333"
+                    height="40px"
                     onClick={async () => {
-                      const exID = !/^\s*$/.test(newDoc)
-                      if (exID && hasPath([col, "__docs", newDoc])(base)) {
-                        alert("Doc exists")
-                        return
-                      }
-                      try {
-                        JSON.parse(newData)
-                      } catch (e) {
-                        alert("Wrong JSON format")
-                        return
-                      }
-                      let col_path = compose(
-                        join(", "),
-                        map(v => `"${v}"`),
-                        append(col)
-                      )(base_path)
-                      let query = `${newData}, ${col_path}`
-                      if (exID) query += `, "${newDoc}"`
-                      const res = await fn(queryDB)({
-                        method: exID ? "set" : "add",
-                        query,
-                        contractTxId,
-                      })
-                      if (/^Error:/.test(res)) {
-                        alert("Something went wrong")
-                      } else {
-                        setNewDoc("")
-                        setNewData(`{}`)
-                        setAddDoc(false)
+                      if (isNil($.loading)) {
+                        const exID = !/^\s*$/.test(newDoc)
+                        const docmap = indexBy(prop("id"))(documents)
+                        if (exID && !isNil(docmap[newDoc])) {
+                          alert("Doc exists")
+                          return
+                        }
+                        try {
+                          JSON.parse(newData)
+                        } catch (e) {
+                          alert("Wrong JSON format")
+                          return
+                        }
+                        set("add_doc", "loading")
+                        let col_path = compose(
+                          join(", "),
+                          map(v => `"${v}"`),
+                          append(col)
+                        )(base_path)
+                        let query = `${newData}, ${col_path}`
+                        if (exID) query += `, "${newDoc}"`
+                        try {
+                          const res = JSON.parse(
+                            await fn(queryDB)({
+                              method: exID ? "set" : "add",
+                              query,
+                              contractTxId,
+                            })
+                          )
+                          if (!res.success) {
+                            alert("Something went wrong")
+                          } else {
+                            setNewDoc("")
+                            setNewData(`{}`)
+                            setAddDoc(false)
+                          }
+                          setDocuments(
+                            await db.cget(...[...base_path, col, true])
+                          )
+                        } catch (e) {}
+                        set(null, "loading")
                       }
                     }}
                   >
-                    Add
+                    {!isNil($.loading) ? (
+                      <Box as="i" className="fas fa-spin fa-circle-notch" />
+                    ) : (
+                      "Add"
+                    )}
                   </Flex>
                 </Box>
               </Flex>
@@ -1834,98 +2119,106 @@ export default inject(
                     align="center"
                     color="white"
                     bg="#333"
+                    height="40px"
                     onClick={async () => {
-                      const exID = !/^\s*$/.test(newField)
-                      const exVal =
-                        includes(newFieldType)(["bool", "null"]) ||
-                        !/^\s*$/.test(newFieldVal)
-                      if (!exVal) alert("Enter a value")
-                      if (!exID) alert("Enter field key")
-                      if (
-                        exID &&
-                        hasPath([col, "__docs", doc, "__data", newField])(base)
-                      ) {
-                        alert("Field exists")
-                        return
-                      }
-                      let val = null
-                      switch (newFieldType) {
-                        case "number":
-                          if (Number.isNaN(newFieldVal * 1)) {
-                            alert("Enter a number")
-                            return
-                          }
-                          val = newFieldVal * 1
-                          break
-                        case "string":
-                          val = `"${newFieldVal}"`
-                          break
-                        case "bool":
-                          val = eval(newFieldBool)
-                          break
-                        case "object":
-                          try {
-                            eval(`const obj = ${newFieldVal}`)
-                            val = newFieldVal
-                          } catch (e) {
-                            alert("Wrong JSON format")
-                            return
-                          }
-                          break
-                        case "sub collection":
-                          if (/^\s*$/.test(newField)) {
-                            alert("Enter Collection ID")
-                            return
-                          } else if (
-                            hasPath([col, "__docs", doc, "subs", newField])(
-                              base
-                            )
-                          ) {
-                            alert("Collection exists")
-                            return
-                          }
-                          try {
-                            JSON.parse(newFieldVal)
-                            val = newFieldVal
-                          } catch (e) {
-                            alert("Wrong JSON format")
-                            return
-                          }
-                          break
-                      }
-                      let query = ""
-                      let method = ""
-                      if (newFieldType === "sub collection") {
-                        method = "setRules"
-                        query = `${val}, ${compose(
-                          join(", "),
-                          map(v => `"${v}"`),
-                          append(newField)
-                        )(doc_path)}`
-                      } else {
-                        method = "update"
-                        let _doc_path = compose(
-                          join(", "),
-                          map(v => `"${v}"`),
-                          concat(base_path)
-                        )([col, doc])
-                        query = `{ "${newField}": ${val}}, ${_doc_path}`
-                      }
-                      const res = await fn(queryDB)({
-                        method,
-                        query,
-                        contractTxId,
-                      })
-                      if (/^Error:/.test(res)) {
-                        alert("Something went wrong")
-                      } else {
-                        setNewField("")
-                        setNewFieldVal("")
-                        setAddData(false)
+                      if (isNil($.loading)) {
+                        const exID = !/^\s*$/.test(newField)
+                        const exVal =
+                          includes(newFieldType)(["bool", "null"]) ||
+                          !/^\s*$/.test(newFieldVal)
+                        if (!exVal) alert("Enter a value")
+                        if (!exID) alert("Enter field key")
+                        if (exID && !isNil(docdata.data[newField])) {
+                          alert("Field exists")
+                          return
+                        }
+                        let val = null
+                        switch (newFieldType) {
+                          case "number":
+                            if (Number.isNaN(newFieldVal * 1)) {
+                              alert("Enter a number")
+                              return
+                            }
+                            val = newFieldVal * 1
+                            break
+                          case "string":
+                            val = `"${newFieldVal}"`
+                            break
+                          case "bool":
+                            val = eval(newFieldBool)
+                            break
+                          case "object":
+                            try {
+                              eval(`const obj = ${newFieldVal}`)
+                              val = newFieldVal
+                            } catch (e) {
+                              alert("Wrong JSON format")
+                              return
+                            }
+                            break
+                          case "sub collection":
+                            if (/^\s*$/.test(newField)) {
+                              alert("Enter Collection ID")
+                              return
+                            } else if (!isNil(docdata.data[newField])) {
+                              alert("Collection exists")
+                              return
+                            }
+                            try {
+                              JSON.parse(newFieldVal)
+                              val = newFieldVal
+                            } catch (e) {
+                              alert("Wrong JSON format")
+                              return
+                            }
+                            break
+                        }
+                        set("add_data", "loading")
+                        let query = ""
+                        let method = ""
+                        if (newFieldType === "sub collection") {
+                          method = "setRules"
+                          query = `${val}, ${compose(
+                            join(", "),
+                            map(v => `"${v}"`),
+                            append(newField)
+                          )(doc_path)}`
+                        } else {
+                          method = "update"
+                          let _doc_path = compose(
+                            join(", "),
+                            map(v => `"${v}"`),
+                            concat(base_path)
+                          )([col, doc])
+                          query = `{ "${newField}": ${val}}, ${_doc_path}`
+                        }
+                        const res = JSON.parse(
+                          await fn(queryDB)({
+                            method,
+                            query,
+                            contractTxId,
+                          })
+                        )
+                        if (!res.success) {
+                          alert("Something went wrong")
+                        } else {
+                          setNewField("")
+                          setNewFieldVal("")
+                          setAddData(false)
+                          setDocdata(await db.cget(...doc_path, true))
+                          setSubCollections(
+                            await db.listCollections(...doc_path, true)
+                          )
+                        }
+                        set(null, "loading")
                       }
                     }}
                   >
-                    Add
+                    {!isNil($.loading) ? (
+                      <Box as="i" className="fas fa-spin fa-circle-notch" />
+                    ) : (
+                      "Add"
+                    )}
                   </Flex>
                 </Box>
               </Flex>
@@ -1967,37 +2260,56 @@ export default inject(
                     justify="center"
                     align="center"
                     color="white"
+                    height="40px"
                     bg="#333"
                     onClick={async () => {
-                      const exID = !/^\s*$/.test(newSchemas)
-                      let val = null
-                      try {
-                        eval(`const obj = ${newSchemas}`)
-                        val = newSchemas
-                      } catch (e) {
-                        alert("Wrong JSON format")
-                        return
-                      }
-                      let col_path = compose(
-                        join(", "),
-                        map(v => `"${v}"`),
-                        append(col)
-                      )(base_path)
-                      let query = `${newSchemas}, ${col_path}`
-                      const res = await fn(queryDB)({
-                        method: "setSchema",
-                        query,
-                        contractTxId,
-                      })
-                      if (/^Error:/.test(res)) {
-                        alert("Something went wrong")
-                      } else {
-                        setNewSchemas("")
-                        setAddSchemas(false)
+                      if (isNil($.loading)) {
+                        const exID = !/^\s*$/.test(newSchemas)
+                        let val = null
+                        try {
+                          eval(`const obj = ${newSchemas}`)
+                          val = newSchemas
+                        } catch (e) {
+                          alert("Wrong JSON format")
+                          return
+                        }
+                        set("add_schema", "loading")
+                        let col_path = compose(
+                          join(", "),
+                          map(v => `"${v}"`),
+                          append(col)
+                        )(base_path)
+                        let query = `${newSchemas}, ${col_path}`
+                        const res = JSON.parse(
+                          await fn(queryDB)({
+                            method: "setSchema",
+                            query,
+                            contractTxId,
+                          })
+                        )
+                        if (!res.success) {
+                          alert("Something went wrong")
+                        } else {
+                          setNewSchemas("")
+                          setAddSchemas(false)
+                          setSchema(
+                            await db.getSchema(
+                              ...(doc_path.length % 2 === 0
+                                ? doc_path.slice(0, -1)
+                                : doc_path),
+                              true
+                            )
+                          )
+                        }
+                        set(null, "loading")
                       }
                     }}
                   >
-                    Add
+                    {!isNil($.loading) ? (
+                      <Box as="i" className="fas fa-spin fa-circle-notch" />
+                    ) : (
+                      "Add"
+                    )}
                   </Flex>
                 </Box>
               </Flex>
@@ -2119,54 +2431,70 @@ export default inject(
                     align="center"
                     color="white"
                     bg="#333"
+                    height="40px"
                     onClick={async () => {
-                      const exID = !/^\s*$/.test(newCronName)
-                      if (!exID) {
-                        alert("Enter Cron Name")
-                        return
-                      }
-                      if (newSpan * 1 === 0) {
-                        alert("Span must be greater than 0")
-                      }
-                      let val = null
-                      try {
-                        let obj = null
-                        eval(`obj = ${newCron}`)
-                        val = newCron
-                        if (!is(Array)(obj)) {
-                          alert("Jobs should be an array.")
+                      if (isNil($.loading)) {
+                        const exID = !/^\s*$/.test(newCronName)
+                        if (!exID) {
+                          alert("Enter Cron Name")
                           return
                         }
-                      } catch (e) {
-                        alert("Wrong JSON format")
-                        return
-                      }
-                      let query = `{times: ${newTimes || null}, start: ${
-                        newStart || null
-                      }, end: ${newEnd || null},do: ${
-                        newDo ? "true" : "false"
-                      }, span: ${
-                        newSpan * 1
-                      }, jobs: ${newCron}}, "${newCronName}"`
-                      const res = await fn(queryDB)({
-                        method: "addCron",
-                        query,
-                        contractTxId,
-                      })
-                      if (/^Error:/.test(res)) {
-                        alert("Something went wrong")
-                      } else {
-                        setNewCron("")
-                        setNewStart("")
-                        setNewCronName("")
-                        setNewEnd("")
-                        setNewTimes("")
-                        setNewSpan("")
-                        setAddCron(false)
+                        if (newSpan * 1 === 0) {
+                          alert("Span must be greater than 0")
+                        }
+                        let val = null
+                        try {
+                          let obj = null
+                          eval(`obj = ${newCron}`)
+                          val = newCron
+                          if (!is(Array)(obj)) {
+                            alert("Jobs should be an array.")
+                            return
+                          }
+                        } catch (e) {
+                          alert("Wrong JSON format")
+                          return
+                        }
+                        set("add_cron", "loading")
+                        try {
+                          let query = `{times: ${newTimes || null}, start: ${
+                            newStart || null
+                          }, end: ${newEnd || null},do: ${
+                            newDo ? "true" : "false"
+                          }, span: ${
+                            newSpan * 1
+                          }, jobs: ${newCron}}, "${newCronName}"`
+                          const res = JSON.parse(
+                            await fn(queryDB)({
+                              method: "addCron",
+                              query,
+                              contractTxId,
+                            })
+                          )
+                          if (!res.success) {
+                            alert("Something went wrong")
+                          } else {
+                            setNewCron("")
+                            setNewStart("")
+                            setNewCronName("")
+                            setNewEnd("")
+                            setNewTimes("")
+                            setNewSpan("")
+                            setAddCron(false)
+                            setCrons(await db.getCrons(true))
+                          }
+                        } catch (e) {
+                          alert("Something went wrong")
+                        }
+                        set(null, "loading")
                       }
                     }}
                   >
-                    Add
+                    {!isNil($.loading) ? (
+                      <Box as="i" className="fas fa-spin fa-circle-notch" />
+                    ) : (
+                      "Add"
+                    )}
                   </Flex>
                 </Box>
               </Flex>
@@ -2209,39 +2537,62 @@ export default inject(
                     align="center"
                     color="white"
                     bg="#333"
+                    height="40px"
                     onClick={async () => {
-                      const exRules = !/^\s*$/.test(newRules2)
-                      if (!exRules) {
-                        alert("Enter rules")
-                      }
-                      let val = null
-                      try {
-                        eval(`const obj = ${newRules2}`)
-                        val = newRules2
-                      } catch (e) {
-                        alert("Wrong JSON format")
-                        return
-                      }
-                      let col_path = compose(
-                        join(", "),
-                        map(v => `"${v}"`),
-                        append(col)
-                      )(base_path)
-                      let query = `${newRules2}, ${col_path}`
-                      const res = await fn(queryDB)({
-                        method: "setRules",
-                        query,
-                        contractTxId,
-                      })
-                      if (/^Error:/.test(res)) {
-                        alert("Something went wrong")
-                      } else {
-                        setNewRules2(`{"allow write": true}`)
-                        setAddRules(false)
+                      if (isNil($.loading)) {
+                        const exRules = !/^\s*$/.test(newRules2)
+                        if (!exRules) {
+                          alert("Enter rules")
+                        }
+                        let val = null
+                        try {
+                          eval(`const obj = ${newRules2}`)
+                          val = newRules2
+                        } catch (e) {
+                          alert("Wrong JSON format")
+                          return
+                        }
+                        set("add_rules", "loading")
+                        let col_path = compose(
+                          join(", "),
+                          map(v => `"${v}"`),
+                          append(col)
+                        )(base_path)
+                        try {
+                          let query = `${newRules2}, ${col_path}`
+                          const res = JSON.parse(
+                            await fn(queryDB)({
+                              method: "setRules",
+                              query,
+                              contractTxId,
+                            })
+                          )
+                          if (!res.success) {
+                            alert("Something went wrong")
+                          } else {
+                            setNewRules2(`{"allow write": true}`)
+                            setAddRules(false)
+                            setRules(
+                              await db.getRules(
+                                ...(doc_path.length % 2 === 0
+                                  ? doc_path.slice(0, -1)
+                                  : doc_path),
+                                true
+                              )
+                            )
+                          }
+                        } catch (e) {
+                          alert("Something went wrong")
+                        }
+                        set(null, "loading")
                       }
                     }}
                   >
-                    Add
+                    {!isNil($.loading) ? (
+                      <Box as="i" className="fas fa-spin fa-circle-notch" />
+                    ) : (
+                      "Add"
+                    )}
                   </Flex>
                 </Box>
               </Flex>
@@ -2270,6 +2621,29 @@ export default inject(
                         <Flex flex={1}>{v}</Flex>
                         <Flex>
                           <Box
+                            onClick={async () => {
+                              if (owners.length === 1) {
+                                if (
+                                  !confirm(
+                                    `Would you like to remove ${v}? Removing the last owner will make the DB unconfigurable.`
+                                  )
+                                ) {
+                                  return
+                                }
+                              } else if (
+                                !confirm(`Would you like to remove ${v}?`)
+                              ) {
+                                return
+                              }
+                              const res = await fn(_removeOwner)({
+                                address: v,
+                                contractTxId,
+                              })
+                              if (/^Error:/.test(res)) {
+                                alert("Something went wrong")
+                              }
+                              setState(await db.getInfo(true))
+                            }}
                             className="fas fa-trash"
                             sx={{
                               cursor: "pointer",
@@ -2279,15 +2653,15 @@ export default inject(
                         </Flex>
                       </Flex>
                     )
-                  })(
-                    isNil(state.owner)
-                      ? []
-                      : is(Array, state.owner)
-                      ? state.owner
-                      : [state.owner]
-                  )}
+                  })(owners)}
                   <Flex align="center">
-                    <Input flex={1} />
+                    <Input
+                      flex={1}
+                      value={newOwner}
+                      onChange={e => {
+                        setNewOwner(e.target.value)
+                      }}
+                    />
                     <Flex
                       fontSize="12px"
                       align="center"
@@ -2298,12 +2672,179 @@ export default inject(
                       py={1}
                       px={2}
                       w="100px"
+                      onClick={async () => {
+                        if (isNil($.loading)) {
+                          set("add_owner", "loading")
+                          const res = await fn(_addOwner)({
+                            address: newOwner,
+                            contractTxId,
+                          })
+                          if (/^Error:/.test(res)) {
+                            alert("Something went wrong")
+                          }
+                          setState(await db.getInfo(true))
+                          set(null, "loading")
+                        }
+                      }}
+                      sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
                     >
-                      Add Owner
+                      {!isNil($.loading) ? (
+                        <Box as="i" className="fas fa-spin fa-circle-notch" />
+                      ) : (
+                        "Add Owner"
+                      )}
                     </Flex>
                   </Flex>
-                  <Flex bg="#333" color="white" justify="center" p={3} mt={3}>
-                    Save Change
+                </Box>
+              </Flex>
+            ) : addAlgorithms !== false ? (
+              <Flex
+                w="100%"
+                h="100%"
+                position="fixed"
+                sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+                bg="rgba(0,0,0,0.5)"
+                onClick={() => setAddAlgorithms(false)}
+                justify="center"
+                align="center"
+              >
+                <Box
+                  bg="white"
+                  width="500px"
+                  p={3}
+                  fontSize="12px"
+                  sx={{ borderRadius: "5px", cursor: "default" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Flex>
+                    {map(v => (
+                      <Box mx={3}>
+                        <Box
+                          onClick={() => {
+                            if (includes(v)(newAuths)) {
+                              setNewAuths(without([v], newAuths))
+                            } else {
+                              setNewAuths(append(v, newAuths))
+                            }
+                          }}
+                          className={
+                            includes(v)(newAuths)
+                              ? "fas fa-check-square"
+                              : "far fa-square"
+                          }
+                          mr={2}
+                          sx={{
+                            cursor: "pointer",
+                            ":hover": { opacity: 0.75 },
+                          }}
+                        />
+                        {v}
+                      </Box>
+                    ))(["secp256k1", "secp256k1-2", "ed25519", "rsa256"])}
+                  </Flex>
+                  <Flex
+                    mt={3}
+                    fontSize="12px"
+                    align="center"
+                    height="40px"
+                    bg="#333"
+                    color="white"
+                    justify="center"
+                    py={1}
+                    px={2}
+                    w="100%"
+                    onClick={async () => {
+                      if (isNil($.loading)) {
+                        set("set_algorithms", "loading")
+                        const res = await fn(_setAlgorithms)({
+                          algorithms: newAuths,
+                          contractTxId,
+                        })
+                        if (/^Error:/.test(res)) {
+                          alert("Something went wrong")
+                        }
+                        set(null, "loading")
+                        setState(await db.getInfo(true))
+                      }
+                    }}
+                    sx={{
+                      borderRadius: "5px",
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                  >
+                    {!isNil($.loading) ? (
+                      <Box as="i" className="fas fa-spin fa-circle-notch" />
+                    ) : (
+                      "Save Changes"
+                    )}
+                  </Flex>
+                </Box>
+              </Flex>
+            ) : addCanEvolve !== false ? (
+              <Flex
+                w="100%"
+                h="100%"
+                position="fixed"
+                sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+                bg="rgba(0,0,0,0.5)"
+                onClick={() => setAddCanEvolve(false)}
+                justify="center"
+                align="center"
+              >
+                <Box
+                  bg="white"
+                  width="500px"
+                  p={3}
+                  fontSize="12px"
+                  sx={{ borderRadius: "5px", cursor: "default" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Flex align="center" mb={3} justify="center">
+                    canEvolve is{" "}
+                    <Box
+                      as="span"
+                      ml={2}
+                      fontSize="20px"
+                      fontWeight="bold"
+                      color={state.canEvolve ? "#6441AF" : ""}
+                    >
+                      {state.canEvolve ? "ON" : "OFF"}
+                    </Box>
+                  </Flex>
+                  <Flex align="center">
+                    <Flex
+                      fontSize="12px"
+                      align="center"
+                      height="40px"
+                      bg="#333"
+                      color="white"
+                      justify="center"
+                      py={2}
+                      px={2}
+                      w="100%"
+                      onClick={async () => {
+                        if (isNil($.loading)) {
+                          set("set_canevolve", "loading")
+                          const res = await fn(_setCanEvolve)({
+                            value: !state.canEvolve,
+                            contractTxId,
+                          })
+                          if (/^Error:/.test(res)) {
+                            alert("Something went wrong")
+                          }
+                          setState(await db.getInfo(true))
+                          set(null, "loading")
+                        }
+                      }}
+                      sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
+                    >
+                      {!isNil($.loading) ? (
+                        <Box as="i" className="fas fa-spin fa-circle-notch" />
+                      ) : (
+                        "Switch canEvolve"
+                      )}
+                    </Flex>
                   </Flex>
                 </Box>
               </Flex>
@@ -2346,63 +2887,83 @@ export default inject(
                     align="center"
                     color="white"
                     bg="#333"
+                    height="40px"
                     onClick={async () => {
-                      const exIndex = !/^\s*$/.test(newIndex)
-                      if (!exIndex) {
-                        alert("Enter rules")
-                      }
-                      let val = null
-                      let obj
-                      try {
-                        eval(`obj = ${newIndex}`)
-                        if (!is(Array, obj)) {
-                          alert("Index must be an array")
+                      if (isNil($.loading)) {
+                        const exIndex = !/^\s*$/.test(newIndex)
+                        if (!exIndex) {
+                          alert("Enter rules")
                           return
                         }
-                        if (obj.length < 2) {
-                          alert("Compound Index must have at least 2 fields")
+                        let val = null
+                        let obj
+                        try {
+                          eval(`obj = ${newIndex}`)
+                          if (!is(Array, obj)) {
+                            alert("Index must be an array")
+                            return
+                          }
+                          if (obj.length < 2) {
+                            alert("Compound Index must have at least 2 fields")
+                            return
+                          }
+                          val = newIndex
+                        } catch (e) {
+                          alert("Wrong JSON format")
                           return
                         }
-                        val = newIndex
-                      } catch (e) {
-                        alert("Wrong JSON format")
-                        return
-                      }
-                      const serialize = v =>
-                        map(v2 => {
-                          let v3 = clone(v2)
-                          if (v3.length < 2) v3.push("asc")
-                          return join(":")(v2)
-                        })(v).join(",")
-                      if (
-                        compose(
-                          includes(serialize(obj)),
-                          map(serialize)
-                        )(indexes)
-                      ) {
-                        alert("Index exists")
-                        return
-                      }
-                      let col_path = compose(
-                        join(", "),
-                        map(v => `"${v}"`),
-                        append(col)
-                      )(base_path)
-                      let query = `${newIndex}, ${col_path}`
-                      const res = await fn(queryDB)({
-                        method: "addIndex",
-                        query,
-                        contractTxId,
-                      })
-                      if (/^Error:/.test(res)) {
-                        alert("Something went wrong")
-                      } else {
-                        setNewIndex("[]")
-                        setAddIndex(false)
+                        const serialize = v =>
+                          map(v2 => {
+                            let v3 = clone(v2)
+                            if (v3.length < 2) v3.push("asc")
+                            return join(":")(v2)
+                          })(v).join(",")
+                        if (
+                          compose(
+                            includes(serialize(obj)),
+                            map(serialize)
+                          )(indexes)
+                        ) {
+                          alert("Index exists")
+                          return
+                        }
+                        set("add_index", "loading")
+                        let col_path = compose(
+                          join(", "),
+                          map(v => `"${v}"`),
+                          append(col)
+                        )(base_path)
+                        let query = `${newIndex}, ${col_path}`
+                        const res = JSON.parse(
+                          await fn(queryDB)({
+                            method: "addIndex",
+                            query,
+                            contractTxId,
+                          })
+                        )
+                        if (!res.success) {
+                          alert("Something went wrong")
+                        } else {
+                          setNewIndex("[]")
+                          setAddIndex(false)
+                          setIndexes(
+                            await db.getIndexes(
+                              ...(doc_path.length % 2 === 0
+                                ? doc_path.slice(0, -1)
+                                : doc_path),
+                              true
+                            )
+                          )
+                        }
+                        set(null, "loading")
                       }
                     }}
                   >
-                    Add
+                    {!isNil($.loading) ? (
+                      <Box as="i" className="fas fa-spin fa-circle-notch" />
+                    ) : (
+                      "Add"
+                    )}
                   </Flex>
                 </Box>
               </Flex>
@@ -2603,39 +3164,203 @@ export default inject(
                       p={2}
                       justify="center"
                       align="center"
+                      height="40px"
                       color="white"
                       bg="#333"
                       onClick={async () => {
-                        if (!$.on_connecting) {
-                          set(true, "on_connecting")
-                          const res = await fn(deployDB)({
-                            port: port,
-                            owner: $.temp_current_all.addr,
-                            network: newNetwork,
-                            secure,
-                            canEvolve,
-                            auths,
-                          })
-                          if (!isNil(res.contractTxId)) {
-                            addDB(res)
-                            setAddInstance(false)
-                            if (isNil(contractTxId)) {
-                              setState(null)
-                              setNetwork(res.network)
-                              setContractTxId(res.contractTxId)
+                        if ($.loading === null) {
+                          set("deploy", "loading")
+                          try {
+                            const res = await fn(deployDB)({
+                              port: port,
+                              owner: $.temp_current_all.addr,
+                              network: newNetwork,
+                              secure,
+                              canEvolve,
+                              auths,
+                            })
+                            if (!isNil(res.contractTxId)) {
+                              addDB(res)
+                              setAddInstance(false)
+                              if (isNil(contractTxId)) {
+                                setState(null)
+                                setNetwork(res.network)
+                                setCurrentDB(res)
+                                await _setContractTxId(
+                                  res.contractTxId,
+                                  res.network,
+                                  res.rpc
+                                )
+                              }
                             }
+                          } catch (e) {
+                            alert("something went wrong")
+                            console.log(e)
                           }
-                          set(false, "on_connecting")
+                          set(null, "loading")
                         }
                       }}
                     >
-                      {$.on_connecting ? (
+                      {$.loading === "deploy" ? (
                         <Box as="i" className="fas fa-spin fa-circle-notch" />
                       ) : (
                         "Deploy DB Instance"
                       )}
                     </Flex>
                   ) : (
+                    <>
+                      <Flex fontSize="10px" mx={1} mb={1} mt={3}>
+                        RPC URL (Optional)
+                      </Flex>
+                      <Input
+                        placeholder="https://grpc.example.com"
+                        flex={1}
+                        value={newRPC}
+                        onChange={e => setNewRPC(trim(e.target.value))}
+                        sx={{ borderRadius: 0 }}
+                      />
+                      <Flex
+                        mt={4}
+                        sx={{
+                          borderRadius: "3px",
+                          cursor: "pointer",
+                          ":hover": { opacity: 0.75 },
+                        }}
+                        p={2}
+                        justify="center"
+                        align="center"
+                        color="white"
+                        bg="#333"
+                        height="40px"
+                        onClick={async () => {
+                          if (isNil($.loading)) {
+                            if (!/^\s*$/.test(newContractTxId)) {
+                              set("connect_to_db", "loading")
+                              let db
+                              try {
+                                db = await fn(setupWeaveDB)({
+                                  network: newNetwork,
+                                  contractTxId: newContractTxId,
+                                  port: port || 1820,
+                                  rpc: newRPC,
+                                })
+                                let state = await db.getInfo(true)
+                                if (!isNil(state.version)) {
+                                  if (
+                                    !/^[0-9]+\.[0-9]+\.[0-9]+$/.test(
+                                      state.version
+                                    )
+                                  ) {
+                                    alert("version not compatible")
+                                  } else if (
+                                    +state.version.split(".")[1] < 15
+                                  ) {
+                                    alert(
+                                      "Web Console is only compatible with v0.15 and above."
+                                    )
+                                  } else {
+                                    setNetwork(newNetwork)
+                                    let newdb = {
+                                      network: newNetwork,
+                                      port:
+                                        newNetwork === "Localhost" ? port : 443,
+                                      contractTxId: newContractTxId,
+                                      rpc: newRPC,
+                                    }
+                                    setCurrentDB(newdb)
+                                    await _setContractTxId(
+                                      newContractTxId,
+                                      newNetwork,
+                                      newRPC
+                                    )
+                                    setEditNetwork(false)
+                                    addDB(newdb)
+                                    setAddInstance(false)
+                                    setNewContractTxId("")
+                                    setNewRPC("")
+                                  }
+                                } else {
+                                  alert(
+                                    "couldn't connect to the contract. Web Console is only compatible with v0.15 and above."
+                                  )
+                                }
+                              } catch (e) {
+                                console.log(e)
+                                alert(
+                                  "couldn't connect to the contract. Web Console is only compatible with v0.15 and above."
+                                )
+                              }
+                              set(null, "loading")
+                            }
+                          }
+                        }}
+                      >
+                        {$.loading === "connect_to_db" ? (
+                          <Box as="i" className="fas fa-spin fa-circle-notch" />
+                        ) : (
+                          "Connect to DB"
+                        )}
+                      </Flex>
+                    </>
+                  )}
+                </Box>
+              </Flex>
+            ) : addGRPC !== false ? (
+              <Flex
+                w="100%"
+                h="100%"
+                position="fixed"
+                sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+                bg="rgba(0,0,0,0.5)"
+                onClick={() => setAddGRPC(false)}
+                justify="center"
+                align="center"
+              >
+                <Box
+                  bg="white"
+                  width="500px"
+                  p={3}
+                  sx={{ borderRadius: "5px", cursor: "default" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Flex fontSize="10px" m={1}>
+                    Network
+                  </Flex>
+                  <Select
+                    w="100%"
+                    disabled={true}
+                    value={currentDB.network}
+                    onChange={e => setNewNetwork(e.target.value)}
+                    sx={{ borderRadius: "5px 0 0 5px" }}
+                    mb={3}
+                  >
+                    {map(v => <option value={v}>{v}</option>)(
+                      isNil(port) ? ["Mainnet"] : networks
+                    )}
+                  </Select>
+                  <>
+                    <Flex fontSize="10px" m={1}>
+                      ContractTxId
+                    </Flex>
+                    <Input
+                      flex={1}
+                      value={currentDB.contractTxId}
+                      disabled={true}
+                      sx={{ borderRadius: 0 }}
+                    />
+                  </>
+
+                  <>
+                    <Flex fontSize="10px" mx={1} mb={1} mt={3}>
+                      RPC URL (Optional)
+                    </Flex>
+                    <Input
+                      placeholder="https://grpc.example.com"
+                      flex={1}
+                      value={newRPC2}
+                      onChange={e => setNewRPC2(trim(e.target.value))}
+                      sx={{ borderRadius: 0 }}
+                    />
                     <Flex
                       mt={4}
                       sx={{
@@ -2648,32 +3373,46 @@ export default inject(
                       align="center"
                       color="white"
                       bg="#333"
+                      height="40px"
                       onClick={async () => {
-                        if (!$.on_connecting) {
-                          if (!/^\s*$/.test(newContractTxId)) {
-                            set(true, "on_connecting")
-                            setNetwork(newNetwork)
-                            setContractTxId(newContractTxId)
-                            setEditNetwork(false)
-                            addDB({
-                              network: newNetwork,
-                              port: newNetwork === "Localhost" ? port : 443,
-                              contractTxId: newContractTxId,
-                            })
-                            setAddInstance(false)
-                            setNewContractTxId("")
-                            set(false, "on_connecting")
+                        if (isNil($.loading)) {
+                          set("connect_to_db", "loading")
+                          const db = await fn(setupWeaveDB)({
+                            network: currentDB.network,
+                            contractTxId: currentDB.contractTxId,
+                            port: currentDB.port,
+                            rpc: newRPC,
+                          })
+                          let state = await db.getInfo(true)
+                          if (!isNil(state.version)) {
+                            setState(null)
+                            const newDB = assoc("rpc", newRPC2, currentDB)
+                            updateDB(newDB)
+                            setCurrentDB(newDB)
+                            setAddGRPC(false)
+                            setNewRPC2("")
+                            await _setContractTxId(
+                              currentDB.contractTxId,
+                              currentDB.network,
+                              newRPC2
+                            )
+                          } else {
+                            alert(
+                              "couldn't connect to the contract. Web Console is only compatible with v0.15 and above."
+                            )
                           }
+
+                          set(null, "loading")
                         }
                       }}
                     >
-                      {$.on_connecting ? (
+                      {$.loading === "connect_to_db" ? (
                         <Box as="i" className="fas fa-spin fa-circle-notch" />
                       ) : (
                         "Connect to DB"
                       )}
                     </Flex>
-                  )}
+                  </>
                 </Box>
               </Flex>
             ) : connect !== false ? (

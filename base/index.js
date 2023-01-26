@@ -59,6 +59,14 @@ class Base {
     return this.request("getRules", ...query)
   }
 
+  async getInfo() {
+    return this.request("getInfo")
+  }
+
+  async listCollections(...query) {
+    return this.request("listCollections", ...query)
+  }
+
   async _write(func, ...query) {
     let opt = null
     if (is(Object, last(query)) && !is(Array, last(query))) {
