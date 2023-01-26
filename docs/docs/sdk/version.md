@@ -15,6 +15,47 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.15.0 (Jan 25, 2023)
+
+#### Source Transaction Id
+
+[ZRREoTw94icjJVyVnCHnR7T_Q96AWLLLnYugmt9OgAQ](https://sonar.warp.cc/#/app/source/ZRREoTw94icjJVyVnCHnR7T_Q96AWLLLnYugmt9OgAQ)
+
+#### Added Features
+
+- [set/update subcollections](/docs/sdk/queries#set)
+
+### v0.14.0 (Jan 24, 2023)
+
+#### Source Transaction Id
+
+[ThKJQwNBy2tdELecqmlG86bo9NacyMxquQef1DOLBPA](https://sonar.warp.cc/#/app/source/ThKJQwNBy2tdELecqmlG86bo9NacyMxquQef1DOLBPA)
+
+#### Added Features
+
+- [listCollections()](/docs/sdk/queries#listcollections) : list sub collections too
+
+### v0.13.0 (Jan 23, 2023)
+
+#### Source Transaction Id
+
+[4lSfFFQIpX37GMdab6c4ZdWli33b70qu_KJan5vB1ZI](https://sonar.warp.cc/#/app/source/4lSfFFQIpX37GMdab6c4ZdWli33b70qu_KJan5vB1ZI)
+
+#### Added Features
+
+- [listCollections()](/docs/sdk/queries#listcollections)
+- [getInfo()](/docs/sdk/queries#getInfo)
+
+### v0.12.0 (Jan 17, 2023)
+
+#### Source Transaction Id
+
+[8dUFGgl05GiunNN_5LMBYEorkS2Znr1-L2JYVb0Cpm4](https://sonar.warp.cc/#/app/source/8dUFGgl05GiunNN_5LMBYEorkS2Znr1-L2JYVb0Cpm4)
+
+#### Added Features
+
+- [secp256k1-2 algorithm for Intmax is now settable](/docs/sdk/auth#intmaxwallet-intmax)
+
 ### v0.11.0 (Jan 15, 2023)
 
 #### Source Transaction Id
