@@ -153,6 +153,18 @@ class SDK extends Base {
   async getIds(tx) {
     return this.request("getIds", tx)
   }
+
+  async getAddressLink(address) {
+    return this.request("getAddressLink", address)
+  }
+
+  async getVersion() {
+    return this.request("getAddressLink")
+  }
+
+  async getEvolve() {
+    return this.request("getEvolve")
+  }
 }
 
 module.exports = SDK
