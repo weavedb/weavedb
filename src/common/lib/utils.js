@@ -388,6 +388,14 @@ export const parse = async (
   return { data, query, new_data, path, _data, schema, col, next_data }
 }
 
+export const isOwner = (signer, state) => {
+  let owner = state.owner || []
+  if (is(String)(owner)) owner = of(owner)
+  if (!includes(signer)(owner)) {
+    err(`Signer[${signer}] is not the owner[${owner.join(", ")}].`)
+  }
+  return owner
+}
 export const read = async (contract, param) => {
   return (await SmartWeave.contracts.viewContractState(contract, param)).result
 }
