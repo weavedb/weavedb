@@ -15,6 +15,16 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.16.0 (Jan 27, 2023)
+
+#### Source Transaction Id
+
+[viUyq-GD9kxDYRVkvT-NPjEvzLIgQYEx70DoliFwytQ](https://sonar.warp.cc/#/app/source/viUyq-GD9kxDYRVkvT-NPjEvzLIgQYEx70DoliFwytQ)
+
+#### Added Features
+
+- [better owner validation for crons](/docs/sdk/crons)
+
 ### v0.15.0 (Jan 25, 2023)
 
 #### Source Transaction Id

@@ -1,11 +1,12 @@
 import { isNil } from "ramda"
-import { err, clone } from "../../lib/utils"
+import { err, clone, isOwner } from "../../lib/utils"
 import { validate } from "../../lib/validate"
 import { executeCron } from "../../lib/cron"
 
 export const addCron = async (state, action, signer) => {
   signer ||= await validate(state, action, "addCron")
-  if (action.caller !== state.owner) err()
+  const owner = isOwner(signer, state)
+
   if (isNil(state.crons)) {
     state.crons = { lastExecuted: SmartWeave.block.timestamp, crons: {} }
   }
