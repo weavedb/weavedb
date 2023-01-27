@@ -1,56 +1,7 @@
-const EthCrypto = require("eth-crypto")
-const { privateToAddress } = require("ethereumjs-util")
-require("dotenv").config()
-const fs = require("fs")
-const path = require("path")
-const wallet_name = process.argv[2]
-const contractTxId = process.argv[3] || process.env.WALL_CONTRACT_TX_ID
-const name = process.env.WALL_APP_NAME || "weavedb"
-const version = process.env.VERSION || "1"
-let privateKey = process.env.PRIVATE_KEY
-const { isNil } = require("ramda")
-const SDK = require("../sdk")
-
-if (isNil(wallet_name)) {
-  console.log("no wallet name given")
-  process.exit()
-}
-
-if (isNil(contractTxId)) {
-  console.log("contract not specified")
-  process.exit()
-}
-
+const { initSetup, send, getArgv } = require("./utils")
+const argv = getArgv("wallet_name", "contractTxId")
 const setup = async () => {
-  const wallet_path = path.resolve(
-    __dirname,
-    ".wallets",
-    `wallet-${wallet_name}.json`
-  )
-  if (!fs.existsSync(wallet_path)) {
-    console.log("wallet doesn't exist")
-    process.exit()
-  }
-  const wallet = JSON.parse(fs.readFileSync(wallet_path, "utf8"))
-  const db = new SDK({
-    wallet,
-    name,
-    version,
-    contractTxId,
-    arweave: {
-      host:
-        wallet_name === "mainnet" ? "arweave.net" : "testnet.redstone.tools",
-      port: 443,
-      protocol: "https",
-      timeout: 200000,
-    },
-  })
-
-  const addr = `0x${privateToAddress(
-    Buffer.from(privateKey.replace(/^0x/, ""), "hex")
-  ).toString("hex")}`.toLowerCase()
-
-  console.log("set up WeaveDB..." + contractTxId)
+  const { sdk, wallet, addr } = await initSetup(argv)
 
   const schemas_users = {
     type: "object",
@@ -64,8 +15,6 @@ const setup = async () => {
       },
     },
   }
-  await db.setSchema(schemas_users, "users", { privateKey })
-  console.log("users schema set")
   const rules_users = {
     "allow create,update": {
       and: [
@@ -91,8 +40,7 @@ const setup = async () => {
       ],
     },
   }
-  await db.setRules(rules_users, "users", { privateKey })
-  console.log("users rules set")
+
   const schemas_wall = {
     type: "object",
     required: ["text", "user", "date", "id"],
@@ -111,8 +59,6 @@ const setup = async () => {
       },
     },
   }
-  await db.setSchema(schemas_wall, "wall", { privateKey })
-  console.log("wall schema set")
   const rules_wall = {
     "let create": {
       id: [
@@ -147,8 +93,26 @@ const setup = async () => {
       "==": [{ var: "request.auth.signer" }, { var: "resource.data.user" }],
     },
   }
-  await db.setRules(rules_wall, "wall", { privateKey })
-  console.log("wall rules set")
+
+  await send(sdk, wallet, [
+    {
+      func: "setSchema",
+      query: [schemas_users, "users"],
+      msg: "users schema set!",
+    },
+    {
+      func: "setRules",
+      query: [rules_users, "users"],
+      msg: "users rules set!",
+    },
+    {
+      func: "setSchema",
+      query: [schemas_wall, "wall"],
+      msg: "wall schema set!",
+    },
+    { func: "setRules", query: [rules_wall, "wall"], msg: "wall rules set!" },
+  ])
+
   process.exit()
 }
 
