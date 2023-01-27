@@ -115,7 +115,7 @@ export default inject(
     const [cron, setCron] = useState(null)
     const [method, setMethod] = useState("get")
     const [query, setQuery] = useState("")
-    const tabs = ["DB", "Data", "Schemas", "Rules", "Indexes"]
+    const tabs = ["DB", "Data", "Schemas", "Rules", "Indexes", "Crons"]
     const [port, setPort] = useState(null)
     const [network, setNetwork] = useState("Mainnet")
     const [newNetwork, setNewNetwork] = useState("Mainnet")
@@ -578,7 +578,7 @@ export default inject(
             mb={4}
             sx={{ borderRadius: "5px" }}
           >
-            For old contracts before v0.15, please use
+            For old contracts before v0.16, please use
             <Box
               sx={{ textDecoration: "underline" }}
               ml={1}
@@ -1128,13 +1128,13 @@ export default inject(
                                           )
                                         } else {
                                           alert(
-                                            "couldn't connect to the contract. Web Console is only compatible with v0.15 and above."
+                                            "couldn't connect to the contract. Web Console is only compatible with v0.16 and above."
                                           )
                                         }
                                       } catch (e) {
                                         console.log(e)
                                         alert(
-                                          "couldn't connect to the contract. Web Console is only compatible with v0.15 and above."
+                                          "couldn't connect to the contract. Web Console is only compatible with v0.16 and above."
                                         )
                                       }
                                     }
@@ -3256,7 +3256,7 @@ export default inject(
                                     +state.version.split(".")[1] < 15
                                   ) {
                                     alert(
-                                      "Web Console is only compatible with v0.15 and above."
+                                      "Web Console is only compatible with v0.16 and above."
                                     )
                                   } else {
                                     setNetwork(newNetwork)
@@ -3281,13 +3281,13 @@ export default inject(
                                   }
                                 } else {
                                   alert(
-                                    "couldn't connect to the contract. Web Console is only compatible with v0.15 and above."
+                                    "couldn't connect to the contract. Web Console is only compatible with v0.16 and above."
                                   )
                                 }
                               } catch (e) {
                                 console.log(e)
                                 alert(
-                                  "couldn't connect to the contract. Web Console is only compatible with v0.15 and above."
+                                  "couldn't connect to the contract. Web Console is only compatible with v0.16 and above."
                                 )
                               }
                               set(null, "loading")
@@ -3398,7 +3398,7 @@ export default inject(
                             )
                           } else {
                             alert(
-                              "couldn't connect to the contract. Web Console is only compatible with v0.15 and above."
+                              "couldn't connect to the contract. Web Console is only compatible with v0.16 and above."
                             )
                           }
 

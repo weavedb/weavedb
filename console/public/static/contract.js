@@ -14012,6 +14012,15 @@
     }
     return { data, query, new_data, path: path3, _data, schema, col, next_data };
   };
+  var isOwner = (signer, state) => {
+    let owner = state.owner || [];
+    if (is_default(String)(owner))
+      owner = of_default(owner);
+    if (!includes_default(signer)(owner)) {
+      err(`Signer[${signer}] is not the owner[${owner.join(", ")}].`);
+    }
+    return owner;
+  };
   var read = async (contract, param) => {
     return (await SmartWeave.contracts.viewContractState(contract, param)).result;
   };
@@ -15386,8 +15395,7 @@
   // src/common/actions/write/addCron.js
   var addCron = async (state, action, signer) => {
     signer ||= await validate(state, action, "addCron");
-    if (action.caller !== state.owner)
-      err();
+    const owner = isOwner(signer, state);
     if (isNil_default(state.crons)) {
       state.crons = { lastExecuted: SmartWeave.block.timestamp, crons: {} };
     }
@@ -15422,9 +15430,8 @@
 
   // src/common/actions/write/removeCron.js
   var removeCron = async (state, action, signer) => {
-    signer ||= validate(state, action, "removeCron");
-    if (action.caller !== state.owner)
-      err();
+    signer ||= await validate(state, action, "removeCron");
+    const owner = isOwner(signer, state);
     if (isNil_default(state.crons)) {
       state.crons = { lastExecuted: SmartWeave.block.timestamp, crons: {} };
     }
@@ -15558,11 +15565,7 @@
   // src/common/actions/write/setCanEvolve.js
   var setCanEvolve = async (state, action, signer) => {
     signer ||= await validate(state, action, "setCanEvolve");
-    let owner = state.owner || [];
-    if (is_default(String)(owner))
-      owner = of_default(owner);
-    if (!includes_default(signer)(owner))
-      err("Signer is not the owner.");
+    const owner = isOwner(signer, state);
     if (!is_default(Boolean)(action.input.query.value)) {
       err("Value must be a boolean.");
     }
@@ -15573,11 +15576,7 @@
   // src/common/actions/write/addOwner.js
   var addOwner = async (state, action, signer) => {
     signer ||= await validate(state, action, "addOwner");
-    let owner = state.owner || [];
-    if (is_default(String)(owner))
-      owner = of_default(owner);
-    if (!includes_default(signer)(owner))
-      err("Signer is not the owner.");
+    const owner = isOwner(signer, state);
     if (!is_default(String)(action.input.query.address)) {
       err("Value must be string.");
     }
@@ -15594,11 +15593,7 @@
   // src/common/actions/write/removeOwner.js
   var removeOwner = async (state, action, signer) => {
     signer ||= await validate(state, action, "removeOwner");
-    let owner = state.owner || [];
-    if (is_default(String)(owner))
-      owner = of_default(owner);
-    if (!includes_default(signer)(owner))
-      err("Signer is not the owner.");
+    const owner = isOwner(signer, state);
     if (!is_default(String)(action.input.query.address)) {
       err("Value must be string.");
     }
