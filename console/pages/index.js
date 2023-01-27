@@ -3253,7 +3253,7 @@ export default inject(
                                   ) {
                                     alert("version not compatible")
                                   } else if (
-                                    +state.version.split(".")[1] < 15
+                                    +state.version.split(".")[1] < 16
                                   ) {
                                     alert(
                                       "Web Console is only compatible with v0.16 and above."
