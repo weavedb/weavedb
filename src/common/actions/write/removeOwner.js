@@ -1,13 +1,10 @@
-import { err } from "../../lib/utils"
+import { err, isOwner } from "../../lib/utils"
 import { without, includes, is, of } from "ramda"
 import { validate } from "../../lib/validate"
 
 export const removeOwner = async (state, action, signer) => {
   signer ||= await validate(state, action, "removeOwner")
-
-  let owner = state.owner || []
-  if (is(String)(owner)) owner = of(owner)
-  if (!includes(signer)(owner)) err("Signer is not the owner.")
+  const owner = isOwner(signer, state)
 
   if (!is(String)(action.input.query.address)) {
     err("Value must be string.")

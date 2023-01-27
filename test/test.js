@@ -466,7 +466,10 @@ describe("WeaveDB", function () {
         do: true,
         jobs: [["upsert", [{ age: db.inc(1) }, "ppl", "Bob"]]],
       },
-      "inc age"
+      "inc age",
+      {
+        ar: arweave_wallet,
+      }
     )
     expect((await db.get("ppl", "Bob")).age).to.eql(4)
     while (true) {
@@ -476,7 +479,9 @@ describe("WeaveDB", function () {
       }
     }
     expect((await db.get("ppl", "Bob")).age).to.be.eql(5)
-    await db.removeCron("inc age")
+    await db.removeCron("inc age", {
+      ar: arweave_wallet,
+    })
     expect((await db.getCrons()).crons).to.eql({})
   })
 
