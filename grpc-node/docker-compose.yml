@@ -1,15 +1,19 @@
 version: '3'
 services:
   node-server:
-    build: ./node-server
+    # build: ./node-server
+    image: 0xkaz/weavedb-node-server
     ports:
       - "9090:9090"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
       - ./node-server/cache:/node-server/cache
+    environment:
+      - CONTRACT_TX_ID=SMVDZ9jRXO7Kb88D4rByayB3HbwzXYzzbaPJ9DnrB_s
   envoy:
-    build: ./envoy
+    # build: ./envoy
+    image: 0xkaz/weavedb-envoy
     ports:
       - "8080:8080"
     links:

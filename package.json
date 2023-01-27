@@ -58,7 +58,8 @@
     "clean": "rimraf ./dist",
     "cp": "copyfiles -u 1 ./src/**/*.json dist",
     "repl": "yarn build && node scripts/runNode.js",
-    "run-node": "cd grpc-node && sudo docker-compose up --build"
+    "run-node-old": "cd grpc-node && sudo docker-compose up --build",
+    "run-node": "cd grpc-node && sudo docker-compose up"
   },
   "devDependencies": {
     "@dfinity/agent": "^0.13.2",
