@@ -144,21 +144,26 @@ async function initSDK(v) {
 }
 
 async function main() {
-  const contracts = isNil(config.contractTxId)
-    ? []
-    : is(Array, config.contractTxId)
-    ? config.contractTxId
-    : [config.contractTxId]
+  // const contracts = isNil(config.contractTxId)
+  //   ? []
+  //   : is(Array, config.contractTxId)
+  //   ? config.contractTxId
+  //   : [config.contractTxId]
 
-  for (let v of contracts) {
-    initSDK(v)
-      .then(() => console.log(`sdk(${v}) ready!`))
-      .catch(e => {
-        console.log(`sdk(${v}) error!`)
-        console.log(e)
-      })
-  }
-
+  // for (let v of contracts) {
+  //   initSDK(v)
+  //     .then(() => console.log(`sdk(${v}) ready!`))
+  //     .catch(e => {
+  //       console.log(`sdk(${v}) error!`)
+  //       console.log(e)
+  //     })
+  // }
+  initSDK(CONTRACT_TX_ID)
+    .then(() => console.log(`sdk(${CONTRACT_TX_ID}) ready!`))
+    .catch(e => {
+      console.log(`sdk(${CONTRACT_TX_ID}) error!`)
+      console.log(e)
+    })
   const server = new grpc.Server()
 
   server.addService(weavedb.DB.service, {
