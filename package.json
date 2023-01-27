@@ -43,8 +43,8 @@
     "warp-contracts-lmdb": "^1.1.6",
     "wasmbuilder": "^0.0.16",
     "wasmcurves": "^0.2.0",
-    "weavedb-sdk": "^0.9.8",
-    "weavedb-sdk-node": "^0.10.2",
+    "weavedb-sdk": "^0.13.1",
+    "weavedb-sdk-node": "^0.13.1",
     "yargs": "^17.6.2"
   },
   "engines": {

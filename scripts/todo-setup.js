@@ -1,21 +1,5 @@
-const EthCrypto = require("eth-crypto")
-require("dotenv").config()
-const fs = require("fs")
-const path = require("path")
-const wallet_name = process.argv[2]
-const contractTxId = process.argv[3] || process.env.CONTRACT_TX_ID_TODOS
-const { isNil } = require("ramda")
-const SDK = require("weavedb-sdk")
-
-if (isNil(wallet_name)) {
-  console.log("no wallet name given")
-  process.exit()
-}
-
-if (isNil(contractTxId)) {
-  console.log("contract not specified")
-  process.exit()
-}
+const { initSetup, send, getArgv } = require("./utils")
+const argv = getArgv("wallet_name", "contractTxId")
 
 const schemas = {
   type: "object",
@@ -78,32 +62,16 @@ const rules = {
 }
 
 const setup = async () => {
-  const wallet_path = path.resolve(
-    __dirname,
-    ".wallets",
-    `wallet-${wallet_name}.json`
-  )
-  if (!fs.existsSync(wallet_path)) {
-    console.log("wallet doesn't exist")
-    process.exit()
-  }
-  const wallet = JSON.parse(fs.readFileSync(wallet_path, "utf8"))
-  const sdk = new SDK({
-    wallet,
-    contractTxId,
-  })
+  const { sdk, wallet, addr } = await initSetup(argv)
 
-  console.log("init WeaveDB..." + contractTxId)
-  const walletAddress = await sdk.arweave.wallets.jwkToAddress(wallet)
-  await sdk.setSchema(schemas, "tasks", {
-    ar: wallet,
-  })
-  console.log("tasks schema set!")
-
-  await sdk.setRules(rules, "tasks", {
-    ar: wallet,
-  })
-  console.log(`tasks rules set!`)
+  await send(sdk, wallet, [
+    {
+      func: "setSchema",
+      query: [schemas, "tasks"],
+      msg: "tasks schema set!",
+    },
+    { func: "setRules", query: [rules, "tasks"], msg: "tasks rules set!" },
+  ])
   process.exit()
 }
 
