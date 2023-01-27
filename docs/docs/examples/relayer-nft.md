@@ -221,7 +221,7 @@ sudo curl -L "https://github.com/docker/compose/releases/download/v2.2.3/docker-
 sudo chmod +x /usr/local/bin/docker-compose
 ```
 
-Then create `weavedb.config.js` to `/docker/node-server` directory.
+Then create `weavedb.config.js` to `/node/net/grpc/gateway/weavedb/node-server` directory.
 
 ```js
 module.exports = {
@@ -238,9 +238,8 @@ module.exports = {
 Then run docker-compose.
 
 ```bash
-cd docker/node-server
-sudo DOCKER_BUILDKIT=0 docker-compose build
-sudo docker-compose up -d 
+cd node
+sudo docker-compose up --build 
 
 ```
 
