@@ -1,52 +1,10 @@
-const EthCrypto = require("eth-crypto")
-const { privateToAddress } = require("ethereumjs-util")
-require("dotenv").config()
-const fs = require("fs")
-const path = require("path")
-const wallet_name = process.argv[2]
-const contractTxId = process.argv[3] || process.env.CONTRACT_TX_ID
-const name = process.env.NAME || "weavedb"
-const version = process.env.VERSION || "1"
-let privateKey = process.env.PRIVATE_KEY
-const { isNil } = require("ramda")
-const SDK = require("../sdk")
-
-if (isNil(wallet_name)) {
-  console.log("no wallet name given")
-  process.exit()
-}
-
-if (isNil(contractTxId)) {
-  console.log("contract not specified")
-  process.exit()
-}
+const { initSetup, send, getArgv } = require("./utils")
+const argv = getArgv("wallet_name", "contractTxId")
+const { compose, values, mapObjIndexed } = require("ramda")
 
 const setup = async () => {
-  const wallet_path = path.resolve(
-    __dirname,
-    ".wallets",
-    `wallet-${wallet_name}.json`
-  )
-  if (!fs.existsSync(wallet_path)) {
-    console.log("wallet doesn't exist")
-    process.exit()
-  }
-  const wallet = JSON.parse(fs.readFileSync(wallet_path, "utf8"))
-  const sdk = new SDK({
-    wallet,
-    name,
-    version,
-    contractTxId,
-    arweave: {
-      host:
-        wallet_name === "mainnet" ? "arweave.net" : "testnet.redstone.tools",
-      port: 443,
-      protocol: "https",
-      timeout: 200000,
-    },
-  })
+  const { sdk, wallet, addr } = await initSetup(argv)
 
-  console.log("set up WeaveDB..." + contractTxId)
   const schemas = {
     bookmarks: {
       type: "object",
@@ -64,18 +22,6 @@ const setup = async () => {
       },
     },
   }
-  if (isNil(privateKey)) {
-    const identity = EthCrypto.createIdentity()
-    privateKey = identity.privateKey
-  }
-  const addr = `0x${privateToAddress(
-    Buffer.from(privateKey.replace(/^0x/, ""), "hex")
-  ).toString("hex")}`.toLowerCase()
-
-  await sdk.setSchema(schemas.bookmarks, "bookmarks", {
-    privateKey,
-  })
-  console.log("bookmarks schema set!")
 
   const rules = {
     bookmarks: {
@@ -127,13 +73,23 @@ const setup = async () => {
     },
   }
 
-  for (let k in rules) {
-    await sdk.setRules(rules[k], k, {
-      privateKey,
-    })
-    console.log(`${k} rules set!`)
-  }
-
+  await send(sdk, wallet, [
+    {
+      func: "setSchema",
+      query: [schemas.bookmarks, "bookmarks"],
+      msg: "bookmarks schema set!",
+    },
+    ...compose(
+      values,
+      mapObjIndexed((v, k) => {
+        return {
+          func: "setRules",
+          query: [rules[k], k],
+          msg: `${k} rules set!`,
+        }
+      })
+    )(rules),
+  ])
   process.exit()
 }
 
