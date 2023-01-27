@@ -18,11 +18,10 @@ Install `docker` and `docker-compose` globally to your machine. And open port `8
 
 ### Run docker-compose
 
-Add `weavedb.config.js` to `/node/net/grpc/gateway/weavedb/node-server` directory.
+Add `weavedb.config.js` to `/grpc-node/node-server` directory.
 
 ```bash
-cd node/net/grpc/gateway/weavedb/node-server
-touch weavedb.config.js
+touch grpc-node/node-server/weavedb.config.js
 ```
 
 #### weavedb.config.js
@@ -46,8 +45,7 @@ There are 3 ways to specify the `contractTxId` in the config file.
 Then build and run the docker container.
 
 ```bash
-cd ..
-sudo docker-compose up --build
+yarn run-node
 ```
 
 Now you can interact with the node using the [Light Client](/docs/sdk/client).
@@ -79,9 +77,7 @@ module.exports = {
     host: "host.docker.internal"
     port: 1820,
     protocol: "http"
-  },
-  subscribe: false,
-  cache: "leveldb",
+  }
 }
 ```
 
@@ -98,8 +94,7 @@ module.exports = {
 ##### 4. Run Docker Conompose
 
 ```bash
-cd node
-sudo docker-compose up --build 
+yarn run-node
 ```
 
 ##### 5. Set the instance IP address to the Light Client
@@ -175,7 +170,7 @@ git clone https://github.com/weavedb/weavedb.git
 - Create and edit `weavedb.config.js` with your favorite editor such as nano
 
 ```bash
-nano weavedb/node/net/grpc/gateway/node-server/weavedb.config.js
+nano weavedb/grpc-node/node-server/weavedb.config.js
 ```
 
 ```javascript
@@ -184,11 +179,11 @@ module.exports = {
 }
 ```
 
-- Move to `weavedb/node` and run docker-compose
+- Move to `weavedb` and run `yarn run-node`
 
 ```bash
-cd weavedb/node
-sudo docker-compose up --build
+cd weavedb
+yarn run-node
 ```
 
 - Set up NGINX with SSL/TLS certificate using Certbot

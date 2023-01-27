@@ -221,7 +221,7 @@ sudo curl -L "https://github.com/docker/compose/releases/download/v2.2.3/docker-
 sudo chmod +x /usr/local/bin/docker-compose
 ```
 
-Then create `weavedb.config.js` to `/node/net/grpc/gateway/weavedb/node-server` directory.
+Then create `weavedb.config.js` to `/grpc-node/node-server` directory.
 
 ```js
 module.exports = {
@@ -235,11 +235,10 @@ module.exports = {
   cache: "leveldb",
 }
 ```
-Then run docker-compose.
+Then run docker-compose with `yarn run-node`.
 
 ```bash
-cd node
-sudo docker-compose up --build 
+yarn run-node
 
 ```
 

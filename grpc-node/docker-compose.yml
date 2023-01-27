@@ -6,8 +6,8 @@ services:
       - "9090:9090"
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    volumes: 
-      - "./cache:/weavedb/cache"
+    volumes:
+      - ./node-server/cache:/node-server/cache
   envoy:
     build: ./envoy
     ports:

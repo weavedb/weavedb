@@ -1,6 +1,6 @@
 const md5 = require("md5")
 const config = require("./weavedb.config.js")
-const PROTO_PATH = __dirname + "/../weavedb.proto"
+const PROTO_PATH = __dirname + "/weavedb.proto"
 let sdk = null
 const { is, isNil, includes, clone, map } = require("ramda")
 const SDK = require("weavedb-sdk-node")
