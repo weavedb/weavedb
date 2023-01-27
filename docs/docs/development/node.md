@@ -167,16 +167,15 @@ sudo chmod +x /usr/local/bin/docker-compose
 git clone https://github.com/weavedb/weavedb.git
 ```
 
-- Create and edit `weavedb.config.js` with your favorite editor such as nano
+- Edit `docker-compose.yaml` with your favorite editor such as nano
 
 ```bash
-nano weavedb/grpc-node/node-server/weavedb.config.js
+nano weavedb/grpc-node/docker-compose.yaml
 ```
 
-```javascript
-module.exports = {
-  contractTxId: "xxxxxxxx..."
-}
+```yaml
+    environment:
+      - CONTRACT_TX_ID=xxxxxx
 ```
 
 - Move to `weavedb` and run `yarn run-node`
