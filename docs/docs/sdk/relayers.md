@@ -44,13 +44,20 @@ await db.addRelayerJob("jobID", { schema, relayers })
 2. If `multisig_type` is set `number` (or `undefined`) and `multisig` is set `5`, 5 valid signatures must be presented.
 :::
 
-## Get Relayer Jobs
+
+## List Relayer Jobs
+
+```javascript
+await db.listRelayerJobs()
+```
+
+## Get Relayer Job
 
 ```javascript
 await db.getRelayerJob("jobID")
 ```
 
-## Remove Relayer Jobs
+## Remove Relayer Job
 
 ```javascript
 await db.removeRelayerJob("jobID")
