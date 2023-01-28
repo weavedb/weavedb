@@ -63,6 +63,8 @@ import {
   _removeOwner,
   _setCanEvolve,
   _setAlgorithms,
+  addRelayerJob,
+  removeRelayerJob,
 } from "../lib/weavedb.js"
 const per_page = 20
 const tabmap = {
@@ -95,10 +97,12 @@ export default inject(
     const [rules, setRules] = useState(null)
     const [indexes, setIndexes] = useState([])
     const [crons, setCrons] = useState({})
+    const [relayers, setRelayers] = useState([])
     const [addDoc, setAddDoc] = useState(false)
     const [addData, setAddData] = useState(false)
     const [addRules, setAddRules] = useState(false)
     const [addCron, setAddCron] = useState(false)
+    const [addRelayer, setAddRelayer] = useState(false)
     const [addIndex, setAddIndex] = useState(false)
     const [addInstance, setAddInstance] = useState(false)
     const [addOwner, setAddOwner] = useState(false)
@@ -116,6 +120,7 @@ export default inject(
     const [doc_path, setDocPath] = useState([])
     const [tab, setTab] = useState("DB")
     const [cron, setCron] = useState(null)
+    const [relayer, setRelayer] = useState(null)
     const [method, setMethod] = useState("get")
     const [query, setQuery] = useState("")
     const tabs = [
@@ -170,6 +175,15 @@ export default inject(
     ])
     const [secure, setSecure] = useState(true)
     const [canEvolve, setCanEvolve] = useState(true)
+
+    const [newJobName, setNewJobName] = useState("")
+    const [newMultisigType, setNewMultisigType] = useState("none")
+    const [newMultisig, setNewMultisig] = useState(2)
+    const [newJobSchema, setNewJobSchema] = useState("")
+    const [newRelayers, setNewRelayers] = useState([])
+    const [newRelayer, setNewRelayer] = useState("")
+    const [newSigner, setNewSigner] = useState("")
+    const [newSigners, setNewSigners] = useState([])
 
     const addDB = async _db => {
       const dbmap = indexBy(prop("contractTxId"), dbs)
@@ -263,6 +277,8 @@ export default inject(
           }
         } else if (tab === "Crons") {
           setCrons(await db.getCrons(true))
+        } else if (tab === "Relayers") {
+          setRelayers(await db.listRelayerJobs(true))
         }
       })()
     }, [contractTxId, tab, doc_path])
@@ -745,7 +761,7 @@ export default inject(
                 </Flex>
                 <Flex height="550px" maxW="1200px" w="100%">
                   <Flex h="550px" w="100%" bg="white">
-                    {includes(tab)(["DB", "Crons"]) ? null : (
+                    {includes(tab)(["DB", "Crons", "Relayers"]) ? null : (
                       <Box
                         flex={1}
                         sx={{ border: "1px solid #555" }}
@@ -1026,6 +1042,190 @@ export default inject(
                               <JSONPretty
                                 id="json-pretty"
                                 data={_cron.jobs}
+                              ></JSONPretty>
+                            )}
+                          </Box>
+                        </Flex>
+                      </>
+                    ) : tab === "Relayers" ? (
+                      <>
+                        <Flex
+                          flex={1}
+                          sx={{ border: "1px solid #555" }}
+                          direction="column"
+                        >
+                          <Flex py={2} px={3} color="white" bg="#333" h="35px">
+                            Relayer Jobs
+                            <Box flex={1} />
+                            <Box
+                              onClick={() => setAddRelayer(true)}
+                              sx={{
+                                cursor: "pointer",
+                                ":hover": { opacity: 0.75 },
+                              }}
+                            >
+                              <Box as="i" className="fas fa-plus" />
+                            </Box>
+                          </Flex>
+                          <Box height="500px" sx={{ overflowY: "auto" }}>
+                            {map(v => (
+                              <Flex
+                                onClick={async () => {
+                                  const job = await db.getRelayerJob(v)
+                                  if (!isNil(job)) setRelayer({ name: v, job })
+                                }}
+                                bg={
+                                  !isNil(relayer) && relayer.name === v
+                                    ? "#ddd"
+                                    : ""
+                                }
+                                py={2}
+                                px={3}
+                                sx={{
+                                  cursor: "pointer",
+                                  ":hover": { opacity: 0.75 },
+                                }}
+                              >
+                                <Box mr={3} flex={1}>
+                                  {v}
+                                </Box>
+                                <Box
+                                  color="#999"
+                                  sx={{
+                                    cursor: "pointer",
+                                    ":hover": {
+                                      opacity: 0.75,
+                                      color: "#6441AF",
+                                    },
+                                  }}
+                                  onClick={async e => {
+                                    e.stopPropagation()
+                                    if (
+                                      !confirm(
+                                        "Would you like to remove the relayer job?"
+                                      )
+                                    ) {
+                                      return
+                                    }
+                                    if (isNil($.loading)) {
+                                      set("remove_relayer", "loading")
+                                      try {
+                                        const res = JSON.parse(
+                                          await fn(removeRelayerJob)({
+                                            name: v,
+                                            contractTxId,
+                                          })
+                                        )
+                                        if (!res.success) {
+                                          alert("Something went wrong")
+                                        } else {
+                                          if (
+                                            !isNil(relayer) &&
+                                            relayer.name === v
+                                          ) {
+                                            setRelayer(null)
+                                          }
+                                          setRelayers(
+                                            await db.listRelayerJobs(true)
+                                          )
+                                        }
+                                      } catch (e) {
+                                        alert("Something went wrong")
+                                      }
+                                      set(null, "loading")
+                                    }
+                                  }}
+                                >
+                                  <Box as="i" className="fas fa-trash" />
+                                </Box>
+                              </Flex>
+                            ))(relayers || [])}
+                          </Box>
+                        </Flex>
+                        <Flex
+                          flex={1}
+                          sx={{ border: "1px solid #555" }}
+                          direction="column"
+                        >
+                          <Flex py={2} px={3} color="white" bg="#333" h="35px">
+                            Settings
+                            <Box flex={1} />
+                          </Flex>
+                          <Box height="500px" sx={{ overflowY: "auto" }}>
+                            {isNil(relayer) ? null : (
+                              <>
+                                <Flex align="flex-start" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#ddd"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    Relayers
+                                  </Box>
+                                  <Box flex={1}>
+                                    {map(v => <Box>{v}</Box>)(
+                                      relayer.job.relayers || []
+                                    )}
+                                  </Box>
+                                </Flex>
+                                <Flex align="center" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#ddd"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    Multisig Type
+                                  </Box>
+                                  <Box flex={1}>
+                                    {relayer.job.multisig_type}
+                                  </Box>
+                                </Flex>
+
+                                <Flex align="center" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#ddd"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    Multisig
+                                  </Box>
+                                  <Box flex={1}>{relayer.job.multisig}</Box>
+                                </Flex>
+                                <Flex align="flex-start" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#ddd"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    Signers
+                                  </Box>
+                                  <Box flex={1}>
+                                    {map(v => <Box>{v}</Box>)(
+                                      relayer.job.signers || []
+                                    )}
+                                  </Box>
+                                </Flex>
+                              </>
+                            )}
+                          </Box>
+                        </Flex>
+                        <Flex
+                          flex={1}
+                          sx={{ border: "1px solid #555" }}
+                          direction="column"
+                        >
+                          <Flex py={2} px={3} color="white" bg="#333" h="35px">
+                            Schema for Extra Data
+                          </Flex>
+                          <Box height="500px" sx={{ overflowY: "auto" }} p={3}>
+                            {isNil(relayer) ? null : (
+                              <JSONPretty
+                                id="json-pretty"
+                                data={relayer.job.schema}
                               ></JSONPretty>
                             )}
                           </Box>
@@ -2579,6 +2779,260 @@ export default inject(
                             setNewSpan("")
                             setAddCron(false)
                             setCrons(await db.getCrons(true))
+                            setRelayers(await db.listRelayerJobs(true))
+                          }
+                        } catch (e) {
+                          alert("Something went wrong")
+                        }
+                        set(null, "loading")
+                      }
+                    }}
+                  >
+                    {!isNil($.loading) ? (
+                      <Box as="i" className="fas fa-spin fa-circle-notch" />
+                    ) : (
+                      "Add"
+                    )}
+                  </Flex>
+                </Box>
+              </Flex>
+            ) : addRelayer !== false ? (
+              <Flex
+                w="100%"
+                h="100%"
+                position="fixed"
+                sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+                bg="rgba(0,0,0,0.5)"
+                onClick={() => setAddRelayer(false)}
+                justify="center"
+                align="center"
+              >
+                <Box
+                  bg="white"
+                  width="500px"
+                  p={3}
+                  sx={{ borderRadius: "5px", cursor: "default" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Flex>
+                    <Input
+                      value={newJobName}
+                      placeholder="Job Name"
+                      onChange={e => setNewJobName(e.target.value)}
+                      sx={{
+                        borderRadius: "3px",
+                      }}
+                    />
+                  </Flex>
+                  <Flex mt={3} mb={1} fontSize="10px">
+                    Relayers
+                  </Flex>
+                  {map(v => {
+                    return (
+                      <Flex mb={3} px={2} align="center" fontSize="12px">
+                        <Flex flex={1}>{v}</Flex>
+                        <Flex>
+                          <Box
+                            onClick={async () => {
+                              setNewRelayers(without(v, newRelayers))
+                            }}
+                            className="fas fa-trash"
+                            sx={{
+                              cursor: "pointer",
+                              ":hover": { opacity: 0.75 },
+                            }}
+                          />
+                        </Flex>
+                      </Flex>
+                    )
+                  })(newRelayers)}
+                  <Flex align="center">
+                    <Input
+                      flex={1}
+                      value={newRelayer}
+                      onChange={e => {
+                        setNewRelayer(e.target.value)
+                      }}
+                      sx={{ borderRadius: "3px 0 0 3px" }}
+                    />
+                    <Flex
+                      fontSize="12px"
+                      align="center"
+                      height="40px"
+                      bg="#333"
+                      color="white"
+                      justify="center"
+                      py={1}
+                      px={2}
+                      w="100px"
+                      onClick={async () => {
+                        if (!/^\s*.$/.test(newRelayer)) {
+                          setNewRelayers(
+                            o(uniq, append(newRelayer))(newRelayers)
+                          )
+                          setNewRelayer("")
+                        }
+                      }}
+                      sx={{
+                        borderRadius: "0 3px 3px 0",
+                        cursor: "pointer",
+                        ":hover": { opacity: 0.75 },
+                      }}
+                    >
+                      {!isNil($.loading) ? (
+                        <Box as="i" className="fas fa-spin fa-circle-notch" />
+                      ) : (
+                        "Add Relayer"
+                      )}
+                    </Flex>
+                  </Flex>
+                  <Flex mt={4}>
+                    <Select
+                      value={newMultisigType}
+                      onChange={e => setNewMultisigType(e.target.value)}
+                    >
+                      {map(v => <option value={v}>{v}</option>)([
+                        "none",
+                        "number",
+                        "percent",
+                      ])}
+                    </Select>
+                    <Input
+                      ml={2}
+                      value={newMultisig}
+                      placeholder="Multisig"
+                      onChange={e => {
+                        if (!Number.isNaN(e.target.value * 1)) {
+                          setNewMultisig(e.target.value)
+                        }
+                      }}
+                      sx={{
+                        borderRadius: "3px",
+                      }}
+                    />
+                  </Flex>
+                  <Flex mt={3} mb={1} fontSize="10px">
+                    Signers
+                  </Flex>
+                  {map(v => {
+                    return (
+                      <Flex mb={3} px={2} align="center" fontSize="12px">
+                        <Flex flex={1}>{v}</Flex>
+                        <Flex>
+                          <Box
+                            onClick={async () => {
+                              setNewSigners(without(v, newSigners))
+                            }}
+                            className="fas fa-trash"
+                            sx={{
+                              cursor: "pointer",
+                              ":hover": { opacity: 0.75 },
+                            }}
+                          />
+                        </Flex>
+                      </Flex>
+                    )
+                  })(newSigners)}
+                  <Flex align="center">
+                    <Input
+                      flex={1}
+                      value={newSigner}
+                      onChange={e => {
+                        setNewSigner(e.target.value)
+                      }}
+                      sx={{ borderRadius: "3px 0 0 3px" }}
+                    />
+                    <Flex
+                      fontSize="12px"
+                      align="center"
+                      height="40px"
+                      bg="#333"
+                      color="white"
+                      justify="center"
+                      py={1}
+                      px={2}
+                      w="100px"
+                      onClick={async () => {
+                        if (!/^\s*.$/.test(newSigner)) {
+                          setNewSigners(o(uniq, append(newSigner))(newSigners))
+                          setNewSigner("")
+                        }
+                      }}
+                      sx={{
+                        borderRadius: "0 3px 3px 0",
+                        cursor: "pointer",
+                        ":hover": { opacity: 0.75 },
+                      }}
+                    >
+                      {!isNil($.loading) ? (
+                        <Box as="i" className="fas fa-spin fa-circle-notch" />
+                      ) : (
+                        "Add Signer"
+                      )}
+                    </Flex>
+                  </Flex>
+                  <Textarea
+                    mt={3}
+                    value={newJobSchema}
+                    placeholder="Schema for Extra Data"
+                    onChange={e => setNewJobSchema(e.target.value)}
+                    sx={{
+                      borderRadius: "3px",
+                    }}
+                  />
+
+                  <Flex
+                    mt={4}
+                    sx={{
+                      borderRadius: "3px",
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                    p={2}
+                    justify="center"
+                    align="center"
+                    color="white"
+                    bg="#333"
+                    height="40px"
+                    onClick={async () => {
+                      if (isNil($.loading)) {
+                        set("add_relayer", "loading")
+                        try {
+                          if (/^\s.*$/.test(newJobName)) {
+                            alert("Enter job name")
+                            return
+                          }
+                          let _schema = null
+                          if (!/^\s.*$/.test(newJobSchema)) {
+                            try {
+                              _schema = JSON.parse(newJobSchema)
+                            } catch (e) {
+                              alert("schema is not a valid JSON format")
+                              return
+                            }
+                          }
+                          const res = JSON.parse(
+                            await fn(addRelayerJob)({
+                              relayers: newRelayers,
+                              signers: newSigners,
+                              name: newJobName,
+                              multisig: newMultisig,
+                              multisig_type: newMultisigType,
+                              schema: _schema,
+                              contractTxId,
+                            })
+                          )
+                          if (!res.success) {
+                            alert("Something went wrong")
+                          } else {
+                            setNewCron("")
+                            setNewStart("")
+                            setNewCronName("")
+                            setNewEnd("")
+                            setNewTimes("")
+                            setNewSpan("")
+                            setAddRelayer(false)
+                            setRelayers(await db.listRelayerJobs(true))
                           }
                         } catch (e) {
                           alert("Something went wrong")
