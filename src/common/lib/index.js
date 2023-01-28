@@ -25,7 +25,7 @@ const {
   equals,
 } = require("ramda")
 
-let comp = (val, x) => {
+const comp = (val, x) => {
   let res = 0
   for (let i of range(0, val.length)) {
     let a = val[i].val
@@ -45,13 +45,19 @@ let comp = (val, x) => {
   return res
 }
 
-let bsearch = function (arr, x, k, db, start = 0, end = arr.length - 1) {
+const bsearch = function (arr, x, k, db, start = 0, end = arr.length - 1) {
   if (start > end) return null
-  let mid = Math.floor((start + end) / 2)
-  let val = db[arr[mid]].__data[k]
+  const mid = Math.floor((start + end) / 2)
+  const val = isNil(k) ? arr[mid] : db[arr[mid]].__data[k]
   if (val === x) return mid
   if (val > x && mid === 0) return 0
-  if (mid !== 0 && val > x && db[arr[mid - 1]].__data[k] <= x) return mid
+  if (
+    mid !== 0 &&
+    val > x &&
+    (isNil(k) ? arr[mid - 1] : db[arr[mid - 1]].__data[k]) <= x
+  ) {
+    return mid
+  }
   if (val > x) {
     return bsearch(arr, x, k, db, start, mid - 1)
   } else {
@@ -60,22 +66,25 @@ let bsearch = function (arr, x, k, db, start = 0, end = arr.length - 1) {
 }
 
 const addSingleIndex = (_id, k, data, ind, db) => {
-  if (isNil(ind[k])) {
+  if (!isNil(k) && isNil(ind[k])) {
     ind[k] = { asc: { _: [], subs: {} } }
   }
-  let indexes = ind[k].asc._
-  const _ind = bsearch(indexes, data[k], k, db)
+  const _k = k || "__id__"
+  const _data = isNil(k) ? _id : data[k]
+  let indexes = ind[_k].asc._
+  const _ind = bsearch(indexes, _data, k, db)
   if (isNil(_ind)) indexes.push(_id)
-  else ind[k].asc._.splice(_ind, 0, _id)
+  else ind[_k].asc._.splice(_ind, 0, _id)
 }
 
 const removeSingleIndex = (_id, k, ind) => {
-  let indexes = ind[k].asc._
+  const _k = k || "__id__"
+  let indexes = ind[_k].asc._
   const _ind = indexOf(_id, indexes)
-  if (!isNil(_ind)) ind[k].asc._.splice(_ind, 1)
+  if (!isNil(_ind)) ind[_k].asc._.splice(_ind, 1)
 }
 
-let bsearch2 = function (arr, x, sort, db, start = 0, end = arr.length - 1) {
+const bsearch2 = function (arr, x, sort, db, start = 0, end = arr.length - 1) {
   if (start > end) return null
   let mid = Math.floor((start + end) / 2)
   const val = map(v => ({
@@ -114,6 +123,7 @@ const removeInd = (_id, index) => {
 
 const _addData = (ind, _id, path = [], db, data, top = false) => {
   for (let k in ind) {
+    if (k === "__id__") continue
     for (let k2 in ind[k]) {
       if (!isNil(ind[k][k2]._) && !top) {
         let sort = append([k, k2])(path)
@@ -139,7 +149,13 @@ export const getIndex = (state, path) => {
 }
 
 export const addData = (_id, data, ind, db) => {
+  if (isNil(ind["__id__"])) {
+    ind["__id__"] = { asc: { _: [_id], subs: {} } }
+  } else {
+    addSingleIndex(_id, null, data, ind, db)
+  }
   for (let k in data) {
+    if (k === "__id__") continue
     if (isNil(ind[k])) {
       ind[k] = { asc: { _: [_id], subs: {} } }
     } else {
@@ -160,6 +176,7 @@ const _updateData = (
   old_data
 ) => {
   for (let k in ind) {
+    if (k === "__id__") continue
     for (let k2 in ind[k]) {
       if (!isNil(ind[k][k2]._) && !top) {
         let sort = append([k, k2])(path)
@@ -198,6 +215,7 @@ export const updateData = (_id, data, old_data, ind, db) => {
   let d = []
   let u = []
   for (let v of _keys) {
+    if (v === "__id__") continue
     if (isNil(data[v])) {
       d.push(v)
       removeSingleIndex(_id, v, ind)
@@ -215,6 +233,7 @@ export const updateData = (_id, data, old_data, ind, db) => {
 
 const _removeData = (ind, _id, path = [], db, top = false) => {
   for (let k in ind) {
+    if (k === "__id__") continue
     for (let k2 in ind[k]) {
       if (!isNil(ind[k][k2]._) && !top) {
         let sort = append([k, k2])(path)
@@ -248,6 +267,9 @@ const _sort = (sort, ind, db) => {
 
 export const removeData = (_id, ind, db) => {
   if (isNil(db[_id])) return
+  if (!isNil(ind["__id__"])) {
+    removeSingleIndex(_id, null, ind)
+  }
   let data = db[_id]
   for (let k in db[_id].__data) {
     if (!isNil(ind[k])) removeSingleIndex(_id, k, ind)

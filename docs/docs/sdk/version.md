@@ -15,6 +15,16 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.17.0 (Jan 28, 2023)
+
+#### Source Transaction Id
+
+[y8h5i9EIHLWBCNtIH9bSdPfj8llXn0OFWbtSbn7Iaqohi](https://sonar.warp.cc/#/app/source/y8h5i9EIHLWBCNtIH9bSdPfj8llXn0OFWbtSbn7Iaqohi)
+
+#### Added Features
+
+- [auto-index doc ids](/docs/sdk/indexes#__id__)
+
 ### v0.16.0 (Jan 27, 2023)
 
 #### Source Transaction Id
