@@ -157,9 +157,9 @@
           },
           "missing": function() {
             var missing = [];
-            var keys5 = Array.isArray(arguments[0]) ? arguments[0] : arguments;
-            for (var i = 0; i < keys5.length; i++) {
-              var key = keys5[i];
+            var keys6 = Array.isArray(arguments[0]) ? arguments[0] : arguments;
+            for (var i = 0; i < keys6.length; i++) {
+              var key = keys6[i];
               var value = jsonLogic3.apply({ "var": key }, this);
               if (value === null || value === "") {
                 missing.push(key);
@@ -1073,9 +1073,9 @@
         }
         if (relative.protocol && relative.protocol !== result.protocol) {
           if (!slashedProtocol[relative.protocol]) {
-            var keys5 = Object.keys(relative);
-            for (var v = 0; v < keys5.length; v++) {
-              var k = keys5[v];
+            var keys6 = Object.keys(relative);
+            for (var v = 0; v < keys6.length; v++) {
+              var k = keys6[v];
               result[k] = relative[k];
             }
             result.href = result.format();
@@ -1870,8 +1870,8 @@
         if (!this.types.object(instance))
           return;
         var result = new ValidatorResult(instance, schema, options, ctx);
-        var keys5 = Object.keys(instance);
-        if (!(keys5.length >= schema.minProperties)) {
+        var keys6 = Object.keys(instance);
+        if (!(keys6.length >= schema.minProperties)) {
           result.addError({
             name: "minProperties",
             argument: schema.minProperties,
@@ -1884,8 +1884,8 @@
         if (!this.types.object(instance))
           return;
         var result = new ValidatorResult(instance, schema, options, ctx);
-        var keys5 = Object.keys(instance);
-        if (!(keys5.length <= schema.maxProperties)) {
+        var keys6 = Object.keys(instance);
+        if (!(keys6.length <= schema.maxProperties)) {
           result.addError({
             name: "maxProperties",
             argument: schema.maxProperties,
@@ -3317,9 +3317,9 @@
         }
         return false;
       };
-      var keys5 = typeof Object.keys === "function" && !hasArgsEnumBug2 ? /* @__PURE__ */ _curry12(function keys6(obj) {
+      var keys6 = typeof Object.keys === "function" && !hasArgsEnumBug2 ? /* @__PURE__ */ _curry12(function keys7(obj) {
         return Object(obj) !== obj ? [] : Object.keys(obj);
-      }) : /* @__PURE__ */ _curry12(function keys6(obj) {
+      }) : /* @__PURE__ */ _curry12(function keys7(obj) {
         if (Object(obj) !== obj) {
           return [];
         }
@@ -3343,7 +3343,7 @@
         }
         return ks;
       });
-      module.exports = keys5;
+      module.exports = keys6;
     }
   });
 
@@ -3356,7 +3356,7 @@
       var _reduce2 = require_reduce();
       var _xmap3 = require_xmap();
       var curryN3 = require_curryN2();
-      var keys5 = require_keys();
+      var keys6 = require_keys();
       var map4 = /* @__PURE__ */ _curry22(
         /* @__PURE__ */ _dispatchable2(["fantasy-land/map", "map"], _xmap3, function map5(fn, functor) {
           switch (Object.prototype.toString.call(functor)) {
@@ -3368,7 +3368,7 @@
               return _reduce2(function(acc, key) {
                 acc[key] = fn(functor[key]);
                 return acc;
-              }, {}, keys5(functor));
+              }, {}, keys6(functor));
             default:
               return _map2(fn, functor);
           }
@@ -3688,9 +3688,9 @@
   var require_values = __commonJS({
     "node_modules/ramda/src/values.js"(exports, module) {
       var _curry12 = require_curry1();
-      var keys5 = require_keys();
+      var keys6 = require_keys();
       var values4 = /* @__PURE__ */ _curry12(function values5(obj) {
-        var props3 = keys5(obj);
+        var props3 = keys6(obj);
         var len = props3.length;
         var vals = [];
         var idx = 0;
@@ -3714,10 +3714,10 @@
       var max3 = require_max();
       var pluck4 = require_pluck();
       var reduce2 = require_reduce2();
-      var keys5 = require_keys();
+      var keys6 = require_keys();
       var values4 = require_values();
       function mapValues2(fn, obj) {
-        return _isArray2(obj) ? obj.map(fn) : keys5(obj).reduce(function(acc, key) {
+        return _isArray2(obj) ? obj.map(fn) : keys6(obj).reduce(function(acc, key) {
           acc[key] = fn(obj[key]);
           return acc;
         }, {});
@@ -4476,7 +4476,7 @@
       var _functionName2 = require_functionName();
       var _has2 = require_has();
       var _objectIs2 = require_objectIs();
-      var keys5 = require_keys();
+      var keys6 = require_keys();
       var type3 = require_type();
       function _uniqContentEquals2(aIterator, bIterator, stackA, stackB) {
         var a = _arrayFromIterator2(aIterator);
@@ -4571,8 +4571,8 @@
           default:
             return false;
         }
-        var keysA = keys5(a);
-        if (keysA.length !== keys5(b).length) {
+        var keysA = keys6(a);
+        if (keysA.length !== keys6(b).length) {
           return false;
         }
         var extendedStackA = stackA.concat([a]);
@@ -4767,7 +4767,7 @@
       var _isObject2 = require_isObject();
       var _reduce2 = require_reduce();
       var _xfilter3 = require_xfilter();
-      var keys5 = require_keys();
+      var keys6 = require_keys();
       var filter3 = /* @__PURE__ */ _curry22(
         /* @__PURE__ */ _dispatchable2(["fantasy-land/filter", "filter"], _xfilter3, function(pred, filterable) {
           return _isObject2(filterable) ? _reduce2(function(acc, key) {
@@ -4775,7 +4775,7 @@
               acc[key] = filterable[key];
             }
             return acc;
-          }, {}, keys5(filterable)) : _filter2(pred, filterable);
+          }, {}, keys6(filterable)) : _filter2(pred, filterable);
         })
       );
       module.exports = filter3;
@@ -4802,17 +4802,17 @@
       var _map2 = require_map();
       var _quote2 = require_quote();
       var _toISOString4 = require_toISOString();
-      var keys5 = require_keys();
+      var keys6 = require_keys();
       var reject3 = require_reject();
       function _toString2(x, seen) {
         var recur = function recur2(y) {
           var xs = seen.concat([x]);
           return _includes2(y, xs) ? "<Circular>" : _toString2(y, xs);
         };
-        var mapPairs = function(obj, keys6) {
+        var mapPairs = function(obj, keys7) {
           return _map2(function(k) {
             return _quote2(k) + ": " + recur(obj[k]);
-          }, keys6.slice().sort());
+          }, keys7.slice().sort());
         };
         switch (Object.prototype.toString.call(x)) {
           case "[object Arguments]":
@@ -4820,7 +4820,7 @@
           case "[object Array]":
             return "[" + _map2(recur, x).concat(mapPairs(x, reject3(function(k) {
               return /^\d+$/.test(k);
-            }, keys5(x)))).join(", ") + "]";
+            }, keys6(x)))).join(", ") + "]";
           case "[object Boolean]":
             return typeof x === "object" ? "new Boolean(" + recur(x.valueOf()) + ")" : x.toString();
           case "[object Date]":
@@ -4840,7 +4840,7 @@
                 return repr;
               }
             }
-            return "{" + mapPairs(x, keys5(x)).join(", ") + "}";
+            return "{" + mapPairs(x, keys6(x)).join(", ") + "}";
         }
       }
       module.exports = _toString2;
@@ -6190,9 +6190,9 @@
   var require_forEachObjIndexed = __commonJS({
     "node_modules/ramda/src/forEachObjIndexed.js"(exports, module) {
       var _curry22 = require_curry2();
-      var keys5 = require_keys();
+      var keys6 = require_keys();
       var forEachObjIndexed3 = /* @__PURE__ */ _curry22(function forEachObjIndexed4(fn, obj) {
-        var keyList = keys5(obj);
+        var keyList = keys6(obj);
         var idx = 0;
         while (idx < keyList.length) {
           var key = keyList[idx];
@@ -6677,9 +6677,9 @@
     "node_modules/ramda/src/invert.js"(exports, module) {
       var _curry12 = require_curry1();
       var _has2 = require_has();
-      var keys5 = require_keys();
+      var keys6 = require_keys();
       var invert3 = /* @__PURE__ */ _curry12(function invert4(obj) {
-        var props3 = keys5(obj);
+        var props3 = keys6(obj);
         var len = props3.length;
         var idx = 0;
         var out = {};
@@ -6700,9 +6700,9 @@
   var require_invertObj = __commonJS({
     "node_modules/ramda/src/invertObj.js"(exports, module) {
       var _curry12 = require_curry1();
-      var keys5 = require_keys();
+      var keys6 = require_keys();
       var invertObj3 = /* @__PURE__ */ _curry12(function invertObj4(obj) {
-        var props3 = keys5(obj);
+        var props3 = keys6(obj);
         var len = props3.length;
         var idx = 0;
         var out = {};
@@ -7023,12 +7023,12 @@
     "node_modules/ramda/src/mapObjIndexed.js"(exports, module) {
       var _curry22 = require_curry2();
       var _reduce2 = require_reduce();
-      var keys5 = require_keys();
+      var keys6 = require_keys();
       var mapObjIndexed3 = /* @__PURE__ */ _curry22(function mapObjIndexed4(fn, obj) {
         return _reduce2(function(acc, key) {
           acc[key] = fn(obj[key], key, obj);
           return acc;
-        }, {}, keys5(obj));
+        }, {}, keys6(obj));
       });
       module.exports = mapObjIndexed3;
     }
@@ -8895,12 +8895,12 @@
   var require_zipObj = __commonJS({
     "node_modules/ramda/src/zipObj.js"(exports, module) {
       var _curry22 = require_curry2();
-      var zipObj3 = /* @__PURE__ */ _curry22(function zipObj4(keys5, values4) {
+      var zipObj3 = /* @__PURE__ */ _curry22(function zipObj4(keys6, values4) {
         var idx = 0;
-        var len = Math.min(keys5.length, values4.length);
+        var len = Math.min(keys6.length, values4.length);
         var out = {};
         while (idx < len) {
-          out[keys5[idx]] = values4[idx];
+          out[keys6[idx]] = values4[idx];
           idx += 1;
         }
         return out;
@@ -10984,10 +10984,10 @@
       var xs = seen.concat([x]);
       return _includes(y, xs) ? "<Circular>" : _toString(y, xs);
     };
-    var mapPairs = function(obj, keys5) {
+    var mapPairs = function(obj, keys6) {
       return _map(function(k) {
         return _quote(k) + ": " + recur(obj[k]);
-      }, keys5.slice().sort());
+      }, keys6.slice().sort());
     };
     switch (Object.prototype.toString.call(x)) {
       case "[object Arguments]":
@@ -13620,12 +13620,12 @@
   var zip_default = zip;
 
   // node_modules/ramda/es/zipObj.js
-  var zipObj = /* @__PURE__ */ _curry2(function zipObj2(keys5, values4) {
+  var zipObj = /* @__PURE__ */ _curry2(function zipObj2(keys6, values4) {
     var idx = 0;
-    var len = Math.min(keys5.length, values4.length);
+    var len = Math.min(keys6.length, values4.length);
     var out = {};
     while (idx < len) {
-      out[keys5[idx]] = values4[idx];
+      out[keys6[idx]] = values4[idx];
       idx += 1;
     }
     return out;
@@ -14866,6 +14866,14 @@
     };
   };
 
+  // src/common/actions/read/listRelayerJobs.js
+  var { keys: keys5 } = require_src();
+  var listRelayerJobs = async (state, action) => {
+    return {
+      result: keys5(state.relayers || {})
+    };
+  };
+
   // src/common/actions/read/getEvolve.js
   var getEvolve = async (state, action) => {
     return {
@@ -15276,14 +15284,14 @@
       signer
     );
     for (let k in new_data) {
-      const keys5 = k.split(" ");
-      const permission = keys5[0];
-      if (keys5.length !== 2 && permission !== "let")
+      const keys6 = k.split(" ");
+      const permission = keys6[0];
+      if (keys6.length !== 2 && permission !== "let")
         err();
       if (!includes_default(permission)(["allow", "deny", "let"]))
         err();
-      if (keys5.length === 2) {
-        const ops = keys5[1].split(",");
+      if (keys6.length === 2) {
+        const ops = keys6[1].split(",");
         if (difference_default(ops, ["write", "create", "update", "delete"]).length > 0) {
           err();
         }
@@ -15750,6 +15758,8 @@
         return await getLinkedContract(state, action);
       case "setAlgorithms":
         return await setAlgorithms(state, action);
+      case "listRelayerJobs":
+        return await listRelayerJobs(state, action);
       case "getRelayerJob":
         return await getRelayerJob(state, action);
       case "addRelayerJob":

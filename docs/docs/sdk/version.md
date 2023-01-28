@@ -19,11 +19,12 @@ await db.getVersion()
 
 #### Source Transaction Id
 
-[y8h5i9EIHLWBCNtIH9bSdPfj8llXn0OFWbtSbn7Iaqohi](https://sonar.warp.cc/#/app/source/y8h5i9EIHLWBCNtIH9bSdPfj8llXn0OFWbtSbn7Iaqohi)
+[WEFEoY33ntimvQzUtC7bS3A1bsGRrtXST_z9E8yx9yw](https://sonar.warp.cc/#/app/source/WEFEoY33ntimvQzUtC7bS3A1bsGRrtXST_z9E8yx9yw)
 
 #### Added Features
 
 - [auto-index doc ids](/docs/sdk/indexes#__id__)
+- [listRelayerJobs()](/docs/sdk/relayers#list-relayer-jobs)
 
 ### v0.16.0 (Jan 27, 2023)
 
