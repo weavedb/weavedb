@@ -10,16 +10,8 @@ export const add = async (
   contractErr = true
 ) => {
   signer ||= await validate(state, action, "add")
-  let {
-    _data,
-    data,
-    query,
-    new_data,
-    path,
-    schema,
-    col,
-    next_data,
-  } = await parse(state, action, "add", signer, salt, contractErr)
+  let { _data, data, query, new_data, path, schema, col, next_data } =
+    await parse(state, action, "add", signer, salt, contractErr)
   if (!isNil(_data.__data)) err("doc already exists")
   validateSchema(schema, next_data, contractErr)
   let ind = getIndex(state, init(path))

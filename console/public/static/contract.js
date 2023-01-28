@@ -14092,14 +14092,15 @@
   var bsearch = function(arr, x, k, db, start = 0, end = arr.length - 1) {
     if (start > end)
       return null;
-    let mid = Math.floor((start + end) / 2);
-    let val = db[arr[mid]].__data[k];
+    const mid = Math.floor((start + end) / 2);
+    const val = isNil3(k) ? arr[mid] : db[arr[mid]].__data[k];
     if (val === x)
       return mid;
     if (val > x && mid === 0)
       return 0;
-    if (mid !== 0 && val > x && db[arr[mid - 1]].__data[k] <= x)
+    if (mid !== 0 && val > x && (isNil3(k) ? arr[mid - 1] : db[arr[mid - 1]].__data[k]) <= x) {
       return mid;
+    }
     if (val > x) {
       return bsearch(arr, x, k, db, start, mid - 1);
     } else {
@@ -14107,21 +14108,24 @@
     }
   };
   var addSingleIndex = (_id, k, data, ind, db) => {
-    if (isNil3(ind[k])) {
+    if (!isNil3(k) && isNil3(ind[k])) {
       ind[k] = { asc: { _: [], subs: {} } };
     }
-    let indexes = ind[k].asc._;
-    const _ind = bsearch(indexes, data[k], k, db);
+    const _k = k || "__id__";
+    const _data = isNil3(k) ? _id : data[k];
+    let indexes = ind[_k].asc._;
+    const _ind = bsearch(indexes, _data, k, db);
     if (isNil3(_ind))
       indexes.push(_id);
     else
-      ind[k].asc._.splice(_ind, 0, _id);
+      ind[_k].asc._.splice(_ind, 0, _id);
   };
   var removeSingleIndex = (_id, k, ind) => {
-    let indexes = ind[k].asc._;
+    const _k = k || "__id__";
+    let indexes = ind[_k].asc._;
     const _ind = indexOf3(_id, indexes);
     if (!isNil3(_ind))
-      ind[k].asc._.splice(_ind, 1);
+      ind[_k].asc._.splice(_ind, 1);
   };
   var bsearch2 = function(arr, x, sort3, db, start = 0, end = arr.length - 1) {
     if (start > end)
@@ -14166,6 +14170,8 @@
   };
   var _addData = (ind, _id, path3 = [], db, data, top = false) => {
     for (let k in ind) {
+      if (k === "__id__")
+        continue;
       for (let k2 in ind[k]) {
         if (!isNil3(ind[k][k2]._) && !top) {
           let sort3 = append3([k, k2])(path3);
@@ -14190,7 +14196,14 @@
     return state.indexes[path3.join(".")];
   };
   var addData = (_id, data, ind, db) => {
+    if (isNil3(ind["__id__"])) {
+      ind["__id__"] = { asc: { _: [_id], subs: {} } };
+    } else {
+      addSingleIndex(_id, null, data, ind, db);
+    }
     for (let k in data) {
+      if (k === "__id__")
+        continue;
       if (isNil3(ind[k])) {
         ind[k] = { asc: { _: [_id], subs: {} } };
       } else {
@@ -14201,6 +14214,8 @@
   };
   var _updateData = (ind, _id, path3 = [], db, top = false, update4, new_data, old_data) => {
     for (let k in ind) {
+      if (k === "__id__")
+        continue;
       for (let k2 in ind[k]) {
         if (!isNil3(ind[k][k2]._) && !top) {
           let sort3 = append3([k, k2])(path3);
@@ -14241,6 +14256,8 @@
     let d = [];
     let u = [];
     for (let v of _keys) {
+      if (v === "__id__")
+        continue;
       if (isNil3(data[v])) {
         d.push(v);
         removeSingleIndex(_id, v, ind);
@@ -14257,6 +14274,8 @@
   };
   var _removeData = (ind, _id, path3 = [], db, top = false) => {
     for (let k in ind) {
+      if (k === "__id__")
+        continue;
       for (let k2 in ind[k]) {
         if (!isNil3(ind[k][k2]._) && !top) {
           let sort3 = append3([k, k2])(path3);
@@ -14291,6 +14310,9 @@
   var removeData = (_id, ind, db) => {
     if (isNil3(db[_id]))
       return;
+    if (!isNil3(ind["__id__"])) {
+      removeSingleIndex(_id, null, ind);
+    }
     let data = db[_id];
     for (let k in db[_id].__data) {
       if (!isNil3(ind[k]))
@@ -14462,7 +14484,7 @@
       if (_sort2.length === 1 && _sort2[0][1] === "desc")
         index = reverse_default(index);
     } else {
-      index = keys_default(getCol(data, path3).__docs);
+      index = !isNil_default(ind.__id__) ? ind.__id__.asc._ : keys_default(getCol(data, path3).__docs);
     }
     return index;
   };
@@ -14575,7 +14597,7 @@
     } else {
       let index = getColIndex(state, data, path3, _sort2);
       if (isNil_default(index))
-        err();
+        err("index doesn't exist");
       const { doc: _data } = path3.length === 1 ? { doc: data } : getDoc(data, slice_default(0, -1, path3));
       const docs = (path3.length === 1 ? _data : _data.subs)[last_default(path3)]?.__docs || {};
       let _docs = [];
@@ -14587,8 +14609,13 @@
         if (is_default(Object)(_start[1]) && hasPath_default([1, "id"])(_start)) {
           start = bsearch3(
             index,
-            ["startAt", map_default((v) => docs[_start[1].id].__data[v[0]])(_sort2)],
-            _sort2,
+            [
+              "startAt",
+              map_default(
+                (v) => v[0] === "__id__" ? _start[1].id : docs[_start[1].id].__data[v[0]]
+              )(_sort2 || [["__id__"]])
+            ],
+            _sort2 || [["__id__"]],
             docs
           );
           for (let i = start; i < index.length; i++) {
@@ -14603,7 +14630,7 @@
             index.splice(0, start);
           }
         } else {
-          start = bsearch3(index, _start, _sort2, docs);
+          start = bsearch3(index, _start, _sort2 || [["__id__"]], docs);
           index.splice(0, start);
         }
       }
@@ -14623,8 +14650,13 @@
         if (is_default(Object)(_end[1]) && hasPath_default([1, "id"])(_end)) {
           end = bsearch3(
             index,
-            ["startAt", map_default((v) => docs[_end[1].id].__data[v[0]])(_sort2)],
-            _sort2,
+            [
+              "startAt",
+              map_default(
+                (v) => v[0] === "__id__" ? _end[1].id : docs[_end[1].id].__data[v[0]]
+              )(_sort2 || [["__id__"]])
+            ],
+            _sort2 || [["__id__"]],
             docs
           );
           for (let i = end; i < index.length; i++) {
@@ -14639,7 +14671,7 @@
             index.splice(end + 1, index.length - end);
           }
         } else {
-          end = bsearch3(index, _end, _sort2, docs);
+          end = bsearch3(index, _end, _sort2 || [["__id__"]], docs);
           index.splice(end + 1, index.length - end);
         }
       }
@@ -15003,16 +15035,7 @@
   // src/common/actions/write/add.js
   var add3 = async (state, action, signer, salt = 0, contractErr = true) => {
     signer ||= await validate(state, action, "add");
-    let {
-      _data,
-      data,
-      query,
-      new_data,
-      path: path3,
-      schema,
-      col,
-      next_data
-    } = await parse(state, action, "add", signer, salt, contractErr);
+    let { _data, data, query, new_data, path: path3, schema, col, next_data } = await parse(state, action, "add", signer, salt, contractErr);
     if (!isNil_default(_data.__data))
       err("doc already exists");
     validateSchema(schema, next_data, contractErr);
@@ -15283,6 +15306,9 @@
       signer
     );
     let ind = getIndex(state, path3);
+    if (o_default(includes_default("__id__"), flatten_default)(new_data)) {
+      err("index cannot contain __id__");
+    }
     addIndex3(new_data, ind, col.__docs);
     return { state };
   };
