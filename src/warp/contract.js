@@ -12,6 +12,7 @@ import { getLinkedContract } from "../common/actions/read/getLinkedContract"
 import { getOwner } from "../common/actions/read/getOwner"
 import { getAddressLink } from "../common/actions/read/getAddressLink"
 import { getRelayerJob } from "../common/actions/read/getRelayerJob"
+import { listRelayerJobs } from "../common/actions/read/listRelayerJobs"
 import { getEvolve } from "../common/actions/read/getEvolve"
 import { version } from "../common/actions/read/version"
 import { listCollections } from "../common/actions/read/listCollections"
@@ -86,6 +87,8 @@ export async function handle(state, action) {
       return await getLinkedContract(state, action)
     case "setAlgorithms":
       return await setAlgorithms(state, action)
+    case "listRelayerJobs":
+      return await listRelayerJobs(state, action)
     case "getRelayerJob":
       return await getRelayerJob(state, action)
     case "addRelayerJob":

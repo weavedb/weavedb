@@ -32,6 +32,7 @@ const reads = [
   "getEvolve",
   "getVersion",
   "getRelayerJob",
+  "listRelayerJobs",
   "listCollections",
   "getInfo",
 ]

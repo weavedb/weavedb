@@ -118,7 +118,15 @@ export default inject(
     const [cron, setCron] = useState(null)
     const [method, setMethod] = useState("get")
     const [query, setQuery] = useState("")
-    const tabs = ["DB", "Data", "Schemas", "Rules", "Indexes", "Crons"]
+    const tabs = [
+      "DB",
+      "Data",
+      "Schemas",
+      "Rules",
+      "Indexes",
+      "Crons",
+      "Relayers",
+    ]
     const [port, setPort] = useState(null)
     const [network, setNetwork] = useState("Mainnet")
     const [newNetwork, setNewNetwork] = useState("Mainnet")

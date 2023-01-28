@@ -633,6 +633,7 @@ describe("WeaveDB", function () {
       ar: arweave_wallet,
     })
     expect(await db.getRelayerJob("test-job")).to.eql(job)
+    expect(await db.listRelayerJobs()).to.eql(["test-job"])
     const rules = {
       let: {
         "resource.newData.height": { var: "request.auth.extra.height" },
