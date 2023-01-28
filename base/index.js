@@ -47,6 +47,10 @@ class Base {
     return this.request("getRelayerJob", ...query)
   }
 
+  async listRelayerJobs(...query) {
+    return this.request("listRelayerJobs", ...query)
+  }
+
   async getLinkedContract(...query) {
     return this.request("getLinkedContract", ...query)
   }
