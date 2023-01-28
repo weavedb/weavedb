@@ -1,7 +1,7 @@
 const { Ed25519KeyIdentity } = require("@dfinity/identity")
 const { providers, Wallet, utils } = require("ethers")
 const { expect } = require("chai")
-const { isNil, range, pick } = require("ramda")
+const { isNil, range, pick, pluck } = require("ramda")
 const { init, stop, initBeforeEach, addFunds } = require("./util")
 const buildEddsa = require("circomlibjs").buildEddsa
 const Account = require("intmax").Account
@@ -168,7 +168,7 @@ describe("WeaveDB", function () {
     await db.set(Alice, "ppl", "Alice")
     await db.set(John, "ppl", "John")
     await db.set(Beth, "ppl", "Beth")
-    expect(await db.get("ppl")).to.eql([Bob, Alice, John, Beth])
+    expect(await db.get("ppl")).to.eql([Alice, Beth, Bob, John])
 
     // limit
     expect((await db.get("ppl", 1)).length).to.eql(1)
@@ -183,6 +183,7 @@ describe("WeaveDB", function () {
       Beth,
       Alice,
     ])
+
     // sort multiple fields
     await db.addIndex([["age"], ["weight", "desc"]], "ppl", {
       ar: arweave_wallet,
@@ -223,9 +224,9 @@ describe("WeaveDB", function () {
 
     // where in
     expect(await db.get("ppl", ["age", "in", [20, 30]])).to.eql([
-      Bob,
       Alice,
       Beth,
+      Bob,
     ])
 
     // where not-in
@@ -235,14 +236,14 @@ describe("WeaveDB", function () {
 
     // where array-contains
     expect(await db.get("ppl", ["letters", "array-contains", "b"])).to.eql([
-      Bob,
       Beth,
+      Bob,
     ])
 
     // where array-contains-any
     expect(
       await db.get("ppl", ["letters", "array-contains-any", ["j", "t"]])
-    ).to.eql([John, Beth])
+    ).to.eql([Beth, John])
 
     // skip startAt
     expect(await db.get("ppl", ["age"], ["startAt", 30])).to.eql([
@@ -394,7 +395,9 @@ describe("WeaveDB", function () {
     expect(
       await db.get("ppl", ["age"], ["name", "in", ["Alice", "John"]])
     ).to.eql([data4, data2])
+
     expect(await db.getIndexes("ppl")).to.eql([
+      [["__id__", "asc"]],
       [["name", "asc"]],
       [["age", "asc"]],
       [
@@ -810,5 +813,27 @@ describe("WeaveDB", function () {
     })
     await db.set(data2, "ppl", "Bob", "foods", "apple")
     expect(await db.get("ppl", "Bob", "foods", "apple")).to.eql(data2)
+  })
+
+  it("should sort without indexes", async () => {
+    const data = { name: "Bob", age: 20 }
+    const data2 = { name: "Alice", age: 25 }
+    const data3 = { name: "John", age: 30 }
+    const data4 = { name: "Beth", age: 35 }
+    await db.set(data, "ppl", "Bob")
+    await db.set(data2, "ppl", "Alice")
+    await db.set(data3, "ppl", "John")
+    await db.set(data4, "ppl", "Beth")
+    const ppl = await db.cget("ppl", 2)
+    expect(pluck("data")(ppl)).to.eql([data2, data4])
+    const ppl2 = await db.cget("ppl", ["startAfter", ppl[1]], 2)
+    expect(pluck("data")(ppl2)).to.eql([data, data3])
+
+    expect(await db.get("ppl", ["__id__", "desc"])).to.eql([
+      data3,
+      data,
+      data4,
+      data2,
+    ])
   })
 })
