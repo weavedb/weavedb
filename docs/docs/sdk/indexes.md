@@ -3,7 +3,7 @@ sidebar_position: 6
 ---
 # Indexes
 
-Single field indexes are automatically generated, but multi field compound indexes need to be added by the DB admin before collections can be accessed with complex queries.
+Single-field indexes are automatically generated, but multi-field compound indexes need to be added by the DB admin before collections can be accessed with complex queries.
 
 add an index
 
@@ -23,3 +23,12 @@ remove an index
 await db.removeIndex([ [ "age" ], [ "height", "desc" ] ], "people")
 ```
 
+## \__id__
+
+`__id__` is reserved to auto-index doc ids. `__id__` field will not be indexed, and `__id__` cannot be used in multi-field indexes.
+
+You can, however, use `__id__` to get a collection in descending order sorted by doc id.
+
+```js
+await db.get("people", ["__id__", "desc"], 5)
+```
