@@ -39,6 +39,8 @@ import {
   append,
   indexBy,
   prop,
+  o,
+  sortBy,
   addIndex as _addIndex,
 } from "ramda"
 import lf from "localforage"
@@ -62,7 +64,7 @@ import {
   _setCanEvolve,
   _setAlgorithms,
 } from "../lib/weavedb.js"
-
+const per_page = 20
 const tabmap = {
   DB: { name: "DB Instances" },
   Data: { name: "Data Collections" },
@@ -86,6 +88,7 @@ export default inject(
     "loading_contract",
   ],
   ({ set, init, router, conf, fn, $ }) => {
+    const [loadMore, setLoadMore] = useState(null)
     const [addCollection, setAddCollection] = useState(false)
     const [addSchemas, setAddSchemas] = useState(false)
     const [schema, setSchema] = useState(null)
@@ -517,6 +520,27 @@ export default inject(
     return (
       <ChakraProvider>
         <style global jsx>{`
+          /* ===== Scrollbar CSS ===== */
+          /* Firefox */
+          * {
+            scrollbar-width: auto;
+            scrollbar-color: #666 #ffffff;
+          }
+
+          /* Chrome, Edge, and Safari */
+          *::-webkit-scrollbar {
+            width: 10px;
+          }
+
+          *::-webkit-scrollbar-track {
+            background: #ffffff;
+          }
+
+          *::-webkit-scrollbar-thumb {
+            background-color: #666;
+            border-radius: 10px;
+            border: 3px solid #ffffff;
+          }
           html,
           #__next,
           body {
@@ -680,13 +704,16 @@ export default inject(
                               ),
                               true
                             )
-                            setDocuments(
-                              await db.cget(
-                                ...(dpath.length % 2 === 0
-                                  ? dpath.slice(0, -1)
-                                  : dpath),
-                                true
-                              )
+                            const _docs = await db.cget(
+                              ...(dpath.length % 2 === 0
+                                ? dpath.slice(0, -1)
+                                : dpath),
+                              per_page,
+                              true
+                            )
+                            setDocuments(_docs)
+                            setLoadMore(
+                              _docs.length === per_page ? last(_docs) : null
                             )
                             if (dpath.length % 2 === 0) {
                               setDocdata(await db.cget(...dpath, true))
@@ -737,9 +764,12 @@ export default inject(
                               setDocPath([...base_path, v])
                               setDocdata(null)
                               setSubCollections([])
-                              setDocuments(
-                                await db.cget(...[...base_path, v, true])
+                              let _docs = await db.cget(
+                                ...[...base_path, v, per_page, true]
                               )
+                              setDocuments(_docs)
+                              if (_docs.length === per_page)
+                                setLoadMore(last(_docs))
                             }}
                             bg={col === v ? "#ddd" : ""}
                             py={2}
@@ -1599,6 +1629,51 @@ export default inject(
                                 </Box>
                               </Flex>
                             ))(pluck("id", documents))}
+                            {isNil(loadMore) ? null : (
+                              <Flex align="center" justify="center">
+                                <Flex
+                                  px={6}
+                                  m={3}
+                                  bg="#999"
+                                  color="white"
+                                  sx={{
+                                    borderRadius: "5px",
+                                    cursor: "pointer",
+                                    ":hover": { opacity: 0.75 },
+                                  }}
+                                  onClick={async () => {
+                                    let _docs = await db.cget(
+                                      ...[
+                                        ...base_path,
+                                        col,
+                                        ["startAfter", loadMore],
+                                        per_page,
+                                        true,
+                                      ]
+                                    )
+                                    if (_docs.length > 0) {
+                                      setDocuments(
+                                        compose(
+                                          map(prop("v")),
+                                          sortBy(prop("k")),
+                                          values,
+                                          mapObjIndexed((v, k) => ({ v, k })),
+                                          indexBy(prop("id")),
+                                          concat(documents)
+                                        )(_docs)
+                                      )
+                                    }
+                                    setLoadMore(
+                                      _docs.length === per_page
+                                        ? last(_docs)
+                                        : null
+                                    )
+                                  }}
+                                >
+                                  Load More
+                                </Flex>
+                              </Flex>
+                            )}
                           </Box>
                         </Flex>
                         <Box
@@ -1638,8 +1713,16 @@ export default inject(
                                     setDocdata(null)
                                     setSubCollections([])
                                     setCollections(subCollections)
-                                    setDocuments(
-                                      await db.cget(..._doc_path, true)
+                                    const _docs = await db.cget(
+                                      ..._doc_path,
+                                      per_page,
+                                      true
+                                    )
+                                    setDocuments(_docs)
+                                    setLoadMore(
+                                      _docs.length === per_page
+                                        ? last(_docs)
+                                        : null
                                     )
                                   }}
                                 >
@@ -2020,8 +2103,14 @@ export default inject(
                             setNewData(`{}`)
                             setAddDoc(false)
                           }
+                          const _doc = await db.cget(
+                            ...[...base_path, col, res.docID, true]
+                          )
                           setDocuments(
-                            await db.cget(...[...base_path, col, true])
+                            o(
+                              sortBy(prop("id")),
+                              append({ id: res.docID, data: newDoc })
+                            )(documents)
                           )
                         } catch (e) {}
                         set(null, "loading")
