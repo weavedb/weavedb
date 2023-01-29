@@ -7505,10 +7505,10 @@ warp-contracts@1.2.36:
     unzipit "^1.4.0"
     vm2 "3.9.11"
 
-weavedb-base@^0.13.1:
-  version "0.13.1"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.13.1.tgz#f15627f6c15775f25baf66c1894917aac41ebfe8"
-  integrity sha512-i2yQOs3Yoc7gvJtwcHJKKlpP4WKRCU5Bcw1KE20KU7VF9PYDCscAetlZnDrk1MREJnzHNi6jF11AGLI12XfGMw==
+weavedb-base@^0.18.2:
+  version "0.18.2"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.18.2.tgz#f4f1bceb6cfddfeb07d18844c69e406a234c2843"
+  integrity sha512-cSKHmFzF/+HcXWpRRvk4qfBLC68EZ+KyUZloU2eowJi4qhk6wx2e1gOLus0aTPEKY6KMMg6iKeuc6vAfDC8Ukw==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"
@@ -7516,22 +7516,22 @@ weavedb-base@^0.13.1:
     ethereumjs-util "^7.1.5"
     ramda "^0.28.0"
 
-weavedb-client@^0.13.5:
-  version "0.13.5"
-  resolved "https://registry.yarnpkg.com/weavedb-client/-/weavedb-client-0.13.5.tgz#7220a28ffb171cbbbccb9124b123b961ef2bb8db"
-  integrity sha512-iDtPBk0pagbAix9jm1wuEmHRO07dUd1FdpbMsF2AEu//igKS8zfepNiYdKHIkTgET6MW+ksjuY4lvyNJp0MYmQ==
+weavedb-client@^0.18.3:
+  version "0.18.3"
+  resolved "https://registry.yarnpkg.com/weavedb-client/-/weavedb-client-0.18.3.tgz#d213dd507df21a2dda0cee88415fed5f6783d45f"
+  integrity sha512-twxxuCBcnnc5+wVTd9IwNo9yc2eVAmE3g450sW01c6TTQO0sItv03WZ1aljBiHVwKcfq6sE9FuO+/WHo0eut1g==
   dependencies:
     "@metamask/legacy-web3" "^2.0.0"
     arweave "^1.11.8"
     google-protobuf "^3.21.0"
     grpc-web "^1.3.1"
     ramda "^0.28.0"
-    weavedb-base "^0.13.1"
+    weavedb-base "^0.18.2"
 
-weavedb-sdk@^0.13.2:
-  version "0.13.2"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.13.2.tgz#9b847d6c51614a7e036f18ef6c70fa429e7b5385"
-  integrity sha512-MpjPvuv2PkNnaiuxPUUe/YpNlIN2ren0exESaSNb3KP8+5PkPgnlTZWs46YqVWxfSh6FKjhbbepdGaKrNW/Dxg==
+weavedb-sdk@^0.18.2:
+  version "0.18.2"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.18.2.tgz#9743bb0127fdb28367408fae97dc9fe0ea870161"
+  integrity sha512-XC4329frKvqOe0z6dFxJ8pBguoeRs/qY6srZ47UIuyFVHhnIhL0cLF0dwQ+owbetvrTk0np+8+FviQBQejCjRw==
   dependencies:
     "@metamask/legacy-web3" "^2.0.0"
     arweave "^1.11.4"
@@ -7541,7 +7541,7 @@ weavedb-sdk@^0.13.2:
     ramda "^0.28.0"
     warp-contracts "1.2.36"
     warp-contracts-old "npm:warp-contracts@1.2.26"
-    weavedb-base "^0.13.1"
+    weavedb-base "^0.18.2"
 
 webcrypto-core@^1.7.4:
   version "1.7.5"

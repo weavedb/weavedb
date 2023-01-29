@@ -5,7 +5,7 @@ let {
   dbPath = null,
   secure = false,
 } = require("yargs")(process.argv.slice(2)).argv
-const Constants = require("../src/intmax/lib/circomlibjs/poseidon_constants_opt.js")
+const Constants = require("../contracts/intmax/lib/circomlibjs/poseidon_constants_opt.js")
 const readline = require("readline")
 const { stdin: input, stdout: output } = require("process")
 const rl = readline.createInterface({ input, output })

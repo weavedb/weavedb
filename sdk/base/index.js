@@ -19,56 +19,115 @@ const EIP712Domain = [
 ]
 
 class Base {
+  constructor() {
+    this.reads = [
+      "get",
+      "cget",
+      "getIndexes",
+      "getCrons",
+      "getSchema",
+      "getRules",
+      "getIds",
+      "getOwner",
+      "getAddressLink",
+      "getAlgorithms",
+      "getLinkedContract",
+      "getEvolve",
+      "getVersion",
+      "getRelayerJob",
+      "listRelayerJobs",
+      "listCollections",
+      "getInfo",
+    ]
+  }
+  signer() {
+    return { __op: "signer" }
+  }
+
+  ts() {
+    return { __op: "ts" }
+  }
+
+  del() {
+    return { __op: "del" }
+  }
+
+  inc(n) {
+    return { __op: "inc", n }
+  }
+
+  union(...args) {
+    return { __op: "arrayUnion", arr: args }
+  }
+
+  remove(...args) {
+    return { __op: "arrayRemove", arr: args }
+  }
+
   setEthWallet(wallet) {
     this.wallet = wallet
   }
 
-  async get(...query) {
-    return this.request("get", ...query)
+  async getVersion(nocache) {
+    return await this.read({ function: "version" }, nocache)
   }
 
-  async cget(...query) {
-    return this.request("cget", ...query)
+  async getAddressLink(address, nocache) {
+    return this.read(
+      { function: "getAddressLink", query: { address } },
+      nocache
+    )
   }
 
-  async getIndexes(...query) {
-    return this.request("getIndexes", ...query)
+  async getNonce(address, nocache) {
+    return (
+      (await this.read(
+        {
+          function: "nonce",
+          address,
+        },
+        nocache
+      )) + 1
+    )
   }
 
-  async getCrons(...query) {
-    return this.request("getCrons", ...query)
+  async getIds(tx, nocache) {
+    return this.read(
+      {
+        function: "ids",
+        tx,
+      },
+      nocache
+    )
   }
 
-  async getAlgorithms(...query) {
-    return this.request("getAlgorithms", ...query)
+  async addOwner(address, opt) {
+    return this._write2("addOwner", { address }, opt)
   }
 
-  async getRelayerJob(...query) {
-    return this.request("getRelayerJob", ...query)
+  async removeOwner(address, opt) {
+    return this._write2("removeOwner", { address }, opt)
   }
 
-  async listRelayerJobs(...query) {
-    return this.request("listRelayerJobs", ...query)
+  async evolve(value, opt) {
+    return this._write2("evolve", { value }, { ...opt, extra: { value } })
   }
 
-  async getLinkedContract(...query) {
-    return this.request("getLinkedContract", ...query)
+  async setCanEvolve(value, opt) {
+    return this._write2("setCanEvolve", { value }, opt)
   }
 
-  async getSchema(...query) {
-    return this.request("getSchema", ...query)
+  async mineBlock() {
+    await this.arweave.api.get("mine")
   }
 
-  async getRules(...query) {
-    return this.request("getRules", ...query)
-  }
-
-  async getInfo() {
-    return this.request("getInfo")
-  }
-
-  async listCollections(...query) {
-    return this.request("listCollections", ...query)
+  async sign(func, ...query) {
+    if (is(Object, last(query)) && !is(Array, last(query))) {
+      query[query.length - 1].relay = true
+    } else {
+      query.push({ relay: true })
+    }
+    return await this[func](...query)
   }
 
   async _write(func, ...query) {
@@ -130,7 +189,7 @@ class Base {
       ? await this.writeWithII(ii, ...params)
       : !isNil(ar)
       ? await this.writeWithAR(ar, ...params)
-      : await this.write(
+      : await this.writeWithEVM(
           wallet || this.wallet,
           func,
           query,
@@ -247,103 +306,7 @@ class Base {
     return await this._write2("removeAddressLink", query, opt)
   }
 
-  async relay(...query) {
-    return this._write("relay", ...query)
-  }
-
-  async set(...query) {
-    return this._write("set", ...query)
-  }
-
-  async delete(...query) {
-    return this._write("delete", ...query)
-  }
-
-  async add(...query) {
-    return this._write("add", ...query)
-  }
-
-  async addIndex(...query) {
-    return this._write("addIndex", ...query)
-  }
-
-  async addCron(...query) {
-    return this._write("addCron", ...query)
-  }
-
-  async removeCron(...query) {
-    return this._write("removeCron", ...query)
-  }
-
-  async removeIndex(...query) {
-    return this._write("removeIndex", ...query)
-  }
-
-  async update(...query) {
-    return this._write("update", ...query)
-  }
-
-  async upsert(...query) {
-    return this._write("upsert", ...query)
-  }
-
-  async setSchema(...query) {
-    return this._write("setSchema", ...query)
-  }
-
-  async setAlgorithms(...query) {
-    return this._write("setAlgorithms", ...query)
-  }
-
-  async addRelayerJob(...query) {
-    return this._write("addRelayerJob", ...query)
-  }
-
-  async removeRelayerJob(...query) {
-    return this._write("removeRelayerJob", ...query)
-  }
-
-  async linkContract(...query) {
-    return this._write("linkContract", ...query)
-  }
-
-  async unlinkContract(...query) {
-    return this._write("unlinkContract", ...query)
-  }
-
-  async setRules(...query) {
-    return this._write("setRules", ...query)
-  }
-
-  async batch(...query) {
-    return this._write("batch", ...query)
-  }
-
-  signer() {
-    return { __op: "signer" }
-  }
-
-  ts() {
-    return { __op: "ts" }
-  }
-
-  del() {
-    return { __op: "del" }
-  }
-
-  inc(n) {
-    return { __op: "inc", n }
-  }
-
-  union(...args) {
-    return { __op: "arrayUnion", arr: args }
-  }
-
-  remove(...args) {
-    return { __op: "arrayRemove", arr: args }
-  }
-
-  async write(
+  async writeWithEVM(
     wallet,
     func,
     query,
@@ -419,7 +382,7 @@ class Base {
     if (!isNil(jobID)) param.jobID = jobID
     if (!isNil(multisigs)) param.multisigs = multisigs
     bundle ||= this.network === "mainnet"
-    return await this._request(func, param, dryWrite, bundle, relay)
+    return await this.write(func, param, dryWrite, bundle, relay)
   }
 
   async writeWithII(
@@ -474,7 +437,7 @@ class Base {
     })
     if (!isNil(jobID)) param.jobID = jobID
     if (!isNil(multisigs)) param.multisigs = multisigs
-    return await this._request(func, param, dryWrite, bundle, relay)
+    return await this.write(func, param, dryWrite, bundle, relay)
   }
 
   async writeWithAR(
@@ -540,7 +503,7 @@ class Base {
     })
     if (!isNil(jobID)) param.jobID = jobID
     if (!isNil(multisigs)) param.multisigs = multisigs
-    return await this._request(func, param, dryWrite, bundle, relay)
+    return await this.write(func, param, dryWrite, bundle, relay)
   }
 
   async writeWithIntmax(
@@ -621,72 +584,77 @@ class Base {
     )
     if (!isNil(jobID)) param.jobID = jobID
     if (!isNil(multisigs)) param.multisigs = multisigs
-    return await this._request(func, param, dryWrite, bundle, relay)
+    return await this.write(func, param, dryWrite, bundle, relay)
   }
 
-  async getOwner() {
-    return this.request("getOwner")
-  }
-
-  async addOwner(address, opt) {
-    return this._write2("addOwner", { address }, opt)
-  }
-
-  async removeOwner(address, opt) {
-    return this._write2("removeOwner", { address }, opt)
-  }
-
-  async getEvolve() {
-    return await this.viewState({
-      function: "getEvolve",
-    })
-  }
-
-  async evolve(value, opt) {
-    return this._write2("evolve", { value }, { ...opt, extra: { value } })
-  }
-
-  async setCanEvolve(value, opt) {
-    return this._write2("setCanEvolve", { value }, opt)
-  }
-
-  async getAddressLink(address) {
-    return this.viewState({ function: "getAddressLink", query: { address } })
-  }
-
-  async getVersion() {
-    return await this.viewState({
-      function: "version",
-    })
-  }
-
-  async getNonce(addr) {
-    return (
-      (await this.viewState({
-        function: "nonce",
-        address: addr,
-      })) + 1
-    )
-  }
-
-  async getIds(tx) {
-    return this.viewState({
-      function: "ids",
-      tx,
-    })
-  }
-
-  async mineBlock() {
-    await this.arweave.api.get("mine")
-  }
-
-  async sign(func, ...query) {
-    if (is(Object, last(query)) && !is(Array, last(query))) {
-      query[query.length - 1].relay = true
-    } else {
-      query.push({ relay: true })
+  parseQuery(func, query) {
+    let nocache = false
+    if (includes(func)(this.reads) && is(Boolean, last(query))) {
+      nocache = last(query)
+      query = init(query)
     }
-    return await this[func](...query)
+    return { nocache, query }
+  }
+
+  async readQuery(func, ...query) {
+    let nocache = false
+    ;({ nocache, query } = this.parseQuery(func, query))
+    return await this.read({ function: func, query }, nocache)
+  }
+}
+
+const readQueries = [
+  "get",
+  "cget",
+  "getIndexes",
+  "listCollections",
+  "getCrons",
+  "getAlgorithms",
+  "getRelayerJob",
+  "listRelayerJobs",
+  "getLinkedContract",
+  "getSchema",
+  "getRules",
+]
+
+for (const v of readQueries) {
+  Base.prototype[v] = async function (...query) {
+    return this.readQuery(v, ...query)
+  }
+}
+
+const reads = ["getOwner", "getEvolve", "getInfo"]
+
+for (const v of reads) {
+  Base.prototype[v] = async function (nocache) {
+    return this.read({ function: v }, nocache)
+  }
+}
+
+const writes = [
+  "relay",
+  "set",
+  "delete",
+  "add",
+  "addIndex",
+  "addCron",
+  "removeCron",
+  "removeIndex",
+  "update",
+  "upsert",
+  "setSchema",
+  "setAlgorithms",
+  "addRelayerJob",
+  "removeRelayerJob",
+  "linkContract",
+  "unlinkContract",
+  "setRules",
+  "batch",
+]
+
+for (const v of writes) {
+  Base.prototype[v] = async function (...query) {
+    return this._write(v, ...query)
   }
 }
 

@@ -128,24 +128,11 @@ class SDK extends Base {
     if (!isNil(EthWallet)) this.setEthWallet(EthWallet)
   }
 
-  async request(func, ...query) {
-    let nocache = false
-    if (is(Boolean, last(query))) {
-      nocache = last(query)
-      query = init(query)
-    }
-    return this.viewState({
-      function: func,
-      query,
-    })
+  async read(params) {
+    return (await this.db.viewState(params)).result
   }
 
-  async viewState(opt) {
-    let res = await this.db.viewState(opt)
-    return res.result
-  }
-
-  async _request(func, param, dryWrite, bundle, relay = false) {
+  async write(func, param, dryWrite, bundle, relay = false) {
     if (relay) {
       return param
     } else {
