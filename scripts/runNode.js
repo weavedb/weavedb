@@ -3,7 +3,6 @@ let {
   contractTxId,
   port = 1820,
   dbPath = null,
-  persist = false,
   secure = false,
 } = require("yargs")(process.argv.slice(2)).argv
 const Constants = require("../src/intmax/lib/circomlibjs/poseidon_constants_opt.js")
@@ -44,10 +43,8 @@ async function init() {
     : /^\//.test(dbPath)
     ? dbPath
     : path.resolve(process.cwd(), dbPath)
-  if (persist) {
-    console.log(`dbPath: ${dbPath}`)
-  }
-  arlocal = new ArLocal(port, false, dbPath, persist)
+  console.log(`dbPath: ${dbPath}`)
+  arlocal = new ArLocal(port, false, dbPath, true)
   await arlocal.start()
   let _arweave_wallet = null
   if (!isNil(wallet)) {
