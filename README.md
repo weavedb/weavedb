@@ -9,14 +9,16 @@
 - [Warp Contracts](/src/contracts)
 - [Tests](/test)
 - [SDK](/sdk)
+- [SDK for NodeJS](/sdk-node)
 - [Web Light Client](/web-client)
 - [Node Light Client](/node-client)
 - [SDK for EXM](/sdk-exm)
 - [Web Client for EXM](/sdk-exm-web)
-- [gRPC Node](/node)
+- [gRPC Node](/grpc-node)
 - [REPL](/scripts/runNode.js)
 - [Web Console](/console)
 - [Docs](/docs)
+- [Example Dapps](/examples)
 
 You can view the docs at [docs.weavedb.dev](https://docs.weavedb.dev).
 
@@ -34,29 +36,17 @@ Smart contract transactions are auto-signed, free and instant for dapp users, wh
 
 WeaveDB is permissionless with granular access controls with pure cryptography. Anyone can access with a one-time Metamask signature.
 
-#### Powerful Logics for Complex Dapps
+#### Powerful Logic for Complex Dapps
 
 WeaveDB allows JSON-based functional programming on data, which opens up possibilities for building highly complex dapps with ease.
 
+## Contract Versions
+
+The latest contract can be found [here](https://docs.weavedb.dev/docs/sdk/version).
+
 ## Demo Dapps
 
-The the latest contract can be found [here](https://docs.weavedb.dev/docs/sdk/version).
-
-### The Wall 2 on DEFINITY
-
-A v0.5 demo dapp (The Wall 2) is deployed at [xdiw4-hiaaa-aaaai-qnnbq-cai.ic0.app](https://xdiw4-hiaaa-aaaai-qnnbq-cai.ic0.app).
-
-### Todo Manager
-
-A v0.2 demo dapp (Todo Manager) is deployed at [weavedb-todos.asteroid.ac](https://weavedb-todos.asteroid.ac).
-
-- [Dapp Building Tutorial](/docs/examples/bookmarks)
-
-### Mirror Social Bookmarking
-
-A v0.2 demo dapp (Social Bookmarking) is deployed at [asteroid.ac](https://asteroid.ac).
-
-- [Dapp Building Tutorial](/docs/examples/bookmarks)
+Domo dapps and tutorials can be found [here](https://docs.weavedb.dev/docs/category/example-dapps).
 
 *WeaveDB is still in its infancy. Everything is subject to change.*
 
