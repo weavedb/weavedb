@@ -167,6 +167,7 @@ class SDK extends Base {
         ? "localhost"
         : "mainnet")
 
+    if (this.network === "localhost") this.cache = "leveldb"
     if (arweave.host === "host.docker.internal") {
       this.warp = this.Warp.WarpFactory.custom(this.arweave, {}, "local")
         .useArweaveGateway()
