@@ -12,7 +12,7 @@ const contracts = [
 
 build({
   entryPoints: contracts.map(source => {
-    return `./src${source}`
+    return `./contracts${source}`
   }),
   outdir: "./dist",
   minify: false,

@@ -3,7 +3,7 @@ const path = require("path")
 const Arweave = require("arweave")
 const wallet_name = process.argv[2]
 const { isNil } = require("ramda")
-const Constants = require("../src/intmax/lib/circomlibjs/poseidon_constants_opt.js")
+const Constants = require("../contracts/intmax/lib/circomlibjs/poseidon_constants_opt.js")
 const { WarpFactory, LoggerFactory } = require("warp-contracts")
 
 if (isNil(wallet_name)) {

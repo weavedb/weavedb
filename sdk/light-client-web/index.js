@@ -1,29 +1,19 @@
 const { DBClient } = require("./weavedb_grpc_web_pb")
 const { WeaveDBRequest } = require("./weavedb_pb")
-const { includes, all, complement, last, isNil, is, init } = require("ramda")
+const {
+  isEmpty,
+  includes,
+  all,
+  complement,
+  last,
+  isNil,
+  is,
+  init,
+  dissoc,
+} = require("ramda")
 const Base = require("weavedb-base")
 let Arweave = require("arweave")
 Arweave = Arweave.default || Arweave
-
-const reads = [
-  "get",
-  "cget",
-  "getIndexes",
-  "getCrons",
-  "getSchema",
-  "getRules",
-  "getIds",
-  "getOwner",
-  "getAddressLink",
-  "getAlgorithms",
-  "getLinkedContract",
-  "getEvolve",
-  "getVersion",
-  "getRelayerJob",
-  "listRelayerJobs",
-  "listCollections",
-  "getInfo",
-]
 
 class SDK extends Base {
   constructor({
@@ -55,17 +45,16 @@ class SDK extends Base {
     if (!isNil(EthWallet)) this.setEthWallet(EthWallet)
   }
 
-  async _request(func, query, nocache, bundle, relay = false) {
-    if (!includes(func)(reads)) {
+  async write(func, query, nocache, bundle, relay = false) {
+    if (!includes(func)(this.reads)) {
       nocache = false
       if (relay) {
         return query
       }
     }
-
     const request = new WeaveDBRequest()
     request.setMethod(`${func}@${this.contractTxId}`)
-    request.setQuery(JSON.stringify(query))
+    request.setQuery(JSON.stringify(isNil(query) ? "" : query))
     request.setNocache(nocache)
     const _query = () =>
       new Promise(ret => {
@@ -84,39 +73,19 @@ class SDK extends Base {
     return q.result
   }
 
-  parseQuery(func, query) {
-    let nocache = false
-    if (includes(func)(reads) && is(Boolean, last(query))) {
-      nocache = last(query)
-      query = init(query)
+  async read(params, nocache) {
+    let query = dissoc("function")(params)
+    if (isEmpty(query)) {
+      query = null
+    } else if (!isNil(query.query)) {
+      query = query.query
     }
-    return { nocache, query }
-  }
 
-  async request(func, ...query) {
-    let nocache = false
-    ;({ nocache, query } = this.parseQuery(func, query))
-    return await this._request(func, query, nocache)
+    return await this.write(params.function, query, nocache)
   }
 
   async getNonce(addr) {
-    return this.request("getNonce", addr, true)
-  }
-
-  async getIds(tx) {
-    return this.request("getIds", tx)
-  }
-
-  async getAddressLink(address) {
-    return this.request("getAddressLink", address)
-  }
-
-  async getVersion() {
-    return this.request("getAddressLink")
-  }
-
-  async getEvolve() {
-    return this.request("getEvolve")
+    return this.readQuery("getNonce", addr, true)
   }
 }
 

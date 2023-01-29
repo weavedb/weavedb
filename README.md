@@ -6,14 +6,14 @@
 
 [WeaveDB](https://github.com/weavedb/weavedb) is a monorepo that contains
 
-- [Warp Contracts](/src/contracts)
+- [Contracts](/contracts)
 - [Tests](/test)
-- [SDK](/sdk)
-- [SDK for NodeJS](/sdk-node)
-- [Web Light Client](/web-client)
-- [Node Light Client](/node-client)
-- [SDK for EXM](/sdk-exm)
-- [Web Client for EXM](/sdk-exm-web)
+- [SDK for Web](/sdk/sdk-web)
+- [SDK for NodeJS](/sdk/sdk-node)
+- [Web Light Client](/sdk/light-client-web)
+- [Node Light Client](/sdk/light-client-node)
+- [SDK for EXM](/sdk/sdk-exm-node)
+- [Web Client for EXM](/sdk/sdk-exm-web)
 - [gRPC Node](/grpc-node)
 - [REPL](/scripts/runNode.js)
 - [Web Console](/console)
