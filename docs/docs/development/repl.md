@@ -32,10 +32,9 @@ If you also start the [web console](/docs/development/web-console), the REPL and
 ### Command Line Arguments
 
 - `wallet` : A wallet name of the owner of the contract. If not provided, a random wallet will be generated.
-- `persist` : To make the database persistent between processes.
 - `dbPath` : A database path to save the persistent data.
 - `port` : A port to run ArLocal, default to 1820.
-- `contractTxId` : A tx id of the contract, if running the `persist` mode.
+- `contractTxId` : A tx id of the contract.
 - `secure` : To deploy a contract with secure mode. No one can update data without schemas and access control rules in secure mode.
 
 #### Use Existing Wallet
@@ -48,23 +47,31 @@ yarn repl --wallet my_wallet_name
 
 #### Deploy DB in Secure Mode
 
+With secure mode, you can set up access control rules to allow anyone to write to the contract.
+
+Whereas without secure mode, anyone can write by default. Insecure mode is convenient for development.
+
 ```bash
 yarn repl --secure
 ```
 
 #### Change ArLocal Port
 
+The local Arweave node runs on port `1820` by default.
+
 ```bash
 yarn repl --port 1984
 ```
 
-#### Make DB Persistent
+#### Change Cache Directory
 
-To make the database persistent, specify `persist` and `dbPath` to deploy a persistent db instance.
+The cache to make the database persistent is stored at `scripts/.db`, specify `dbPath` to change the location.
 
 ```bash
-yarn repl --persist --dbPath scripts/.db
+yarn repl --dbPath scripts/.db
 ```
+
+#### Interact with Existing Contract
 
 Take note of the `contractTxId` displayed in the console.
 
@@ -77,5 +84,7 @@ Take note of the `contractTxId` displayed in the console.
 Then specify the `contractTxId` when running REPL next time.
 
 ```bash
-yarn repl --persist --dbPath scripts/.db --contractTxId Mw7Q1LF3uC9cYgyr5dM860HGlwNfxILNXkcg0RNXIFc
+yarn repl --dbPath scripts/.db --contractTxId Mw7Q1LF3uC9cYgyr5dM860HGlwNfxILNXkcg0RNXIFc
 ```
+
+Note that you can only interact with local contract with REPL.
