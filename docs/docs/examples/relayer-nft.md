@@ -230,9 +230,7 @@ module.exports = {
     host: "host.docker.internal"
     port: 1820,
     protocol: "http"
-  },
-  subscribe: true,
-  cache: "leveldb",
+  }
 }
 ```
 Then run docker-compose with `yarn run-node`.

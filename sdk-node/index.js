@@ -122,7 +122,7 @@ class SDK extends Base {
     subscribe = true,
     network,
     port = 1820,
-    cache = "leveldb",
+    cache = "lmdb",
     lmdb = {},
     old = false,
   }) {
