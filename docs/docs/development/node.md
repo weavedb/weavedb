@@ -74,7 +74,7 @@ Use `host.docker.internal` as `host` to internally connect from the docker conta
 module.exports = {
   contractTxId: "xxxxx...",
   arweave:{
-    host: "host.docker.internal"
+    host: "host.docker.internal",
     port: 1820,
     protocol: "http"
   }
