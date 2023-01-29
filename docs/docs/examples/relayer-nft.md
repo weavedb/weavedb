@@ -83,12 +83,11 @@ contract NFT is ERC721URIStorage {
   }
 }
 ```
-Go to the NFT folder and compile the contract.
+Go to the NFT folder and install dependencies.
 
 ```bash
 cd examples/relayer-nft/nft-contract
 yarn
-npx hardhat compile
 ```
 
 Create `.env` file with the following variables.
@@ -97,6 +96,12 @@ Create `.env` file with the following variables.
 EVM_RPC="https://goerli.infura.io/v3/yourapikey"
 ETHERSCAN_API_KEY="yourapikey"
 PRIVATEKEY="yourprivatekey"
+```
+
+Compile the contract.
+
+```bash
+npx hardhat compile
 ```
 
 Then deploy the contract to the Goerli testnet.
@@ -225,19 +230,13 @@ Then create `weavedb.config.js` to `/grpc-node/node-server` directory.
 
 ```js
 module.exports = {
-  contractTxId: "xxxxxxxx...",
-  arweave:{
-    host: "host.docker.internal"
-    port: 1820,
-    protocol: "http"
-  }
+  contractTxId: "xxxxxxxx..."
 }
 ```
 Then run docker-compose with `yarn run-node`.
 
 ```bash
 yarn run-node
-
 ```
 
 Now you should be able to access the node at `localhost:8080`.
@@ -320,7 +319,7 @@ Create `.env.local` file and set the following variables.
 
 ```
 EVM_RPC="https://goerli.infura.io/v3/your_api_key"
-WEAVEDB_RPC="localhost:8080"
+WEAVEDB_RPC_NODE="localhost:8080"
 RELAYER_PRIVATEKEY="Relayer_EOA_Privatekey"
 RELAYER_ADDRESS="Relayer_EOA_Address"
 
@@ -889,3 +888,11 @@ export default function Home() {
   )
 }
 ```
+
+## Using the Dapp
+
+:::caution Using the Dapp
+
+When minting the NFT, please use a different EVM account from the relayer. This is because if the relayer and the message sender are the same account, they will have the same nonce for separate signatures and it will cause a signature verification error.
+
+:::
