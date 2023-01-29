@@ -43,8 +43,8 @@
     "warp-contracts-lmdb": "^1.1.6",
     "wasmbuilder": "^0.0.16",
     "wasmcurves": "^0.2.0",
-    "weavedb-sdk": "^0.13.2",
-    "weavedb-sdk-node": "^0.13.4",
+    "weavedb-sdk": "^0.18.2",
+    "weavedb-sdk-node": "^0.18.2",
     "yargs": "^17.6.2"
   },
   "engines": {
@@ -56,7 +56,7 @@
     "test": "yarn build && mocha",
     "build": "yarn clean && node build.js && npm run cp && node scripts/mod.js",
     "clean": "rimraf ./dist",
-    "cp": "copyfiles -u 1 ./src/**/*.json dist",
+    "cp": "copyfiles -u 1 ./contracts/**/*.json dist",
     "repl": "yarn build && node scripts/runNode.js",
     "run-node": "cd grpc-node && sudo docker-compose up --build"
   },

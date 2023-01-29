@@ -101,7 +101,7 @@ async function query(call, callback) {
         result = await sdks[contractTxId][func](...JSON.parse(query))
         _cache[key] = { date: Date.now(), result }
       } else {
-        result = await sdks[contractTxId]._request(
+        result = await sdks[contractTxId].write(
           func,
           JSON.parse(query),
           true,
