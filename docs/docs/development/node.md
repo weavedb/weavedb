@@ -179,11 +179,11 @@ module.exports = {
 }
 ```
 
-- Move to `weavedb` and run `yarn run-node`
+- Move to `weavedb/grpc-node`, build and run docker-compose.
 
 ```bash
-cd weavedb
-yarn run-node
+cd weavedb/grpc-node
+sudo docker-compose up --build
 ```
 
 - Set up NGINX with SSL/TLS certificate using Certbot
