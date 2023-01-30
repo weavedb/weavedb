@@ -1,0 +1,21 @@
+import { isNil, is, of, includes, mergeLeft, last } from "ramda"
+import { err, isOwner } from "../../../lib/utils"
+import { validate } from "../../../lib/validate"
+import version from "../../../../warp/lib/version"
+
+export const migrate = async (state, action, signer) => {
+  signer ||= await validate(state, action, "migrate")
+  const owner = isOwner(signer, state)
+  if (version !== action.input.query.version) {
+    err(`version doesn't match (${version} : ${action.input.query.version})`)
+  }
+  if (
+    isNil(state.evolveHistory) ||
+    isNil(last(state.evolveHistory)) ||
+    !isNil(last(state.evolveHistory).newVersion)
+  ) {
+    err(`contract is not ready to migrate`)
+  }
+  state.evolveHistory[state.evolveHistory.length - 1].newVersion = version
+  return { state }
+}

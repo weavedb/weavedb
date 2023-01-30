@@ -37,6 +37,7 @@ import { removeRelayerJob } from "../common/actions/write/removeRelayerJob"
 import { linkContract } from "../common/actions/write/linkContract"
 import { unlinkContract } from "../common/actions/write/unlinkContract"
 import { evolve } from "../common/warp/actions/write/evolve"
+import { migrate } from "../common/warp/actions/write/migrate"
 import { setCanEvolve } from "../common/actions/write/setCanEvolve"
 import { setSecure } from "../common/actions/write/setSecure"
 import { addOwner } from "../common/actions/write/addOwner"
@@ -133,6 +134,8 @@ export async function handle(state, action) {
       return await getEvolve(state, action)
     case "evolve":
       return await evolve(state, action)
+    case "migrate":
+      return await migrate(state, action)
     case "setCanEvolve":
       return await setCanEvolve(state, action)
     case "setSecure":
