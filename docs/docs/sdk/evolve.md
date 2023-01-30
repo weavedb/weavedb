@@ -5,6 +5,15 @@ sidebar_position: 11
 
 Database contracts are upgradable with `evolve` function, if set so.
 
+## Get Evolve Stats
+
+To get the stats related to evolve, use `getEvolve`.
+
+```js
+await db.getEvolve()
+// { canEvolve, history, evolve, isEvolving }
+```
+
 ## Make DB Contract Upgradable
 
 When deploying the WeaveDB contract, `canEvolve` should be set `true`, and `evolve` should be set `null` in the initial state.
@@ -49,4 +58,10 @@ The new version has to be deployed first, and pass the `contractTxId` of the new
 
 ```js
 await db.evolve(contractTxId, { ar: arweave_wallet })
+```
+
+After evolving you need execute `migrate`. The write operations will be blocked before the migration.
+
+```js
+await db.migrate(newVersion, { ar: arweave_wallet })
 ```
