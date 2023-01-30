@@ -23,6 +23,7 @@ export const evolve = async (state, action, signer) => {
     block: SmartWeave.block.height,
     data: SmartWeave.block.timestamp,
     srcTxId: action.input.value,
+    oldVersion: version,
   })
 
   return { state }

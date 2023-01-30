@@ -9,7 +9,7 @@ const name = process.env.NAME || "weavedb"
 const version = process.env.VERSION || "1"
 let privateKey = process.env.PRIVATE_KEY
 const { isNil } = require("ramda")
-const SDK = require("../sdk")
+const SDK = require("../sdk/sdk-web")
 
 if (isNil(wallet_name)) {
   console.log("no wallet name given")

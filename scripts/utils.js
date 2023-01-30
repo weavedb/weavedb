@@ -1,6 +1,6 @@
 const fs = require("fs")
 const path = require("path")
-const SDK = require("../sdk")
+const SDK = require("../sdk/sdk-web")
 const { isNil } = require("ramda")
 
 const send = async (sdk, wallet, queries) => {

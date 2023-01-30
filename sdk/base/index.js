@@ -105,6 +105,10 @@ class Base {
     return this._write2("addOwner", { address }, opt)
   }
 
+  async migrate(version, opt) {
+    return this._write2("migrate", { version }, opt)
+  }
+
   async removeOwner(address, opt) {
     return this._write2("removeOwner", { address }, opt)
   }

@@ -583,16 +583,19 @@ describe("WeaveDB", function () {
     return
   })
 
-  it.only("should evolve", async () => {
+  it("should evolve", async () => {
     const evolve = "contract-1"
     const evolve2 = "contract-2"
+    const version = require("../contracts/warp/lib/version")
     const history1 = {
       signer: walletAddress,
       srcTxId: evolve,
+      oldVersion: version,
     }
     const history2 = {
       signer: walletAddress,
       srcTxId: evolve2,
+      oldVersion: version,
     }
 
     expect(await db.getEvolve()).to.eql({
@@ -602,38 +605,39 @@ describe("WeaveDB", function () {
     })
 
     await db.evolve(evolve, { ar: arweave_wallet })
+    await db.migrate(version, { ar: arweave_wallet })
     const evo = await db.getEvolve()
     expect(dissoc("history", evo)).to.eql({ canEvolve: true, evolve })
-    expect(compose(map(pick(["signer", "srcTxId"])))(evo.history)).to.eql([
-      history1,
-    ])
+    expect(
+      compose(map(pick(["signer", "srcTxId", "oldVersion"])))(evo.history)
+    ).to.eql([history1])
 
     await db.setCanEvolve(false, { ar: arweave_wallet })
     const evo2 = await db.getEvolve()
     expect(dissoc("history", evo2)).to.eql({ canEvolve: false, evolve })
-    expect(compose(map(pick(["signer", "srcTxId"])))(evo2.history)).to.eql([
-      history1,
-    ])
+    expect(
+      compose(map(pick(["signer", "srcTxId", "oldVersion"])))(evo2.history)
+    ).to.eql([history1])
 
     await db.evolve(evolve2, { ar: arweave_wallet })
     const evo3 = await db.getEvolve()
     expect(dissoc("history", evo3)).to.eql({ canEvolve: false, evolve: evolve })
-    expect(compose(map(pick(["signer", "srcTxId"])))(evo3.history)).to.eql([
-      history1,
-    ])
+    expect(
+      compose(map(pick(["signer", "srcTxId", "oldVersion"])))(evo3.history)
+    ).to.eql([history1])
 
     await db.setCanEvolve(true, { ar: arweave_wallet })
     await db.evolve(evolve2, { ar: arweave_wallet })
+    await db.migrate(version, { ar: arweave_wallet })
     const evo4 = await db.getEvolve()
     expect(dissoc("history", evo4)).to.eql({
       canEvolve: true,
       evolve: evolve2,
     })
 
-    expect(compose(map(pick(["signer", "srcTxId"])))(evo4.history)).to.eql([
-      history1,
-      history2,
-    ])
+    expect(
+      compose(map(pick(["signer", "srcTxId", "oldVersion"])))(evo4.history)
+    ).to.eql([history1, history2])
 
     return
   })
