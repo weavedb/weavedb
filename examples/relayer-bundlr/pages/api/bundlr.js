@@ -37,7 +37,6 @@ export default async (req, res) => {
         {
           jobID: params.jobID,
           privateKey: process.env.RELAYER_PRIVATEKEY,
-          wallet: process.env.RELAYER_ADDRESS,
         }
       )
       if (relay_tx.success) {

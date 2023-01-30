@@ -321,7 +321,6 @@ Create `.env.local` file and set the following variables.
 EVM_RPC="https://goerli.infura.io/v3/your_api_key"
 WEAVEDB_RPC_NODE="localhost:8080"
 RELAYER_PRIVATEKEY="Relayer_EOA_Privatekey"
-RELAYER_ADDRESS="Relayer_EOA_Address"
 
 NEXT_PUBLIC_WEAVEDB_CONTRACT_TX_ID="Your_Contract_Tx_Id"
 NEXT_PUBLIC_NFT_CONTRACT_ADDR="Goerli_NFT_Contract_Address"
@@ -364,7 +363,6 @@ export default async (req, res) => {
   const tx = await sdk.relay(params.jobID, params, owner, {
     jobID: params.jobID,
     privateKey: process.env.RELAYER_PRIVATEKEY,
-    wallet: process.env.RELAYER_ADDRESS,
   })
 
   res.status(200).json(tx)

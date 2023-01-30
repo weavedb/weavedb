@@ -26,7 +26,7 @@ export default async (req, res) => {
   const tx = await sdk.relay(params.jobID, params, owner, {
     jobID: params.jobID,
     privateKey: process.env.RELAYER_PRIVATEKEY,
-    wallet: process.env.RELAYER_ADDRESS,
   })
+  console.log(tx)
   res.status(200).json(tx)
 }
