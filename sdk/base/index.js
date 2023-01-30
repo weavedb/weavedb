@@ -117,6 +117,10 @@ class Base {
     return this._write2("setCanEvolve", { value }, opt)
   }
 
+  async setSecure(value, opt) {
+    return this._write2("setSecure", { value }, opt)
+  }
+
   async mineBlock() {
     await this.arweave.api.get("mine")
   }

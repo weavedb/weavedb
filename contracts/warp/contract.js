@@ -39,6 +39,7 @@ import { linkContract } from "../common/actions/write/linkContract"
 import { unlinkContract } from "../common/actions/write/unlinkContract"
 import { evolve } from "../common/warp/actions/write/evolve"
 import { setCanEvolve } from "../common/actions/write/setCanEvolve"
+import { setSecure } from "../common/actions/write/setSecure"
 import { addOwner } from "../common/actions/write/addOwner"
 import { removeOwner } from "../common/actions/write/removeOwner"
 import { addAddressLink } from "../common/actions/write/addAddressLink"
@@ -123,22 +124,21 @@ export async function handle(state, action) {
       return await remove(state, action)
     case "batch":
       return await batch(state, action)
-
     case "getOwner":
       return await getOwner(state, action)
-
     case "addOwner":
       return await addOwner(state, action)
-
     case "removeOwner":
       return await removeOwner(state, action)
-
     case "getEvolve":
       return await getEvolve(state, action)
     case "evolve":
       return await evolve(state, action)
     case "setCanEvolve":
       return await setCanEvolve(state, action)
+    case "setSecure":
+      return await setSecure(state, action)
+
     default:
       err(
         `No function supplied or function not recognised: "${action.input.function}"`
