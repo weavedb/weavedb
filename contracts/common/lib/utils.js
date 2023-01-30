@@ -401,3 +401,8 @@ export const read = async (contract, param) => {
 }
 
 export const version = "0.18.0"
+
+export const isEvolving = state =>
+  !isNil(state.evolveHistory) &&
+  !isNil(last(state.evolveHistory)) &&
+  isNil(last(state.evolveHistory).newVersion)
