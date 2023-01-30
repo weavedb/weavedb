@@ -1,6 +1,5 @@
 import LitJsSdk from "@lit-protocol/sdk-browser"
 import SDK from "weavedb-client"
-import SDK2 from "weavedb-sdk"
 import { ethers } from "ethers"
 import { useEffect, useState } from "react"
 import {
