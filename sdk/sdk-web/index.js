@@ -14,7 +14,8 @@ const {
 } = require("ramda")
 let Arweave = require("arweave")
 Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
-const Base = require("weavedb-base")
+//const Base = require("weavedb-base")
+const Base = require("../base")
 const { WarpFactory, LoggerFactory } = require("warp-contracts")
 const { get, parseQuery } = require("./off-chain/actions/read/get")
 const { ids } = require("./off-chain/actions/read/ids")

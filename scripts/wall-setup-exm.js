@@ -7,7 +7,7 @@ const wallet_name = process.argv[2]
 const functionId = process.argv[3]
 const token = process.argv[4]
 const { values, isNil } = require("ramda")
-const SDK = require("../sdk-exm")
+const SDK = require("../sdk/sdk-exm-node")
 
 if (isNil(wallet_name)) {
   console.log("no wallet name given")
