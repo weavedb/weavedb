@@ -17,6 +17,7 @@
     "dayjs": "^1.11.7",
     "ethers": "^5.7.2",
     "framer-motion": "^6",
+    "lit-js-sdk": "^1.1.242",
     "localforage": "^1.10.0",
     "next": "13.1.1",
     "ramda": "^0.28.0",
