@@ -132,6 +132,14 @@ async function initSDK(v) {
   let [txid, old] = v.split("@")
   _config.contractTxId = txid
   if (old === "old") _config.old = true
+  if ((_config.cache || "lmdb") === "lmdb") {
+    _config.lmdb = {
+      state: { dbLocation: `./cache/warp/${_config.contractTxId}/state` },
+      contracts: {
+        dbLocation: `./cache/warp/${_config.contractTxId}/contracts`,
+      },
+    }
+  }
   sdks[txid] = new SDK(_config)
   if (isNil(_config.wallet)) await sdks[txid].initializeWithoutWallet()
   await sdks[txid].db.readState()
