@@ -1,5 +1,3 @@
-import { err } from "../common/lib/utils"
-import version from "./lib/version"
 import { nonce } from "../common/actions/read/nonce"
 import { ids } from "../common/actions/read/ids"
 import { get } from "../common/actions/read/get"
@@ -28,7 +26,6 @@ import { update } from "../common/actions/write/update"
 import { upsert } from "../common/actions/write/upsert"
 import { remove } from "../common/actions/write/remove"
 import { batch } from "../common/actions/write/batch"
-import { cron } from "../common/lib/cron"
 import { addCron } from "../common/actions/write/addCron"
 import { removeCron } from "../common/actions/write/removeCron"
 import { setAlgorithms } from "../common/actions/write/setAlgorithms"
@@ -45,7 +42,41 @@ import { removeOwner } from "../common/actions/write/removeOwner"
 import { addAddressLink } from "../common/actions/write/addAddressLink"
 import { removeAddressLink } from "../common/actions/write/removeAddressLink"
 
+import { cron } from "../common/lib/cron"
+import { err, isEvolving } from "../common/lib/utils"
+import version from "./lib/version"
+import { includes } from "ramda"
+
+const writes = [
+  "relay",
+  "set",
+  "setSchema",
+  "setRules",
+  "addIndex",
+  "removeIndex",
+  "add",
+  "upsert",
+  "remove",
+  "batch",
+  "addCron",
+  "removeCron",
+  "setAlgorithms",
+  "addRelayerJob",
+  "linkContract",
+  "unlinkContract",
+  "setCanEvolve",
+  "setSecure",
+  "addOwner",
+  "removeOwner",
+  "addAddressLink",
+  "removeAddressLink",
+]
+
 export async function handle(state, action) {
+  if (isEvolving(state) && includes(action.input.function)(writes)) {
+    err("contract needs migration")
+  }
+
   try {
     ;({ state } = await cron(state))
   } catch (e) {

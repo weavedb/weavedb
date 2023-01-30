@@ -584,9 +584,11 @@ describe("WeaveDB", function () {
   })
 
   it("should evolve", async () => {
+    const data = { name: "Bob", age: 20 }
     const evolve = "contract-1"
     const evolve2 = "contract-2"
     const version = require("../contracts/warp/lib/version")
+
     const history1 = {
       signer: walletAddress,
       srcTxId: evolve,
@@ -602,42 +604,60 @@ describe("WeaveDB", function () {
       canEvolve: true,
       evolve: null,
       history: [],
+      isEvolving: false,
     })
 
     await db.evolve(evolve, { ar: arweave_wallet })
     await db.migrate(version, { ar: arweave_wallet })
     const evo = await db.getEvolve()
-    expect(dissoc("history", evo)).to.eql({ canEvolve: true, evolve })
+    expect(dissoc("history", evo)).to.eql({
+      canEvolve: true,
+      evolve,
+      isEvolving: false,
+    })
     expect(
       compose(map(pick(["signer", "srcTxId", "oldVersion"])))(evo.history)
     ).to.eql([history1])
-
     await db.setCanEvolve(false, { ar: arweave_wallet })
     const evo2 = await db.getEvolve()
-    expect(dissoc("history", evo2)).to.eql({ canEvolve: false, evolve })
+    expect(dissoc("history", evo2)).to.eql({
+      canEvolve: false,
+      evolve,
+      isEvolving: false,
+    })
     expect(
       compose(map(pick(["signer", "srcTxId", "oldVersion"])))(evo2.history)
     ).to.eql([history1])
 
     await db.evolve(evolve2, { ar: arweave_wallet })
     const evo3 = await db.getEvolve()
-    expect(dissoc("history", evo3)).to.eql({ canEvolve: false, evolve: evolve })
+    expect(dissoc("history", evo3)).to.eql({
+      canEvolve: false,
+      evolve: evolve,
+      isEvolving: false,
+    })
     expect(
       compose(map(pick(["signer", "srcTxId", "oldVersion"])))(evo3.history)
     ).to.eql([history1])
 
     await db.setCanEvolve(true, { ar: arweave_wallet })
     await db.evolve(evolve2, { ar: arweave_wallet })
-    await db.migrate(version, { ar: arweave_wallet })
+    await db.set(data, "ppl", "Bob")
+    expect(await db.get("ppl", "Bob")).to.eql(null)
     const evo4 = await db.getEvolve()
     expect(dissoc("history", evo4)).to.eql({
       canEvolve: true,
       evolve: evolve2,
+      isEvolving: true,
     })
 
+    await db.migrate(version, { ar: arweave_wallet })
     expect(
       compose(map(pick(["signer", "srcTxId", "oldVersion"])))(evo4.history)
     ).to.eql([history1, history2])
+
+    await db.set(data, "ppl", "Bob")
+    expect(await db.get("ppl", "Bob")).to.eql(data)
 
     return
   })
@@ -836,9 +856,11 @@ describe("WeaveDB", function () {
         ethereum: ethereumTxId,
       },
       evolve: null,
+      isEvolving: false,
       secure: false,
       version,
       owner: addr,
+      evolveHistory: [],
     })
     return
   })
