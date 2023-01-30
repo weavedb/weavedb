@@ -15,6 +15,18 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.18.0 (Jan 30, 2023)
+
+#### Source Transaction Id
+
+[fHH99N1FIxkU-vYwbg30eYHpBpOjN_Qa3k3ch73Yz04](https://sonar.warp.cc/#/app/source/fHH99N1FIxkU-vYwbg30eYHpBpOjN_Qa3k3ch73Yz04)
+
+#### Added Features
+
+- [setSecure()](/docs/development/repl#deploy-db-in-secure-mode)
+- [migrate()](/docs/sdk/evolve#upgrade--evolve-db-contract)
+- [getEvolve()](/docs/sdk/evolve#get-evolve-stats)
+
 ### v0.17.0 (Jan 28, 2023)
 
 #### Source Transaction Id
