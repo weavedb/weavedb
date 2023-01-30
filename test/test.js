@@ -837,4 +837,11 @@ describe("WeaveDB", function () {
       data2,
     ])
   })
+  it("should set secure", async () => {
+    await db.setSecure(false, { ar: arweave_wallet })
+    expect((await db.getInfo()).secure).to.eql(false)
+    await db.setSecure(true, { ar: arweave_wallet })
+    expect((await db.getInfo()).secure).to.eql(true)
+    return
+  })
 })
