@@ -1,7 +1,7 @@
 const { Ed25519KeyIdentity } = require("@dfinity/identity")
 const { providers, Wallet, utils } = require("ethers")
 const { expect } = require("chai")
-const { isNil, range, pick, pluck } = require("ramda")
+const { isNil, range, pick, pluck, dissoc, compose, map } = require("ramda")
 const { init, stop, initBeforeEach, addFunds } = require("./util")
 const buildEddsa = require("circomlibjs").buildEddsa
 const Account = require("intmax").Account
@@ -583,16 +583,58 @@ describe("WeaveDB", function () {
     return
   })
 
-  it("should evolve", async () => {
+  it.only("should evolve", async () => {
     const evolve = "contract-1"
     const evolve2 = "contract-2"
-    expect(await db.getEvolve()).to.eql({ canEvolve: true, evolve: null })
+    const history1 = {
+      signer: walletAddress,
+      srcTxId: evolve,
+    }
+    const history2 = {
+      signer: walletAddress,
+      srcTxId: evolve2,
+    }
+
+    expect(await db.getEvolve()).to.eql({
+      canEvolve: true,
+      evolve: null,
+      history: [],
+    })
+
     await db.evolve(evolve, { ar: arweave_wallet })
-    expect(await db.getEvolve()).to.eql({ canEvolve: true, evolve })
+    const evo = await db.getEvolve()
+    expect(dissoc("history", evo)).to.eql({ canEvolve: true, evolve })
+    expect(compose(map(pick(["signer", "srcTxId"])))(evo.history)).to.eql([
+      history1,
+    ])
+
     await db.setCanEvolve(false, { ar: arweave_wallet })
-    expect(await db.getEvolve()).to.eql({ canEvolve: false, evolve })
+    const evo2 = await db.getEvolve()
+    expect(dissoc("history", evo2)).to.eql({ canEvolve: false, evolve })
+    expect(compose(map(pick(["signer", "srcTxId"])))(evo2.history)).to.eql([
+      history1,
+    ])
+
     await db.evolve(evolve2, { ar: arweave_wallet })
-    expect(await db.getEvolve()).to.eql({ canEvolve: false, evolve: evolve })
+    const evo3 = await db.getEvolve()
+    expect(dissoc("history", evo3)).to.eql({ canEvolve: false, evolve: evolve })
+    expect(compose(map(pick(["signer", "srcTxId"])))(evo3.history)).to.eql([
+      history1,
+    ])
+
+    await db.setCanEvolve(true, { ar: arweave_wallet })
+    await db.evolve(evolve2, { ar: arweave_wallet })
+    const evo4 = await db.getEvolve()
+    expect(dissoc("history", evo4)).to.eql({
+      canEvolve: true,
+      evolve: evolve2,
+    })
+
+    expect(compose(map(pick(["signer", "srcTxId"])))(evo4.history)).to.eql([
+      history1,
+      history2,
+    ])
+
     return
   })
 
@@ -771,6 +813,7 @@ describe("WeaveDB", function () {
 
   it("should get info", async () => {
     const addr = await db.arweave.wallets.jwkToAddress(arweave_wallet)
+    const version = require("../contracts/warp/lib/version")
     const initial_state = JSON.parse(
       readFileSync(
         resolve(__dirname, "../dist/warp/initial-state.json"),
@@ -790,7 +833,7 @@ describe("WeaveDB", function () {
       },
       evolve: null,
       secure: false,
-      version: initial_state.version,
+      version,
       owner: addr,
     })
     return

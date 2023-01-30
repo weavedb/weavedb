@@ -1,13 +1,11 @@
 import { is, of, includes, mergeLeft } from "ramda"
-import { err } from "../../../lib/utils"
+import { err, isOwner } from "../../../lib/utils"
 import { validate } from "../../../lib/validate"
+import version from "../../../../warp/lib/version"
 
 export const evolve = async (state, action, signer) => {
   signer ||= await validate(state, action, "evolve")
-
-  let owner = state.owner || []
-  if (is(String)(owner)) owner = of(owner)
-  if (!includes(signer)(owner)) err("Signer is not the owner.")
+  const owner = isOwner(signer, state)
 
   if (action.input.value !== action.input.query.value) {
     err("Values don't match.")
@@ -18,5 +16,14 @@ export const evolve = async (state, action, signer) => {
   } else {
     err(`This contract cannot evolve.`)
   }
+
+  state.evolveHistory ||= []
+  state.evolveHistory.push({
+    signer,
+    block: SmartWeave.block.height,
+    data: SmartWeave.block.timestamp,
+    srcTxId: action.input.value,
+  })
+
   return { state }
 }
