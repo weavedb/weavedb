@@ -48,14 +48,8 @@ describe("WeaveDB", function () {
   })
 
   it("should get version", async () => {
-    expect(await db.getVersion()).to.equal(
-      JSON.parse(
-        readFileSync(
-          resolve(__dirname, "../dist/warp/initial-state.json"),
-          "utf8"
-        )
-      ).version
-    )
+    const version = require("../contracts/warp/lib/version")
+    expect(await db.getVersion()).to.equal(version)
   })
 
   it("should get nonce", async () => {
