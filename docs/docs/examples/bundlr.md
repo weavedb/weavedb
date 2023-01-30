@@ -204,10 +204,9 @@ console.log(`node balance (converted) = ${convertedBalance}`);
 Create `.env.local` file and set the following variables.
 
 ```
-WEAVEDB_RPC="localhost:8080"
+WEAVEDB_RPC_NODE="localhost:8080"
 BUNDLR_PRIVATEKEY="Bundlr_EOA_Privatekey"
 RELAYER_PRIVATEKEY="Relayer_EOA_Privatekey"
-RELAYER_ADDRESS="Relayer_EOA_Address"
 
 NEXT_PUBLIC_WEAVEDB_CONTRACT_TX_ID="Your_Contract_Tx_Id"
 NEXT_PUBLIC_WEAVEDB_RPC_WEB="http://localhost:8080"
@@ -264,7 +263,6 @@ export default async (req, res) => {
         {
           jobID: params.jobID,
           privateKey: process.env.RELAYER_PRIVATEKEY,
-          wallet: process.env.RELAYER_ADDRESS,
         }
       )
       if (relay_tx.success) {

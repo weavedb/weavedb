@@ -1967,6 +1967,16 @@ arweave@^1.10.13, arweave@^1.11.8:
     bignumber.js "^9.0.2"
     util "^0.12.4"
 
+arweave@^1.12.2:
+  version "1.12.4"
+  resolved "https://registry.yarnpkg.com/arweave/-/arweave-1.12.4.tgz#08a4fcbda250c490150cb094ce57119eb1e46b3b"
+  integrity sha512-W5z7hb9/ZP2vy6BiYC+2obfGMhlhz/DaCkEXpkj/4hjaecWYUnvlUX5aCI2i0+lCrzbBUFbz+maDihUpBrdZpg==
+  dependencies:
+    arconnect "^0.4.2"
+    asn1.js "^5.4.1"
+    base64-js "^1.5.1"
+    bignumber.js "^9.0.2"
+
 asn1.js@^5.4.1:
   version "5.4.1"
   resolved "https://registry.yarnpkg.com/asn1.js/-/asn1.js-5.4.1.tgz#11a980b84ebb91781ce35b0fdc2ee294e3783f07"
@@ -3726,10 +3736,10 @@ util@^0.12.4:
     is-typed-array "^1.1.3"
     which-typed-array "^1.1.2"
 
-weavedb-base@^0.9.7:
-  version "0.9.7"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.9.7.tgz#58ca8b2cc302bf536794a0bcdac3a6cdbbeda389"
-  integrity sha512-0Gwbv7dkIoAuaLhei7vQ6Kvv8bCx5RkmX+P/BdcgNCMz2aXKhAMBEnyT96TW794ZjsX+FMbvoXoXWDff8PkRPQ==
+weavedb-base@^0.18.4:
+  version "0.18.4"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.18.4.tgz#ad3c0863d04c05dc08904c6bb75ed14e34ae618d"
+  integrity sha512-4AzBFMn4u2j93RywKGtTeAiSUuY50+D1cbBl8kDk6Gwtzw7dui7TYJOf5yGp+1/nx2FqkgCj6eYOnHqb1jzvRw==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"
@@ -3737,27 +3747,28 @@ weavedb-base@^0.9.7:
     ethereumjs-util "^7.1.5"
     ramda "^0.28.0"
 
-weavedb-client@^0.9.7:
-  version "0.9.7"
-  resolved "https://registry.yarnpkg.com/weavedb-client/-/weavedb-client-0.9.7.tgz#7225354cd4721d2fca095e1e0038a47e9361497f"
-  integrity sha512-sdYhVvfdQf2XtV9jEeIzbxuENpunkbalrDkn/nKbmyP3PYLoKSoqdy2QxcWUHa63dPXYwCjn+qYcnWYqxrL8oQ==
+weavedb-client@^0.18.5:
+  version "0.18.5"
+  resolved "https://registry.yarnpkg.com/weavedb-client/-/weavedb-client-0.18.5.tgz#ddb8701a16b77f4649be4f9491f98c7a431842ca"
+  integrity sha512-16kYq/lKPub5/uk1yrNYR23LmOI12x/0D6HvItf5DELGnhBYCfESUT6EGfz1Vwb4KoXi7zgDAblGxl9JNMKO+g==
   dependencies:
     "@metamask/legacy-web3" "^2.0.0"
     arweave "^1.11.8"
     google-protobuf "^3.21.0"
     grpc-web "^1.3.1"
     ramda "^0.28.0"
-    weavedb-base "^0.9.7"
+    weavedb-base "^0.18.4"
 
-weavedb-node-client@^0.9.7:
-  version "0.9.7"
-  resolved "https://registry.yarnpkg.com/weavedb-node-client/-/weavedb-node-client-0.9.7.tgz#e399a721cd262a2172cda4144cae3bbe20b69e92"
-  integrity sha512-akyRHFU//hDwdOmR6WAv9EwDAvUkvbFoh+6IE34FwbqLiU7DaEAt/1wo7ZiLVk6YjFGR/go5bWOi9dkchQc2PA==
+weavedb-node-client@^0.18.5:
+  version "0.18.5"
+  resolved "https://registry.yarnpkg.com/weavedb-node-client/-/weavedb-node-client-0.18.5.tgz#b59abf7e7e9eebf5541504a8d20d2b1ddb2cd224"
+  integrity sha512-g1Ud4UqAjp5/5ewDDwMts/0rAXDwfHqBfxJ0VsVJI1O5YyUfeabUw7mHuNHuhykfFJwSSDMQdY7ssAkoPFiwVw==
   dependencies:
     "@grpc/grpc-js" "^1.1.0"
     "@grpc/proto-loader" "^0.5.0"
+    arweave "^1.12.2"
     ramda "^0.28.0"
-    weavedb-base "^0.9.7"
+    weavedb-base "^0.18.4"
 
 web-streams-polyfill@^3.0.3:
   version "3.2.1"
