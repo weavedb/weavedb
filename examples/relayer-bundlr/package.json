@@ -27,7 +27,7 @@
     "react-dom": "18.2.0",
     "react-jdenticon": "^1.0.0",
     "react-markdown": "^8.0.4",
-    "weavedb-client": "^0.9.7",
-    "weavedb-node-client": "^0.9.7"
+    "weavedb-client": "^0.18.5",
+    "weavedb-node-client": "^0.18.5"
   }
 }

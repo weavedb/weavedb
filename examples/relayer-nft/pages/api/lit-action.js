@@ -44,7 +44,6 @@ export default async (req, res) => {
         multisigs,
         jobID: params.jobID,
         privateKey: process.env.RELAYER_PRIVATEKEY,
-        wallet: process.env.RELAYER_ADDRESS,
       }
     )
     res.status(200).json({ success: true, tx })
