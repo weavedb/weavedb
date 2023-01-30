@@ -1246,9 +1246,9 @@
     }
   });
 
-  // src/common/lib/jsonschema/helpers.js
+  // contracts/common/lib/jsonschema/helpers.js
   var require_helpers = __commonJS({
-    "src/common/lib/jsonschema/helpers.js"(exports, module) {
+    "contracts/common/lib/jsonschema/helpers.js"(exports, module) {
       "use strict";
       var uri = require_url();
       var ValidationError = exports.ValidationError = function ValidationError2(message, instance, schema, path3, name, argument) {
@@ -1569,9 +1569,9 @@
     }
   });
 
-  // src/common/lib/jsonschema/attribute.js
+  // contracts/common/lib/jsonschema/attribute.js
   var require_attribute = __commonJS({
-    "src/common/lib/jsonschema/attribute.js"(exports, module) {
+    "contracts/common/lib/jsonschema/attribute.js"(exports, module) {
       "use strict";
       var helpers = require_helpers();
       var ValidatorResult = helpers.ValidatorResult;
@@ -2280,9 +2280,9 @@
     }
   });
 
-  // src/common/lib/jsonschema/scan.js
+  // contracts/common/lib/jsonschema/scan.js
   var require_scan = __commonJS({
-    "src/common/lib/jsonschema/scan.js"(exports, module) {
+    "contracts/common/lib/jsonschema/scan.js"(exports, module) {
       "use strict";
       var urilib = require_url();
       var helpers = require_helpers();
@@ -2360,9 +2360,9 @@
     }
   });
 
-  // src/common/lib/jsonschema/validator.js
+  // contracts/common/lib/jsonschema/validator.js
   var require_validator = __commonJS({
-    "src/common/lib/jsonschema/validator.js"(exports, module) {
+    "contracts/common/lib/jsonschema/validator.js"(exports, module) {
       "use strict";
       var urilib = require_url();
       var attribute = require_attribute();
@@ -2610,9 +2610,9 @@
     }
   });
 
-  // src/common/lib/jsonschema/index.js
+  // contracts/common/lib/jsonschema/index.js
   var require_jsonschema = __commonJS({
-    "src/common/lib/jsonschema/index.js"(exports, module) {
+    "contracts/common/lib/jsonschema/index.js"(exports, module) {
       "use strict";
       var Validator = module.exports.Validator = require_validator();
       module.exports.ValidatorResult = require_helpers().ValidatorResult;
@@ -9212,6 +9212,13 @@
     }
   });
 
+  // contracts/warp/lib/version.js
+  var require_version = __commonJS({
+    "contracts/warp/lib/version.js"(exports, module) {
+      module.exports = "0.18.0";
+    }
+  });
+
   // node_modules/ramda/es/index.js
   var es_exports = {};
   __export(es_exports, {
@@ -13680,7 +13687,7 @@
   };
   var g = n;
 
-  // src/common/lib/utils.js
+  // contracts/common/lib/utils.js
   var import_json_logic_js = __toESM(require_logic());
   var import_jsonschema = __toESM(require_jsonschema());
   var clone3 = (state) => JSON.parse(JSON.stringify(state));
@@ -14024,8 +14031,9 @@
   var read = async (contract, param) => {
     return (await SmartWeave.contracts.viewContractState(contract, param)).result;
   };
+  var isEvolving = (state) => !isNil_default(state.evolveHistory) && !isNil_default(last_default(state.evolveHistory)) && isNil_default(last_default(state.evolveHistory).newVersion);
 
-  // src/common/actions/read/nonce.js
+  // contracts/common/actions/read/nonce.js
   var nonce = async (state, action) => {
     const { nonces } = state;
     let { address } = action.input;
@@ -14036,14 +14044,14 @@
     return { result: nonces[address] || 0 };
   };
 
-  // src/common/actions/read/ids.js
+  // contracts/common/actions/read/ids.js
   var ids = async (state, action) => {
     const { ids: ids2 } = state;
     const { tx } = action.input;
     return { result: ids2[tx] || null };
   };
 
-  // src/common/lib/index.js
+  // contracts/common/lib/index.js
   var {
     intersection: intersection3,
     uniq: uniq2,
@@ -14354,7 +14362,7 @@
     delete _ind._;
   };
 
-  // src/common/actions/read/get.js
+  // contracts/common/actions/read/get.js
   var parseQuery = (query) => {
     const [path3, opt] = splitWhen_default(complement_default(is_default)(String), query);
     let _limit = null;
@@ -14758,7 +14766,7 @@
     }
   };
 
-  // src/common/actions/read/getSchema.js
+  // contracts/common/actions/read/getSchema.js
   var getSchema = async (state, action) => {
     let { _data, data, query, new_data, path: path3 } = await parse(
       state,
@@ -14768,7 +14776,7 @@
     return { result: _data.schema || null };
   };
 
-  // src/common/actions/read/getRules.js
+  // contracts/common/actions/read/getRules.js
   var getRules = async (state, action) => {
     let { _data, data, query, new_data, path: path3 } = await parse(
       state,
@@ -14778,7 +14786,7 @@
     return { result: _data.rules || null };
   };
 
-  // src/common/actions/read/getIndexes.js
+  // contracts/common/actions/read/getIndexes.js
   var scanIndexes = (ind) => {
     let indexes = [];
     for (let k in ind) {
@@ -14806,7 +14814,7 @@
     };
   };
 
-  // src/common/actions/read/getCrons.js
+  // contracts/common/actions/read/getCrons.js
   var getCrons = async (state, action) => {
     if (isNil_default(state.crons)) {
       state.crons = { lastExecuted: SmartWeave.block.timestamp, crons: {} };
@@ -14816,7 +14824,7 @@
     };
   };
 
-  // src/common/actions/read/getAlgorithms.js
+  // contracts/common/actions/read/getAlgorithms.js
   var getAlgorithms = async (state, action) => {
     if (isNil_default(state.auth.algorithms)) {
       state.auth.algorithms = ["secp256k1", "ed25519", "rsa256", "poseidon"];
@@ -14826,7 +14834,7 @@
     };
   };
 
-  // src/common/actions/read/getLinkedContract.js
+  // contracts/common/actions/read/getLinkedContract.js
   var getLinkedContract = async (state, action) => {
     const contracts = state.contracts || {};
     return {
@@ -14834,7 +14842,7 @@
     };
   };
 
-  // src/common/actions/read/getOwner.js
+  // contracts/common/actions/read/getOwner.js
   var { is: is3, of: of2 } = require_src();
   var getOwner = async (state, action) => {
     let owner = state.owner || [];
@@ -14845,7 +14853,7 @@
     };
   };
 
-  // src/common/actions/read/getAddressLink.js
+  // contracts/common/actions/read/getAddressLink.js
   var getAddressLink = async (state, action) => {
     const { address } = action.input.query;
     const link = state.auth.links[address.toLowerCase()];
@@ -14858,7 +14866,7 @@
     };
   };
 
-  // src/common/actions/read/getRelayerJob.js
+  // contracts/common/actions/read/getRelayerJob.js
   var getRelayerJob = async (state, action) => {
     const jobs = state.relayers || {};
     return {
@@ -14866,7 +14874,7 @@
     };
   };
 
-  // src/common/actions/read/listRelayerJobs.js
+  // contracts/common/actions/read/listRelayerJobs.js
   var { keys: keys5 } = require_src();
   var listRelayerJobs = async (state, action) => {
     return {
@@ -14874,22 +14882,17 @@
     };
   };
 
-  // src/common/actions/read/getEvolve.js
+  // contracts/common/actions/read/getEvolve.js
   var getEvolve = async (state, action) => {
+    let evolve4 = pickAll_default(["canEvolve", "evolve"])(state);
+    evolve4.history = state.evolveHistory || [];
+    evolve4.isEvolving = isEvolving(state);
     return {
-      result: pickAll_default(["canEvolve", "evolve"])(state)
+      result: evolve4
     };
   };
 
-  // src/common/actions/read/version.js
-  var version = async (state, action) => {
-    const { version: version2 } = state;
-    if (isNil_default(version2))
-      err(`No version assigned`);
-    return { result: version2 };
-  };
-
-  // src/common/actions/read/listCollections.js
+  // contracts/common/actions/read/listCollections.js
   var listCollections = async (state, action) => {
     let { _data, data, query, new_data, path: path3 } = await parse(
       state,
@@ -14901,8 +14904,9 @@
     };
   };
 
-  // src/common/actions/read/getInfo.js
+  // contracts/common/actions/read/getInfo.js
   var { pick: pick3 } = require_src();
+  var version = require_version();
   var getInfo = async (state, action) => {
     let info = pick3(
       [
@@ -14918,12 +14922,15 @@
       state
     );
     delete info.auth.links;
+    info.version = version;
+    info.evolveHistory = state.evolveHistory || [];
+    info.isEvolving = isEvolving(state);
     return {
       result: info
     };
   };
 
-  // src/common/lib/validate.js
+  // contracts/common/lib/validate.js
   var validate = async (state, action, func) => {
     const {
       query,
@@ -15040,7 +15047,7 @@
     return _signer;
   };
 
-  // src/common/actions/write/add.js
+  // contracts/common/actions/write/add.js
   var add3 = async (state, action, signer, salt = 0, contractErr = true) => {
     signer ||= await validate(state, action, "add");
     let { _data, data, query, new_data, path: path3, schema, col, next_data } = await parse(state, action, "add", signer, salt, contractErr);
@@ -15053,7 +15060,7 @@
     return { state };
   };
 
-  // src/common/actions/write/set.js
+  // contracts/common/actions/write/set.js
   var set3 = async (state, action, signer, contractErr = true) => {
     signer ||= await validate(state, action, "set");
     let { _data, data, query, new_data, path: path3, schema, col, next_data } = await parse(state, action, "set", signer, 0, contractErr);
@@ -15069,7 +15076,7 @@
     return { state };
   };
 
-  // src/common/actions/write/update.js
+  // contracts/common/actions/write/update.js
   var update3 = async (state, action, signer, contractErr = true) => {
     signer ||= await validate(state, action, "update");
     let {
@@ -15092,7 +15099,7 @@
     return { state };
   };
 
-  // src/common/actions/write/upsert.js
+  // contracts/common/actions/write/upsert.js
   var upsert = async (state, action, signer, contractErr = true) => {
     signer ||= await validate(state, action, "upsert");
     let {
@@ -15118,7 +15125,7 @@
     return { state };
   };
 
-  // src/common/actions/write/remove.js
+  // contracts/common/actions/write/remove.js
   var remove3 = async (state, action, signer, contractErr = true) => {
     signer ||= await validate(state, action, "delete");
     const { data, query, new_data, path: path3, _data, col } = await parse(
@@ -15137,7 +15144,7 @@
     return { state };
   };
 
-  // src/common/actions/write/batch.js
+  // contracts/common/actions/write/batch.js
   var batch = async (state, action, signer, contractErr = true) => {
     signer ||= await validate(state, action, "batch");
     let _state = state;
@@ -15176,7 +15183,7 @@
     return { state: _state };
   };
 
-  // src/common/actions/write/relay.js
+  // contracts/common/actions/write/relay.js
   var relay = async (state, action, signer, contractErr = true) => {
     signer ||= await validate(state, action, "relay");
     let jobID = head_default(action.input.query);
@@ -15254,7 +15261,7 @@
     return { state };
   };
 
-  // src/common/actions/write/setSchema.js
+  // contracts/common/actions/write/setSchema.js
   var import_jsonschema2 = __toESM(require_jsonschema());
   var setSchema = async (state, action, signer) => {
     signer ||= await validate(state, action, "setSchema");
@@ -15273,7 +15280,7 @@
     return { state };
   };
 
-  // src/common/actions/write/setRules.js
+  // contracts/common/actions/write/setRules.js
   var import_json_logic_js2 = __toESM(require_logic());
   var setRules = async (state, action, signer) => {
     signer ||= await validate(state, action, "setRules");
@@ -15304,7 +15311,7 @@
     return { state };
   };
 
-  // src/common/actions/write/addIndex.js
+  // contracts/common/actions/write/addIndex.js
   var addIndex4 = async (state, action, signer) => {
     signer ||= await validate(state, action, "addIndex");
     let { col, _data, data, query, new_data, path: path3 } = await parse(
@@ -15321,7 +15328,7 @@
     return { state };
   };
 
-  // src/common/actions/write/removeIndex.js
+  // contracts/common/actions/write/removeIndex.js
   var removeIndex2 = async (state, action, signer) => {
     signer ||= await validate(state, action, "removeIndex");
     let { col, _data, data, query, new_data, path: path3 } = await parse(
@@ -15335,7 +15342,7 @@
     return { state };
   };
 
-  // src/common/lib/cron.js
+  // contracts/common/lib/cron.js
   var executeCron = async (cron2, state) => {
     let vars = {
       block: {
@@ -15426,7 +15433,7 @@
     return { state: _state };
   };
 
-  // src/common/actions/write/addCron.js
+  // contracts/common/actions/write/addCron.js
   var addCron = async (state, action, signer) => {
     signer ||= await validate(state, action, "addCron");
     const owner = isOwner(signer, state);
@@ -15462,7 +15469,7 @@
     return { state };
   };
 
-  // src/common/actions/write/removeCron.js
+  // contracts/common/actions/write/removeCron.js
   var removeCron = async (state, action, signer) => {
     signer ||= await validate(state, action, "removeCron");
     const owner = isOwner(signer, state);
@@ -15476,7 +15483,7 @@
     return { state };
   };
 
-  // src/common/actions/write/setAlgorithms.js
+  // contracts/common/actions/write/setAlgorithms.js
   var setAlgorithms = async (state, action, signer) => {
     signer ||= await validate(state, action, "setAlgorithms");
     let { _data, data, query, new_data, path: path3 } = await parse(
@@ -15492,7 +15499,7 @@
     return { state };
   };
 
-  // src/common/actions/write/addRelayerJob.js
+  // contracts/common/actions/write/addRelayerJob.js
   var import_jsonschema3 = __toESM(require_jsonschema());
   var addRelayerJob = async (state, action, signer) => {
     signer ||= await validate(state, action, "addRelayerJob");
@@ -15522,7 +15529,7 @@
     return { state };
   };
 
-  // src/common/actions/write/removeRelayerJob.js
+  // contracts/common/actions/write/removeRelayerJob.js
   var import_jsonschema4 = __toESM(require_jsonschema());
   var removeRelayerJob = async (state, action, signer) => {
     signer ||= await validate(state, action, "removeRelayerJob");
@@ -15539,7 +15546,7 @@
     return { state };
   };
 
-  // src/common/actions/write/linkContract.js
+  // contracts/common/actions/write/linkContract.js
   var linkContract = async (state, action, signer) => {
     signer ||= await validate(state, action, "linkContract");
     let { _data, data, query, new_data, path: path3 } = await parse(
@@ -15558,7 +15565,7 @@
     return { state };
   };
 
-  // src/common/actions/write/unlinkContract.js
+  // contracts/common/actions/write/unlinkContract.js
   var unlinkContract = async (state, action, signer) => {
     signer ||= await validate(state, action, "unlinkContract");
     let { _data, data, query, new_data, path: path3 } = await parse(
@@ -15577,14 +15584,11 @@
     return { state };
   };
 
-  // src/common/warp/actions/write/evolve.js
+  // contracts/common/warp/actions/write/evolve.js
+  var import_version = __toESM(require_version());
   var evolve3 = async (state, action, signer) => {
     signer ||= await validate(state, action, "evolve");
-    let owner = state.owner || [];
-    if (is_default(String)(owner))
-      owner = of_default(owner);
-    if (!includes_default(signer)(owner))
-      err("Signer is not the owner.");
+    const owner = isOwner(signer, state);
     if (action.input.value !== action.input.query.value) {
       err("Values don't match.");
     }
@@ -15593,10 +15597,32 @@
     } else {
       err(`This contract cannot evolve.`);
     }
+    state.evolveHistory ||= [];
+    state.evolveHistory.push({
+      signer,
+      block: SmartWeave.block.height,
+      data: SmartWeave.block.timestamp,
+      srcTxId: action.input.value,
+      oldVersion: import_version.default
+    });
     return { state };
   };
 
-  // src/common/actions/write/setCanEvolve.js
+  // contracts/common/warp/actions/write/migrate.js
+  var import_version2 = __toESM(require_version());
+  var migrate = async (state, action, signer) => {
+    signer ||= await validate(state, action, "migrate");
+    const owner = isOwner(signer, state);
+    if (import_version2.default !== action.input.query.version) {
+      err(`version doesn't match (${import_version2.default} : ${action.input.query.version})`);
+    }
+    if (!isEvolving(state))
+      err(`contract is not ready to migrate`);
+    state.evolveHistory[state.evolveHistory.length - 1].newVersion = import_version2.default;
+    return { state };
+  };
+
+  // contracts/common/actions/write/setCanEvolve.js
   var setCanEvolve = async (state, action, signer) => {
     signer ||= await validate(state, action, "setCanEvolve");
     const owner = isOwner(signer, state);
@@ -15607,7 +15633,18 @@
     return { state };
   };
 
-  // src/common/actions/write/addOwner.js
+  // contracts/common/actions/write/setSecure.js
+  var setSecure = async (state, action, signer) => {
+    signer ||= await validate(state, action, "setSecure");
+    const owner = isOwner(signer, state);
+    if (!is_default(Boolean)(action.input.query.value)) {
+      err("Value must be a boolean.");
+    }
+    state.secure = action.input.query.value;
+    return { state };
+  };
+
+  // contracts/common/actions/write/addOwner.js
   var addOwner = async (state, action, signer) => {
     signer ||= await validate(state, action, "addOwner");
     const owner = isOwner(signer, state);
@@ -15624,7 +15661,7 @@
     return { state };
   };
 
-  // src/common/actions/write/removeOwner.js
+  // contracts/common/actions/write/removeOwner.js
   var removeOwner = async (state, action, signer) => {
     signer ||= await validate(state, action, "removeOwner");
     const owner = isOwner(signer, state);
@@ -15638,7 +15675,7 @@
     return { state };
   };
 
-  // src/common/actions/write/addAddressLink.js
+  // contracts/common/actions/write/addAddressLink.js
   var addAddressLink = async (state, action, signer) => {
     signer ||= await validate(state, action, "addAddressLink");
     const { address, signature, expiry } = action.input.query;
@@ -15698,7 +15735,7 @@
     return { state };
   };
 
-  // src/common/actions/write/removeAddressLink.js
+  // contracts/common/actions/write/removeAddressLink.js
   var removeAddressLink = async (state, action, signer) => {
     signer ||= await validate(state, action, "removeAddressLink");
     const { address } = action.input.query;
@@ -15713,8 +15750,36 @@
     return { state };
   };
 
-  // src/warp/contract.js
+  // contracts/warp/contract.js
+  var import_version3 = __toESM(require_version());
+  var writes = [
+    "relay",
+    "set",
+    "setSchema",
+    "setRules",
+    "addIndex",
+    "removeIndex",
+    "add",
+    "upsert",
+    "remove",
+    "batch",
+    "addCron",
+    "removeCron",
+    "setAlgorithms",
+    "addRelayerJob",
+    "linkContract",
+    "unlinkContract",
+    "setCanEvolve",
+    "setSecure",
+    "addOwner",
+    "removeOwner",
+    "addAddressLink",
+    "removeAddressLink"
+  ];
   async function handle(state, action) {
+    if (isEvolving(state) && includes_default(action.input.function)(writes)) {
+      err("contract needs migration");
+    }
     try {
       ;
       ({ state } = await cron(state));
@@ -15787,7 +15852,7 @@
       case "nonce":
         return await nonce(state, action);
       case "version":
-        return await version(state, action);
+        return { result: import_version3.default };
       case "ids":
         return await ids(state, action);
       case "delete":
@@ -15804,8 +15869,12 @@
         return await getEvolve(state, action);
       case "evolve":
         return await evolve3(state, action);
+      case "migrate":
+        return await migrate(state, action);
       case "setCanEvolve":
         return await setCanEvolve(state, action);
+      case "setSecure":
+        return await setSecure(state, action);
       default:
         err(
           `No function supplied or function not recognised: "${action.input.function}"`

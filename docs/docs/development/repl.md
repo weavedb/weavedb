@@ -55,6 +55,12 @@ Whereas without secure mode, anyone can write by default. Insecure mode is conve
 yarn repl --secure
 ```
 
+The seecure mode can be switched with `setSecure` method.
+
+```js
+await db.setSecure(false)
+```
+
 #### Change ArLocal Port
 
 The local Arweave node runs on port `1820` by default.
