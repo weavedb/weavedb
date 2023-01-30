@@ -2973,6 +2973,32 @@ lit-connect-modal@^0.1.10:
   dependencies:
     micromodal "^0.4.10"
 
+lit-js-sdk@^1.1.242:
+  version "1.1.242"
+  resolved "https://registry.yarnpkg.com/lit-js-sdk/-/lit-js-sdk-1.1.242.tgz#da848b18f52ddce71ca6a174db65bdd74de864f2"
+  integrity sha512-UHOe/U6aUgfdqxmBkSYP3xHv90YcAKuVdS6uXbGseApWk8Tt1jnqq8eQfzj0yCcx9QA0T5xx267BpFe+kTMnjw==
+  dependencies:
+    "@ethersproject/bytes" "^5.5.0"
+    "@ethersproject/contracts" "^5.2.0"
+    "@ethersproject/hash" "^5.4.0"
+    "@ethersproject/providers" "^5.2.0"
+    "@ethersproject/strings" "^5.5.0"
+    "@ethersproject/units" "^5.4.0"
+    "@ethersproject/wallet" "^5.2.0"
+    "@walletconnect/ethereum-provider" "1.7.8"
+    buffer "^6.0.3"
+    bufferutil "^4.0.6"
+    cross-blob "^3.0.1"
+    jszip "^3.6.0"
+    lit-connect-modal "^0.1.10"
+    lit-siwe "^1.1.8"
+    node-fetch "^3.2.3"
+    pako "^2.0.4"
+    tslib "^2.3.1"
+    tweetnacl "^1.0.3"
+    tweetnacl-util "^0.15.1"
+    utf-8-validate "^5.0.8"
+
 lit-siwe@^1.1.8:
   version "1.1.8"
   resolved "https://registry.yarnpkg.com/lit-siwe/-/lit-siwe-1.1.8.tgz#6a393069012816d629c518bb8aa410f1e4a78bd7"
