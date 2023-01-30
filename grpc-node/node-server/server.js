@@ -42,7 +42,7 @@ async function query(call, callback) {
   let [func, contractTxId] = method.split("@")
   const allowed_contracts = map(v => v.split("@")[0])(
     isNil(config.contractTxId)
-      ? null
+      ? []
       : is(Array, config.contractTxId)
       ? config.contractTxId
       : [config.contractTxId]
@@ -52,7 +52,10 @@ async function query(call, callback) {
       ? config.contractTxId[0]
       : config.contractTxId
   ).split("@")[0]
-  if (!isNil(allowed_contracts) && !includes(contractTxId)(allowed_contracts)) {
+  if (
+    allowed_contracts.length !== 0 &&
+    !includes(contractTxId)(allowed_contracts)
+  ) {
     callback(null, {
       result: null,
       err: "contractTxId not allowed",
