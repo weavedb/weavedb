@@ -1,5 +1,5 @@
 import { err } from "../common/lib/utils"
-
+import version from "./lib/version"
 import { nonce } from "../common/actions/read/nonce"
 import { ids } from "../common/actions/read/ids"
 import { get } from "../common/actions/read/get"
@@ -14,7 +14,6 @@ import { getAddressLink } from "../common/actions/read/getAddressLink"
 import { getRelayerJob } from "../common/actions/read/getRelayerJob"
 import { listRelayerJobs } from "../common/actions/read/listRelayerJobs"
 import { getEvolve } from "../common/actions/read/getEvolve"
-import { version } from "../common/actions/read/version"
 import { listCollections } from "../common/actions/read/listCollections"
 import { getInfo } from "../common/actions/read/getInfo"
 
@@ -117,7 +116,7 @@ export async function handle(state, action) {
     case "nonce":
       return await nonce(state, action)
     case "version":
-      return await version(state, action)
+      return { result: version }
     case "ids":
       return await ids(state, action)
     case "delete":

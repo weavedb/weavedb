@@ -399,3 +399,5 @@ export const isOwner = (signer, state) => {
 export const read = async (contract, param) => {
   return (await SmartWeave.contracts.viewContractState(contract, param)).result
 }
+
+export const version = "0.18.0"
