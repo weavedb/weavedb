@@ -80,6 +80,20 @@ module.exports = {
 }
 ```
 
+#### Redis for Remote In-Memory Cache
+
+You can use Redis for multiple nodes to share the same remote cache.
+
+Use `redis` option in `weavedb.config.js`. This will be passed to `createClient(config)`.
+
+```js
+module.exports = {
+  redis: {
+    url: "redis://localhost:6379
+  }
+}
+```
+
 ### Run docker-compose
 
 ```bash
