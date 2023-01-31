@@ -34,15 +34,24 @@ There are 3 ways to specify the `contractTxId` in the config file.
 `contractTxId: "xxxxx..."`
 - multiple contracts - set an array of ids to allow multiple DB instances.  
 `contractTxId: [ "xxxxx...", "yyyyy...", "zzzzz..." ]`
-- any contracts - omit this field to allow any DB instance on the node.
+- any contracts - omit `contractTxId` or set `allowAnyContracts` to `true`
+
+When you have old contracts, they need to be specified in the `contractTxId`, and you can still allow any contracts.
+
+```js
+module.exports = {
+  contractTxId: ["xxxxx...@old", "yyyyy...@old"],
+  allowAnyContracts: true
+}
+```
 
 Then build and run the docker container.
 
 #### Store Snapshots in Cloud
 
-Due to the concept of the lazy evaluation, initializing contracts with a large number of transactions is extremely slow.
+Due to the concept of lazy evaluation, initializing contracts with a large number of transactions is extremely slow.
 
-You can save snapshot in a cloud storage such as GCP and AWS.
+You can save snapshots in cloud storage such as GCP and AWS.
 
 To use Google Cloud Storage, specify `gcs` option in `weavedb.config.js`.
 
