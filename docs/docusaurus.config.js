@@ -138,6 +138,19 @@ const config = {
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
       },
+      algolia: {
+        appId: "93NNZMMTYN",
+        apiKey: "12057167e7530f1503c0bb73da722e7b",
+        indexName: "weavedb",
+        contextualSearch: true,
+        externalUrlRegex: "external\\.com|domain\\.com",
+        replaceSearchResultPathname: {
+          from: "/docs/",
+          to: "/",
+        },
+        searchParameters: {},
+        searchPagePath: "search",
+      },
     }),
 }
 
