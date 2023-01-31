@@ -38,6 +38,7 @@ class Base {
       "listRelayerJobs",
       "listCollections",
       "getInfo",
+      "getNonce",
     ]
   }
   signer() {
