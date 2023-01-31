@@ -1,3 +1,7 @@
+const archiver = require("archiver")
+const extract = require("extract-zip")
+const fs = require("fs")
+const path = require("path")
 const md5 = require("md5")
 const config = require("./weavedb.config.js")
 const PROTO_PATH = __dirname + "/weavedb.proto"
@@ -36,6 +40,60 @@ const reads = [
   "listCollections",
   "getInfo",
 ]
+
+let bucket = null
+const isLmdb = (config.cache || "lmdb") === "lmdb"
+const cacheDirPath = path.resolve(__dirname, "cache/warp")
+if (!isNil(config.gcs)) {
+  try {
+    const { Storage } = require("@google-cloud/storage")
+    const gcs = path.resolve(__dirname, config.gcs.keyFilename)
+    const storage = new Storage({ keyFilename: gcs })
+    bucket = storage.bucket(config.gcs.bucket)
+  } catch (e) {
+    console.log(e)
+  }
+}
+
+async function uploadToGCS(contractTxId) {
+  const options = {
+    destination: `${contractTxId}.zip`,
+  }
+
+  try {
+    const filePath = path.resolve(cacheDirPath, `${contractTxId}.zip`)
+    await bucket.upload(filePath, options)
+    console.log(`snapshot (${contractTxId}) saved!`)
+  } catch (e) {
+    console.log(e)
+  }
+}
+
+async function saveSnapShot(contractTxId) {
+  const output = fs.createWriteStream(
+    path.resolve(cacheDirPath, `${contractTxId}.zip`)
+  )
+  const archive = archiver("zip", {
+    zlib: { level: 9 },
+  })
+
+  archive.on("error", function (err) {
+    console.log(err)
+  })
+  output.on("close", () => uploadToGCS(contractTxId))
+
+  archive.pipe(output)
+
+  archive.directory(
+    path.resolve(cacheDirPath, `${contractTxId}/state/`),
+    "state"
+  )
+  archive.directory(
+    path.resolve(cacheDirPath, `${contractTxId}/contracts/`),
+    "contracts"
+  )
+  archive.finalize()
+}
 
 async function query(call, callback) {
   const { method, query, nocache } = call.request
@@ -132,17 +190,46 @@ async function initSDK(v) {
   let [txid, old] = v.split("@")
   _config.contractTxId = txid
   if (old === "old") _config.old = true
-  if ((_config.cache || "lmdb") === "lmdb") {
+  if (isLmdb) {
     _config.lmdb = {
       state: { dbLocation: `./cache/warp/${_config.contractTxId}/state` },
       contracts: {
         dbLocation: `./cache/warp/${_config.contractTxId}/contracts`,
       },
     }
+    if (!isNil(bucket)) {
+      try {
+        fs.mkdirSync(cacheDirPath, { recursive: true })
+      } catch (e) {
+        console.log(e)
+      }
+      try {
+        const src = path.resolve(
+          __dirname,
+          `cache/warp/${_config.contractTxId}-downloaded.zip`
+        )
+        const dist = path.resolve(
+          __dirname,
+          `cache/warp/${_config.contractTxId}/`
+        )
+
+        console.log(
+          await bucket.file(`${_config.contractTxId}.zip`).download({
+            destination: src,
+          })
+        )
+        await extract(src, { dir: dist })
+        console.log(`snapshot(${_config.contractTxId}) downloaded!`)
+      } catch (e) {
+        console.log(e)
+        console.log(`snapshot(${_config.contractTxId}])doesn't exist`)
+      }
+    }
   }
   sdks[txid] = new SDK(_config)
   if (isNil(_config.wallet)) await sdks[txid].initializeWithoutWallet()
   await sdks[txid].db.readState()
+  if (!isNil(bucket)) saveSnapShot(txid)
   return
 }
 
