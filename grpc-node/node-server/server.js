@@ -1,3 +1,4 @@
+const Cache = require("./cache")
 const archiver = require("archiver")
 const extract = require("extract-zip")
 const fs = require("fs")
@@ -19,8 +20,8 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 })
 
 const weavedb = grpc.loadPackageDefinition(packageDefinition).weavedb
+let redis = null
 let sdks = {}
-let _cache = {}
 let _init = {}
 const allowed_contracts = map(v => v.split("@")[0])(
   isNil(config.contractTxId)
@@ -49,6 +50,8 @@ if (!isNil(config.gcs)) {
     console.log(e)
   }
 }
+
+const cache = new Cache(config)
 
 async function uploadToGCS(contractTxId) {
   const options = {
@@ -148,7 +151,7 @@ async function query(call, callback) {
         }
       } else if (includes(func)(sdks[contractTxId].reads)) {
         result = await sdks[contractTxId][func](...JSON.parse(query))
-        _cache[key] = { date: Date.now(), result }
+        await cache.set(key, { date: Date.now(), result })
       } else {
         result = await sdks[contractTxId].write(
           func,
@@ -171,7 +174,7 @@ async function query(call, callback) {
 
   if (
     includes(func)(sdks[contractTxId].reads) &&
-    !isNil(_cache[key]) &&
+    (await cache.exists(key)) &&
     !nocache
   ) {
     result = _cache[key].result
@@ -244,6 +247,7 @@ async function main() {
         console.log(e)
       })
   }
+  cache.init()
 
   const server = new grpc.Server()
 
