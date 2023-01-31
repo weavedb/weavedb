@@ -15,16 +15,10 @@ Browser clients can use the [Light Client](/docs/sdk/client), instead of the ful
 
 Install `docker` and `docker-compose` globally to your machine. And open port `8080` for anyone.
 
-
-### Run docker-compose
+### weavedb.config.js
 
 Add `weavedb.config.js` to `/grpc-node/node-server` directory.
 
-```bash
-touch grpc-node/node-server/weavedb.config.js
-```
-
-#### weavedb.config.js
 
 ```js
 module.exports = {
@@ -43,6 +37,41 @@ There are 3 ways to specify the `contractTxId` in the config file.
 - any contracts - omit this field to allow any DB instance on the node.
 
 Then build and run the docker container.
+
+#### Store Snapshots in Cloud
+
+Due to the concept of the lazy evaluation, initializing contracts with a large number of transactions is extremely slow.
+
+You can save snapshot in a cloud storage such as GCP and AWS.
+
+To use Google Cloud Storage, specify `gcs` option in `weavedb.config.js`.
+
+```js
+module.exports = {
+  gcs: {
+    bucket: "[bucket_name]",
+    keyFilename: "[service_account_key_file_location]",
+  }
+}
+```
+
+For example, to use the project default bucket with the default service account,
+
+- go to [Cloud Console](https://console.cloud.google.com/)
+- set up a project and the storage (note the `projectId`)
+- get a service account key file from `Project Settings > Service accounts`
+- store it at `/grpc-node/node-server/gcs.json`
+
+```js
+module.exports = {
+  gcs: {
+    bucket: "[projectId].appspot.com",
+    keyFilename: "gcs.json",
+  }
+}
+```
+
+### Run docker-compose
 
 ```bash
 yarn run-node
