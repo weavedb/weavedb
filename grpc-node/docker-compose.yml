@@ -7,7 +7,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
-      - ./node-server/cache:/node-server/cache
+      - ./node-server/cache:/weavedb/cache
   envoy:
     build: ./envoy
     ports:

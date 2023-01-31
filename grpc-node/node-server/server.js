@@ -21,25 +21,20 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 const weavedb = grpc.loadPackageDefinition(packageDefinition).weavedb
 let sdks = {}
 let _cache = {}
-const reads = [
-  "get",
-  "cget",
-  "getIndexes",
-  "getCrons",
-  "getSchema",
-  "getRules",
-  "getIds",
-  "getOwner",
-  "getAddressLink",
-  "getAlgorithms",
-  "getLinkedContract",
-  "getEvolve",
-  "getVersion",
-  "getRelayerJob",
-  "listRelayerJobs",
-  "listCollections",
-  "getInfo",
-]
+let _init = {}
+const allowed_contracts = map(v => v.split("@")[0])(
+  isNil(config.contractTxId)
+    ? []
+    : is(Array, config.contractTxId)
+    ? config.contractTxId
+    : [config.contractTxId]
+)
+
+const allow_any_contracts =
+  config.allowAnyContracts === true || allowed_contracts.length === 0
+
+const isAllowed = contractTxId =>
+  !allow_any_contracts && !includes(contractTxId)(allowed_contracts)
 
 let bucket = null
 const isLmdb = (config.cache || "lmdb") === "lmdb"
@@ -98,31 +93,29 @@ async function saveSnapShot(contractTxId) {
 async function query(call, callback) {
   const { method, query, nocache } = call.request
   let [func, contractTxId] = method.split("@")
-  const allowed_contracts = map(v => v.split("@")[0])(
-    isNil(config.contractTxId)
-      ? []
-      : is(Array, config.contractTxId)
-      ? config.contractTxId
-      : [config.contractTxId]
-  )
-  contractTxId ||= (
-    is(Array, config.contractTxId)
-      ? config.contractTxId[0]
-      : config.contractTxId
-  ).split("@")[0]
-  if (
-    allowed_contracts.length !== 0 &&
-    !includes(contractTxId)(allowed_contracts)
-  ) {
+
+  if (isNil(contractTxId)) {
+    callback(null, {
+      result: null,
+      err: "contractTxId not specified",
+    })
+    return
+  }
+
+  contractTxId = contractTxId.split("@")[0]
+
+  if (isAllowed(contractTxId)) {
     callback(null, {
       result: null,
       err: "contractTxId not allowed",
     })
     return
   }
+
   if (isNil(sdks[contractTxId])) {
     console.log("initializing contract..." + contractTxId)
     try {
+      console.log("lets go...", contractTxId)
       await initSDK(contractTxId)
       console.log(`sdk(${contractTxId}) ready!`)
     } catch (e) {
@@ -134,31 +127,26 @@ async function query(call, callback) {
       return
     }
   }
-  const start = Date.now()
+
   const key = md5(`${contractTxId}:${func}:${query}`)
   let result = null
   let err = null
-  let end
-
-  function cb(result, err) {
-    callback(null, {
-      result: JSON.stringify(result),
-      err: err,
-    })
-  }
-
   const sendQuery = async () => {
     const nameMap = { get: "getCache", cget: "cgetCache" }
     try {
       if (includes(func)(["get", "cget", "getNonce"])) {
-        if (nocache && includes(func)(["get", "cget"])) {
+        if (
+          includes(func)(["get", "cget"]) &&
+          (isNil(_init[contractTxId]) || nocache)
+        ) {
           result = await sdks[contractTxId][func](...JSON.parse(query))
+          _init[contractTxId] = true
         } else {
           result = await sdks[contractTxId][nameMap[func] || func](
             ...JSON.parse(query)
           )
         }
-      } else if (includes(func)(reads)) {
+      } else if (includes(func)(sdks[contractTxId].reads)) {
         result = await sdks[contractTxId][func](...JSON.parse(query))
         _cache[key] = { date: Date.now(), result }
       } else {
@@ -175,7 +163,17 @@ async function query(call, callback) {
     return { result, err }
   }
 
-  if (includes(func)(reads) && !isNil(_cache[key]) && !nocache) {
+  const cb = (result, err) =>
+    callback(null, {
+      result: JSON.stringify(result),
+      err: err,
+    })
+
+  if (
+    includes(func)(sdks[contractTxId].reads) &&
+    !isNil(_cache[key]) &&
+    !nocache
+  ) {
     result = _cache[key].result
     cb(result, err)
     await sendQuery()
@@ -213,11 +211,9 @@ async function initSDK(v) {
           `cache/warp/${_config.contractTxId}/`
         )
 
-        console.log(
-          await bucket.file(`${_config.contractTxId}.zip`).download({
-            destination: src,
-          })
-        )
+        await bucket.file(`${_config.contractTxId}.zip`).download({
+          destination: src,
+        })
         await extract(src, { dir: dist })
         console.log(`snapshot(${_config.contractTxId}) downloaded!`)
       } catch (e) {
