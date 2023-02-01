@@ -1,6 +1,5 @@
 const { isNil } = require("ramda")
 
-var REDIS_TTL = 3600
 class Cache {
   constructor(config) {
     this.cache = {}
@@ -26,11 +25,7 @@ class Cache {
   async get(key) {
     if (this.isRedis) {
       try {
-        const _ret = await this.redis.get(key)
-        if (_ret) {
-          const ret = JSON.parse(_ret)
-          if (ret) return ret
-        }
+        return JSON.parse(await this.redis.get(key))
       } catch (e) {
         console.log(e)
       }
@@ -40,15 +35,12 @@ class Cache {
     }
   }
 
-  async set(key, val, ttl = REDIS_TTL) {
+  async set(key, val) {
     if (this.isRedis) {
       try {
         await this.redis.set(key, JSON.stringify(val))
-        await this.redis.expire(key, ttl)
       } catch (e) {
         console.log(e)
-        console.log("key: ", key)
-        console.log("val: ", val)
       }
     } else {
       this.cache[key] = val
