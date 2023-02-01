@@ -64,10 +64,13 @@ import {
   _setCanEvolve,
   _setSecure,
   _setAlgorithms,
+  _evolve,
+  _migrate,
   addRelayerJob,
   removeRelayerJob,
 } from "../lib/weavedb.js"
 const per_page = 20
+const latest = "0.18.0"
 const tabmap = {
   DB: { name: "DB Instances" },
   Data: { name: "Data Collections" },
@@ -108,6 +111,7 @@ export default inject(
     const [addInstance, setAddInstance] = useState(false)
     const [addOwner, setAddOwner] = useState(false)
     const [addCanEvolve, setAddCanEvolve] = useState(false)
+    const [addEvolve, setAddEvolve] = useState(false)
     const [addSecure, setAddSecure] = useState(false)
     const [addAlgorithms, setAddAlgorithms] = useState(false)
     const [addGRPC, setAddGRPC] = useState(false)
@@ -543,6 +547,7 @@ export default inject(
             ($.temp_current || "").toLowerCase(),
             map(toLower)(is(Array, state.owner) ? state.owner : [state.owner])
           )
+    console.log(state)
     return (
       <ChakraProvider>
         <style global jsx>{`
@@ -1619,50 +1624,6 @@ export default inject(
                                     bg="#ddd"
                                     sx={{ borderRadius: "3px" }}
                                   >
-                                    canEvolve
-                                  </Box>
-                                  <Flex flex={1}>
-                                    {state.canEvolve ? "true" : "false"}
-                                  </Flex>
-                                  <Box
-                                    color="#999"
-                                    sx={{
-                                      cursor: "pointer",
-                                      ":hover": {
-                                        opacity: 0.75,
-                                        color: "#6441AF",
-                                      },
-                                    }}
-                                    onClick={async e => {
-                                      e.stopPropagation()
-                                      if (!isOwner) {
-                                        alert(`Sign in with the owner account.`)
-                                        return
-                                      }
-                                      setAddCanEvolve(true)
-                                    }}
-                                  >
-                                    <Box as="i" className="fas fa-edit" />
-                                  </Box>
-                                </Flex>
-                                <Flex align="center" p={2} px={3}>
-                                  <Box
-                                    mr={2}
-                                    px={3}
-                                    bg="#ddd"
-                                    sx={{ borderRadius: "3px" }}
-                                  >
-                                    evolve
-                                  </Box>
-                                  {isNil(state.evolve) ? "null" : state.evolve}
-                                </Flex>
-                                <Flex align="center" p={2} px={3}>
-                                  <Box
-                                    mr={2}
-                                    px={3}
-                                    bg="#ddd"
-                                    sx={{ borderRadius: "3px" }}
-                                  >
                                     secure
                                   </Box>
                                   <Flex flex={1}>
@@ -1724,6 +1685,113 @@ export default inject(
                                     <Box as="i" className="fas fa-edit" />
                                   </Box>
                                 </Flex>
+                                <Flex align="center" p={2} px={3}>
+                                  <Flex
+                                    sx={{ borderBottom: "1px solid #333" }}
+                                    w="100%"
+                                  >
+                                    <Box sx={{ borderRadius: "3px" }}>
+                                      Evolve
+                                    </Box>
+                                  </Flex>
+                                </Flex>
+                                <Flex align="center" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#ddd"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    canEvolve
+                                  </Box>
+                                  <Flex flex={1}>
+                                    {state.canEvolve ? "true" : "false"}
+                                  </Flex>
+                                  <Box
+                                    color="#999"
+                                    sx={{
+                                      cursor: "pointer",
+                                      ":hover": {
+                                        opacity: 0.75,
+                                        color: "#6441AF",
+                                      },
+                                    }}
+                                    onClick={async e => {
+                                      e.stopPropagation()
+                                      if (!isOwner) {
+                                        alert(`Sign in with the owner account.`)
+                                        return
+                                      }
+                                      setAddCanEvolve(true)
+                                    }}
+                                  >
+                                    <Box as="i" className="fas fa-edit" />
+                                  </Box>
+                                </Flex>
+                                <Flex align="center" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#ddd"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    evolve
+                                  </Box>
+                                  <Flex flex={1} align="center">
+                                    {isNil(state.evolve)
+                                      ? "null"
+                                      : state.evolve}
+                                    {state.isEvolving ? (
+                                      <Box
+                                        ml={1}
+                                        color="#6441AF"
+                                        sx={{ textDecoration: "underline" }}
+                                      >
+                                        (migration required!)
+                                      </Box>
+                                    ) : null}
+                                  </Flex>
+                                  <Box
+                                    color="#999"
+                                    sx={{
+                                      cursor: "pointer",
+                                      ":hover": {
+                                        opacity: 0.75,
+                                        color: "#6441AF",
+                                      },
+                                    }}
+                                    onClick={async e => {
+                                      e.stopPropagation()
+                                      if (!isOwner) {
+                                        alert(`Sign in with the owner account.`)
+                                        return
+                                      }
+                                      setAddEvolve(true)
+                                    }}
+                                  >
+                                    <Box as="i" className="fas fa-edit" />
+                                  </Box>
+                                </Flex>
+                                {(state.evolveHistory || []).length ===
+                                0 ? null : (
+                                  <Flex align="flex-start" p={2} px={3}>
+                                    <Box
+                                      mr={2}
+                                      px={3}
+                                      bg="#ddd"
+                                      sx={{ borderRadius: "3px" }}
+                                    >
+                                      evolve history
+                                    </Box>
+                                    <Box flex={1}>
+                                      {map(v => (
+                                        <Box>
+                                          {v.srcTxId} (v{v.newVersion})
+                                        </Box>
+                                      ))(state.evolveHistory)}
+                                    </Box>
+                                  </Flex>
+                                )}
                                 <Flex align="center" p={2} px={3}>
                                   <Flex
                                     sx={{ borderBottom: "1px solid #333" }}
@@ -3423,14 +3491,14 @@ export default inject(
                   </Flex>
                 </Box>
               </Flex>
-            ) : addCanEvolve !== false ? (
+            ) : addEvolve !== false ? (
               <Flex
                 w="100%"
                 h="100%"
                 position="fixed"
                 sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
                 bg="rgba(0,0,0,0.5)"
-                onClick={() => setAddCanEvolve(false)}
+                onClick={() => setAddEvolve(false)}
                 justify="center"
                 align="center"
               >
@@ -3443,7 +3511,7 @@ export default inject(
                   onClick={e => e.stopPropagation()}
                 >
                   <Flex align="center" mb={3} justify="center">
-                    canEvolve is{" "}
+                    contract version is{" "}
                     <Box
                       as="span"
                       ml={2}
@@ -3451,7 +3519,7 @@ export default inject(
                       fontWeight="bold"
                       color={state.canEvolve ? "#6441AF" : ""}
                     >
-                      {state.canEvolve ? "ON" : "OFF"}
+                      {state.version}
                     </Box>
                   </Flex>
                   <Flex align="center">
@@ -3459,19 +3527,33 @@ export default inject(
                       fontSize="12px"
                       align="center"
                       height="40px"
-                      bg="#333"
+                      bg={
+                        state.version === latest
+                          ? "#999"
+                          : state.isEvolving
+                          ? "#6441AF"
+                          : "#333"
+                      }
                       color="white"
                       justify="center"
                       py={2}
                       px={2}
                       w="100%"
                       onClick={async () => {
-                        if (isNil($.loading)) {
-                          set("set_canevolve", "loading")
-                          const res = await fn(_setCanEvolve)({
-                            value: !state.canEvolve,
-                            contractTxId,
-                          })
+                        if (state.version !== latest && isNil($.loading)) {
+                          set("set_evolve", "loading")
+                          let res
+                          if (state.isEvolving) {
+                            res = await fn(_migrate)({
+                              version: latest,
+                              contractTxId,
+                            })
+                          } else {
+                            res = await fn(_evolve)({
+                              value: !state.canEvolve,
+                              contractTxId,
+                            })
+                          }
                           if (/^Error:/.test(res)) {
                             alert("Something went wrong")
                           }
@@ -3479,12 +3561,22 @@ export default inject(
                           set(null, "loading")
                         }
                       }}
-                      sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
+                      sx={{
+                        cursor:
+                          state.version === latest ? "default" : "pointer",
+                        ":hover": {
+                          opacity: state.version === latest ? 1 : 0.75,
+                        },
+                      }}
                     >
                       {!isNil($.loading) ? (
                         <Box as="i" className="fas fa-spin fa-circle-notch" />
+                      ) : state.version === latest ? (
+                        "The current version is up to date"
+                      ) : state.isEvolving ? (
+                        "Migrate"
                       ) : (
-                        "Switch canEvolve"
+                        `Upgrade to ${latest}`
                       )}
                     </Flex>
                   </Flex>
