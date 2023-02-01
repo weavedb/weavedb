@@ -360,6 +360,8 @@ async function initSDK(v) {
   if (isNil(_config.wallet)) await sdks[txid].initializeWithoutWallet()
   await sdks[txid].db.readState()
   if (!isNil(gcsBucket)) saveSnapShotGCS(txid)
+  else if (!isNil(s3Ins)) saveSnapShotS3(txid)
+
   return
 }
 
