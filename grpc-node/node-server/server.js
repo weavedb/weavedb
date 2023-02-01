@@ -64,7 +64,6 @@ if (!isNil(config.gcs)) {
       const { S3 } = require("aws-sdk")
       s3Ins = new S3({
         apiVersion: "2006-03-01",
-        apiVersion: "2006-03-01",
         useDualstackEndpoint: true,
         accessKeyId: accessKeyId,
         secretAccessKey: secretAccessKey,
