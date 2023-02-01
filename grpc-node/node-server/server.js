@@ -40,6 +40,7 @@ const isAllowed = (contractTxId) =>
 let gcsBucket = null
 let s3Ins = null
 
+
 const isLmdb = (config.cache || "lmdb") === "lmdb"
 const cacheDirPath = path.resolve(__dirname, "cache/warp")
 if (!isNil(config.gcs)) {
@@ -57,9 +58,10 @@ if (!isNil(config.gcs)) {
   !isNil(config.s3.prefix)
 ) {
   try {
-    const accessKeyId = process.env.AWS_ACCESS_KEY_ID
-    const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
-    const s3region = process.env.AWS_REGION
+    const accessKeyId = !isNil(config.s3.accessKeyId) ? config.s3.accessKeyId : process.env.AWS_ACCESS_KEY_ID
+    const secretAccessKey = !isNil(config.s3.secretAccessKey) ? config.s3.secretAccessKey : process.env.AWS_SECRET_ACCESS_KEY
+    const s3region = !isNil(config.s3.region) ? config.s3.region : process.env.AWS_REGION
+
     if (!isNil(accessKeyId) && !isNil(secretAccessKey) && !isNil(s3region)) {
       const { S3 } = require("aws-sdk")
       s3Ins = new S3({
