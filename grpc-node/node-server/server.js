@@ -165,7 +165,6 @@ async function saveSnapShotS3(contractTxId) {
   })
 
   output.on("close", () => uploadToS3(contractTxId))
-  // console.log("state dir: " , path.resolve(cacheDirPath, `${contractTxId}/state/`,'state'))
 
   archive.pipe(output)
   archive.directory(
@@ -310,7 +309,6 @@ async function initSDK(v) {
         console.log(`snapshot(${_config.contractTxId}])doesn't exist`)
       }
     } else if (!isNil(s3Ins)) {
-      console.log("!isNil(s3Ins)")
       try {
         fs.mkdirSync(cacheDirPath, { recursive: true })
       } catch (e) {
@@ -322,10 +320,10 @@ async function initSDK(v) {
           `${_config.contractTxId}-downloaded.zip`
         )
         const dist = path.resolve(cacheDirPath, `${_config.contractTxId}/`)
-        console.log("dist: ", dist)
+        // console.log("dist: ", dist)
 
         const s3key = `${config.s3.prefix}${_config.contractTxId}.zip`
-        console.log("s3key: ", s3key)
+        // console.log("s3key: ", s3key)
         const s3data = await s3Ins
           .getObject({
             Bucket: config.s3.bucket,
