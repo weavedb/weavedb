@@ -739,6 +739,47 @@ export const _setCanEvolve = async ({
   }
 }
 
+export const _setSecure = async ({
+  val: { value, contractTxId },
+  global,
+  set,
+  fn,
+  conf,
+  get,
+}) => {
+  try {
+    const current = get("temp_current")
+    const identity = isNil(current)
+      ? null
+      : await lf.getItem(`temp_address:${contractTxId}:${current}`)
+    let ii = null
+    if (is(Array)(identity)) {
+      ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(identity))
+    }
+    const opt = !isNil(ii)
+      ? { ii }
+      : !isNil(identity) && !isNil(identity.tx)
+      ? {
+          wallet: current,
+          privateKey: identity.privateKey,
+        }
+      : null
+    if (isNil(opt)) {
+      alert("not logged in")
+      return
+    }
+    const res = await sdk.setSecure(value, opt)
+    if (!isNil(res.err)) {
+      return `Error: ${res.err.errorMessage}`
+    } else {
+      return JSON.stringify(res)
+    }
+  } catch (e) {
+    console.log(e)
+    return `Error: Something went wrong`
+  }
+}
+
 export const _setAlgorithms = async ({
   val: { algorithms, contractTxId },
   global,

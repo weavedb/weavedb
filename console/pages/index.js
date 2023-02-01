@@ -62,6 +62,7 @@ import {
   _addOwner,
   _removeOwner,
   _setCanEvolve,
+  _setSecure,
   _setAlgorithms,
   addRelayerJob,
   removeRelayerJob,
@@ -107,6 +108,7 @@ export default inject(
     const [addInstance, setAddInstance] = useState(false)
     const [addOwner, setAddOwner] = useState(false)
     const [addCanEvolve, setAddCanEvolve] = useState(false)
+    const [addSecure, setAddSecure] = useState(false)
     const [addAlgorithms, setAddAlgorithms] = useState(false)
     const [addGRPC, setAddGRPC] = useState(false)
 
@@ -1663,7 +1665,29 @@ export default inject(
                                   >
                                     secure
                                   </Box>
-                                  {state.secure ? "true" : "false"}
+                                  <Flex flex={1}>
+                                    {state.secure ? "true" : "false"}
+                                  </Flex>
+                                  <Box
+                                    color="#999"
+                                    sx={{
+                                      cursor: "pointer",
+                                      ":hover": {
+                                        opacity: 0.75,
+                                        color: "#6441AF",
+                                      },
+                                    }}
+                                    onClick={async e => {
+                                      e.stopPropagation()
+                                      if (!isOwner) {
+                                        alert(`Sign in with the owner account.`)
+                                        return
+                                      }
+                                      setAddSecure(true)
+                                    }}
+                                  >
+                                    <Box as="i" className="fas fa-edit" />
+                                  </Box>
                                 </Flex>
                                 <Flex align="center" p={2} px={3}>
                                   <Box
@@ -3394,6 +3418,140 @@ export default inject(
                         <Box as="i" className="fas fa-spin fa-circle-notch" />
                       ) : (
                         "Switch canEvolve"
+                      )}
+                    </Flex>
+                  </Flex>
+                </Box>
+              </Flex>
+            ) : addCanEvolve !== false ? (
+              <Flex
+                w="100%"
+                h="100%"
+                position="fixed"
+                sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+                bg="rgba(0,0,0,0.5)"
+                onClick={() => setAddCanEvolve(false)}
+                justify="center"
+                align="center"
+              >
+                <Box
+                  bg="white"
+                  width="500px"
+                  p={3}
+                  fontSize="12px"
+                  sx={{ borderRadius: "5px", cursor: "default" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Flex align="center" mb={3} justify="center">
+                    canEvolve is{" "}
+                    <Box
+                      as="span"
+                      ml={2}
+                      fontSize="20px"
+                      fontWeight="bold"
+                      color={state.canEvolve ? "#6441AF" : ""}
+                    >
+                      {state.canEvolve ? "ON" : "OFF"}
+                    </Box>
+                  </Flex>
+                  <Flex align="center">
+                    <Flex
+                      fontSize="12px"
+                      align="center"
+                      height="40px"
+                      bg="#333"
+                      color="white"
+                      justify="center"
+                      py={2}
+                      px={2}
+                      w="100%"
+                      onClick={async () => {
+                        if (isNil($.loading)) {
+                          set("set_canevolve", "loading")
+                          const res = await fn(_setCanEvolve)({
+                            value: !state.canEvolve,
+                            contractTxId,
+                          })
+                          if (/^Error:/.test(res)) {
+                            alert("Something went wrong")
+                          }
+                          setState(await db.getInfo(true))
+                          set(null, "loading")
+                        }
+                      }}
+                      sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
+                    >
+                      {!isNil($.loading) ? (
+                        <Box as="i" className="fas fa-spin fa-circle-notch" />
+                      ) : (
+                        "Switch canEvolve"
+                      )}
+                    </Flex>
+                  </Flex>
+                </Box>
+              </Flex>
+            ) : addSecure !== false ? (
+              <Flex
+                w="100%"
+                h="100%"
+                position="fixed"
+                sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+                bg="rgba(0,0,0,0.5)"
+                onClick={() => setAddSecure(false)}
+                justify="center"
+                align="center"
+              >
+                <Box
+                  bg="white"
+                  width="500px"
+                  p={3}
+                  fontSize="12px"
+                  sx={{ borderRadius: "5px", cursor: "default" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Flex align="center" mb={3} justify="center">
+                    Secure is{" "}
+                    <Box
+                      as="span"
+                      ml={2}
+                      fontSize="20px"
+                      fontWeight="bold"
+                      color={state.secure ? "#6441AF" : ""}
+                    >
+                      {state.secure ? "ON" : "OFF"}
+                    </Box>
+                  </Flex>
+                  <Flex align="center">
+                    <Flex
+                      fontSize="12px"
+                      align="center"
+                      height="40px"
+                      bg="#333"
+                      color="white"
+                      justify="center"
+                      py={2}
+                      px={2}
+                      w="100%"
+                      onClick={async () => {
+                        if (isNil($.loading)) {
+                          set("set_secure", "loading")
+                          const res = await fn(_setSecure)({
+                            value: !state.secure,
+                            contractTxId,
+                          })
+                          if (/^Error:/.test(res)) {
+                            alert("Something went wrong")
+                          }
+                          setState(await db.getInfo(true))
+                          set(null, "loading")
+                        }
+                      }}
+                      sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
+                    >
+                      {!isNil($.loading) ? (
+                        <Box as="i" className="fas fa-spin fa-circle-notch" />
+                      ) : (
+                        "Switch Secure Mode"
                       )}
                     </Flex>
                   </Flex>
