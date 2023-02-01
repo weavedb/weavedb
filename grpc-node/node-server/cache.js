@@ -25,7 +25,7 @@ class Cache {
   async get(key) {
     if (this.isRedis) {
       try {
-        return await this.redis.get(key)
+        return JSON.parse(await this.redis.get(key))
       } catch (e) {
         console.log(e)
       }
@@ -38,7 +38,7 @@ class Cache {
   async set(key, val) {
     if (this.isRedis) {
       try {
-        await this.redis.set(key, val)
+        await this.redis.set(key, JSON.stringify(val))
       } catch (e) {
         console.log(e)
       }
