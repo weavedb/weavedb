@@ -177,7 +177,7 @@ async function query(call, callback) {
     (await cache.exists(key)) &&
     !nocache
   ) {
-    result = _cache[key].result
+    result = await cache.get(key).result
     cb(result, err)
     await sendQuery()
   } else {
