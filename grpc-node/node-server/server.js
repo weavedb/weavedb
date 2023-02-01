@@ -265,12 +265,23 @@ async function query(call, callback) {
     !nocache
   ) {
     result = await cache.get(key).result
-    cb(result, err)
-    await sendQuery()
+    if (!isNil(result)) {
+      cb(result, err)
+      await sendQuery()
+      console.log("end 1 ")
+      return
+    }
   } else {
     ;({ result, err } = await sendQuery())
     cb(result, err)
+    console.log("end 2 ")
+    return
   }
+  // just in case 
+  cb(result, err)
+  await sendQuery()
+  console.log("end 3 ")
+  return
 }
 
 async function initSDK(v) {
