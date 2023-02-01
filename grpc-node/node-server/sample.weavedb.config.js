@@ -7,5 +7,12 @@ module.exports = {
     protocol: "https",
   },
   subscribe: true,
-  cache: "leveldb",
+  // s3: {
+  //   bucket: 'BUCKET_NAME',
+  //   prefix: 'PREFIX/',
+  // },
+  cache: "lmdb", // or "leveldb"
+  // redis: {
+  //   url: `redis://${process.env.REDISPORT}:${process.env.REDISPORT}`,
+  // }
 }
