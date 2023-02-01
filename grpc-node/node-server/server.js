@@ -264,7 +264,7 @@ async function query(call, callback) {
     (await cache.exists(key)) &&
     !nocache
   ) {
-    result = await cache.get(key).result
+    result = (await cache.get(key)).result
     if (!isNil(result)) {
       cb(result, err)
       await sendQuery()
