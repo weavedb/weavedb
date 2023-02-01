@@ -388,7 +388,7 @@ If not, you should follow the first two sections now.
 
 ### Copy ACL ABI
 
-Copy and save the minimum ABI for the NFT contract to `/lib/NFT.json`.
+Copy and save the minimum ABI for the NFT contract to `/lib/ACL.json`.
 
 The relayer needs this ABI to access the Ethereum blockchain.
 
