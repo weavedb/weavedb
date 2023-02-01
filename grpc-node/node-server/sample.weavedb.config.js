@@ -1,4 +1,3 @@
-
 module.exports = {
   contractTxId: "1gU_EmELb5-sqqlURuBQFCD0HTlBxHLLZhUojIXxj78",
   arweave: {
