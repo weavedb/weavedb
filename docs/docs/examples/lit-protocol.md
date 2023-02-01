@@ -466,6 +466,7 @@ RELAYER_PRIVATEKEY="Relayer_EOA_Privatekey"
 NEXT_PUBLIC_WEAVEDB_CONTRACT_TX_ID="Your_Contract_Tx_Id"
 NEXT_PUBLIC_NFT_CONTRACT_ADDR="Goerli_NFT_Contract_Address"
 NEXT_PUBLIC_ACL_CONTRACT_ADDR="Goerli_ACL_Contract_Address"
+NEXT_PUBLIC_WEAVEDB_RPC_WEB="http://localhost:8080"
 ```
 
 ### Set up Relayer
