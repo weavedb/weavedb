@@ -1,7 +1,7 @@
 const md5 = require("md5")
 const { includes, init, is, complement, splitWhen } = require("ramda")
 
-const getCollectionPath = (func, query) => {
+const getPath = (func, query) => {
   if (
     !includes(func)([
       "get",
@@ -15,11 +15,16 @@ const getCollectionPath = (func, query) => {
     return "__admin__"
   } else {
     const _path = splitWhen(complement(is)(String), JSON.parse(query))[0]
-    return (_path.length % 2 == 0 ? init(_path) : _path).join("/")
+    const len = _path.length
+    if (func === "listCollections") {
+      return (len === 0 ? "__root__" : _path).join("/")
+    } else {
+      return (len % 2 === 0 ? init(_path) : _path).join("/")
+    }
   }
 }
 
 const getKey = (contractTxId, func, query) =>
-  `${contractTxId}.${md5(getCollectionPath(func, query))}.${func}.${md5(query)}`
+  `${contractTxId}.${md5(getPath(func, query))}.${func}.${md5(query)}`
 
-module.exports = { getKey, getCollectionPath }
+module.exports = { getKey, getPath }
