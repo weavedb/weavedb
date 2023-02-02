@@ -26,7 +26,7 @@ import {
 } from "ramda"
 import { Buffer } from "buffer"
 let sdk
-const weavedbSrcTxId = "fHH99N1FIxkU-vYwbg30eYHpBpOjN_Qa3k3ch73Yz04"
+const weavedbSrcTxId = "1tzmYDnNDEfbywdQDO9Oa3Dvnyu1qcC89QCXzN0dURk"
 //const intmaxSrcTxId = "OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94"
 const dfinitySrcTxId = "3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8"
 const ethereumSrcTxId = "Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w"
