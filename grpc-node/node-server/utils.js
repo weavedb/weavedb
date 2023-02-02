@@ -17,7 +17,7 @@ const getPath = (func, query) => {
     const _path = splitWhen(complement(is)(String), JSON.parse(query))[0]
     const len = _path.length
     if (func === "listCollections") {
-      return (len === 0 ? "__root__" : _path).join("/")
+      return len === 0 ? "__root__" : _path.join("/")
     } else {
       return (len % 2 === 0 ? init(_path) : _path).join("/")
     }
