@@ -68,7 +68,6 @@ async function query(call, callback) {
   if (isNil(sdks[contractTxId])) {
     console.log("initializing contract..." + contractTxId)
     try {
-      console.log("lets go...", contractTxId)
       await initSDK(contractTxId)
       console.log(`sdk(${contractTxId}) ready!`)
     } catch (e) {
