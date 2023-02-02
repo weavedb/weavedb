@@ -3,14 +3,24 @@ const Snapshot = require("./snapshot")
 const { saveSnapShotGCS, saveSnapShotS3 } = require("./snapshot")
 const fs = require("fs")
 const path = require("path")
-const md5 = require("md5")
 const config = require("./weavedb.config.js")
 const PROTO_PATH = __dirname + "/weavedb.proto"
 let sdk = null
-const { is, isNil, includes, clone, map } = require("ramda")
+const {
+  is,
+  isNil,
+  includes,
+  clone,
+  map,
+  splitWhen,
+  complement,
+  init,
+} = require("ramda")
 const SDK = require("weavedb-sdk-node")
 const grpc = require("@grpc/grpc-js")
 const protoLoader = require("@grpc/proto-loader")
+const { getKey } = require("./utils")
+
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
   longs: String,
@@ -80,9 +90,10 @@ async function query(call, callback) {
     }
   }
 
-  const key = md5(`${contractTxId}:${func}:${query}`)
+  const key = getKey(contractTxId, func, query)
   let result = null
   let err = null
+
   const sendQuery = async () => {
     const nameMap = { get: "getCache", cget: "cgetCache" }
     try {
@@ -126,7 +137,7 @@ async function query(call, callback) {
     (await cache.exists(key)) &&
     !nocache
   ) {
-    result = await cache.get(key).result
+    result = (await cache.get(key)).result
     cb(result, err)
     await sendQuery()
   } else {
