@@ -15,6 +15,16 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.19.0 (Feb 2, 2023)
+
+#### Source Transaction Id
+
+[fHH99N1FIxkU-vYwbg30eYHpBpOjN_Qa3k3ch73Yz04](https://sonar.warp.cc/#/app/source/fHH99N1FIxkU-vYwbg30eYHpBpOjN_Qa3k3ch73Yz04)
+
+#### Added Features
+
+- collection id / doc id [restrictions](https://firebase.google.com/docs/firestore/quotas#collections_documents_and_fields)
+
 ### v0.18.0 (Jan 30, 2023)
 
 #### Source Transaction Id

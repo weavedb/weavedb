@@ -33,6 +33,7 @@ class Snapshot {
     const secretAccessKey =
       this.config.s3.secretAccessKey || process.env.AWS_SECRET_ACCESS_KEY
     const region = this.config.s3.region || process.env.AWS_REGION
+
     if (none(isNil)([accessKeyId, secretAccessKey, region])) {
       const { S3 } = require("aws-sdk")
       this.s3Ins = new S3({
