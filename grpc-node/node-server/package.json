@@ -18,10 +18,12 @@
     "extract-zip": "^2.0.1",
     "google-protobuf": "~3.14.0",
     "md5": "^2.3.0",
-    "node-dev": "^8.0.0",
-    "prettier": "^2.8.3",
     "ramda": "^0.28.0",
     "redis": "^4.6.4",
     "weavedb-sdk-node": "^0.18.5"
+  },
+  "devDependencies": {
+    "node-dev": "^8.0.0",
+    "prettier": "2.8.3"
   }
 }

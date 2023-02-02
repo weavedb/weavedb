@@ -23,7 +23,7 @@ const weavedb = grpc.loadPackageDefinition(packageDefinition).weavedb
 let redis = null
 let sdks = {}
 let _init = {}
-const allowed_contracts = map((v) => v.split("@")[0])(
+const allowed_contracts = map(v => v.split("@")[0])(
   isNil(config.contractTxId)
     ? []
     : is(Array, config.contractTxId)
@@ -34,12 +34,11 @@ const allowed_contracts = map((v) => v.split("@")[0])(
 const allow_any_contracts =
   config.allowAnyContracts === true || allowed_contracts.length === 0
 
-const isAllowed = (contractTxId) =>
+const isAllowed = contractTxId =>
   !allow_any_contracts && !includes(contractTxId)(allowed_contracts)
 
 let gcsBucket = null
 let s3Ins = null
-
 
 const isLmdb = (config.cache || "lmdb") === "lmdb"
 const cacheDirPath = path.resolve(__dirname, "cache/warp")
@@ -58,9 +57,15 @@ if (!isNil(config.gcs)) {
   !isNil(config.s3.prefix)
 ) {
   try {
-    const accessKeyId = !isNil(config.s3.accessKeyId) ? config.s3.accessKeyId : process.env.AWS_ACCESS_KEY_ID
-    const secretAccessKey = !isNil(config.s3.secretAccessKey) ? config.s3.secretAccessKey : process.env.AWS_SECRET_ACCESS_KEY
-    const s3region = !isNil(config.s3.region) ? config.s3.region : process.env.AWS_REGION
+    const accessKeyId = !isNil(config.s3.accessKeyId)
+      ? config.s3.accessKeyId
+      : process.env.AWS_ACCESS_KEY_ID
+    const secretAccessKey = !isNil(config.s3.secretAccessKey)
+      ? config.s3.secretAccessKey
+      : process.env.AWS_SECRET_ACCESS_KEY
+    const s3region = !isNil(config.s3.region)
+      ? config.s3.region
+      : process.env.AWS_REGION
 
     if (!isNil(accessKeyId) && !isNil(secretAccessKey) && !isNil(s3region)) {
       const { S3 } = require("aws-sdk")
@@ -339,7 +344,7 @@ async function initSDK(v) {
           return
         }
 
-        fs.writeFile(src, s3data.Body, (err) => {
+        fs.writeFile(src, s3data.Body, err => {
           if (err) {
             console.error(err)
           }
@@ -375,7 +380,7 @@ async function main() {
   for (let v of contracts) {
     initSDK(v)
       .then(() => console.log(`sdk(${v}) ready!`))
-      .catch((e) => {
+      .catch(e => {
         console.log(`sdk(${v}) error!`)
         console.log(e)
       })
