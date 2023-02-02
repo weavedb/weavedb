@@ -8,44 +8,47 @@ const { isNil, none, any, forEach } = require("ramda")
 class Snapshot {
   constructor(config) {
     this.config = config
-    if (!isNil(config.gcs)) {
-      try {
-        const { Storage } = require("@google-cloud/storage")
-        const storage = new Storage({
-          keyFilename: path.resolve(__dirname, config.gcs.keyFilename),
-        })
-        this.gcsBucket = storage.bucket(config.gcs.bucket)
-      } catch (e) {
-        console.log(e)
+    try {
+      if (!isNil(config.gcs)) {
+        this.initGCS()
+      } else if (none(isNil)([config.s3, config.s3.bucket, config.s3.prefix])) {
+        this.initS3()
       }
-    } else if (none(isNil)([config.s3, config.s3.bucket, config.s3.prefix])) {
-      try {
-        const accessKeyId =
-          config.s3.accessKeyId || process.env.AWS_ACCESS_KEY_ID
-        const secretAccessKey =
-          config.s3.secretAccessKey || process.env.AWS_SECRET_ACCESS_KEY
-        const region = config.s3.region || process.env.AWS_REGION
+    } catch (e) {
+      console.log(e)
+    }
+  }
 
-        if (none(isNil)([accessKeyId, secretAccessKey, region])) {
-          const { S3 } = require("aws-sdk")
-          this.s3Ins = new S3({
-            apiVersion: "2006-03-01",
-            useDualstackEndpoint: true,
-            accessKeyId,
-            secretAccessKey,
-            region,
-          })
-        } else {
-          forEach(console.log)([
-            "lacking s3 settings",
-            `AWS_ACCESS_KEY_ID: ${accessKeyId}`,
-            `AWS_SECRET_ACCESS_KEY: ${secretAccessKey}`,
-            `AWS_REGION: ${region}`,
-          ])
-        }
-      } catch (e) {
-        console.log(e)
-      }
+  initGCS() {
+    const { Storage } = require("@google-cloud/storage")
+    const storage = new Storage({
+      keyFilename: path.resolve(__dirname, this.config.gcs.keyFilename),
+    })
+    this.gcsBucket = storage.bucket(this.config.gcs.bucket)
+  }
+
+  initS3() {
+    const accessKeyId =
+      this.config.s3.accessKeyId || process.env.AWS_ACCESS_KEY_ID
+    const secretAccessKey =
+      this.config.s3.secretAccessKey || process.env.AWS_SECRET_ACCESS_KEY
+    const region = this.config.s3.region || process.env.AWS_REGION
+    if (none(isNil)([accessKeyId, secretAccessKey, region])) {
+      const { S3 } = require("aws-sdk")
+      this.s3Ins = new S3({
+        apiVersion: "2006-03-01",
+        useDualstackEndpoint: true,
+        accessKeyId,
+        secretAccessKey,
+        region,
+      })
+    } else {
+      forEach(console.log)([
+        "lacking s3 settings",
+        `AWS_ACCESS_KEY_ID: ${accessKeyId}`,
+        `AWS_SECRET_ACCESS_KEY: ${secretAccessKey}`,
+        `AWS_REGION: ${region}`,
+      ])
     }
   }
 
@@ -80,8 +83,8 @@ class Snapshot {
         }
       }
     } catch (e) {
-      console.log(e)
       console.log(`snapshot(${contractTxId}]) doesn't exist`)
+      console.log(e)
     }
   }
 
@@ -148,4 +151,5 @@ class Snapshot {
     archive.finalize()
   }
 }
+
 module.exports = Snapshot
