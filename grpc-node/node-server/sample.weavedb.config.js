@@ -18,4 +18,3 @@ module.exports = {
   //   url: `redis://${process.env.REDISPORT}:${process.env.REDISPORT}`,
   // }
 }
-
