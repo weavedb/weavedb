@@ -547,7 +547,6 @@ export default inject(
             ($.temp_current || "").toLowerCase(),
             map(toLower)(is(Array, state.owner) ? state.owner : [state.owner])
           )
-    console.log(state)
     return (
       <ChakraProvider>
         <style global jsx>{`
