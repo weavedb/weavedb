@@ -70,7 +70,7 @@ import {
   removeRelayerJob,
 } from "../lib/weavedb.js"
 const per_page = 20
-const latest = "0.18.0"
+const latest = "0.19.0"
 const tabmap = {
   DB: { name: "DB Instances" },
   Data: { name: "Data Collections" },
@@ -633,7 +633,7 @@ export default inject(
             mb={4}
             sx={{ borderRadius: "5px" }}
           >
-            For old contracts before v0.17, please use
+            For old contracts before v0.18, please use
             <Box
               sx={{ textDecoration: "underline" }}
               ml={1}
@@ -1373,13 +1373,13 @@ export default inject(
                                           )
                                         } else {
                                           alert(
-                                            "couldn't connect to the contract. Web Console is only compatible with v0.17 and above."
+                                            "couldn't connect to the contract. Web Console is only compatible with v0.18 and above."
                                           )
                                         }
                                       } catch (e) {
                                         console.log(e)
                                         alert(
-                                          "couldn't connect to the contract. Web Console is only compatible with v0.17 and above."
+                                          "couldn't connect to the contract. Web Console is only compatible with v0.18 and above."
                                         )
                                       }
                                     }
@@ -4054,10 +4054,10 @@ export default inject(
                                   ) {
                                     alert("version not compatible")
                                   } else if (
-                                    +state.version.split(".")[1] < 17
+                                    +state.version.split(".")[1] < 18
                                   ) {
                                     alert(
-                                      "Web Console is only compatible with v0.17 and above."
+                                      "Web Console is only compatible with v0.18 and above."
                                     )
                                   } else {
                                     setNetwork(newNetwork)
@@ -4082,13 +4082,13 @@ export default inject(
                                   }
                                 } else {
                                   alert(
-                                    "couldn't connect to the contract. Web Console is only compatible with v0.17 and above."
+                                    "couldn't connect to the contract. Web Console is only compatible with v0.18 and above."
                                   )
                                 }
                               } catch (e) {
                                 console.log(e)
                                 alert(
-                                  "couldn't connect to the contract. Web Console is only compatible with v0.17 and above."
+                                  "couldn't connect to the contract. Web Console is only compatible with v0.18 and above."
                                 )
                               }
                               set(null, "loading")
@@ -4199,7 +4199,7 @@ export default inject(
                             )
                           } else {
                             alert(
-                              "couldn't connect to the contract. Web Console is only compatible with v0.17 and above."
+                              "couldn't connect to the contract. Web Console is only compatible with v0.18 and above."
                             )
                           }
 

@@ -2628,6 +2628,14 @@
     }
   });
 
+  // contracts/common/lib/pure.js
+  var require_pure = __commonJS({
+    "contracts/common/lib/pure.js"(exports, module) {
+      var isValidName2 = (str) => /^[^\/]+$/.test(str) && !/^__.*__+$/.test(str) && !/^\.{1,2}$/.test(str) && new Blob([str]).size <= 1500;
+      module.exports = { isValidName: isValidName2 };
+    }
+  });
+
   // node_modules/ramda/src/F.js
   var require_F = __commonJS({
     "node_modules/ramda/src/F.js"(exports, module) {
@@ -9215,7 +9223,7 @@
   // contracts/warp/lib/version.js
   var require_version = __commonJS({
     "contracts/warp/lib/version.js"(exports, module) {
-      module.exports = "0.18.0";
+      module.exports = "0.19.0";
     }
   });
 
@@ -13690,6 +13698,7 @@
   // contracts/common/lib/utils.js
   var import_json_logic_js = __toESM(require_logic());
   var import_jsonschema = __toESM(require_jsonschema());
+  var import_pure = __toESM(require_pure());
   var clone3 = (state) => JSON.parse(JSON.stringify(state));
   var err = (msg = `The wrong query`, contractErr = false) => {
     if (contractErr) {
@@ -13736,6 +13745,10 @@
   };
   var getDoc = (data, path3, _signer, func, new_data, secure = false, relayer, jobID, extra) => {
     const [_col, id] = path3;
+    if (!(0, import_pure.isValidName)(_col))
+      err(`collection id is not valid: ${_col}`);
+    if (!(0, import_pure.isValidName)(id))
+      err(`doc id is not valid: ${id}`);
     data[_col] ||= { __docs: {} };
     const col = data[_col];
     const { rules, schema } = col;
@@ -13863,10 +13876,14 @@
   };
   var getCol = (data, path3, _signer) => {
     const [col, id] = path3;
+    if (!(0, import_pure.isValidName)(col))
+      err(`collection id is not valid: ${col}`);
     data[col] ||= { __docs: {} };
     if (isNil_default(id)) {
       return data[col];
     } else {
+      if (!(0, import_pure.isValidName)(id))
+        err(`doc id is not valid: ${id}`);
       data[col].__docs[id] ||= { __data: null, subs: {} };
       if (!isNil_default(_signer) && isNil_default(data[col].__docs[id].setter)) {
         data[col].__docs[id].setter = _signer;
