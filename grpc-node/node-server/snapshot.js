@@ -85,7 +85,6 @@ class Snapshot {
       }
     } catch (e) {
       console.log(`snapshot(${contractTxId}]) doesn't exist`)
-      console.log(e)
     }
   }
 

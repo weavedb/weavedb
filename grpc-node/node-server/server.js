@@ -1,3 +1,4 @@
+const Arweave = require("arweave")
 const Cache = require("./cache")
 const Snapshot = require("./snapshot")
 const { saveSnapShotGCS, saveSnapShotS3 } = require("./snapshot")
@@ -5,7 +6,6 @@ const fs = require("fs")
 const path = require("path")
 const config = require("./weavedb.config.js")
 const PROTO_PATH = __dirname + "/weavedb.proto"
-let sdk = null
 const {
   is,
   isNil,
@@ -16,11 +16,12 @@ const {
   complement,
   init,
 } = require("ramda")
+
 const SDK = require("weavedb-sdk-node")
 const grpc = require("@grpc/grpc-js")
 const protoLoader = require("@grpc/proto-loader")
 const { getKey } = require("./utils")
-
+const { validate } = require("./validate")
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
   longs: String,
@@ -31,6 +32,7 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 
 const weavedb = grpc.loadPackageDefinition(packageDefinition).weavedb
 
+let admin = null
 let sdks = {}
 let _init = {}
 
@@ -56,22 +58,51 @@ const snapshot = new Snapshot(config)
 async function query(call, callback) {
   const { method, query, nocache } = call.request
   let [func, contractTxId] = method.split("@")
-
-  if (isNil(contractTxId)) {
+  const error = err =>
     callback(null, {
       result: null,
-      err: "contractTxId not specified",
+      err,
     })
+
+  if (func === "admin") {
+    const _query = JSON.parse(query)
+    if (_query.type !== "rsa256") {
+      error("Admin must be an Arweave account")
+      return
+    }
+    if (contractTxId !== config.admin.contractTxId) {
+      error(`The wrong admin contract (${contractTxId})`)
+      return
+    }
+    const { err, signer } = await validate(_query, contractTxId)
+    if (err) {
+      error(`The wrong signature`)
+      return
+    } else if (signer !== admin) {
+      error(`The signer is not admin`)
+      return
+    }
+    if (isNil(sdks[contractTxId])) {
+      error(`Admin contract not ready`)
+      return
+    }
+    const { op } = _query.query
+    switch (op) {
+      default:
+        error(`operaion not found: ${op}`)
+        return
+    }
+  }
+
+  if (isNil(contractTxId)) {
+    error("contractTxId not specified")
     return
   }
 
   contractTxId = contractTxId.split("@")[0]
 
   if (isAllowed(contractTxId)) {
-    callback(null, {
-      result: null,
-      err: "contractTxId not allowed",
-    })
+    error("contractTxId not allowed")
     return
   }
 
@@ -82,10 +113,7 @@ async function query(call, callback) {
       console.log(`sdk(${contractTxId}) ready!`)
     } catch (e) {
       console.log(`sdk(${contractTxId}) error!`)
-      callback(null, {
-        result: null,
-        err: "sdk error",
-      })
+      error("sdk error")
       return
     }
   }
@@ -168,12 +196,26 @@ async function initSDK(v) {
 }
 
 async function main() {
-  const contracts = isNil(config.contractTxId)
+  let contracts = isNil(config.contractTxId)
     ? []
     : is(Array, config.contractTxId)
     ? config.contractTxId
     : [config.contractTxId]
 
+  if (!isNil(config.admin)) {
+    if (!isNil(config.admin.contractTxId)) {
+      console.log(`Admin Contract: ${config.admin.contractTxId}`)
+      contracts.push(config.admin.contractTxId)
+    }
+    if (!isNil(config.admin.owner)) {
+      try {
+        admin = await Arweave.init().wallets.jwkToAddress(config.admin.owner)
+        console.log(`Admin Account: ${admin}`)
+      } catch (e) {
+        console.log(e)
+      }
+    }
+  }
   for (let v of contracts) {
     initSDK(v)
       .then(() => console.log(`sdk(${v}) ready!`))
@@ -182,6 +224,7 @@ async function main() {
         console.log(e)
       })
   }
+
   cache.init()
 
   const server = new grpc.Server()
