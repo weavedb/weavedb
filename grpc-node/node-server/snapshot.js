@@ -2,47 +2,46 @@ const fs = require("fs")
 const path = require("path")
 const archiver = require("archiver")
 const extract = require("extract-zip")
-const config = require("./weavedb.config.js")
 const cacheDirPath = path.resolve(__dirname, "cache/warp")
-const { isNil, none, any } = require("ramda")
+const { isNil, none, any, forEach } = require("ramda")
 
 class Snapshot {
   constructor(config) {
+    this.config = config
     if (!isNil(config.gcs)) {
       try {
         const { Storage } = require("@google-cloud/storage")
-        const gcs = path.resolve(__dirname, config.gcs.keyFilename)
-        const storage = new Storage({ keyFilename: gcs })
+        const storage = new Storage({
+          keyFilename: path.resolve(__dirname, config.gcs.keyFilename),
+        })
         this.gcsBucket = storage.bucket(config.gcs.bucket)
       } catch (e) {
         console.log(e)
       }
     } else if (none(isNil)([config.s3, config.s3.bucket, config.s3.prefix])) {
       try {
-        const accessKeyId = !isNil(config.s3.accessKeyId)
-          ? config.s3.accessKeyId
-          : process.env.AWS_ACCESS_KEY_ID
-        const secretAccessKey = !isNil(config.s3.secretAccessKey)
-          ? config.s3.secretAccessKey
-          : process.env.AWS_SECRET_ACCESS_KEY
-        const s3region = !isNil(config.s3.region)
-          ? config.s3.region
-          : process.env.AWS_REGION
+        const accessKeyId =
+          config.s3.accessKeyId || process.env.AWS_ACCESS_KEY_ID
+        const secretAccessKey =
+          config.s3.secretAccessKey || process.env.AWS_SECRET_ACCESS_KEY
+        const region = config.s3.region || process.env.AWS_REGION
 
-        if (none(isNil)([accessKeyId, secretAccessKey, s3region])) {
+        if (none(isNil)([accessKeyId, secretAccessKey, region])) {
           const { S3 } = require("aws-sdk")
           this.s3Ins = new S3({
             apiVersion: "2006-03-01",
             useDualstackEndpoint: true,
-            accessKeyId: accessKeyId,
-            secretAccessKey: secretAccessKey,
-            region: s3region,
+            accessKeyId,
+            secretAccessKey,
+            region,
           })
         } else {
-          console.log("lacking s3 settings")
-          console.log(`AWS_ACCESS_KEY_ID: ${accessKeyId}`)
-          console.log(`AWS_SECRET_ACCESS_KEY: ${secretAccessKey}`)
-          console.log(`AWS_REGION: ${s3region}`)
+          forEach(console.log)([
+            "lacking s3 settings",
+            `AWS_ACCESS_KEY_ID: ${accessKeyId}`,
+            `AWS_SECRET_ACCESS_KEY: ${secretAccessKey}`,
+            `AWS_REGION: ${region}`,
+          ])
         }
       } catch (e) {
         console.log(e)
@@ -66,11 +65,10 @@ class Snapshot {
         await extract(src, { dir: dest })
         console.log(`snapshot(${contractTxId}) downloaded!`)
       } else if (!isNil(this.s3Ins)) {
-        const s3key = `${config.s3.prefix}${contractTxId}.zip`
         const s3data = await this.s3Ins
           .getObject({
-            Bucket: config.s3.bucket,
-            Key: s3key,
+            Bucket: this.config.s3.bucket,
+            Key: `${this.config.s3.prefix}${contractTxId}.zip`,
           })
           .promise()
         if (any(isNil)([s3data, s3data.Body])) {
@@ -110,14 +108,13 @@ class Snapshot {
   }
 
   async uploadToS3(contractTxId) {
-    const data = fs.readFileSync(
-      path.resolve(cacheDirPath, `${contractTxId}.zip`)
-    )
     await this.s3Ins
       .putObject({
-        Bucket: config.s3.bucket,
-        Key: `${config.s3.prefix}${contractTxId}.zip`,
-        Body: data,
+        Bucket: this.config.s3.bucket,
+        Key: `${this.config.s3.prefix}${contractTxId}.zip`,
+        Body: fs.readFileSync(
+          path.resolve(cacheDirPath, `${contractTxId}.zip`)
+        ),
       })
       .promise()
   }
@@ -137,9 +134,7 @@ class Snapshot {
     const archive = archiver("zip", {
       zlib: { level: 9 },
     })
-    archive.on("error", err => {
-      console.log(err)
-    })
+    archive.on("error", err => console.log(err))
     output.on("close", () => uploader(contractTxId))
     archive.pipe(output)
     archive.directory(
