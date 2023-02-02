@@ -3,16 +3,23 @@
   "version": "0.5.3",
   "main": "server.js",
   "engines": {
-    "node": ">=16.5"
+    "node": ">=18.13"
+  },
+  "scripts": {
+    "dev": "node-dev --respawn server.js",
+    "prettier": "prettier *.js --write"
   },
   "dependencies": {
     "@google-cloud/storage": "^6.9.1",
     "@grpc/grpc-js": "~1.1.8",
     "@grpc/proto-loader": "~0.5.0",
     "archiver": "^5.3.1",
+    "aws-sdk": "^2.1306.0",
     "extract-zip": "^2.0.1",
     "google-protobuf": "~3.14.0",
     "md5": "^2.3.0",
+    "node-dev": "^8.0.0",
+    "prettier": "^2.8.3",
     "ramda": "^0.28.0",
     "redis": "^4.6.4",
     "weavedb-sdk-node": "^0.18.5"
