@@ -23,7 +23,7 @@ const weavedb = grpc.loadPackageDefinition(packageDefinition).weavedb
 let redis = null
 let sdks = {}
 let _init = {}
-const allowed_contracts = map(v => v.split("@")[0])(
+const allowed_contracts = map((v) => v.split("@")[0])(
   isNil(config.contractTxId)
     ? []
     : is(Array, config.contractTxId)
@@ -34,10 +34,13 @@ const allowed_contracts = map(v => v.split("@")[0])(
 const allow_any_contracts =
   config.allowAnyContracts === true || allowed_contracts.length === 0
 
-const isAllowed = contractTxId =>
+const isAllowed = (contractTxId) =>
   !allow_any_contracts && !includes(contractTxId)(allowed_contracts)
 
-let bucket = null
+let gcsBucket = null
+let s3Ins = null
+
+
 const isLmdb = (config.cache || "lmdb") === "lmdb"
 const cacheDirPath = path.resolve(__dirname, "cache/warp")
 if (!isNil(config.gcs)) {
@@ -45,9 +48,38 @@ if (!isNil(config.gcs)) {
     const { Storage } = require("@google-cloud/storage")
     const gcs = path.resolve(__dirname, config.gcs.keyFilename)
     const storage = new Storage({ keyFilename: gcs })
-    bucket = storage.bucket(config.gcs.bucket)
+    gcsBucket = storage.bucket(config.gcs.bucket)
   } catch (e) {
     console.log(e)
+  }
+} else if (
+  !isNil(config.s3) &&
+  !isNil(config.s3.bucket) &&
+  !isNil(config.s3.prefix)
+) {
+  try {
+    const accessKeyId = !isNil(config.s3.accessKeyId) ? config.s3.accessKeyId : process.env.AWS_ACCESS_KEY_ID
+    const secretAccessKey = !isNil(config.s3.secretAccessKey) ? config.s3.secretAccessKey : process.env.AWS_SECRET_ACCESS_KEY
+    const s3region = !isNil(config.s3.region) ? config.s3.region : process.env.AWS_REGION
+
+    if (!isNil(accessKeyId) && !isNil(secretAccessKey) && !isNil(s3region)) {
+      const { S3 } = require("aws-sdk")
+      s3Ins = new S3({
+        apiVersion: "2006-03-01",
+        useDualstackEndpoint: true,
+        accessKeyId: accessKeyId,
+        secretAccessKey: secretAccessKey,
+        region: s3region,
+      })
+    } else {
+      console.log("lacking s3 settings")
+      console.log(`AWS_ACCESS_KEY_ID: ${accessKeyId}`)
+      console.log(`AWS_SECRET_ACCESS_KEY: ${secretAccessKey}`)
+      console.log(`AWS_REGION: ${s3region}`)
+    }
+  } catch (e) {
+    console.log(e)
+    s3Ins = null
   }
 }
 
@@ -60,14 +92,41 @@ async function uploadToGCS(contractTxId) {
 
   try {
     const filePath = path.resolve(cacheDirPath, `${contractTxId}.zip`)
-    await bucket.upload(filePath, options)
+    await gcsBucket.upload(filePath, options)
     console.log(`snapshot (${contractTxId}) saved!`)
   } catch (e) {
     console.log(e)
   }
 }
 
-async function saveSnapShot(contractTxId) {
+async function uploadToS3(contractTxId) {
+  console.log("uploadToS3")
+  if (isNil(s3Ins)) return
+  const filePath = path.resolve(cacheDirPath, `${contractTxId}.zip`)
+  const destination = `${config.s3.prefix}${contractTxId}.zip`
+  try {
+    // console.log("filePath: ", filePath)
+    fs.readFile(filePath, function (err, data) {
+      if (err) throw err
+
+      s3Ins
+        .putObject({
+          Bucket: config.s3.bucket,
+          Key: destination,
+          Body: data,
+        })
+        .promise()
+        .then(() => {
+          console.log(`snapshot(s3) (${contractTxId}) saved!`)
+        })
+    })
+  } catch (e) {
+    console.log(`snapshot(s3) (${contractTxId}) save error!`)
+    console.log(e)
+  }
+}
+
+async function saveSnapShotGCS(contractTxId) {
   const output = fs.createWriteStream(
     path.resolve(cacheDirPath, `${contractTxId}.zip`)
   )
@@ -82,6 +141,34 @@ async function saveSnapShot(contractTxId) {
 
   archive.pipe(output)
 
+  archive.directory(
+    path.resolve(cacheDirPath, `${contractTxId}/state/`),
+    "state"
+  )
+  archive.directory(
+    path.resolve(cacheDirPath, `${contractTxId}/contracts/`),
+    "contracts"
+  )
+  archive.finalize()
+}
+
+async function saveSnapShotS3(contractTxId) {
+  console.log("saveSnapShotS3")
+  if (isNil(s3Ins)) return
+  const output = fs.createWriteStream(
+    path.resolve(cacheDirPath, `${contractTxId}.zip`)
+  )
+  const archive = archiver("zip", {
+    zlib: { level: 9 },
+  })
+
+  archive.on("error", function (err) {
+    console.log(err)
+  })
+
+  output.on("close", () => uploadToS3(contractTxId))
+
+  archive.pipe(output)
   archive.directory(
     path.resolve(cacheDirPath, `${contractTxId}/state/`),
     "state"
@@ -198,7 +285,7 @@ async function initSDK(v) {
         dbLocation: `./cache/warp/${_config.contractTxId}/contracts`,
       },
     }
-    if (!isNil(bucket)) {
+    if (!isNil(gcsBucket)) {
       try {
         fs.mkdirSync(cacheDirPath, { recursive: true })
       } catch (e) {
@@ -214,7 +301,7 @@ async function initSDK(v) {
           `cache/warp/${_config.contractTxId}/`
         )
 
-        await bucket.file(`${_config.contractTxId}.zip`).download({
+        await gcsBucket.file(`${_config.contractTxId}.zip`).download({
           destination: src,
         })
         await extract(src, { dir: dist })
@@ -223,12 +310,58 @@ async function initSDK(v) {
         console.log(e)
         console.log(`snapshot(${_config.contractTxId}])doesn't exist`)
       }
+    } else if (!isNil(s3Ins)) {
+      try {
+        fs.mkdirSync(cacheDirPath, { recursive: true })
+      } catch (e) {
+        console.log(e)
+      }
+      try {
+        const src = path.resolve(
+          cacheDirPath,
+          `${_config.contractTxId}-downloaded.zip`
+        )
+        const dist = path.resolve(cacheDirPath, `${_config.contractTxId}/`)
+        // console.log("dist: ", dist)
+
+        const s3key = `${config.s3.prefix}${_config.contractTxId}.zip`
+        // console.log("s3key: ", s3key)
+        const s3data = await s3Ins
+          .getObject({
+            Bucket: config.s3.bucket,
+            Key: s3key,
+          })
+          .promise()
+        if (isNil(s3data) || isNil(s3data.Body)) {
+          console.log(
+            `snapshot(${_config.contractTxId}) downloaded error! (s3)`
+          )
+          return
+        }
+
+        fs.writeFile(src, s3data.Body, (err) => {
+          if (err) {
+            console.error(err)
+          }
+          // file written successfully
+          console.log(`snapshot(${_config.contractTxId}) downloaded! (s3)`)
+          extract(src, { dir: dist }).then(() => {
+            // extracted successfully
+            console.log(`snapshot(${_config.contractTxId}) extracted! (s3)`)
+          })
+        })
+      } catch (e) {
+        console.log(e)
+        console.log(`snapshot(${_config.contractTxId}])doesn't exist (s3)`)
+      }
     }
   }
   sdks[txid] = new SDK(_config)
   if (isNil(_config.wallet)) await sdks[txid].initializeWithoutWallet()
   await sdks[txid].db.readState()
-  if (!isNil(bucket)) saveSnapShot(txid)
+  if (!isNil(gcsBucket)) saveSnapShotGCS(txid)
+  else if (!isNil(s3Ins)) saveSnapShotS3(txid)
+
   return
 }
 
@@ -242,7 +375,7 @@ async function main() {
   for (let v of contracts) {
     initSDK(v)
       .then(() => console.log(`sdk(${v}) ready!`))
-      .catch(e => {
+      .catch((e) => {
         console.log(`sdk(${v}) error!`)
         console.log(e)
       })

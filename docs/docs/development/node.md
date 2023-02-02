@@ -47,7 +47,7 @@ module.exports = {
 
 Then build and run the docker container.
 
-#### Store Snapshots in Cloud
+#### Store Snapshots in Google Cloud Storage
 
 Due to the concept of lazy evaluation, initializing contracts with a large number of transactions is extremely slow.
 
@@ -77,6 +77,26 @@ module.exports = {
     bucket: "[projectId].appspot.com",
     keyFilename: "gcs.json",
   }
+}
+```
+
+
+
+#### Store Snapshots in Amazon S3
+
+There is another option to store data in the cloud, Amazon S3. 
+
+To use Amazon S3, specify `s3` option in `weavedb.config.js`.
+
+```js
+module.exports = {
+  s3: {
+    bucket: "[s3_bucket_name]",
+    prefix: "[key_prefix_for_the_s3_bucket]",
+    accessKeyId: "[aws_access_key_id]",
+    secretAccessKey: "[aws_access_secret_key]",
+    region: "[aws_s3_region]",
+  },
 }
 ```
 
