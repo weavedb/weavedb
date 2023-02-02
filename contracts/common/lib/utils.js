@@ -20,6 +20,7 @@ import {
 import fpjson from "fpjson-lang"
 import jsonLogic from "json-logic-js"
 import { validate as validator } from "./jsonschema"
+import { isValidName } from "./pure"
 
 export const clone = state => JSON.parse(JSON.stringify(state))
 
@@ -73,6 +74,8 @@ export const getDoc = (
   extra
 ) => {
   const [_col, id] = path
+  if (!isValidName(_col)) err(`collection id is not valid: ${_col}`)
+  if (!isValidName(id)) err(`doc id is not valid: ${id}`)
   data[_col] ||= { __docs: {} }
   const col = data[_col]
   const { rules, schema } = col
@@ -200,10 +203,12 @@ export const getDoc = (
 
 export const getCol = (data, path, _signer) => {
   const [col, id] = path
+  if (!isValidName(col)) err(`collection id is not valid: ${col}`)
   data[col] ||= { __docs: {} }
   if (isNil(id)) {
     return data[col]
   } else {
+    if (!isValidName(id)) err(`doc id is not valid: ${id}`)
     data[col].__docs[id] ||= { __data: null, subs: {} }
     if (!isNil(_signer) && isNil(data[col].__docs[id].setter)) {
       data[col].__docs[id].setter = _signer

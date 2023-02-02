@@ -900,11 +900,20 @@ describe("WeaveDB", function () {
       data2,
     ])
   })
+
   it("should set secure", async () => {
     await db.setSecure(false, { ar: arweave_wallet })
     expect((await db.getInfo()).secure).to.eql(false)
     await db.setSecure(true, { ar: arweave_wallet })
     expect((await db.getInfo()).secure).to.eql(true)
+    return
+  })
+
+  it("should reject invalid col/doc ids", async () => {
+    await db.set({}, "__ppl__", "Bob")
+    await db.set({}, "ppl", "Bob/Alice")
+    expect(await db.get("ppl")).to.eql([])
+    expect(await db.listCollections()).to.eql([])
     return
   })
 })
