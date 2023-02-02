@@ -2631,7 +2631,7 @@
   // contracts/common/lib/pure.js
   var require_pure = __commonJS({
     "contracts/common/lib/pure.js"(exports, module) {
-      var isValidName2 = (str) => /^[^\/]+$/.test(str) && !/^__.*__+$/.test(str) && !/^\.{1,2}$/.test(str) && new Blob([str]).size <= 1500;
+      var isValidName2 = (str) => /^[^\/]+$/.test(str) && !/^__.*__+$/.test(str) && !/^\.{1,2}$/.test(str) && Buffer.byteLength(str, "utf8") <= 1500;
       module.exports = { isValidName: isValidName2 };
     }
   });
