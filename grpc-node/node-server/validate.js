@@ -1,5 +1,8 @@
 const Arweave = require("arweave")
-const { recoverTypedSignature } = require("@metamask/eth-sig-util")
+const {
+  recoverTypedSignature,
+  recoverPersonalSignature,
+} = require("@metamask/eth-sig-util")
 const { verifyII } = require("./internet-identity")
 
 const validate = async (input, verifyingContract) => {
@@ -72,6 +75,11 @@ const validate = async (input, verifyingContract) => {
     } catch (e) {
       err = true
     }
+  } else if (type == "secp256k1-2") {
+    signer = recoverPersonalSignature({
+      data: JSON.stringify(_data),
+      signature,
+    })
   }
   return { err, signer }
 }
