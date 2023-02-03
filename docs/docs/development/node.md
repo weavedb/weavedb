@@ -109,7 +109,7 @@ Use `redis` option in `weavedb.config.js`. This will be passed to `createClient(
 ```js
 module.exports = {
   redis: {
-    url: "redis://localhost:6379
+    url: "redis://localhost:6379"
   }
 }
 ```
@@ -331,4 +331,61 @@ const db = new client({
   contractTxId: WEAVEDB_CONTRACT_TX_ID,
   rpc: "https://grpc.example.com" // gRPC node URL
 })
+```
+## Manage Node with Admin Contract
+
+WeaveDB nodes can be remotely managed by an admin WeaveDB contract.
+
+### Setup
+
+##### 1. Deploy a fresh WeaveDB contract
+
+You can go to [the Web Console](https://console.weavedb.dev) and deploy one.
+
+Note that currently the contract owner has to be an Arweave account.
+
+##### 2. Add Settings
+
+Add `admin` option to `weavedb.confg.js`. This will be the admin contract.
+
+- `contractTxId` : the admin contract previously deployed
+- `owner` : the wallet JSON of the owner of the admin contract
+
+```js
+module.exports = {
+  ...,
+  admin: {
+    contractTxId: "xyz...",
+    owner: {
+      kty: "RSA",
+	  ...
+    },
+  },
+}
+```
+
+##### 3. Set up the WeaveDB Instance
+
+Once you start the node with the admin settings, make a grpc call to your node using `light-client`.
+
+```js
+const SDK = require("weavedb-node-client") // or weavedb-client
+const db = new SDK({ contractTxId, rpc })
+await db.admin({ op: "setup" }, { ar: admin_wallet })
+```
+
+### Whitelist
+
+The admin can add user addresses to the whitelist, and whitelisted users can add contracts to the node.
+
+```js
+await db.admin({ op: "whitelist", address }, { ar: admin_wallet })
+```
+
+### Add Contract to Node
+
+The user must be whitelisted to add a contract.
+
+```js
+await db.admin({ op: "add_contract", contractTxId }, { ar: user_wallet })
 ```

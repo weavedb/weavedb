@@ -87,6 +87,9 @@ class SDK extends Base {
   async getNonce(addr) {
     return this.readQuery("getNonce", addr, true)
   }
+  async admin(op, opt) {
+    return this._write2("admin", op, opt)
+  }
 }
 
 module.exports = SDK
