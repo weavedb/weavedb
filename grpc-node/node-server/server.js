@@ -67,6 +67,7 @@ async function query(call, callback) {
 
   if (func === "admin") {
     const _query = JSON.parse(query)
+    const { op } = _query.query
     if (_query.type !== "rsa256") {
       error("Admin must be an Arweave account")
       return
@@ -79,7 +80,7 @@ async function query(call, callback) {
     if (err) {
       error(`The wrong signature`)
       return
-    } else if (signer !== admin) {
+    } else if (signer !== admin && op !== "add_contract") {
       error(`The signer is not admin`)
       return
     }
@@ -87,14 +88,49 @@ async function query(call, callback) {
       error(`Admin contract not ready`)
       return
     }
-    const { op, address } = _query.query
     let txs = []
     let isErr = null
     switch (op) {
+      case "add_contract":
+        const { contractTxId: txid } = _query.query
+        try {
+          const user = await sdks[contractTxId].get("users", signer)
+          if (isNil(user) || !user.allow) {
+            isErr = `${signer} is not allowed to add contract`
+            callback(null, {
+              result: JSON.stringify(txs),
+              err: isErr,
+            })
+          } else {
+            callback(null, {
+              result: JSON.stringify(txs),
+              err: isErr,
+            })
+            if (isNil(sdks[txid])) {
+              console.log("initializing contract..." + txid)
+              try {
+                await initSDK(txid)
+                console.log(`sdk(${txid}) ready!`)
+              } catch (e) {
+                console.log(`sdk(${txid}) error!`)
+                error("sdk error")
+              }
+            }
+          }
+        } catch (e) {
+          isErr = true
+          console.log(e)
+          callback(null, {
+            result: JSON.stringify(txs),
+            err: isErr,
+          })
+        }
+        return
       case "whitelist":
+        const { address, allow } = _query.query
         try {
           const tx1 = await sdks[contractTxId].upsert(
-            { address, allow: true },
+            { address, allow },
             "users",
             address,
             {
