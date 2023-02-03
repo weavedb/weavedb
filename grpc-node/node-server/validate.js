@@ -1,5 +1,7 @@
 const Arweave = require("arweave")
 const { recoverTypedSignature } = require("@metamask/eth-sig-util")
+const { verifyII } = require("./internet-identity")
+
 const validate = async (input, verifyingContract) => {
   const { query, nonce, signature, caller, type = "secp256k1", pubKey } = input
   const EIP712Domain = [
@@ -53,12 +55,23 @@ const validate = async (input, verifyingContract) => {
     } catch (e) {
       err = true
     }
-  } else {
+  } else if (type === "secp256k1") {
     signer = recoverTypedSignature({
       version: "V4",
       data: _data,
       signature,
     })
+  } else if (type === "ed25519") {
+    try {
+      const isValid = await verifyII(_data, signature, caller)
+      if (isValid) {
+        signer = caller
+      } else {
+        err = true
+      }
+    } catch (e) {
+      err = true
+    }
   }
   return { err, signer }
 }
