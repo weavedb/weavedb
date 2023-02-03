@@ -87,11 +87,34 @@ async function query(call, callback) {
       error(`Admin contract not ready`)
       return
     }
-    const { op } = _query.query
+    const { op, address } = _query.query
+    let txs = []
+    let isErr = null
     switch (op) {
+      case "whitelist":
+        try {
+          const tx1 = await sdks[contractTxId].upsert(
+            { address, allow: true },
+            "users",
+            address,
+            {
+              ar: config.admin.owner,
+            }
+          )
+          if (tx1.success) {
+            txs.push(tx1)
+          } else {
+            throw new Error()
+          }
+        } catch (e) {
+          isErr = true
+        }
+        callback(null, {
+          result: JSON.stringify(txs),
+          err: isErr,
+        })
+        return
       case "setup":
-        let txs = []
-        let err = null
         try {
           const { schema, rules } = getSetups(admin)
 
@@ -113,11 +136,11 @@ async function query(call, callback) {
             throw new Error()
           }
         } catch (e) {
-          err = true
+          isErr = true
         }
         callback(null, {
           result: JSON.stringify(txs),
-          err,
+          err: isErr,
         })
         return
       default:
