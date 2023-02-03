@@ -1,8 +1,8 @@
 const config = require("./weavedb.config.js")
 const { validate } = require("./validate")
-const { isNil, last } = require("ramda")
+const { includes, isNil, last } = require("ramda")
 const getSetups = address => {
-  const schema = {
+  const users_schema = {
     type: "object",
     required: ["address", "allow"],
     properties: {
@@ -14,7 +14,7 @@ const getSetups = address => {
       },
     },
   }
-  const rules = {
+  const users_rules = {
     "allow create,update": {
       and: [
         {
@@ -25,7 +25,41 @@ const getSetups = address => {
     },
     "allow delete": { "==": [{ var: "request.auth.signer" }, address] },
   }
-  return { schema, rules }
+  const contracts_schema = {
+    type: "object",
+    required: ["address", "txid", "date"],
+    properties: {
+      address: {
+        type: "string",
+      },
+      txid: {
+        type: "string",
+      },
+      date: {
+        type: "number",
+      },
+    },
+  }
+
+  const contracts_rules = {
+    "allow create": {
+      and: [
+        {
+          "==": [{ var: "resource.newData.txid" }, { var: "request.id" }],
+        },
+        { "==": [{ var: "request.auth.signer" }, address] },
+        {
+          "==": [
+            { var: "resource.newData.date" },
+            { var: "request.block.timestamp" },
+          ],
+        },
+      ],
+    },
+    "allow delete": { "==": [{ var: "request.auth.signer" }, address] },
+  }
+
+  return { users_schema, users_rules, contracts_schema, contracts_rules }
 }
 
 const execAdmin = async ({
@@ -38,7 +72,8 @@ const execAdmin = async ({
 }) => {
   const _query = JSON.parse(query)
   const { op } = _query.query
-  if (_query.type !== "rsa256" && op !== "add_contract") {
+  const nonAdmin = ["remove_contract", "add_contract"]
+  if (_query.type !== "rsa256" && !includes(op)(nonAdmin)) {
     return res("Admin must be an Arweave account")
   }
   if (contractTxId !== config.admin.contractTxId) {
@@ -47,12 +82,13 @@ const execAdmin = async ({
   const { err, signer } = await validate(_query, contractTxId)
   if (err) {
     return res(`The wrong signature`)
-  } else if (signer !== admin && op !== "add_contract") {
+  } else if (signer !== admin && !includes(op)(nonAdmin)) {
     return res(`The signer is not admin`)
   }
   if (isNil(sdks[contractTxId])) {
     return res(`Admin contract not ready`)
   }
+
   let txs = []
   const db = sdks[contractTxId]
   const auth = {
@@ -66,16 +102,46 @@ const execAdmin = async ({
         const user = await db.get("users", signer)
         if (isNil(user) || !user.allow) {
           return res(`${signer} is not allowed to add contract`, txs)
-        } else {
-          res(null, txs)
-          if (isNil(sdks[txid])) await initSDK(txid)
-          return
         }
+        const contract = await db.get("contracts", txid)
+        if (!isNil(contract)) {
+          return res(`${txid} already exists`, txs)
+        }
+        txs.push(
+          await db.set(
+            { date: db.ts(), address: signer, txid },
+            "contracts",
+            txid,
+            auth
+          )
+        )
+        if (!last(txs).success) throw new Error()
+        res(null, txs)
+        if (isNil(sdks[txid])) await initSDK(txid)
+        return
       } catch (e) {
         console.log(e)
         return res("something went wrong", txs)
       }
-
+    case "remove_contract":
+      const { contractTxId: txid2 } = _query.query
+      try {
+        const contract = await db.get("contracts", txid2)
+        if (isNil(contract)) {
+          return res(`${txid2} doesn't exist`, txs)
+        }
+        if (contract.address !== signer) {
+          return res(`${signer} is not contract registrator`, txs)
+        }
+        txs.push(await db.delete("contracts", txid2, auth))
+        if (!last(txs).success) throw new Error()
+        res(null, txs)
+        delete sdks[txid2]
+        return
+      } catch (e) {
+        console.log(e)
+        return res("something went wrong", txs)
+      }
     case "whitelist":
       let { address, allow } = _query.query
       if (/^0x.+$/.test(address)) address = address.toLowerCase()
@@ -90,10 +156,16 @@ const execAdmin = async ({
 
     case "setup":
       try {
-        const { schema, rules } = getSetups(admin)
-        txs.push(await db.setSchema(schema, "users", auth))
+        const { users_schema, users_rules, contracts_schema, contracts_rules } =
+          getSetups(admin)
+        txs.push(await db.setSchema(users_schema, "users", auth))
         if (!last(txs).success) throw new Error()
-        txs.push(await db.setRules(rules, "users", auth))
+        txs.push(await db.setRules(users_rules, "users", auth))
+        if (!last(txs).success) throw new Error()
+
+        txs.push(await db.setSchema(contracts_schema, "contracts", auth))
+        if (!last(txs).success) throw new Error()
+        txs.push(await db.setRules(contracts_rules, "contracts", auth))
         if (!last(txs).success) throw new Error()
       } catch (e) {
         isErr = isErr = "something went wrong"

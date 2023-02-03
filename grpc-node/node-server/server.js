@@ -8,6 +8,7 @@ const config = require("./weavedb.config.js")
 const PROTO_PATH = __dirname + "/weavedb.proto"
 const { execAdmin } = require("./admin")
 const {
+  pluck,
   is,
   isNil,
   includes,
@@ -158,6 +159,22 @@ async function initSDK(v) {
     await sdks[contractTxId].db.readState()
     await snapshot.save(contractTxId)
     console.log(`sdk(${v}) ready!`)
+
+    if (!isNil(config.admin)) {
+      if (
+        !isNil(config.admin.contractTxId) &&
+        config.admin.contractTxId === v
+      ) {
+        try {
+          for (const v2 of pluck(
+            "txid",
+            await sdks[contractTxId].get("contracts")
+          )) {
+            if (v2 !== config.admin.contractTxId) initSDK(v2)
+          }
+        } catch (e) {}
+      }
+    }
   } catch (e) {
     console.log(`sdk(${v}) error!`)
     success = false
