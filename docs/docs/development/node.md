@@ -389,3 +389,11 @@ The user must be whitelisted to add a contract.
 ```js
 await db.admin({ op: "add_contract", contractTxId }, { ar: user_wallet })
 ```
+
+### Remove Contract from Node
+
+The user must be the contract registrator.
+
+```js
+await db.admin({ op: "remove_contract", contractTxId }, { ar: user_wallet })
+```
