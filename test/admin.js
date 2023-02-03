@@ -2,7 +2,7 @@ const Arweave = require("arweave")
 const fs = require("fs")
 const path = require("path")
 const { expect } = require("chai")
-const { pluck, isNil, range, indexBy, prop } = require("ramda")
+const { pluck, isNil, range, indexBy, prop, dissoc } = require("ramda")
 const { init, stop, initBeforeEach, addFunds } = require("./util")
 
 describe("Node Admin Contract", function () {
@@ -61,6 +61,40 @@ describe("Node Admin Contract", function () {
       "allow delete": { "==": [{ var: "request.auth.signer" }, walletAddress] },
     }
     await db.setRules(rules, "users", { ar: arweave_wallet })
+    const contracts_schema = {
+      type: "object",
+      required: ["address", "txid", "date"],
+      properties: {
+        address: {
+          type: "string",
+        },
+        txid: {
+          type: "string",
+        },
+        date: {
+          type: "number",
+        },
+      },
+    }
+    await db.setSchema(contracts_schema, "contracts", { ar: arweave_wallet })
+    const contracts_rules = {
+      "allow create": {
+        and: [
+          {
+            "==": [{ var: "resource.newData.txid" }, { var: "request.id" }],
+          },
+          { "==": [{ var: "request.auth.signer" }, walletAddress] },
+          {
+            "==": [
+              { var: "resource.newData.date" },
+              { var: "request.block.timestamp" },
+            ],
+          },
+        ],
+      },
+      "allow delete": { "==": [{ var: "request.auth.signer" }, walletAddress] },
+    }
+    await db.setRules(contracts_rules, "contracts", { ar: arweave_wallet })
   }
 
   it("should manage node", async () => {
@@ -82,5 +116,13 @@ describe("Node Admin Contract", function () {
       ar: arweave_wallet,
     })
     expect(await db.get("users", user.address)).to.eql(null)
+
+    const contract = { date: db.ts(), address, txid: "abc" }
+    await db.set(contract, "contracts", contract.txid, {
+      ar: arweave_wallet,
+    })
+    expect(dissoc("date", await db.get("contracts", contract.txid))).to.eql(
+      dissoc("date", contract)
+    )
   })
 })
