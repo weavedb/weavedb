@@ -38,7 +38,7 @@ const execAdmin = async ({
 }) => {
   const _query = JSON.parse(query)
   const { op } = _query.query
-  if (_query.type !== "rsa256") {
+  if (_query.type !== "rsa256" && op !== "add_contract") {
     return res("Admin must be an Arweave account")
   }
   if (contractTxId !== config.admin.contractTxId) {
