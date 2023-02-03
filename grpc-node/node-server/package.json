@@ -21,6 +21,7 @@
     "md5": "^2.3.0",
     "ramda": "^0.28.0",
     "redis": "^4.6.4",
+    "tweetnacl": "^1.0.3",
     "weavedb-sdk-node": "^0.18.5"
   },
   "devDependencies": {

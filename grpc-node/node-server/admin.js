@@ -58,7 +58,7 @@ const execAdmin = async ({
   const auth = {
     ar: config.admin.owner,
   }
-  const isErr = null
+  let isErr = null
   switch (op) {
     case "add_contract":
       const { contractTxId: txid } = _query.query
@@ -84,6 +84,7 @@ const execAdmin = async ({
         if (!last(txs).success) throw new Error()
       } catch (e) {
         isErr = `something went wrong`
+        console.log(e)
       }
       return res(isErr, txs)
 
