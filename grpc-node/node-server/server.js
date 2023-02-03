@@ -6,6 +6,7 @@ const fs = require("fs")
 const path = require("path")
 const config = require("./weavedb.config.js")
 const PROTO_PATH = __dirname + "/weavedb.proto"
+const { getSetups } = require("./admin")
 const {
   is,
   isNil,
@@ -88,8 +89,39 @@ async function query(call, callback) {
     }
     const { op } = _query.query
     switch (op) {
+      case "setup":
+        let txs = []
+        let err = null
+        try {
+          const { schema, rules } = getSetups(admin)
+
+          const tx1 = await sdks[contractTxId].setSchema(schema, "users", {
+            ar: config.admin.owner,
+          })
+          if (tx1.success) {
+            txs.push(tx1)
+          } else {
+            throw new Error()
+          }
+          const tx2 = await sdks[contractTxId].setRules(rules, "users", {
+            ar: config.admin.owner,
+          })
+
+          if (tx2.success) {
+            txs.push(tx2)
+          } else {
+            throw new Error()
+          }
+        } catch (e) {
+          err = true
+        }
+        callback(null, {
+          result: JSON.stringify(txs),
+          err,
+        })
+        return
       default:
-        error(`operaion not found: ${op}`)
+        error(`operation not found: ${op}`)
         return
     }
   }
