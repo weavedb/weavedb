@@ -340,13 +340,13 @@ WeaveDB nodes can be remotely managed by an admin WeaveDB contract.
 
 ##### 1. Deploy a fresh WeaveDB contract
 
-You can go to [the Web Console](https://console.weavedb.dev) and deploy one.
+You can go to [the Web Console](https://console.weavedb.dev) and deploy one. This will be the admin contract.
 
 Note that currently the contract owner has to be an Arweave account.
 
 ##### 2. Add Settings
 
-Add `admin` option to `weavedb.confg.js`. This will be the admin contract.
+Add `admin` option to `weavedb.confg.js`.
 
 - `contractTxId` : the admin contract previously deployed
 - `owner` : the wallet JSON of the owner of the admin contract
@@ -379,7 +379,7 @@ await db.admin({ op: "setup" }, { ar: admin_wallet })
 The admin can add user addresses to the whitelist, and whitelisted users can add contracts to the node.
 
 ```js
-await db.admin({ op: "whitelist", address }, { ar: admin_wallet })
+await db.admin({ op: "whitelist", address, allow: true }, { ar: admin_wallet })
 ```
 
 ### Add Contract to Node

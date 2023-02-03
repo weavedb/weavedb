@@ -77,7 +77,8 @@ const execAdmin = async ({
       }
 
     case "whitelist":
-      const { address, allow } = _query.query
+      let { address, allow } = _query.query
+      if (/^0x.+$/.test(address)) address = address.toLowerCase()
       try {
         txs.push(await db.upsert({ address, allow }, "users", address, auth))
         if (!last(txs).success) throw new Error()
