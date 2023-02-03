@@ -1,7 +1,7 @@
 const Arweave = require("arweave")
-
+const { recoverTypedSignature } = require("@metamask/eth-sig-util")
 const validate = async (input, verifyingContract) => {
-  const { query, nonce, signature, caller, pubKey } = input
+  const { query, nonce, signature, caller, type = "secp256k1", pubKey } = input
   const EIP712Domain = [
     { name: "name", type: "string" },
     { name: "version", type: "string" },
@@ -34,23 +34,31 @@ const validate = async (input, verifyingContract) => {
 
   let signer = null
   let err = null
-  try {
-    let encoded_data = JSON.stringify(_data)
-    const enc = new TextEncoder()
-    encoded_data = enc.encode(encoded_data)
-    const _crypto = Arweave.crypto
-    const isValid = await _crypto.verify(
-      pubKey,
-      encoded_data,
-      Buffer.from(signature, "hex")
-    )
-    if (isValid) {
-      signer = caller
-    } else {
+  if (type === "rsa256") {
+    try {
+      let encoded_data = JSON.stringify(_data)
+      const enc = new TextEncoder()
+      encoded_data = enc.encode(encoded_data)
+      const _crypto = Arweave.crypto
+      const isValid = await _crypto.verify(
+        pubKey,
+        encoded_data,
+        Buffer.from(signature, "hex")
+      )
+      if (isValid) {
+        signer = caller
+      } else {
+        err = true
+      }
+    } catch (e) {
       err = true
     }
-  } catch (e) {
-    err = true
+  } else {
+    signer = recoverTypedSignature({
+      version: "V4",
+      data: _data,
+      signature,
+    })
   }
   return { err, signer }
 }
