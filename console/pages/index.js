@@ -494,21 +494,15 @@ export default inject(
             contractTxId: node.contract,
             rpc: node.rpc,
           })
-          console.log($.temp_current_all.addr)
-          console.log(await db.get("users"))
-          console.log(await db.get("contracts"))
-          console.log("lets get", await db.get("users", "a8C6896Ea01e"))
-          let user = await db.get("users", $.temp_current_all.addr)
-          console.log(user)
+          const addr = /^0x.+$/.test($.temp_current_all.addr)
+            ? $.temp_current_all.addr.toLowerCase()
+            : $.temp_current_all.addr
+          let user = await db.get("users", addr)
           let whitelisted = !isNil(user) && user.allow
           setIsWhitelisted(whitelisted)
           if (whitelisted) {
             setContracts(
-              await db.get(
-                "contracts",
-                ["address", "=", $.temp_current_all.addr],
-                true
-              )
+              await db.get("contracts", ["address", "=", addr], true)
             )
           } else {
             setContracts([])
@@ -1491,14 +1485,15 @@ export default inject(
                                             contractTxId: node.contract,
                                             rpc: node.rpc,
                                           })
+                                          const addr = /^0x.+$/.test(
+                                            $.temp_current_all.addr
+                                          )
+                                            ? $.temp_current_all.addr.toLowerCase()
+                                            : $.temp_current_all.addr
                                           setContracts(
                                             await db.get(
                                               "contracts",
-                                              [
-                                                "address",
-                                                "=",
-                                                $.temp_current_all.addr,
-                                              ],
+                                              ["address", "=", addr],
                                               true
                                             )
                                           )
@@ -3539,10 +3534,13 @@ export default inject(
                           contractTxId: node.contract,
                           rpc: node.rpc,
                         })
+                        const addr = /^0x.+$/.test($.temp_current_all.addr)
+                          ? $.temp_current_all.addr.toLowerCase()
+                          : $.temp_current_all.addr
                         setContracts(
                           await db.get(
                             "contracts",
-                            ["address", "=", $.temp_current_all.addr],
+                            ["address", "=", addr],
                             true
                           )
                         )
