@@ -49,7 +49,9 @@ const allow_any_contracts =
   config.allowAnyContracts === true || allowed_contracts.length === 0
 
 const isAllowed = contractTxId =>
-  !allow_any_contracts && !includes(contractTxId)(allowed_contracts)
+  allow_any_contracts ||
+  includes(contractTxId)(allowed_contracts) ||
+  (!isNil(config.admin) && config.admin.contractTxId === contractTxId)
 
 const isLmdb = (config.cache || "lmdb") === "lmdb"
 
@@ -65,26 +67,18 @@ async function query(call, callback) {
       err,
     })
 
-  if (isNil(contractTxId)) {
-    res("contractTxId not specified")
-    return
-  }
+  if (isNil(contractTxId)) return res("contractTxId not specified")
 
   contractTxId = contractTxId.split("@")[0]
 
   if (func === "admin") {
-    await execAdmin({ contractTxId, query, res, sdks, admin, initSDK })
-    return
+    return await execAdmin({ contractTxId, query, res, sdks, admin, initSDK })
   }
 
-  if (isAllowed(contractTxId)) {
-    res("contractTxId not allowed")
-    return
-  }
+  if (!isAllowed(contractTxId))
+    return res(`contractTxId[${contractTxId}] not allowed`)
 
-  if (isNil(sdks[contractTxId])) {
-    if (!(await initSDK(contractTxId))) return
-  }
+  if (isNil(sdks[contractTxId]) && !(await initSDK(contractTxId))) return
 
   const key = getKey(contractTxId, func, query)
   let result = null
@@ -101,9 +95,11 @@ async function query(call, callback) {
           result = await sdks[contractTxId][func](...JSON.parse(query))
           _init[contractTxId] = true
         } else {
+          console.log("are we here???")
           result = await sdks[contractTxId][nameMap[func] || func](
             ...JSON.parse(query)
           )
+          console.log(result);
         }
       } else if (includes(func)(sdks[contractTxId].reads)) {
         result = await sdks[contractTxId][func](...JSON.parse(query))

@@ -63,6 +63,8 @@ import {
   _removeOwner,
   _setCanEvolve,
   _setSecure,
+  _admin,
+  _remove,
   _setAlgorithms,
   _evolve,
   _migrate,
@@ -107,6 +109,9 @@ export default inject(
     const [addRules, setAddRules] = useState(false)
     const [addCron, setAddCron] = useState(false)
     const [addRelayer, setAddRelayer] = useState(false)
+    const [addNode, setAddNode] = useState(false)
+    const [addContract, setAddContract] = useState(false)
+    const [contracts, setContracts] = useState([])
     const [addIndex, setAddIndex] = useState(false)
     const [addInstance, setAddInstance] = useState(false)
     const [addOwner, setAddOwner] = useState(false)
@@ -117,6 +122,7 @@ export default inject(
     const [addGRPC, setAddGRPC] = useState(false)
 
     const [newOwner, setNewOwner] = useState("")
+    const [newNode, setNewNode] = useState("")
     const [result, setResult] = useState("")
     const [state, setState] = useState(null)
     const [collections, setCollections] = useState([])
@@ -128,6 +134,7 @@ export default inject(
     const [cron, setCron] = useState(null)
     const [relayer, setRelayer] = useState(null)
     const [method, setMethod] = useState("get")
+    const [isWhitelisted, setIsWhitelisted] = useState(false)
     const [query, setQuery] = useState("")
     const tabs = [
       "DB",
@@ -137,10 +144,12 @@ export default inject(
       "Indexes",
       "Crons",
       "Relayers",
+      "Nodes",
     ]
     const [port, setPort] = useState(null)
     const [network, setNetwork] = useState("Mainnet")
     const [newNetwork, setNewNetwork] = useState("Mainnet")
+    const [newContract, setNewContract] = useState("")
     const [newRules, setNewRules] = useState(`{"allow write": true}`)
     const [newRules2, setNewRules2] = useState(`{"allow write": true}`)
     const [newData, setNewData] = useState(`{}`)
@@ -169,6 +178,13 @@ export default inject(
     const [newRPC2, setNewRPC2] = useState("")
     const [deployMode, setDeployMode] = useState("Connect")
     const [dbs, setDBs] = useState([])
+    const [node, setNode] = useState(null)
+    const [nodes, setNodes] = useState([
+      {
+        rpc: "http://localhost:8080",
+        contract: "ULKzK8dmkCCpoTiRpJi2ae3dh6Xfe3GzUbR7w0uInjI",
+      },
+    ])
     const [currentDB, setCurrentDB] = useState(null)
     const [connect, setConnect] = useState(false)
     const [newPort, setNewPort] = useState(1820)
@@ -297,18 +313,8 @@ export default inject(
 
     useEffect(() => {
       ;(async () => {
-        const db = new SDK({
-          contractTxId: "4H85bexFaqZH6Eq1p3Q92eNocsV2PAfLu3JYIKHJOhk",
-        })
-        await db.initializeWithoutWallet()
-      })()
-    }, [])
-
-    useEffect(() => {
-      ;(async () => {
-        let _dbs = (await lf.getItem(`my_dbs`)) || []
-        const dbmap = indexBy(prop("contractTxId"), _dbs)
-        setDBs(_dbs)
+        setDBs((await lf.getItem(`my_dbs`)) || [])
+        //setNodes((await lf.getItem(`my_nodes`)) || [])
       })()
     }, [])
 
@@ -369,54 +375,104 @@ export default inject(
       "getOwner",
       "getVersion",
     ]
-    const ConnectWallet = () => (
-      <Flex
-        py={2}
-        px={6}
-        bg={isNil(contractTxId) ? "#6441AF" : "#333"}
-        color="white"
-        sx={{
-          borderRadius: "25px",
-          cursor: "pointer",
-          ":hover": { opacity: 0.75 },
-        }}
-        justifyContent="center"
-        onClick={async () => {
-          if (isNil(contractTxId)) {
-            setAddInstance(true)
-          } else if (isNil($.temp_current)) {
-            set(true, "signing_in_modal")
-          } else {
-            if (confirm("Would you like to sign out?")) {
-              fn(logoutTemp)()
-            }
-          }
-        }}
-      >
-        {isNil(contractTxId) ? (
-          "Connect with DB"
-        ) : isNil($.temp_current) ? (
-          "Sign Into DB"
-        ) : (
-          <Flex align="center">
-            <Image
-              boxSize="25px"
-              src={
-                $.temp_wallet === "intmax"
-                  ? "/static/images/intmax.png"
-                  : $.temp_current.length < 88
-                  ? /^0x/.test($.temp_current)
-                    ? "/static/images/metamask.png"
-                    : "/static/images/arconnect.png"
-                  : "/static/images/dfinity.png"
+    const ConnectWallet = () =>
+      tab === "Nodes" ? (
+        <Flex
+          py={2}
+          px={6}
+          bg={isNil(node) ? "#6441AF" : "#333"}
+          color="white"
+          sx={{
+            borderRadius: "25px",
+            cursor: isNil(node) ? "default" : "pointer",
+            ":hover": { opacity: 0.75 },
+          }}
+          justifyContent="center"
+          onClick={async () => {
+            if (isNil(node)) {
+            } else if (isNil($.temp_current_all)) {
+              set(true, "signing_in_modal")
+            } else {
+              if (confirm("Would you like to sign out?")) {
+                fn(logoutTemp)()
               }
-              mr={3}
-            />
-            {`${$.temp_current.slice(0, 6)}...${$.temp_current.slice(-4)}`}
-          </Flex>
-        )}
-      </Flex>
-    )
+            }
+          }}
+        >
+          {isNil(node) ? (
+            "Select Node"
+          ) : isNil($.temp_current_all) ? (
+            "Connect Wallet"
+          ) : (
+            <Flex align="center">
+              <Image
+                boxSize="25px"
+                src={
+                  $.temp_wallet === "intmax"
+                    ? "/static/images/intmax.png"
+                    : $.temp_current_all.addr.length < 88
+                    ? /^0x/.test($.temp_current_all.addr)
+                      ? "/static/images/metamask.png"
+                      : "/static/images/arconnect.png"
+                    : "/static/images/dfinity.png"
+                }
+                mr={3}
+              />
+              {`${$.temp_current_all.addr.slice(
+                0,
+                6
+              )}...${$.temp_current_all.addr.slice(-4)}`}
+            </Flex>
+          )}
+        </Flex>
+      ) : (
+        <Flex
+          py={2}
+          px={6}
+          bg={isNil(contractTxId) ? "#6441AF" : "#333"}
+          color="white"
+          sx={{
+            borderRadius: "25px",
+            cursor: "pointer",
+            ":hover": { opacity: 0.75 },
+          }}
+          justifyContent="center"
+          onClick={async () => {
+            if (isNil(contractTxId)) {
+              setAddInstance(true)
+            } else if (isNil($.temp_current)) {
+              set(true, "signing_in_modal")
+            } else {
+              if (confirm("Would you like to sign out?")) {
+                fn(logoutTemp)()
+              }
+            }
+          }}
+        >
+          {isNil(contractTxId) ? (
+            "Connect with DB"
+          ) : isNil($.temp_current) ? (
+            "Sign Into DB"
+          ) : (
+            <Flex align="center">
+              <Image
+                boxSize="25px"
+                src={
+                  $.temp_wallet === "intmax"
+                    ? "/static/images/intmax.png"
+                    : $.temp_current.length < 88
+                    ? /^0x/.test($.temp_current)
+                      ? "/static/images/metamask.png"
+                      : "/static/images/arconnect.png"
+                    : "/static/images/dfinity.png"
+                }
+                mr={3}
+              />
+              {`${$.temp_current.slice(0, 6)}...${$.temp_current.slice(-4)}`}
+            </Flex>
+          )}
+        </Flex>
+      )
 
     let _cron = null
     if (!isNil(crons) && !isNil(crons.crons)) {
@@ -431,6 +487,35 @@ export default inject(
         }
       })()
     }, [])
+    useEffect(() => {
+      ;(async () => {
+        if (!isNil(node) && !isNil($.temp_current_all)) {
+          const db = await fn(setupWeaveDB)({
+            contractTxId: node.contract,
+            rpc: node.rpc,
+          })
+          console.log($.temp_current_all.addr)
+          console.log(await db.get("users"))
+          console.log(await db.get("contracts"))
+          console.log("lets get", await db.get("users", "a8C6896Ea01e"))
+          let user = await db.get("users", $.temp_current_all.addr)
+          console.log(user)
+          let whitelisted = !isNil(user) && user.allow
+          setIsWhitelisted(whitelisted)
+          if (whitelisted) {
+            setContracts(
+              await db.get(
+                "contracts",
+                ["address", "=", $.temp_current_all.addr],
+                true
+              )
+            )
+          } else {
+            setContracts([])
+          }
+        }
+      })()
+    }, [node, $.temp_current_all])
 
     useEffect(() => {
       if (isNil(port)) setNewNetwork("Mainnet")
@@ -594,17 +679,24 @@ export default inject(
             return (
               <Flex
                 onClick={() => {
-                  if (v === "DB" || !isNil(currentDB)) setTab(v)
+                  if (includes(v, ["DB", "Nodes"]) || !isNil(currentDB))
+                    setTab(v)
                 }}
                 bg={v === tab ? "#6441AF" : "#eee"}
                 color={
-                  v === tab ? "white" : !isNil(currentDB) ? "#333" : "#999"
+                  v === tab
+                    ? "white"
+                    : !isNil(currentDB) || includes(v)(["DB", "Nodes"])
+                    ? "#333"
+                    : "#999"
                 }
                 py={3}
                 px={4}
                 sx={{
                   cursor:
-                    !isNil(currentDB) || v === "DB" ? "pointer" : "not-allowed",
+                    !isNil(currentDB) || includes(v)(["DB", "Nodes"])
+                      ? "pointer"
+                      : "not-allowed",
                   ":hover": { opacity: 0.75 },
                 }}
               >
@@ -767,7 +859,12 @@ export default inject(
                 </Flex>
                 <Flex height="550px" maxW="1200px" w="100%">
                   <Flex h="550px" w="100%" bg="white">
-                    {includes(tab)(["DB", "Crons", "Relayers"]) ? null : (
+                    {includes(tab)([
+                      "DB",
+                      "Crons",
+                      "Relayers",
+                      "Nodes",
+                    ]) ? null : (
                       <Box
                         flex={1}
                         sx={{ border: "1px solid #555" }}
@@ -1233,6 +1330,186 @@ export default inject(
                                 id="json-pretty"
                                 data={relayer.job.schema}
                               ></JSONPretty>
+                            )}
+                          </Box>
+                        </Flex>
+                      </>
+                    ) : tab === "Nodes" ? (
+                      <>
+                        <Flex
+                          flex={1}
+                          sx={{ border: "1px solid #555" }}
+                          direction="column"
+                        >
+                          <Flex py={2} px={3} color="white" bg="#333" h="35px">
+                            Nodes
+                            <Box flex={1} />
+                            {true ? null : (
+                              <Box
+                                onClick={() => setAddNode(true)}
+                                sx={{
+                                  cursor: "pointer",
+                                  ":hover": { opacity: 0.75 },
+                                }}
+                              >
+                                <Box as="i" className="fas fa-plus" />
+                              </Box>
+                            )}
+                          </Flex>
+                          <Box height="500px" sx={{ overflowY: "auto" }}>
+                            {map(v => (
+                              <Flex
+                                onClick={async () => setNode(v)}
+                                bg={
+                                  !isNil(node) && node.rpc === v.rpc
+                                    ? "#ddd"
+                                    : ""
+                                }
+                                py={2}
+                                px={3}
+                                sx={{
+                                  cursor: "pointer",
+                                  ":hover": { opacity: 0.75 },
+                                }}
+                              >
+                                <Box mr={3} flex={1}>
+                                  {v.rpc}
+                                </Box>
+                                {true ? null : (
+                                  <Box
+                                    color="#999"
+                                    sx={{
+                                      cursor: "pointer",
+                                      ":hover": {
+                                        opacity: 0.75,
+                                        color: "#6441AF",
+                                      },
+                                    }}
+                                    onClick={async e => {
+                                      e.stopPropagation()
+                                      if (
+                                        !confirm(
+                                          "Would you like to remove the node?"
+                                        )
+                                      ) {
+                                        return
+                                      }
+                                      if (isNil($.loading)) {
+                                        set("remove_node", "loading")
+
+                                        set(null, "loading")
+                                      }
+                                    }}
+                                  >
+                                    <Box as="i" className="fas fa-trash" />
+                                  </Box>
+                                )}
+                              </Flex>
+                            ))(nodes || [])}
+                          </Box>
+                        </Flex>
+                        <Flex
+                          flex={1}
+                          sx={{ border: "1px solid #555" }}
+                          direction="column"
+                        >
+                          <Flex py={2} px={3} color="white" bg="#333" h="35px">
+                            Your Contracts
+                            <Box flex={1} />
+                            {isNil($.temp_current_all) ? null : (
+                              <Box
+                                onClick={() => setAddContract(true)}
+                                sx={{
+                                  cursor: "pointer",
+                                  ":hover": { opacity: 0.75 },
+                                }}
+                              >
+                                <Box as="i" className="fas fa-plus" />
+                              </Box>
+                            )}
+                          </Flex>
+                          <Box height="500px" sx={{ overflowY: "auto" }}>
+                            {isNil(node) ? (
+                              <Flex
+                                justify="center"
+                                align="center"
+                                height="100%"
+                              >
+                                Please select a node.
+                              </Flex>
+                            ) : isNil($.temp_current_all) ? (
+                              <Flex
+                                justify="center"
+                                align="center"
+                                height="100%"
+                              >
+                                Please connect a wallet.
+                              </Flex>
+                            ) : !isWhitelisted ? (
+                              <Flex
+                                justify="center"
+                                align="center"
+                                height="100%"
+                              >
+                                You are not whitelisted for this node.
+                              </Flex>
+                            ) : contracts.length === 0 ? (
+                              <Flex
+                                justify="center"
+                                align="center"
+                                height="100%"
+                              >
+                                Add a contract.
+                              </Flex>
+                            ) : (
+                              <Box height="500px" sx={{ overflowY: "auto" }}>
+                                {map(v => (
+                                  <Flex p={2} px={3}>
+                                    <Box flex={1}>{v.txid}</Box>
+                                    <Box
+                                      color="#999"
+                                      sx={{
+                                        cursor: "pointer",
+                                        ":hover": {
+                                          opacity: 0.75,
+                                          color: "#6441AF",
+                                        },
+                                      }}
+                                      onClick={async e => {
+                                        e.stopPropagation()
+                                        if (
+                                          confirm(
+                                            "Would you like to remove the contract?"
+                                          )
+                                        ) {
+                                          await fn(_remove)({
+                                            contractTxId: node.contract,
+                                            txid: v.txid,
+                                            rpc: node.rpc,
+                                          })
+                                          const db = await fn(setupWeaveDB)({
+                                            contractTxId: node.contract,
+                                            rpc: node.rpc,
+                                          })
+                                          setContracts(
+                                            await db.get(
+                                              "contracts",
+                                              [
+                                                "address",
+                                                "=",
+                                                $.temp_current_all.addr,
+                                              ],
+                                              true
+                                            )
+                                          )
+                                        }
+                                      }}
+                                    >
+                                      <Box as="i" className="fas fa-trash" />
+                                    </Box>
+                                  </Flex>
+                                ))(contracts)}
+                              </Box>
                             )}
                           </Box>
                         </Flex>
@@ -2043,7 +2320,7 @@ export default inject(
                             values,
                             mapObjIndexed((v, k) => {
                               return (
-                                <Flex align="center" p={2} px={3}>
+                                <Flex align="flex-start" p={2} px={3}>
                                   <Box
                                     mr={2}
                                     px={3}
@@ -3136,6 +3413,149 @@ export default inject(
                       <Box as="i" className="fas fa-spin fa-circle-notch" />
                     ) : (
                       "Add"
+                    )}
+                  </Flex>
+                </Box>
+              </Flex>
+            ) : addNode !== false ? (
+              <Flex
+                w="100%"
+                h="100%"
+                position="fixed"
+                sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+                bg="rgba(0,0,0,0.5)"
+                onClick={() => setAddNode(false)}
+                justify="center"
+                align="center"
+              >
+                <Box
+                  bg="white"
+                  width="500px"
+                  p={3}
+                  sx={{ borderRadius: "5px", cursor: "default" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Flex>
+                    <Input
+                      value={newNode}
+                      placeholder="Node RPC URL"
+                      onChange={e => setNewNode(e.target.value)}
+                      sx={{
+                        borderRadius: "3px",
+                      }}
+                    />
+                  </Flex>
+                  <Flex
+                    mt={4}
+                    sx={{
+                      borderRadius: "3px",
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                    p={2}
+                    justify="center"
+                    align="center"
+                    color="white"
+                    bg="#333"
+                    height="40px"
+                    onClick={async () => {
+                      if (isNil($.loading)) {
+                        set("add_node", "loading")
+                        if (
+                          !/^http:\/\//.test(newNode) &&
+                          !/^https:\/\//.test(newNode)
+                        ) {
+                          alert("node url should start with http(s)://")
+                          set(null, "loading")
+                          return
+                        }
+                        set(null, "loading")
+                      }
+                    }}
+                  >
+                    {!isNil($.loading) ? (
+                      <Box as="i" className="fas fa-spin fa-circle-notch" />
+                    ) : (
+                      "Add Node"
+                    )}
+                  </Flex>
+                </Box>
+              </Flex>
+            ) : addContract !== false ? (
+              <Flex
+                w="100%"
+                h="100%"
+                position="fixed"
+                sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+                bg="rgba(0,0,0,0.5)"
+                onClick={() => setAddContract(false)}
+                justify="center"
+                align="center"
+              >
+                <Box
+                  bg="white"
+                  width="500px"
+                  p={3}
+                  sx={{ borderRadius: "5px", cursor: "default" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Flex>
+                    <Input
+                      value={newContract}
+                      placeholder="contractTxId"
+                      onChange={e => setNewContract(e.target.value)}
+                      sx={{
+                        borderRadius: "3px",
+                      }}
+                    />
+                  </Flex>
+                  <Flex
+                    mt={4}
+                    sx={{
+                      borderRadius: "3px",
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                    p={2}
+                    justify="center"
+                    align="center"
+                    color="white"
+                    bg="#333"
+                    height="40px"
+                    onClick={async () => {
+                      if (isNil($.loading)) {
+                        set("add_contract", "loading")
+                        if (/^\s*$/.test(newContract)) {
+                          alert("enter contractTxId")
+                          set(null, "loading")
+                          return
+                        }
+                        await fn(_admin)({
+                          contractTxId: node.contract,
+                          txid: newContract,
+                          rpc: node.rpc,
+                        })
+                        const db = await fn(setupWeaveDB)({
+                          contractTxId: node.contract,
+                          rpc: node.rpc,
+                        })
+                        setContracts(
+                          await db.get(
+                            "contracts",
+                            ["address", "=", $.temp_current_all.addr],
+                            true
+                          )
+                        )
+                        setNewContract("")
+                        setAddContract(false)
+                        set(null, "loading")
+                      }
+                    }}
+                  >
+                    {!isNil($.loading) ? (
+                      <Box as="i" className="fas fa-spin fa-circle-notch" />
+                    ) : (
+                      "Add Contract"
                     )}
                   </Flex>
                 </Box>
@@ -4354,6 +4774,7 @@ export default inject(
                             await fn(createTempAddress)({
                               contractTxId,
                               network,
+                              node: tab === "Nodes",
                             })
                           }
                           set(false, "signing_in")
@@ -4391,6 +4812,7 @@ export default inject(
                             await fn(createTempAddressWithII)({
                               contractTxId,
                               network,
+                              node: tab === "Nodes",
                             })
                           }
                           set(false, "signing_in")
@@ -4428,6 +4850,7 @@ export default inject(
                             await fn(createTempAddressWithAR)({
                               contractTxId,
                               network,
+                              node: tab === "Nodes",
                             })
                           }
                           set(false, "signing_in")
