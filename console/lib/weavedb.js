@@ -1000,7 +1000,6 @@ export const _remove = async ({
       _opt.ii = ii
     }
     try {
-      console.log(await db.get("contracts", txid))
       return await db.admin({ op: "remove_contract", contractTxId: txid }, _opt)
     } catch (e) {
       console.log(e)

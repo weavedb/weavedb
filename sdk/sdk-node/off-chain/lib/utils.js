@@ -11,7 +11,7 @@ const {
   last,
   intersection,
 } = require("ramda")
-
+const { isValidName } = require("./pure")
 const clone = state => JSON.parse(JSON.stringify(state))
 
 const err = (msg = `The wrong query`, contractErr = false) => {
