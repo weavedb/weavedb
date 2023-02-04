@@ -8,7 +8,7 @@
     "lint": "next lint"
   },
   "engines": {
-    "node": ">=16.0.0 <17.0.0"
+    "node": ">=18.13.0"
   },
   "dependencies": {
     "@chakra-ui/react": "^2.2.4",
@@ -34,7 +34,7 @@
     "recoil": "^0.5.2",
     "roidjs": "^0.1.6",
     "warp-contracts": "1.2.36",
-    "weavedb-client": "^0.18.5",
+    "weavedb-client": "^0.18.8",
     "weavedb-sdk": "^0.18.4"
   }
 }

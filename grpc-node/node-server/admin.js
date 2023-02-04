@@ -127,6 +127,7 @@ const execAdmin = async ({
       const { contractTxId: txid2 } = _query.query
       try {
         const contract = await db.get("contracts", txid2)
+        console.log(contract, txid2)
         if (isNil(contract)) {
           return res(`${txid2} doesn't exist`, txs)
         }

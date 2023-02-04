@@ -99,7 +99,7 @@ export const setupWeaveDB = async ({
 export const createTempAddressWithII = async ({
   conf,
   set,
-  val: { contractTxId, network },
+  val: { contractTxId, network, node },
 }) => {
   const iiUrl =
     network === "Mainnet"
@@ -116,6 +116,10 @@ export const createTempAddressWithII = async ({
   const ii = authClient.getIdentity()
   if (isNil(ii._inner)) return
   const addr = ii._inner.toJSON()[0]
+  if (node) {
+    set({ addr, type: "evm", network }, "temp_current_all")
+    return
+  }
   const ex_identity = await lf.getItem(`temp_address:${contractTxId}:${addr}`)
   let identity = ex_identity
   let tx
@@ -131,11 +135,15 @@ export const createTempAddressWithII = async ({
 export const createTempAddressWithAR = async ({
   conf,
   set,
-  val: { contractTxId, network },
+  val: { contractTxId, network, node },
 }) => {
   const wallet = window.arweaveWallet
   await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
   let addr = await wallet.getActiveAddress()
+  if (node) {
+    set({ addr, type: "ar", network }, "temp_current_all")
+    return
+  }
   const ex_identity = await lf.getItem(`temp_address:${contractTxId}:${addr}`)
   let identity = ex_identity
   let tx
@@ -216,12 +224,16 @@ export const connectAddressWithAR = async ({ conf, set, val: { network } }) => {
 export const createTempAddress = async ({
   conf,
   set,
-  val: { contractTxId, network },
+  val: { contractTxId, network, node },
 }) => {
   const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
   await provider.send("eth_requestAccounts", [])
   const signer = provider.getSigner()
   const addr = await signer.getAddress()
+  if (node) {
+    set({ addr, type: "evm", network }, "temp_current_all")
+    return
+  }
   const ex_identity = await lf.getItem(`temp_address:${contractTxId}:${addr}`)
   let identity = ex_identity
   let tx
@@ -896,6 +908,103 @@ export const _migrate = async ({
       return `Error: ${res.err.errorMessage}`
     } else {
       return JSON.stringify(res)
+    }
+  } catch (e) {
+    console.log(e)
+    return `Error: Something went wrong`
+  }
+}
+
+export const _admin = async ({
+  val: { rpc, contractTxId, txid, network = "mainnet" },
+  global,
+  set,
+  fn,
+  conf,
+  get,
+}) => {
+  const db = await fn(setupWeaveDB)({
+    contractTxId,
+    rpc,
+  })
+  try {
+    const current = get("temp_current_all")
+    let _opt = {}
+    if (current.type === "ar") {
+      const wallet = window.arweaveWallet
+      await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
+      _opt.ar = wallet
+    } else if (current.type === "ii") {
+      const iiUrl =
+        network === "Mainnet"
+          ? "https://identity.ic0.app/"
+          : `http://localhost:8000/?canisterId=rwlgt-iiaaa-aaaaa-aaaaa-cai`
+      const authClient = await AuthClient.create()
+      await new Promise((resolve, reject) => {
+        authClient.login({
+          identityProvider: iiUrl,
+          onSuccess: resolve,
+          onError: reject,
+        })
+      })
+      const ii = authClient.getIdentity()
+      if (isNil(ii._inner)) return
+      _opt.ii = ii
+    }
+    try {
+      return await db.admin({ op: "add_contract", contractTxId: txid }, _opt)
+    } catch (e) {
+      console.log(e)
+      return `Error: Something went wrong`
+    }
+  } catch (e) {
+    console.log(e)
+    return `Error: Something went wrong`
+  }
+}
+
+export const _remove = async ({
+  val: { rpc, contractTxId, txid, network = "mainnet" },
+  global,
+  set,
+  fn,
+  conf,
+  get,
+}) => {
+  const db = await fn(setupWeaveDB)({
+    contractTxId,
+    rpc,
+  })
+  try {
+    const current = get("temp_current_all")
+    let _opt = {}
+    if (current.type === "ar") {
+      const wallet = window.arweaveWallet
+      await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
+      _opt.ar = wallet
+    } else if (current.type === "ii") {
+      const iiUrl =
+        network === "Mainnet"
+          ? "https://identity.ic0.app/"
+          : `http://localhost:8000/?canisterId=rwlgt-iiaaa-aaaaa-aaaaa-cai`
+      const authClient = await AuthClient.create()
+      await new Promise((resolve, reject) => {
+        authClient.login({
+          identityProvider: iiUrl,
+          onSuccess: resolve,
+          onError: reject,
+        })
+      })
+      const ii = authClient.getIdentity()
+      if (isNil(ii._inner)) return
+      _opt.ii = ii
+    }
+    try {
+      console.log(await db.get("contracts", txid))
+      return await db.admin({ op: "remove_contract", contractTxId: txid }, _opt)
+    } catch (e) {
+      console.log(e)
+      return `Error: Something went wrong`
     }
   } catch (e) {
     console.log(e)
