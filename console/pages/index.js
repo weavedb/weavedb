@@ -123,6 +123,7 @@ export default inject(
 
     const [newOwner, setNewOwner] = useState("")
     const [newNode, setNewNode] = useState("")
+    const [newHttp, setNewHttp] = useState("https://")
     const [result, setResult] = useState("")
     const [state, setState] = useState(null)
     const [collections, setCollections] = useState([])
@@ -179,12 +180,7 @@ export default inject(
     const [deployMode, setDeployMode] = useState("Connect")
     const [dbs, setDBs] = useState([])
     const [node, setNode] = useState(null)
-    const [nodes, setNodes] = useState([
-      {
-        rpc: "https://grpc.asteroid.ac",
-        contract: "ULKzK8dmkCCpoTiRpJi2ae3dh6Xfe3GzUbR7w0uInjI",
-      },
-    ])
+    const [nodes, setNodes] = useState([])
     const [currentDB, setCurrentDB] = useState(null)
     const [connect, setConnect] = useState(false)
     const [newPort, setNewPort] = useState(1820)
@@ -206,6 +202,38 @@ export default inject(
     const [newRelayer, setNewRelayer] = useState("")
     const [newSigner, setNewSigner] = useState("")
     const [newSigners, setNewSigners] = useState([])
+
+    const addGRPCNode = async _node => {
+      const nodemap = indexBy(prop("rpc"), nodes)
+      if (isNil(nodemap[_node.rpc])) {
+        const _nodes = append(_node, nodes)
+        setNodes(_nodes)
+        await lf.setItem(`my_nodes`, _nodes)
+        if (isNil(node)) setNode(_node)
+      } else {
+        await updateGRPCNode(_node)
+      }
+    }
+
+    const updateGRPCNode = async _node => {
+      const nodemap = indexBy(prop("rpc"), nodes)
+      if (!isNil(nodemap[_node.rpc])) {
+        nodemap[_node.rpc] = _node
+        const _nodes = values(nodemap)
+        setNodes(_nodes)
+        await lf.setItem(`my_nodes`, _nodes)
+      }
+    }
+
+    const removeGRPCNode = async _node => {
+      const nodemap = indexBy(prop("rpc"), nodes)
+      if (!isNil(nodemap[_node.rpc])) {
+        const _nodes = reject(propEq("rpc", _node.rpc), nodes)
+        setNodes(_nodes)
+        await lf.setItem(`my_nodes`, _nodes)
+        if (!isNil(node) && _node.rpc === node.rpc) setNode(null)
+      }
+    }
 
     const addDB = async _db => {
       const dbmap = indexBy(prop("contractTxId"), dbs)
@@ -314,7 +342,16 @@ export default inject(
     useEffect(() => {
       ;(async () => {
         setDBs((await lf.getItem(`my_dbs`)) || [])
-        //setNodes((await lf.getItem(`my_nodes`)) || [])
+        let _nodes = (await lf.getItem(`my_nodes`)) || []
+        if (_nodes.length === 0) {
+          _nodes = [
+            {
+              rpc: "https://grpc.asteroid.ac",
+              contract: "ULKzK8dmkCCpoTiRpJi2ae3dh6Xfe3GzUbR7w0uInjI",
+            },
+          ]
+        }
+        setNodes(_nodes)
       })()
     }, [])
 
@@ -1338,17 +1375,15 @@ export default inject(
                           <Flex py={2} px={3} color="white" bg="#333" h="35px">
                             Nodes
                             <Box flex={1} />
-                            {true ? null : (
-                              <Box
-                                onClick={() => setAddNode(true)}
-                                sx={{
-                                  cursor: "pointer",
-                                  ":hover": { opacity: 0.75 },
-                                }}
-                              >
-                                <Box as="i" className="fas fa-plus" />
-                              </Box>
-                            )}
+                            <Box
+                              onClick={() => setAddNode(true)}
+                              sx={{
+                                cursor: "pointer",
+                                ":hover": { opacity: 0.75 },
+                              }}
+                            >
+                              <Box as="i" className="fas fa-plus" />
+                            </Box>
                           </Flex>
                           <Box height="500px" sx={{ overflowY: "auto" }}>
                             {map(v => (
@@ -1369,35 +1404,33 @@ export default inject(
                                 <Box mr={3} flex={1}>
                                   {v.rpc}
                                 </Box>
-                                {true ? null : (
-                                  <Box
-                                    color="#999"
-                                    sx={{
-                                      cursor: "pointer",
-                                      ":hover": {
-                                        opacity: 0.75,
-                                        color: "#6441AF",
-                                      },
-                                    }}
-                                    onClick={async e => {
-                                      e.stopPropagation()
-                                      if (
-                                        !confirm(
-                                          "Would you like to remove the node?"
-                                        )
-                                      ) {
-                                        return
-                                      }
-                                      if (isNil($.loading)) {
-                                        set("remove_node", "loading")
-
-                                        set(null, "loading")
-                                      }
-                                    }}
-                                  >
-                                    <Box as="i" className="fas fa-trash" />
-                                  </Box>
-                                )}
+                                <Box
+                                  color="#999"
+                                  sx={{
+                                    cursor: "pointer",
+                                    ":hover": {
+                                      opacity: 0.75,
+                                      color: "#6441AF",
+                                    },
+                                  }}
+                                  onClick={async e => {
+                                    e.stopPropagation()
+                                    if (
+                                      !confirm(
+                                        "Would you like to remove the node?"
+                                      )
+                                    ) {
+                                      return
+                                    }
+                                    if (isNil($.loading)) {
+                                      set("remove_node", "loading")
+                                      removeGRPCNode(v)
+                                      set(null, "loading")
+                                    }
+                                  }}
+                                >
+                                  <Box as="i" className="fas fa-trash" />
+                                </Box>
                               </Flex>
                             ))(nodes || [])}
                           </Box>
@@ -3432,6 +3465,13 @@ export default inject(
                   onClick={e => e.stopPropagation()}
                 >
                   <Flex>
+                    <Select
+                      w="150px"
+                      value={newHttp}
+                      onChange={e => setNewHttp(e.target.value)}
+                    >
+                      {map(v => <option>{v}</option>)(["https://", "http://"])}
+                    </Select>
                     <Input
                       value={newNode}
                       placeholder="Node RPC URL"
@@ -3457,13 +3497,26 @@ export default inject(
                     onClick={async () => {
                       if (isNil($.loading)) {
                         set("add_node", "loading")
-                        if (
-                          !/^http:\/\//.test(newNode) &&
-                          !/^https:\/\//.test(newNode)
-                        ) {
-                          alert("node url should start with http(s)://")
+                        if (/^\s*$/.test(newNode)) {
+                          alert("enter URL")
                           set(null, "loading")
                           return
+                        }
+                        try {
+                          const db = await fn(setupWeaveDB)({
+                            contractTxId: "node",
+                            rpc: newHttp + newNode,
+                          })
+                          const stats = await db.node({ op: "stats" })
+                          if (isNil(stats.admin.contractTxId)) throw new Error()
+                          await addGRPCNode({
+                            contract: stats.admin.contractTxId,
+                            rpc: newHttp + newNode,
+                          })
+                          setNewNode("")
+                          setAddNode(false)
+                        } catch (e) {
+                          alert("couldn't connect with the node")
                         }
                         set(null, "loading")
                       }
