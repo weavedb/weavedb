@@ -105,8 +105,13 @@ class SDK extends Base {
             ret({ result: null, err })
           } else {
             if (response.err === "") {
-              const result = JSON.parse(response.result)
-              ret({ result, err: null })
+              try {
+                const result =
+                  response.result === "" ? null : JSON.parse(response.result)
+                ret({ result, err: null })
+              } catch (e) {
+                ret({ result: null, err: e })
+              }
             } else {
               ret({ result: null, err: response.err })
             }
