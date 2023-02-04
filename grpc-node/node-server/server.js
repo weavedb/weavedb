@@ -68,14 +68,15 @@ async function query(call, callback) {
       err,
     })
 
-  if (isNil(contractTxId)) return res("contractTxId not specified")
-
-  contractTxId = contractTxId.split("@")[0]
-
-  if (func === "admin") {
-    return await execAdmin({ contractTxId, query, res, sdks, admin, initSDK })
+  if (isNil(contractTxId) && func !== "admin") {
+    return res("contractTxId not specified")
   }
 
+  if (!isNil(contractTxId)) contractTxId = contractTxId.split("@")[0]
+
+  if (func === "admin") {
+    return await execAdmin({ query, res, sdks, admin, initSDK })
+  }
   if (!isAllowed(contractTxId))
     return res(`contractTxId[${contractTxId}] not allowed`)
 
