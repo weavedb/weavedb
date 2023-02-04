@@ -11,6 +11,7 @@ const {
   is,
   last,
   tail,
+  clone,
 } = require("ramda")
 const { LmdbCache } = require("warp-contracts-lmdb")
 const shortid = require("shortid")
@@ -48,7 +49,7 @@ const _on = async (state, contractTxId, block = {}) => {
         const query = subs[txid][hash].query
         try {
           const res = await get(
-            state,
+            clone(state),
             {
               input: { query },
             },
@@ -371,7 +372,7 @@ class SDK extends Base {
           res.docID = last(res.path)
         }
         res.doc = (
-          await get(state.cachedValue.state, {
+          await get(clone(state.cachedValue.state), {
             input: { query: res.path },
           })
         ).result
@@ -423,7 +424,7 @@ class SDK extends Base {
     if (isNil(states[this.contractTxId])) return null
     return (
       await get(
-        states[this.contractTxId],
+        clone(states[this.contractTxId]),
         {
           input: { query },
         },
@@ -437,7 +438,7 @@ class SDK extends Base {
     if (isNil(states[this.contractTxId])) return null
     return (
       await get(
-        states[this.contractTxId],
+        clone(states[this.contractTxId]),
         {
           input: { query },
         },
