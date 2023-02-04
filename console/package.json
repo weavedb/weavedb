@@ -34,7 +34,7 @@
     "recoil": "^0.5.2",
     "roidjs": "^0.1.6",
     "warp-contracts": "1.2.36",
-    "weavedb-client": "^0.18.8",
+    "weavedb-client": "^0.19.0",
     "weavedb-sdk": "^0.18.4"
   }
 }
