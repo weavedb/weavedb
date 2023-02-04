@@ -62,6 +62,32 @@ const getSetups = address => {
   return { users_schema, users_rules, contracts_schema, contracts_rules }
 }
 
+const execAdminRead = async ({
+  query,
+  res,
+  contractTxId,
+  sdks,
+  admin,
+  initSDK,
+}) => {
+  let _query, op
+  try {
+    _query = JSON.parse(query)
+    ;({ op } = _query.query)
+  } catch (e) {
+    return res(`The wrong query`)
+  }
+  switch (op) {
+    case "stats":
+      const admin = isNil(config.admin)
+        ? null
+        : { contractTxId: config.admin.contractTxId }
+      return res(null, { admin })
+    default:
+      return res(`operation not found: ${op}`)
+  }
+}
+
 const execAdmin = async ({
   query,
   res,
@@ -70,9 +96,18 @@ const execAdmin = async ({
   admin,
   initSDK,
 }) => {
-  const _query = JSON.parse(query)
-  const { op } = _query.query
+  let _query, op
+  try {
+    _query = JSON.parse(query)
+    ;({ op } = _query.query)
+  } catch (e) {
+    return res(`The wrong query`)
+  }
   const nonAdmin = ["remove_contract", "add_contract"]
+  const reads = ["stats"]
+  if (includes(op)(reads)) {
+    return execAdminRead({ query, res, contractTxId, sdks, admin, initSDK })
+  }
   if (_query.type !== "rsa256" && !includes(op)(nonAdmin)) {
     return res("Admin must be an Arweave account")
   }
