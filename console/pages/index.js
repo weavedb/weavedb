@@ -181,7 +181,7 @@ export default inject(
     const [node, setNode] = useState(null)
     const [nodes, setNodes] = useState([
       {
-        rpc: "http://localhost:8080",
+        rpc: "https://grpc.asteroid.ac",
         contract: "ULKzK8dmkCCpoTiRpJi2ae3dh6Xfe3GzUbR7w0uInjI",
       },
     ])

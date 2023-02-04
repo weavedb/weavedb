@@ -49,6 +49,7 @@ const allow_any_contracts =
   config.allowAnyContracts === true || allowed_contracts.length === 0
 
 const isAllowed = contractTxId =>
+  !isNil(sdks[contractTxId]) ||
   allow_any_contracts ||
   includes(contractTxId)(allowed_contracts) ||
   (!isNil(config.admin) && config.admin.contractTxId === contractTxId)
