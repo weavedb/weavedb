@@ -95,11 +95,9 @@ async function query(call, callback) {
           result = await sdks[contractTxId][func](...JSON.parse(query))
           _init[contractTxId] = true
         } else {
-          console.log("are we here???")
           result = await sdks[contractTxId][nameMap[func] || func](
             ...JSON.parse(query)
           )
-          console.log(result);
         }
       } else if (includes(func)(sdks[contractTxId].reads)) {
         result = await sdks[contractTxId][func](...JSON.parse(query))
