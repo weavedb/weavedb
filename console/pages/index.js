@@ -1410,7 +1410,8 @@ export default inject(
                           <Flex py={2} px={3} color="white" bg="#333" h="35px">
                             Your Contracts
                             <Box flex={1} />
-                            {isNil($.temp_current_all) ? null : (
+                            {isNil($.temp_current_all) ||
+                            !isWhitelisted ? null : (
                               <Box
                                 onClick={() => setAddContract(true)}
                                 sx={{

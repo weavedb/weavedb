@@ -98,6 +98,9 @@ class SDK extends Base {
   async admin(op, opt) {
     return this._write2("admin", op, opt)
   }
+  async node(op, opt) {
+    return this.write("admin", { query: op })
+  }
 }
 
 module.exports = SDK
