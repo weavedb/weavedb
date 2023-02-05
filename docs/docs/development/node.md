@@ -34,7 +34,7 @@ There are 3 ways to specify the `contractTxId` in the config file.
 `contractTxId: "xxxxx..."`
 - multiple contracts - set an array of ids to allow multiple DB instances.  
 `contractTxId: [ "xxxxx...", "yyyyy...", "zzzzz..." ]`
-- any contracts - omit `contractTxId` or set `allowAnyContracts` to `true`
+- any contracts - set `allowAnyContracts` to `true`
 
 When you have old contracts, they need to be specified in the `contractTxId`, and you can still allow any contracts.
 
