@@ -138,6 +138,10 @@ class SDK extends Base {
     return this.readQuery("getNonce", addr, true)
   }
 
+  async getAddressLink(address, nocache) {
+    return this.readQuery("getAddressLink", address, nocache)
+  }
+
   async admin(op, opt) {
     return this._write2("admin", op, opt)
   }
