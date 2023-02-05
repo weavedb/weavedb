@@ -60,7 +60,9 @@ import {
   logoutTemp,
   queryDB,
   _addOwner,
+  _addNodeOwner,
   _removeOwner,
+  _removeNodeOwner,
   _setCanEvolve,
   _setSecure,
   _admin,
@@ -115,6 +117,7 @@ export default inject(
     const [addIndex, setAddIndex] = useState(false)
     const [addInstance, setAddInstance] = useState(false)
     const [addOwner, setAddOwner] = useState(false)
+    const [addNodeOwner, setAddNodeOwner] = useState(false)
     const [addCanEvolve, setAddCanEvolve] = useState(false)
     const [addEvolve, setAddEvolve] = useState(false)
     const [addSecure, setAddSecure] = useState(false)
@@ -667,6 +670,13 @@ export default inject(
             ($.temp_current || "").toLowerCase(),
             map(toLower)(is(Array, state.owner) ? state.owner : [state.owner])
           )
+    let isNodeOwner = false
+    if (!isNil($.temp_current_all) && !isNil(node)) {
+      const addr = /^0x.+$/.test($.temp_current_all.addr)
+        ? $.temp_current_all.addr.toLowerCase()
+        : $.temp_current_all.addr
+      isNodeOwner = includes(addr)(node.owners || [])
+    }
     return (
       <ChakraProvider>
         <style global jsx>{`
@@ -1440,7 +1450,7 @@ export default inject(
                           </Box>
                         </Flex>
                         <Flex
-                          flex={1}
+                          flex={2}
                           sx={{ border: "1px solid #555" }}
                           direction="column"
                         >
@@ -1544,6 +1554,112 @@ export default inject(
                                   </Flex>
                                 ))(contracts)}
                               </Box>
+                            )}
+                          </Box>
+                        </Flex>
+                        <Flex
+                          flex={2}
+                          sx={{ border: "1px solid #555" }}
+                          direction="column"
+                        >
+                          <Flex py={2} px={3} color="white" bg="#333" h="35px">
+                            Settings
+                            <Box flex={1} />
+                            {isNil($.temp_current_all) ||
+                            !isWhitelisted ? null : (
+                              <Box
+                                onClick={() => {
+                                  if (
+                                    !isNil(nodeUser.limit) &&
+                                    nodeUser.limit <= contracts.length
+                                  ) {
+                                    alert("You have reached the limit")
+                                    return
+                                  }
+                                  setAddContract(true)
+                                }}
+                                sx={{
+                                  cursor: "pointer",
+                                  ":hover": { opacity: 0.75 },
+                                }}
+                              >
+                                <Box as="i" className="fas fa-plus" />
+                              </Box>
+                            )}
+                          </Flex>
+                          <Box height="500px" sx={{ overflowY: "auto" }}>
+                            {isNil(node) ? (
+                              <Flex
+                                justify="center"
+                                align="center"
+                                height="100%"
+                              >
+                                Please select a node.
+                              </Flex>
+                            ) : (
+                              <>
+                                <Flex align="flex-start" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg="#ddd"
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    Contract
+                                  </Box>
+                                  <Box flex={1}>
+                                    <Box
+                                      as="a"
+                                      target="_blank"
+                                      href={`https://sonar.warp.cc/?#/app/contract/${node.contract}`}
+                                      color="#6441AF"
+                                      sx={{ textDecoration: "underline" }}
+                                    >
+                                      {node.contract}
+                                    </Box>
+                                  </Box>
+                                </Flex>
+                                <Flex align="flex-start" p={2} px={3}>
+                                  <Box
+                                    mr={2}
+                                    px={3}
+                                    bg={isNodeOwner ? "#6441AF" : "#ddd"}
+                                    color={isNodeOwner ? "white" : "#333"}
+                                    sx={{ borderRadius: "3px" }}
+                                  >
+                                    Owner
+                                  </Box>
+                                  <Box flex={1}>
+                                    {map(v => <Box>{v}</Box>)(
+                                      node.owners || []
+                                    )}
+                                  </Box>
+                                  {!isNodeOwner ? null : (
+                                    <Box
+                                      color="#999"
+                                      sx={{
+                                        cursor: "pointer",
+                                        ":hover": {
+                                          opacity: 0.75,
+                                          color: "#6441AF",
+                                        },
+                                      }}
+                                      onClick={async e => {
+                                        e.stopPropagation()
+                                        if (!isNodeOwner) {
+                                          alert(
+                                            `Sign in with the owner account.`
+                                          )
+                                          return
+                                        }
+                                        setAddNodeOwner(true)
+                                      }}
+                                    >
+                                      <Box as="i" className="fas fa-edit" />
+                                    </Box>
+                                  )}
+                                </Flex>
+                              </>
                             )}
                           </Box>
                         </Flex>
@@ -3513,10 +3629,96 @@ export default inject(
                             rpc: newHttp + newNode,
                           })
                           const stats = await db.node({ op: "stats" })
-                          if (isNil(stats.admin.contractTxId)) throw new Error()
+                          if (isNil(stats.contractTxId)) throw new Error()
                           await addGRPCNode({
-                            contract: stats.admin.contractTxId,
+                            contract: stats.contractTxId,
                             rpc: newHttp + newNode,
+                            owners: stats.owners,
+                          })
+                          setNewNode("")
+                          setAddNode(false)
+                        } catch (e) {
+                          alert("couldn't connect with the node")
+                        }
+                        set(null, "loading")
+                      }
+                    }}
+                  >
+                    {!isNil($.loading) ? (
+                      <Box as="i" className="fas fa-spin fa-circle-notch" />
+                    ) : (
+                      "Add Node"
+                    )}
+                  </Flex>
+                </Box>
+              </Flex>
+            ) : addNode !== false ? (
+              <Flex
+                w="100%"
+                h="100%"
+                position="fixed"
+                sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+                bg="rgba(0,0,0,0.5)"
+                onClick={() => setAddNode(false)}
+                justify="center"
+                align="center"
+              >
+                <Box
+                  bg="white"
+                  width="500px"
+                  p={3}
+                  sx={{ borderRadius: "5px", cursor: "default" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Flex>
+                    <Select
+                      w="150px"
+                      value={newHttp}
+                      onChange={e => setNewHttp(e.target.value)}
+                    >
+                      {map(v => <option>{v}</option>)(["https://", "http://"])}
+                    </Select>
+                    <Input
+                      value={newNode}
+                      placeholder="Node RPC URL"
+                      onChange={e => setNewNode(e.target.value)}
+                      sx={{
+                        borderRadius: "3px",
+                      }}
+                    />
+                  </Flex>
+                  <Flex
+                    mt={4}
+                    sx={{
+                      borderRadius: "3px",
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                    p={2}
+                    justify="center"
+                    align="center"
+                    color="white"
+                    bg="#333"
+                    height="40px"
+                    onClick={async () => {
+                      if (isNil($.loading)) {
+                        set("add_node", "loading")
+                        if (/^\s*$/.test(newNode)) {
+                          alert("enter URL")
+                          set(null, "loading")
+                          return
+                        }
+                        try {
+                          const db = await fn(setupWeaveDB)({
+                            contractTxId: "node",
+                            rpc: newHttp + newNode,
+                          })
+                          const stats = await db.node({ op: "stats" })
+                          if (isNil(stats.contractTxId)) throw new Error()
+                          await addGRPCNode({
+                            contract: stats.contractTxId,
+                            rpc: newHttp + newNode,
+                            owners: stats.owners,
                           })
                           setNewNode("")
                           setAddNode(false)
@@ -3701,14 +3903,14 @@ export default inject(
                   </Flex>
                 </Box>
               </Flex>
-            ) : addOwner !== false ? (
+            ) : addNodeOwner !== false ? (
               <Flex
                 w="100%"
                 h="100%"
                 position="fixed"
                 sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
                 bg="rgba(0,0,0,0.5)"
-                onClick={() => setAddOwner(false)}
+                onClick={() => setAddNodeOwner(false)}
                 justify="center"
                 align="center"
               >
@@ -3740,14 +3942,22 @@ export default inject(
                               ) {
                                 return
                               }
-                              const res = await fn(_removeOwner)({
+                              const res = await fn(_removeNodeOwner)({
                                 address: v,
-                                contractTxId,
+                                contractTxId: node.contract,
+                                rpc: node.rpc,
                               })
                               if (/^Error:/.test(res)) {
                                 alert("Something went wrong")
                               }
-                              setState(await db.getInfo(true))
+
+                              const _node = assoc(
+                                "owners",
+                                without([v], node.owners),
+                                node
+                              )
+                              await updateGRPCNode(_node)
+                              setNode(_node)
                             }}
                             className="fas fa-trash"
                             sx={{
@@ -3758,7 +3968,7 @@ export default inject(
                         </Flex>
                       </Flex>
                     )
-                  })(owners)}
+                  })(node.owners)}
                   <Flex align="center">
                     <Input
                       flex={1}
@@ -3780,15 +3990,24 @@ export default inject(
                       onClick={async () => {
                         if (isNil($.loading)) {
                           set("add_owner", "loading")
-                          const res = await fn(_addOwner)({
+                          const res = await fn(_addNodeOwner)({
                             address: newOwner,
-                            contractTxId,
+                            contractTxId: node.contract,
+                            rpc: node.rpc,
                           })
                           if (/^Error:/.test(res)) {
                             alert("Something went wrong")
+                            return
                           }
-                          setState(await db.getInfo(true))
+                          const _node = assoc(
+                            "owners",
+                            append(newOwner, node.owners),
+                            node
+                          )
+                          await updateGRPCNode(_node)
+                          setNode(_node)
                           set(null, "loading")
+                          setNewOwner("")
                         }
                       }}
                       sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}

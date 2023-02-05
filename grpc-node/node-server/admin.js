@@ -82,10 +82,17 @@ const execAdminRead = async ({
   }
   switch (op) {
     case "stats":
-      const admin = isNil(config.admin)
-        ? null
-        : { contractTxId: config.admin.contractTxId }
-      return res(null, { admin })
+      let stats = {}
+      if (!isNil(config.admin) && !isNil(config.admin.contractTxId)) {
+        stats.contractTxId = config.admin.contractTxId
+      }
+      try {
+        const db = sdks[stats.contractTxId]
+        stats.owners = await db.getOwner()
+      } catch (e) {
+        console.log(e)
+      }
+      return res(null, stats)
     default:
       return res(`operation not found: ${op}`)
   }
