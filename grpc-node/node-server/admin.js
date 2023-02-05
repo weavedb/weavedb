@@ -99,7 +99,7 @@ const execAdmin = async ({
   admin,
   initSDK,
 }) => {
-  let _query, op
+  let _query, op, owners, err, signer
   try {
     _query = JSON.parse(query)
     ;({ op } = _query.query)
@@ -117,10 +117,14 @@ const execAdmin = async ({
   if (contractTxId !== config.admin.contractTxId) {
     return res(`The wrong admin contract (${contractTxId})`)
   }
-  const { err, signer } = await validate(_query, contractTxId)
+  const db = sdks[contractTxId]
+  try {
+    owners = await db.getOwner()
+    ;({ err, signer } = await validate(_query, contractTxId))
+  } catch (e) {}
   if (err) {
     return res(`The wrong signature`)
-  } else if (signer !== admin && !includes(op)(nonAdmin)) {
+  } else if (!includes(signer)(owners) && !includes(op)(nonAdmin)) {
     return res(`The signer is not admin`)
   }
   if (isNil(sdks[contractTxId])) {
@@ -128,7 +132,6 @@ const execAdmin = async ({
   }
 
   let txs = []
-  const db = sdks[contractTxId]
   const auth = {
     ar: config.admin.owner,
   }
