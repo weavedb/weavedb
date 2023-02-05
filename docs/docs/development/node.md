@@ -378,8 +378,10 @@ await db.admin({ op: "setup" }, { ar: admin_wallet })
 
 The admin can add user addresses to the whitelist, and whitelisted users can add contracts to the node.
 
+`limit` is an optional field to limit the number of contracts the user can deploy.
+
 ```js
-await db.admin({ op: "whitelist", address, allow: true }, { ar: admin_wallet })
+await db.admin({ op: "whitelist", address, allow: true, limit: 5 }, { ar: admin_wallet })
 ```
 
 ### Add Contract to Node

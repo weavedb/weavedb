@@ -46,6 +46,9 @@ describe("Node Admin Contract", function () {
         allow: {
           type: "boolean",
         },
+        limit: {
+          type: "number",
+        },
       },
     }
     await db.setSchema(users_schema, "users", { ar: arweave_wallet })
