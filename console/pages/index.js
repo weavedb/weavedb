@@ -3882,13 +3882,32 @@ export default inject(
                           set(null, "loading")
                           return
                         }
-                        await fn(_admin)({
+                        const res = await fn(_admin)({
                           contractTxId: node.contract,
                           txid: newContract,
                           rpc: node.rpc,
                         })
-                        setNewContract("")
-                        setAddContract(false)
+                        if (/^Error:/.test(res)) {
+                          alert("Something went wrong")
+                        } else {
+                          setNewContract("")
+                          setAddContract(false)
+
+                          const db = await fn(setupWeaveDB)({
+                            contractTxId: node.contract,
+                            rpc: node.rpc,
+                          })
+                          const addr = /^0x.+$/.test($.temp_current_all.addr)
+                            ? $.temp_current_all.addr.toLowerCase()
+                            : $.temp_current_all.addr
+                          setContracts(
+                            await db.get(
+                              "contracts",
+                              ["address", "=", addr],
+                              true
+                            )
+                          )
+                        }
                         set(null, "loading")
                       }
                     }}
@@ -5021,6 +5040,8 @@ export default inject(
                   >
                     {$.loading === "whitelist" ? (
                       <Box as="i" className="fas fa-spin fa-circle-notch" />
+                    ) : editWhitelist ? (
+                      "Update Address"
                     ) : (
                       "Add to Whitelist"
                     )}

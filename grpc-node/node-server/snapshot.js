@@ -3,7 +3,7 @@ const path = require("path")
 const archiver = require("archiver")
 const extract = require("extract-zip")
 const cacheDirPath = path.resolve(__dirname, "cache/warp")
-const { isNil, none, any, forEach } = require("ramda")
+const { hasPath, isNil, none, any, forEach } = require("ramda")
 
 class Snapshot {
   constructor(config) {
@@ -11,7 +11,11 @@ class Snapshot {
     try {
       if (!isNil(config.gcs)) {
         this.initGCS()
-      } else if (none(isNil)([config.s3, config.s3.bucket, config.s3.prefix])) {
+      } else if (
+        !isNil(config.s3) &&
+        !isNil(config.s3.bucket) &&
+        !isNil(config.s3.prefix)
+      ) {
         this.initS3()
       }
     } catch (e) {
@@ -75,7 +79,7 @@ class Snapshot {
             Key: `${this.config.s3.prefix}${contractTxId}.zip`,
           })
           .promise()
-        if (any(isNil)([s3data, s3data.Body])) {
+        if (isNil(s3data) || isNil(s3data.Body)) {
           console.log(`snapshot(${contractTxId}) downloaded error! (s3)`)
         } else {
           fs.writeFileSync(src, s3data.Body)
