@@ -1096,3 +1096,48 @@ export const _removeNodeOwner = async ({
     return `Error: Something went wrong`
   }
 }
+
+export const _whitelist = async ({
+  val: { address, contractTxId, rpc, network = "Mainnet", limit, allow },
+  global,
+  set,
+  fn,
+  conf,
+  get,
+}) => {
+  const db = await fn(setupWeaveDB)({
+    contractTxId,
+    rpc,
+  })
+  try {
+    const current = get("temp_current_all")
+    let _opt = {}
+    if (current.type === "ar") {
+      const wallet = window.arweaveWallet
+      await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
+      _opt.ar = wallet
+    } else if (current.type === "ii") {
+      const iiUrl =
+        network === "Mainnet"
+          ? "https://identity.ic0.app/"
+          : `http://localhost:8000/?canisterId=rwlgt-iiaaa-aaaaa-aaaaa-cai`
+      const authClient = await AuthClient.create()
+      await new Promise((resolve, reject) => {
+        authClient.login({
+          identityProvider: iiUrl,
+          onSuccess: resolve,
+          onError: reject,
+        })
+      })
+      const ii = authClient.getIdentity()
+      if (isNil(ii._inner)) return
+      _opt.ii = ii
+    }
+    let params = { allow, address }
+    if (!isNil(limit)) params.limit = limit
+    return await db.admin({ op: "whitelist", ...params }, _opt)
+  } catch (e) {
+    console.log(e)
+    return `Error: Something went wrong`
+  }
+}
