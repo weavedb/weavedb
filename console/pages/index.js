@@ -5021,6 +5021,8 @@ export default inject(
                   >
                     {$.loading === "whitelist" ? (
                       <Box as="i" className="fas fa-spin fa-circle-notch" />
+                    ) : editWhitelist ? (
+                      "Update Address"
                     ) : (
                       "Add to Whitelist"
                     )}
