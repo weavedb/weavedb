@@ -151,11 +151,18 @@ const execAdmin = async ({
         if (isNil(user) || !user.allow) {
           return res(`${signer} is not allowed to add contract`, txs)
         }
-        const contracts = await db.get("contracts")
+        const contracts = await db.get("contracts", [
+          "address",
+          "=",
+          user.address,
+        ])
         const contractMap = indexBy(prop("txid"), contracts)
         if (!isNil(contractMap[txid])) return res(`${txid} already exists`, txs)
         if (!isNil(user.limit) && contracts.length >= user.limit) {
-          return res(`You reached the limit[${user.limit}]`, txs)
+          return res(
+            `You reached the limit[${contracts.length}/${user.limit}]`,
+            txs
+          )
         }
         txs.push(
           await db.set(
