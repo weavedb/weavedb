@@ -67,6 +67,7 @@ import {
   _setSecure,
   _admin,
   _remove,
+  _whitelist,
   _setAlgorithms,
   _evolve,
   _migrate,
@@ -99,6 +100,7 @@ export default inject(
   ],
   ({ set, init, router, conf, fn, $ }) => {
     const [loadMore, setLoadMore] = useState(null)
+    const [whitelist, setWhitelist] = useState([])
     const [addCollection, setAddCollection] = useState(false)
     const [addSchemas, setAddSchemas] = useState(false)
     const [schema, setSchema] = useState(null)
@@ -117,6 +119,7 @@ export default inject(
     const [addIndex, setAddIndex] = useState(false)
     const [addInstance, setAddInstance] = useState(false)
     const [addOwner, setAddOwner] = useState(false)
+    const [addWhitelist, setAddWhitelist] = useState(false)
     const [addNodeOwner, setAddNodeOwner] = useState(false)
     const [addCanEvolve, setAddCanEvolve] = useState(false)
     const [addEvolve, setAddEvolve] = useState(false)
@@ -206,6 +209,12 @@ export default inject(
     const [newRelayer, setNewRelayer] = useState("")
     const [newSigner, setNewSigner] = useState("")
     const [newSigners, setNewSigners] = useState([])
+
+    const [allow, setAllow] = useState(true)
+    const [limit, setLimit] = useState(true)
+    const [numLimit, setNumLimit] = useState(5)
+    const [newWhitelistUser, setNewWhitelistUser] = useState("")
+    const [editWhitelist, setEditWhitelist] = useState(false)
 
     const addGRPCNode = async _node => {
       const nodemap = indexBy(prop("rpc"), nodes)
@@ -530,6 +539,14 @@ export default inject(
     useEffect(() => {
       ;(async () => {
         if (!isNil(node) && !isNil($.temp_current_all)) {
+          let isNodeOwner = false
+          if (!isNil($.temp_current_all) && !isNil(node)) {
+            const addr = /^0x.+$/.test($.temp_current_all.addr)
+              ? $.temp_current_all.addr.toLowerCase()
+              : $.temp_current_all.addr
+            isNodeOwner = includes(addr)(node.owners || [])
+          }
+
           const db = await fn(setupWeaveDB)({
             contractTxId: node.contract,
             rpc: node.rpc,
@@ -537,7 +554,7 @@ export default inject(
           const addr = /^0x.+$/.test($.temp_current_all.addr)
             ? $.temp_current_all.addr.toLowerCase()
             : $.temp_current_all.addr
-          let user = await db.get("users", addr)
+          let user = await db.get("users", addr, true)
           let whitelisted = !isNil(user) && user.allow
           setIsWhitelisted(whitelisted)
           if (whitelisted) {
@@ -548,6 +565,11 @@ export default inject(
           } else {
             setContracts([])
             setNodeUser(null)
+          }
+          if (isNodeOwner) {
+            setWhitelist(await db.get("users", true))
+          } else {
+            setWhitelist([])
           }
         } else {
           setNodeUser(null)
@@ -1565,27 +1587,6 @@ export default inject(
                           <Flex py={2} px={3} color="white" bg="#333" h="35px">
                             Settings
                             <Box flex={1} />
-                            {isNil($.temp_current_all) ||
-                            !isWhitelisted ? null : (
-                              <Box
-                                onClick={() => {
-                                  if (
-                                    !isNil(nodeUser.limit) &&
-                                    nodeUser.limit <= contracts.length
-                                  ) {
-                                    alert("You have reached the limit")
-                                    return
-                                  }
-                                  setAddContract(true)
-                                }}
-                                sx={{
-                                  cursor: "pointer",
-                                  ":hover": { opacity: 0.75 },
-                                }}
-                              >
-                                <Box as="i" className="fas fa-plus" />
-                              </Box>
-                            )}
                           </Flex>
                           <Box height="500px" sx={{ overflowY: "auto" }}>
                             {isNil(node) ? (
@@ -1627,7 +1628,7 @@ export default inject(
                                     color={isNodeOwner ? "white" : "#333"}
                                     sx={{ borderRadius: "3px" }}
                                   >
-                                    Owner
+                                    Admin
                                   </Box>
                                   <Box flex={1}>
                                     {map(v => <Box>{v}</Box>)(
@@ -1659,6 +1660,99 @@ export default inject(
                                     </Box>
                                   )}
                                 </Flex>
+                                {!isNodeOwner ? null : (
+                                  <>
+                                    <Flex align="center" p={2} px={3}>
+                                      <Flex
+                                        sx={{ borderBottom: "1px solid #333" }}
+                                        w="100%"
+                                        pb={1}
+                                      >
+                                        <Box
+                                          flex={1}
+                                          sx={{ borderRadius: "3px" }}
+                                        >
+                                          Whitelist
+                                        </Box>
+                                        <Box
+                                          color="#333"
+                                          sx={{
+                                            cursor: "pointer",
+                                            ":hover": {
+                                              opacity: 0.75,
+                                              color: "#6441AF",
+                                            },
+                                          }}
+                                          mr="3px"
+                                          onClick={async e => {
+                                            setNewWhitelistUser("")
+                                            setAddWhitelist(true)
+                                          }}
+                                        >
+                                          <Box as="i" className="fas fa-plus" />
+                                        </Box>
+                                      </Flex>
+                                    </Flex>
+                                    <Flex direction="column" align="center">
+                                      {map(v => (
+                                        <Flex w="100%" px={3} py={2}>
+                                          <Flex
+                                            sx={{ wordBreak: "break-all" }}
+                                            flex={1}
+                                          >
+                                            {v.address}
+                                          </Flex>
+                                          <Flex
+                                            justify="center"
+                                            mr={2}
+                                            w="30px"
+                                          >
+                                            {!v.allow
+                                              ? 0
+                                              : isNil(v.limit)
+                                              ? "∞"
+                                              : v.limit}
+                                          </Flex>
+                                          <Box
+                                            w="13.5px"
+                                            color="#999"
+                                            sx={{
+                                              cursor: "pointer",
+                                              ":hover": {
+                                                opacity: 0.75,
+                                                color: "#6441AF",
+                                              },
+                                            }}
+                                            onClick={async e => {
+                                              e.stopPropagation()
+                                              if (!isNodeOwner) {
+                                                alert(
+                                                  `Sign in with the owner account.`
+                                                )
+                                                return
+                                              }
+                                              setNewWhitelistUser(v.address)
+                                              setAllow(v.allow)
+                                              setLimit(!isNil(v.limit))
+                                              setNumLimit(
+                                                !isNil(v.limit)
+                                                  ? v.limit.toString()
+                                                  : "5"
+                                              )
+                                              setEditWhitelist(true)
+                                              setAddWhitelist(true)
+                                            }}
+                                          >
+                                            <Box
+                                              as="i"
+                                              className="fas fa-edit"
+                                            />
+                                          </Box>
+                                        </Flex>
+                                      ))(whitelist || [])}
+                                    </Flex>
+                                  </>
+                                )}
                               </>
                             )}
                           </Box>
@@ -2115,6 +2209,7 @@ export default inject(
                                   <Flex
                                     sx={{ borderBottom: "1px solid #333" }}
                                     w="100%"
+                                    pb={1}
                                   >
                                     <Box sx={{ borderRadius: "3px" }}>
                                       Evolve
@@ -2222,6 +2317,7 @@ export default inject(
                                   <Flex
                                     sx={{ borderBottom: "1px solid #333" }}
                                     w="100%"
+                                    pb={1}
                                   >
                                     <Box sx={{ borderRadius: "3px" }}>
                                       Plugin Contracts
@@ -4785,6 +4881,150 @@ export default inject(
                       </Flex>
                     </>
                   )}
+                </Box>
+              </Flex>
+            ) : addWhitelist !== false ? (
+              <Flex
+                w="100%"
+                h="100%"
+                position="fixed"
+                sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
+                bg="rgba(0,0,0,0.5)"
+                onClick={() => {
+                  setAddWhitelist(false)
+                  setEditWhitelist(false)
+                }}
+                justify="center"
+                align="center"
+              >
+                <Box
+                  bg="white"
+                  width="500px"
+                  p={3}
+                  sx={{ borderRadius: "5px", cursor: "default" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <>
+                    <Flex fontSize="10px" m={1}>
+                      <Box>Contract Owner</Box>
+                    </Flex>
+                    <Input
+                      flex={1}
+                      disabled={editWhitelist}
+                      value={newWhitelistUser || ""}
+                      sx={{ borderRadius: "5px" }}
+                      onChange={e => setNewWhitelistUser(e.target.value)}
+                    />
+                    <Flex mt={3}>
+                      <Box flex={1}>
+                        <Flex fontSize="10px" mx={1} my={1}>
+                          Allow
+                        </Flex>
+                        <Select
+                          w="100%"
+                          value={allow ? "True" : "False"}
+                          onChange={e => setAllow(e.target.value === "True")}
+                          sx={{ borderRadius: "5px" }}
+                          mb={3}
+                        >
+                          {map(v => <option value={v}>{v}</option>)([
+                            "True",
+                            "False",
+                          ])}
+                        </Select>
+                      </Box>
+                      <Box flex={1} ml={1}>
+                        <Flex fontSize="10px" mx={1} my={1}>
+                          Limit
+                        </Flex>
+                        <Select
+                          disabled={!allow}
+                          w="100%"
+                          value={limit ? "True" : "False"}
+                          onChange={e => setLimit(e.target.value === "True")}
+                          sx={{ borderRadius: "5px" }}
+                          mb={3}
+                        >
+                          {map(v => <option value={v}>{v}</option>)([
+                            "True",
+                            "False",
+                          ])}
+                        </Select>
+                      </Box>
+                      <Box flex={1} ml={1}>
+                        <Flex fontSize="10px" mx={1} my={1}>
+                          How many Contracts?
+                        </Flex>
+                        <Input
+                          w="100%"
+                          value={numLimit}
+                          disabled={!limit || !allow}
+                          onChange={e => {
+                            if (!Number.isNaN(+e.target.value * 1)) {
+                              setNumLimit(e.target.value)
+                            }
+                          }}
+                          sx={{ borderRadius: "5px" }}
+                          mb={3}
+                        />
+                      </Box>
+                    </Flex>
+                  </>
+                  <Flex
+                    mt={4}
+                    sx={{
+                      borderRadius: "3px",
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                    p={2}
+                    justify="center"
+                    align="center"
+                    height="40px"
+                    color="white"
+                    bg="#333"
+                    onClick={async () => {
+                      if ($.loading === null) {
+                        set("whitelist", "loading")
+                        if (/^\s*$/.test(newWhitelistUser)) {
+                          alert("enter address")
+                          return
+                        }
+
+                        try {
+                          const res = await fn(_whitelist)({
+                            contractTxId: node.contract,
+                            rpc: node.rpc,
+                            address: newWhitelistUser,
+                            allow,
+                            limit: limit ? +numLimit : null,
+                          })
+                          if (/^Error:/.test(res)) {
+                            alert("Something went wrong")
+                            return
+                          }
+                          const db = await fn(setupWeaveDB)({
+                            contractTxId: node.contract,
+                            rpc: node.rpc,
+                          })
+                          setWhitelist(await db.get("users", true))
+                          setNewWhitelistUser("")
+                          setAddWhitelist(false)
+                          setEditWhitelist(false)
+                        } catch (e) {
+                          alert("something went wrong")
+                          console.log(e)
+                        }
+                        set(null, "loading")
+                      }
+                    }}
+                  >
+                    {$.loading === "whitelist" ? (
+                      <Box as="i" className="fas fa-spin fa-circle-notch" />
+                    ) : (
+                      "Add to Whitelist"
+                    )}
+                  </Flex>
                 </Box>
               </Flex>
             ) : addGRPC !== false ? (
