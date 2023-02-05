@@ -45,8 +45,7 @@ const allowed_contracts = map(v => v.split("@")[0])(
     : [config.contractTxId]
 )
 
-const allow_any_contracts =
-  config.allowAnyContracts === true || allowed_contracts.length === 0
+const allow_any_contracts = config.allowAnyContracts === true
 
 const isAllowed = contractTxId =>
   !isNil(sdks[contractTxId]) ||
