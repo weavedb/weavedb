@@ -13,6 +13,10 @@ module.exports = {
   //   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   //   region: process.env.AWS_REGION,
   // },
+  // ratelimit: {
+  //   every: 5,
+  //   limit: 300
+  // },
   cache: "lmdb", // or "leveldb"
   // redis: {
   //   url: `redis://${process.env.REDISPORT}:${process.env.REDISPORT}`,

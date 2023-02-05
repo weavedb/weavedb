@@ -73,6 +73,23 @@ async function query(call, callback) {
 
   if (!isNil(contractTxId)) contractTxId = contractTxId.split("@")[0]
 
+  if (
+    !isNil(config.redis) &&
+    !isNil(config.ratelimit) &&
+    !isNil(config.ratelimit.every)
+  ) {
+    const RateLimitCounter = require('./rate_limit_counter.js')
+    const ratelimit = new RateLimitCounter(config.ratelimit, config.redis)
+    await ratelimit.init()
+    try {
+      if (await ratelimit.checkCountLimit(contractTxId)) {
+        return res("ratelimit error ")
+      }
+    } catch (e) {
+      console.log(e.message)
+    }
+  }
+
   if (func === "admin") {
     return await execAdmin({ query, res, sdks, admin, initSDK, contractTxId })
   }
