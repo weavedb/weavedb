@@ -1,6 +1,6 @@
 const config = require("./weavedb.config.js")
 const { validate } = require("./validate")
-const { includes, isNil, last } = require("ramda")
+const { indexBy, includes, isNil, last } = require("ramda")
 const getSetups = address => {
   const users_schema = {
     type: "object",
@@ -11,6 +11,9 @@ const getSetups = address => {
       },
       allow: {
         type: "boolean",
+      },
+      limit: {
+        type: "number",
       },
     },
   }
@@ -138,9 +141,11 @@ const execAdmin = async ({
         if (isNil(user) || !user.allow) {
           return res(`${signer} is not allowed to add contract`, txs)
         }
-        const contract = await db.get("contracts", txid)
-        if (!isNil(contract)) {
-          return res(`${txid} already exists`, txs)
+        const contracts = await db.get("contracts")
+        const contractMap = indexBy("txid", contracts)
+        if (!isNil(contractMap[txid])) return res(`${txid} already exists`, txs)
+        if (!isNil(user.limit) && contracts.length >= user.limit) {
+          return res(`You reached the limit[${user.limit}]`, txs)
         }
         txs.push(
           await db.set(
@@ -178,10 +183,12 @@ const execAdmin = async ({
         return res("something went wrong", txs)
       }
     case "whitelist":
-      let { address, allow } = _query.query
+      let { address, allow, limit } = _query.query
       if (/^0x.+$/.test(address)) address = address.toLowerCase()
+      let newUser = { address, allow }
+      if (!isNil(limit)) newUser.limit = limit
       try {
-        txs.push(await db.upsert({ address, allow }, "users", address, auth))
+        txs.push(await db.upsert(newUser, "users", address, auth))
         if (!last(txs).success) throw new Error()
       } catch (e) {
         isErr = `something went wrong`
