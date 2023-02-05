@@ -136,6 +136,7 @@ export default inject(
     const [relayer, setRelayer] = useState(null)
     const [method, setMethod] = useState("get")
     const [isWhitelisted, setIsWhitelisted] = useState(false)
+    const [nodeUser, setNodeUser] = useState(false)
     const [query, setQuery] = useState("")
     const tabs = [
       "DB",
@@ -338,7 +339,6 @@ export default inject(
         if (addAlgorithms) setNewAuths(state.auth.algorithms)
       })()
     }, [addAlgorithms])
-
     useEffect(() => {
       ;(async () => {
         setDBs((await lf.getItem(`my_dbs`)) || [])
@@ -541,9 +541,13 @@ export default inject(
             setContracts(
               await db.get("contracts", ["address", "=", addr], true)
             )
+            setNodeUser(user)
           } else {
             setContracts([])
+            setNodeUser(null)
           }
+        } else {
+          setNodeUser(null)
         }
       })()
     }, [node, $.temp_current_all])
@@ -1441,12 +1445,29 @@ export default inject(
                           direction="column"
                         >
                           <Flex py={2} px={3} color="white" bg="#333" h="35px">
-                            Your Contracts
+                            Your Contracts (
+                            {isNil(nodeUser)
+                              ? "-"
+                              : `${contracts.length} / ${
+                                  isNil(nodeUser.limit)
+                                    ? "unlimited"
+                                    : nodeUser.limit
+                                }`}
+                            )
                             <Box flex={1} />
                             {isNil($.temp_current_all) ||
                             !isWhitelisted ? null : (
                               <Box
-                                onClick={() => setAddContract(true)}
+                                onClick={() => {
+                                  if (
+                                    !isNil(nodeUser.limit) &&
+                                    nodeUser.limit <= contracts.length
+                                  ) {
+                                    alert("You have reached the limit")
+                                    return
+                                  }
+                                  setAddContract(true)
+                                }}
                                 sx={{
                                   cursor: "pointer",
                                   ":hover": { opacity: 0.75 },
@@ -1515,22 +1536,6 @@ export default inject(
                                             txid: v.txid,
                                             rpc: node.rpc,
                                           })
-                                          const db = await fn(setupWeaveDB)({
-                                            contractTxId: node.contract,
-                                            rpc: node.rpc,
-                                          })
-                                          const addr = /^0x.+$/.test(
-                                            $.temp_current_all.addr
-                                          )
-                                            ? $.temp_current_all.addr.toLowerCase()
-                                            : $.temp_current_all.addr
-                                          setContracts(
-                                            await db.get(
-                                              "contracts",
-                                              ["address", "=", addr],
-                                              true
-                                            )
-                                          )
                                         }
                                       }}
                                     >
@@ -3584,20 +3589,6 @@ export default inject(
                           txid: newContract,
                           rpc: node.rpc,
                         })
-                        const db = await fn(setupWeaveDB)({
-                          contractTxId: node.contract,
-                          rpc: node.rpc,
-                        })
-                        const addr = /^0x.+$/.test($.temp_current_all.addr)
-                          ? $.temp_current_all.addr.toLowerCase()
-                          : $.temp_current_all.addr
-                        setContracts(
-                          await db.get(
-                            "contracts",
-                            ["address", "=", addr],
-                            true
-                          )
-                        )
                         setNewContract("")
                         setAddContract(false)
                         set(null, "loading")
