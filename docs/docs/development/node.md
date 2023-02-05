@@ -114,6 +114,32 @@ module.exports = {
 }
 ```
 
+
+
+
+#### Global Rate Limit Counter 
+
+You can set limit accesses for all each contracts. 
+
+To use this setting, specify `ratelimit` option in `weavedb.config.js`.
+
+You need to setup redis setting as well. 
+
+The below setting enables you to limit 300 accesses in 5 min. 
+
+
+```js
+module.exports = {
+  ratelimit: {
+    every: 5,
+    limit: 300
+  },
+   redis: {
+    url: "redis://localhost:6379"
+  },
+}
+```
+
 ### Run docker-compose
 
 ```bash
