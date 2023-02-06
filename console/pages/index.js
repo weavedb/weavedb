@@ -51,7 +51,7 @@ export default inject(
     const [loadMore, setLoadMore] = useState(null)
     const [whitelist, setWhitelist] = useState([])
     const [addCollection, setAddCollection] = useState(false)
-    const [addSchemas, setAddSchemas] = useState(false)
+    const [addSchema, setAddSchema] = useState(false)
     const [schema, setSchema] = useState(null)
     const [rules, setRules] = useState(null)
     const [indexes, setIndexes] = useState([])
@@ -99,7 +99,7 @@ export default inject(
     const [newContract, setNewContract] = useState("")
     const [newRules2, setNewRules2] = useState(`{"allow write": true}`)
     const [newIndex, setNewIndex] = useState(`[]`)
-    const [newSchemas, setNewSchemas] = useState("")
+
     const [newCron, setNewCron] = useState("")
 
     const [editNetwork, setEditNetwork] = useState(false)
@@ -396,18 +396,6 @@ export default inject(
       }
     }, [newNetwork, addInstance])
 
-    useEffect(() => {
-      ;(async () => {
-        if (isNil(col)) {
-          setNewSchemas(null)
-        } else {
-          /*;({ rules, schema } = getCol(state.data, append(col, base_path)))
-          setNewSchemas(JSON.stringify(schema))
-          setNewRules2(JSON.stringify(rules))*/
-        }
-      })()
-    }, [doc_path])
-
     const owners = isNil(state)
       ? []
       : is(Array, state.owner)
@@ -458,7 +446,7 @@ export default inject(
         collections,
         col,
       },
-      Schemas: { col, schema, setAddSchemas },
+      Schemas: { col, schema, setAddSchema },
       Rules: { rules, setAddRules, col },
       Crons: {
         setAddCron,
@@ -674,9 +662,8 @@ export default inject(
         newTimes,
         setNewTimes,
         setDocdata,
-        setAddSchemas,
-        newSchemas,
-        addSchemas,
+        setAddSchema,
+        addSchema,
         setSchema,
         setAddCron,
         newCronName,
@@ -687,7 +674,6 @@ export default inject(
         newEnd,
         setNewEnd,
         setNewCronName,
-        setNewSchemas,
         doc_path,
         setSubCollections,
         docdata,
