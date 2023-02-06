@@ -1,4 +1,12 @@
-import { Checkbox, Select, Box, Flex, Input, Textarea } from "@chakra-ui/react"
+import {
+  Image,
+  Checkbox,
+  Select,
+  Box,
+  Flex,
+  Input,
+  Textarea,
+} from "@chakra-ui/react"
 import {
   assoc,
   includes,
@@ -43,7 +51,14 @@ import {
 } from "../lib/weavedb"
 import { latest } from "../lib/const"
 export default inject(
-  ["signing_in_modal", "owner_signing_in_modal", "loading", "temp_current_all"],
+  [
+    "temp_current",
+    "signing_in",
+    "signing_in_modal",
+    "owner_signing_in_modal",
+    "loading",
+    "temp_current_all",
+  ],
   ({
     newStart,
     addDB,
@@ -2460,13 +2475,24 @@ export default inject(
                 <Flex fontSize="10px" mx={1} mb={1} mt={3}>
                   RPC URL (Optional)
                 </Flex>
-                <Input
-                  placeholder="https://grpc.example.com"
-                  flex={1}
-                  value={newRPC}
-                  onChange={e => setNewRPC(trim(e.target.value))}
-                  sx={{ borderRadius: 0 }}
-                />
+                <Flex>
+                  <Select
+                    w="150px"
+                    value={newHttp}
+                    onChange={e => setNewHttp(e.target.value)}
+                    sx={{ borderRadius: 0 }}
+                  >
+                    {map(v => <option>{v}</option>)(["https://", "http://"])}
+                  </Select>
+                  <Input
+                    flex={1}
+                    placeholder="grpc.example.com"
+                    flex={1}
+                    value={newRPC}
+                    onChange={e => setNewRPC(trim(e.target.value))}
+                    sx={{ borderRadius: 0 }}
+                  />
+                </Flex>
                 <Flex
                   mt={4}
                   sx={{
@@ -2485,12 +2511,14 @@ export default inject(
                       if (!/^\s*$/.test(newContractTxId)) {
                         set("connect_to_db", "loading")
                         let db
+                        const rpc = newHttp + newRPC
+                        console.log(rpc)
                         try {
                           db = await fn(setupWeaveDB)({
                             network: newNetwork,
                             contractTxId: newContractTxId,
                             port: port || 1820,
-                            rpc: newRPC,
+                            rpc,
                           })
                           let state = await db.getInfo(true)
                           if (!isNil(state.version)) {
@@ -2508,13 +2536,13 @@ export default inject(
                                 network: newNetwork,
                                 port: newNetwork === "Localhost" ? port : 443,
                                 contractTxId: newContractTxId,
-                                rpc: newRPC,
+                                rpc,
                               }
                               setCurrentDB(newdb)
                               await _setContractTxId(
                                 newContractTxId,
                                 newNetwork,
-                                newRPC
+                                rpc
                               )
                               setEditNetwork(false)
                               addDB(newdb)
@@ -2743,13 +2771,23 @@ export default inject(
               <Flex fontSize="10px" mx={1} mb={1} mt={3}>
                 RPC URL (Optional)
               </Flex>
-              <Input
-                placeholder="https://grpc.example.com"
-                flex={1}
-                value={newRPC2}
-                onChange={e => setNewRPC2(trim(e.target.value))}
-                sx={{ borderRadius: 0 }}
-              />
+              <Flex>
+                <Select
+                  w="150px"
+                  value={newHttp}
+                  onChange={e => setNewHttp(e.target.value)}
+                  sx={{ borderRadius: 0 }}
+                >
+                  {map(v => <option>{v}</option>)(["https://", "http://"])}
+                </Select>
+                <Input
+                  placeholder="grpc.example.com"
+                  flex={1}
+                  value={newRPC2}
+                  onChange={e => setNewRPC2(trim(e.target.value))}
+                  sx={{ borderRadius: 0 }}
+                />
+              </Flex>
               <Flex
                 mt={4}
                 sx={{
@@ -2766,24 +2804,26 @@ export default inject(
                 onClick={async () => {
                   if (isNil($.loading)) {
                     set("connect_to_db", "loading")
+                    const rpc = newHttp + newRPC2
                     const db = await fn(setupWeaveDB)({
-                      network: currentDB.network,
+                      network: newHttp === "https://" ? "Mainnet" : "Localhost",
                       contractTxId: currentDB.contractTxId,
-                      port: currentDB.port,
-                      rpc: newRPC,
+                      rpc,
                     })
                     let state = await db.getInfo(true)
                     if (!isNil(state.version)) {
                       setState(null)
-                      const newDB = assoc("rpc", newRPC2, currentDB)
+                      const newDB = assoc("rpc", rpc, currentDB)
                       updateDB(newDB)
                       setCurrentDB(newDB)
                       setAddGRPC(false)
                       setNewRPC2("")
                       await _setContractTxId(
                         currentDB.contractTxId,
-                        currentDB.network,
-                        newRPC2
+                        newHttp === "https://" ? "Mainnet" : "Localhost",
+                        rpc,
+                        db,
+                        state
                       )
                     } else {
                       alert(
