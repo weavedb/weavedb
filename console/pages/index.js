@@ -95,7 +95,7 @@ export default inject(
     const [port, setPort] = useState(null)
     const [network, setNetwork] = useState("Mainnet")
     const [newNetwork, setNewNetwork] = useState("Mainnet")
-    const [newContract, setNewContract] = useState("")
+
     const [newRules2, setNewRules2] = useState(`{"allow write": true}`)
     const [newIndex, setNewIndex] = useState(`[]`)
 
@@ -448,6 +448,7 @@ export default inject(
         relayers,
       },
       Nodes: {
+        setContracts,
         setNewWhitelistUser,
         isNodeOwner,
         setNumLimit,
@@ -591,7 +592,6 @@ export default inject(
         addContract,
         connect,
         setAddContract,
-        setNewContract,
         setContracts,
         setNewRules2,
         setRules,
@@ -609,7 +609,6 @@ export default inject(
         setAddRules,
         addRules,
         node,
-        newContract,
         setAddNode,
         newHttp,
         setNewHttp,
