@@ -1,11 +1,24 @@
 import { Box, Flex } from "@chakra-ui/react"
 import { inject } from "roidjs"
-import { isNil, mapObjIndexed, values, compose, map } from "ramda"
+import {
+  includes,
+  uniq,
+  concat,
+  pluck,
+  isNil,
+  mapObjIndexed,
+  values,
+  compose,
+  map,
+} from "ramda"
 import { setupWeaveDB } from "../lib/weavedb"
-
+import { preset_rpcs } from "../lib/const"
 export default inject(
   ["loading_contract"],
   ({
+    setPresetRPC,
+    setNewRPCType,
+    nodes,
     setNewHttp,
     setAddInstance,
     contractTxId,
@@ -181,6 +194,18 @@ export default inject(
                   }}
                   onClick={async e => {
                     e.stopPropagation()
+                    const rpcs = compose(
+                      uniq,
+                      concat(preset_rpcs),
+                      pluck("rpc")
+                    )(nodes)
+                    if (
+                      !isNil(currentDB.rpc) &&
+                      includes(currentDB.rpc)(rpcs)
+                    ) {
+                      setNewRPCType("preset")
+                      setPresetRPC(currentDB.rpc)
+                    }
                     setNewRPC2(
                       isNil(currentDB.rpc)
                         ? ""
