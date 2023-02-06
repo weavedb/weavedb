@@ -6,6 +6,7 @@ import { setupWeaveDB } from "../lib/weavedb"
 export default inject(
   ["loading_contract"],
   ({
+    setNewHttp,
     setAddInstance,
     contractTxId,
     port,
@@ -180,8 +181,17 @@ export default inject(
                   }}
                   onClick={async e => {
                     e.stopPropagation()
-                    setNewRPC2(currentDB.rpc || "")
-                    setAddGRPC(true)
+                    setNewRPC2(
+                      isNil(currentDB.rpc)
+                        ? ""
+                        : currentDB.rpc.replace(/^http[s]{0,1}:\/\//i, "")
+                    )
+                    setNewHttp(
+                      /^http:\/\//.test(currentDB.rpc || "")
+                        ? "http://"
+                        : "https://"
+                    )
+                    setAddGRPC()
                   }}
                 >
                   <Box as="i" className="fas fa-edit" />
