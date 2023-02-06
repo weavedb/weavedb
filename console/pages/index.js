@@ -100,19 +100,11 @@ export default inject(
     const [newRules2, setNewRules2] = useState(`{"allow write": true}`)
     const [newIndex, setNewIndex] = useState(`[]`)
 
-    const [newCron, setNewCron] = useState("")
-
     const [editNetwork, setEditNetwork] = useState(false)
     const networks = ["Mainnet", "Localhost"]
     const [initDB, setInitDB] = useState(false)
     const [networkErr, setNetworkErr] = useState(false)
 
-    const [newDo, setNewDo] = useState("")
-    const [newSpan, setNewSpan] = useState("")
-    const [newCronName, setNewCronName] = useState("")
-    const [newStart, setNewStart] = useState("")
-    const [newEnd, setNewEnd] = useState("")
-    const [newTimes, setNewTimes] = useState("")
     const [contractTxId, setContractTxId] = useState(null)
     const [newContractTxId, setNewContractTxId] = useState("")
     const [newRPC, setNewRPC] = useState("")
@@ -540,7 +532,6 @@ export default inject(
         setPresetRPC,
         newRPCType,
         setNewRPCType,
-        newStart,
         addDB,
         newRPC,
         setEditNetwork,
@@ -645,8 +636,6 @@ export default inject(
         setNewMultisig,
         newMultisigType,
         setNewMultisigType,
-        newSpan,
-        newCron,
         setCrons,
         addRelayer,
         setNewRelayers,
@@ -657,23 +646,12 @@ export default inject(
         newJobName,
         setNewJobName,
         setRelayers,
-        setNewCron,
-        setNewSpan,
-        newTimes,
-        setNewTimes,
         setDocdata,
         setAddSchema,
         addSchema,
         setSchema,
         setAddCron,
-        newCronName,
         addCron,
-        setNewStart,
-        newDo,
-        setNewDo,
-        newEnd,
-        setNewEnd,
-        setNewCronName,
         doc_path,
         setSubCollections,
         docdata,
