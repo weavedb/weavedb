@@ -1,11 +1,12 @@
 import { Box, Flex } from "@chakra-ui/react"
 import { isNil, map } from "ramda"
 import { inject } from "roidjs"
-import { _remove } from "../lib/weavedb"
+import { _remove, setupWeaveDB } from "../lib/weavedb"
 
 export default inject(
-  ["loading", "temp_current_all"],
+  ["loading", "temp_current_all", "temp_current"],
   ({
+    setContracts,
     setNewWhitelistUser,
     isNodeOwner,
     setNumLimit,
@@ -155,6 +156,20 @@ export default inject(
                           txid: v.txid,
                           rpc: node.rpc,
                         })
+                        const db = await fn(setupWeaveDB)({
+                          contractTxId: node.contract,
+                          rpc: node.rpc,
+                        })
+                        const addr = /^0x.+$/.test($.temp_current_all.addr)
+                          ? $.temp_current_all.addr.toLowerCase()
+                          : $.temp_current_all.addr
+                        setContracts(
+                          await db.get(
+                            "contracts",
+                            ["address", "=", addr],
+                            true
+                          )
+                        )
                       }
                     }}
                   >
