@@ -60,7 +60,6 @@ export const setupWeaveDB = async ({
   let isRPC = !isNil(rpc) && !/^\s*$/.test(rpc)
   if (isRPC) {
     try {
-      console.log(rpc, contractTxId)
       sdk = new Client({
         rpc,
         contractTxId,
