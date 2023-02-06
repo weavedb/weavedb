@@ -97,9 +97,7 @@ export default inject(
     const [network, setNetwork] = useState("Mainnet")
     const [newNetwork, setNewNetwork] = useState("Mainnet")
     const [newContract, setNewContract] = useState("")
-    const [newRules, setNewRules] = useState(`{"allow write": true}`)
     const [newRules2, setNewRules2] = useState(`{"allow write": true}`)
-    const [newData, setNewData] = useState(`{}`)
     const [newIndex, setNewIndex] = useState(`[]`)
     const [newSchemas, setNewSchemas] = useState("")
     const [newCron, setNewCron] = useState("")
@@ -111,8 +109,7 @@ export default inject(
     const networks = ["Mainnet", "Localhost"]
     const [initDB, setInitDB] = useState(false)
     const [networkErr, setNetworkErr] = useState(false)
-    const [newCollection, setNewCollection] = useState("")
-    const [newDoc, setNewDoc] = useState("")
+
     const [newDo, setNewDo] = useState("")
     const [newSpan, setNewSpan] = useState("")
     const [newCronName, setNewCronName] = useState("")
@@ -711,19 +708,11 @@ export default inject(
         db,
         setAddDoc,
         addDoc,
-        setNewDoc,
-        setNewData,
-        newDoc,
-        newData,
         col,
         setDocuments,
         documents,
         contractTxId,
         base_path,
-        newRules,
-        setNewRules,
-        newCollection,
-        setNewCollection,
         addCollection,
         setAddCollection,
       },

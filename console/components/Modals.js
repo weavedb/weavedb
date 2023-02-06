@@ -1,3 +1,4 @@
+import { useState } from "react"
 import {
   Image,
   Checkbox,
@@ -51,6 +52,8 @@ import {
   setupWeaveDB,
 } from "../lib/weavedb"
 import { latest, preset_rpcs, rpc_types } from "../lib/const"
+import AddCollection from "./Modals/AddCollection"
+import AddDoc from "./Modals/AddDoc"
 export default inject(
   [
     "temp_current",
@@ -218,20 +221,12 @@ export default inject(
     db,
     setAddDoc,
     addDoc,
-    setNewDoc,
-    setNewData,
-    newDoc,
-    newData,
     col,
     setDocuments,
     documents,
     contractTxId,
     connect,
     base_path,
-    newRules,
-    setNewRules,
-    newCollection,
-    setNewCollection,
     addCollection,
     setAddCollection,
     fn,
@@ -240,215 +235,28 @@ export default inject(
   }) => (
     <>
       {addCollection !== false ? (
-        <Flex
-          w="100%"
-          h="100%"
-          position="fixed"
-          sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
-          bg="rgba(0,0,0,0.5)"
-          onClick={() => setAddCollection(false)}
-          justify="center"
-          align="center"
-        >
-          <Box
-            bg="white"
-            width="500px"
-            p={3}
-            sx={{ borderRadius: "5px", cursor: "default" }}
-            onClick={e => e.stopPropagation()}
-          >
-            <Input
-              value={newCollection}
-              placeholder="Collection ID"
-              onChange={e => setNewCollection(e.target.value)}
-              sx={{
-                borderRadius: "3px",
-              }}
-            />
-            <Textarea
-              mt={3}
-              value={newRules}
-              placeholder="Access Control Rules"
-              onChange={e => setNewRules(e.target.value)}
-              sx={{
-                borderRadius: "3px",
-              }}
-            />
-            <Flex
-              mt={4}
-              sx={{
-                borderRadius: "3px",
-                cursor: "pointer",
-                ":hover": { opacity: 0.75 },
-              }}
-              p={2}
-              justify="center"
-              align="center"
-              color="white"
-              bg="#333"
-              height="40px"
-              onClick={async () => {
-                if (isNil($.loading)) {
-                  if (/^\s*$/.test(newCollection)) {
-                    alert("Enter Collection ID")
-                    return
-                  } else if (
-                    !isNil(indexBy(prop("id"))(documents)[newCollection])
-                  ) {
-                    alert("Collection exists")
-                    return
-                  }
-                  set("add_collection", "loading")
-                  try {
-                    JSON.parse(newRules)
-                  } catch (e) {
-                    alert("Wrong JSON format")
-                    return
-                  }
-                  try {
-                    const res = JSON.parse(
-                      await fn(queryDB)({
-                        method: "setRules",
-                        query: `${newRules}, ${compose(
-                          join(", "),
-                          map(v => `"${v}"`),
-                          append(newCollection)
-                        )(base_path)}`,
-                        contractTxId,
-                      })
-                    )
-                    if (!res.success) {
-                      alert("Something went wrong")
-                    } else {
-                      setNewCollection("")
-                      setNewRules(`{"allow write": true}`)
-                      setAddCollection(false)
-                      setCollections(
-                        await db.listCollections(...base_path, true)
-                      )
-                    }
-                  } catch (e) {
-                    alert("Something went wrong")
-                  }
-                  set(null, "loading")
-                }
-              }}
-            >
-              {!isNil($.loading) ? (
-                <Box as="i" className="fas fa-spin fa-circle-notch" />
-              ) : (
-                "Add"
-              )}
-            </Flex>
-          </Box>
-        </Flex>
+        <AddCollection
+          {...{
+            setAddCollection,
+            documents,
+            base_path,
+            contractTxId,
+            setCollections,
+            db,
+          }}
+        />
       ) : addDoc !== false ? (
-        <Flex
-          w="100%"
-          h="100%"
-          position="fixed"
-          sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
-          bg="rgba(0,0,0,0.5)"
-          onClick={() => setAddDoc(false)}
-          justify="center"
-          align="center"
-        >
-          <Box
-            bg="white"
-            width="500px"
-            p={3}
-            sx={{ borderRadius: "5px", cursor: "default" }}
-            onClick={e => e.stopPropagation()}
-          >
-            <Input
-              value={newDoc}
-              placeholder="Doc ID - leave it empty for random generation"
-              onChange={e => setNewDoc(e.target.value)}
-              sx={{
-                borderRadius: "3px",
-              }}
-            />
-            <Textarea
-              mt={3}
-              value={newData}
-              placeholder="JSON Data"
-              onChange={e => setNewData(e.target.value)}
-              sx={{
-                borderRadius: "3px",
-              }}
-            />
-            <Flex
-              mt={4}
-              sx={{
-                borderRadius: "3px",
-                cursor: "pointer",
-                ":hover": { opacity: 0.75 },
-              }}
-              p={2}
-              justify="center"
-              align="center"
-              color="white"
-              bg="#333"
-              height="40px"
-              onClick={async () => {
-                if (isNil($.loading)) {
-                  const exID = !/^\s*$/.test(newDoc)
-                  const docmap = indexBy(prop("id"))(documents)
-                  if (exID && !isNil(docmap[newDoc])) {
-                    alert("Doc exists")
-                    return
-                  }
-                  try {
-                    JSON.parse(newData)
-                  } catch (e) {
-                    alert("Wrong JSON format")
-                    return
-                  }
-                  set("add_doc", "loading")
-                  let col_path = compose(
-                    join(", "),
-                    map(v => `"${v}"`),
-                    append(col)
-                  )(base_path)
-                  let query = `${newData}, ${col_path}`
-                  if (exID) query += `, "${newDoc}"`
-                  try {
-                    const res = JSON.parse(
-                      await fn(queryDB)({
-                        method: exID ? "set" : "add",
-                        query,
-                        contractTxId,
-                      })
-                    )
-                    if (!res.success) {
-                      alert("Something went wrong")
-                    } else {
-                      setNewDoc("")
-                      setNewData(`{}`)
-                      setAddDoc(false)
-                    }
-                    const _doc = await db.cget(
-                      ...[...base_path, col, res.docID, true]
-                    )
-                    setDocuments(
-                      o(
-                        sortBy(prop("id")),
-                        append({ id: res.docID, data: newDoc })
-                      )(documents)
-                    )
-                  } catch (e) {}
-                  set(null, "loading")
-                }
-              }}
-            >
-              {!isNil($.loading) ? (
-                <Box as="i" className="fas fa-spin fa-circle-notch" />
-              ) : (
-                "Add"
-              )}
-            </Flex>
-          </Box>
-        </Flex>
+        <AddDoc
+          {...{
+            setDocuments,
+            db,
+            contractTxId,
+            documents,
+            setAddDoc,
+            col,
+            base_path,
+          }}
+        />
       ) : addData !== false ? (
         <Flex
           w="100%"
@@ -1249,91 +1057,6 @@ export default inject(
             </Flex>
           </Box>
         </Flex>
-      ) : addNode !== false ? (
-        <Flex
-          w="100%"
-          h="100%"
-          position="fixed"
-          sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
-          bg="rgba(0,0,0,0.5)"
-          onClick={() => setAddNode(false)}
-          justify="center"
-          align="center"
-        >
-          <Box
-            bg="white"
-            width="500px"
-            p={3}
-            sx={{ borderRadius: "5px", cursor: "default" }}
-            onClick={e => e.stopPropagation()}
-          >
-            <Flex>
-              <Select
-                w="150px"
-                value={newHttp}
-                onChange={e => setNewHttp(e.target.value)}
-              >
-                {map(v => <option>{v}</option>)(["https://", "http://"])}
-              </Select>
-              <Input
-                value={newNode}
-                placeholder="Node RPC URL"
-                onChange={e => setNewNode(e.target.value)}
-                sx={{
-                  borderRadius: "3px",
-                }}
-              />
-            </Flex>
-            <Flex
-              mt={4}
-              sx={{
-                borderRadius: "3px",
-                cursor: "pointer",
-                ":hover": { opacity: 0.75 },
-              }}
-              p={2}
-              justify="center"
-              align="center"
-              color="white"
-              bg="#333"
-              height="40px"
-              onClick={async () => {
-                if (isNil($.loading)) {
-                  set("add_node", "loading")
-                  if (/^\s*$/.test(newNode)) {
-                    alert("enter URL")
-                    set(null, "loading")
-                    return
-                  }
-                  try {
-                    const db = await fn(setupWeaveDB)({
-                      contractTxId: "node",
-                      rpc: newHttp + newNode,
-                    })
-                    const stats = await db.node({ op: "stats" })
-                    if (isNil(stats.contractTxId)) throw new Error()
-                    await addGRPCNode({
-                      contract: stats.contractTxId,
-                      rpc: newHttp + newNode,
-                      owners: stats.owners,
-                    })
-                    setNewNode("")
-                    setAddNode(false)
-                  } catch (e) {
-                    alert("couldn't connect with the node")
-                  }
-                  set(null, "loading")
-                }
-              }}
-            >
-              {!isNil($.loading) ? (
-                <Box as="i" className="fas fa-spin fa-circle-notch" />
-              ) : (
-                "Add Node"
-              )}
-            </Flex>
-          </Box>
-        </Flex>
       ) : addContract !== false ? (
         <Flex
           w="100%"
@@ -1611,90 +1334,6 @@ export default inject(
                   "Add Owner"
                 )}
               </Flex>
-            </Flex>
-          </Box>
-        </Flex>
-      ) : addAlgorithms !== false ? (
-        <Flex
-          w="100%"
-          h="100%"
-          position="fixed"
-          sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
-          bg="rgba(0,0,0,0.5)"
-          onClick={() => setAddAlgorithms(false)}
-          justify="center"
-          align="center"
-        >
-          <Box
-            bg="white"
-            width="500px"
-            p={3}
-            fontSize="12px"
-            sx={{ borderRadius: "5px", cursor: "default" }}
-            onClick={e => e.stopPropagation()}
-          >
-            <Flex>
-              {map(v => (
-                <Box mx={3}>
-                  <Box
-                    onClick={() => {
-                      if (includes(v)(newAuths)) {
-                        setNewAuths(without([v], newAuths))
-                      } else {
-                        setNewAuths(append(v, newAuths))
-                      }
-                    }}
-                    className={
-                      includes(v)(newAuths)
-                        ? "fas fa-check-square"
-                        : "far fa-square"
-                    }
-                    mr={2}
-                    sx={{
-                      cursor: "pointer",
-                      ":hover": { opacity: 0.75 },
-                    }}
-                  />
-                  {v}
-                </Box>
-              ))(["secp256k1", "secp256k1-2", "ed25519", "rsa256"])}
-            </Flex>
-            <Flex
-              mt={3}
-              fontSize="12px"
-              align="center"
-              height="40px"
-              bg="#333"
-              color="white"
-              justify="center"
-              py={1}
-              px={2}
-              w="100%"
-              onClick={async () => {
-                if (isNil($.loading)) {
-                  set("set_algorithms", "loading")
-                  const res = await fn(_setAlgorithms)({
-                    algorithms: newAuths,
-                    contractTxId,
-                  })
-                  if (/^Error:/.test(res)) {
-                    alert("Something went wrong")
-                  }
-                  set(null, "loading")
-                  setState(await db.getInfo(true))
-                }
-              }}
-              sx={{
-                borderRadius: "5px",
-                cursor: "pointer",
-                ":hover": { opacity: 0.75 },
-              }}
-            >
-              {!isNil($.loading) ? (
-                <Box as="i" className="fas fa-spin fa-circle-notch" />
-              ) : (
-                "Save Changes"
-              )}
             </Flex>
           </Box>
         </Flex>
