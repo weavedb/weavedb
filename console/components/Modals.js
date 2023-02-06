@@ -55,6 +55,8 @@ import { latest, preset_rpcs, rpc_types } from "../lib/const"
 import AddCollection from "./Modals/AddCollection"
 import AddDoc from "./Modals/AddDoc"
 import AddData from "./Modals/AddData"
+import AddSchema from "./Modals/AddSchema"
+
 export default inject(
   [
     "temp_current",
@@ -192,9 +194,8 @@ export default inject(
     newTimes,
     setNewTimes,
     setDocdata,
-    setAddSchemas,
-    newSchemas,
-    addSchemas,
+    setAddSchema,
+    addSchema,
     setSchema,
     setAddCron,
     newCronName,
@@ -205,7 +206,6 @@ export default inject(
     newEnd,
     setNewEnd,
     setNewCronName,
-    setNewSchemas,
     doc_path,
     setSubCollections,
     docdata,
@@ -269,97 +269,18 @@ export default inject(
             $,
           }}
         />
-      ) : addSchemas !== false ? (
-        <Flex
-          w="100%"
-          h="100%"
-          position="fixed"
-          sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
-          bg="rgba(0,0,0,0.5)"
-          onClick={() => setAddSchemas(false)}
-          justify="center"
-          align="center"
-        >
-          <Box
-            bg="white"
-            width="500px"
-            p={3}
-            sx={{ borderRadius: "5px", cursor: "default" }}
-            onClick={e => e.stopPropagation()}
-          >
-            <Textarea
-              mt={3}
-              value={newSchemas}
-              placeholder="JSON Schema"
-              onChange={e => setNewSchemas(e.target.value)}
-              sx={{
-                borderRadius: "3px",
-              }}
-            />
-            <Flex
-              mt={4}
-              sx={{
-                borderRadius: "3px",
-                cursor: "pointer",
-                ":hover": { opacity: 0.75 },
-              }}
-              p={2}
-              justify="center"
-              align="center"
-              color="white"
-              height="40px"
-              bg="#333"
-              onClick={async () => {
-                if (isNil($.loading)) {
-                  const exID = !/^\s*$/.test(newSchemas)
-                  let val = null
-                  try {
-                    eval(`const obj = ${newSchemas}`)
-                    val = newSchemas
-                  } catch (e) {
-                    alert("Wrong JSON format")
-                    return
-                  }
-                  set("add_schema", "loading")
-                  let col_path = compose(
-                    join(", "),
-                    map(v => `"${v}"`),
-                    append(col)
-                  )(base_path)
-                  let query = `${newSchemas}, ${col_path}`
-                  const res = JSON.parse(
-                    await fn(queryDB)({
-                      method: "setSchema",
-                      query,
-                      contractTxId,
-                    })
-                  )
-                  if (!res.success) {
-                    alert("Something went wrong")
-                  } else {
-                    setNewSchemas("")
-                    setAddSchemas(false)
-                    setSchema(
-                      await db.getSchema(
-                        ...(doc_path.length % 2 === 0
-                          ? doc_path.slice(0, -1)
-                          : doc_path),
-                        true
-                      )
-                    )
-                  }
-                  set(null, "loading")
-                }
-              }}
-            >
-              {!isNil($.loading) ? (
-                <Box as="i" className="fas fa-spin fa-circle-notch" />
-              ) : (
-                "Add"
-              )}
-            </Flex>
-          </Box>
-        </Flex>
+      ) : addSchema !== false ? (
+        <AddSchema
+          {...{
+            db,
+            doc_path,
+            setSchema,
+            setAddSchema,
+            contractTxId,
+            col,
+            base_path,
+          }}
+        />
       ) : addCron !== false ? (
         <Flex
           w="100%"
