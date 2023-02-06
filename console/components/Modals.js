@@ -9,6 +9,7 @@ import {
 } from "@chakra-ui/react"
 import {
   assoc,
+  pluck,
   includes,
   uniq,
   without,
@@ -49,7 +50,7 @@ import {
   addRelayerJob,
   setupWeaveDB,
 } from "../lib/weavedb"
-import { latest } from "../lib/const"
+import { latest, preset_rpcs, rpc_types } from "../lib/const"
 export default inject(
   [
     "temp_current",
@@ -60,6 +61,11 @@ export default inject(
     "temp_current_all",
   ],
   ({
+    nodes,
+    presetRPC,
+    setPresetRPC,
+    newRPCType,
+    setNewRPCType,
     newStart,
     addDB,
     newRPC,
@@ -2477,21 +2483,61 @@ export default inject(
                 </Flex>
                 <Flex>
                   <Select
-                    w="150px"
-                    value={newHttp}
-                    onChange={e => setNewHttp(e.target.value)}
+                    mr={2}
+                    w="130px"
+                    value={newRPCType}
+                    onChange={e => setNewRPCType(e.target.value)}
                     sx={{ borderRadius: 0 }}
                   >
-                    {map(v => <option>{v}</option>)(["https://", "http://"])}
+                    {map(v => <option value={v.key}>{v.name}</option>)(
+                      rpc_types
+                    )}
                   </Select>
-                  <Input
-                    flex={1}
-                    placeholder="grpc.example.com"
-                    flex={1}
-                    value={newRPC}
-                    onChange={e => setNewRPC(trim(e.target.value))}
-                    sx={{ borderRadius: 0 }}
-                  />
+                  {newRPCType === "sdk" ? (
+                    <Input
+                      flex={1}
+                      value="Browser Local Cache"
+                      disabled={true}
+                    />
+                  ) : newRPCType === "preset" ? (
+                    <>
+                      <Select
+                        flex={1}
+                        value={presetRPC}
+                        onChange={e => setPresetRPC(e.target.value)}
+                        sx={{ borderRadius: 0 }}
+                      >
+                        {map(v => <option>{v}</option>)(
+                          compose(
+                            uniq,
+                            concat(preset_rpcs),
+                            pluck("rpc")
+                          )(nodes)
+                        )}
+                      </Select>
+                    </>
+                  ) : (
+                    <>
+                      <Select
+                        w="100px"
+                        value={newHttp}
+                        onChange={e => setNewHttp(e.target.value)}
+                        sx={{ borderRadius: 0 }}
+                      >
+                        {map(v => <option>{v}</option>)([
+                          "https://",
+                          "http://",
+                        ])}
+                      </Select>
+                      <Input
+                        placeholder="grpc.example.com"
+                        flex={1}
+                        value={newRPC}
+                        onChange={e => setNewRPC(trim(e.target.value))}
+                        sx={{ borderRadius: 0 }}
+                      />
+                    </>
+                  )}
                 </Flex>
                 <Flex
                   mt={4}
@@ -2511,8 +2557,12 @@ export default inject(
                       if (!/^\s*$/.test(newContractTxId)) {
                         set("connect_to_db", "loading")
                         let db
-                        const rpc = newHttp + newRPC
-                        console.log(rpc)
+                        const rpc =
+                          newRPCType === "sdk"
+                            ? null
+                            : newRPCType === "preset"
+                            ? presetRPC
+                            : newHttp + newRPC2
                         try {
                           db = await fn(setupWeaveDB)({
                             network: newNetwork,
@@ -2769,24 +2819,52 @@ export default inject(
 
             <>
               <Flex fontSize="10px" mx={1} mb={1} mt={3}>
-                RPC URL (Optional)
+                RPC URL
               </Flex>
               <Flex>
                 <Select
-                  w="150px"
-                  value={newHttp}
-                  onChange={e => setNewHttp(e.target.value)}
+                  mr={2}
+                  w="130px"
+                  value={newRPCType}
+                  onChange={e => setNewRPCType(e.target.value)}
                   sx={{ borderRadius: 0 }}
                 >
-                  {map(v => <option>{v}</option>)(["https://", "http://"])}
+                  {map(v => <option value={v.key}>{v.name}</option>)(rpc_types)}
                 </Select>
-                <Input
-                  placeholder="grpc.example.com"
-                  flex={1}
-                  value={newRPC2}
-                  onChange={e => setNewRPC2(trim(e.target.value))}
-                  sx={{ borderRadius: 0 }}
-                />
+                {newRPCType === "sdk" ? (
+                  <Input flex={1} value="Browser Local Cache" disabled={true} />
+                ) : newRPCType === "preset" ? (
+                  <>
+                    <Select
+                      flex={1}
+                      value={presetRPC}
+                      onChange={e => setPresetRPC(e.target.value)}
+                      sx={{ borderRadius: 0 }}
+                    >
+                      {map(v => <option>{v}</option>)(
+                        compose(uniq, concat(preset_rpcs), pluck("rpc"))(nodes)
+                      )}
+                    </Select>
+                  </>
+                ) : (
+                  <>
+                    <Select
+                      w="100px"
+                      value={newHttp}
+                      onChange={e => setNewHttp(e.target.value)}
+                      sx={{ borderRadius: 0 }}
+                    >
+                      {map(v => <option>{v}</option>)(["https://", "http://"])}
+                    </Select>
+                    <Input
+                      placeholder="grpc.example.com"
+                      flex={1}
+                      value={newRPC2}
+                      onChange={e => setNewRPC2(trim(e.target.value))}
+                      sx={{ borderRadius: 0 }}
+                    />
+                  </>
+                )}
               </Flex>
               <Flex
                 mt={4}
@@ -2804,7 +2882,12 @@ export default inject(
                 onClick={async () => {
                   if (isNil($.loading)) {
                     set("connect_to_db", "loading")
-                    const rpc = newHttp + newRPC2
+                    const rpc =
+                      newRPCType === "sdk"
+                        ? null
+                        : newRPCType === "preset"
+                        ? presetRPC
+                        : newHttp + newRPC2
                     const db = await fn(setupWeaveDB)({
                       network: newHttp === "https://" ? "Mainnet" : "Localhost",
                       contractTxId: currentDB.contractTxId,
