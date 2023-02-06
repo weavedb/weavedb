@@ -92,7 +92,6 @@ export const setupWeaveDB = async ({
     })
   }
   window.Buffer = Buffer
-  set(true, "initWDB")
   return sdk
 }
 
