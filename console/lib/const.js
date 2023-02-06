@@ -93,3 +93,12 @@ export const default_nodes = [
 
 export const per_page = 20
 export const latest = "0.19.0"
+export const rpc_types = [
+  { key: "sdk", name: "None" },
+  { key: "preset", name: "Preset" },
+  { key: "custom", name: "Custom" },
+]
+export const preset_rpcs = [
+  "https://grpc.weavedb-node.xyz",
+  "http://localhost:8080",
+]
