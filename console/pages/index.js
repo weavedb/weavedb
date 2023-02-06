@@ -101,10 +101,7 @@ export default inject(
     const [newIndex, setNewIndex] = useState(`[]`)
     const [newSchemas, setNewSchemas] = useState("")
     const [newCron, setNewCron] = useState("")
-    const [newField, setNewField] = useState("")
-    const [newFieldType, setNewFieldType] = useState(`string`)
-    const [newFieldVal, setNewFieldVal] = useState("")
-    const [newFieldBool, setNewFieldBool] = useState(true)
+
     const [editNetwork, setEditNetwork] = useState(false)
     const networks = ["Mainnet", "Localhost"]
     const [initDB, setInitDB] = useState(false)
@@ -693,15 +690,7 @@ export default inject(
         setNewSchemas,
         doc_path,
         setSubCollections,
-        newFieldType,
-        newField,
-        setNewField,
-        newFieldVal,
-        setNewFieldVal,
         docdata,
-        newFieldBool,
-        setNewFieldBool,
-        setNewFieldType,
         addData,
         setAddData,
         setCollections,
@@ -709,6 +698,7 @@ export default inject(
         setAddDoc,
         addDoc,
         col,
+        doc,
         setDocuments,
         documents,
         contractTxId,
@@ -726,7 +716,6 @@ export default inject(
         db,
         setQuery,
         query,
-        fn,
       },
     }
 
