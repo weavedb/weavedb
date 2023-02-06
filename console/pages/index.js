@@ -296,21 +296,29 @@ export default inject(
       })()
     }, [])
 
-    const _setContractTxId = async (_contractTxId, network, rpc) => {
+    const _setContractTxId = async (
+      _contractTxId,
+      network,
+      rpc,
+      _db,
+      state
+    ) => {
       setContractTxId(_contractTxId)
       if (!isNil(_contractTxId)) {
         set(_contractTxId, "loading_contract")
-        db = await fn(setupWeaveDB)({
-          network,
-          contractTxId: _contractTxId,
-          port,
-          rpc,
-        })
-        setState(await db.getInfo(true))
+        db =
+          _db ||
+          (await fn(setupWeaveDB)({
+            network,
+            contractTxId: _contractTxId,
+            port,
+            rpc,
+          }))
+        setState(state || (await db.getInfo(true)))
         set(null, "loading_contract")
         fn(switchTempAddress)({ contractTxId: _contractTxId })
       } else {
-        db = await fn(setupWeaveDB)({ network: "Mainnet" })
+        db = _db || (await fn(setupWeaveDB)({ network: "Mainnet" }))
       }
       setInitDB(true)
     }
@@ -495,6 +503,7 @@ export default inject(
         setAddContract,
       },
       DB: {
+        setNewHttp,
         setAddInstance,
         contractTxId,
         port,

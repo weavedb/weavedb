@@ -37,19 +37,6 @@ const ConnectWallet = inject(
           "Connect Wallet"
         ) : (
           <Flex align="center">
-            <Image
-              boxSize="25px"
-              src={
-                $.temp_wallet === "intmax"
-                  ? "/static/images/intmax.png"
-                  : $.temp_current_all.addr.length < 88
-                  ? /^0x/.test($.temp_current_all.addr)
-                    ? "/static/images/metamask.png"
-                    : "/static/images/arconnect.png"
-                  : "/static/images/dfinity.png"
-              }
-              mr={3}
-            />
             {`${$.temp_current_all.addr.slice(
               0,
               6

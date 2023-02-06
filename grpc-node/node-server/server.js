@@ -76,8 +76,9 @@ async function query(call, callback) {
   if (func === "admin") {
     return await execAdmin({ query, res, sdks, admin, initSDK, contractTxId })
   }
-  if (!isAllowed(contractTxId))
+  if (!isAllowed(contractTxId)) {
     return res(`contractTxId[${contractTxId}] not allowed`)
+  }
 
   if (isNil(sdks[contractTxId]) && !(await initSDK(contractTxId))) return
 
