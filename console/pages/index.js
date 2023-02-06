@@ -122,16 +122,6 @@ export default inject(
     const [newAuths, setNewAuths] = useState(wallet_chains)
     const [secure, setSecure] = useState(true)
     const [canEvolve, setCanEvolve] = useState(true)
-
-    const [newJobName, setNewJobName] = useState("")
-    const [newMultisigType, setNewMultisigType] = useState("none")
-    const [newMultisig, setNewMultisig] = useState(2)
-    const [newJobSchema, setNewJobSchema] = useState("")
-    const [newRelayers, setNewRelayers] = useState([])
-    const [newRelayer, setNewRelayer] = useState("")
-    const [newSigner, setNewSigner] = useState("")
-    const [newSigners, setNewSigners] = useState([])
-
     const [allow, setAllow] = useState(true)
     const [limit, setLimit] = useState(true)
     const [numLimit, setNumLimit] = useState(5)
@@ -597,10 +587,6 @@ export default inject(
         setNode,
         addNodeOwner,
         setAddNodeOwner,
-        newSigners,
-        setNewSigners,
-        setNewJobSchema,
-        newJobSchema,
         addNode,
         addGRPCNode,
         addContract,
@@ -630,21 +616,9 @@ export default inject(
         setNewHttp,
         setNewNode,
         newNode,
-        newSigner,
-        setNewSigner,
-        newMultisig,
-        setNewMultisig,
-        newMultisigType,
-        setNewMultisigType,
         setCrons,
         addRelayer,
-        setNewRelayers,
-        newRelayer,
-        setNewRelayer,
         setAddRelayer,
-        newRelayers,
-        newJobName,
-        setNewJobName,
         setRelayers,
         setDocdata,
         setAddSchema,
