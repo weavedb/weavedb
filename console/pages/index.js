@@ -94,39 +94,34 @@ export default inject(
     const [query, setQuery] = useState("")
     const [port, setPort] = useState(null)
     const [network, setNetwork] = useState("Mainnet")
-    const [newNetwork, setNewNetwork] = useState("Mainnet")
 
     const [newRules2, setNewRules2] = useState(`{"allow write": true}`)
     const [newIndex, setNewIndex] = useState(`[]`)
 
-    const [editNetwork, setEditNetwork] = useState(false)
     const networks = ["Mainnet", "Localhost"]
     const [initDB, setInitDB] = useState(false)
     const [networkErr, setNetworkErr] = useState(false)
 
     const [contractTxId, setContractTxId] = useState(null)
-    const [newContractTxId, setNewContractTxId] = useState("")
-    const [newRPC, setNewRPC] = useState("")
+
     const [newRPCType, setNewRPCType] = useState("sdk")
     const [newRPC2, setNewRPC2] = useState("")
     const [presetRPC, setPresetRPC] = useState("https://grpc.weavedb-node.xyz")
-    const [deployMode, setDeployMode] = useState("Connect")
+
     const [dbs, setDBs] = useState([])
     const [node, setNode] = useState(null)
     const [nodes, setNodes] = useState([])
     const [currentDB, setCurrentDB] = useState(null)
     const [connect, setConnect] = useState(false)
     const [newPort, setNewPort] = useState(1820)
-    const [auths, setAuths] = useState(wallet_chains)
-    const [newAuths, setNewAuths] = useState(wallet_chains)
-    const [secure, setSecure] = useState(true)
-    const [canEvolve, setCanEvolve] = useState(true)
+
     const [allow, setAllow] = useState(true)
     const [limit, setLimit] = useState(true)
     const [numLimit, setNumLimit] = useState(5)
     const [newWhitelistUser, setNewWhitelistUser] = useState("")
     const [editWhitelist, setEditWhitelist] = useState(false)
-
+    const [newNetwork, setNewNetwork] = useState("Mainnet")
+    const [newAuths, setNewAuths] = useState(wallet_chains)
     const addGRPCNode = async _node => {
       const nodemap = indexBy(prop("rpc"), nodes)
       if (isNil(nodemap[_node.rpc])) {
@@ -262,6 +257,7 @@ export default inject(
         if (addAlgorithms) setNewAuths(state.auth.algorithms)
       })()
     }, [addAlgorithms])
+
     useEffect(() => {
       ;(async () => {
         setDBs((await lf.getItem(`my_dbs`)) || [])
@@ -517,14 +513,14 @@ export default inject(
         doc,
       },
       Modals: {
+        newNetwork,
+        setNewNetwork,
         nodes,
         presetRPC,
         setPresetRPC,
         newRPCType,
         setNewRPCType,
         addDB,
-        newRPC,
-        setEditNetwork,
         addWhitelist,
         editWhitelist,
         numLimit,
@@ -550,18 +546,9 @@ export default inject(
         setNewWhitelistUser,
         setAddWhitelist,
         setEditWhitelist,
-        setNewRPC,
         setNetwork,
         setCurrentDB,
         _setContractTxId,
-        secure,
-        auths,
-        canEvolve,
-        setCanEvolve,
-        newContractTxId,
-        setNewContractTxId,
-        setAuths,
-        setSecure,
         networks,
         addSecure,
         setAddSecure,
@@ -571,11 +558,7 @@ export default inject(
         indexes,
         setIndexes,
         addInstance,
-        setDeployMode,
-        newNetwork,
-        setNewNetwork,
         port,
-        deployMode,
         setAddInstance,
         setNewIndex,
         state,
@@ -601,8 +584,6 @@ export default inject(
         setState,
         setAddAlgorithms,
         addAlgorithms,
-        newAuths,
-        setNewAuths,
         newOwner,
         setNewOwner,
         newRules2,
