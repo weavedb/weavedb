@@ -70,9 +70,12 @@ export default inject(
                     contractTxId: "node",
                     rpc: newHttp + newNode,
                   })
+                  const start = Date.now()
                   const stats = await db.node({ op: "stats" })
+                  const queryTime = Date.now() - start
                   if (isNil(stats.contractTxId)) throw new Error()
                   await addGRPCNode({
+                    queryTime,
                     contract: stats.contractTxId,
                     rpc: newHttp + newNode,
                     owners: stats.owners,

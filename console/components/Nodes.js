@@ -4,7 +4,7 @@ import { inject } from "roidjs"
 import { _remove, setupWeaveDB } from "../lib/weavedb"
 
 export default inject(
-  ["loading", "temp_current_all", "temp_current"],
+  ["loading", "temp_current_all", "temp_current", "loading_node"],
   ({
     setContracts,
     setNewWhitelistUser,
@@ -25,6 +25,7 @@ export default inject(
     removeGRPCNode,
     setAddNodeOwner,
     setAddContract,
+    updateGRPCNode,
     $,
     set,
     fn,
@@ -47,7 +48,26 @@ export default inject(
         <Box height="500px" sx={{ overflowY: "auto" }}>
           {map(v => (
             <Flex
-              onClick={async () => setNode(v)}
+              onClick={async () => {
+                set(v.rpc, "loading_node")
+                setNode(v)
+                const db = await fn(setupWeaveDB)({
+                  contractTxId: v.contract,
+                  rpc: v.rpc,
+                })
+                const start = Date.now()
+                const stats = await db.node({ op: "stats" })
+                const queryTime = Date.now() - start
+                const newNode = {
+                  queryTime,
+                  contract: stats.contractTxId,
+                  rpc: v.rpc,
+                  owners: stats.owners,
+                }
+                setNode(newNode)
+                set(null, "loading_node")
+                await updateGRPCNode(newNode)
+              }}
               bg={!isNil(node) && node.rpc === v.rpc ? "#ddd" : ""}
               py={2}
               px={3}
@@ -191,6 +211,15 @@ export default inject(
             <Flex justify="center" align="center" height="100%">
               Please select a node.
             </Flex>
+          ) : $.loading_node === node.rpc ? (
+            <Flex justify="center" align="center" height="100%">
+              <Box
+                color="#6441AF"
+                as="i"
+                className="fas fa-spin fa-circle-notch"
+                fontSize="50px"
+              />
+            </Flex>
           ) : (
             <>
               <Flex align="flex-start" p={2} px={3}>
@@ -208,6 +237,12 @@ export default inject(
                     {node.contract}
                   </Box>
                 </Box>
+              </Flex>
+              <Flex align="flex-start" p={2} px={3}>
+                <Box mr={2} px={3} bg="#ddd" sx={{ borderRadius: "3px" }}>
+                  Read Query Speed
+                </Box>
+                <Box flex={1}>{node.queryTime} ms</Box>
               </Flex>
               <Flex align="flex-start" p={2} px={3}>
                 <Box
