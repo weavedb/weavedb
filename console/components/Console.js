@@ -6,7 +6,7 @@ import { queryDB } from "../lib/weavedb"
 import { methods } from "../lib/const"
 
 export default inject(
-  [],
+  ["temp_current"],
   ({
     result,
     method,
@@ -20,6 +20,7 @@ export default inject(
     fn,
   }) => {
     const [querying, setQuerying] = useState(false)
+    const isDB = !isNil(contractTxId)
     return (
       <Flex w="100%" bg="white" direction="column">
         <Flex
@@ -27,11 +28,12 @@ export default inject(
           justify="center"
           bg="white"
           sx={{
-            border: "1px solid #333",
+            border: "1px solid #999",
           }}
         >
           <Select
             w="200px"
+            disabled={!isDB}
             value={method}
             onChange={e => setMethod(e.target.value)}
             sx={{
@@ -45,6 +47,7 @@ export default inject(
             ))(methods)}
           </Select>
           <Input
+            disabled={!isDB}
             flex={1}
             sx={{
               border: "",
@@ -58,15 +61,16 @@ export default inject(
           <Flex
             sx={{
               borderRadius: 0,
-              cursor: "pointer",
-              ":hover": { opacity: 0.75 },
+              cursor: isDB ? "pointer" : "default",
+              ":hover": { opacity: isDB ? 0.75 : 1 },
             }}
             w="150px"
             justify="center"
             align="center"
             color="white"
-            bg="#333"
+            bg={isDB ? "#333" : "#999"}
             onClick={async () => {
+              if (!isDB) return
               if (!querying) {
                 setQuerying(true)
                 try {
@@ -101,18 +105,20 @@ export default inject(
           justify="center"
           mb={3}
         >
-          <Flex p={2} align="center">
+          <Flex p={2} align="center" color={isDB ? "#333" : "#6441AF"}>
             <Box
               as="i"
               mr={2}
               className="fas fa-angle-right"
-              color="#aaa"
+              color="#6441AF"
               fontSize="18px"
             />
-            {`${method}(${query})`}
+            {isDB
+              ? `${method}(${query})`
+              : "To execute queries, connect with a WeaveDB instance."}
           </Flex>
-          <Flex flex={1} px={6} color={"#6441AF"}>
-            {result}
+          <Flex flex={1} px={6} color="#6441AF">
+            {isDB ? result : ""}
           </Flex>
         </Flex>
       </Flex>
