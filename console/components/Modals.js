@@ -73,6 +73,7 @@ import AddEvolve from "./Modals/AddEvolve"
 import AddSecure from "./Modals/AddSecure"
 import AddWhitelist from "./Modals/AddWhitelist"
 import AddGRPC from "./Modals/AddGRPC"
+import ConnectLocal from "./Modals/ConnectLocal"
 
 export default inject(
   [
@@ -358,127 +359,33 @@ export default inject(
           }}
         />
       ) : addGRPC !== false ? (
-        <AddGRPC />
+        <AddGRPC
+          {...{
+            setAddGRPC,
+            setNewNetwork,
+            port,
+            networks,
+            currentDB,
+            setNewRPCType,
+            newRPCType,
+            presetRPC,
+            setPresetRPC,
+            setState,
+            updateDB,
+            setCurrentDB,
+            _setContractTxId,
+            nodes,
+            newHttp,
+            setNewHttp,
+            newRPC2,
+            setNewRPC2,
+          }}
+        />
       ) : connect !== false ? (
-        <Flex
-          w="100%"
-          h="100%"
-          position="fixed"
-          sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
-          bg="rgba(0,0,0,0.5)"
-          onClick={() => setConnect(false)}
-          justify="center"
-          align="center"
-        >
-          <Box
-            bg="white"
-            width="500px"
-            p={3}
-            sx={{ borderRadius: "5px", cursor: "default" }}
-            onClick={e => e.stopPropagation()}
-          >
-            <>
-              <Flex fontSize="10px" m={1}>
-                Port
-              </Flex>
-              <Input
-                flex={1}
-                value={newPort}
-                sx={{ borderRadius: 0 }}
-                onChange={e => {
-                  if (!Number.isNaN(e.target.value * 1)) {
-                    setNewPort(e.target.value * 1)
-                  }
-                }}
-              />
-            </>
-            <Flex
-              mt={4}
-              sx={{
-                borderRadius: "3px",
-                cursor: "pointer",
-                ":hover": { opacity: 0.75 },
-              }}
-              p={2}
-              justify="center"
-              align="center"
-              color="white"
-              bg="#333"
-              onClick={async () => {
-                const _port = await fn(connectLocalhost)({
-                  port: newPort,
-                })
-                if (isNil(_port)) {
-                  alert("couldn't connect with the port")
-                } else {
-                  setPort(_port)
-                  setConnect(false)
-                }
-              }}
-            >
-              Connect
-            </Flex>
-          </Box>
-        </Flex>
+        <ConnectLocal {...{ newPort, setNewPort, setConnect, setPort }} />
       ) : null}
       {$.signing_in_modal || $.owner_signing_in_modal ? (
-        <Flex
-          align="center"
-          justify="center"
-          sx={{
-            bg: "rgba(0,0,0,.5)",
-            position: "fixed",
-            w: "100%",
-            h: "100%",
-            zIndex: 100,
-            top: 0,
-            left: 0,
-            cursor: "pointer",
-          }}
-          onClick={() => {
-            set(false, "signing_in_modal")
-            set(false, "owner_signing_in_modal")
-          }}
-        >
-          <Flex
-            width="580px"
-            wrap="wrap"
-            p={4}
-            justify="center"
-            bg="white"
-            sx={{ borderRadius: "10px", cursor: "default" }}
-            onClick={e => e.stopPropagation()}
-          >
-            {$.signing_in ? (
-              <Flex
-                justify="center"
-                align="center"
-                direction="column"
-                boxSize="150px"
-                p={4}
-                m={4}
-                color="#333"
-                bg="white"
-                sx={{
-                  borderRadius: "10px",
-                  cursor: "pointer",
-                  ":hover": { opacity: 0.75 },
-                }}
-                onClick={async () => set(false, "signing_in")}
-              >
-                <Box
-                  fontSize="50px"
-                  mb={3}
-                  as="i"
-                  className="fas fa-spin fa-circle-notch"
-                />
-                <Box textAlign="center">cancel sign-in</Box>
-              </Flex>
-            ) : (
-              <Connect {...{ newNetwork, contractTxId, network, tab }} />
-            )}
-          </Flex>
-        </Flex>
+        <Connect {...{ newNetwork, contractTxId, network, tab }} />
       ) : null}
     </>
   )
