@@ -76,7 +76,6 @@ export default inject(
     const [addAlgorithms, setAddAlgorithms] = useState(false)
     const [addGRPC, setAddGRPC] = useState(false)
 
-    const [newOwner, setNewOwner] = useState("")
     const [newHttp, setNewHttp] = useState("https://")
     const [result, setResult] = useState("")
     const [state, setState] = useState(null)
@@ -582,8 +581,6 @@ export default inject(
         setState,
         setAddAlgorithms,
         addAlgorithms,
-        newOwner,
-        setNewOwner,
         setAddRules,
         addRules,
         node,
