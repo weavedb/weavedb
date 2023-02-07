@@ -922,40 +922,9 @@ export const _admin = async ({
   conf,
   get,
 }) => {
-  const db = await fn(setupWeaveDB)({
-    contractTxId,
-    rpc,
-  })
   try {
-    const current = get("temp_current_all")
-    let _opt = {}
-    if (current.type === "ar") {
-      const wallet = window.arweaveWallet
-      await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
-      _opt.ar = wallet
-    } else if (current.type === "ii") {
-      const iiUrl =
-        network === "Mainnet"
-          ? "https://identity.ic0.app/"
-          : `http://localhost:8000/?canisterId=rwlgt-iiaaa-aaaaa-aaaaa-cai`
-      const authClient = await AuthClient.create()
-      await new Promise((resolve, reject) => {
-        authClient.login({
-          identityProvider: iiUrl,
-          onSuccess: resolve,
-          onError: reject,
-        })
-      })
-      const ii = authClient.getIdentity()
-      if (isNil(ii._inner)) return
-      _opt.ii = ii
-    }
-    try {
-      return await db.admin({ op: "add_contract", contractTxId: txid }, _opt)
-    } catch (e) {
-      console.log(e)
-      return `Error: Something went wrong`
-    }
+    const { db, opt } = await fn(getRawDB)({ contractTxId, rpc, network })
+    return await db.admin({ op: "add_contract", contractTxId: txid }, opt)
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
@@ -970,40 +939,9 @@ export const _remove = async ({
   conf,
   get,
 }) => {
-  const db = await fn(setupWeaveDB)({
-    contractTxId,
-    rpc,
-  })
   try {
-    const current = get("temp_current_all")
-    let _opt = {}
-    if (current.type === "ar") {
-      const wallet = window.arweaveWallet
-      await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
-      _opt.ar = wallet
-    } else if (current.type === "ii") {
-      const iiUrl =
-        network === "Mainnet"
-          ? "https://identity.ic0.app/"
-          : `http://localhost:8000/?canisterId=rwlgt-iiaaa-aaaaa-aaaaa-cai`
-      const authClient = await AuthClient.create()
-      await new Promise((resolve, reject) => {
-        authClient.login({
-          identityProvider: iiUrl,
-          onSuccess: resolve,
-          onError: reject,
-        })
-      })
-      const ii = authClient.getIdentity()
-      if (isNil(ii._inner)) return
-      _opt.ii = ii
-    }
-    try {
-      return await db.admin({ op: "remove_contract", contractTxId: txid }, _opt)
-    } catch (e) {
-      console.log(e)
-      return `Error: Something went wrong`
-    }
+    const { db, opt } = await fn(getRawDB)({ contractTxId, rpc, network })
+    return await db.admin({ op: "remove_contract", contractTxId: txid }, opt)
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
@@ -1018,35 +956,9 @@ export const _addNodeOwner = async ({
   conf,
   get,
 }) => {
-  const db = await fn(setupWeaveDB)({
-    contractTxId,
-    rpc,
-  })
   try {
-    const current = get("temp_current_all")
-    let _opt = {}
-    if (current.type === "ar") {
-      const wallet = window.arweaveWallet
-      await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
-      _opt.ar = wallet
-    } else if (current.type === "ii") {
-      const iiUrl =
-        network === "Mainnet"
-          ? "https://identity.ic0.app/"
-          : `http://localhost:8000/?canisterId=rwlgt-iiaaa-aaaaa-aaaaa-cai`
-      const authClient = await AuthClient.create()
-      await new Promise((resolve, reject) => {
-        authClient.login({
-          identityProvider: iiUrl,
-          onSuccess: resolve,
-          onError: reject,
-        })
-      })
-      const ii = authClient.getIdentity()
-      if (isNil(ii._inner)) return
-      _opt.ii = ii
-    }
-    return await db.addOwner(address, _opt)
+    const { db, opt } = await fn(getRawDB)({ contractTxId, rpc, network })
+    return await db.addOwner(address, opt)
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
@@ -1061,39 +973,49 @@ export const _removeNodeOwner = async ({
   conf,
   get,
 }) => {
-  const db = await fn(setupWeaveDB)({
-    contractTxId,
-    rpc,
-  })
   try {
-    const current = get("temp_current_all")
-    let _opt = {}
-    if (current.type === "ar") {
-      const wallet = window.arweaveWallet
-      await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
-      _opt.ar = wallet
-    } else if (current.type === "ii") {
-      const iiUrl =
-        network === "Mainnet"
-          ? "https://identity.ic0.app/"
-          : `http://localhost:8000/?canisterId=rwlgt-iiaaa-aaaaa-aaaaa-cai`
-      const authClient = await AuthClient.create()
-      await new Promise((resolve, reject) => {
-        authClient.login({
-          identityProvider: iiUrl,
-          onSuccess: resolve,
-          onError: reject,
-        })
-      })
-      const ii = authClient.getIdentity()
-      if (isNil(ii._inner)) return
-      _opt.ii = ii
-    }
-    return await db.removeOwner(address, _opt)
+    const { db, opt } = await fn(getRawDB)({ contractTxId, rpc, network })
+    return await db.removeOwner(address, opt)
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
   }
+}
+
+export const getRawDB = async ({
+  val: { contractTxId, rpc, network },
+  fn,
+  get,
+}) => {
+  let err = false
+  const db = await fn(setupWeaveDB)({
+    contractTxId,
+    rpc,
+  })
+  let opt = {}
+  const current = get("temp_current_all")
+  if (current.type === "ar") {
+    const wallet = window.arweaveWallet
+    await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
+    opt.ar = wallet
+  } else if (current.type === "ii") {
+    const iiUrl =
+      network === "Mainnet"
+        ? "https://identity.ic0.app/"
+        : `http://localhost:8000/?canisterId=rwlgt-iiaaa-aaaaa-aaaaa-cai`
+    const authClient = await AuthClient.create()
+    await new Promise((resolve, reject) => {
+      authClient.login({
+        identityProvider: iiUrl,
+        onSuccess: resolve,
+        onError: reject,
+      })
+    })
+    const ii = authClient.getIdentity()
+    if (isNil(ii._inner)) return
+    opt.ii = ii
+  }
+  return { opt, db }
 }
 
 export const _whitelist = async ({
@@ -1104,37 +1026,11 @@ export const _whitelist = async ({
   conf,
   get,
 }) => {
-  const db = await fn(setupWeaveDB)({
-    contractTxId,
-    rpc,
-  })
   try {
-    const current = get("temp_current_all")
-    let _opt = {}
-    if (current.type === "ar") {
-      const wallet = window.arweaveWallet
-      await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
-      _opt.ar = wallet
-    } else if (current.type === "ii") {
-      const iiUrl =
-        network === "Mainnet"
-          ? "https://identity.ic0.app/"
-          : `http://localhost:8000/?canisterId=rwlgt-iiaaa-aaaaa-aaaaa-cai`
-      const authClient = await AuthClient.create()
-      await new Promise((resolve, reject) => {
-        authClient.login({
-          identityProvider: iiUrl,
-          onSuccess: resolve,
-          onError: reject,
-        })
-      })
-      const ii = authClient.getIdentity()
-      if (isNil(ii._inner)) return
-      _opt.ii = ii
-    }
+    const { db, opt } = await fn(getRawDB)({ contractTxId, rpc, network })
     let params = { allow, address }
     if (!isNil(limit)) params.limit = limit
-    return await db.admin({ op: "whitelist", ...params }, _opt)
+    return await db.admin({ op: "whitelist", ...params }, opt)
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
