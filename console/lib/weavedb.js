@@ -465,7 +465,8 @@ export const _addOwner = async ({
       alert("not logged in")
       return
     }
-    const res = await sdk.addOwner(address, opt)
+    const addr = /^0x.+$/.test(address) ? address.toLowerCase() : address
+    const res = await sdk.addOwner(addr, opt)
     if (!isNil(res.err)) {
       return `Error: ${res.err.errorMessage}`
     } else {
@@ -955,6 +956,7 @@ export const _addNodeOwner = async ({
 }) => {
   try {
     const { db, opt } = await fn(getRawDB)({ contractTxId, rpc, network })
+    const addr = /^0x.+$/.test(address) ? address.toLowerCase() : address
     return await db.addOwner(address, opt)
   } catch (e) {
     console.log(e)
