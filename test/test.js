@@ -1050,4 +1050,22 @@ describe("WeaveDB", function () {
     expect(await db.getIndexes("ppl")).to.eql([])
     expect(await db.getRelayerJob(jobID)).to.eql(null)
   })
+
+  it("should only allow owners", async () => {
+    const data = { name: "Bob", age: 20 }
+    const addr = await db.arweave.wallets.jwkToAddress(arweave_wallet)
+    const rules = {
+      "allow create": {
+        in: [{ var: "request.auth.signer" }, { var: "contract.owners" }],
+      },
+    }
+    await db.setRules(rules, "ppl", {
+      ar: arweave_wallet,
+    })
+    expect(await db.getRules("ppl")).to.eql(rules)
+    await db.set(data, "ppl", "Bob")
+    expect(await db.get("ppl", "Bob")).to.eql(null)
+    await db.set(data, "ppl", "Bob", { ar: arweave_wallet })
+    expect(await db.get("ppl", "Bob")).to.eql(data)
+  })
 })

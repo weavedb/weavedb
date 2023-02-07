@@ -51,19 +51,21 @@ describe("Node Admin Contract", function () {
         },
       },
     }
-    await db.setSchema(users_schema, "users", { ar: arweave_wallet })
-    const rules = {
+    const users_rules = {
       "allow create,update": {
         and: [
           {
             "==": [{ var: "resource.newData.address" }, { var: "request.id" }],
           },
-          { "==": [{ var: "request.auth.signer" }, walletAddress] },
+          {
+            in: [{ var: "request.auth.signer" }, { var: "contract.owners" }],
+          },
         ],
       },
-      "allow delete": { "==": [{ var: "request.auth.signer" }, walletAddress] },
+      "allow delete": {
+        in: [{ var: "request.auth.signer" }, { var: "contract.owners" }],
+      },
     }
-    await db.setRules(rules, "users", { ar: arweave_wallet })
     const contracts_schema = {
       type: "object",
       required: ["address", "txid", "date"],
@@ -79,14 +81,15 @@ describe("Node Admin Contract", function () {
         },
       },
     }
-    await db.setSchema(contracts_schema, "contracts", { ar: arweave_wallet })
     const contracts_rules = {
       "allow create": {
         and: [
           {
             "==": [{ var: "resource.newData.txid" }, { var: "request.id" }],
           },
-          { "==": [{ var: "request.auth.signer" }, walletAddress] },
+          {
+            in: [{ var: "request.auth.signer" }, { var: "contract.owners" }],
+          },
           {
             "==": [
               { var: "resource.newData.date" },
@@ -95,9 +98,19 @@ describe("Node Admin Contract", function () {
           },
         ],
       },
-      "allow delete": { "==": [{ var: "request.auth.signer" }, walletAddress] },
+      "allow delete": {
+        in: [{ var: "request.auth.signer" }, { var: "contract.owners" }],
+      },
     }
-    await db.setRules(contracts_rules, "contracts", { ar: arweave_wallet })
+    await db.batch(
+      [
+        ["setSchema", users_schema, "users"],
+        ["setRules", users_rules, "users"],
+        ["setSchema", contracts_schema, "contracts"],
+        ["setRules", contracts_rules, "contracts"],
+      ],
+      { ar: arweave_wallet }
+    )
   }
 
   it("should manage node", async () => {

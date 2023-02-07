@@ -230,3 +230,12 @@ await db.batch([
   ["delete", "John"]
 ])
 ```
+Admin queries can be batch-executed as well
+
+```js
+await db.batch([
+  ["setSchema", schema, "people"],
+  ["setRules", rules, "people"],
+  ["addOwner", "0xABC"]
+], { ar : admin_arweave_wallet })
+```

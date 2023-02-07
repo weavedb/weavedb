@@ -92,7 +92,7 @@ export const default_nodes = [
 ]
 
 export const per_page = 20
-export const latest = "0.19.0"
+
 export const rpc_types = [
   { key: "sdk", name: "None" },
   { key: "preset", name: "Preset" },
@@ -102,3 +102,9 @@ export const preset_rpcs = [
   "https://grpc.weavedb-node.xyz",
   "http://localhost:8080",
 ]
+
+export const latest = "0.20.0"
+export const weavedbSrcTxId = "pfzMiEGWwoyAL33M2ceRUkgG3XvxUyjxUqiyLNHD66g"
+//export const intmaxSrcTxId = "OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94"
+export const dfinitySrcTxId = "3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8"
+export const ethereumSrcTxId = "Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w"
