@@ -2636,6 +2636,13 @@
     }
   });
 
+  // contracts/warp/lib/version.js
+  var require_version = __commonJS({
+    "contracts/warp/lib/version.js"(exports, module) {
+      module.exports = "0.20.0";
+    }
+  });
+
   // node_modules/ramda/src/F.js
   var require_F = __commonJS({
     "node_modules/ramda/src/F.js"(exports, module) {
@@ -9220,13 +9227,6 @@
     }
   });
 
-  // contracts/warp/lib/version.js
-  var require_version = __commonJS({
-    "contracts/warp/lib/version.js"(exports, module) {
-      module.exports = "0.19.0";
-    }
-  });
-
   // node_modules/ramda/es/index.js
   var es_exports = {};
   __export(es_exports, {
@@ -13699,6 +13699,7 @@
   var import_json_logic_js = __toESM(require_logic());
   var import_jsonschema = __toESM(require_jsonschema());
   var import_pure = __toESM(require_pure());
+  var import_version = __toESM(require_version());
   var clone3 = (state) => JSON.parse(JSON.stringify(state));
   var err = (msg = `The wrong query`, contractErr = false) => {
     if (contractErr) {
@@ -13743,7 +13744,7 @@
     }
     return _data;
   };
-  var getDoc = (data, path3, _signer, func, new_data, secure = false, relayer, jobID, extra) => {
+  var getDoc = (data, path3, _signer, func, new_data, secure = false, relayer, jobID, extra, state) => {
     const [_col, id] = path3;
     if (!(0, import_pure.isValidName)(_col))
       err(`collection id is not valid: ${_col}`);
@@ -13779,6 +13780,11 @@
       }
       let allowed = false;
       let rule_data = {
+        contract: {
+          id: SmartWeave.contract.id,
+          version: import_version.default,
+          owners: is_default(Array, state.owner) ? state.owner : [state.owner]
+        },
         request: {
           method: op,
           auth: { signer: _signer, relayer, jobID, extra },
@@ -13865,7 +13871,8 @@
       secure,
       relayer,
       jobID,
-      extra
+      extra,
+      state
     ) : {
       doc,
       schema,
@@ -14012,7 +14019,8 @@
         state.secure,
         relayer,
         jobID,
-        extra
+        extra,
+        state
       );
       _data = doc.doc;
       ({ next_data, schema, rules, col } = doc);
@@ -14923,7 +14931,7 @@
 
   // contracts/common/actions/read/getInfo.js
   var { pick: pick3 } = require_src();
-  var version = require_version();
+  var version2 = require_version();
   var getInfo = async (state, action) => {
     let info = pick3(
       [
@@ -14939,7 +14947,7 @@
       state
     );
     delete info.auth.links;
-    info.version = version;
+    info.version = version2;
     info.evolveHistory = state.evolveHistory || [];
     info.isEvolving = isEvolving(state);
     return {
@@ -15161,142 +15169,6 @@
     return { state };
   };
 
-  // contracts/common/actions/write/batch.js
-  var batch = async (state, action, signer, contractErr = true) => {
-    signer ||= await validate(state, action, "batch");
-    let _state = state;
-    let i = 0;
-    for (let v of action.input.query) {
-      let [op, ...query] = v;
-      const _action = { input: { function: op, query }, caller: action.caller };
-      let res = null;
-      switch (op) {
-        case "add":
-          res = await add3(_state, _action, signer, i, contractErr);
-          break;
-        case "set":
-          res = await set3(_state, _action, signer, contractErr);
-          break;
-        case "update":
-          res = await update3(_state, _action, signer, contractErr);
-          break;
-        case "upsert":
-          res = await upsert(_state, _action, signer, contractErr);
-          break;
-        case "delete":
-          res = await remove3(_state, _action, signer, contractErr);
-          break;
-        default:
-          const msg = `No function supplied or function not recognised: "${op}"`;
-          if (contractErr) {
-            err(msg);
-          } else {
-            throw msg;
-          }
-      }
-      _state = res.state;
-      i++;
-    }
-    return { state: _state };
-  };
-
-  // contracts/common/actions/write/relay.js
-  var relay = async (state, action, signer, contractErr = true) => {
-    signer ||= await validate(state, action, "relay");
-    let jobID = head_default(action.input.query);
-    let input = nth_default(1, action.input.query);
-    let query = nth_default(2, action.input.query);
-    if (input.jobID !== jobID)
-      err("the wrong jobID");
-    let action2 = { input, relayer: signer, extra: query, jobID };
-    const relayers = state.relayers || {};
-    if (isNil_default(relayers[jobID]))
-      err("relayer jobID doesn't exist");
-    if (!isNil_default(relayers[jobID].relayers)) {
-      const allowed_relayers = map_default(toLower_default)(relayers[jobID].relayers || []);
-      if (!includes_default(signer)(allowed_relayers))
-        err("relayer is not allowed");
-    }
-    if (includes_default(relayers[jobID].multisig_type)(["number", "percent"])) {
-      const allowed_signers = map_default(toLower_default)(relayers[jobID].signers || []);
-      let signers = [];
-      if (is_default(Array)(action.input.multisigs)) {
-        const data = {
-          extra: action2.extra,
-          jobID,
-          params: input
-        };
-        for (const signature of action.input.multisigs) {
-          const _signer = (await read(state.contracts.ethereum, {
-            function: "verify",
-            data,
-            signature
-          })).signer;
-          signers.push(_signer);
-        }
-      }
-      const matched_signers = intersection_default(allowed_signers, signers);
-      let min3 = 1;
-      if (relayers[jobID].multisig_type === "percent") {
-        min3 = Math.ceil(
-          relayers[jobID].signers.length * (relayers[jobID].multisig || 100) / 100
-        );
-      } else if (relayers[jobID].multisig_type === "number") {
-        min3 = relayers[jobID].multisig || 1;
-      }
-      if (matched_signers.length < min3) {
-        err(
-          `not enough number of allowed signers [${matched_signers.length}/${min3}] for the job[${jobID}]`
-        );
-      }
-    }
-    if (!isNil_default(relayers[jobID].schema)) {
-      try {
-        validateSchema(relayers[jobID].schema, query);
-      } catch (e) {
-        err("relayer data validation error");
-      }
-    }
-    switch (action2.input.function) {
-      case "add":
-        return await add3(state, action2);
-      case "set":
-        return await set3(state, action2);
-      case "update":
-        return await update3(state, action2);
-      case "upsert":
-        return await upsert(state, action2);
-      case "delete":
-        return await remove3(state, action2);
-      case "batch":
-        return await batch(state, action2);
-      default:
-        err(
-          `No function supplied or function not recognised: "${action2.input.function}"`
-        );
-    }
-    return { state };
-  };
-
-  // contracts/common/actions/write/setSchema.js
-  var import_jsonschema2 = __toESM(require_jsonschema());
-  var setSchema = async (state, action, signer) => {
-    signer ||= await validate(state, action, "setSchema");
-    let { _data, data, query, new_data, path: path3 } = await parse(
-      state,
-      action,
-      "setSchema",
-      signer
-    );
-    _data.schema = new_data;
-    try {
-      (0, import_jsonschema2.validate)(void 0, clone3(_data.schema));
-    } catch (e) {
-      err("schema error");
-    }
-    return { state };
-  };
-
   // contracts/common/actions/write/setRules.js
   var import_json_logic_js2 = __toESM(require_logic());
   var setRules = async (state, action, signer) => {
@@ -15328,6 +15200,63 @@
     return { state };
   };
 
+  // contracts/common/actions/write/setSchema.js
+  var import_jsonschema2 = __toESM(require_jsonschema());
+  var setSchema = async (state, action, signer) => {
+    signer ||= await validate(state, action, "setSchema");
+    let { _data, data, query, new_data, path: path3 } = await parse(
+      state,
+      action,
+      "setSchema",
+      signer
+    );
+    _data.schema = new_data;
+    try {
+      (0, import_jsonschema2.validate)(void 0, clone3(_data.schema));
+    } catch (e) {
+      err("schema error");
+    }
+    return { state };
+  };
+
+  // contracts/common/actions/write/setCanEvolve.js
+  var setCanEvolve = async (state, action, signer) => {
+    signer ||= await validate(state, action, "setCanEvolve");
+    const owner = isOwner(signer, state);
+    if (!is_default(Boolean)(action.input.query.value)) {
+      err("Value must be a boolean.");
+    }
+    state.canEvolve = action.input.query.value;
+    return { state };
+  };
+
+  // contracts/common/actions/write/setSecure.js
+  var setSecure = async (state, action, signer) => {
+    signer ||= await validate(state, action, "setSecure");
+    const owner = isOwner(signer, state);
+    if (!is_default(Boolean)(action.input.query.value)) {
+      err("Value must be a boolean.");
+    }
+    state.secure = action.input.query.value;
+    return { state };
+  };
+
+  // contracts/common/actions/write/setAlgorithms.js
+  var setAlgorithms = async (state, action, signer) => {
+    signer ||= await validate(state, action, "setAlgorithms");
+    let { _data, data, query, new_data, path: path3 } = await parse(
+      state,
+      action,
+      "setAlgorithms",
+      signer
+    );
+    if (!is_default(Array)(new_data) || intersection_default(new_data)(["secp256k1", "ed25519", "rsa256", "secp256k1-2"]).length !== new_data.length) {
+      throw new ContractError(`The wrong algorithms`);
+    }
+    state.auth.algorithms = new_data;
+    return { state };
+  };
+
   // contracts/common/actions/write/addIndex.js
   var addIndex4 = async (state, action, signer) => {
     signer ||= await validate(state, action, "addIndex");
@@ -15345,17 +15274,50 @@
     return { state };
   };
 
-  // contracts/common/actions/write/removeIndex.js
-  var removeIndex2 = async (state, action, signer) => {
-    signer ||= await validate(state, action, "removeIndex");
-    let { col, _data, data, query, new_data, path: path3 } = await parse(
+  // contracts/common/actions/write/addOwner.js
+  var addOwner = async (state, action, signer) => {
+    signer ||= await validate(state, action, "addOwner");
+    const owner = isOwner(signer, state);
+    if (!is_default(String)(action.input.query.address)) {
+      err("Value must be string.");
+    }
+    if (!is_default(String)(action.input.query.address)) {
+      err("Value must be string.");
+    }
+    if (includes_default(action.input.query.address, owner)) {
+      err("The owner already exists.");
+    }
+    state.owner = append_default(action.input.query.address, owner);
+    return { state };
+  };
+
+  // contracts/common/actions/write/addRelayerJob.js
+  var import_jsonschema3 = __toESM(require_jsonschema());
+  var addRelayerJob = async (state, action, signer) => {
+    signer ||= await validate(state, action, "addRelayerJob");
+    let { _data, data, query, new_data, path: path3 } = await parse(
       state,
       action,
-      "removeIndex",
+      "addRelayerJob",
       signer
     );
-    let ind = getIndex(state, path3);
-    removeIndex(new_data, ind, col.__docs);
+    const [jobID, job] = query;
+    if (!isNil_default(job.relayers) && !is_default(Array, job.relayers)) {
+      err("relayers must be Array");
+    }
+    if (!isNil_default(job.signers) && !is_default(Array, job.signers)) {
+      err("signers must be Array");
+    }
+    if (!isNil_default(job.schema)) {
+      try {
+        (0, import_jsonschema3.validate)(void 0, clone3(job.schema));
+      } catch (e) {
+        err("schema error");
+      }
+    }
+    if (isNil_default(state.relayers))
+      state.relayers = {};
+    state.relayers[jobID] = job;
     return { state };
   };
 
@@ -15500,49 +15462,31 @@
     return { state };
   };
 
-  // contracts/common/actions/write/setAlgorithms.js
-  var setAlgorithms = async (state, action, signer) => {
-    signer ||= await validate(state, action, "setAlgorithms");
-    let { _data, data, query, new_data, path: path3 } = await parse(
+  // contracts/common/actions/write/removeIndex.js
+  var removeIndex2 = async (state, action, signer) => {
+    signer ||= await validate(state, action, "removeIndex");
+    let { col, _data, data, query, new_data, path: path3 } = await parse(
       state,
       action,
-      "setAlgorithms",
+      "removeIndex",
       signer
     );
-    if (!is_default(Array)(new_data) || intersection_default(new_data)(["secp256k1", "ed25519", "rsa256", "secp256k1-2"]).length !== new_data.length) {
-      throw new ContractError(`The wrong algorithms`);
-    }
-    state.auth.algorithms = new_data;
+    let ind = getIndex(state, path3);
+    removeIndex(new_data, ind, col.__docs);
     return { state };
   };
 
-  // contracts/common/actions/write/addRelayerJob.js
-  var import_jsonschema3 = __toESM(require_jsonschema());
-  var addRelayerJob = async (state, action, signer) => {
-    signer ||= await validate(state, action, "addRelayerJob");
-    let { _data, data, query, new_data, path: path3 } = await parse(
-      state,
-      action,
-      "addRelayerJob",
-      signer
-    );
-    const [jobID, job] = query;
-    if (!isNil_default(job.relayers) && !is_default(Array, job.relayers)) {
-      err("relayers must be Array");
+  // contracts/common/actions/write/removeOwner.js
+  var removeOwner = async (state, action, signer) => {
+    signer ||= await validate(state, action, "removeOwner");
+    const owner = isOwner(signer, state);
+    if (!is_default(String)(action.input.query.address)) {
+      err("Value must be string.");
     }
-    if (!isNil_default(job.signers) && !is_default(Array, job.signers)) {
-      err("signers must be Array");
+    if (!includes_default(action.input.query.address, owner)) {
+      err("The owner doesn't exist.");
     }
-    if (!isNil_default(job.schema)) {
-      try {
-        (0, import_jsonschema3.validate)(void 0, clone3(job.schema));
-      } catch (e) {
-        err("schema error");
-      }
-    }
-    if (isNil_default(state.relayers))
-      state.relayers = {};
-    state.relayers[jobID] = job;
+    state.owner = without_default([action.input.query.address], owner);
     return { state };
   };
 
@@ -15560,6 +15504,168 @@
     if (isNil_default(state.relayers[jobID]))
       err("relayer job doesn't exist");
     delete state.relayers[jobID];
+    return { state };
+  };
+
+  // contracts/common/actions/write/batch.js
+  var batch = async (state, action, signer, contractErr = true) => {
+    signer ||= await validate(state, action, "batch");
+    let _state = state;
+    let i = 0;
+    for (let v of action.input.query) {
+      let [op, ...query] = v;
+      const _action = includes_default(op)(["addOwner", "removeOwner"]) ? {
+        input: { function: op, query: { address: query[0] } },
+        caller: action.caller
+      } : includes_default(op)(["setCanEvolve", "setSecure"]) ? {
+        input: { function: op, query: { value: query[0] } },
+        caller: action.caller
+      } : { input: { function: op, query }, caller: action.caller };
+      let res = null;
+      switch (op) {
+        case "add":
+          res = await add3(_state, _action, signer, i, contractErr);
+          break;
+        case "set":
+          res = await set3(_state, _action, signer, contractErr);
+          break;
+        case "update":
+          res = await update3(_state, _action, signer, contractErr);
+          break;
+        case "upsert":
+          res = await upsert(_state, _action, signer, contractErr);
+          break;
+        case "delete":
+          res = await remove3(_state, _action, signer, contractErr);
+          break;
+        case "setRules":
+          res = await setRules(_state, _action, signer, contractErr);
+          break;
+        case "setSchema":
+          res = await setSchema(_state, _action, signer, contractErr);
+          break;
+        case "setCanEvolve":
+          res = await setCanEvolve(_state, _action, signer, contractErr);
+          break;
+        case "setSecure":
+          res = await setSecure(_state, _action, signer, contractErr);
+          break;
+        case "setAlgorithms":
+          res = await setAlgorithms(_state, _action, signer, contractErr);
+          break;
+        case "addIndex":
+          res = await addIndex4(_state, _action, signer, contractErr);
+          break;
+        case "addOwner":
+          res = await addOwner(_state, _action, signer, contractErr);
+          break;
+        case "addRelayerJob":
+          res = await addRelayerJob(_state, _action, signer, contractErr);
+          break;
+        case "addCron":
+          res = await addCron(_state, _action, signer, contractErr);
+          break;
+        case "removeCron":
+          res = await removeCron(_state, _action, signer, contractErr);
+          break;
+        case "removeIndex":
+          res = await removeIndex2(_state, _action, signer, contractErr);
+          break;
+        case "removeOwner":
+          res = await removeOwner(_state, _action, signer, contractErr);
+          break;
+        case "removeRelayerJob":
+          res = await removeRelayerJob(_state, _action, signer, contractErr);
+          break;
+        default:
+          const msg = `No function supplied or function not recognised: "${op}"`;
+          if (contractErr) {
+            err(msg);
+          } else {
+            throw msg;
+          }
+      }
+      _state = res.state;
+      i++;
+    }
+    return { state: _state };
+  };
+
+  // contracts/common/actions/write/relay.js
+  var relay = async (state, action, signer, contractErr = true) => {
+    signer ||= await validate(state, action, "relay");
+    let jobID = head_default(action.input.query);
+    let input = nth_default(1, action.input.query);
+    let query = nth_default(2, action.input.query);
+    if (input.jobID !== jobID)
+      err("the wrong jobID");
+    let action2 = { input, relayer: signer, extra: query, jobID };
+    const relayers = state.relayers || {};
+    if (isNil_default(relayers[jobID]))
+      err("relayer jobID doesn't exist");
+    if (!isNil_default(relayers[jobID].relayers)) {
+      const allowed_relayers = map_default(toLower_default)(relayers[jobID].relayers || []);
+      if (!includes_default(signer)(allowed_relayers))
+        err("relayer is not allowed");
+    }
+    if (includes_default(relayers[jobID].multisig_type)(["number", "percent"])) {
+      const allowed_signers = map_default(toLower_default)(relayers[jobID].signers || []);
+      let signers = [];
+      if (is_default(Array)(action.input.multisigs)) {
+        const data = {
+          extra: action2.extra,
+          jobID,
+          params: input
+        };
+        for (const signature of action.input.multisigs) {
+          const _signer = (await read(state.contracts.ethereum, {
+            function: "verify",
+            data,
+            signature
+          })).signer;
+          signers.push(_signer);
+        }
+      }
+      const matched_signers = intersection_default(allowed_signers, signers);
+      let min3 = 1;
+      if (relayers[jobID].multisig_type === "percent") {
+        min3 = Math.ceil(
+          relayers[jobID].signers.length * (relayers[jobID].multisig || 100) / 100
+        );
+      } else if (relayers[jobID].multisig_type === "number") {
+        min3 = relayers[jobID].multisig || 1;
+      }
+      if (matched_signers.length < min3) {
+        err(
+          `not enough number of allowed signers [${matched_signers.length}/${min3}] for the job[${jobID}]`
+        );
+      }
+    }
+    if (!isNil_default(relayers[jobID].schema)) {
+      try {
+        validateSchema(relayers[jobID].schema, query);
+      } catch (e) {
+        err("relayer data validation error");
+      }
+    }
+    switch (action2.input.function) {
+      case "add":
+        return await add3(state, action2);
+      case "set":
+        return await set3(state, action2);
+      case "update":
+        return await update3(state, action2);
+      case "upsert":
+        return await upsert(state, action2);
+      case "delete":
+        return await remove3(state, action2);
+      case "batch":
+        return await batch(state, action2);
+      default:
+        err(
+          `No function supplied or function not recognised: "${action2.input.function}"`
+        );
+    }
     return { state };
   };
 
@@ -15602,7 +15708,7 @@
   };
 
   // contracts/common/warp/actions/write/evolve.js
-  var import_version = __toESM(require_version());
+  var import_version2 = __toESM(require_version());
   var evolve3 = async (state, action, signer) => {
     signer ||= await validate(state, action, "evolve");
     const owner = isOwner(signer, state);
@@ -15620,75 +15726,22 @@
       block: SmartWeave.block.height,
       data: SmartWeave.block.timestamp,
       srcTxId: action.input.value,
-      oldVersion: import_version.default
+      oldVersion: import_version2.default
     });
     return { state };
   };
 
   // contracts/common/warp/actions/write/migrate.js
-  var import_version2 = __toESM(require_version());
+  var import_version3 = __toESM(require_version());
   var migrate = async (state, action, signer) => {
     signer ||= await validate(state, action, "migrate");
     const owner = isOwner(signer, state);
-    if (import_version2.default !== action.input.query.version) {
-      err(`version doesn't match (${import_version2.default} : ${action.input.query.version})`);
+    if (import_version3.default !== action.input.query.version) {
+      err(`version doesn't match (${import_version3.default} : ${action.input.query.version})`);
     }
     if (!isEvolving(state))
       err(`contract is not ready to migrate`);
-    state.evolveHistory[state.evolveHistory.length - 1].newVersion = import_version2.default;
-    return { state };
-  };
-
-  // contracts/common/actions/write/setCanEvolve.js
-  var setCanEvolve = async (state, action, signer) => {
-    signer ||= await validate(state, action, "setCanEvolve");
-    const owner = isOwner(signer, state);
-    if (!is_default(Boolean)(action.input.query.value)) {
-      err("Value must be a boolean.");
-    }
-    state.canEvolve = action.input.query.value;
-    return { state };
-  };
-
-  // contracts/common/actions/write/setSecure.js
-  var setSecure = async (state, action, signer) => {
-    signer ||= await validate(state, action, "setSecure");
-    const owner = isOwner(signer, state);
-    if (!is_default(Boolean)(action.input.query.value)) {
-      err("Value must be a boolean.");
-    }
-    state.secure = action.input.query.value;
-    return { state };
-  };
-
-  // contracts/common/actions/write/addOwner.js
-  var addOwner = async (state, action, signer) => {
-    signer ||= await validate(state, action, "addOwner");
-    const owner = isOwner(signer, state);
-    if (!is_default(String)(action.input.query.address)) {
-      err("Value must be string.");
-    }
-    if (!is_default(String)(action.input.query.address)) {
-      err("Value must be string.");
-    }
-    if (includes_default(action.input.query.address, owner)) {
-      err("The owner already exists.");
-    }
-    state.owner = append_default(action.input.query.address, owner);
-    return { state };
-  };
-
-  // contracts/common/actions/write/removeOwner.js
-  var removeOwner = async (state, action, signer) => {
-    signer ||= await validate(state, action, "removeOwner");
-    const owner = isOwner(signer, state);
-    if (!is_default(String)(action.input.query.address)) {
-      err("Value must be string.");
-    }
-    if (!includes_default(action.input.query.address, owner)) {
-      err("The owner doesn't exist.");
-    }
-    state.owner = without_default([action.input.query.address], owner);
+    state.evolveHistory[state.evolveHistory.length - 1].newVersion = import_version3.default;
     return { state };
   };
 
@@ -15768,7 +15821,7 @@
   };
 
   // contracts/warp/contract.js
-  var import_version3 = __toESM(require_version());
+  var import_version4 = __toESM(require_version());
   var writes = [
     "relay",
     "set",
@@ -15869,7 +15922,7 @@
       case "nonce":
         return await nonce(state, action);
       case "version":
-        return { result: import_version3.default };
+        return { result: import_version4.default };
       case "ids":
         return await ids(state, action);
       case "delete":

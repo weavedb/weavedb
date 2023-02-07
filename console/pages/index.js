@@ -323,6 +323,8 @@ export default inject(
             const addr = /^0x.+$/.test($.temp_current_all.addr)
               ? $.temp_current_all.addr.toLowerCase()
               : $.temp_current_all.addr
+            console.log(addr)
+            console.log(node.owners)
             isNodeOwner = includes(addr)(node.owners || [])
           }
 

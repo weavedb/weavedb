@@ -134,10 +134,7 @@ export default inject(
                     allow,
                     limit: limit ? +numLimit : null,
                   })
-                  if (/^Error:/.test(res)) {
-                    alert("Something went wrong")
-                    return
-                  }
+                  if (/^Error:/.test(res)) throw new Error()
                   const db = await fn(setupWeaveDB)({
                     contractTxId: node.contract,
                     rpc: node.rpc,
