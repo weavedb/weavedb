@@ -56,7 +56,7 @@ Within the rules object, each top level key defines one rule. A keys should be a
 
 ## Preset Variables
 
-You can access to various data within the validation blocks.
+You can access various data within the validation blocks.
 
 ```js
 const data = {
