@@ -511,6 +511,8 @@ export default inject(
         doc,
       },
       Modals: {
+        newAuths,
+        setNewAuths,
         newNetwork,
         setNewNetwork,
         nodes,
