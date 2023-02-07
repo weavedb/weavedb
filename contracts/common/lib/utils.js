@@ -21,7 +21,7 @@ import fpjson from "fpjson-lang"
 import jsonLogic from "json-logic-js"
 import { validate as validator } from "./jsonschema"
 import { isValidName } from "./pure"
-
+import version from "../../warp/lib/version"
 export const clone = state => JSON.parse(JSON.stringify(state))
 
 export const err = (msg = `The wrong query`, contractErr = false) => {
@@ -71,7 +71,8 @@ export const getDoc = (
   secure = false,
   relayer,
   jobID,
-  extra
+  extra,
+  state
 ) => {
   const [_col, id] = path
   if (!isValidName(_col)) err(`collection id is not valid: ${_col}`)
@@ -106,6 +107,11 @@ export const getDoc = (
     }
     let allowed = false
     let rule_data = {
+      contract: {
+        id: SmartWeave.contract.id,
+        version,
+        owners: is(Array, state.owner) ? state.owner : [state.owner],
+      },
       request: {
         method: op,
         auth: { signer: _signer, relayer, jobID, extra },
@@ -128,6 +134,7 @@ export const getDoc = (
         path,
       },
     }
+    console.log(rule_data)
     const setElm = (k, val) => {
       let elm = rule_data
       let elm_path = k.split(".")
@@ -190,7 +197,8 @@ export const getDoc = (
         secure,
         relayer,
         jobID,
-        extra
+        extra,
+        state
       )
     : {
         doc,
@@ -366,7 +374,8 @@ export const parse = async (
       state.secure,
       relayer,
       jobID,
-      extra
+      extra,
+      state
     )
     _data = doc.doc
     ;({ next_data, schema, rules, col } = doc)
@@ -404,8 +413,6 @@ export const isOwner = (signer, state) => {
 export const read = async (contract, param) => {
   return (await SmartWeave.contracts.viewContractState(contract, param)).result
 }
-
-export const version = "0.18.0"
 
 export const isEvolving = state =>
   !isNil(state.evolveHistory) &&

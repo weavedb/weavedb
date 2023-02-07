@@ -62,6 +62,7 @@ export default inject(
                   txid: newContract,
                   rpc: node.rpc,
                 })
+                console.log(res)
                 if (/^Error:/.test(res)) {
                   alert("Something went wrong")
                 } else {

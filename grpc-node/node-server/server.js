@@ -34,6 +34,7 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 const weavedb = grpc.loadPackageDefinition(packageDefinition).weavedb
 
 let admin = null
+let admin_sdk = null
 let sdks = {}
 let _init = {}
 
@@ -162,10 +163,9 @@ async function initSDK(v) {
         config.admin.contractTxId === v
       ) {
         try {
-          for (const v2 of pluck(
-            "txid",
-            await sdks[contractTxId].get("contracts")
-          )) {
+          const contracts = await sdks[contractTxId].get("contracts")
+          admin_sdk = sdks[contractTxId]
+          for (const v2 of pluck("txid", contracts)) {
             if (v2 !== config.admin.contractTxId) initSDK(v2)
           }
         } catch (e) {}
