@@ -54,10 +54,13 @@ Within the rules object, each top level key defines one rule. A keys should be a
 
 `allow write` is equivalent to `allow create,update,delete`.
 
+## Preset Variables
+
 You can access to various data within the validation blocks.
 
 ```js
 const data = {
+  contract: { id, owners },
   request: {
     auth: { signer, relayer, jobID, extra },
     block: { height, timestamp },
@@ -68,6 +71,49 @@ const data = {
   },
   resource: { data, setter, newData, id, path },
 }
+```
+
+#### contract
+
+- `id` : contractTxId
+- `owners` : contract owners, equivalent to `getOwner()`
+
+#### Request
+
+- `auth` : `signer` of the query, and relayer info (`relayer` / `jobID` / `extra`)
+- `block` : block info
+- `transaction` : transaction info
+- `resource` : `data` in the query
+- `id` : doc id
+- `path` : collection / doc path
+
+#### Resource
+
+- `data` : data before this query
+- `newData` : data after this query
+- `id` : doc id
+- `path` : collection / doc path
+- `setter` : original creator of the doc
+
+### Modify Updated Data
+
+You can amend the updated data before it's stored by modifying `newData` in access control rules.
+
+For example always add `signer` address field as `address` field.
+
+```js
+const rules = {
+  let : { "resource.newData.address" : "request.auth.signer" },
+  "allow create" : true
+}
+await db.setRules(rules, "people", { ar : arweave_wallet })
+```
+
+If you set `{ name : "Bob"}` with wallet `0xABC`, the stored data will be `{ name : "Bob", address : "0xABC" }`.
+
+```js
+await db.set({ name : "Bob" }, "people", "Bob")
+expect(await db.get("people", "Bob")).to.eql({name : "Bob", address: "0xABC" }) // true
 ```
 
 ## Add-on: JSON-based Functional Programming
