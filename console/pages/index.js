@@ -75,7 +75,6 @@ export default inject(
     const [addSecure, setAddSecure] = useState(false)
     const [addAlgorithms, setAddAlgorithms] = useState(false)
     const [addGRPC, setAddGRPC] = useState(false)
-
     const [newHttp, setNewHttp] = useState("https://")
     const [result, setResult] = useState("")
     const [state, setState] = useState(null)
@@ -93,24 +92,19 @@ export default inject(
     const [query, setQuery] = useState("")
     const [port, setPort] = useState(null)
     const [network, setNetwork] = useState("Mainnet")
-
     const networks = ["Mainnet", "Localhost"]
     const [initDB, setInitDB] = useState(false)
     const [networkErr, setNetworkErr] = useState(false)
-
     const [contractTxId, setContractTxId] = useState(null)
-
     const [newRPCType, setNewRPCType] = useState("sdk")
     const [newRPC2, setNewRPC2] = useState("")
     const [presetRPC, setPresetRPC] = useState("https://grpc.weavedb-node.xyz")
-
     const [dbs, setDBs] = useState([])
     const [node, setNode] = useState(null)
     const [nodes, setNodes] = useState([])
     const [currentDB, setCurrentDB] = useState(null)
     const [connect, setConnect] = useState(false)
     const [newPort, setNewPort] = useState(1820)
-
     const [allow, setAllow] = useState(true)
     const [limit, setLimit] = useState(true)
     const [numLimit, setNumLimit] = useState(5)
@@ -118,6 +112,7 @@ export default inject(
     const [editWhitelist, setEditWhitelist] = useState(false)
     const [newNetwork, setNewNetwork] = useState("Mainnet")
     const [newAuths, setNewAuths] = useState(wallet_chains)
+
     const addGRPCNode = async _node => {
       const nodemap = indexBy(prop("rpc"), nodes)
       if (isNil(nodemap[_node.rpc])) {
@@ -196,6 +191,13 @@ export default inject(
         )
       }
     }
+
+    useEffect(() => {
+      ;(async () => {
+        if (!isNil(node)) {
+        }
+      })()
+    }, [node])
 
     useEffect(() => {
       ;(async () => {
@@ -440,6 +442,7 @@ export default inject(
         relayers,
       },
       Nodes: {
+        updateGRPCNode,
         setContracts,
         setNewWhitelistUser,
         isNodeOwner,
