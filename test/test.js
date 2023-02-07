@@ -954,4 +954,100 @@ describe("WeaveDB", function () {
       )
     )
   })
+  it("should batch execute admin methods", async () => {
+    const schema = {
+      type: "object",
+      required: ["name"],
+      properties: {
+        name: {
+          type: "number",
+        },
+      },
+    }
+    const rules = {
+      "allow create,update": {
+        and: [
+          { "!=": [{ var: "request.auth.signer" }, null] },
+          { "<": [{ var: "resource.newData.age" }, 30] },
+        ],
+      },
+      "deny delete": { "!=": [{ var: "request.auth.signer" }, null] },
+    }
+    const algorithms = ["secp256k1", "rsa256"]
+    const index = [
+      ["age", "desc"],
+      ["name", "desc"],
+    ]
+    const arweave_wallet2 = await db.arweave.wallets.generate()
+    const addr = await db.arweave.wallets.jwkToAddress(arweave_wallet)
+    const addr2 = await db.arweave.wallets.jwkToAddress(arweave_wallet2)
+
+    const identity = EthCrypto.createIdentity()
+    const identity2 = EthCrypto.createIdentity()
+    const identity3 = EthCrypto.createIdentity()
+    const jobID = "test-job"
+    const job = {
+      relayers: [identity.address],
+      signers: [identity.address, identity2.address, identity3.address],
+      multisig: 50,
+      multisig_type: "percent",
+      schema: {
+        type: "object",
+        required: ["height"],
+        properties: {
+          height: {
+            type: "number",
+          },
+        },
+      },
+    }
+    const cron = {
+      span: 2,
+      times: 2,
+      start: 10000000000,
+      do: false,
+      jobs: [["add", [{ age: db.inc(1) }, "ppl"]]],
+    }
+
+    await db.batch(
+      [
+        ["addCron", cron, "inc age"],
+        ["setSchema", schema, "ppl"],
+        ["setRules", rules, "ppl"],
+        ["setCanEvolve", false],
+        ["setSecure", true],
+        ["setAlgorithms", algorithms],
+        ["addIndex", index, "ppl"],
+        ["addOwner", addr2],
+        ["addRelayerJob", jobID, job],
+      ],
+      {
+        ar: arweave_wallet,
+      }
+    )
+    expect(await db.getSchema("ppl")).to.eql(schema)
+    expect(await db.getRules("ppl")).to.eql(rules)
+    expect((await db.getEvolve()).canEvolve).to.eql(false)
+    expect((await db.getInfo()).secure).to.eql(true)
+    expect(await db.getAlgorithms()).to.eql(algorithms)
+    expect(await db.getIndexes("ppl")).to.eql([index])
+    expect(await db.getOwner()).to.eql([addr, addr2])
+    expect(await db.getRelayerJob(jobID)).to.eql(job)
+    expect((await db.getCrons()).crons).to.eql({ "inc age": cron })
+    await db.batch(
+      [
+        ["removeCron", "inc age"],
+        ["removeOwner", addr2],
+        ["removeIndex", index, "ppl"],
+        ["removeRelayerJob", jobID],
+      ],
+      {
+        ar: arweave_wallet,
+      }
+    )
+    expect((await db.getCrons()).crons).to.eql({})
+    expect(await db.getOwner()).to.eql([addr])
+    expect(await db.getIndexes("ppl")).to.eql([])
+    expect(await db.getRelayerJob(jobID)).to.eql(null)
+  })
 })
