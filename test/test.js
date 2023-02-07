@@ -1,7 +1,16 @@
 const { Ed25519KeyIdentity } = require("@dfinity/identity")
 const { providers, Wallet, utils } = require("ethers")
 const { expect } = require("chai")
-const { isNil, range, pick, pluck, dissoc, compose, map } = require("ramda")
+const {
+  isNil,
+  range,
+  pick,
+  pluck,
+  dissoc,
+  compose,
+  map,
+  mergeLeft,
+} = require("ramda")
 const { init, stop, initBeforeEach, addFunds } = require("./util")
 const buildEddsa = require("circomlibjs").buildEddsa
 const Account = require("intmax").Account
@@ -15,6 +24,7 @@ describe("WeaveDB", function () {
     wallet2,
     db,
     arweave_wallet,
+    contractTxId,
     dfinityTxId,
     ethereumTxId
   const _ii = [
@@ -38,6 +48,7 @@ describe("WeaveDB", function () {
       wallet2,
       dfinityTxId,
       ethereumTxId,
+      contractTxId,
     } = await initBeforeEach())
   })
 
@@ -915,5 +926,32 @@ describe("WeaveDB", function () {
     expect(await db.get("ppl")).to.eql([])
     expect(await db.listCollections()).to.eql([])
     return
+  })
+
+  it("should insert contract info into access rules", async () => {
+    const data = { name: "Bob", age: 20 }
+    const rules = {
+      let: { "resource.newData.contract": { var: "contract" } },
+      "allow write": true,
+    }
+    const arweave_wallet2 = await db.arweave.wallets.generate()
+    let addr2 = await db.arweave.wallets.jwkToAddress(arweave_wallet2)
+    await db.addOwner(addr2, { ar: arweave_wallet })
+    await db.setRules(rules, "ppl", {
+      ar: arweave_wallet,
+    })
+    await db.set(data, "ppl", "Bob")
+    expect(await db.get("ppl", "Bob")).to.eql(
+      mergeLeft(
+        {
+          contract: {
+            id: contractTxId,
+            owners: await db.getOwner(),
+            version: await db.getVersion(),
+          },
+        },
+        data
+      )
+    )
   })
 })
