@@ -37,7 +37,7 @@ let admin = null
 let admin_sdk = null
 let sdks = {}
 let _init = {}
-
+let lastChecked = {}
 const allowed_contracts = map(v => v.split("@")[0])(
   isNil(config.contractTxId)
     ? []
@@ -78,7 +78,22 @@ async function query(call, callback) {
     return await execAdmin({ query, res, sdks, admin, initSDK, contractTxId })
   }
   if (!isAllowed(contractTxId)) {
-    return res(`contractTxId[${contractTxId}] not allowed`)
+    let allowed = false
+    if (!isNil(admin_sdk)) {
+      try {
+        const date = Date.now()
+        if (
+          isNil(lastChecked[contractTxId]) ||
+          lastChecked[contractTxId] < date - 1000 * 60 * 10
+        ) {
+          lastChecked[contractTxId] = date
+          if (!isNil(await admin_sdk.get("contracts", contractTxId))) {
+            allowed = true
+          }
+        }
+      } catch (e) {}
+    }
+    if (!allowed) return res(`contractTxId[${contractTxId}] not allowed`)
   }
 
   if (isNil(sdks[contractTxId]) && !(await initSDK(contractTxId))) return
