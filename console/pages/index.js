@@ -95,7 +95,6 @@ export default inject(
     const [port, setPort] = useState(null)
     const [network, setNetwork] = useState("Mainnet")
 
-    const [newRules2, setNewRules2] = useState(`{"allow write": true}`)
     const [newIndex, setNewIndex] = useState(`[]`)
 
     const networks = ["Mainnet", "Localhost"]
@@ -576,7 +575,6 @@ export default inject(
         connect,
         setAddContract,
         setContracts,
-        setNewRules2,
         setRules,
         addOwner,
         setAddOwner,
@@ -586,7 +584,6 @@ export default inject(
         addAlgorithms,
         newOwner,
         setNewOwner,
-        newRules2,
         setAddRules,
         addRules,
         node,
