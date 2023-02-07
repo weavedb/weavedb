@@ -94,8 +94,6 @@ export default inject(
     const [port, setPort] = useState(null)
     const [network, setNetwork] = useState("Mainnet")
 
-    const [newIndex, setNewIndex] = useState(`[]`)
-
     const networks = ["Mainnet", "Localhost"]
     const [initDB, setInitDB] = useState(false)
     const [networkErr, setNetworkErr] = useState(false)
@@ -554,13 +552,11 @@ export default inject(
         setAddSecure,
         addIndex,
         setAddIndex,
-        newIndex,
         indexes,
         setIndexes,
         addInstance,
         port,
         setAddInstance,
-        setNewIndex,
         state,
         setAddEvolve,
         addEvolve,
