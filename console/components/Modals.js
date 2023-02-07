@@ -63,6 +63,16 @@ import AddNode from "./Modals/AddNode"
 import AddContract from "./Modals/AddContract"
 import AddInstance from "./Modals/AddInstance"
 import Connect from "./Modals/Connect"
+import AddRules from "./Modals/AddRules"
+
+//import AddOwner from "./Modals/AddOwner"
+//import AddNodeOwner from "./Modals/AddNodeOwner"
+//import AddAlgorithms from "./Modals/AddAlgorithms"
+//import AddCanEvolve from "./Modals/AddCanEvolve"
+//import AddElovle from "./Modals/AddElovle"
+//import AddSecure from "./Modals/AddSecure"
+//import AddWhitelist from "./Modals/AddWhitelist"
+//import AddGRPC from "./Modals/AddGRPC"
 
 export default inject(
   [
@@ -141,7 +151,6 @@ export default inject(
     addContract,
     setAddContract,
     setContracts,
-    setNewRules2,
     setRules,
     addOwner,
     setAddOwner,
@@ -153,7 +162,6 @@ export default inject(
     setNewAuths,
     newOwner,
     setNewOwner,
-    newRules2,
     setAddRules,
     addRules,
     node,
@@ -253,103 +261,17 @@ export default inject(
       ) : addContract !== false ? (
         <AddContract {...{ setAddContract, node, setContracts }} />
       ) : addRules !== false ? (
-        <Flex
-          w="100%"
-          h="100%"
-          position="fixed"
-          sx={{ top: 0, left: 0, zIndex: 100, cursor: "pointer" }}
-          bg="rgba(0,0,0,0.5)"
-          onClick={() => setAddRules(false)}
-          justify="center"
-          align="center"
-        >
-          <Box
-            bg="white"
-            width="500px"
-            p={3}
-            sx={{ borderRadius: "5px", cursor: "default" }}
-            onClick={e => e.stopPropagation()}
-          >
-            <Textarea
-              mt={3}
-              value={newRules2}
-              placeholder="Access Control Rules"
-              onChange={e => setNewRules2(e.target.value)}
-              sx={{
-                borderRadius: "3px",
-              }}
-            />
-            <Flex
-              mt={4}
-              sx={{
-                borderRadius: "3px",
-                cursor: "pointer",
-                ":hover": { opacity: 0.75 },
-              }}
-              p={2}
-              justify="center"
-              align="center"
-              color="white"
-              bg="#333"
-              height="40px"
-              onClick={async () => {
-                if (isNil($.loading)) {
-                  const exRules = !/^\s*$/.test(newRules2)
-                  if (!exRules) {
-                    alert("Enter rules")
-                  }
-                  let val = null
-                  try {
-                    eval(`const obj = ${newRules2}`)
-                    val = newRules2
-                  } catch (e) {
-                    alert("Wrong JSON format")
-                    return
-                  }
-                  set("add_rules", "loading")
-                  let col_path = compose(
-                    join(", "),
-                    map(v => `"${v}"`),
-                    append(col)
-                  )(base_path)
-                  try {
-                    let query = `${newRules2}, ${col_path}`
-                    const res = JSON.parse(
-                      await fn(queryDB)({
-                        method: "setRules",
-                        query,
-                        contractTxId,
-                      })
-                    )
-                    if (!res.success) {
-                      alert("Something went wrong")
-                    } else {
-                      setNewRules2(`{"allow write": true}`)
-                      setAddRules(false)
-                      setRules(
-                        await db.getRules(
-                          ...(doc_path.length % 2 === 0
-                            ? doc_path.slice(0, -1)
-                            : doc_path),
-                          true
-                        )
-                      )
-                    }
-                  } catch (e) {
-                    alert("Something went wrong")
-                  }
-                  set(null, "loading")
-                }
-              }}
-            >
-              {!isNil($.loading) ? (
-                <Box as="i" className="fas fa-spin fa-circle-notch" />
-              ) : (
-                "Add"
-              )}
-            </Flex>
-          </Box>
-        </Flex>
+        <AddRules
+          {...{
+            db,
+            doc_path,
+            setRules,
+            setAddRules,
+            col,
+            base_path,
+            contractTxId,
+          }}
+        />
       ) : addOwner !== false ? (
         <Flex
           w="100%"
