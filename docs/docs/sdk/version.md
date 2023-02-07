@@ -15,6 +15,17 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.20.0 (Feb 8, 2023)
+
+#### Source Transaction Id
+
+[pfzMiEGWwoyAL33M2ceRUkgG3XvxUyjxUqiyLNHD66g](https://sonar.warp.cc/#/app/source/pfzMiEGWwoyAL33M2ceRUkgG3XvxUyjxUqiyLNHD66g)
+
+#### Added Features
+
+- [batch execution of admin methods](/docs/sdk/queries#batch)
+- `contract` field to [access control rules](/docs/sdk/rules#preset-variables)
+
 ### v0.19.0 (Feb 2, 2023)
 
 #### Source Transaction Id

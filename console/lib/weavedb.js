@@ -26,10 +26,7 @@ import {
 } from "ramda"
 import { Buffer } from "buffer"
 let sdk
-const weavedbSrcTxId = "jhQ9kWIqjNYzGrg96zr7q7xbot4NwkKT8UZwsrb-fvE"
-//const intmaxSrcTxId = "OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94"
-const dfinitySrcTxId = "3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8"
-const ethereumSrcTxId = "Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w"
+import { weavedbSrcTxId, dfinitySrcTxId, ethereumSrcTxId } from "./const"
 let arweave_wallet
 let funded = false
 async function addFunds(arweave, wallet) {

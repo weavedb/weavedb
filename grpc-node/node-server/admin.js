@@ -1,68 +1,72 @@
 const config = require("./weavedb.config.js")
 const { validate } = require("./validate")
 const { indexBy, includes, isNil, last, prop } = require("ramda")
-const getSetups = address => {
-  const users_schema = {
-    type: "object",
-    required: ["address", "allow"],
-    properties: {
-      address: {
-        type: "string",
-      },
-      allow: {
-        type: "boolean",
-      },
-      limit: {
-        type: "number",
-      },
-    },
-  }
-  const users_rules = {
-    "allow create,update": {
-      and: [
-        {
-          "==": [{ var: "resource.newData.address" }, { var: "request.id" }],
-        },
-        { "==": [{ var: "request.auth.signer" }, address] },
-      ],
-    },
-    "allow delete": { "==": [{ var: "request.auth.signer" }, address] },
-  }
-  const contracts_schema = {
-    type: "object",
-    required: ["address", "txid", "date"],
-    properties: {
-      address: {
-        type: "string",
-      },
-      txid: {
-        type: "string",
-      },
-      date: {
-        type: "number",
-      },
-    },
-  }
 
-  const contracts_rules = {
-    "allow create": {
-      and: [
-        {
-          "==": [{ var: "resource.newData.txid" }, { var: "request.id" }],
-        },
-        { "==": [{ var: "request.auth.signer" }, address] },
-        {
-          "==": [
-            { var: "resource.newData.date" },
-            { var: "request.block.timestamp" },
-          ],
-        },
-      ],
+const users_schema = {
+  type: "object",
+  required: ["address", "allow"],
+  properties: {
+    address: {
+      type: "string",
     },
-    "allow delete": { "==": [{ var: "request.auth.signer" }, address] },
-  }
-
-  return { users_schema, users_rules, contracts_schema, contracts_rules }
+    allow: {
+      type: "boolean",
+    },
+    limit: {
+      type: "number",
+    },
+  },
+}
+const users_rules = {
+  "allow create,update": {
+    and: [
+      {
+        "==": [{ var: "resource.newData.address" }, { var: "request.id" }],
+      },
+      {
+        in: [{ var: "request.auth.signer" }, { var: "contract.owners" }],
+      },
+    ],
+  },
+  "allow delete": {
+    in: [{ var: "request.auth.signer" }, { var: "contract.owners" }],
+  },
+}
+const contracts_schema = {
+  type: "object",
+  required: ["address", "txid", "date"],
+  properties: {
+    address: {
+      type: "string",
+    },
+    txid: {
+      type: "string",
+    },
+    date: {
+      type: "number",
+    },
+  },
+}
+const contracts_rules = {
+  "allow create": {
+    and: [
+      {
+        "==": [{ var: "resource.newData.txid" }, { var: "request.id" }],
+      },
+      {
+        in: [{ var: "request.auth.signer" }, { var: "contract.owners" }],
+      },
+      {
+        "==": [
+          { var: "resource.newData.date" },
+          { var: "request.block.timestamp" },
+        ],
+      },
+    ],
+  },
+  "allow delete": {
+    in: [{ var: "request.auth.signer" }, { var: "contract.owners" }],
+  },
 }
 
 const execAdminRead = async ({
@@ -215,16 +219,17 @@ const execAdmin = async ({
 
     case "setup":
       try {
-        const { users_schema, users_rules, contracts_schema, contracts_rules } =
-          getSetups(admin)
-        txs.push(await db.setSchema(users_schema, "users", auth))
-        if (!last(txs).success) throw new Error()
-        txs.push(await db.setRules(users_rules, "users", auth))
-        if (!last(txs).success) throw new Error()
-
-        txs.push(await db.setSchema(contracts_schema, "contracts", auth))
-        if (!last(txs).success) throw new Error()
-        txs.push(await db.setRules(contracts_rules, "contracts", auth))
+        txs.push(
+          await db.batch(
+            [
+              ["setSchema", users_schema, "users"],
+              ["setRules", users_rules, "users"],
+              ["setSchema", contracts_schema, "contracts"],
+              ["setRules", contracts_rules, "contracts"],
+            ],
+            auth
+          )
+        )
         if (!last(txs).success) throw new Error()
       } catch (e) {
         isErr = isErr = "something went wrong"
