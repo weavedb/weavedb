@@ -1,11 +1,9 @@
 const Arweave = require("arweave")
 const Cache = require("./cache")
 const Snapshot = require("./snapshot")
-const { saveSnapShotGCS, saveSnapShotS3 } = require("./snapshot")
-const fs = require("fs")
 const path = require("path")
 const config = require("../weavedb.config.js")
-const PROTO_PATH = __dirname + "/weavedb.proto"
+const PROTO_PATH = __dirname + "/../weavedb.proto"
 const { execAdmin } = require("./admin")
 const {
   pluck,
@@ -79,7 +77,7 @@ async function query(call, callback) {
     !isNil(config.ratelimit) &&
     !isNil(config.ratelimit.every)
   ) {
-    const RateLimitCounter = require('./rate_limit_counter.js')
+    const RateLimitCounter = require("./rate_limit_counter.js")
     const ratelimit = new RateLimitCounter(config.ratelimit, config.redis)
     await ratelimit.init()
     try {
@@ -175,9 +173,9 @@ async function initSDK(v) {
     if (old === "old") _config.old = true
     if (isLmdb) {
       _config.lmdb = {
-        state: { dbLocation: `./cache/warp/${_config.contractTxId}/state` },
+        state: { dbLocation: `${path.resolve(__dirname, "cache/warp")}/${_config.contractTxId}/state` },
         contracts: {
-          dbLocation: `./cache/warp/${_config.contractTxId}/contracts`,
+          dbLocation: `${path.resolve(__dirname, "cache/warp")}/${_config.contractTxId}/contracts`,
         },
       }
       await snapshot.recover(contractTxId)
