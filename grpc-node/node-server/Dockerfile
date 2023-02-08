@@ -8,4 +8,4 @@ RUN npm install
 
 EXPOSE 9090
 
-CMD ["node", "server.js"]
+CMD ["node", "src/server.js"]
