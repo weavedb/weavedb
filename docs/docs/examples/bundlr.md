@@ -119,7 +119,9 @@ const job = {
 
 await sdk.addRelayerJob("bundlr, job, { ar: wallet })
 ```
-With these simple settings, we expect the relayer to receive an NFT-tokenID, and check the owner address on the Ethereum blockchain (Goerli), then relay the signed WeaveDB query with extra data of string owner address.
+With these simple settings, we expect the relayer to receive the `author`, `title`, and body content before adding the `date` and uploading it to bundlr.
+
+Finally, it relays the signed WeaveDB query with extra data of (`author`, `date`, `id`) to the signed query.
 
 ### Set up Access Control Rules
 
