@@ -6,36 +6,116 @@ import Client from "weavedb-client"
 import { ethers } from "ethers"
 import { AuthClient } from "@dfinity/auth-client"
 import { WarpFactory } from "warp-contracts"
-import {
-  assocPath,
-  is,
-  includes,
-  difference,
-  keys,
-  compose,
-  map,
-  clone,
-  indexBy,
-  prop,
-  pluck,
-  mergeLeft,
-  isNil,
-  concat,
-  last,
-  path,
-} from "ramda"
+import { clone, prepend, assocPath, is, mergeLeft, isNil } from "ramda"
 import { Buffer } from "buffer"
-let sdk
 import { weavedbSrcTxId, dfinitySrcTxId, ethereumSrcTxId } from "./const"
-let arweave_wallet
-let funded = false
+let arweave_wallet, sdk
+
+const ret = res =>
+  !isNil(res.err) ? `Error: ${res.err.errorMessage}` : JSON.stringify(res)
+
+class Log {
+  constructor(sdk, method, query, opt, fn) {
+    this.contractTxId = sdk.contractTxId
+    this.node = isNil(sdk.client) ? null : sdk.client.hostname_
+    this.start = Date.now()
+    this.method = method
+    this.query = query
+    this.fn = fn
+    this.opt = opt
+    this.sdk = sdk
+  }
+  async rec(array = false) {
+    const res = isNil(this.opt)
+      ? array
+        ? await this.sdk[this.method](...this.query)
+        : await this.sdk[this.method](this.query)
+      : array
+      ? await this.sdk[this.method](...this.query, this.opt)
+      : await this.sdk[this.method](this.query, this.opt)
+    const date = Date.now()
+    let log = {
+      node: this.node,
+      date,
+      duration: date - this.start,
+      method: this.method,
+      query: this.query,
+      contractTxId: this.contractTxId,
+      res,
+      success: isNil(res) || isNil(res.err),
+    }
+    this.fn(addLog)({
+      log,
+    })
+    return clone(res)
+  }
+}
+
+export const getOpt = async ({ val: { contractTxId }, get }) => {
+  const current = get("temp_current")
+  const identity = isNil(current)
+    ? null
+    : await lf.getItem(`temp_address:${contractTxId}:${current}`)
+  let ii = null
+  if (is(Array)(identity)) {
+    ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(identity))
+  }
+  let err = null
+  const opt = !isNil(ii)
+    ? { ii }
+    : !isNil(identity) && !isNil(identity.tx)
+    ? {
+        wallet: current,
+        privateKey: identity.privateKey,
+      }
+    : null
+  if (isNil(opt)) err = "not logged in"
+  return { opt, err }
+}
+
+export const getRawDB = async ({
+  val: { contractTxId, rpc, network },
+  fn,
+  get,
+}) => {
+  let err = false
+  const db = await fn(setupWeaveDB)({
+    contractTxId,
+    rpc,
+  })
+  let opt = {}
+  const current = get("temp_current_all")
+  if (current.type === "ar") {
+    const wallet = window.arweaveWallet
+    await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
+    opt.ar = wallet
+  } else if (current.type === "ii") {
+    const iiUrl =
+      network === "Mainnet"
+        ? "https://identity.ic0.app/"
+        : `http://localhost:8000/?canisterId=rwlgt-iiaaa-aaaaa-aaaaa-cai`
+    const authClient = await AuthClient.create()
+    await new Promise((resolve, reject) => {
+      authClient.login({
+        identityProvider: iiUrl,
+        onSuccess: resolve,
+        onError: reject,
+      })
+    })
+    const ii = authClient.getIdentity()
+    if (isNil(ii._inner)) return
+    opt.ii = ii
+  }
+  return { opt, db }
+}
+
 async function addFunds(arweave, wallet) {
   const walletAddress = await arweave.wallets.getAddress(wallet)
   await arweave.api.get(`/mint/${walletAddress}/1000000000000000`)
   await arweave.api.get("mine")
 }
 
-export const connectLocalhost = async ({ conf, set, val: { port } }) => {
+export const connectLocalhost = async ({ val: { port } }) => {
   const arweave = Arweave.init({
     host: "localhost",
     port,
@@ -50,8 +130,6 @@ export const connectLocalhost = async ({ conf, set, val: { port } }) => {
 }
 
 export const setupWeaveDB = async ({
-  conf,
-  set,
   val: { network, contractTxId, port, rpc },
 }) => {
   let isRPC = !isNil(rpc) && !/^\s*$/.test(rpc)
@@ -93,7 +171,6 @@ export const setupWeaveDB = async ({
 }
 
 export const createTempAddressWithII = async ({
-  conf,
   set,
   val: { contractTxId, network, node },
 }) => {
@@ -129,8 +206,8 @@ export const createTempAddressWithII = async ({
 }
 
 export const createTempAddressWithAR = async ({
-  conf,
   set,
+  fn,
   val: { contractTxId, network, node },
 }) => {
   const wallet = window.arweaveWallet
@@ -144,8 +221,20 @@ export const createTempAddressWithAR = async ({
   let identity = ex_identity
   let tx
   if (isNil(identity)) {
-    ;({ tx, identity } = await sdk.createTempAddressWithAR(wallet))
-    const linked = await sdk.getAddressLink(identity.address)
+    ;({ tx, identity } = await new Log(
+      sdk,
+      "createTempAddressWithAR",
+      wallet,
+      null,
+      fn
+    ).rec())
+    const linked = await new Log(
+      sdk,
+      "getAddressLink",
+      identity.address,
+      null,
+      fn
+    ).rec()
     if (isNil(linked)) {
       alert("something went wrong")
       return
@@ -168,7 +257,7 @@ export const createTempAddressWithAR = async ({
   }
 }
 
-export const connectAddress = async ({ conf, set, val: { network } }) => {
+export const connectAddress = async ({ set, val: { network } }) => {
   const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
   await provider.send("eth_requestAccounts", [])
   const signer = provider.getSigner()
@@ -181,7 +270,7 @@ export const connectAddress = async ({ conf, set, val: { network } }) => {
   return
 }
 
-export const connectAddressWithII = async ({ conf, set, val: { network } }) => {
+export const connectAddressWithII = async ({ set, val: { network } }) => {
   const iiUrl =
     network === "Mainnet"
       ? "https://identity.ic0.app/"
@@ -205,7 +294,7 @@ export const connectAddressWithII = async ({ conf, set, val: { network } }) => {
   return
 }
 
-export const connectAddressWithAR = async ({ conf, set, val: { network } }) => {
+export const connectAddressWithAR = async ({ set, val: { network } }) => {
   const wallet = window.arweaveWallet
   await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
   let addr = await wallet.getActiveAddress()
@@ -218,8 +307,8 @@ export const connectAddressWithAR = async ({ conf, set, val: { network } }) => {
 }
 
 export const createTempAddress = async ({
-  conf,
   set,
+  fn,
   val: { contractTxId, network, node },
 }) => {
   const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
@@ -234,8 +323,21 @@ export const createTempAddress = async ({
   let identity = ex_identity
   let tx
   if (isNil(identity)) {
-    ;({ tx, identity } = await sdk.createTempAddress(addr))
-    const linked = await sdk.getAddressLink(identity.address)
+    ;({ tx, identity } = await new Log(
+      sdk,
+      "createTempAddress",
+      addr,
+      null,
+      fn
+    ).rec())
+    const linked = await new Log(
+      sdk,
+      "getAddressLink",
+      identity.address,
+      null,
+      fn
+    ).rec()
+
     if (isNil(linked)) {
       alert("something went wrong")
       return
@@ -259,7 +361,6 @@ export const createTempAddress = async ({
 }
 
 export const switchTempAddress = async function ({
-  conf,
   set,
   val: { contractTxId },
 }) {
@@ -279,7 +380,6 @@ export const switchTempAddress = async function ({
 }
 
 export const checkTempAddress = async function ({
-  conf,
   set,
   val: { contractTxId },
 }) {
@@ -290,233 +390,10 @@ export const checkTempAddress = async function ({
   }
 }
 
-export const logoutTemp = async ({ conf, set }) => {
+export const logoutTemp = async ({ set }) => {
   await lf.removeItem("temp_address:current")
   set(null, "temp_current")
   set(null, "temp_current_all")
-}
-
-export const addRelayerJob = async ({
-  val: {
-    relayers,
-    signers,
-    name,
-    multisig,
-    multisig_type,
-    contractTxId,
-    schema,
-  },
-  global,
-  set,
-  fn,
-  conf,
-  get,
-}) => {
-  try {
-    const current = get("temp_current")
-    const identity = isNil(current)
-      ? null
-      : await lf.getItem(`temp_address:${contractTxId}:${current}`)
-    let ii = null
-    if (is(Array)(identity)) {
-      ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(identity))
-    }
-    const opt = !isNil(ii)
-      ? { ii }
-      : !isNil(identity) && !isNil(identity.tx)
-      ? {
-          wallet: current,
-          privateKey: identity.privateKey,
-        }
-      : null
-    if (isNil(opt)) {
-      alert("not logged in")
-      return
-    }
-    let job = {
-      relayers,
-      signers,
-      multisig,
-      multisig_type,
-    }
-    if (!/^\s*$/.test(schema)) job.schema = schema
-    const res = await sdk.addRelayerJob(name, job, opt)
-    if (!isNil(res.err)) {
-      return `Error: ${res.err.errorMessage}`
-    } else {
-      return JSON.stringify(res)
-    }
-  } catch (e) {
-    console.log(e)
-    return `Error: Something went wrong`
-  }
-}
-
-export const removeRelayerJob = async ({
-  val: { name, contractTxId },
-  global,
-  set,
-  fn,
-  conf,
-  get,
-}) => {
-  try {
-    const current = get("temp_current")
-    const identity = isNil(current)
-      ? null
-      : await lf.getItem(`temp_address:${contractTxId}:${current}`)
-    let ii = null
-    if (is(Array)(identity)) {
-      ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(identity))
-    }
-    const opt = !isNil(ii)
-      ? { ii }
-      : !isNil(identity) && !isNil(identity.tx)
-      ? {
-          wallet: current,
-          privateKey: identity.privateKey,
-        }
-      : null
-    if (isNil(opt)) {
-      alert("not logged in")
-      return
-    }
-    const res = await sdk.removeRelayerJob(name, opt)
-    if (!isNil(res.err)) {
-      return `Error: ${res.err.errorMessage}`
-    } else {
-      return JSON.stringify(res)
-    }
-  } catch (e) {
-    console.log(e)
-    return `Error: Something went wrong`
-  }
-}
-
-export const queryDB = async ({
-  val: { query, method, contractTxId },
-  global,
-  set,
-  fn,
-  conf,
-  get,
-}) => {
-  try {
-    const current = get("temp_current")
-    let q
-    eval(`q = [${query}]`)
-    const identity = isNil(current)
-      ? null
-      : await lf.getItem(`temp_address:${contractTxId}:${current}`)
-    let ii = null
-    if (is(Array)(identity)) {
-      ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(identity))
-    }
-    const opt = !isNil(ii)
-      ? { ii }
-      : !isNil(identity) && !isNil(identity.tx)
-      ? {
-          wallet: current,
-          privateKey: identity.privateKey,
-        }
-      : null
-    if (isNil(opt)) {
-      alert("not logged in")
-      return
-    }
-    const res = await sdk[method](...q, opt)
-    if (!isNil(res.err)) {
-      return `Error: ${res.err.errorMessage}`
-    } else {
-      return JSON.stringify(res)
-    }
-  } catch (e) {
-    console.log(e)
-    return `Error: Something went wrong`
-  }
-}
-
-export const _addOwner = async ({
-  val: { address, contractTxId },
-  global,
-  set,
-  fn,
-  conf,
-  get,
-}) => {
-  try {
-    const current = get("temp_current")
-    const identity = isNil(current)
-      ? null
-      : await lf.getItem(`temp_address:${contractTxId}:${current}`)
-    let ii = null
-    if (is(Array)(identity)) {
-      ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(identity))
-    }
-    const opt = !isNil(ii)
-      ? { ii }
-      : !isNil(identity) && !isNil(identity.tx)
-      ? {
-          wallet: current,
-          privateKey: identity.privateKey,
-        }
-      : null
-    if (isNil(opt)) {
-      alert("not logged in")
-      return
-    }
-    const addr = /^0x.+$/.test(address) ? address.toLowerCase() : address
-    const res = await sdk.addOwner(addr, opt)
-    if (!isNil(res.err)) {
-      return `Error: ${res.err.errorMessage}`
-    } else {
-      return JSON.stringify(res)
-    }
-  } catch (e) {
-    console.log(e)
-    return `Error: Something went wrong`
-  }
-}
-
-export const _removeOwner = async ({
-  val: { address, contractTxId },
-  global,
-  set,
-  fn,
-  conf,
-  get,
-}) => {
-  try {
-    const current = get("temp_current")
-    const identity = isNil(current)
-      ? null
-      : await lf.getItem(`temp_address:${contractTxId}:${current}`)
-    let ii = null
-    if (is(Array)(identity)) {
-      ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(identity))
-    }
-    const opt = !isNil(ii)
-      ? { ii }
-      : !isNil(identity) && !isNil(identity.tx)
-      ? {
-          wallet: current,
-          privateKey: identity.privateKey,
-        }
-      : null
-    if (isNil(opt)) {
-      alert("not logged in")
-      return
-    }
-    const res = await sdk.removeOwner(address, opt)
-    if (!isNil(res.err)) {
-      return `Error: ${res.err.errorMessage}`
-    } else {
-      return JSON.stringify(res)
-    }
-  } catch (e) {
-    console.log(e)
-    return `Error: Something went wrong`
-  }
 }
 
 const Constants = require("./poseidon_constants_opt.js")
@@ -562,11 +439,6 @@ async function deployFromSrc({ src, warp, init, extra, algorithms }) {
 
 export const deployDB = async ({
   val: { owner, network, port, secure, canEvolve, auths },
-  global,
-  set,
-  fn,
-  conf,
-  get,
 }) => {
   let algorithms = []
   for (let v of auths) {
@@ -707,82 +579,22 @@ export const deployDB = async ({
   }
 }
 
-export const _setCanEvolve = async ({
-  val: { value, contractTxId },
-  global,
-  set,
-  fn,
-  conf,
-  get,
-}) => {
+export const _setCanEvolve = async ({ val: { value, contractTxId }, fn }) => {
   try {
-    const current = get("temp_current")
-    const identity = isNil(current)
-      ? null
-      : await lf.getItem(`temp_address:${contractTxId}:${current}`)
-    let ii = null
-    if (is(Array)(identity)) {
-      ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(identity))
-    }
-    const opt = !isNil(ii)
-      ? { ii }
-      : !isNil(identity) && !isNil(identity.tx)
-      ? {
-          wallet: current,
-          privateKey: identity.privateKey,
-        }
-      : null
-    if (isNil(opt)) {
-      alert("not logged in")
-      return
-    }
-    const res = await sdk.setCanEvolve(value, opt)
-    if (!isNil(res.err)) {
-      return `Error: ${res.err.errorMessage}`
-    } else {
-      return JSON.stringify(res)
-    }
+    const { err, opt } = await fn(getOpt)({ contractTxId })
+    if (!isNil(err)) return alert(err)
+    return ret(await new Log(sdk, "setCanEvolve", value, opt, fn).rec())
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
   }
 }
 
-export const _setSecure = async ({
-  val: { value, contractTxId },
-  global,
-  set,
-  fn,
-  conf,
-  get,
-}) => {
+export const _setSecure = async ({ val: { value, contractTxId }, fn }) => {
   try {
-    const current = get("temp_current")
-    const identity = isNil(current)
-      ? null
-      : await lf.getItem(`temp_address:${contractTxId}:${current}`)
-    let ii = null
-    if (is(Array)(identity)) {
-      ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(identity))
-    }
-    const opt = !isNil(ii)
-      ? { ii }
-      : !isNil(identity) && !isNil(identity.tx)
-      ? {
-          wallet: current,
-          privateKey: identity.privateKey,
-        }
-      : null
-    if (isNil(opt)) {
-      alert("not logged in")
-      return
-    }
-    const res = await sdk.setSecure(value, opt)
-    if (!isNil(res.err)) {
-      return `Error: ${res.err.errorMessage}`
-    } else {
-      return JSON.stringify(res)
-    }
+    const { err, opt } = await fn(getOpt)({ contractTxId })
+    if (!isNil(err)) return alert(err)
+    return ret(await new Log(sdk, "setSecure", value, opt, fn).rec())
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
@@ -791,121 +603,34 @@ export const _setSecure = async ({
 
 export const _setAlgorithms = async ({
   val: { algorithms, contractTxId },
-  global,
-  set,
   fn,
-  conf,
-  get,
 }) => {
   try {
-    const current = get("temp_current")
-    const identity = isNil(current)
-      ? null
-      : await lf.getItem(`temp_address:${contractTxId}:${current}`)
-    let ii = null
-    if (is(Array)(identity)) {
-      ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(identity))
-    }
-    const opt = !isNil(ii)
-      ? { ii }
-      : !isNil(identity) && !isNil(identity.tx)
-      ? {
-          wallet: current,
-          privateKey: identity.privateKey,
-        }
-      : null
-    if (isNil(opt)) {
-      alert("not logged in")
-      return
-    }
-    const res = await sdk.setAlgorithms(algorithms, opt)
-    if (!isNil(res.err)) {
-      return `Error: ${res.err.errorMessage}`
-    } else {
-      return JSON.stringify(res)
-    }
+    const { err, opt } = await fn(getOpt)({ contractTxId })
+    if (!isNil(err)) return alert(err)
+    return ret(await new Log(sdk, "setAlgorithms", algorithms, opt, fn).rec())
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
   }
 }
 
-export const _evolve = async ({
-  val: { contractTxId },
-  global,
-  set,
-  fn,
-  conf,
-  get,
-}) => {
+export const _evolve = async ({ val: { contractTxId }, fn }) => {
   try {
-    const current = get("temp_current")
-    const identity = isNil(current)
-      ? null
-      : await lf.getItem(`temp_address:${contractTxId}:${current}`)
-    let ii = null
-    if (is(Array)(identity)) {
-      ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(identity))
-    }
-    const opt = !isNil(ii)
-      ? { ii }
-      : !isNil(identity) && !isNil(identity.tx)
-      ? {
-          wallet: current,
-          privateKey: identity.privateKey,
-        }
-      : null
-    if (isNil(opt)) {
-      alert("not logged in")
-      return
-    }
-    const res = await sdk.evolve(weavedbSrcTxId, opt)
-    if (!isNil(res.err)) {
-      return `Error: ${res.err.errorMessage}`
-    } else {
-      return JSON.stringify(res)
-    }
+    const { err, opt } = await fn(getOpt)({ contractTxId })
+    if (!isNil(err)) return alert(err)
+    return ret(await new Log(sdk, "evolve", weavedbSrcTxId, opt, fn).rec())
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
   }
 }
 
-export const _migrate = async ({
-  val: { contractTxId, version },
-  global,
-  set,
-  fn,
-  conf,
-  get,
-}) => {
+export const _migrate = async ({ val: { contractTxId, version }, fn }) => {
   try {
-    const current = get("temp_current")
-    const identity = isNil(current)
-      ? null
-      : await lf.getItem(`temp_address:${contractTxId}:${current}`)
-    let ii = null
-    if (is(Array)(identity)) {
-      ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(identity))
-    }
-    const opt = !isNil(ii)
-      ? { ii }
-      : !isNil(identity) && !isNil(identity.tx)
-      ? {
-          wallet: current,
-          privateKey: identity.privateKey,
-        }
-      : null
-    if (isNil(opt)) {
-      alert("not logged in")
-      return
-    }
-    const res = await sdk.migrate(version, opt)
-    if (!isNil(res.err)) {
-      return `Error: ${res.err.errorMessage}`
-    } else {
-      return JSON.stringify(res)
-    }
+    const { err, opt } = await fn(getOpt)({ contractTxId })
+    if (!isNil(err)) return alert(err)
+    return ret(await new Log(sdk, "migrate", version, opt, fn).rec())
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
@@ -914,15 +639,12 @@ export const _migrate = async ({
 
 export const _admin = async ({
   val: { rpc, contractTxId, txid, network = "Mainnet" },
-  global,
-  set,
   fn,
-  conf,
-  get,
 }) => {
   try {
     const { db, opt } = await fn(getRawDB)({ contractTxId, rpc, network })
-    return await db.admin({ op: "add_contract", contractTxId: txid }, opt)
+    const query = { op: "add_contract", contractTxId: txid }
+    return await new Log(db, "admin", query, opt, fn).rec()
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
@@ -931,15 +653,12 @@ export const _admin = async ({
 
 export const _remove = async ({
   val: { rpc, contractTxId, txid, network = "mainnet" },
-  global,
-  set,
   fn,
-  conf,
-  get,
 }) => {
   try {
     const { db, opt } = await fn(getRawDB)({ contractTxId, rpc, network })
-    return await db.admin({ op: "remove_contract", contractTxId: txid }, opt)
+    const query = { op: "remove_contract", contractTxId: txid }
+    return await new Log(db, "admin", query, opt, fn).rec()
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
@@ -948,16 +667,12 @@ export const _remove = async ({
 
 export const _addNodeOwner = async ({
   val: { address, contractTxId, rpc, network = "Mainnet" },
-  global,
-  set,
   fn,
-  conf,
-  get,
 }) => {
   try {
     const { db, opt } = await fn(getRawDB)({ contractTxId, rpc, network })
     const addr = /^0x.+$/.test(address) ? address.toLowerCase() : address
-    return await db.addOwner(address, opt)
+    return await new Log(db, "addOwner", addr, opt, fn).rec()
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
@@ -966,72 +681,113 @@ export const _addNodeOwner = async ({
 
 export const _removeNodeOwner = async ({
   val: { address, contractTxId, rpc, network = "Mainnet" },
-  global,
-  set,
   fn,
-  conf,
-  get,
 }) => {
   try {
     const { db, opt } = await fn(getRawDB)({ contractTxId, rpc, network })
-    return await db.removeOwner(address, opt)
+    return await new Log(db, "removeOwner", address, opt, fn).rec()
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
   }
 }
 
-export const getRawDB = async ({
-  val: { contractTxId, rpc, network },
-  fn,
-  get,
-}) => {
-  let err = false
-  const db = await fn(setupWeaveDB)({
-    contractTxId,
-    rpc,
-  })
-  let opt = {}
-  const current = get("temp_current_all")
-  if (current.type === "ar") {
-    const wallet = window.arweaveWallet
-    await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
-    opt.ar = wallet
-  } else if (current.type === "ii") {
-    const iiUrl =
-      network === "Mainnet"
-        ? "https://identity.ic0.app/"
-        : `http://localhost:8000/?canisterId=rwlgt-iiaaa-aaaaa-aaaaa-cai`
-    const authClient = await AuthClient.create()
-    await new Promise((resolve, reject) => {
-      authClient.login({
-        identityProvider: iiUrl,
-        onSuccess: resolve,
-        onError: reject,
-      })
-    })
-    const ii = authClient.getIdentity()
-    if (isNil(ii._inner)) return
-    opt.ii = ii
-  }
-  return { opt, db }
-}
-
 export const _whitelist = async ({
   val: { address, contractTxId, rpc, network = "Mainnet", limit, allow },
-  global,
-  set,
   fn,
-  conf,
-  get,
 }) => {
   try {
     const { db, opt } = await fn(getRawDB)({ contractTxId, rpc, network })
     let params = { allow, address }
     if (!isNil(limit)) params.limit = limit
-    return await db.admin({ op: "whitelist", ...params }, opt)
+    const query = { op: "whitelist", ...params }
+    return await new Log(db, "admin", query, opt, fn).rec()
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
   }
 }
+
+export const addLog = async ({ set, get, val: { log } }) => {
+  let logs = get("tx_logs") || []
+  set(prepend(log, logs), "tx_logs")
+}
+
+export const addRelayerJob = async ({
+  val: {
+    relayers,
+    signers,
+    name,
+    multisig,
+    multisig_type,
+    contractTxId,
+    schema,
+  },
+  fn,
+}) => {
+  try {
+    const { err, opt } = await fn(getOpt)({ contractTxId })
+    if (!isNil(err)) return alert(err)
+    let job = {
+      relayers,
+      signers,
+      multisig,
+      multisig_type,
+    }
+    if (!/^\s*$/.test(schema)) job.schema = schema
+    return ret(await new Log(sdk, "addRelayerJob", name, job, opt).rec())
+  } catch (e) {
+    console.log(e)
+    return `Error: Something went wrong`
+  }
+}
+
+export const removeRelayerJob = async ({ val: { name, contractTxId }, fn }) => {
+  try {
+    const { err, opt } = await fn(getOpt)({ contractTxId })
+    if (!isNil(err)) return alert(err)
+    return ret(await new Log(sdk, "removeRelayerJob", name, opt).rec())
+  } catch (e) {
+    console.log(e)
+    return `Error: Something went wrong`
+  }
+}
+
+export const _addOwner = async ({ val: { address, contractTxId }, fn }) => {
+  try {
+    const { err, opt } = await fn(getOpt)({ contractTxId })
+    if (!isNil(err)) return alert(err)
+    const addr = /^0x.+$/.test(address) ? address.toLowerCase() : address
+    return ret(await new Log(sdk, "addOwner", addr, opt, fn).rec())
+  } catch (e) {
+    console.log(e)
+    return `Error: Something went wrong`
+  }
+}
+
+export const _removeOwner = async ({ val: { address, contractTxId }, fn }) => {
+  try {
+    const { err, opt } = await fn(getOpt)({ contractTxId })
+    if (!isNil(err)) return alert(err)
+    return ret(await new Log(sdk, "removeOwner", address, opt, fn).rec())
+  } catch (e) {
+    console.log(e)
+    return `Error: Something went wrong`
+  }
+}
+
+export const queryDB = async ({ val: { query, method, contractTxId }, fn }) => {
+  try {
+    let q
+    eval(`q = [${query}]`)
+    const { err, opt } = await fn(getOpt)({ contractTxId })
+    if (!isNil(err)) return alert(err)
+    return ret(await new Log(sdk, method, q, opt, fn).rec(true))
+  } catch (e) {
+    console.log(e)
+    return `Error: Something went wrong`
+  }
+}
+
+export const read = async ({ val: { q, m, db, arr = true }, fn }) =>
+  await new Log(db, m, q, null, fn).rec(arr)

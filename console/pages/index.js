@@ -41,12 +41,13 @@ import {
   checkTempAddress,
   switchTempAddress,
   setupWeaveDB,
+  read,
 } from "../lib/weavedb"
 
 let db
 
 export default inject(
-  ["temp_current_all", "temp_current", "loading_contract"],
+  ["temp_current_all", "temp_current", "loading_contract", "tx_logs"],
   ({ set, init, router, conf, fn, $ }) => {
     const [loadMore, setLoadMore] = useState(null)
     const [whitelist, setWhitelist] = useState([])
@@ -202,7 +203,9 @@ export default inject(
     useEffect(() => {
       ;(async () => {
         if (!isNil(currentDB) && !$.loading_contract) {
-          setCollections(await db.listCollections(true))
+          setCollections(
+            await fn(read)({ db, m: "listCollections", q: [true] })
+          )
         }
       })()
     }, [contractTxId, currentDB, $.loading_contract])
@@ -212,40 +215,52 @@ export default inject(
         if (tab === "Schemas") {
           if (!isNil(col)) {
             setSchema(
-              await db.getSchema(
-                ...(doc_path.length % 2 === 0
-                  ? doc_path.slice(0, -1)
-                  : doc_path),
-                true
-              )
+              await fn(read)({
+                db,
+                m: "getSchema",
+                q: [
+                  ...(doc_path.length % 2 === 0
+                    ? doc_path.slice(0, -1)
+                    : doc_path),
+                  true,
+                ],
+              })
             )
           }
         } else if (tab === "Rules") {
           if (!isNil(col)) {
             setRules(
-              await db.getRules(
-                ...(doc_path.length % 2 === 0
-                  ? doc_path.slice(0, -1)
-                  : doc_path),
-                true
-              )
+              await fn(read)({
+                db,
+                m: "getRules",
+                q: [
+                  ...(doc_path.length % 2 === 0
+                    ? doc_path.slice(0, -1)
+                    : doc_path),
+                  true,
+                ],
+              })
             )
           }
         } else if (tab === "Indexes") {
           if (!isNil(col)) {
             setIndexes(
-              await db.getIndexes(
-                ...(doc_path.length % 2 === 0
-                  ? doc_path.slice(0, -1)
-                  : doc_path),
-                true
-              )
+              await fn(read)({
+                db,
+                m: "getIndexes",
+                q: [
+                  ...(doc_path.length % 2 === 0
+                    ? doc_path.slice(0, -1)
+                    : doc_path),
+                  true,
+                ],
+              })
             )
           }
         } else if (tab === "Crons") {
-          setCrons(await db.getCrons(true))
+          setCrons(await fn(read)({ db, m: "getCrons", q: [true] }))
         } else if (tab === "Relayers") {
-          setRelayers(await db.listRelayerJobs(true))
+          setRelayers(await fn(read)({ db, m: "listRelayerJobs", q: [true] }))
         }
       })()
     }, [contractTxId, tab, doc_path])
@@ -285,7 +300,7 @@ export default inject(
             port,
             rpc,
           }))
-        setState(state || (await db.getInfo(true)))
+        setState(state || (await fn(read)({ db, m: "getInfo", q: [true] })))
         set(null, "loading_contract")
         fn(switchTempAddress)({ contractTxId: _contractTxId })
       } else {
@@ -333,12 +348,16 @@ export default inject(
           const addr = /^0x.+$/.test($.temp_current_all.addr)
             ? $.temp_current_all.addr.toLowerCase()
             : $.temp_current_all.addr
-          let user = await db.get("users", addr, true)
+          let user = await fn(read)({ db, m: "get", q: ["users", addr, true] })
           let whitelisted = !isNil(user) && user.allow
           setIsWhitelisted(whitelisted)
           if (whitelisted) {
             setContracts(
-              await db.get("contracts", ["address", "=", addr], true)
+              await fn(read)({
+                db,
+                m: "get",
+                q: ["contracts", ["address", "=", addr], true],
+              })
             )
             setNodeUser(user)
           } else {
@@ -346,7 +365,7 @@ export default inject(
             setNodeUser(null)
           }
           if (isNodeOwner) {
-            setWhitelist(await db.get("users", true))
+            setWhitelist(await fn(read)({ db, m: "get", q: ["users", true] }))
           } else {
             setWhitelist([])
           }

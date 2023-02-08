@@ -86,8 +86,8 @@ export const wallet_chains = ["Arweave", "EVM", "DFINITY", "Intmax"]
 
 export const default_nodes = [
   {
-    rpc: "https://grpc.asteroid.ac",
-    contract: "ULKzK8dmkCCpoTiRpJi2ae3dh6Xfe3GzUbR7w0uInjI",
+    rpc: "https://grpc.weavedb-node.xyz",
+    contract: "XoHBBLZfrrpQIcvnrsWs69OoHfXwWMQWdAbYOifcTQA",
   },
 ]
 

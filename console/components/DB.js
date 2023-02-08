@@ -11,10 +11,10 @@ import {
   compose,
   map,
 } from "ramda"
-import { setupWeaveDB } from "../lib/weavedb"
+import { read, setupWeaveDB } from "../lib/weavedb"
 import { preset_rpcs } from "../lib/const"
 export default inject(
-  ["loading_contract"],
+  ["loading_contract", "tx_logs"],
   ({
     setPresetRPC,
     setNewRPCType,
@@ -77,7 +77,11 @@ export default inject(
                         port: port || 1820,
                         rpc: v.rpc,
                       })
-                      let state = await db.getInfo(true)
+                      let state = await fn(read)({
+                        db,
+                        m: "getInfo",
+                        q: [true],
+                      })
                       if (!isNil(state.version)) {
                         setState(null)
                         setNetwork(v.network)

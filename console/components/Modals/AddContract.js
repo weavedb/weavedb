@@ -2,10 +2,10 @@ import { useState } from "react"
 import { Box, Flex, Input } from "@chakra-ui/react"
 import { isNil } from "ramda"
 import { inject } from "roidjs"
-import { setupWeaveDB, _admin } from "../../lib/weavedb"
+import { read, setupWeaveDB, _admin } from "../../lib/weavedb"
 
 export default inject(
-  ["loading", "temp_current_all", "temp_current"],
+  ["loading", "temp_current_all", "temp_current", "tx_logs"],
   ({ setAddContract, node, setContracts, fn, set, $ }) => {
     const [newContract, setNewContract] = useState("")
     return (
@@ -76,7 +76,11 @@ export default inject(
                     ? $.temp_current_all.addr.toLowerCase()
                     : $.temp_current_all.addr
                   setContracts(
-                    await db.get("contracts", ["address", "=", addr], true)
+                    await fn(read)({
+                      db,
+                      m: "get",
+                      q: ["contracts", ["address", "=", addr], true],
+                    })
                   )
                 }
                 set(null, "loading")

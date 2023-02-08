@@ -17,11 +17,11 @@ import {
   last,
   mapObjIndexed,
 } from "ramda"
-import { queryDB } from "../lib/weavedb.js"
+import { read, queryDB } from "../lib/weavedb.js"
 import { inject } from "roidjs"
 import { per_page } from "../lib/const"
 export default inject(
-  [],
+  ["temp_current", "tx_logs"],
   ({
     col,
     documents,
@@ -69,9 +69,19 @@ export default inject(
             <Flex
               onClick={async () => {
                 setDocPath(concat(base_path, [col, v]))
-                setDocdata(await db.cget(...concat(base_path, [col, v, true])))
+                setDocdata(
+                  await fn(read)({
+                    db,
+                    m: "cget",
+                    q: concat(base_path, [col, v, true]),
+                  })
+                )
                 setSubCollections(
-                  await db.listCollections(...concat(base_path, [col, v, true]))
+                  await fn(read)({
+                    db,
+                    m: "listCollections",
+                    q: concat(base_path, [col, v, true]),
+                  })
                 )
               }}
               bg={doc === v ? "#ddd" : ""}
@@ -139,15 +149,17 @@ export default inject(
                   ":hover": { opacity: 0.75 },
                 }}
                 onClick={async () => {
-                  let _docs = await db.cget(
-                    ...[
+                  let _docs = await fn(read)({
+                    db,
+                    m: "cget",
+                    q: [
                       ...base_path,
                       col,
                       ["startAfter", loadMore],
                       per_page,
                       true,
-                    ]
-                  )
+                    ],
+                  })
                   if (_docs.length > 0) {
                     setDocuments(
                       compose(
@@ -206,7 +218,11 @@ export default inject(
                   setDocdata(null)
                   setSubCollections([])
                   setCollections(subCollections)
-                  const _docs = await db.cget(..._doc_path, per_page, true)
+                  const _docs = await fn(read)({
+                    db,
+                    m: "cget",
+                    q: [..._doc_path, per_page, true],
+                  })
                   setDocuments(_docs)
                   setLoadMore(_docs.length === per_page ? last(_docs) : null)
                 }}
@@ -276,9 +292,19 @@ export default inject(
                       if (/^Error:/.test(res)) {
                         alert("Something went wrong")
                       }
-                      setDocdata(await db.cget(...doc_path, true))
+                      setDocdata(
+                        await fn(read)({
+                          db,
+                          m: "cget",
+                          q: [...doc_path, true],
+                        })
+                      )
                       setSubCollections(
-                        await db.listCollections(...doc_path, true)
+                        await fn(read)({
+                          db,
+                          m: "listCollections",
+                          q: [...doc_path, true],
+                        })
                       )
                     }
                   }}

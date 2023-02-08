@@ -17,6 +17,7 @@ export default inject(
     "owner_signing_in_modal",
     "signing_in",
     "signing_in_modal",
+    "tx_logs",
   ],
   ({ newNetwork, contractTxId, network, tab, fn, set, $ }) => {
     return (
