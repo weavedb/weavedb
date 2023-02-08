@@ -56,6 +56,8 @@ export default function Home() {
   useEffect(() => {
     ;(async () => {
       if (!isNil(authSig) && initSDK) {
+        setMessages([])
+        setUserTokenIDs([])
         const query = `
 {
   user (id: "${authSig.address}"){
@@ -76,6 +78,7 @@ export default function Home() {
             body: JSON.stringify({ query }),
           }
         ).then(r => r.json())
+        if (isNil(data.data.user)) return
         const tokenIDs = compose(
           map(v => +v),
           pluck("id")
