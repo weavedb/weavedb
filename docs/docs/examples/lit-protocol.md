@@ -246,7 +246,7 @@ NFT_ADDRESS="0xABC"
 Then deploy the contract to the Goerli testnet.
 
 ```bash
-npx hardhat run scripts/deployACL.js 0xNFTContractAddress --network goerli
+npx hardhat run scripts/deployACL.js --network goerli
 ```
 
 Now you should receive yoru contract address. To verify the contract on Etherscan, run the following.
