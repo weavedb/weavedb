@@ -240,6 +240,7 @@ Create `.env` file with the following variables.
 EVM_RPC="https://goerli.infura.io/v3/yourapikey"
 ETHERSCAN_API_KEY="yourapikey"
 PRIVATEKEY="yourprivatekey"
+NFT_ADDRESS="0xABC"
 ```
 
 Then deploy the contract to the Goerli testnet.
