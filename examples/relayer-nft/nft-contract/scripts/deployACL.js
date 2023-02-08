@@ -1,5 +1,7 @@
 const hre = require("hardhat")
 const nft_address = process.env.NFT_ADDRESS
+console.log(process.env)
+process.exit()
 if (typeof nft_address === "undefined") {
   console.log("nft_address missing")
   process.exit()
