@@ -2,10 +2,10 @@ import { useState } from "react"
 import { Box, Flex, Textarea } from "@chakra-ui/react"
 import { is, compose, includes, append, isNil, map, clone, join } from "ramda"
 import { inject } from "roidjs"
-import { queryDB } from "../../lib/weavedb"
+import { read, queryDB } from "../../lib/weavedb"
 
 export default inject(
-  ["loading", "temp_current"],
+  ["loading", "temp_current", "tx_logs"],
   ({
     setAddIndex,
     indexes,
@@ -116,12 +116,16 @@ export default inject(
                   setNewIndex("[]")
                   setAddIndex(false)
                   setIndexes(
-                    await db.getIndexes(
-                      ...(doc_path.length % 2 === 0
-                        ? doc_path.slice(0, -1)
-                        : doc_path),
-                      true
-                    )
+                    await fn(read)({
+                      db,
+                      m: "getIndexes",
+                      q: [
+                        ...(doc_path.length % 2 === 0
+                          ? doc_path.slice(0, -1)
+                          : doc_path),
+                        true,
+                      ],
+                    })
                   )
                 }
                 set(null, "loading")

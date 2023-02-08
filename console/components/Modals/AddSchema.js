@@ -2,10 +2,10 @@ import { useState } from "react"
 import { Box, Flex, Textarea } from "@chakra-ui/react"
 import { isNil, compose, join, map, append } from "ramda"
 import { inject } from "roidjs"
-import { queryDB } from "../../lib/weavedb"
+import { read, queryDB } from "../../lib/weavedb"
 
 export default inject(
-  ["loading", "temp_current"],
+  ["loading", "temp_current", "tx_logs"],
   ({
     db,
     doc_path,
@@ -90,12 +90,16 @@ export default inject(
                   setNewSchema("")
                   setAddSchema(false)
                   setSchema(
-                    await db.getSchema(
-                      ...(doc_path.length % 2 === 0
-                        ? doc_path.slice(0, -1)
-                        : doc_path),
-                      true
-                    )
+                    await fn(read)({
+                      db,
+                      m: "getSchema",
+                      q: [
+                        ...(doc_path.length % 2 === 0
+                          ? doc_path.slice(0, -1)
+                          : doc_path),
+                        true,
+                      ],
+                    })
                   )
                 }
                 set(null, "loading")

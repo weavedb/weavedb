@@ -2,10 +2,10 @@ import { useState } from "react"
 import { Box, Flex, Input, Textarea, Select } from "@chakra-ui/react"
 import { concat, compose, join, append, map, isNil, includes } from "ramda"
 import { inject } from "roidjs"
-import { queryDB } from "../../lib/weavedb"
+import { read, queryDB } from "../../lib/weavedb"
 
 export default inject(
-  ["loading", "temp_current"],
+  ["loading", "temp_current", "tx_logs"],
   ({
     col,
     doc,
@@ -208,8 +208,16 @@ export default inject(
                   setNewField("")
                   setNewFieldVal("")
                   setAddData(false)
-                  setDocdata(await db.cget(...doc_path, true))
-                  setSubCollections(await db.listCollections(...doc_path, true))
+                  setDocdata(
+                    await fn(read)({ db, m: "cget", q: [...doc_path, true] })
+                  )
+                  setSubCollections(
+                    await fn(read)({
+                      db,
+                      m: "listCollections",
+                      q: [...doc_path, true],
+                    })
+                  )
                 }
                 set(null, "loading")
               }

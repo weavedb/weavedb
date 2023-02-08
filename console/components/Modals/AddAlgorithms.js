@@ -2,10 +2,10 @@ import { useState } from "react"
 import { Box, Flex } from "@chakra-ui/react"
 import { map, includes, without, append, isNil } from "ramda"
 import { inject } from "roidjs"
-import { _setAlgorithms } from "../../lib/weavedb"
+import { _setAlgorithms, read } from "../../lib/weavedb"
 
 export default inject(
-  ["loading", "temp_current"],
+  ["loading", "temp_current", "tx_logs"],
   ({
     db,
     contractTxId,
@@ -84,7 +84,7 @@ export default inject(
                   alert("Something went wrong")
                 }
                 set(null, "loading")
-                setState(await db.getInfo(true))
+                setState(await fn(read)({ db, m: "getInfo", q: [true] }))
               }
             }}
             sx={{

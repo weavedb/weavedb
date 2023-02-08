@@ -13,11 +13,17 @@ import {
   trim,
 } from "ramda"
 import { inject } from "roidjs"
-import { deployDB, setupWeaveDB } from "../../lib/weavedb"
+import { read, deployDB, setupWeaveDB } from "../../lib/weavedb"
 import { wallet_chains, latest, preset_rpcs, rpc_types } from "../../lib/const"
 
 export default inject(
-  ["owner_signing_in_modal", "loading", "temp_current", "temp_current_all"],
+  [
+    "owner_signing_in_modal",
+    "loading",
+    "temp_current",
+    "temp_current_all",
+    "tx_logs",
+  ],
   ({
     newNetwork,
     setNewNetwork,
@@ -370,7 +376,11 @@ export default inject(
                           port: port || 1820,
                           rpc,
                         })
-                        let state = await db.getInfo(true)
+                        let state = await fn(read)({
+                          db,
+                          m: "getInfo",
+                          q: [true],
+                        })
                         if (!isNil(state.version)) {
                           if (!/^[0-9]+\.[0-9]+\.[0-9]+$/.test(state.version)) {
                             alert("version not compatible")
