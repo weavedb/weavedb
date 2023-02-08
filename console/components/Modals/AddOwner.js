@@ -2,10 +2,10 @@ import { useState } from "react"
 import { Box, Flex, Input } from "@chakra-ui/react"
 import { isNil, map } from "ramda"
 import { inject } from "roidjs"
-import { _addOwner, _removeOwner } from "../../lib/weavedb"
+import { read, _addOwner, _removeOwner } from "../../lib/weavedb"
 
 export default inject(
-  ["loading", "temp_current", "temp_current_all"],
+  ["loading", "temp_current", "temp_current_all", "tx_logs"],
   ({ setState, setAddOwner, owners, contractTxId, db, fn, set, $ }) => {
     const [newOwner, setNewOwner] = useState("")
     return (
@@ -52,7 +52,7 @@ export default inject(
                       if (/^Error:/.test(res)) {
                         alert("Something went wrong")
                       }
-                      setState(await db.getInfo(true))
+                      setState(await fn(read)({ db, m: "getInfo", q: [true] }))
                     }}
                     className="fas fa-trash"
                     sx={{
@@ -93,7 +93,7 @@ export default inject(
                     alert("Something went wrong")
                   } else {
                     setNewOwner("")
-                    setState(await db.getInfo(true))
+                    setState(await fn(read)({ db, m: "getInfo", q: [true] }))
                   }
                   set(null, "loading")
                 }

@@ -5,7 +5,7 @@ import { inject } from "roidjs"
 import { _addNodeOwner, _removeNodeOwner } from "../../lib/weavedb"
 
 export default inject(
-  ["loading", "temp_current", "temp_current_all"],
+  ["loading", "temp_current", "temp_current_all", "tx_logs"],
   ({ owners, updateGRPCNode, node, setNode, setAddNodeOwner, fn, set, $ }) => {
     const [newOwner, setNewOwner] = useState("")
     return (

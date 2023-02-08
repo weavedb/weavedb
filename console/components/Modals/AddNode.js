@@ -2,10 +2,10 @@ import { useState } from "react"
 import { Box, Flex, Input, Textarea, Select } from "@chakra-ui/react"
 import { map, isNil } from "ramda"
 import { inject } from "roidjs"
-import { setupWeaveDB } from "../../lib/weavedb"
+import { read, setupWeaveDB } from "../../lib/weavedb"
 
 export default inject(
-  ["loading", "temp_current"],
+  ["loading", "temp_current", "tx_logs"],
   ({ addGRPCNode, setAddNode, fn, set, $ }) => {
     const [newHttp, setNewHttp] = useState("https://")
     const [newNode, setNewNode] = useState("")
@@ -71,7 +71,12 @@ export default inject(
                     rpc: newHttp + newNode,
                   })
                   const start = Date.now()
-                  const stats = await db.node({ op: "stats" })
+                  const stats = await fn(read)({
+                    db,
+                    m: "node",
+                    q: { op: "stats" },
+                    arr: false,
+                  })
                   const queryTime = Date.now() - start
                   if (isNil(stats.contractTxId)) throw new Error()
                   await addGRPCNode({

@@ -2,9 +2,9 @@ import { Box, Flex } from "@chakra-ui/react"
 import JSONPretty from "react-json-pretty"
 import { map, isNil } from "ramda"
 import { inject } from "roidjs"
-import { removeRelayerJob } from "../lib/weavedb"
+import { read, removeRelayerJob } from "../lib/weavedb"
 export default inject(
-  ["loading"],
+  ["loading", "tx_logs"],
   ({
     contractTxId,
     setRelayers,
@@ -36,7 +36,12 @@ export default inject(
           {map(v => (
             <Flex
               onClick={async () => {
-                const job = await db.getRelayerJob(v)
+                const job = await fn(read)({
+                  db,
+                  m: "getRelayerJob",
+                  q: v,
+                  arr: false,
+                })
                 if (!isNil(job)) setRelayer({ name: v, job })
               }}
               bg={!isNil(relayer) && relayer.name === v ? "#ddd" : ""}
@@ -79,7 +84,13 @@ export default inject(
                         if (!isNil(relayer) && relayer.name === v) {
                           setRelayer(null)
                         }
-                        setRelayers(await db.listRelayerJobs(true))
+                        setRelayers(
+                          await fn(read)({
+                            db,
+                            m: "listRelayerJobs",
+                            q: [true],
+                          })
+                        )
                       }
                     } catch (e) {
                       alert("Something went wrong")

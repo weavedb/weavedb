@@ -12,10 +12,10 @@ import {
   prop,
 } from "ramda"
 import { inject } from "roidjs"
-import { queryDB } from "../../lib/weavedb"
+import { queryDB, read } from "../../lib/weavedb"
 
 export default inject(
-  ["loading", "temp_current"],
+  ["loading", "temp_current", "tx_logs"],
   ({
     setDocuments,
     db,
@@ -115,9 +115,11 @@ export default inject(
                     setNewData(`{}`)
                     setAddDoc(false)
                   }
-                  const _doc = await db.cget(
-                    ...[...base_path, col, res.docID, true]
-                  )
+                  const _doc = await fn(read)({
+                    db,
+                    m: "cget",
+                    q: [...base_path, col, res.docID, true],
+                  })
                   setDocuments(
                     o(
                       sortBy(prop("id")),

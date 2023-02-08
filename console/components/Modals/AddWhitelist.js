@@ -2,10 +2,10 @@ import { useState } from "react"
 import { Box, Flex, Input, Select } from "@chakra-ui/react"
 import { map } from "ramda"
 import { inject } from "roidjs"
-import { _whitelist, setupWeaveDB } from "../../lib/weavedb"
+import { read, _whitelist, setupWeaveDB } from "../../lib/weavedb"
 
 export default inject(
-  ["loading", "temp_current", "temp_current_all"],
+  ["loading", "temp_current", "temp_current_all", "tx_logs"],
   ({
     node,
     setWhitelist,
@@ -139,7 +139,9 @@ export default inject(
                     contractTxId: node.contract,
                     rpc: node.rpc,
                   })
-                  setWhitelist(await db.get("users", true))
+                  setWhitelist(
+                    await fn(read)({ db, m: "get", q: ["users", true] })
+                  )
                   setNewWhitelistUser("")
                   setAddWhitelist(false)
                   setEditWhitelist(false)

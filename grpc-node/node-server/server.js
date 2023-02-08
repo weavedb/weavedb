@@ -79,7 +79,7 @@ async function query(call, callback) {
     !isNil(config.ratelimit) &&
     !isNil(config.ratelimit.every)
   ) {
-    const RateLimitCounter = require('./rate_limit_counter.js')
+    const RateLimitCounter = require("./rate_limit_counter.js")
     const ratelimit = new RateLimitCounter(config.ratelimit, config.redis)
     await ratelimit.init()
     try {
@@ -108,7 +108,9 @@ async function query(call, callback) {
             allowed = true
           }
         }
-      } catch (e) {}
+      } catch (e) {
+        console.log(e)
+      }
     }
     if (!allowed) return res(`contractTxId[${contractTxId}] not allowed`)
   }

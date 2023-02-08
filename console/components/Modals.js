@@ -1,57 +1,4 @@
-import { useState } from "react"
-import {
-  Image,
-  Checkbox,
-  Select,
-  Box,
-  Flex,
-  Input,
-  Textarea,
-} from "@chakra-ui/react"
-import {
-  assoc,
-  pluck,
-  includes,
-  uniq,
-  without,
-  o,
-  sortBy,
-  join,
-  compose,
-  append,
-  indexBy,
-  prop,
-  map,
-  isNil,
-  concat,
-  trim,
-} from "ramda"
 import { inject } from "roidjs"
-import {
-  _admin,
-  _removeOwner,
-  _addOwner,
-  _setAlgorithms,
-  _removeNodeOwner,
-  _addNodeOwner,
-  _setCanEvolve,
-  _migrate,
-  _evolve,
-  _setSecure,
-  deployDB,
-  _whitelist,
-  connectLocalhost,
-  connectAddress,
-  createTempAddress,
-  connectAddressWithII,
-  createTempAddressWithII,
-  connectAddressWithAR,
-  createTempAddressWithAR,
-  queryDB,
-  addRelayerJob,
-  setupWeaveDB,
-} from "../lib/weavedb"
-import { latest, preset_rpcs, rpc_types } from "../lib/const"
 
 import AddCollection from "./Modals/AddCollection"
 import AddDoc from "./Modals/AddDoc"
@@ -191,7 +138,6 @@ export default inject(
     base_path,
     addCollection,
     setAddCollection,
-    fn,
     $,
     set,
   }) => (
@@ -232,9 +178,6 @@ export default inject(
             setSubCollections,
             setDocdata,
             setAddData,
-            fn,
-            set,
-            $,
           }}
         />
       ) : addSchema !== false ? (
