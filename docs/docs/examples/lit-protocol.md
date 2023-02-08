@@ -617,7 +617,8 @@ Then subsequently get messages for the tokenIDs from WeaveDB, and decrypt them u
   useEffect(() => {
     ;(async () => {
       if (!isNil(authSig) && initSDK) {
-	  
+	    setMessages([])
+        setUserTokenIDs([])
 	    // a subgraph query to get the connected user with tokens
         const query = `
 {
@@ -639,6 +640,7 @@ Then subsequently get messages for the tokenIDs from WeaveDB, and decrypt them u
             body: JSON.stringify({ query }),
           }
         ).then(r => r.json())
+		if (isNil(data.data.user)) return
         const tokenIDs = compose(
           map(v => +v),
           pluck("id")
