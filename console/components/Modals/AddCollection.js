@@ -2,10 +2,10 @@ import { useState } from "react"
 import { Box, Flex, Input, Textarea } from "@chakra-ui/react"
 import { join, compose, map, append, isNil, indexBy, prop } from "ramda"
 import { inject } from "roidjs"
-import { queryDB } from "../../lib/weavedb"
+import { read, queryDB } from "../../lib/weavedb"
 
 export default inject(
-  ["loading", "temp_current"],
+  ["loading", "temp_current", "tx_logs"],
   ({
     setAddCollection,
     documents,
@@ -103,7 +103,13 @@ export default inject(
                     setNewCollection("")
                     setNewRules(`{"allow write": true}`)
                     setAddCollection(false)
-                    setCollections(await db.listCollections(...base_path, true))
+                    setCollections(
+                      await fn(read)({
+                        db,
+                        m: "listCollections",
+                        q: [...base_path, true],
+                      })
+                    )
                   }
                 } catch (e) {
                   alert("Something went wrong")

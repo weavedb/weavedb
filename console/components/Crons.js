@@ -2,10 +2,10 @@ import { Box, Flex } from "@chakra-ui/react"
 import { keys, compose, map, cron, isNil } from "ramda"
 import JSONPretty from "react-json-pretty"
 import { inject } from "roidjs"
-import { queryDB } from "../lib/weavedb"
+import { read, queryDB } from "../lib/weavedb"
 
 export default inject(
-  [],
+  ["temp_current", "tx_logs"],
   ({ setAddCron, crons, setCron, _cron, fn, contractTxId, db, setState }) => (
     <>
       <Flex flex={1} sx={{ border: "1px solid #555" }} direction="column">
@@ -61,7 +61,7 @@ export default inject(
                       if (/^Error:/.test(res)) {
                         alert("Something went wrong")
                       }
-                      setState(await db.getInfo(true))
+                      setState(await fn(read)({ db, m: "getInfo", q: [true] }))
                     }
                   }}
                 >

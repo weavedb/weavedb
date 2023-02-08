@@ -2,10 +2,10 @@ import { useState } from "react"
 import { Box, Flex, Input, Select, Textarea } from "@chakra-ui/react"
 import { isNil, without, o, uniq, append, map } from "ramda"
 import { inject } from "roidjs"
-import { addRelayerJob } from "../../lib/weavedb"
+import { read, addRelayerJob } from "../../lib/weavedb"
 
 export default inject(
-  ["loading", "temp_current"],
+  ["loading", "temp_current", "tx_logs"],
   ({ setRelayers, contractTxId, db, setAddRelayer, fn, set, $ }) => {
     const [newJobName, setNewJobName] = useState("")
     const [newRelayers, setNewRelayers] = useState([])
@@ -244,7 +244,9 @@ export default inject(
                     alert("Something went wrong")
                   } else {
                     setAddRelayer(false)
-                    setRelayers(await db.listRelayerJobs(true))
+                    setRelayers(
+                      await fn(read)({ db, m: "listRelayerJobs", q: [true] })
+                    )
                   }
                 } catch (e) {
                   alert("Something went wrong")

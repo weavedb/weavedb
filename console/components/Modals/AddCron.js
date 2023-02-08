@@ -2,10 +2,10 @@ import { useState } from "react"
 import { Checkbox, Box, Flex, Input, Textarea } from "@chakra-ui/react"
 import { isNil, is } from "ramda"
 import { inject } from "roidjs"
-import { queryDB } from "../../lib/weavedb"
+import { read, queryDB } from "../../lib/weavedb"
 
 export default inject(
-  ["loading", "temp_current"],
+  ["loading", "temp_current", "tx_logs"],
   ({ db, contractTxId, setCrons, setAddCron, fn, set, $ }) => {
     const [newSpan, setNewSpan] = useState("")
     const [newCronName, setNewCronName] = useState("")
@@ -181,7 +181,7 @@ export default inject(
                     setNewTimes("")
                     setNewSpan("")
                     setAddCron(false)
-                    setCrons(await db.getCrons(true))
+                    setCrons(await fn(read)({ db, m: "getCrons", q: [true] }))
                   }
                 } catch (e) {
                   alert("Something went wrong")

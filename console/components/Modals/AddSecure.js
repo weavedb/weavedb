@@ -2,10 +2,10 @@ import { useState } from "react"
 import { Box, Flex } from "@chakra-ui/react"
 import { isNil } from "ramda"
 import { inject } from "roidjs"
-import { _setSecure } from "../../lib/weavedb"
+import { read, _setSecure } from "../../lib/weavedb"
 
 export default inject(
-  ["loading", "temp_current"],
+  ["loading", "temp_current", "tx_logs"],
   ({ setAddSecure, state, contractTxId, db, setState, fn, set, $ }) => {
     return (
       <Flex
@@ -59,7 +59,7 @@ export default inject(
                   if (/^Error:/.test(res)) {
                     alert("Something went wrong")
                   }
-                  setState(await db.getInfo(true))
+                  setState(await fn(read)({ db, m: "getInfo", q: [true] }))
                   set(null, "loading")
                 }
               }}

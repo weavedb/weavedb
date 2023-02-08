@@ -2,11 +2,11 @@ import { useState } from "react"
 import { Box, Flex, Input, Select } from "@chakra-ui/react"
 import { isNil, map, compose, concat, uniq, pluck, trim, assoc } from "ramda"
 import { inject } from "roidjs"
-import { setupWeaveDB } from "../../lib/weavedb"
+import { setupWeaveDB, read } from "../../lib/weavedb"
 import { preset_rpcs, rpc_types } from "../../lib/const"
 
 export default inject(
-  ["loading", "temp_current"],
+  ["loading", "temp_current", "tx_logs"],
   ({
     setAddGRPC,
     setNewNetwork,
@@ -151,7 +151,7 @@ export default inject(
                     contractTxId: currentDB.contractTxId,
                     rpc,
                   })
-                  let state = await db.getInfo(true)
+                  let state = await fn(read)({ db, m: "getInfo", q: [true] })
                   if (!isNil(state.version)) {
                     setState(null)
                     const newDB = assoc("rpc", rpc, currentDB)
