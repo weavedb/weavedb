@@ -154,7 +154,7 @@ await sdk.setRules(rules, "notes", { ar: wallet })
 To set up everything with one command, run the following.
 
 ```bash
-node scripts/bundlr-setup.js mainnet mainnet YOUR_CONTRACT_TX_ID RELAYER_EVM_ADDRESS
+node scripts/bundlr-setup.js mainnet YOUR_CONTRACT_TX_ID RELAYER_EVM_ADDRESS
 ```
 
 ## Set up Local gRPC Node
