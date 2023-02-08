@@ -1,13 +1,13 @@
 {
   "name": "weavedb-node",
   "version": "0.5.3",
-  "main": "server.js",
+  "main": "src/server.js",
   "engines": {
     "node": ">=18.13"
   },
   "scripts": {
-    "dev": "node-dev --respawn server.js",
-    "prettier": "prettier *.js --write"
+    "dev": "node-dev --respawn src/server.js",
+    "prettier": "prettier src/*.js --write"
   },
   "dependencies": {
     "@google-cloud/storage": "^6.9.1",
