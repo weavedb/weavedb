@@ -4,7 +4,7 @@ const Snapshot = require("./snapshot")
 const { saveSnapShotGCS, saveSnapShotS3 } = require("./snapshot")
 const fs = require("fs")
 const path = require("path")
-const config = require("./weavedb.config.js")
+const config = require("../weavedb.config.js")
 const PROTO_PATH = __dirname + "/weavedb.proto"
 const { execAdmin } = require("./admin")
 const {
