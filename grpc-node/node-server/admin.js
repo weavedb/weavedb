@@ -1,4 +1,4 @@
-const config = require("../weavedb.config.js")
+const config = require("./weavedb.config.js")
 const { validate } = require("./validate")
 const { indexBy, includes, isNil, last, prop } = require("ramda")
 
