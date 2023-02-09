@@ -50,28 +50,35 @@ export default inject(
             <Flex
               onClick={async () => {
                 set(v.rpc, "loading_node")
-                setNode(v)
-                const db = await fn(setupWeaveDB)({
-                  contractTxId: v.contract,
-                  rpc: v.rpc,
-                })
-                const start = Date.now()
-                const stats = await fn(read)({
-                  db,
-                  m: "node",
-                  q: { op: "stats" },
-                  arr: false,
-                })
-                const queryTime = Date.now() - start
-                const newNode = {
-                  queryTime,
-                  contract: stats.contractTxId,
-                  rpc: v.rpc,
-                  owners: stats.owners,
+                let prevnode = node
+                try {
+                  setNode(v)
+                  const db = await fn(setupWeaveDB)({
+                    contractTxId: v.contract,
+                    rpc: v.rpc,
+                  })
+                  const start = Date.now()
+                  const stats = await fn(read)({
+                    db,
+                    m: "node",
+                    q: { op: "stats" },
+                    arr: false,
+                  })
+                  const queryTime = Date.now() - start
+                  const newNode = {
+                    queryTime,
+                    contract: stats.contractTxId,
+                    rpc: v.rpc,
+                    owners: stats.owners,
+                  }
+                  setNode(newNode)
+                  await updateGRPCNode(newNode)
+                } catch (e) {
+                  console.log(e)
+                  setNode(prevnode)
+                  alert("couldn't connect with the node")
                 }
-                setNode(newNode)
                 set(null, "loading_node")
-                await updateGRPCNode(newNode)
               }}
               bg={!isNil(node) && node.rpc === v.rpc ? "#ddd" : ""}
               py={2}
