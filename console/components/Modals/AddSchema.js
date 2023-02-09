@@ -53,7 +53,7 @@ export default inject(
             padding={10}
             placeholder="enter schema"
             style={{
-              border: "1px solid #999",
+              border: "1px solid #E2E8F0",
               borderRadius: "5px",
               fontFamily: '"Fira code", "Fira Mono", monospace',
               fontSize: 12,

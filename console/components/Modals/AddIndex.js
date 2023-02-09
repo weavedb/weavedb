@@ -45,16 +45,16 @@ export default inject(
           onClick={e => e.stopPropagation()}
         >
           <Flex mb={1} fontSize="10px">
-            Schema for ({doc_path.join(" > ")})
+            Index for ({doc_path.join(" > ")})
           </Flex>
           <Editor
             value={newIndex}
             onValueChange={code => setNewIndex(code)}
             highlight={code => highlight(code, languages.js)}
             padding={10}
-            placeholder="enter schema"
+            placeholder="enter index"
             style={{
-              border: "1px solid #999",
+              border: "1px solid #E2E8F0",
               borderRadius: "5px",
               fontFamily: '"Fira code", "Fira Mono", monospace',
               fontSize: 12,
