@@ -90,7 +90,15 @@ export default inject(
                     color="#6441AF"
                     fontSize="18px"
                   />
-                  <Box>{v.contractTxId}</Box>
+                  <Box
+                    as="a"
+                    color="#6441AF"
+                    sx={{ textDecoration: "underline" }}
+                    target="_blank"
+                    href={`https://sonar.warp.cc/?#/app/contract/${v.contractTxId}`}
+                  >
+                    {v.contractTxId}
+                  </Box>
                   <Box
                     as="i"
                     mx={2}
@@ -109,6 +117,26 @@ export default inject(
                         fontSize="18px"
                       />
                       <Box color="#6441AF">Error</Box>
+                    </>
+                  )}
+                  {isNil(v.txid) ? null : (
+                    <>
+                      <Box
+                        as="i"
+                        mx={2}
+                        className="fas fa-angle-right"
+                        color="#6441AF"
+                        fontSize="18px"
+                      />
+                      <Box
+                        as="a"
+                        color="#6441AF"
+                        sx={{ textDecoration: "underline" }}
+                        target="_blank"
+                        href={`https://sonar.warp.cc/#/app/interaction/${v.txid}`}
+                      >
+                        {v.txid}
+                      </Box>
                     </>
                   )}
                 </Flex>
