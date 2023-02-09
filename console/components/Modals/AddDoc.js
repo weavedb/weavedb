@@ -13,6 +13,11 @@ import {
 } from "ramda"
 import { inject } from "roidjs"
 import { queryDB, read } from "../../lib/weavedb"
+import Editor from "react-simple-code-editor"
+import { highlight, languages } from "prismjs/components/prism-core"
+import "prismjs/components/prism-clike"
+import "prismjs/components/prism-javascript"
+import "prismjs/themes/prism.css"
 
 export default inject(
   ["loading", "temp_current", "tx_logs"],
@@ -55,14 +60,19 @@ export default inject(
             sx={{
               borderRadius: "3px",
             }}
+            mb={3}
           />
-          <Textarea
-            mt={3}
+          <Editor
             value={newData}
-            placeholder="JSON Data"
-            onChange={e => setNewData(e.target.value)}
-            sx={{
-              borderRadius: "3px",
+            onValueChange={code => setNewData(code)}
+            highlight={code => highlight(code, languages.js)}
+            padding={10}
+            placeholder="entar doc data"
+            style={{
+              border: "1px solid #E2E8F0",
+              borderRadius: "5px",
+              fontFamily: '"Fira code", "Fira Mono", monospace',
+              fontSize: 12,
             }}
           />
           <Flex
