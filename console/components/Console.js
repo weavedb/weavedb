@@ -230,21 +230,33 @@ export default inject(
                   )}
                 </Flex>
               </Flex>
-
-              <Flex p={2} align="center" color={isDB ? "#333" : "#6441AF"}>
-                <Box
-                  as="i"
-                  mr={2}
-                  className="fas fa-angle-right"
+              <Flex
+                flex={1}
+                height="160px"
+                sx={{ overflowY: "auto" }}
+                direction="column"
+              >
+                <Flex p={2} color={isDB ? "#333" : "#6441AF"}>
+                  <Box
+                    as="i"
+                    mr={2}
+                    className="fas fa-angle-right"
+                    color="#6441AF"
+                    fontSize="18px"
+                  />
+                  {isDB
+                    ? `${method}(${query})`
+                    : "To execute queries, connect with a WeaveDB instance."}
+                </Flex>
+                <Flex
+                  flex={1}
+                  px={6}
                   color="#6441AF"
-                  fontSize="18px"
-                />
-                {isDB
-                  ? `${method}(${query})`
-                  : "To execute queries, connect with a WeaveDB instance."}
-              </Flex>
-              <Flex flex={1} px={6} color="#6441AF" pb={3}>
-                {isDB ? result : ""}
+                  pb={3}
+                  sx={{ wordBreak: "break-all" }}
+                >
+                  {isDB ? result : ""}
+                </Flex>
               </Flex>
             </Flex>
           )}
