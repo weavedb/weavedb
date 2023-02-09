@@ -12,7 +12,9 @@ import { weavedbSrcTxId, dfinitySrcTxId, ethereumSrcTxId } from "./const"
 let arweave_wallet, sdk
 
 const ret = res =>
-  !isNil(res.err) ? `Error: ${res.err.errorMessage}` : JSON.stringify(res)
+  !isNil(res) && !isNil(res.err)
+    ? `Error: ${res.err.errorMessage}`
+    : JSON.stringify(res)
 
 class Log {
   constructor(sdk, method, query, opt, fn) {
@@ -35,7 +37,7 @@ class Log {
       : await this.sdk[this.method](this.query, this.opt)
     const date = Date.now()
     let log = {
-      txid: !isNil(res.originalTxId) ? res.originalTxId : null,
+      txid: !isNil(res) && !isNil(res.originalTxId) ? res.originalTxId : null,
       node: this.node,
       date,
       duration: date - this.start,
