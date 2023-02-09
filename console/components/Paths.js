@@ -21,7 +21,11 @@ export default inject(
     fn,
   }) => (
     <Flex mb={3} align="center" fontSize="14px">
-      WeaveDB ({isNil(contractTxId) ? "-" : contractTxId.slice(0, 7)})
+      WeaveDB (
+      {isNil(contractTxId)
+        ? "-"
+        : `${contractTxId.slice(0, 4)}...${contractTxId.slice(-4)}`}
+      )
       {addIndex(map)((v, i) => (
         <>
           <Box mx={2} as="i" className="fas fa-angle-right" />
