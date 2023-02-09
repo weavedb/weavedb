@@ -16,6 +16,8 @@ import { preset_rpcs } from "../lib/const"
 export default inject(
   ["loading_contract", "tx_logs"],
   ({
+    setEditGRPC,
+    editGRPC,
     setPresetRPC,
     setNewRPCType,
     nodes,
@@ -65,6 +67,7 @@ export default inject(
             map(v => (
               <Flex
                 onClick={async () => {
+                  let isErr = false
                   if (contractTxId !== v.contractTxId) {
                     if (v.network === "Localhost" && isNil(port)) {
                       alert("not connected with localhost")
@@ -88,15 +91,18 @@ export default inject(
                         setCurrentDB(v)
                         await _setContractTxId(v.contractTxId, v.network, v.rpc)
                       } else {
-                        alert(
-                          "couldn't connect to the contract. Web Console is only compatible with v0.18 and above."
-                        )
+                        isErr = true
                       }
                     } catch (e) {
                       console.log(e)
+                      isErr = true
+                    }
+                    if (isErr) {
                       alert(
                         "couldn't connect to the contract. Web Console is only compatible with v0.18 and above."
                       )
+                      setEditGRPC(v)
+                      setAddGRPC(true)
                     }
                   }
                 }}

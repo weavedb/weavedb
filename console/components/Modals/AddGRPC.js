@@ -8,6 +8,8 @@ import { preset_rpcs, rpc_types } from "../../lib/const"
 export default inject(
   ["loading", "temp_current", "tx_logs"],
   ({
+    setEditGRPC,
+    editGRPC,
     setAddGRPC,
     setNewNetwork,
     port,
@@ -30,6 +32,7 @@ export default inject(
     set,
     $,
   }) => {
+    const cdb = editGRPC || currentDB
     return (
       <Flex
         w="100%"
@@ -54,7 +57,7 @@ export default inject(
           <Select
             w="100%"
             disabled={true}
-            value={currentDB.network}
+            value={cdb.network}
             onChange={e => setNewNetwork(e.target.value)}
             sx={{ borderRadius: "5px 0 0 5px" }}
             mb={3}
@@ -69,7 +72,7 @@ export default inject(
             </Flex>
             <Input
               flex={1}
-              value={currentDB.contractTxId}
+              value={cdb.contractTxId}
               disabled={true}
               sx={{ borderRadius: 0 }}
             />
@@ -139,39 +142,45 @@ export default inject(
               height="40px"
               onClick={async () => {
                 if (isNil($.loading)) {
-                  set("connect_to_db", "loading")
-                  const rpc =
-                    newRPCType === "sdk"
-                      ? null
-                      : newRPCType === "preset"
-                      ? presetRPC
-                      : newHttp + newRPC2
-                  const db = await fn(setupWeaveDB)({
-                    network: newHttp === "https://" ? "Mainnet" : "Localhost",
-                    contractTxId: currentDB.contractTxId,
-                    rpc,
-                  })
-                  let state = await fn(read)({ db, m: "getInfo", q: [true] })
-                  if (!isNil(state.version)) {
-                    setState(null)
-                    const newDB = assoc("rpc", rpc, currentDB)
-                    updateDB(newDB)
-                    setCurrentDB(newDB)
-                    setAddGRPC(false)
-                    setNewRPC2("")
-                    await _setContractTxId(
-                      currentDB.contractTxId,
-                      newHttp === "https://" ? "Mainnet" : "Localhost",
+                  try {
+                    set("connect_to_db", "loading")
+                    const rpc =
+                      newRPCType === "sdk"
+                        ? null
+                        : newRPCType === "preset"
+                        ? presetRPC
+                        : newHttp + newRPC2
+                    const db = await fn(setupWeaveDB)({
+                      network: newHttp === "https://" ? "Mainnet" : "Localhost",
+                      contractTxId: cdb.contractTxId,
                       rpc,
-                      db,
-                      state
-                    )
-                  } else {
+                    })
+                    let state = await fn(read)({ db, m: "getInfo", q: [true] })
+                    if (!isNil(state.version)) {
+                      setState(null)
+                      const newDB = assoc("rpc", rpc, cdb)
+                      updateDB(newDB)
+                      setCurrentDB(newDB)
+                      setAddGRPC(false)
+                      setEditGRPC(null)
+                      setNewRPC2("")
+                      await _setContractTxId(
+                        cdb.contractTxId,
+                        newHttp === "https://" ? "Mainnet" : "Localhost",
+                        rpc,
+                        db,
+                        state
+                      )
+                    } else {
+                      alert(
+                        "couldn't connect to the contract. Web Console is only compatible with v0.18 and above."
+                      )
+                    }
+                  } catch (e) {
                     alert(
                       "couldn't connect to the contract. Web Console is only compatible with v0.18 and above."
                     )
                   }
-
                   set(null, "loading")
                 }
               }}

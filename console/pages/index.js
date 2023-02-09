@@ -51,6 +51,7 @@ export default inject(
   ({ set, init, router, conf, fn, $ }) => {
     const [loadMore, setLoadMore] = useState(null)
     const [whitelist, setWhitelist] = useState([])
+    const [editGRPC, setEditGRPC] = useState(null)
     const [addCollection, setAddCollection] = useState(false)
     const [addSchema, setAddSchema] = useState(false)
     const [schema, setSchema] = useState(null)
@@ -483,6 +484,8 @@ export default inject(
         setAddContract,
       },
       DB: {
+        editGRPC,
+        setEditGRPC,
         setPresetRPC,
         setNewRPCType,
         nodes,
@@ -531,6 +534,8 @@ export default inject(
         doc,
       },
       Modals: {
+        editGRPC,
+        setEditGRPC,
         newAuths,
         setNewAuths,
         newNetwork,
