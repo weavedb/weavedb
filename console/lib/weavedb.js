@@ -35,6 +35,7 @@ class Log {
       : await this.sdk[this.method](this.query, this.opt)
     const date = Date.now()
     let log = {
+      txid: !isNil(res.originalTxId) ? res.originalTxId : null,
       node: this.node,
       date,
       duration: date - this.start,
