@@ -101,6 +101,7 @@ export default inject(
     const [newRPCType, setNewRPCType] = useState("sdk")
     const [newRPC2, setNewRPC2] = useState("")
     const [newSchema, setNewSchema] = useState("")
+    const [newIndex, setNewIndex] = useState("")
     const [newRules, setNewRules] = useState("")
     const [presetRPC, setPresetRPC] = useState("https://grpc.weavedb-node.xyz")
     const [dbs, setDBs] = useState([])
@@ -536,6 +537,8 @@ export default inject(
         doc,
       },
       Modals: {
+        newIndex,
+        setNewIndex,
         newRules,
         setNewRules,
         newSchema,
@@ -699,7 +702,15 @@ export default inject(
                       ) : tab === "Nodes" ? (
                         <Nodes {...props.Nodes} />
                       ) : tab === "Indexes" ? (
-                        <Indexes {...{ indexes, setAddIndex, col }} />
+                        <Indexes
+                          {...{
+                            isOwner,
+                            setNewIndex,
+                            indexes,
+                            setAddIndex,
+                            col,
+                          }}
+                        />
                       ) : tab === "DB" ? (
                         <DB {...props.DB} />
                       ) : (
