@@ -3,6 +3,11 @@ import { Box, Flex, Input, Select, Textarea } from "@chakra-ui/react"
 import { isNil, without, o, uniq, append, map } from "ramda"
 import { inject } from "roidjs"
 import { read, addRelayerJob } from "../../lib/weavedb"
+import Editor from "react-simple-code-editor"
+import { highlight, languages } from "prismjs/components/prism-core"
+import "prismjs/components/prism-clike"
+import "prismjs/components/prism-javascript"
+import "prismjs/themes/prism.css"
 
 export default inject(
   ["loading", "temp_current", "tx_logs"],
@@ -151,7 +156,7 @@ export default inject(
               </Flex>
             )
           })(newSigners)}
-          <Flex align="center">
+          <Flex align="center" mb={3}>
             <Input
               flex={1}
               value={newSigner}
@@ -189,16 +194,19 @@ export default inject(
               )}
             </Flex>
           </Flex>
-          <Textarea
-            mt={3}
+          <Editor
             value={newJobSchema}
+            onValueChange={code => setNewJobSchema(code)}
+            highlight={code => highlight(code, languages.js)}
+            padding={10}
             placeholder="Schema for Extra Data"
-            onChange={e => setNewJobSchema(e.target.value)}
-            sx={{
-              borderRadius: "3px",
+            style={{
+              border: "1px solid #E2E8F0",
+              borderRadius: "5px",
+              fontFamily: '"Fira code", "Fira Mono", monospace',
+              fontSize: 12,
             }}
           />
-
           <Flex
             mt={4}
             sx={{
