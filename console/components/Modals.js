@@ -32,6 +32,8 @@ export default inject(
     "temp_current_all",
   ],
   ({
+    setEditGRPC,
+    editGRPC,
     setNewNetwork,
     newNetwork,
     doc,
@@ -304,6 +306,8 @@ export default inject(
       ) : addGRPC !== false ? (
         <AddGRPC
           {...{
+            setEditGRPC,
+            editGRPC,
             setAddGRPC,
             setNewNetwork,
             port,
