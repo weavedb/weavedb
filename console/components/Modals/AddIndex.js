@@ -3,10 +3,17 @@ import { Box, Flex, Textarea } from "@chakra-ui/react"
 import { is, compose, includes, append, isNil, map, clone, join } from "ramda"
 import { inject } from "roidjs"
 import { read, queryDB } from "../../lib/weavedb"
+import Editor from "react-simple-code-editor"
+import { highlight, languages } from "prismjs/components/prism-core"
+import "prismjs/components/prism-clike"
+import "prismjs/components/prism-javascript"
+import "prismjs/themes/prism.css"
 
 export default inject(
   ["loading", "temp_current", "tx_logs"],
   ({
+    newIndex,
+    setNewIndex,
     setAddIndex,
     indexes,
     setIndexes,
@@ -19,7 +26,6 @@ export default inject(
     set,
     $,
   }) => {
-    const [newIndex, setNewIndex] = useState(`[]`)
     return (
       <Flex
         w="100%"
@@ -38,15 +44,23 @@ export default inject(
           sx={{ borderRadius: "5px", cursor: "default" }}
           onClick={e => e.stopPropagation()}
         >
-          <Textarea
-            mt={3}
+          <Flex mb={1} fontSize="10px">
+            Schema for ({doc_path.join(" > ")})
+          </Flex>
+          <Editor
             value={newIndex}
-            placeholder="Compound Index"
-            onChange={e => setNewIndex(e.target.value)}
-            sx={{
-              borderRadius: "3px",
+            onValueChange={code => setNewIndex(code)}
+            highlight={code => highlight(code, languages.js)}
+            padding={10}
+            placeholder="enter schema"
+            style={{
+              border: "1px solid #999",
+              borderRadius: "5px",
+              fontFamily: '"Fira code", "Fira Mono", monospace',
+              fontSize: 12,
             }}
           />
+
           <Flex
             mt={4}
             sx={{
