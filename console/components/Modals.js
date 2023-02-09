@@ -32,6 +32,8 @@ export default inject(
     "temp_current_all",
   ],
   ({
+    newSchema,
+    setNewSchema,
     setEditGRPC,
     editGRPC,
     setNewNetwork,
@@ -185,6 +187,8 @@ export default inject(
       ) : addSchema !== false ? (
         <AddSchema
           {...{
+            newSchema,
+            setNewSchema,
             db,
             doc_path,
             setSchema,

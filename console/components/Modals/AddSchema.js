@@ -3,10 +3,17 @@ import { Box, Flex, Textarea } from "@chakra-ui/react"
 import { isNil, compose, join, map, append } from "ramda"
 import { inject } from "roidjs"
 import { read, queryDB } from "../../lib/weavedb"
+import Editor from "react-simple-code-editor"
+import { highlight, languages } from "prismjs/components/prism-core"
+import "prismjs/components/prism-clike"
+import "prismjs/components/prism-javascript"
+import "prismjs/themes/prism.css"
 
 export default inject(
   ["loading", "temp_current", "tx_logs"],
   ({
+    newSchema,
+    setNewSchema,
     db,
     doc_path,
     setSchema,
@@ -18,7 +25,6 @@ export default inject(
     set,
     $,
   }) => {
-    const [newSchema, setNewSchema] = useState("")
     return (
       <Flex
         w="100%"
@@ -37,13 +43,20 @@ export default inject(
           sx={{ borderRadius: "5px", cursor: "default" }}
           onClick={e => e.stopPropagation()}
         >
-          <Textarea
-            mt={3}
+          <Flex mb={1} fontSize="10px">
+            Schema for ({doc_path.join(" > ")})
+          </Flex>
+          <Editor
             value={newSchema}
-            placeholder="JSON Schema"
-            onChange={e => setNewSchema(e.target.value)}
-            sx={{
-              borderRadius: "3px",
+            onValueChange={code => setNewSchema(code)}
+            highlight={code => highlight(code, languages.js)}
+            padding={10}
+            placeholder="enter schema"
+            style={{
+              border: "1px solid #999",
+              borderRadius: "5px",
+              fontFamily: '"Fira code", "Fira Mono", monospace',
+              fontSize: 12,
             }}
           />
           <Flex
@@ -77,31 +90,33 @@ export default inject(
                   append(col)
                 )(base_path)
                 let query = `${newSchema}, ${col_path}`
-                const res = JSON.parse(
-                  await fn(queryDB)({
-                    method: "setSchema",
-                    query,
-                    contractTxId,
-                  })
-                )
-                if (!res.success) {
-                  alert("Something went wrong")
-                } else {
-                  setNewSchema("")
-                  setAddSchema(false)
-                  setSchema(
-                    await fn(read)({
-                      db,
-                      m: "getSchema",
-                      q: [
-                        ...(doc_path.length % 2 === 0
-                          ? doc_path.slice(0, -1)
-                          : doc_path),
-                        true,
-                      ],
+                try {
+                  const res = JSON.parse(
+                    await fn(queryDB)({
+                      method: "setSchema",
+                      query,
+                      contractTxId,
                     })
                   )
-                }
+                  if (!res.success) {
+                    alert("Something went wrong")
+                  } else {
+                    setNewSchema("")
+                    setAddSchema(false)
+                    setSchema(
+                      await fn(read)({
+                        db,
+                        m: "getSchema",
+                        q: [
+                          ...(doc_path.length % 2 === 0
+                            ? doc_path.slice(0, -1)
+                            : doc_path),
+                          true,
+                        ],
+                      })
+                    )
+                  }
+                } catch (e) {}
                 set(null, "loading")
               }
             }}
