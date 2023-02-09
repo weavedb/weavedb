@@ -32,6 +32,8 @@ export default inject(
     "temp_current_all",
   ],
   ({
+    newRules,
+    setNewRules,
     newSchema,
     setNewSchema,
     setEditGRPC,
@@ -209,6 +211,8 @@ export default inject(
       ) : addRules !== false ? (
         <AddRules
           {...{
+            newRules,
+            setNewRules,
             db,
             doc_path,
             setRules,
