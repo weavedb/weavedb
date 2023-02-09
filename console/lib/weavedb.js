@@ -6,7 +6,7 @@ import Client from "weavedb-client"
 import { ethers } from "ethers"
 import { AuthClient } from "@dfinity/auth-client"
 import { WarpFactory } from "warp-contracts"
-import { clone, prepend, assocPath, is, mergeLeft, isNil } from "ramda"
+import { trim, clone, prepend, assocPath, is, mergeLeft, isNil } from "ramda"
 import { Buffer } from "buffer"
 import { weavedbSrcTxId, dfinitySrcTxId, ethereumSrcTxId } from "./const"
 let arweave_wallet, sdk
@@ -645,8 +645,13 @@ export const _admin = async ({
   fn,
 }) => {
   try {
-    const { db, opt } = await fn(getRawDB)({ contractTxId, rpc, network })
-    const query = { op: "add_contract", contractTxId: txid }
+    const _txid = trim(txid)
+    const { db, opt } = await fn(getRawDB)({
+      contractTxId,
+      rpc,
+      network,
+    })
+    const query = { op: "add_contract", contractTxId: _txid }
     return await new Log(db, "admin", query, opt, fn).rec()
   } catch (e) {
     console.log(e)
@@ -674,7 +679,8 @@ export const _addNodeOwner = async ({
 }) => {
   try {
     const { db, opt } = await fn(getRawDB)({ contractTxId, rpc, network })
-    const addr = /^0x.+$/.test(address) ? address.toLowerCase() : address
+    const _address = trim(address)
+    const addr = /^0x.+$/.test(_address) ? _address.toLowerCase() : _address
     return await new Log(db, "addOwner", addr, opt, fn).rec()
   } catch (e) {
     console.log(e)
@@ -701,7 +707,9 @@ export const _whitelist = async ({
 }) => {
   try {
     const { db, opt } = await fn(getRawDB)({ contractTxId, rpc, network })
-    let params = { allow, address }
+    const _address = trim(address)
+    const addr = /^0x.+$/.test(_address) ? _address.toLowerCase() : _address
+    let params = { allow, address: addr }
     if (!isNil(limit)) params.limit = limit
     const query = { op: "whitelist", ...params }
     return await new Log(db, "admin", query, opt, fn).rec()
@@ -760,7 +768,8 @@ export const _addOwner = async ({ val: { address, contractTxId }, fn }) => {
   try {
     const { err, opt } = await fn(getOpt)({ contractTxId })
     if (!isNil(err)) return alert(err)
-    const addr = /^0x.+$/.test(address) ? address.toLowerCase() : address
+    const _address = trim(address)
+    const addr = /^0x.+$/.test(_address) ? _address.toLowerCase() : _address
     return ret(await new Log(sdk, "addOwner", addr, opt, fn).rec())
   } catch (e) {
     console.log(e)
