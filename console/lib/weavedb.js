@@ -6,7 +6,16 @@ import Client from "weavedb-client"
 import { ethers } from "ethers"
 import { AuthClient } from "@dfinity/auth-client"
 import { WarpFactory } from "warp-contracts"
-import { trim, clone, prepend, assocPath, is, mergeLeft, isNil } from "ramda"
+import {
+  trim,
+  clone,
+  prepend,
+  assocPath,
+  is,
+  mergeLeft,
+  isNil,
+  includes,
+} from "ramda"
 import { Buffer } from "buffer"
 import { weavedbSrcTxId, dfinitySrcTxId, ethereumSrcTxId } from "./const"
 let arweave_wallet, sdk
@@ -792,7 +801,10 @@ export const queryDB = async ({ val: { query, method, contractTxId }, fn }) => {
   try {
     let q
     eval(`q = [${query}]`)
-    const { err, opt } = await fn(getOpt)({ contractTxId })
+
+    const { err, opt } = includes(method)(sdk.reads)
+      ? { err: null, opt: null }
+      : await fn(getOpt)({ contractTxId })
     if (!isNil(err)) return alert(err)
     return ret(await new Log(sdk, method, q, opt, fn).rec(true))
   } catch (e) {
