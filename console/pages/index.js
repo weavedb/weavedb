@@ -100,6 +100,7 @@ export default inject(
     const [contractTxId, setContractTxId] = useState(null)
     const [newRPCType, setNewRPCType] = useState("sdk")
     const [newRPC2, setNewRPC2] = useState("")
+    const [newSchema, setNewSchema] = useState("")
     const [presetRPC, setPresetRPC] = useState("https://grpc.weavedb-node.xyz")
     const [dbs, setDBs] = useState([])
     const [node, setNode] = useState(null)
@@ -441,7 +442,7 @@ export default inject(
         collections,
         col,
       },
-      Schemas: { col, schema, setAddSchema },
+      Schemas: { col, schema, setAddSchema, newSchema, setNewSchema },
       Rules: { rules, setAddRules, col },
       Crons: {
         setAddCron,
@@ -534,6 +535,8 @@ export default inject(
         doc,
       },
       Modals: {
+        newSchema,
+        setNewSchema,
         editGRPC,
         setEditGRPC,
         newAuths,
