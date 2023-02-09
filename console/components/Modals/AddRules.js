@@ -51,9 +51,9 @@ export default inject(
             onValueChange={code => setNewRules(code)}
             highlight={code => highlight(code, languages.js)}
             padding={10}
-            placeholder="enter schema"
+            placeholder="Access Contral Rules"
             style={{
-              border: "1px solid #999",
+              border: "1px solid #E2E8F0",
               borderRadius: "5px",
               fontFamily: '"Fira code", "Fira Mono", monospace',
               fontSize: 12,
