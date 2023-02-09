@@ -32,6 +32,8 @@ export default inject(
     "temp_current_all",
   ],
   ({
+    newIndex,
+    setNewIndex,
     newRules,
     setNewRules,
     newSchema,
@@ -259,6 +261,8 @@ export default inject(
       ) : addIndex !== false ? (
         <AddIndex
           {...{
+            newIndex,
+            setNewIndex,
             setAddIndex,
             indexes,
             setIndexes,

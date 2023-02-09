@@ -3,6 +3,11 @@ import { Box, Flex, Input, Textarea, Select } from "@chakra-ui/react"
 import { concat, compose, join, append, map, isNil, includes } from "ramda"
 import { inject } from "roidjs"
 import { read, queryDB } from "../../lib/weavedb"
+import Editor from "react-simple-code-editor"
+import { highlight, languages } from "prismjs/components/prism-core"
+import "prismjs/components/prism-clike"
+import "prismjs/components/prism-javascript"
+import "prismjs/themes/prism.css"
 
 export default inject(
   ["loading", "temp_current", "tx_logs"],
@@ -24,7 +29,9 @@ export default inject(
     const [newField, setNewField] = useState("")
     const [newFieldType, setNewFieldType] = useState(`string`)
     const [newFieldVal, setNewFieldVal] = useState("")
-    const [newFieldVal2, setNewFieldVal2] = useState(`{"allow write": true}`)
+    const [newFieldVal2, setNewFieldVal2] = useState(
+      JSON.stringify({ "allow write": true })
+    )
     const [newFieldBool, setNewFieldBool] = useState(true)
     return (
       <Flex
@@ -44,7 +51,7 @@ export default inject(
           sx={{ borderRadius: "5px", cursor: "default" }}
           onClick={e => e.stopPropagation()}
         >
-          <Flex>
+          <Flex mb={3}>
             <Select
               value={newFieldType}
               onChange={e => setNewFieldType(e.target.value)}
@@ -73,7 +80,6 @@ export default inject(
           </Flex>
           {newFieldType === "bool" ? (
             <Select
-              mt={3}
               value={newFieldBool}
               onChange={e => setNewFieldBool(eval(e.target.value))}
             >
@@ -83,29 +89,36 @@ export default inject(
               ])}
             </Select>
           ) : newFieldType === "sub collection" ? (
-            <Textarea
-              mt={3}
+            <Editor
               value={newFieldVal2}
-              placeholder={"Access Control Rules"}
-              onChange={e => setNewFieldVal2(e.target.value)}
-              sx={{
-                borderRadius: "3px",
+              onValueChange={code => setNewFieldVal2(code)}
+              highlight={code => highlight(code, languages.js)}
+              padding={10}
+              placeholder="Access Contral Rules"
+              style={{
+                border: "1px solid #E2E8F0",
+                borderRadius: "5px",
+                fontFamily: '"Fira code", "Fira Mono", monospace',
+                fontSize: 12,
               }}
             />
           ) : (
-            <Textarea
-              mt={3}
-              value={newFieldType === "null" ? "null" : newFieldVal}
-              placeholder={"Field Value"}
-              onChange={e => setNewFieldVal(e.target.value)}
-              disabled={newFieldType === "null"}
-              sx={{
-                borderRadius: "3px",
+            <Editor
+              value={newFieldVal}
+              onValueChange={code => setNewFieldVal(code)}
+              highlight={code => highlight(code, languages.js)}
+              padding={10}
+              placeholder="Field Value"
+              style={{
+                border: "1px solid #E2E8F0",
+                borderRadius: "5px",
+                fontFamily: '"Fira code", "Fira Mono", monospace',
+                fontSize: 12,
               }}
             />
           )}
           <Flex
-            mt={4}
+            mt={3}
             sx={{
               borderRadius: "3px",
               cursor: "pointer",
