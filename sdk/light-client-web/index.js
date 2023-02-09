@@ -91,7 +91,12 @@ class SDK extends Base {
 
     return await this.write(params.function, query, nocache)
   }
-
+  async getVersion(nocache) {
+    return this.readQuery("getVersion", null, nocache)
+  }
+  async getIds(tx, nocache) {
+    return this.readQuery("getIds", tx, nocache)
+  }
   async getNonce(addr) {
     return this.readQuery("getNonce", addr, true)
   }
