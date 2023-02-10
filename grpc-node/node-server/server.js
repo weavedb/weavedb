@@ -181,6 +181,9 @@ async function initSDK(v) {
         contracts: {
           dbLocation: `./cache/warp/${_config.contractTxId}/contracts`,
         },
+        src: {
+          dbLocation: `./cache/warp/${_config.contractTxId}/src`,
+        },
       }
       await snapshot.recover(contractTxId)
     }
@@ -188,7 +191,7 @@ async function initSDK(v) {
     if (isNil(_config.wallet))
       await sdks[contractTxId].initializeWithoutWallet()
     await sdks[contractTxId].db.readState()
-    await snapshot.save(contractTxId)
+    if(isLmdb) await snapshot.save(contractTxId)
     console.log(`sdk(${v}) ready!`)
 
     if (!isNil(config.admin)) {
