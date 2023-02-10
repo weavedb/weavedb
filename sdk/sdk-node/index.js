@@ -14,6 +14,7 @@ const {
   clone,
 } = require("ramda")
 const { LmdbCache } = require("warp-contracts-lmdb")
+const { RedisCache } = require("./RedisCache")
 const shortid = require("shortid")
 const {
   WarpFactory,
@@ -60,15 +61,15 @@ const _on = async (state, contractTxId, block = {}) => {
             if (subs[txid][hash].height < block.height) {
               subs[txid][hash].height = block.height
               let prev = isNil(subs[txid][hash].prev)
-                ? subs[txid][hash].prev
-                : subs[txid][hash].doc
-                ? subs[txid][hash].prev.data
-                : pluck("data", subs[txid][hash].prev)
+                  ? subs[txid][hash].prev
+                  : subs[txid][hash].doc
+                  ? subs[txid][hash].prev.data
+                  : pluck("data", subs[txid][hash].prev)
               let current = isNil(res.result)
-                ? res.result
-                : subs[txid][hash].doc
-                ? res.result.data
-                : pluck("data", res.result)
+                  ? res.result
+                  : subs[txid][hash].doc
+                  ? res.result.data
+                  : pluck("data", res.result)
               if (!equals(current, prev)) {
                 for (const k in subs[txid][hash].subs) {
                   try {
@@ -78,9 +79,9 @@ const _on = async (state, contractTxId, block = {}) => {
                           ? res.result
                           : subs[txid][hash].doc
                           ? isNil(res.result)
-                            ? null
-                            : res.result.data
-                          : pluck("data", res.result)
+                          ? null
+                          : res.result.data
+                        : pluck("data", res.result)
                       )
                   } catch (e) {
                     console.log(e)
@@ -125,6 +126,7 @@ class SDK extends Base {
     port = 1820,
     cache = "lmdb",
     lmdb = {},
+    redis = {},
     old = false,
   }) {
     super()
@@ -140,6 +142,7 @@ class SDK extends Base {
     }
     this.cache = cache
     this.lmdb = lmdb
+    this.redis = redis
     this.arweave_wallet = arweave_wallet
     if (isNil(arweave)) {
       if (network === "localhost") {
@@ -165,8 +168,8 @@ class SDK extends Base {
     this.network =
       network ||
       (arweave.host === "host.docker.internal" || arweave.host === "localhost"
-        ? "localhost"
-        : "mainnet")
+       ? "localhost"
+       : "mainnet")
 
     if (this.network === "localhost") this.cache = "leveldb"
     if (arweave.host === "host.docker.internal") {
@@ -196,7 +199,28 @@ class SDK extends Base {
             ...this.Warp.defaultCacheOptions,
             dbLocation: `./cache/warp/contracts`,
             ...(lmdb.contracts || {}),
+          }),
+          new LmdbCache({
+            ...this.Warp.defaultCacheOptions,
+            dbLocation: `./cache/warp/src`,
+            ...(lmdb.src || {}),
           })
+        )
+    }else if(this.cache === "redis"){
+      const opt = {url: (this.redis.url || null)}
+      this.warp
+        .useStateCache(
+          new RedisCache({
+            prefix: `${this.redis.prefix || "warp"}.state`,
+          },opt)
+        )
+        .useContractCache(
+          new RedisCache({
+            prefix: `${this.redis.prefix || "warp"}.contracts`,
+          },opt),
+          new RedisCache({
+            prefix: `${this.redis.prefix || "warp"}.src`,
+          },opt)
         )
     }
     this.contractTxId = contractTxId
@@ -403,7 +427,7 @@ class SDK extends Base {
       .then(v => {
         if (
           !isNil(subs[this.contractTxId][hash].subs[id]) &&
-          subs[this.contractTxId][hash].height === 0
+            subs[this.contractTxId][hash].height === 0
         ) {
           subs[this.contractTxId][hash].prev = v
           cb(isCon ? v : isDoc ? (isNil(v) ? null : v.data) : pluck("data", v))
