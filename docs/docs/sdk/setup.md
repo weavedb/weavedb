@@ -63,9 +63,25 @@ WeaveDB contracts v0.7 and less are not compatible with the latest warp SDK. Set
 - **subscribe** : `true` | `false` (default : `true`)  
 [Warp subscription plugin](https://github.com/warp-contracts/warp-contracts-plugins/tree/main/warp-contracts-plugin-subscription) needed for `on`, `con`, `getCache`, `cgetCache` methods, only available with NodeJS
 
-- **cache** : `leveldb` | `lmdb` (default : `lmdb`)  
+- **cache** : `leveldb` | `lmdb` | `redis` (default : `lmdb`)  
 [LMDB has better performance than LevelDB](https://mozilla.github.io/firefox-browser-architecture/text/0017-lmdb-vs-leveldb.html) and also is capable of concurrency, but only available with NodeJS. `leveldb` is what the Warp SDK uses by default, but you can only run one SDK instance with it.
 
 - **lmdb** : lmdb settings to merge with the default settings  
-e.g. `{state: {dbLocation: "xyz"}, contracts: {dbLocation: "xyz2"}}`
 
+```js
+{
+  state: { dbLocation: "./cache/warp/state" },
+  contracts: { dbLocation: "./cache/warp/contracts" },
+  src: { dbLocation: "./cache/warp/src" }
+}
+````
+
+- **redis** : redis settings  
+
+```js
+{
+  prefix: "warp", // default to "warp"
+  url: "redis://localhost:6379" // default to null
+}
+```
+The Redis cache keys will be `[prefix].state.[sortKey]`, `[prefix].contracts.[sortKey]`, `[prefix].src.[sortKey]`
