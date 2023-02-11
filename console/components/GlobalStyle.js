@@ -4,7 +4,7 @@ export default () => (
     /* Firefox */
     * {
       scrollbar-width: auto;
-      scrollbar-color: #666 #ffffff;
+      scrollbar-color: #999 #ffffff;
     }
 
     /* Chrome, Edge, and Safari */
@@ -17,7 +17,7 @@ export default () => (
     }
 
     *::-webkit-scrollbar-thumb {
-      background-color: #666;
+      background-color: #999;
       border-radius: 10px;
       border: 3px solid #ffffff;
     }
