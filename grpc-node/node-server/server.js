@@ -92,7 +92,15 @@ async function query(call, callback) {
   }
 
   if (func === "admin") {
-    return await execAdmin({ query, res, sdks, admin, initSDK, contractTxId })
+    return await execAdmin({
+      query,
+      res,
+      sdks,
+      admin,
+      initSDK,
+      contractTxId,
+      snapshot,
+    })
   }
   if (!isAllowed(contractTxId)) {
     let allowed = false
@@ -167,7 +175,7 @@ async function query(call, callback) {
   }
 }
 
-async function initSDK(v) {
+async function initSDK(v, no_snapshot = false) {
   console.log("initializing contract..." + v)
   let success = true
   try {
@@ -185,17 +193,18 @@ async function initSDK(v) {
           dbLocation: `./cache/warp/${_config.contractTxId}/src`,
         },
       }
-      await snapshot.recover(contractTxId)
+      if (!no_snapshot) await snapshot.recover(contractTxId)
     }
     sdks[contractTxId] = new SDK(_config)
     if (isNil(_config.wallet))
       await sdks[contractTxId].initializeWithoutWallet()
     await sdks[contractTxId].db.readState()
-    if(isLmdb) await snapshot.save(contractTxId)
+    if (isLmdb && !no_snapshot) await snapshot.save(contractTxId)
     console.log(`sdk(${v}) ready!`)
 
     if (!isNil(config.admin)) {
       if (
+        !no_snapshot &&
         !isNil(config.admin.contractTxId) &&
         config.admin.contractTxId === v
       ) {

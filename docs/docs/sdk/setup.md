@@ -84,4 +84,8 @@ WeaveDB contracts v0.7 and less are not compatible with the latest warp SDK. Set
   url: "redis://localhost:6379" // default to null
 }
 ```
-The Redis cache keys will be `[prefix].state.[sortKey]`, `[prefix].contracts.[sortKey]`, `[prefix].src.[sortKey]`
+The Redis cache keys will be
+
+- `[prefix].[contractTxId].state.[sortKey]`
+- `[prefix].[contractTxId].contracts.[sortKey]`
+- `[prefix].[contractTxId].src.[sortKey]`
