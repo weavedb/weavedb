@@ -56,7 +56,23 @@ class Snapshot {
       ])
     }
   }
-
+  async delete(contractTxId) {
+    try {
+      const zip = path.resolve(cacheDirPath, `${contractTxId}.zip`)
+      const src = path.resolve(cacheDirPath, `${contractTxId}-downloaded.zip`)
+      const dest = path.resolve(cacheDirPath, `${contractTxId}/`)
+      for (const v of [zip, src, dest]) {
+        try {
+          fs.rmSync(v, { recursive: true, force: true })
+        } catch (e) {
+          console.log(e)
+        }
+      }
+      console.log(`snapshot(${contractTxId}) deleted!`)
+    } catch (e) {
+      console.log(`snapshot(${contractTxId}]) deletion error`)
+    }
+  }
   async recover(contractTxId) {
     try {
       fs.mkdirSync(cacheDirPath, { recursive: true })
@@ -152,6 +168,8 @@ class Snapshot {
       path.resolve(cacheDirPath, `${contractTxId}/contracts/`),
       "contracts"
     )
+    archive.directory(path.resolve(cacheDirPath, `${contractTxId}/src/`), "src")
+
     archive.finalize()
   }
 }
