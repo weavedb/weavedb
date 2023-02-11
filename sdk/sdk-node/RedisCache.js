@@ -1,7 +1,4 @@
-const {
-  LoggerFactory,
-  lastPossibleSortKey,
-} = require("warp-contracts")
+const { LoggerFactory, lastPossibleSortKey } = require("warp-contracts")
 const { createClient } = require("redis")
 const {
   map,
@@ -22,8 +19,8 @@ class RedisCache {
   constructor(cacheOptions, redisOptions = {}) {
     this.prefix = `${cacheOptions.prefix}`
     this.logger = LoggerFactory.INST.create("RedisCache")
-    this.client = createClient()
-    this.client.connect(redisOptions)
+    this.client = createClient(redisOptions)
+    this.client.connect()
   }
 
   async get(cacheKey, returnDeepCopy) {
@@ -32,10 +29,12 @@ class RedisCache {
       `${this.prefix}.${cacheKey.key}|${cacheKey.sortKey}`
     )
     if (res !== null) result = JSON.parse(res)
-    return result ? {
-      sortKey: cacheKey.sortKey,
-      cachedValue: result,
-    } : null
+    return result
+      ? {
+          sortKey: cacheKey.sortKey,
+          cachedValue: result,
+        }
+      : null
   }
 
   async getLast(key) {
@@ -48,13 +47,16 @@ class RedisCache {
       takeWhile(v => v <= `${this.prefix}.${start}`),
       sortBy(identity)
     )(keys)
-    return isNil(_key) ? null : !_key.startsWith(key) ? null : {
-      sortKey: _key.split("|")[1],
-      cachedValue: JSON.parse(
-        await this.client.get(`${this.prefix}.${_key}`)
-      ),
-    }
-    
+    return isNil(_key)
+      ? null
+      : !_key.startsWith(key)
+      ? null
+      : {
+          sortKey: _key.split("|")[1],
+          cachedValue: JSON.parse(
+            await this.client.get(`${this.prefix}.${_key}`)
+          ),
+        }
   }
 
   async getLessOrEqual(key, sortKey) {
@@ -67,12 +69,16 @@ class RedisCache {
       takeWhile(v => v <= `${this.prefix}.${start}`),
       sortBy(identity)
     )(keys)
-    return isNil(_key) ? null : !_key.startsWith(key) ? null : {
-      sortKey: _key.split("|")[1],
-      cachedValue: JSON.parse(
-        await this.client.get(`${this.prefix}.${_key}`)
-      ),
-    }
+    return isNil(_key)
+      ? null
+      : !_key.startsWith(key)
+      ? null
+      : {
+          sortKey: _key.split("|")[1],
+          cachedValue: JSON.parse(
+            await this.client.get(`${this.prefix}.${_key}`)
+          ),
+        }
   }
 
   async put(cacheKey, value) {
