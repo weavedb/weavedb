@@ -21,7 +21,7 @@ export default inject(
     col,
   }) => {
     return includes(tab)(["DB", "Crons", "Relayers", "Nodes"]) ? null : (
-      <Box flex={1} sx={{ border: "1px solid #555" }} direction="column">
+      <Flex flex={1} sx={{ border: "1px solid #555" }} direction="column">
         <Flex py={2} px={3} color="white" bg="#333" h="35px">
           <Box>Collections</Box>
           <Box flex={1} />
@@ -37,32 +37,45 @@ export default inject(
             </Box>
           )}
         </Flex>
-        {map(v => (
-          <Flex
-            onClick={async () => {
-              setDocPath([...base_path, v])
-              setDocdata(null)
-              setSubCollections([])
-              let _docs = await fn(read)({
-                db,
-                m: "cget",
-                q: [...base_path, v, per_page, true],
-              })
-              setDocuments(_docs)
-              if (_docs.length === per_page) setLoadMore(last(_docs))
-            }}
-            bg={col === v ? "#ddd" : ""}
-            py={2}
-            px={3}
+        <Box flex={1} sx={{ position: "relative" }}>
+          <Box
             sx={{
-              cursor: "pointer",
-              ":hover": { opacity: 0.75 },
+              position: "absolute",
+              left: 0,
+              top: 0,
+              right: 0,
+              bottom: 0,
+              overflowY: "auto",
             }}
           >
-            {v}
-          </Flex>
-        ))(collections)}
-      </Box>
+            {map(v => (
+              <Flex
+                onClick={async () => {
+                  setDocPath([...base_path, v])
+                  setDocdata(null)
+                  setSubCollections([])
+                  let _docs = await fn(read)({
+                    db,
+                    m: "cget",
+                    q: [...base_path, v, per_page, true],
+                  })
+                  setDocuments(_docs)
+                  if (_docs.length === per_page) setLoadMore(last(_docs))
+                }}
+                bg={col === v ? "#ddd" : ""}
+                py={2}
+                px={3}
+                sx={{
+                  cursor: "pointer",
+                  ":hover": { opacity: 0.75 },
+                }}
+              >
+                {v}
+              </Flex>
+            ))(collections)}
+          </Box>
+        </Box>
+      </Flex>
     )
   }
 )
