@@ -26,8 +26,20 @@ export default ({ rules, isOwner, setNewRules, setAddRules, col }) => (
         </Box>
       )}
     </Flex>
-    <Box height="500px" sx={{ overflowY: "auto" }} p={3}>
-      <JSONPretty id="json-pretty" data={rules}></JSONPretty>
+    <Box flex={1} sx={{ position: "relative" }}>
+      <Box
+        sx={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          right: 0,
+          bottom: 0,
+          overflowY: "auto",
+        }}
+        p={3}
+      >
+        <JSONPretty id="json-pretty" data={rules}></JSONPretty>
+      </Box>
     </Box>
   </Flex>
 )

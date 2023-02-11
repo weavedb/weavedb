@@ -32,14 +32,26 @@ export default inject(
           </Box>
         )}
       </Flex>
-      <Box height="500px" sx={{ overflowY: "auto" }} p={3}>
-        {isNil(schema) ? (
-          <Flex justify="center" align="center" height="100%">
-            Schema is not set.
-          </Flex>
-        ) : (
-          <JSONPretty id="json-pretty" data={schema}></JSONPretty>
-        )}
+      <Box flex={1} sx={{ position: "relative" }}>
+        <Box
+          sx={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            right: 0,
+            bottom: 0,
+            overflowY: "auto",
+          }}
+          p={3}
+        >
+          {isNil(schema) ? (
+            <Flex justify="center" align="center" height="100%">
+              Schema is not set.
+            </Flex>
+          ) : (
+            <JSONPretty id="json-pretty" data={schema}></JSONPretty>
+          )}
+        </Box>
       </Box>
     </Flex>
   )
