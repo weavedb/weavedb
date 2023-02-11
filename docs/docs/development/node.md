@@ -410,6 +410,14 @@ The admin can add user addresses to the whitelist, and whitelisted users can add
 await db.admin({ op: "whitelist", address, allow: true, limit: 5 }, { ar: admin_wallet })
 ```
 
+### Reset Cache
+
+The admin can delete cache and reconstruct it.
+
+```js
+await db.admin({ op: "reset_cache", contractTxId }, { ar: admin_wallet })
+```
+
 ### Add Contract to Node
 
 The user must be whitelisted to add a contract.
