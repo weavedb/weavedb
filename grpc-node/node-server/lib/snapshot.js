@@ -26,7 +26,7 @@ class Snapshot {
   initGCS() {
     const { Storage } = require("@google-cloud/storage")
     const storage = new Storage({
-      keyFilename: path.resolve(__dirname, this.conf.gcs.keyFilename),
+      keyFilename: path.resolve(__dirname, "..", this.conf.gcs.keyFilename),
     })
     this.gcsBucket = storage.bucket(this.conf.gcs.bucket)
   }
