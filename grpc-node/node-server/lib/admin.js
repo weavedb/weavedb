@@ -67,7 +67,7 @@ const contracts_rules = {
   },
 }
 
-const execAdminRead = async ({ query, res, contractTxId, node }) => {
+const execAdminRead = async ({ query, res, txid, node }) => {
   let _query, op
   try {
     _query = JSON.parse(query)
@@ -93,7 +93,7 @@ const execAdminRead = async ({ query, res, contractTxId, node }) => {
   }
 }
 
-const execAdmin = async ({ query, res, contractTxId, node }) => {
+const execAdmin = async ({ query, res, txid, node }) => {
   let _query, op, owners, err, signer
   try {
     _query = JSON.parse(query)
@@ -102,12 +102,12 @@ const execAdmin = async ({ query, res, contractTxId, node }) => {
     return res(`The wrong query`)
   }
 
-  const db = node.sdks[contractTxId]
+  const db = node.sdks[txid]
   if (isNil(node.conf.admin) || isNil(node.conf.admin.contractTxId)) {
     return res(`Admin doesn't exist`)
   }
-  if (contractTxId !== node.conf.admin.contractTxId) {
-    return res(`The wrong admin contract (${contractTxId})`)
+  if (txid !== node.conf.admin.contractTxId) {
+    return res(`The wrong admin contract (${txid})`)
   }
 
   if (isNil(db)) {
@@ -118,7 +118,7 @@ const execAdmin = async ({ query, res, contractTxId, node }) => {
   const reads = ["stats"]
 
   if (includes(op)(reads)) {
-    return execAdminRead({ query, res, contractTxId, node })
+    return execAdminRead({ query, res, txid, node })
   }
   if (_query.type !== "rsa256" && !includes(op)(nonAdmin)) {
     return res("Admin must be an Arweave account")
@@ -126,7 +126,7 @@ const execAdmin = async ({ query, res, contractTxId, node }) => {
 
   try {
     owners = await db.getOwner()
-    ;({ err, signer } = await validate(_query, contractTxId))
+    ;({ err, signer } = await validate(_query, txid))
   } catch (e) {}
   if (err) {
     return res(`The wrong signature`)
