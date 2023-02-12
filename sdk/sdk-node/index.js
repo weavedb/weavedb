@@ -42,9 +42,10 @@ let Arweave = require("arweave")
 Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
 const Base = require("weavedb-base")
 
-const _on = async (state, contractTxId, block = {}) => {
+const _on = async (state, input) => {
+  const block = input.interaction.block
   if (!isNil(state)) {
-    states[contractTxId] = state
+    states[input.contractTxId] = state
     for (const txid in subs) {
       for (const hash in subs[txid]) {
         const query = subs[txid][hash].query
@@ -99,18 +100,6 @@ const _on = async (state, contractTxId, block = {}) => {
   }
 }
 
-class CustomSubscriptionPlugin extends WarpSubscriptionPlugin {
-  async process(input) {
-    try {
-      let data = await dbs[this.contractTxId].db.readState(
-        input.interaction.block.height
-      )
-      const state = data.cachedValue.state
-      await _on(state, this.contractTxId, input.interaction.block)
-    } catch (e) {}
-  }
-}
-
 class SDK extends Base {
   constructor({
     arweave,
@@ -128,8 +117,10 @@ class SDK extends Base {
     lmdb = {},
     redis = {},
     old = false,
+    onUpdate,
   }) {
     super()
+    this.onUpdate = onUpdate
     this.subscribe = subscribe
     this.old = old
     if (!this.old) {
@@ -282,6 +273,26 @@ class SDK extends Base {
     if (!isNil(EthWallet)) this.setEthWallet(EthWallet)
     if (this.network !== "localhost") {
       if (this.subscribe) {
+        const self = this
+        class CustomSubscriptionPlugin extends WarpSubscriptionPlugin {
+          async process(input) {
+            try {
+              let data = await dbs[this.contractTxId].db.readState(
+                input.interaction.block.height
+              )
+              const state = data.cachedValue.state
+              try {
+                _on(state, input)
+              } catch (e) {}
+              if (!isNil(self.onUpdate)) {
+                try {
+                  self.onUpdate(state, input)
+                } catch (e) {}
+              }
+            } catch (e) {}
+          }
+        }
+
         this.warp.use(
           new CustomSubscriptionPlugin(this.contractTxId, this.warp)
         )
