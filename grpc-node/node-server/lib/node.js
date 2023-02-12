@@ -1,4 +1,15 @@
-const { map, includes, pluck, isNil, is, clone } = require("ramda")
+const {
+  map,
+  includes,
+  pluck,
+  isNil,
+  clone,
+  of,
+  is,
+  unless,
+  defaultTo,
+  compose,
+} = require("ramda")
 const Arweave = require("arweave")
 const Cache = require("./cache")
 const Snapshot = require("./snapshot")
@@ -7,7 +18,7 @@ const SDK = require("weavedb-sdk-node")
 const grpc = require("@grpc/grpc-js")
 const protoLoader = require("@grpc/proto-loader")
 
-const PROTO_PATH = __dirname + "/weavedb.proto"
+const PROTO_PATH = __dirname + "/../weavedb.proto"
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
   longs: String,
@@ -118,13 +129,11 @@ class Node {
   }
 
   async isAllowed(txid) {
-    const allowed_contracts = map(v => v.split("@")[0])(
-      isNil(this.conf.contractTxId)
-        ? []
-        : is(Array, this.conf.contractTxId)
-        ? this.conf.contractTxId
-        : [this.conf.contractTxId]
-    )
+    const allowed_contracts = compose(
+      map(v => v.split("@")[0]),
+      unless(is(Array), of),
+      defaultTo([])
+    )(this.conf.contractTxId)
 
     let allowed =
       !isNil(this.sdks[txid]) ||
