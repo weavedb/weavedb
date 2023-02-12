@@ -6,15 +6,15 @@ const cacheDirPath = path.resolve(__dirname, "cache/warp")
 const { hasPath, isNil, none, any, forEach } = require("ramda")
 
 class Snapshot {
-  constructor(config) {
-    this.config = config
+  constructor(conf) {
+    this.conf = conf
     try {
-      if (!isNil(config.gcs)) {
+      if (!isNil(conf.gcs)) {
         this.initGCS()
       } else if (
-        !isNil(config.s3) &&
-        !isNil(config.s3.bucket) &&
-        !isNil(config.s3.prefix)
+        !isNil(conf.s3) &&
+        !isNil(conf.s3.bucket) &&
+        !isNil(conf.s3.prefix)
       ) {
         this.initS3()
       }
@@ -26,17 +26,17 @@ class Snapshot {
   initGCS() {
     const { Storage } = require("@google-cloud/storage")
     const storage = new Storage({
-      keyFilename: path.resolve(__dirname, this.config.gcs.keyFilename),
+      keyFilename: path.resolve(__dirname, this.conf.gcs.keyFilename),
     })
-    this.gcsBucket = storage.bucket(this.config.gcs.bucket)
+    this.gcsBucket = storage.bucket(this.conf.gcs.bucket)
   }
 
   initS3() {
     const accessKeyId =
-      this.config.s3.accessKeyId || process.env.AWS_ACCESS_KEY_ID
+      this.conf.s3.accessKeyId || process.env.AWS_ACCESS_KEY_ID
     const secretAccessKey =
-      this.config.s3.secretAccessKey || process.env.AWS_SECRET_ACCESS_KEY
-    const region = this.config.s3.region || process.env.AWS_REGION
+      this.conf.s3.secretAccessKey || process.env.AWS_SECRET_ACCESS_KEY
+    const region = this.conf.s3.region || process.env.AWS_REGION
 
     if (none(isNil)([accessKeyId, secretAccessKey, region])) {
       const { S3 } = require("aws-sdk")
@@ -91,8 +91,8 @@ class Snapshot {
       } else if (!isNil(this.s3Ins)) {
         const s3data = await this.s3Ins
           .getObject({
-            Bucket: this.config.s3.bucket,
-            Key: `${this.config.s3.prefix}${contractTxId}.zip`,
+            Bucket: this.conf.s3.bucket,
+            Key: `${this.conf.s3.prefix}${contractTxId}.zip`,
           })
           .promise()
         if (isNil(s3data) || isNil(s3data.Body)) {
@@ -133,8 +133,8 @@ class Snapshot {
   async uploadToS3(contractTxId) {
     await this.s3Ins
       .putObject({
-        Bucket: this.config.s3.bucket,
-        Key: `${this.config.s3.prefix}${contractTxId}.zip`,
+        Bucket: this.conf.s3.bucket,
+        Key: `${this.conf.s3.prefix}${contractTxId}.zip`,
         Body: fs.readFileSync(
           path.resolve(cacheDirPath, `${contractTxId}.zip`)
         ),

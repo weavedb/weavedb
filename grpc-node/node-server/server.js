@@ -1,10 +1,14 @@
+const { port = 9090, config = "./weavedb.config.js" } = require("yargs")(
+  process.argv.slice(2)
+).argv
+
 const Arweave = require("arweave")
 const Cache = require("./cache")
 const Snapshot = require("./snapshot")
 const { saveSnapShotGCS, saveSnapShotS3 } = require("./snapshot")
 const fs = require("fs")
 const path = require("path")
-const config = require("./weavedb.config.js")
+const conf = require(config)
 const PROTO_PATH = __dirname + "/weavedb.proto"
 const { execAdmin } = require("./admin")
 const {
@@ -39,25 +43,25 @@ let sdks = {}
 let _init = {}
 let lastChecked = {}
 const allowed_contracts = map(v => v.split("@")[0])(
-  isNil(config.contractTxId)
+  isNil(conf.contractTxId)
     ? []
-    : is(Array, config.contractTxId)
-    ? config.contractTxId
-    : [config.contractTxId]
+    : is(Array, conf.contractTxId)
+    ? conf.contractTxId
+    : [conf.contractTxId]
 )
 
-const allow_any_contracts = config.allowAnyContracts === true
+const allow_any_contracts = conf.allowAnyContracts === true
 
 const isAllowed = contractTxId =>
   !isNil(sdks[contractTxId]) ||
   allow_any_contracts ||
   includes(contractTxId)(allowed_contracts) ||
-  (!isNil(config.admin) && config.admin.contractTxId === contractTxId)
+  (!isNil(conf.admin) && conf.admin.contractTxId === contractTxId)
 
-const isLmdb = (config.cache || "lmdb") === "lmdb"
+const isLmdb = (conf.cache || "lmdb") === "lmdb"
 
-const cache = new Cache(config)
-const snapshot = new Snapshot(config)
+const cache = new Cache(conf)
+const snapshot = new Snapshot(conf)
 
 async function query(call, callback) {
   const { method, query, nocache } = call.request
@@ -75,12 +79,12 @@ async function query(call, callback) {
   if (!isNil(contractTxId)) contractTxId = contractTxId.split("@")[0]
 
   if (
-    !isNil(config.redis) &&
-    !isNil(config.ratelimit) &&
-    !isNil(config.ratelimit.every)
+    !isNil(conf.redis) &&
+    !isNil(conf.ratelimit) &&
+    !isNil(conf.ratelimit.every)
   ) {
     const RateLimitCounter = require("./rate_limit_counter.js")
-    const ratelimit = new RateLimitCounter(config.ratelimit, config.redis)
+    const ratelimit = new RateLimitCounter(conf.ratelimit, conf.redis)
     await ratelimit.init()
     try {
       if (await ratelimit.checkCountLimit(contractTxId)) {
@@ -179,40 +183,39 @@ async function initSDK(v, no_snapshot = false) {
   console.log("initializing contract..." + v)
   let success = true
   try {
-    let _config = clone(config)
+    let _conf = clone(conf)
     let [contractTxId, old] = v.split("@")
-    _config.contractTxId = contractTxId
-    if (old === "old") _config.old = true
+    _conf.contractTxId = contractTxId
+    if (old === "old") _conf.old = true
     if (isLmdb) {
-      _config.lmdb = {
-        state: { dbLocation: `./cache/warp/${_config.contractTxId}/state` },
+      _conf.lmdb = {
+        state: { dbLocation: `./cache/warp/${_conf.contractTxId}/state` },
         contracts: {
-          dbLocation: `./cache/warp/${_config.contractTxId}/contracts`,
+          dbLocation: `./cache/warp/${_conf.contractTxId}/contracts`,
         },
         src: {
-          dbLocation: `./cache/warp/${_config.contractTxId}/src`,
+          dbLocation: `./cache/warp/${_conf.contractTxId}/src`,
         },
       }
       if (!no_snapshot) await snapshot.recover(contractTxId)
     }
-    sdks[contractTxId] = new SDK(_config)
-    if (isNil(_config.wallet))
-      await sdks[contractTxId].initializeWithoutWallet()
+    sdks[contractTxId] = new SDK(_conf)
+    if (isNil(_conf.wallet)) await sdks[contractTxId].initializeWithoutWallet()
     await sdks[contractTxId].db.readState()
     if (isLmdb && !no_snapshot) await snapshot.save(contractTxId)
     console.log(`sdk(${v}) ready!`)
 
-    if (!isNil(config.admin)) {
+    if (!isNil(conf.admin)) {
       if (
         !no_snapshot &&
-        !isNil(config.admin.contractTxId) &&
-        config.admin.contractTxId === v
+        !isNil(conf.admin.contractTxId) &&
+        conf.admin.contractTxId === v
       ) {
         try {
           const contracts = await sdks[contractTxId].get("contracts")
           admin_sdk = sdks[contractTxId]
           for (const v2 of pluck("txid", contracts)) {
-            if (v2 !== config.admin.contractTxId) initSDK(v2)
+            if (v2 !== conf.admin.contractTxId) initSDK(v2)
           }
         } catch (e) {}
       }
@@ -225,20 +228,20 @@ async function initSDK(v, no_snapshot = false) {
 }
 
 async function main() {
-  let contracts = isNil(config.contractTxId)
+  let contracts = isNil(conf.contractTxId)
     ? []
-    : is(Array, config.contractTxId)
-    ? config.contractTxId
-    : [config.contractTxId]
+    : is(Array, conf.contractTxId)
+    ? conf.contractTxId
+    : [conf.contractTxId]
 
-  if (!isNil(config.admin)) {
-    if (!isNil(config.admin.contractTxId)) {
-      console.log(`Admin Contract: ${config.admin.contractTxId}`)
-      contracts.push(config.admin.contractTxId)
+  if (!isNil(conf.admin)) {
+    if (!isNil(conf.admin.contractTxId)) {
+      console.log(`Admin Contract: ${conf.admin.contractTxId}`)
+      contracts.push(conf.admin.contractTxId)
     }
-    if (!isNil(config.admin.owner)) {
+    if (!isNil(conf.admin.owner)) {
       try {
-        admin = await Arweave.init().wallets.jwkToAddress(config.admin.owner)
+        admin = await Arweave.init().wallets.jwkToAddress(conf.admin.owner)
         console.log(`Admin Account: ${admin}`)
       } catch (e) {
         console.log(e)
@@ -256,13 +259,13 @@ async function main() {
   })
 
   server.bindAsync(
-    "0.0.0.0:9090",
+    `0.0.0.0:${port}`,
     grpc.ServerCredentials.createInsecure(),
     () => {
       server.start()
     }
   )
-  console.log("server ready!")
+  console.log(`server ready on ${port}!`)
 }
 
 main()

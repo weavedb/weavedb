@@ -1,4 +1,4 @@
-const config = require("./weavedb.config.js")
+const conf = require("./weavedb.config.js")
 const { validate } = require("./validate")
 const { indexBy, includes, isNil, last, prop } = require("ramda")
 const { createClient } = require("redis")
@@ -87,8 +87,8 @@ const execAdminRead = async ({
   switch (op) {
     case "stats":
       let stats = {}
-      if (!isNil(config.admin) && !isNil(config.admin.contractTxId)) {
-        stats.contractTxId = config.admin.contractTxId
+      if (!isNil(conf.admin) && !isNil(conf.admin.contractTxId)) {
+        stats.contractTxId = conf.admin.contractTxId
       }
       try {
         const db = sdks[stats.contractTxId]
@@ -120,10 +120,10 @@ const execAdmin = async ({
   }
 
   const db = sdks[contractTxId]
-  if (isNil(config.admin) || isNil(config.admin.contractTxId)) {
+  if (isNil(conf.admin) || isNil(conf.admin.contractTxId)) {
     return res(`Admin doesn't exist`)
   }
-  if (contractTxId !== config.admin.contractTxId) {
+  if (contractTxId !== conf.admin.contractTxId) {
     return res(`The wrong admin contract (${contractTxId})`)
   }
 
@@ -153,7 +153,7 @@ const execAdmin = async ({
 
   let txs = []
   const auth = {
-    ar: config.admin.owner,
+    ar: conf.admin.owner,
   }
   let isErr = null
   switch (op) {
@@ -228,7 +228,7 @@ const execAdmin = async ({
 
     case "reset_cache":
       let { contractTxId } = _query.query
-      const cache_type = config.cache || "lmdb"
+      const cache_type = conf.cache || "lmdb"
       if (isNil(sdks[contractTxId])) {
         isErr = "cache doesn't exist"
       } else {
@@ -236,10 +236,10 @@ const execAdmin = async ({
         if (cache_type === "redis") {
           try {
             const prefix =
-              isNil(config.redis) || isNil(config.redis.prefix)
+              isNil(conf.redis) || isNil(conf.redis.prefix)
                 ? "warp"
-                : config.redis.prefix
-            const client = createClient({ url: config.redis?.prefix || null })
+                : conf.redis.prefix
+            const client = createClient({ url: conf.redis?.prefix || null })
             await client.connect()
             for (const key of await client.KEYS(
               `${prefix}.${contractTxId}.*`
