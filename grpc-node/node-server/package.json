@@ -22,7 +22,8 @@
     "ramda": "^0.28.0",
     "redis": "^4.6.4",
     "tweetnacl": "^1.0.3",
-    "weavedb-sdk-node": "^0.20.7"
+    "weavedb-sdk-node": "^0.20.7",
+    "yargs": "^17.6.2"
   },
   "devDependencies": {
     "node-dev": "^8.0.0",
