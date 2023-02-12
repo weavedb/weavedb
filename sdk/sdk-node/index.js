@@ -130,6 +130,7 @@ class SDK extends Base {
     old = false,
   }) {
     super()
+    this.subscribe = subscribe
     this.old = old
     if (!this.old) {
       this.Warp = { WarpFactory, LoggerFactory, defaultCacheOptions }
@@ -219,6 +220,7 @@ class SDK extends Base {
     subscribe,
   }) {
     if (!isNil(contractTxId)) this.contractTxId = contractTxId
+    if (!isNil(subscribe)) this.subscribe = subscribe
     if (this.cache === "lmdb") {
       this.warp
         .useStateCache(
@@ -284,7 +286,7 @@ class SDK extends Base {
     this.domain = { name, version, verifyingContract: this.contractTxId }
     if (!isNil(EthWallet)) this.setEthWallet(EthWallet)
     if (this.network !== "localhost") {
-      if (subscribe) {
+      if (this.subscribe) {
         this.warp.use(
           new CustomSubscriptionPlugin(this.contractTxId, this.warp)
         )
@@ -294,7 +296,7 @@ class SDK extends Base {
         .then(data => (states[this.contractTxId] = data.cachedValue.state))
         .catch(() => {})
     } else {
-      if (subscribe) {
+      if (this.subscribe) {
         this.interval = setInterval(() => {
           this.db
             .readState()
