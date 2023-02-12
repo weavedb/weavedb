@@ -1,11 +1,11 @@
 const { isNil } = require("ramda")
 
 class Cache {
-  constructor(config) {
+  constructor(conf) {
     this.cache = {}
-    if (!isNil(config.redis)) {
+    if (!isNil(conf.redis)) {
       const { createClient } = require("redis")
-      this.redis = createClient(config.redis)
+      this.redis = createClient(conf.redis)
     }
   }
 
