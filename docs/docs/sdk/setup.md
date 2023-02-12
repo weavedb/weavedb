@@ -63,6 +63,17 @@ WeaveDB contracts v0.7 and less are not compatible with the latest warp SDK. Set
 - **subscribe** : `true` | `false` (default : `true`)  
 [Warp subscription plugin](https://github.com/warp-contracts/warp-contracts-plugins/tree/main/warp-contracts-plugin-subscription) needed for `on`, `con`, `getCache`, `cgetCache` methods, only available with NodeJS
 
+- **onUpdate** : `function`   
+A function to execute on pub/sub updates. `newState` and `input` object will be passed down.
+
+```js
+import WeaveDB from "weavedb-sdk-node" 
+new WeaveDB({
+  contractTxId,
+  onUpdate: (newState, input)=>{}
+})
+```
+
 - **cache** : `leveldb` | `lmdb` | `redis` (default : `lmdb`)  
 [LMDB has better performance than LevelDB](https://mozilla.github.io/firefox-browser-architecture/text/0017-lmdb-vs-leveldb.html) and also is capable of concurrency, but only available with NodeJS. `leveldb` is what the Warp SDK uses by default, but you can only run one SDK instance with it.
 
