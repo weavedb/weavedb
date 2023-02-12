@@ -7,7 +7,7 @@ const SDK = require("weavedb-sdk-node")
 const grpc = require("@grpc/grpc-js")
 const protoLoader = require("@grpc/proto-loader")
 
-const PROTO_PATH = __dirname + "/../weavedb.proto"
+const PROTO_PATH = __dirname + "/weavedb.proto"
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
   longs: String,
@@ -48,8 +48,8 @@ class Node {
     let success = true
     try {
       let _conf = clone(this.conf)
-      let [contractTxId, old] = v.split("@")
-      _conf.contractTxId = contractTxId
+      let [txid, old] = v.split("@")
+      _conf.contractTxId = txid
       if (old === "old") _conf.old = true
       if (this.isLmdb) {
         _conf.lmdb = {
@@ -61,18 +61,17 @@ class Node {
             dbLocation: `./cache/warp/${_conf.contractTxId}/src`,
           },
         }
-        if (!no_snapshot) await this.snapshot.recover(contractTxId)
+        if (!no_snapshot) await this.snapshot.recover(txid)
       }
       let __conf = clone(_conf)
       if (__conf.cache === "redis") {
         __conf.redis ||= {}
         __conf.redis.client = this.redis
       }
-      this.sdks[contractTxId] = new SDK(__conf)
-      if (isNil(_conf.wallet))
-        await this.sdks[contractTxId].initializeWithoutWallet()
-      await this.sdks[contractTxId].db.readState()
-      if (this.isLmdb && !no_snapshot) await this.snapshot.save(contractTxId)
+      this.sdks[txid] = new SDK(__conf)
+      if (isNil(_conf.wallet)) await this.sdks[txid].initializeWithoutWallet()
+      await this.sdks[txid].db.readState()
+      if (this.isLmdb && !no_snapshot) await this.snapshot.save(txid)
       console.log(`sdk(${v}) ready!`)
 
       if (!isNil(this.conf.admin)) {
@@ -82,8 +81,8 @@ class Node {
           this.conf.admin.contractTxId === v
         ) {
           try {
-            const contracts = await this.sdks[contractTxId].get("contracts")
-            this.admin_sdk = this.sdks[contractTxId]
+            const contracts = await this.sdks[txid].get("contracts")
+            this.admin_sdk = this.sdks[txid]
             for (const v2 of pluck("txid", contracts)) {
               if (v2 !== this.conf.admin.contractTxId) this.initSDK(v2)
             }
@@ -97,7 +96,7 @@ class Node {
     return success
   }
 
-  async rateLimit(contractTxId, res) {
+  async rateLimit(txid, res) {
     if (
       !isNil(this.conf.redis) &&
       !isNil(this.conf.ratelimit) &&
@@ -110,7 +109,7 @@ class Node {
       )
       await ratelimit.init()
       try {
-        if (await ratelimit.checkCountLimit(contractTxId)) return true
+        if (await ratelimit.checkCountLimit(txid)) return true
       } catch (e) {
         console.log(e.message)
       }
@@ -118,7 +117,7 @@ class Node {
     return false
   }
 
-  async isAllowed(contractTxId) {
+  async isAllowed(txid) {
     const allowed_contracts = map(v => v.split("@")[0])(
       isNil(this.conf.contractTxId)
         ? []
@@ -128,20 +127,20 @@ class Node {
     )
 
     let allowed =
-      !isNil(this.sdks[contractTxId]) ||
+      !isNil(this.sdks[txid]) ||
       this.conf.allowAnyContracts === true ||
-      includes(contractTxId)(allowed_contracts) ||
-      (!isNil(this.conf.admin) && this.conf.admin.contractTxId === contractTxId)
+      includes(txid)(allowed_contracts) ||
+      (!isNil(this.conf.admin) && this.conf.admin.contractTxId === txid)
 
     if (!allowed && !isNil(this.admin_sdk)) {
       try {
         const date = Date.now()
         if (
-          isNil(this.lastChecked[contractTxId]) ||
-          this.lastChecked[contractTxId] < date - 1000 * 60 * 10
+          isNil(this.lastChecked[txid]) ||
+          this.lastChecked[txid] < date - 1000 * 60 * 10
         ) {
-          this.lastChecked[contractTxId] = date
-          if (!isNil(await this.admin_sdk.get("contracts", contractTxId))) {
+          this.lastChecked[txid] = date
+          if (!isNil(await this.admin_sdk.get("contracts", txid))) {
             allowed = true
           }
         }
@@ -219,22 +218,13 @@ class Node {
 
   async query(call, callback) {
     let parsed = this.parseQuery(call, callback)
-    let { res, nocache, txid, func, query, isAdmin } = parsed
-    if (isNil(txid) && isAdmin) return res("no contractTxId")
+    const { res, nocache, txid, func, query, isAdmin } = parsed
+    if (isNil(txid) && !isAdmin) return res("no contractTxId")
     if (this.rateLimit(txid, res)) return res("ratelimit error")
-    if (isAdmin) {
-      return await execAdmin({
-        query,
-        res,
-        node: this,
-        contractTxId: txid,
-      })
-    }
-
+    if (isAdmin) return await execAdmin({ query, res, node: this, txid })
     if (!(await this.isAllowed(txid))) return res(`${txid} not allowed`)
-
     if (isNil(this.sdks[txid]) && !(await this.initSDK(txid))) {
-      return res(`contract initialization failed`)
+      return res(`contract[${txid}] init failed`)
     }
     this.execUser(parsed)
   }
