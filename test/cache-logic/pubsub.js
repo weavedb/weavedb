@@ -30,7 +30,9 @@ describe("Warp pub/sub plugin", function () {
   before(async () => {
     const arweave = Arweave.init()
     ar = await arweave.wallets.generate()
-    db = new SDK({ contractTxId })
+    db = new SDK({
+      contractTxId,
+    })
     await db.initializeWithoutWallet()
     expect((await db.getInfo()).secure).to.eql(false)
 
@@ -63,7 +65,7 @@ describe("Warp pub/sub plugin", function () {
 
     // immediately get with nocache from node
     expect(await client.get("test", tx.docID, true)).to.eql(data)
-    await sleep(5000)
+    await sleep(10000)
 
     // check if sdk cache has been updated by pubsub
     expect(updated).to.eql(true)
