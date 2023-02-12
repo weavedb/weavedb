@@ -1,12 +1,9 @@
 const { isNil } = require("ramda")
 
 class Cache {
-  constructor(conf) {
+  constructor(conf, redis) {
     this.cache = {}
-    if (!isNil(conf.redis)) {
-      const { createClient } = require("redis")
-      this.redis = createClient(conf.redis)
-    }
+    if (!isNil(conf.redis)) this.redis = redis
   }
 
   async init() {

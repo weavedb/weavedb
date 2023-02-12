@@ -243,33 +243,28 @@ class SDK extends Base {
           })
         )
     } else if (this.cache === "redis") {
+      const { createClient } = require("redis")
       const opt = { url: this.redis.url || null }
+      this.redis_client = this.redis.client || createClient(opt)
+      if (isNil(this.redis.client)) this.redis_client.connect()
       this.warp
         .useStateCache(
-          new RedisCache(
-            {
-              prefix: `${this.redis.prefix || "warp"}.${
-                this.contractTxId
-              }.state`,
-            },
-            opt
-          )
+          new RedisCache({
+            client: this.redis_client,
+            prefix: `${this.redis.prefix || "warp"}.${this.contractTxId}.state`,
+          })
         )
         .useContractCache(
-          new RedisCache(
-            {
-              prefix: `${this.redis.prefix || "warp"}.${
-                this.contractTxId
-              }.contracts`,
-            },
-            opt
-          ),
-          new RedisCache(
-            {
-              prefix: `${this.redis.prefix || "warp"}.${this.contractTxId}.src`,
-            },
-            opt
-          )
+          new RedisCache({
+            client: this.redis_client,
+            prefix: `${this.redis.prefix || "warp"}.${
+              this.contractTxId
+            }.contracts`,
+          }),
+          new RedisCache({
+            client: this.redis_client,
+            prefix: `${this.redis.prefix || "warp"}.${this.contractTxId}.src`,
+          })
         )
     }
     if (isNil(wallet)) throw Error("wallet missing")

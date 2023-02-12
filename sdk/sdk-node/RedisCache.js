@@ -16,11 +16,10 @@ const {
 } = require("ramda")
 
 class RedisCache {
-  constructor(cacheOptions, redisOptions = {}) {
+  constructor(cacheOptions) {
     this.prefix = `${cacheOptions.prefix}`
     this.logger = LoggerFactory.INST.create("RedisCache")
-    this.client = createClient(redisOptions)
-    this.client.connect()
+    this.client = cacheOptions.client
   }
 
   async get(cacheKey, returnDeepCopy) {
