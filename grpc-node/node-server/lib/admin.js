@@ -1,7 +1,5 @@
-const conf = require("./weavedb.config.js")
 const { validate } = require("./validate")
 const { indexBy, includes, isNil, last, prop } = require("ramda")
-const { createClient } = require("redis")
 const users_schema = {
   type: "object",
   required: ["address", "allow"],
@@ -69,14 +67,7 @@ const contracts_rules = {
   },
 }
 
-const execAdminRead = async ({
-  query,
-  res,
-  contractTxId,
-  sdks,
-  admin,
-  initSDK,
-}) => {
+const execAdminRead = async ({ query, res, contractTxId, node }) => {
   let _query, op
   try {
     _query = JSON.parse(query)
@@ -87,11 +78,11 @@ const execAdminRead = async ({
   switch (op) {
     case "stats":
       let stats = {}
-      if (!isNil(conf.admin) && !isNil(conf.admin.contractTxId)) {
-        stats.contractTxId = conf.admin.contractTxId
+      if (!isNil(node.conf.admin) && !isNil(node.conf.admin.contractTxId)) {
+        stats.contractTxId = node.conf.admin.contractTxId
       }
       try {
-        const db = sdks[stats.contractTxId]
+        const db = node.sdks[stats.contractTxId]
         stats.owners = await db.getOwner()
       } catch (e) {
         console.log(e)
@@ -102,15 +93,7 @@ const execAdminRead = async ({
   }
 }
 
-const execAdmin = async ({
-  query,
-  res,
-  contractTxId,
-  sdks,
-  admin,
-  initSDK,
-  snapshot,
-}) => {
+const execAdmin = async ({ query, res, contractTxId, node }) => {
   let _query, op, owners, err, signer
   try {
     _query = JSON.parse(query)
@@ -119,11 +102,11 @@ const execAdmin = async ({
     return res(`The wrong query`)
   }
 
-  const db = sdks[contractTxId]
-  if (isNil(conf.admin) || isNil(conf.admin.contractTxId)) {
+  const db = node.sdks[contractTxId]
+  if (isNil(node.conf.admin) || isNil(node.conf.admin.contractTxId)) {
     return res(`Admin doesn't exist`)
   }
-  if (contractTxId !== conf.admin.contractTxId) {
+  if (contractTxId !== node.conf.admin.contractTxId) {
     return res(`The wrong admin contract (${contractTxId})`)
   }
 
@@ -135,7 +118,7 @@ const execAdmin = async ({
   const reads = ["stats"]
 
   if (includes(op)(reads)) {
-    return execAdminRead({ query, res, contractTxId, sdks, admin, initSDK })
+    return execAdminRead({ query, res, contractTxId, node })
   }
   if (_query.type !== "rsa256" && !includes(op)(nonAdmin)) {
     return res("Admin must be an Arweave account")
@@ -153,7 +136,7 @@ const execAdmin = async ({
 
   let txs = []
   const auth = {
-    ar: conf.admin.owner,
+    ar: node.conf.admin.owner,
   }
   let isErr = null
   switch (op) {
@@ -187,7 +170,7 @@ const execAdmin = async ({
         )
         if (!last(txs).success) throw new Error()
         res(null, txs)
-        if (isNil(sdks[txid])) await initSDK(txid)
+        if (isNil(node.sdks[txid])) await node.initSDK(txid)
         return
       } catch (e) {
         console.log(e)
@@ -206,7 +189,7 @@ const execAdmin = async ({
         txs.push(await db.delete("contracts", txid2, auth))
         if (!last(txs).success) throw new Error()
         res(null, txs)
-        delete sdks[txid2]
+        delete node.sdks[txid2]
         return
       } catch (e) {
         console.log(e)
@@ -228,29 +211,27 @@ const execAdmin = async ({
 
     case "reset_cache":
       let { contractTxId } = _query.query
-      const cache_type = conf.cache || "lmdb"
-      if (isNil(sdks[contractTxId])) {
+      const cache_type = node.conf.cache || "lmdb"
+      if (isNil(node.sdks[contractTxId])) {
         isErr = "cache doesn't exist"
       } else {
-        delete sdks[contractTxId]
+        delete node.sdks[contractTxId]
         if (cache_type === "redis") {
           try {
             const prefix =
-              isNil(conf.redis) || isNil(conf.redis.prefix)
+              isNil(node.conf.redis) || isNil(node.conf.redis.prefix)
                 ? "warp"
-                : conf.redis.prefix
-            const client = createClient({ url: conf.redis?.prefix || null })
-            await client.connect()
-            for (const key of await client.KEYS(
+                : node.conf.redis.prefix
+            for (const key of await node.redis.KEYS(
               `${prefix}.${contractTxId}.*`
             )) {
-              await client.del(key)
+              await node.redis.del(key)
             }
           } catch (e) {}
         } else if (cache_type === "lmdb") {
-          await snapshot.delete(contractTxId)
+          await node.snapshot.delete(contractTxId)
         }
-        initSDK(contractTxId, true)
+        node.initSDK(contractTxId, true)
       }
       return res(isErr, txs)
 
