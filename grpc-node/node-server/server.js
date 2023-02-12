@@ -5,7 +5,6 @@ const { port = 9090, config = "./weavedb.config.js" } = require("yargs")(
 const Arweave = require("arweave")
 const Cache = require("./cache")
 const Snapshot = require("./snapshot")
-const { saveSnapShotGCS, saveSnapShotS3 } = require("./snapshot")
 const fs = require("fs")
 const path = require("path")
 const conf = require(config)
@@ -60,7 +59,15 @@ const isAllowed = contractTxId =>
 
 const isLmdb = (conf.cache || "lmdb") === "lmdb"
 
-const cache = new Cache(conf)
+let redis = null
+if (conf.cache === "redis") {
+  const { createClient } = require("redis")
+  redis = createClient({
+    url: conf.redis?.url || null,
+  })
+  redis.connect()
+}
+const cache = new Cache(conf, redis)
 const snapshot = new Snapshot(conf)
 
 async function query(call, callback) {
@@ -199,7 +206,12 @@ async function initSDK(v, no_snapshot = false) {
       }
       if (!no_snapshot) await snapshot.recover(contractTxId)
     }
-    sdks[contractTxId] = new SDK(_conf)
+    let __conf = clone(_conf)
+    if (__conf.cache === "redis") {
+      __conf.redis ||= {}
+      __conf.redis.client = redis
+    }
+    sdks[contractTxId] = new SDK(__conf)
     if (isNil(_conf.wallet)) await sdks[contractTxId].initializeWithoutWallet()
     await sdks[contractTxId].db.readState()
     if (isLmdb && !no_snapshot) await snapshot.save(contractTxId)
