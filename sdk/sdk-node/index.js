@@ -28,7 +28,9 @@ const {
   defaultCacheOptions: defaultCacheOptions_old,
 } = require("warp-contracts-old")
 
-const { WarpSubscriptionPlugin } = require("warp-contracts-plugin-subscription")
+const {
+  WarpSubscriptionPlugin,
+} = require("./warp-contracts-plugin-subscription")
 const { get, parseQuery } = require("./off-chain/actions/read/get")
 const { ids } = require("./off-chain/actions/read/ids")
 const md5 = require("md5")
@@ -277,7 +279,7 @@ class SDK extends Base {
         class CustomSubscriptionPlugin extends WarpSubscriptionPlugin {
           async process(input) {
             try {
-              let data = await dbs[this.contractTxId].db.readState(
+              let data = await dbs[self.contractTxId].db.readState(
                 input.interaction.block.height
               )
               const state = data.cachedValue.state
@@ -287,9 +289,13 @@ class SDK extends Base {
               if (!isNil(self.onUpdate)) {
                 try {
                   self.onUpdate(state, input)
-                } catch (e) {}
+                } catch (e) {
+                  console.log(e)
+                }
               }
-            } catch (e) {}
+            } catch (e) {
+              console.log(e)
+            }
           }
         }
 
