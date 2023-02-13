@@ -3998,6 +3998,16 @@ warp-contracts-pubsub@^1.0.3:
     isomorphic-ws "^5.0.0"
     ws "^8.11.0"
 
+warp-contracts-pubsub@^1.0.5:
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/warp-contracts-pubsub/-/warp-contracts-pubsub-1.0.5.tgz#6193749997874a3ccd1f9a2c8a921bcfa0252eb2"
+  integrity sha512-8p6qv7i2qgsMit8ldMHNEX09Lqip3/Sw48kRixGWPduGPrXyVkCZxGqcH51Oz4/vzyNYe7650lKlgM9MruGI+Q==
+  dependencies:
+    "@aws-amplify/api" "^4.0.61"
+    "@aws-amplify/core" "4.7.12"
+    isomorphic-ws "^5.0.0"
+    ws "^8.11.0"
+
 warp-contracts@1.2.48:
   version "1.2.48"
   resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.2.48.tgz#2a325e80093eb54ed59af495e21c3b2c98b796a9"
@@ -4052,10 +4062,10 @@ weavedb-base@^0.18.5:
     ethereumjs-util "^7.1.5"
     ramda "^0.28.0"
 
-weavedb-sdk-node@^0.20.9:
-  version "0.20.9"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk-node/-/weavedb-sdk-node-0.20.9.tgz#6ce192d267761d295c1cd158f5095f72425cf62a"
-  integrity sha512-2SN7miZwyzn1mgnBwjthNOaUVGc30SajOJ6KJ69p8PCaR8TsuDOS5Vv/xtWZBx8oaPSjsqSBI8kLAawBbt0TaQ==
+weavedb-sdk-node@^0.20.14:
+  version "0.20.14"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk-node/-/weavedb-sdk-node-0.20.14.tgz#735b9a256ad1e35f9280efb3d9729ef37cab44dd"
+  integrity sha512-it5OUo6MAN6kADRjDDWEblALP6A76AsL3er459RLTl7DnxMvJNHKwIR6p2UN0uRjtxiZBO7phMzadbmXJk0jHg==
   dependencies:
     "@aws-amplify/api" "^5.0.14"
     "@metamask/legacy-web3" "^2.0.0"
@@ -4070,6 +4080,7 @@ weavedb-sdk-node@^0.20.9:
     warp-contracts-lmdb "^1.1.9"
     warp-contracts-old "npm:warp-contracts@1.2.26"
     warp-contracts-plugin-subscription "^1.0.5"
+    warp-contracts-pubsub "^1.0.5"
     weavedb-base "^0.18.5"
 
 webidl-conversions@^3.0.0:
