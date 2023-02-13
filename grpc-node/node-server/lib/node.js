@@ -1,4 +1,5 @@
 const {
+  o,
   map,
   includes,
   pluck,
@@ -7,8 +8,6 @@ const {
   of,
   is,
   unless,
-  defaultTo,
-  compose,
 } = require("ramda")
 const Arweave = require("arweave")
 const Cache = require("./cache")
@@ -107,7 +106,7 @@ class Node {
     return success
   }
 
-  async rateLimit(txid, res) {
+  async rateLimit(txid) {
     if (
       !isNil(this.conf.redis) &&
       !isNil(this.conf.ratelimit) &&
@@ -129,11 +128,10 @@ class Node {
   }
 
   async isAllowed(txid) {
-    const allowed_contracts = compose(
+    const allowed_contracts = o(
       map(v => v.split("@")[0]),
-      unless(is(Array), of),
-      defaultTo([])
-    )(this.conf.contractTxId)
+      unless(is(Array), of)
+    )(this.conf.contractTxId || [])
 
     let allowed =
       !isNil(this.sdks[txid]) ||
@@ -229,7 +227,7 @@ class Node {
     let parsed = this.parseQuery(call, callback)
     const { res, nocache, txid, func, query, isAdmin } = parsed
     if (isNil(txid) && !isAdmin) return res("no contractTxId")
-    if (this.rateLimit(txid, res)) return res("ratelimit error")
+    if (await this.rateLimit(txid)) return res("rate limit error")
     if (isAdmin) return await execAdmin({ query, res, node: this, txid })
     if (!(await this.isAllowed(txid))) return res(`${txid} not allowed`)
     if (isNil(this.sdks[txid]) && !(await this.initSDK(txid))) {
@@ -269,7 +267,7 @@ class Node {
     const server = new grpc.Server()
 
     server.addService(weavedb.DB.service, {
-      query: this.query,
+      query: this.query.bind(this),
     })
 
     server.bindAsync(
