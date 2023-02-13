@@ -12,7 +12,7 @@ jobs:
         uses: docker/setup-qemu-action@v2
 
       - name: wallet.json
-        run: echo '${{ secret.WEAVEDB_OWNER_WALLET_JSON }}' > ./wallet.json
+        run: echo '${{ secrets.WEAVEDB_OWNER_WALLET_JSON }}' > ./wallet.json
         working-directory: ./grpc-node/node-server
 
 
