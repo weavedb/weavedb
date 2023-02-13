@@ -3,7 +3,7 @@ const {
   LoggerFactory,
   lastPossibleSortKey,
 } = require("warp-contracts")
-const { map, last } = require("ramda")
+const { map } = require("ramda")
 class RedisCache {
   constructor(cacheOptions, lmdbOptions) {
     this.prefix = `${cacheOptions.prefix}`
@@ -100,8 +100,8 @@ class RedisCache {
   }
 
   async keys() {
-    return map(v => last(v.split(".")).split("|")[1])(
-      await this.client.ZRANGE(`${this.prefix}.keys`, `+`, "-", {
+    return map(v => v.split("|")[1])(
+      await this.client.ZRANGE(`${this.prefix}.keys`, `-`, "+", {
         BY: "LEX",
       })
     )
