@@ -11,8 +11,13 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
+      - name: wallet.json
+        run: echo '${{ secret.WEAVEDB_OWNER_WALLET_JSON }}' > ./wallet.json
+        working-directory: ./grpc-node/node-server
+
+
       - name: weavedb config
-        run: cat weavedb.config.tmpl.js | sed s/WEAVEDB_ADMIN_CONTRACT/${{ secrets.WEAVEDB_ADMIN_CONTRACT }}/ | sed s/WEAVEDB_OWNER_WALLET_JSON/${{ secrets.WEAVEDB_OWNER_WALLET_JSON }}/ > weavedb.config.js
+        run: cat weavedb.config.tmpl.js | sed s/WEAVEDB_ADMIN_CONTRACT/${{ secrets.WEAVEDB_ADMIN_CONTRACT }}/  > weavedb.config.js
         working-directory: ./grpc-node/node-server
 
       - name: docker build

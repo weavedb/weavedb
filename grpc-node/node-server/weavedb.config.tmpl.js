@@ -7,7 +7,7 @@ const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
 const s3region = process.env.AWS_REGION
 const s3bucket = process.env.S3_BUCKET_NAME
 const s3prefix = process.env.S3_PREFIX
-
+const wallet = require('./wallet.json')
 module.exports = {
   // subscribe: true,
   s3: {
@@ -24,6 +24,6 @@ module.exports = {
   admin: {
     contractTxId: "WEAVEDB_ADMIN_CONTRACT",
     // YSReuO6vzkBWd4Tdfe8HE0YLXj4tJokfatsORv7iZ94
-    owner: WEAVEDB_OWNER_WALLET_JSON,
+    owner: wallet,
   },
 }
