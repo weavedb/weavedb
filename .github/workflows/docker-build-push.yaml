@@ -14,6 +14,7 @@ jobs:
       - name: wallet.json
         run: echo '${{ secrets.WEAVEDB_OWNER_WALLET_JSON }}' > ./wallet.json
         working-directory: ./grpc-node/node-server
+        
 
 
       - name: weavedb config
