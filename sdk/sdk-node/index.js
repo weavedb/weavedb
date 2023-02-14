@@ -1,4 +1,5 @@
 const {
+  uniq,
   map,
   drop,
   splitWhen,
@@ -353,7 +354,7 @@ class SDK extends Base {
                     }
                   }
                 } catch (e) {}
-                self.pubsubReceived(state, query, input)
+                await self.pubsubReceived(state, query, input)
               }
             } catch (e) {
               console.log(e)
@@ -509,7 +510,9 @@ class SDK extends Base {
       states[this.contractTxId] = state
       const info = await this.arweave.network.getInfo()
       setTimeout(async () => {
-        this.pubsubReceived(state.cachedValue.state, param)
+        await this.pubsubReceived(state.cachedValue.state, param, {
+          interaction: { id: res.originalTxId },
+        })
       }, 0)
       await _on(state, {
         contractTxId: this.contractTxId,
@@ -674,14 +677,65 @@ class SDK extends Base {
     return keys
   }
 
-  pubsubReceived(state, query, input) {
+  async pubsubReceived(state, query, input) {
+    const keys = SDK.getKeys(this.contractTxId, query, this.cache_prefix)
+    const updates = {}
+    const deletes = []
+    for (let v of keys) {
+      let _query = null
+      if (v.func === "add") {
+        const docID = (
+          await ids(clone(state), { input: { tx: input.interaction.id } })
+        ).result[0]
+        _query = append(docID, v.path)
+      } else if (includes(v.func)(["upsert", "set", "update"])) {
+        _query = v.path
+      }
+      if (!isNil(_query)) {
+        let val = (
+          await get(
+            clone(state),
+            {
+              input: { query: _query },
+            },
+            true,
+            { block: {} }
+          )
+        ).result
+        if (!isNil(val)) delete val.block
+        const key = SDK.getKey(
+          this.contractTxId,
+          "cget",
+          _query,
+          this.cache_prefix
+        )
+        updates[key] = val
+      }
+      if (v.func === "delete") {
+        _query = v.path
+        const key = SDK.getKey(
+          this.contractTxId,
+          "cget",
+          _query,
+          this.cache_prefix
+        )
+        updates[key] = null
+      }
+    }
+    for (const k in updates) {
+      if (updates[k] === null) {
+        deletes.push(k)
+        delete updates[k]
+        deletes.push(`${k.split(".").slice(0, 3).join(".")}.*`)
+      }
+    }
     this.onUpdate(
       state,
       query,
       {
-        keys: SDK.getKeys(this.contractTxId, query, this.cache_prefix),
-        update: [],
-        delete: [],
+        keys,
+        updates,
+        deletes: uniq(deletes),
       },
       input
     )
