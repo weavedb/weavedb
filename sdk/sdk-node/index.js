@@ -726,7 +726,7 @@ class SDK extends Base {
       if (updates[k] === null) {
         deletes.push(k)
         delete updates[k]
-        deletes.push(`${k.split(".").slice(0, 3).join(".")}.*`)
+        deletes.push(`${k.split(".").slice(0, 3).join(".")}.__col__.*`)
       }
     }
     this.onUpdate(
