@@ -1,3 +1,4 @@
+const SDK = require("../../sdk/sdk-node")
 const { Ed25519KeyIdentity } = require("@dfinity/identity")
 const { providers, Wallet, utils } = require("ethers")
 const { expect } = require("chai")
@@ -44,7 +45,7 @@ describe("WeaveDB", function () {
       dfinityTxId,
       ethereumTxId,
       contractTxId,
-    } = await initBeforeEach())
+    } = await initBeforeEach(null, true))
   })
 
   afterEach(async () => {
@@ -53,8 +54,14 @@ describe("WeaveDB", function () {
     } catch (e) {}
   })
 
-  it("should get version", async () => {
-    const version = require("../../contracts/warp/lib/version")
-    expect(await db.getVersion()).to.equal(version)
+  it("should receive pubsub notification", done => {
+    db.initialize({
+      wallet: arweave_wallet,
+      onUpdate: (state, query) => {
+        expect(query.function).to.eql("add")
+        done()
+      },
+    })
+    db.add({}, "users", { ar: arweave_wallet })
   })
 })
