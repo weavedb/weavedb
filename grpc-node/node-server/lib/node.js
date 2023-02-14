@@ -29,7 +29,6 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 
 const weavedb = grpc.loadPackageDefinition(packageDefinition).weavedb
 const { execAdmin } = require("./admin")
-const { getKey } = require("./utils")
 
 class Node {
   constructor({ conf, port }) {
@@ -208,7 +207,7 @@ class Node {
 
   async execUser(parsed) {
     const { res, nocache, txid, func, query } = parsed
-    const key = getKey(
+    const key = SDK.getKey(
       txid,
       func,
       query,

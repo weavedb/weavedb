@@ -1,4 +1,5 @@
 const {
+  splitWhen,
   init,
   o,
   includes,
@@ -298,11 +299,7 @@ class SDK extends Base {
                     }
                   }
                 } catch (e) {}
-                try {
-                  self.onUpdate(state, query, input)
-                } catch (e) {
-                  console.log(e)
-                }
+                self.pubsubReceived(state, query, input)
               }
             } catch (e) {
               console.log(e)
@@ -347,7 +344,14 @@ class SDK extends Base {
       }
     }
   }
-
+  pubsubReceived(state, query, input) {
+    this.onUpdate(
+      state,
+      query,
+      { path: SDK.getPath(query.function, query.query) },
+      input
+    )
+  }
   async read(params) {
     return (await this.db.viewState(params)).result
   }
@@ -458,8 +462,8 @@ class SDK extends Base {
       states[this.contractTxId] = state
       const info = await this.arweave.network.getInfo()
       setTimeout(async () => {
-        this.onUpdate(state.cachedValue.state, param)
-      }, 100)
+        this.pubsubReceived(state.cachedValue.state, param)
+      }, 0)
       await _on(state, this.contractTxId, {
         height: info.height,
         timestamp: Math.round(Date.now() / 1000),
@@ -539,6 +543,35 @@ class SDK extends Base {
 
   async con(...query) {
     return await this.subscribe(true, ...query)
+  }
+
+  static getPath(func, query) {
+    if (
+      !includes(func)([
+        "get",
+        "cget",
+        "getSchema",
+        "getRules",
+        "getIndexes",
+        "listCollections",
+      ])
+    ) {
+      return "__admin__"
+    } else {
+      const _path = splitWhen(complement(is)(String), JSON.parse(query))[0]
+      const len = _path.length
+      if (func === "listCollections") {
+        return len === 0 ? "__root__" : _path.join("/")
+      } else {
+        return (len % 2 === 0 ? init(_path) : _path).join("/")
+      }
+    }
+  }
+
+  static getKey(contractTxId, func, query, prefix) {
+    let key = [contractTxId, md5(SDK.getPath(func, query)), func, md5(query)]
+    if (!isNil(prefix)) key.unshift(prefix)
+    return key.join(".")
   }
 }
 
