@@ -145,6 +145,7 @@ describe("WeaveDB", function () {
     expect(caches[0].keys[4].func).to.equal("add")
     expect(caches[0].keys[5].func).to.equal("delete")
     console.log(caches[0].updates)
+    console.log(caches[0].deletes)
     return
   })
 })

@@ -1,4 +1,5 @@
 const {
+  uniq,
   map,
   drop,
   splitWhen,
@@ -679,6 +680,7 @@ class SDK extends Base {
   async pubsubReceived(state, query, input) {
     const keys = SDK.getKeys(this.contractTxId, query, this.cache_prefix)
     const updates = {}
+    const deletes = []
     for (let v of keys) {
       let _query = null
       if (v.func === "add") {
@@ -720,12 +722,20 @@ class SDK extends Base {
         updates[key] = null
       }
     }
+    for (const k in updates) {
+      if (updates[k] === null) {
+        deletes.push(k)
+        delete updates[k]
+        deletes.push(`${k.split(".").slice(0, 3).join(".")}.*`)
+      }
+    }
     this.onUpdate(
       state,
       query,
       {
         keys,
         updates,
+        deletes: uniq(deletes),
       },
       input
     )
