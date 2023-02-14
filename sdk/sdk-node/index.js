@@ -211,9 +211,11 @@ class SDK extends Base {
     version = "1",
     EthWallet,
     subscribe,
+    onUpdate,
   }) {
     if (!isNil(contractTxId)) this.contractTxId = contractTxId
     if (!isNil(subscribe)) this.subscribe = subscribe
+    if (!isNil(onUpdate)) this.onUpdate = onUpdate
     if (this.cache === "lmdb") {
       this.warp
         .useStateCache(
@@ -318,6 +320,8 @@ class SDK extends Base {
         .catch(() => {})
     } else {
       if (this.subscribe) {
+        /*
+        clearInterval(this.interval)
         this.interval = setInterval(() => {
           this.db
             .readState()
@@ -338,7 +342,8 @@ class SDK extends Base {
               console.log("readState error")
               clearInterval(this.interval)
             })
-        }, 1000)
+            }, 1000)
+        */
       }
     }
   }
@@ -441,6 +446,26 @@ class SDK extends Base {
       }
     }
     res.duration = Date.now() - start
+
+    if (
+      this.network === "localhost" &&
+      this.subscribe &&
+      !isNil(this.onUpdate) &&
+      res.success
+    ) {
+      const state = await this.db.readState()
+      this.state = state
+      states[this.contractTxId] = state
+      const info = await this.arweave.network.getInfo()
+      setTimeout(async () => {
+        this.onUpdate(state.cachedValue.state, param)
+      }, 100)
+      await _on(state, this.contractTxId, {
+        height: info.height,
+        timestamp: Math.round(Date.now() / 1000),
+        id: info.current,
+      })
+    }
     return res
   }
   async subscribe(isCon, ...query) {
