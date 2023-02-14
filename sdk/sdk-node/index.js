@@ -280,15 +280,24 @@ class SDK extends Base {
           async process(input) {
             try {
               let data = await dbs[self.contractTxId].db.readState(
-                input.interaction.block.height
+                input.sortKey
               )
               const state = data.cachedValue.state
+
               try {
                 _on(state, input)
               } catch (e) {}
               if (!isNil(self.onUpdate)) {
+                let query = null
                 try {
-                  self.onUpdate(state, input)
+                  for (let v of input.interaction.tags) {
+                    if (v.name === "Input") {
+                      query = JSON.parse(v.value)
+                    }
+                  }
+                } catch (e) {}
+                try {
+                  self.onUpdate(state, query, input)
                 } catch (e) {
                   console.log(e)
                 }
