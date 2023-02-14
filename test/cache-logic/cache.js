@@ -57,7 +57,8 @@ describe("WeaveDB", function () {
   it("should receive pubsub notification", done => {
     db.initialize({
       wallet: arweave_wallet,
-      onUpdate: (state, query) => {
+      onUpdate: (state, query, cache) => {
+        console.log(cache)
         expect(query.function).to.eql("add")
         done()
       },
