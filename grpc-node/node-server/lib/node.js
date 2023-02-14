@@ -1,5 +1,10 @@
 const {
+  isEmpty,
+  compose,
+  flatten,
   o,
+  values,
+  mapObjIndexed,
   map,
   includes,
   pluck,
@@ -77,8 +82,25 @@ class Node {
       if (__conf.cache === "redis") {
         __conf.redis ||= {}
         __conf.redis.client = this.redis
-        __conf.onUpdate = (state, query, cache) => {
-          console.log(cache)
+        __conf.onUpdate = async (state, query, cache) => {
+          if (!isNil(this.redis)) {
+            if (cache.deletes.length) {
+              try {
+                await this.redis.del(cache.deletes)
+              } catch (e) {}
+            }
+            if (!isEmpty(cache.updates)) {
+              try {
+                await this.redis.MSET(
+                  compose(
+                    flatten,
+                    values,
+                    mapObjIndexed((v, k) => [k, v])
+                  )(cache.updates)
+                )
+              } catch (e) {}
+            }
+          }
         }
       }
       this.sdks[txid] = new SDK(__conf)
