@@ -70,6 +70,7 @@ describe("WeaveDB", function () {
     new Promise(res => {
       setTimeout(() => res(), sec * 1000)
     })
+
   it("should handle relay queries", async () => {
     let caches = []
     db.initialize({

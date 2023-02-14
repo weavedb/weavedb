@@ -527,6 +527,7 @@ class SDK extends Base {
     }
     return res
   }
+
   async subscribe(isCon, ...query) {
     const { path } = parseQuery(query)
     const isDoc = path.length % 2 === 0
@@ -726,8 +727,8 @@ class SDK extends Base {
       if (updates[k] === null) {
         deletes.push(k)
         delete updates[k]
-        deletes.push(`${k.split(".").slice(0, 3).join(".")}.__col__.*`)
       }
+      deletes.push(`${k.split(".").slice(0, 3).join(".")}.__col__.*`)
     }
     this.onUpdate(
       state,

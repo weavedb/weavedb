@@ -77,6 +77,9 @@ class Node {
       if (__conf.cache === "redis") {
         __conf.redis ||= {}
         __conf.redis.client = this.redis
+        __conf.onUpdate = (state, query, cache) => {
+          console.log(cache)
+        }
       }
       this.sdks[txid] = new SDK(__conf)
       if (isNil(_conf.wallet)) await this.sdks[txid].initializeWithoutWallet()
