@@ -1,4 +1,5 @@
 const SDK = require("../sdk/sdk-web")
+const SDKNODE = require("../sdk/sdk-node")
 const fs = require("fs")
 const path = require("path")
 const { expect } = require("chai")
@@ -26,7 +27,7 @@ let arlocal,
 
 let isInit = false
 let stopto = null
-async function init() {
+async function init(sdk_type = "web") {
   if (isInit === false) {
     isInit = true
     arlocal = new ArLocal(1820, false)
@@ -34,7 +35,8 @@ async function init() {
   } else {
     clearTimeout(stopto)
   }
-  sdk = new SDK({
+  const _SDK = sdk_type === "node" ? SDKNODE : SDK
+  sdk = new _SDK({
     network: "localhost",
   })
   arweave = sdk.arweave

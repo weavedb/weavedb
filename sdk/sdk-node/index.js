@@ -1,4 +1,7 @@
 const {
+  map,
+  drop,
+  splitWhen,
   init,
   o,
   includes,
@@ -34,7 +37,43 @@ const {
 const { get, parseQuery } = require("./off-chain/actions/read/get")
 const { ids } = require("./off-chain/actions/read/ids")
 const md5 = require("md5")
-
+const is_data = [
+  "set",
+  "setSchema",
+  "setRules",
+  "addIndex",
+  "removeIndex",
+  "add",
+  "update",
+  "upsert",
+]
+const no_paths = [
+  "nonce",
+  "ids",
+  "getCrons",
+  "getAlgorithms",
+  "getLinkedContract",
+  "getOwner",
+  "getAddressLink",
+  "getRelayerJob",
+  "listRelayerJobs",
+  "getEvolve",
+  "getInfo",
+  "addCron",
+  "removeCron",
+  "setAlgorithms",
+  "addRelayerJob",
+  "removeRelayerJob",
+  "linkContract",
+  "evolve",
+  "migrate",
+  "setCanEvolve",
+  "setSecure",
+  "addOwner",
+  "removeOwner",
+  "addAddressLink",
+  "removeAddressLink",
+]
 let states = {}
 let dbs = {}
 let subs = {}
@@ -116,12 +155,14 @@ class SDK extends Base {
     network,
     port = 1820,
     cache = "lmdb",
+    cache_prefix = null,
     lmdb = {},
     redis = {},
     old = false,
     onUpdate,
   }) {
     super()
+    this.cache_prefix = cache_prefix
     this.onUpdate = onUpdate
     this.subscribe = subscribe
     this.old = old
@@ -211,9 +252,19 @@ class SDK extends Base {
     version = "1",
     EthWallet,
     subscribe,
+    onUpdate,
+    cache_prefix,
   }) {
     if (!isNil(contractTxId)) this.contractTxId = contractTxId
     if (!isNil(subscribe)) this.subscribe = subscribe
+    if (!isNil(onUpdate)) this.onUpdate = onUpdate
+    if (!isNil(cache_prefix)) this.cache_prefix = cache_prefix
+    if (
+      !isNil(this.cache_prefix) &&
+      (/\./.test(this.cache_prefix) || /\|/.test(this.cache_prefix))
+    ) {
+      throw new Error(". and | are not allowed in prefix")
+    }
     if (this.cache === "lmdb") {
       this.warp
         .useStateCache(
@@ -240,6 +291,12 @@ class SDK extends Base {
       const opt = { url: this.redis.url || null }
       this.redis_client = this.redis.client || createClient(opt)
       if (isNil(this.redis.client)) this.redis_client.connect()
+      if (
+        !isNil(this.redis.prefix) &&
+        (/\./.test(this.redis.prefix) || /\|/.test(this.redis.prefix))
+      ) {
+        throw new Error(". and | are not allowed in prefix")
+      }
       this.warp
         .useStateCache(
           new RedisCache({
@@ -280,18 +337,23 @@ class SDK extends Base {
           async process(input) {
             try {
               let data = await dbs[self.contractTxId].db.readState(
-                input.interaction.block.height
+                input.sortKey
               )
               const state = data.cachedValue.state
+
               try {
                 _on(state, input)
               } catch (e) {}
               if (!isNil(self.onUpdate)) {
+                let query = null
                 try {
-                  self.onUpdate(state, input)
-                } catch (e) {
-                  console.log(e)
-                }
+                  for (let v of input.interaction.tags) {
+                    if (v.name === "Input") {
+                      query = JSON.parse(v.value)
+                    }
+                  }
+                } catch (e) {}
+                self.pubsubReceived(state, query, input)
               }
             } catch (e) {
               console.log(e)
@@ -309,6 +371,8 @@ class SDK extends Base {
         .catch(() => {})
     } else {
       if (this.subscribe) {
+        /*
+        clearInterval(this.interval)
         this.interval = setInterval(() => {
           this.db
             .readState()
@@ -329,7 +393,8 @@ class SDK extends Base {
               console.log("readState error")
               clearInterval(this.interval)
             })
-        }, 1000)
+            }, 1000)
+        */
       }
     }
   }
@@ -432,6 +497,31 @@ class SDK extends Base {
       }
     }
     res.duration = Date.now() - start
+
+    if (
+      this.network === "localhost" &&
+      this.subscribe &&
+      !isNil(this.onUpdate) &&
+      res.success
+    ) {
+      const state = await this.db.readState()
+      this.state = state
+      states[this.contractTxId] = state
+      const info = await this.arweave.network.getInfo()
+      setTimeout(async () => {
+        this.pubsubReceived(state.cachedValue.state, param)
+      }, 0)
+      await _on(state, {
+        contractTxId: this.contractTxId,
+        interaction: {
+          block: {
+            height: info.height,
+            timestamp: Math.round(Date.now() / 1000),
+            id: info.current,
+          },
+        },
+      })
+    }
     return res
   }
   async subscribe(isCon, ...query) {
@@ -505,6 +595,96 @@ class SDK extends Base {
 
   async con(...query) {
     return await this.subscribe(true, ...query)
+  }
+
+  static getPath(func, query) {
+    if (includes(func, no_paths)) return []
+    let _path = clone(query)
+    if (includes(func, is_data)) _path = tail(_path)
+    return splitWhen(complement(is)(String), _path)[0]
+  }
+
+  static getCollectionPath(func, query) {
+    let _query = SDK.getPath(func, query)
+    const len = _query.length
+    return len === 0
+      ? "__root__"
+      : (len % 2 === 0 ? init(_query) : _query).join("/")
+  }
+
+  static getDocPath(func, query) {
+    let _query = SDK.getPath(func, query)
+    const len = _query.length
+    return len === 0 ? "__root__" : len % 2 === 1 ? "__col__" : _query.join("/")
+  }
+
+  static getKey(contractTxId, func, query, prefix) {
+    let colPath = SDK.getCollectionPath(func, query)
+    let docPath = SDK.getDocPath(func, query)
+    let key = [
+      contractTxId,
+      /^__.*__$/.test(colPath) ? colPath : md5(colPath),
+      /^__.*__$/.test(docPath) ? docPath : md5(docPath),
+      func,
+      md5(query),
+    ]
+    if (!isNil(prefix)) key.unshift(prefix)
+    return key.join(".")
+  }
+
+  static getKeyInfo(contractTxId, query, prefix = null) {
+    const path = SDK.getPath(query.function, query.query)
+    const len = path.length
+    return {
+      type: len === 0 ? "root" : len % 2 === 0 ? "doc" : "collection",
+      path,
+      collectionPath: SDK.getCollectionPath(query.function, query.query),
+      docPath: SDK.getDocPath(query.function, query.query),
+      contractTxId,
+      prefix,
+      func: query.function,
+      query: query.query,
+      key: SDK.getKey(contractTxId, query.function, query.query, prefix),
+    }
+  }
+
+  static getKeys(contractTxId, query, prefix = null) {
+    let keys = []
+    try {
+      if (query.function === "batch") {
+        keys = map(
+          v =>
+            SDK.getKeyInfo(
+              contractTxId,
+              { function: v[0], query: tail(v) },
+              prefix
+            ),
+          query.query
+        )
+      } else {
+        const q =
+          query.function === "relay"
+            ? SDK.getKeyInfo(contractTxId, query.query[1], prefix)
+            : SDK.getKeyInfo(contractTxId, query, prefix)
+        keys.push(q)
+      }
+    } catch (e) {
+      console.log(e)
+    }
+    return keys
+  }
+
+  pubsubReceived(state, query, input) {
+    this.onUpdate(
+      state,
+      query,
+      {
+        keys: SDK.getKeys(this.contractTxId, query, this.cache_prefix),
+        update: [],
+        delete: [],
+      },
+      input
+    )
   }
 }
 

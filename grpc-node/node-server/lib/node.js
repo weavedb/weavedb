@@ -8,6 +8,7 @@ const {
   of,
   is,
   unless,
+  hasPath,
 } = require("ramda")
 const Arweave = require("arweave")
 const Cache = require("./cache")
@@ -28,7 +29,6 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 
 const weavedb = grpc.loadPackageDefinition(packageDefinition).weavedb
 const { execAdmin } = require("./admin")
-const { getKey } = require("./utils")
 
 class Node {
   constructor({ conf, port }) {
@@ -207,7 +207,13 @@ class Node {
 
   async execUser(parsed) {
     const { res, nocache, txid, func, query } = parsed
-    const key = getKey(txid, func, query)
+    const _query = JSON.parse(query)
+    const key = SDK.getKey(
+      txid,
+      func,
+      _query.query || _query,
+      hasPath(["redis", "prefix"], this.conf) ? this.conf.redis.prefix : null
+    )
     let result, err
     if (
       includes(func)(this.sdks[txid].reads) &&

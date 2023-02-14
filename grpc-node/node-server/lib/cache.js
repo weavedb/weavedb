@@ -9,8 +9,6 @@ class Cache {
   async init() {
     if (!isNil(this.redis)) {
       try {
-        await this.redis.connect()
-        console.log("redis is ready!")
         this.isRedis = true
       } catch (e) {
         console.log(e)
