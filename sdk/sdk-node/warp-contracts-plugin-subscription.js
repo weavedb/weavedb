@@ -15,12 +15,11 @@ if (isNode) {
   global.WebSocket = require("ws")
 }
 
-initPubSub()
-
 class WarpSubscriptionPlugin {
   constructor(contractTxId, warp) {
     this.logger = LoggerFactory.INST.create("WarpSubscriptionPlugin")
     const connect = (attempt = 1) => {
+      initPubSub()
       subscribe(
         `interactions/${contractTxId}`,
         async ({ data }) => {
