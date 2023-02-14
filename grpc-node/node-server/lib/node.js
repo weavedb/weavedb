@@ -8,6 +8,7 @@ const {
   of,
   is,
   unless,
+  hasPath,
 } = require("ramda")
 const Arweave = require("arweave")
 const Cache = require("./cache")
@@ -207,7 +208,12 @@ class Node {
 
   async execUser(parsed) {
     const { res, nocache, txid, func, query } = parsed
-    const key = getKey(txid, func, query)
+    const key = getKey(
+      txid,
+      func,
+      query,
+      hasPath(["redis", "prefix"], this.conf) ? this.conf.redis.prefix : null
+    )
     let result, err
     if (
       includes(func)(this.sdks[txid].reads) &&

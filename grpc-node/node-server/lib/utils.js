@@ -1,5 +1,5 @@
 const md5 = require("md5")
-const { includes, init, is, complement, splitWhen } = require("ramda")
+const { isNil, includes, init, is, complement, splitWhen } = require("ramda")
 
 const getPath = (func, query) => {
   if (
@@ -24,7 +24,11 @@ const getPath = (func, query) => {
   }
 }
 
-const getKey = (contractTxId, func, query) =>
-  `${contractTxId}.${md5(getPath(func, query))}.${func}.${md5(query)}`
+const getKey = (contractTxId, func, query, prefix) => {
+  let key = [contractTxId, md5(getPath(func, query)), func, md5(query)]
+  if (!isNil(prefix)) key.unshift(prefix)
+  console.log(key)
+  return key.join(".")
+}
 
 module.exports = { getKey, getPath }
