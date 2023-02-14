@@ -27,7 +27,6 @@ const getPath = (func, query) => {
 const getKey = (contractTxId, func, query, prefix) => {
   let key = [contractTxId, md5(getPath(func, query)), func, md5(query)]
   if (!isNil(prefix)) key.unshift(prefix)
-  console.log(key)
   return key.join(".")
 }
 
