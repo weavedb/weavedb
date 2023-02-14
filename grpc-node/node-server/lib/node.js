@@ -207,10 +207,11 @@ class Node {
 
   async execUser(parsed) {
     const { res, nocache, txid, func, query } = parsed
+    const _query = JSON.parse(query)
     const key = SDK.getKey(
       txid,
       func,
-      query,
+      _query.query || _query,
       hasPath(["redis", "prefix"], this.conf) ? this.conf.redis.prefix : null
     )
     let result, err
