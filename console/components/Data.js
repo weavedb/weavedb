@@ -83,14 +83,14 @@ export default inject(
                     await fn(read)({
                       db,
                       m: "cget",
-                      q: concat(base_path, [col, v, true]),
+                      q: concat(base_path, [col, v]),
                     })
                   )
                   setSubCollections(
                     await fn(read)({
                       db,
                       m: "listCollections",
-                      q: concat(base_path, [col, v, true]),
+                      q: concat(base_path, [col, v]),
                     })
                   )
                 }}
@@ -168,7 +168,6 @@ export default inject(
                         col,
                         ["startAfter", loadMore],
                         per_page,
-                        true,
                       ],
                     })
                     if (_docs.length > 0) {
@@ -244,7 +243,7 @@ export default inject(
                       const _docs = await fn(read)({
                         db,
                         m: "cget",
-                        q: [..._doc_path, per_page, true],
+                        q: [..._doc_path, per_page],
                       })
                       setDocuments(_docs)
                       setLoadMore(
@@ -321,14 +320,14 @@ export default inject(
                             await fn(read)({
                               db,
                               m: "cget",
-                              q: [...doc_path, true],
+                              q: [...doc_path],
                             })
                           )
                           setSubCollections(
                             await fn(read)({
                               db,
                               m: "listCollections",
-                              q: [...doc_path, true],
+                              q: [...doc_path],
                             })
                           )
                         }

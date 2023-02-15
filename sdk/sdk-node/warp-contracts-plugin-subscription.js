@@ -29,8 +29,10 @@ class WarpSubscriptionPlugin {
         },
         e => {
           console.log(e.error)
-          console.log("reconnecting..." + attempt)
-          connect(++attempt)
+          setTimeout(() => {
+            console.log("reconnecting..." + attempt)
+            connect(++attempt)
+          }, 1000)
         }
       )
         .then(() => {

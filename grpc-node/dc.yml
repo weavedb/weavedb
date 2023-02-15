@@ -1,11 +1,9 @@
 version: '3'
 services:
-  redis:
+  cache:
     image: redis:6.2-alpine
     restart: always
-    command: redis-server --save 60 1
-    volumes:
-      - ./node-server/cache/redis:/data
+    command: redis-server --save 20 1
   node-server:
     build: ./node-server
     ports:
@@ -15,8 +13,10 @@ services:
     volumes:
       - ./node-server/cache:/weavedb/cache
     depends_on:
-      - redis
+      - cache    
   envoy:
     build: ./envoy
     ports:
-      - "8080:8080"    
+      - "8080:8080"
+    links:
+      - node-server

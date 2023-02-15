@@ -70,7 +70,7 @@ A function to execute on pub/sub updates. `newState` and `input` object will be 
 import WeaveDB from "weavedb-sdk-node" 
 new WeaveDB({
   contractTxId,
-  onUpdate: (newState, query, input)=>{}
+  onUpdate: (newState, query, cache, input)=>{}
 })
 ```
 
