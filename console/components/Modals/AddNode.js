@@ -88,6 +88,7 @@ export default inject(
                   setNewNode("")
                   setAddNode(false)
                 } catch (e) {
+                  console.log(e)
                   alert("couldn't connect with the node")
                 }
                 set(null, "loading")
