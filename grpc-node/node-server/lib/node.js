@@ -83,7 +83,6 @@ class Node {
         __conf.redis ||= {}
         __conf.redis.client = this.redis
         __conf.onUpdate = async (state, query, cache) => {
-          console.log(cache)
           if (!isNil(this.redis)) {
             if (cache.deletes.length) {
               try {
@@ -320,6 +319,7 @@ class Node {
   }
 
   async init() {
+    console.log("redis", process.env.REDIS_HOST)
     let contracts = isNil(this.conf.contractTxId)
       ? []
       : is(Array, this.conf.contractTxId)
