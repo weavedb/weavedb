@@ -1,5 +1,11 @@
 const {
+  append,
+  isEmpty,
+  compose,
+  flatten,
   o,
+  values,
+  mapObjIndexed,
   map,
   includes,
   pluck,
@@ -35,7 +41,6 @@ class Node {
     this.conf = conf
     this.port = port
     this.sdks = {}
-    this._init = {}
     this.lastChecked = {}
 
     this.initRedis()
@@ -77,6 +82,28 @@ class Node {
       if (__conf.cache === "redis") {
         __conf.redis ||= {}
         __conf.redis.client = this.redis
+        __conf.onUpdate = async (state, query, cache) => {
+          if (!isNil(this.redis)) {
+            if (cache.deletes.length) {
+              try {
+                await this.redis.del(cache.deletes)
+              } catch (e) {}
+            }
+            if (!isEmpty(cache.updates)) {
+              try {
+                const tx = await this.redis.MSET(
+                  compose(
+                    flatten,
+                    values,
+                    mapObjIndexed((v, k) => [k, JSON.stringify(v)])
+                  )(cache.updates)
+                )
+              } catch (e) {
+                console.log(e)
+              }
+            }
+          }
+        }
       }
       this.sdks[txid] = new SDK(__conf)
       if (isNil(_conf.wallet)) await this.sdks[txid].initializeWithoutWallet()
@@ -174,26 +201,52 @@ class Node {
   async sendQuery({ func, txid, nocache, query }, key) {
     let result = null
     let err = null
-    const nameMap = { get: "getCache", cget: "cgetCache" }
     try {
-      if (includes(func)(["get", "cget", "getNonce"])) {
-        if (
-          includes(func)(["get", "cget"]) &&
-          (isNil(this._init[txid]) || nocache)
-        ) {
-          result = await this.sdks[txid][func](...JSON.parse(query))
-          this._init[txid] = true
+      if (func === "getNonce") {
+        result = await this.sdks[txid].getNonce(...JSON.parse(query))
+      } else if (key.func === "cget") {
+        if (nocache) {
+          result = await this.sdks[txid].cget(...JSON.parse(query))
         } else {
-          result = await this.sdks[txid][nameMap[func] || func](
-            ...JSON.parse(query)
-          )
+          result = await this.sdks[txid].cgetCache(...JSON.parse(query))
+        }
+        if (key.type === "collection") {
+          this.cache.set(key.key, pluck("id", result))
+          if (result.length) {
+            this.redis.MSET(
+              o(
+                flatten,
+                map(v => [
+                  SDK.getKey(
+                    txid,
+                    "cget",
+                    append(v.id, key.path),
+                    this.conf.cache_prefix
+                  ),
+                  JSON.stringify(v),
+                ])
+              )(result)
+            )
+          }
+          if (func === "get") result = pluck("data", result)
+        } else {
+          if (func === "get") result = result.data
+          this.cache.set(key.key, result)
         }
       } else if (includes(func)(this.sdks[txid].reads)) {
-        result = await this.sdks[txid][func](...JSON.parse(query))
-        await this.cache.set(key, { date: Date.now(), result })
+        let _query = clone(JSON.parse(query))
+        if (func !== "listCollections" || nocache) {
+          try {
+            _query.push(true)
+          } catch (e) {
+            console.log(e)
+          }
+        }
+        result = await this.sdks[txid][key.func](..._query)
+        this.cache.set(key.key, result)
       } else {
         result = await this.sdks[txid].write(
-          func,
+          key.func,
           JSON.parse(query),
           true,
           true
@@ -208,25 +261,56 @@ class Node {
   async execUser(parsed) {
     const { res, nocache, txid, func, query } = parsed
     const _query = JSON.parse(query)
-    const key = SDK.getKey(
+    const key = SDK.getKeyInfo(
       txid,
-      func,
-      _query.query || _query,
-      hasPath(["redis", "prefix"], this.conf) ? this.conf.redis.prefix : null
+      !isNil(_query.query) ? _query : { function: func, query: _query },
+      this.conf.cache_prefix
     )
-    let result, err
+    let data = null
     if (
-      includes(func)(this.sdks[txid].reads) &&
-      (await this.cache.exists(key)) &&
-      !nocache
+      !nocache &&
+      func !== "getNonce" &&
+      key.func === "cget" && // need to remove this later
+      includes(func)(this.sdks[txid].reads)
     ) {
-      result = (await this.cache.get(key)).result
-      res(err, result)
-      await this.sendQuery(parsed, key)
-    } else {
-      ;({ result, err } = await this.sendQuery(parsed, key))
-      res(err, result)
+      try {
+        data = await this.cache.get(key.key)
+        if (!isNil(data)) {
+          if (
+            key.func === "cget" &&
+            key.type === "collection" &&
+            data.length !== 0
+          ) {
+            data = map(
+              JSON.parse,
+              await this.redis.MGET(
+                map(v =>
+                  SDK.getKey(
+                    txid,
+                    "cget",
+                    append(v, key.path),
+                    this.conf.cache_prefix
+                  )
+                )(data)
+              )
+            )
+            if (includes(null, data)) {
+              data = null
+            } else if (func === "get") {
+              data = pluck("data", data)
+            }
+          }
+        }
+      } catch (e) {}
+
+      if (!isNil(data)) {
+        res(null, data)
+        return await this.sendQuery(parsed, key)
+      }
     }
+    let result, err
+    ;({ result, err } = await this.sendQuery(parsed, key))
+    res(err, result)
   }
 
   async query(call, callback) {
@@ -243,6 +327,7 @@ class Node {
   }
 
   async init() {
+    console.log("redis", process.env.REDIS_HOST)
     let contracts = isNil(this.conf.contractTxId)
       ? []
       : is(Array, this.conf.contractTxId)
@@ -267,8 +352,6 @@ class Node {
     }
 
     for (let v of contracts) this.initSDK(v)
-
-    this.cache.init()
 
     const server = new grpc.Server()
 

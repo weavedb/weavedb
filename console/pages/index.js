@@ -207,9 +207,7 @@ export default inject(
     useEffect(() => {
       ;(async () => {
         if (!isNil(currentDB) && !$.loading_contract) {
-          setCollections(
-            await fn(read)({ db, m: "listCollections", q: [true] })
-          )
+          setCollections(await fn(read)({ db, m: "listCollections", q: [] }))
         }
       })()
     }, [contractTxId, currentDB, $.loading_contract])

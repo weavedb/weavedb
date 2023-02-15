@@ -54,22 +54,23 @@ describe("WeaveDB", function () {
     } catch (e) {}
   })
 
-  it.only("should receive pubsub notification", done => {
+  it("should receive pubsub notification", done => {
     db.initialize({
       cache_prefix: "local_test",
       wallet: arweave_wallet,
       onUpdate: (state, query, cache) => {
         console.log(cache)
-        expect(query.function).to.eql("add")
+        expect(query.function).to.eql("set")
         done()
       },
     })
-    db.add({}, "users", { ar: arweave_wallet })
+    db.set({ name: "Bob" }, "users", "Bob", { ar: arweave_wallet })
   })
   const sleep = sec =>
     new Promise(res => {
       setTimeout(() => res(), sec * 1000)
     })
+
   it("should handle relay queries", async () => {
     let caches = []
     db.initialize({
@@ -114,7 +115,7 @@ describe("WeaveDB", function () {
     return
   })
 
-  it("should handle batch queries", async () => {
+  it.only("should handle batch queries", async () => {
     let caches = []
     db.initialize({
       cache_prefix: "local_test",
@@ -144,6 +145,8 @@ describe("WeaveDB", function () {
     expect(caches[0].keys[3].func).to.equal("upsert")
     expect(caches[0].keys[4].func).to.equal("add")
     expect(caches[0].keys[5].func).to.equal("delete")
+    console.log(caches[0].updates)
+    console.log(caches[0].deletes)
     return
   })
 })
