@@ -57,7 +57,7 @@ export default inject(
                   let _docs = await fn(read)({
                     db,
                     m: "cget",
-                    q: [...base_path, v, per_page, true],
+                    q: [...base_path, v, per_page],
                   })
                   setDocuments(_docs)
                   if (_docs.length === per_page) setLoadMore(last(_docs))
