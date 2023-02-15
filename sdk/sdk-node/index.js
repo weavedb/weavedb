@@ -629,7 +629,7 @@ class SDK extends Base {
       contractTxId,
       /^__.*__$/.test(colPath) ? colPath : md5(colPath),
       /^__.*__$/.test(docPath) ? docPath : md5(docPath),
-      func,
+      func === "get" ? "cget" : func,
       md5(query),
     ]
     if (!isNil(prefix)) key.unshift(prefix)
@@ -646,7 +646,7 @@ class SDK extends Base {
       docPath: SDK.getDocPath(query.function, query.query),
       contractTxId,
       prefix,
-      func: query.function,
+      func: query.function === "get" ? "cget" : query.function,
       query: query.query,
       key: SDK.getKey(contractTxId, query.function, query.query, prefix),
     }
