@@ -6,19 +6,8 @@ class Cache {
     if (!isNil(conf.redis)) this.redis = redis
   }
 
-  async init() {
-    if (!isNil(this.redis)) {
-      try {
-        this.isRedis = true
-      } catch (e) {
-        console.log(e)
-        console.log("redis error")
-      }
-    }
-  }
-
   async get(key) {
-    if (this.isRedis) {
+    if (!isNil(this.redis)) {
       try {
         return JSON.parse(await this.redis.get(key))
       } catch (e) {
@@ -31,7 +20,7 @@ class Cache {
   }
 
   async set(key, val) {
-    if (this.isRedis) {
+    if (!isNil(this.redis)) {
       try {
         await this.redis.set(key, JSON.stringify(val))
       } catch (e) {
@@ -43,7 +32,7 @@ class Cache {
   }
 
   async exists(key) {
-    if (this.isRedis) {
+    if (!isNil(this.redis)) {
       try {
         return (await this.redis.exists(key)) === 1
       } catch (e) {}
