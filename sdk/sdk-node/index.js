@@ -83,6 +83,7 @@ let submap = {}
 let Arweave = require("arweave")
 Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
 const Base = require("weavedb-base")
+const { handle } = require("./off-chain/contract")
 
 const _on = async (state, input) => {
   const block = input.interaction.block
@@ -400,8 +401,21 @@ class SDK extends Base {
     }
   }
 
-  async read(params) {
-    return (await this.db.viewState(params)).result
+  async read(params, nocache = false) {
+    if (!nocache && !isNil(this.state)) {
+      try {
+        return (await handle(states[this.contractTxId], { input: params }))
+          .result
+      } catch (e) {
+        console.log(e)
+      }
+    }
+    const res = await this.db.viewState(params)
+    if (res.type === "ok") {
+      this.state = res.state
+      states[this.contractTxId] = this.state
+    }
+    return res.result
   }
 
   async write(func, param, dryWrite, bundle, relay = false) {
