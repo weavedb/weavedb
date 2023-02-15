@@ -234,7 +234,15 @@ class Node {
           this.cache.set(key.key, result)
         }
       } else if (includes(func)(this.sdks[txid].reads)) {
-        result = await this.sdks[txid][key.func](...JSON.parse(query))
+        let _query = clone(JSON.parse(query))
+        if (func !== "listCollections" || nocache) {
+          try {
+            _query.push(true)
+          } catch (e) {
+            console.log(e)
+          }
+        }
+        result = await this.sdks[txid][key.func](..._query)
         this.cache.set(key.key, result)
       } else {
         result = await this.sdks[txid].write(
