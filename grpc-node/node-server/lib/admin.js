@@ -95,6 +95,7 @@ const execAdminRead = async ({ query, res, txid, node }) => {
 
 const execAdmin = async ({ query, res, txid, node }) => {
   let _query, op, owners, err, signer
+  console.log(query, txid)
   try {
     _query = JSON.parse(query)
     ;({ op } = _query.query)
@@ -106,6 +107,14 @@ const execAdmin = async ({ query, res, txid, node }) => {
   if (isNil(node.conf.admin) || isNil(node.conf.admin.contractTxId)) {
     return res(`Admin doesn't exist`)
   }
+
+  const nonAdmin = ["remove_contract", "add_contract"]
+  const reads = ["stats"]
+
+  if (includes(op)(reads)) {
+    return execAdminRead({ query, res, txid, node })
+  }
+
   if (txid !== node.conf.admin.contractTxId) {
     return res(`The wrong admin contract (${txid})`)
   }
@@ -114,12 +123,6 @@ const execAdmin = async ({ query, res, txid, node }) => {
     return res(`Admin contract not ready`)
   }
 
-  const nonAdmin = ["remove_contract", "add_contract"]
-  const reads = ["stats"]
-
-  if (includes(op)(reads)) {
-    return execAdminRead({ query, res, txid, node })
-  }
   if (_query.type !== "rsa256" && !includes(op)(nonAdmin)) {
     return res("Admin must be an Arweave account")
   }
