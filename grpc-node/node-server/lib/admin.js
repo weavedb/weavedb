@@ -95,7 +95,6 @@ const execAdminRead = async ({ query, res, txid, node }) => {
 
 const execAdmin = async ({ query, res, txid, node }) => {
   let _query, op, owners, err, signer
-  console.log(query, txid)
   try {
     _query = JSON.parse(query)
     ;({ op } = _query.query)
