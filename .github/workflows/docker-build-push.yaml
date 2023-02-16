@@ -1,0 +1,129 @@
+name: Docker Build and Push
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: wallet.json
+        run: echo '${{ secrets.WEAVEDB_OWNER_WALLET_JSON }}' > ./wallet.json
+        working-directory: ./grpc-node/node-server
+        
+      
+      - name: weavedb config
+        run: cat weavedb.config.tmpl-redis.js | sed s/WEAVEDB_ADMIN_CONTRACT/${{ secrets.WEAVEDB_ADMIN_CONTRACT }}/  > weavedb.config.js
+        working-directory: ./grpc-node/node-server
+
+      ## Redis
+      - name: docker build
+        run: docker build  --platform linux/amd64  -t node-server-redis-9090 . 
+        working-directory: ./grpc-node/node-server
+
+      - name: docker tag1
+        run: docker tag  node-server-redis-9090:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/node-server-redis-9090:latest
+      - name: docker tag2
+        run: docker tag  node-server-redis-9090:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/node-server-redis-9090:`date +%Y-%m-%d-%H-%I-%S`-$GITHUB_SHA
+        working-directory: ./grpc-node/node-server
+
+
+      ### S3/lmdb 
+      - name: weavedb config
+        run: cat weavedb.config.tmpl.js | sed s/WEAVEDB_ADMIN_CONTRACT/${{ secrets.WEAVEDB_ADMIN_CONTRACT }}/  > weavedb.config.js
+        working-directory: ./grpc-node/node-server
+
+      - name: docker build
+        run: docker build  --platform linux/amd64  -t node-server-9090 . 
+        working-directory: ./grpc-node/node-server
+
+      - name: docker tag3
+        run: docker tag  node-server-9090:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/node-server-9090:latest
+      - name: docker tag4
+        run: docker tag  node-server-9090:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/node-server-9090:`date +%Y-%m-%d-%H-%I-%S`-$GITHUB_SHA
+        working-directory: ./grpc-node/node-server
+
+
+      # docker login 
+
+      - name: create .aws
+        run: mkdir ~/.aws
+      - name: echo1
+        run: echo '[default]' > ~/.aws/credentials
+      - name: echo2
+        run: echo "aws_access_key_id = ${{ secrets.AWS_ACCESS_KEY_ID }}" >> ~/.aws/credentials
+      - name: echo3
+        run: echo "aws_secret_access_key = ${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ~/.aws/credentials
+      
+      - name: echo4
+        run: echo '[default]' > ~/.aws/config
+      - name: echo5
+        run: echo "region = ${{ secrets.AWS_MAIN_REGION }}" >> ~/.aws/config
+
+      # docker-compose 
+      - name: docker-compose build  
+        run: sudo docker-compose build 
+        working-directory: ./grpc-node/
+
+      - name: dockere-compose up -d 
+        run: sudo docker-compose up -d ; sleep 20 ; docker ps
+        working-directory: ./grpc-node/
+
+
+      # # Server TEST
+      # - name: server test ( 3003 / http)
+      #   run:  ./scripts/dockertesturl.sh http://localhost:3003
+      #   working-directory: ./grpc-node/node-server
+
+
+      # # Server TEST ( must be ERROR)
+      # - name: server test ( 3003 / http)
+      #   run:  ./scripts/dockertesturl.sh http://localhost:3003/ERROR
+      #   working-directory: ./grpc-node/node-server
+
+      # docker login 
+      - name: docker login
+        run: aws ecr get-login-password --region ${{ secrets.AWS_MAIN_REGION }} |  docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION}}.amazonaws.com
+      # push 1
+      - name: docker push
+        run: docker push  --all-tags ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/node-server-9090
+      # push 2
+      - name: docker push
+        run: docker push  --all-tags ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/node-server-redis-9090
+
+      - name: delete old docker image 1 ( node-server-9090 )
+        run: ./scripts/delete_old_docker_images.rb node-server-9090
+        working-directory: ./grpc-node/node-server
+      
+
+      - name: delete old docker image 2 ( node-server-redis-9090 )
+        run: ./scripts/delete_old_docker_images.rb node-server-redis-9090 
+        working-directory: ./grpc-node/node-server
+      
+
+
+      - name: Send custom JSON data to Slack workflow
+        id: slack
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          # For posting a rich message using Block Kit
+          payload: |
+            {
+              "text": "GitHub Action Docker Build/Push result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}\nDocker Repository URL: node-server-9090 & node-server-redis-9090 \nhttps://${{ secrets.AWS_MAIN_REGION }}.console.aws.amazon.com/ecr/repositories/private/${{ secrets.AWS_ACCOUNT_ID }}/node-server-9090?region=${{ secrets.AWS_MAIN_REGION }}\nhttps://${{ secrets.AWS_MAIN_REGION }}.console.aws.amazon.com/ecr/repositories/private/${{ secrets.AWS_ACCOUNT_ID }}/node-server-redis-9090?region=${{ secrets.AWS_MAIN_REGION }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "GitHub Action Docker Build/Push result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}\nDocker Repository URL: node-server-9090 & node-server-redis-9090 \nhttps://${{ secrets.AWS_MAIN_REGION }}.console.aws.amazon.com/ecr/repositories/private/${{ secrets.AWS_ACCOUNT_ID }}/node-server-9090?region=${{ secrets.AWS_MAIN_REGION }}\nhttps://${{ secrets.AWS_MAIN_REGION }}.console.aws.amazon.com/ecr/repositories/private/${{ secrets.AWS_ACCOUNT_ID }}/node-server-redis-9090?region=${{ secrets.AWS_MAIN_REGION }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

@@ -207,9 +207,7 @@ export default inject(
     useEffect(() => {
       ;(async () => {
         if (!isNil(currentDB) && !$.loading_contract) {
-          setCollections(
-            await fn(read)({ db, m: "listCollections", q: [true] })
-          )
+          setCollections(await fn(read)({ db, m: "listCollections", q: [] }))
         }
       })()
     }, [contractTxId, currentDB, $.loading_contract])
@@ -226,7 +224,6 @@ export default inject(
                   ...(doc_path.length % 2 === 0
                     ? doc_path.slice(0, -1)
                     : doc_path),
-                  true,
                 ],
               })
             )
@@ -241,7 +238,6 @@ export default inject(
                   ...(doc_path.length % 2 === 0
                     ? doc_path.slice(0, -1)
                     : doc_path),
-                  true,
                 ],
               })
             )
@@ -256,19 +252,17 @@ export default inject(
                   ...(doc_path.length % 2 === 0
                     ? doc_path.slice(0, -1)
                     : doc_path),
-                  true,
                 ],
               })
             )
           }
         } else if (tab === "Crons") {
-          setCrons(await fn(read)({ db, m: "getCrons", q: [true] }))
+          setCrons(await fn(read)({ db, m: "getCrons", q: [] }))
         } else if (tab === "Relayers") {
-          setRelayers(await fn(read)({ db, m: "listRelayerJobs", q: [true] }))
+          setRelayers(await fn(read)({ db, m: "listRelayerJobs", q: [] }))
         }
       })()
     }, [contractTxId, tab, doc_path])
-
     useEffect(() => {
       ;(async () => {
         if (addAlgorithms) setNewAuths(state.auth.algorithms)
@@ -304,9 +298,18 @@ export default inject(
             port,
             rpc,
           }))
-        setState(state || (await fn(read)({ db, m: "getInfo", q: [true] })))
+        let info = state || (await fn(read)({ db, m: "getInfo", q: [] }))
+        setState(info)
         set(null, "loading_contract")
         fn(switchTempAddress)({ contractTxId: _contractTxId })
+        if (isNil(info.version)) {
+          info.version = await fn(read)({
+            db,
+            m: "getVersion",
+            q: [true],
+          })
+          setState(info)
+        }
       } else {
         db = _db || (await fn(setupWeaveDB)({ network: "Mainnet" }))
       }
@@ -450,6 +453,7 @@ export default inject(
         setAddCron,
         crons,
         setCron,
+        setCrons,
         _cron,
         contractTxId,
         db,

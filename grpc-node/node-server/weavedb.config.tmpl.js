@@ -9,11 +9,11 @@ const s3bucket = process.env.S3_BUCKET_NAME
 const s3prefix = process.env.S3_PREFIX
 const wallet = require('./wallet.json')
 module.exports = {
-  // cache: "redis",
-  // redis: {
-  //   url: `redis://${redishost}:${redisport}`,
-  // },
+
   subscribe: false,
+
+  // subscribe: true,
+
   s3: {
     bucket: s3bucket,
     prefix: s3prefix,
@@ -21,6 +21,11 @@ module.exports = {
     secretAccessKey: secretAccessKey,
     region: s3region,
   },
+
+  // cache: "redis",
+  // redis: {
+  //   url: `redis://${redishost}:${redisport}`,
+  // },
   admin: {
     contractTxId: "WEAVEDB_ADMIN_CONTRACT",
     // YSReuO6vzkBWd4Tdfe8HE0YLXj4tJokfatsORv7iZ94

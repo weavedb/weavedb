@@ -49,8 +49,7 @@ export default inject(
                   const job = await fn(read)({
                     db,
                     m: "getRelayerJob",
-                    q: v,
-                    arr: false,
+                    q: [v],
                   })
                   if (!isNil(job)) setRelayer({ name: v, job })
                 }}

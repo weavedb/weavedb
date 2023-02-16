@@ -1,4 +1,11 @@
 const {
+  append,
+  isEmpty,
+  compose,
+  flatten,
+  o,
+  values,
+  mapObjIndexed,
   map,
   includes,
   pluck,
@@ -7,8 +14,7 @@ const {
   of,
   is,
   unless,
-  defaultTo,
-  compose,
+  hasPath,
 } = require("ramda")
 const Arweave = require("arweave")
 const Cache = require("./cache")
@@ -29,14 +35,12 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 
 const weavedb = grpc.loadPackageDefinition(packageDefinition).weavedb
 const { execAdmin } = require("./admin")
-const { getKey } = require("./utils")
 
 class Node {
   constructor({ conf, port }) {
     this.conf = conf
     this.port = port
     this.sdks = {}
-    this._init = {}
     this.lastChecked = {}
 
     this.initRedis()
@@ -51,6 +55,7 @@ class Node {
         url: this.conf.redis?.url || null,
       })
       this.redis.connect()
+      this.isRedis = true
     }
   }
 
@@ -73,16 +78,43 @@ class Node {
           },
         }
         if (!no_snapshot) await this.snapshot.recover(txid)
+      } else if (this.isRedis) {
+        if (!no_snapshot) await this.snapshot.recoverRedis(txid, this.redis)
       }
       let __conf = clone(_conf)
       if (__conf.cache === "redis") {
         __conf.redis ||= {}
         __conf.redis.client = this.redis
+        __conf.onUpdate = async (state, query, cache) => {
+          if (!isNil(this.redis)) {
+            if (cache.deletes.length) {
+              try {
+                await this.redis.del(cache.deletes)
+              } catch (e) {}
+            }
+            if (!isEmpty(cache.updates)) {
+              try {
+                const tx = await this.redis.MSET(
+                  compose(
+                    flatten,
+                    values,
+                    mapObjIndexed((v, k) => [k, JSON.stringify(v)])
+                  )(cache.updates)
+                )
+              } catch (e) {
+                console.log(e)
+              }
+            }
+          }
+        }
       }
       this.sdks[txid] = new SDK(__conf)
       if (isNil(_conf.wallet)) await this.sdks[txid].initializeWithoutWallet()
       await this.sdks[txid].db.readState()
       if (this.isLmdb && !no_snapshot) await this.snapshot.save(txid)
+      if (this.isRedis && !no_snapshot) {
+        await this.snapshot.save(txid, this.redis)
+      }
       console.log(`sdk(${v}) ready!`)
 
       if (!isNil(this.conf.admin)) {
@@ -107,7 +139,7 @@ class Node {
     return success
   }
 
-  async rateLimit(txid, res) {
+  async rateLimit(txid) {
     if (
       !isNil(this.conf.redis) &&
       !isNil(this.conf.ratelimit) &&
@@ -129,11 +161,10 @@ class Node {
   }
 
   async isAllowed(txid) {
-    const allowed_contracts = compose(
+    const allowed_contracts = o(
       map(v => v.split("@")[0]),
-      unless(is(Array), of),
-      defaultTo([])
-    )(this.conf.contractTxId)
+      unless(is(Array), of)
+    )(this.conf.contractTxId || [])
 
     let allowed =
       !isNil(this.sdks[txid]) ||
@@ -176,26 +207,52 @@ class Node {
   async sendQuery({ func, txid, nocache, query }, key) {
     let result = null
     let err = null
-    const nameMap = { get: "getCache", cget: "cgetCache" }
     try {
-      if (includes(func)(["get", "cget", "getNonce"])) {
-        if (
-          includes(func)(["get", "cget"]) &&
-          (isNil(this._init[txid]) || nocache)
-        ) {
-          result = await this.sdks[txid][func](...JSON.parse(query))
-          this._init[txid] = true
+      if (func === "getNonce") {
+        result = await this.sdks[txid].getNonce(...JSON.parse(query))
+      } else if (key.func === "cget") {
+        if (nocache) {
+          result = await this.sdks[txid].cget(...JSON.parse(query), true)
         } else {
-          result = await this.sdks[txid][nameMap[func] || func](
-            ...JSON.parse(query)
-          )
+          result = await this.sdks[txid].cgetCache(...JSON.parse(query))
+        }
+        if (key.type === "collection") {
+          this.cache.set(key.key, pluck("id", result))
+          if (result.length) {
+            this.redis.MSET(
+              o(
+                flatten,
+                map(v => [
+                  SDK.getKey(
+                    txid,
+                    "cget",
+                    append(v.id, key.path),
+                    this.conf.cache_prefix
+                  ),
+                  JSON.stringify(v),
+                ])
+              )(result)
+            )
+          }
+          if (func === "get") result = pluck("data", result)
+        } else {
+          if (func === "get") result = result.data
+          this.cache.set(key.key, result)
         }
       } else if (includes(func)(this.sdks[txid].reads)) {
-        result = await this.sdks[txid][func](...JSON.parse(query))
-        await this.cache.set(key, { date: Date.now(), result })
+        let _query = query === `""` ? [] : JSON.parse(query)
+        if (includes(func)(["getVersion"]) || nocache) {
+          try {
+            _query.push(true)
+          } catch (e) {
+            console.log(e)
+          }
+        }
+        result = await this.sdks[txid][key.func](..._query)
+        this.cache.set(key.key, result)
       } else {
         result = await this.sdks[txid].write(
-          func,
+          key.func,
           JSON.parse(query),
           true,
           true
@@ -209,27 +266,64 @@ class Node {
 
   async execUser(parsed) {
     const { res, nocache, txid, func, query } = parsed
-    const key = getKey(txid, func, query)
-    let result, err
+    const _query = JSON.parse(query)
+    const key = SDK.getKeyInfo(
+      txid,
+      !isNil(_query.query) ? _query : { function: func, query: _query },
+      this.conf.cache_prefix
+    )
+    let data = null
     if (
-      includes(func)(this.sdks[txid].reads) &&
-      (await this.cache.exists(key)) &&
-      !nocache
+      !nocache &&
+      func !== "getNonce" &&
+      key.func === "cget" && // need to remove this later
+      includes(func)(this.sdks[txid].reads)
     ) {
-      result = (await this.cache.get(key)).result
-      res(err, result)
-      await this.sendQuery(parsed, key)
-    } else {
-      ;({ result, err } = await this.sendQuery(parsed, key))
-      res(err, result)
+      try {
+        data = await this.cache.get(key.key)
+        if (!isNil(data)) {
+          if (
+            key.func === "cget" &&
+            key.type === "collection" &&
+            data.length !== 0
+          ) {
+            data = map(
+              JSON.parse,
+              await this.redis.MGET(
+                map(v =>
+                  SDK.getKey(
+                    txid,
+                    "cget",
+                    append(v, key.path),
+                    this.conf.cache_prefix
+                  )
+                )(data)
+              )
+            )
+            if (includes(null, data)) {
+              data = null
+            } else if (func === "get") {
+              data = pluck("data", data)
+            }
+          }
+        }
+      } catch (e) {}
+
+      if (!isNil(data)) {
+        res(null, data)
+        return await this.sendQuery(parsed, key)
+      }
     }
+    let result, err
+    ;({ result, err } = await this.sendQuery(parsed, key))
+    res(err, result)
   }
 
   async query(call, callback) {
     let parsed = this.parseQuery(call, callback)
     const { res, nocache, txid, func, query, isAdmin } = parsed
     if (isNil(txid) && !isAdmin) return res("no contractTxId")
-    if (this.rateLimit(txid, res)) return res("ratelimit error")
+    if (await this.rateLimit(txid)) return res("rate limit error")
     if (isAdmin) return await execAdmin({ query, res, node: this, txid })
     if (!(await this.isAllowed(txid))) return res(`${txid} not allowed`)
     if (isNil(this.sdks[txid]) && !(await this.initSDK(txid))) {
@@ -264,12 +358,10 @@ class Node {
 
     for (let v of contracts) this.initSDK(v)
 
-    this.cache.init()
-
     const server = new grpc.Server()
 
     server.addService(weavedb.DB.service, {
-      query: this.query,
+      query: this.query.bind(this),
     })
 
     server.bindAsync(

@@ -104,18 +104,16 @@ module.exports = {
 
 You can use Redis for multiple nodes to share the same remote cache.
 
-Use `redis` option in `weavedb.config.js`. This will be passed to `createClient(config)`.
+Use `redis` option in `weavedb.config.js`.
 
 ```js
 module.exports = {
   redis: {
-    url: "redis://localhost:6379"
+    url: "redis://localhost:6379",
+	prefix: "weavedb" // prefix for cache keys
   }
 }
 ```
-
-
-
 
 #### Global Rate Limit Counter 
 
