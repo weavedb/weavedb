@@ -1,4 +1,4 @@
-// redis
+
 
 const redishost = process.env.REDISHOST ? process.env.REDISHOST : "localhost" // 'localhost';
 const redisport = process.env.REDISPORT ? process.env.REDISPORT : 6379 // 6379;
