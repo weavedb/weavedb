@@ -206,7 +206,7 @@ class Node {
         result = await this.sdks[txid].getNonce(...JSON.parse(query))
       } else if (key.func === "cget") {
         if (nocache) {
-          result = await this.sdks[txid].cget(...JSON.parse(query))
+          result = await this.sdks[txid].cget(...JSON.parse(query), true)
         } else {
           result = await this.sdks[txid].cgetCache(...JSON.parse(query))
         }
@@ -234,8 +234,8 @@ class Node {
           this.cache.set(key.key, result)
         }
       } else if (includes(func)(this.sdks[txid].reads)) {
-        let _query = clone(JSON.parse(query))
-        if (func !== "listCollections" || nocache) {
+        let _query = query === `""` ? [] : JSON.parse(query)
+        if (includes(func)(["getVersion"]) || nocache) {
           try {
             _query.push(true)
           } catch (e) {
@@ -327,7 +327,6 @@ class Node {
   }
 
   async init() {
-    console.log("redis", process.env.REDIS_HOST)
     let contracts = isNil(this.conf.contractTxId)
       ? []
       : is(Array, this.conf.contractTxId)
