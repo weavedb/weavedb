@@ -18,6 +18,7 @@ if (isNode) {
 class WarpSubscriptionPlugin {
   constructor(contractTxId, warp) {
     this.logger = LoggerFactory.INST.create("WarpSubscriptionPlugin")
+    let last_attempt = Date.now()
     const connect = (attempt = 1) => {
       initPubSub()
       subscribe(
@@ -29,10 +30,12 @@ class WarpSubscriptionPlugin {
         },
         e => {
           console.log(e.error)
+          console.log(`reconnecting in...${attempt} secs`)
           setTimeout(() => {
-            console.log("reconnecting..." + attempt)
-            connect(++attempt)
-          }, 1000)
+            const date = Date.now()
+            connect(date - 1000 * 60 > last_attempt ? 1 : ++attempt)
+            last_attempt = date
+          }, 1000 * attempt)
         }
       )
         .then(() => {
