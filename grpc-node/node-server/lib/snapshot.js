@@ -290,11 +290,11 @@ class Snapshot {
 
   async saveSnapShotS3(contractTxId, redis) {
     if (!isNil(redis)) {
-      await this.archiveRedis(
-        contractTxId,
-        this.uploadToS3Redis.bind(this),
-        redis
-      )
+      // await this.archiveRedis(
+      //   contractTxId,
+      //   this.uploadToS3Redis.bind(this),
+      //   redis
+      // )
     } else {
       this.archive(contractTxId, this.uploadToS3.bind(this))
     }
