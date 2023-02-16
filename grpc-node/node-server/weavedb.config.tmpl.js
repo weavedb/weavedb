@@ -10,6 +10,13 @@ const s3prefix = process.env.S3_PREFIX
 const wallet = require('./wallet.json')
 module.exports = {
 
+
+// cache: "redis",
+  cache: "lmdb",
+  redis: {
+    url: `redis://${redishost}:${redisport}`,
+  },
+
   subscribe: false,
 
   // subscribe: true,

@@ -10,12 +10,30 @@ services:
     build: ./node-server
     ports:
       - "9090:9090"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    volumes:
-      - ./node-server/cache:/weavedb/cache
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"
+    # volumes:
+    #   - ./node-server/cache:/weavedb/cache
     depends_on:
       - redis
+    # volumes:
+    #   - ./node-server/cache:/weavedb/cache
+    
+    #extra_hosts:
+    #  - "host.docker.internal:host-gateway"
+
+    environment:
+      #- REDISHOST=redis
+      - REDISHOST=0.0.0.0
+      - REDISPORT=6379
+      - SERVICE_DISCOVERY_ADDRESS=0.0.0.0
+    links:
+      - redis
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+     - "6379:6379"
   envoy:
     build: ./envoy
     ports:
