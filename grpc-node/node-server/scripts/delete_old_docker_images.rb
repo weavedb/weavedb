@@ -3,8 +3,14 @@
 require 'json'
 require 'time'
 
-REPO="node-server-9090"
+if ARGV.length==0 then
+  p "error cuz of no specify image name"
+  exit
+end 
+
+REPO=ARGV[0]
 REGION="eu-west-1"
+
 
 CMD = " aws ecr  describe-images \
  --repository-name #{REPO} \

@@ -28,7 +28,7 @@ jobs:
       - name: docker tag1
         run: docker tag  node-server-redis-9090:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/node-server-redis-9090:latest
       - name: docker tag2
-        run: docker tag  node-server-redis-9090:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/node-server-redis-9090:`date +%Y-%m-%d-%H-%I-%S`-${{github.sha}}
+        run: docker tag  node-server-redis-9090:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/node-server-redis-9090:`date +%Y-%m-%d-%H-%I-%S`-$GITHUB_SHA
         working-directory: ./grpc-node/node-server
 
 
@@ -44,7 +44,7 @@ jobs:
       - name: docker tag3
         run: docker tag  node-server-9090:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/node-server-9090:latest
       - name: docker tag4
-        run: docker tag  node-server-9090:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/node-server-9090:`date +%Y-%m-%d-%H-%I-%S`-${{github.sha}}
+        run: docker tag  node-server-9090:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/node-server-9090:`date +%Y-%m-%d-%H-%I-%S`-$GITHUB_SHA
         working-directory: ./grpc-node/node-server
 
 
@@ -95,8 +95,13 @@ jobs:
       - name: docker push
         run: docker push  --all-tags ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/node-server-redis-9090
 
-      - name: delete old docker image 
-        run: ./scripts/delete_old_docker_images.rb
+      - name: delete old docker image 1 ( node-server-9090 )
+        run: ./scripts/delete_old_docker_images.rb node-server-9090
+        working-directory: ./grpc-node/node-server
+      
+
+      - name: delete old docker image 2 ( node-server-redis-9090 )
+        run: ./scripts/delete_old_docker_images.rb node-server-redis-9090 
         working-directory: ./grpc-node/node-server
       
 
@@ -108,13 +113,13 @@ jobs:
           # For posting a rich message using Block Kit
           payload: |
             {
-              "text": "GitHub Action Docker Build/Push result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}",
+              "text": "GitHub Action Docker Build/Push result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}\nDocker Repository URL: node-server-9090 & node-server-redis-9090 \nhttps://${{ secrets.AWS_MAIN_REGION }}.console.aws.amazon.com/ecr/repositories/private/${{ secrets.AWS_ACCOUNT_ID }}/node-server-9090?region=${{ secrets.AWS_MAIN_REGION }}\nhttps://${{ secrets.AWS_MAIN_REGION }}.console.aws.amazon.com/ecr/repositories/private/${{ secrets.AWS_ACCOUNT_ID }}/node-server-redis-9090?region=${{ secrets.AWS_MAIN_REGION }}",
               "blocks": [
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "GitHub Action Docker Build/Push result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+                    "text": "GitHub Action Docker Build/Push result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}\nDocker Repository URL: node-server-9090 & node-server-redis-9090 \nhttps://${{ secrets.AWS_MAIN_REGION }}.console.aws.amazon.com/ecr/repositories/private/${{ secrets.AWS_ACCOUNT_ID }}/node-server-9090?region=${{ secrets.AWS_MAIN_REGION }}\nhttps://${{ secrets.AWS_MAIN_REGION }}.console.aws.amazon.com/ecr/repositories/private/${{ secrets.AWS_ACCOUNT_ID }}/node-server-redis-9090?region=${{ secrets.AWS_MAIN_REGION }}"
                   }
                 }
               ]
