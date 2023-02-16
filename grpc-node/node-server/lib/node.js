@@ -55,6 +55,7 @@ class Node {
         url: this.conf.redis?.url || null,
       })
       this.redis.connect()
+      this.isRedis = true
     }
   }
 
@@ -77,6 +78,8 @@ class Node {
           },
         }
         if (!no_snapshot) await this.snapshot.recover(txid)
+      } else if (this.isRedis) {
+        if (!no_snapshot) await this.snapshot.recoverRedis(txid, this.redis)
       }
       let __conf = clone(_conf)
       if (__conf.cache === "redis") {
@@ -109,6 +112,9 @@ class Node {
       if (isNil(_conf.wallet)) await this.sdks[txid].initializeWithoutWallet()
       await this.sdks[txid].db.readState()
       if (this.isLmdb && !no_snapshot) await this.snapshot.save(txid)
+      if (this.isRedis && !no_snapshot) {
+        await this.snapshot.save(txid, this.redis)
+      }
       console.log(`sdk(${v}) ready!`)
 
       if (!isNil(this.conf.admin)) {
