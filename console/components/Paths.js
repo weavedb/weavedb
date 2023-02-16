@@ -42,7 +42,6 @@ export default inject(
                       ...(dpath.length % 2 === 0
                         ? dpath.slice(0, -2)
                         : dpath.slice(0, -1)),
-                      true,
                     ],
                   })
                 )
@@ -52,20 +51,17 @@ export default inject(
                   q: [
                     ...(dpath.length % 2 === 0 ? dpath.slice(0, -1) : dpath),
                     per_page,
-                    true,
                   ],
                 })
                 setDocuments(_docs)
                 setLoadMore(_docs.length === per_page ? last(_docs) : null)
                 if (dpath.length % 2 === 0) {
-                  setDocdata(
-                    await fn(read)({ db, m: "cget", q: [...dpath, true] })
-                  )
+                  setDocdata(await fn(read)({ db, m: "cget", q: [...dpath] }))
                   setSubCollections(
                     await fn(read)({
                       db,
                       m: "listCollections",
-                      q: [...dpath, true],
+                      q: [...dpath],
                     })
                   )
                 } else {
