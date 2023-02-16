@@ -23,7 +23,7 @@ output=`#{CMD}`
 jdata = JSON.parse(output)
 #p jdata["imageDetails"][0]
 cnt=0
-keepNum=100
+keepNum=8000
 
 jdata['imageDetails'].each do |item|
   #p item
