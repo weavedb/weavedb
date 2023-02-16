@@ -6,7 +6,17 @@ import { read, queryDB } from "../lib/weavedb"
 
 export default inject(
   ["temp_current", "tx_logs"],
-  ({ setAddCron, crons, setCron, _cron, fn, contractTxId, db, setState }) => (
+  ({
+    setCrons,
+    setAddCron,
+    crons,
+    setCron,
+    _cron,
+    fn,
+    contractTxId,
+    db,
+    setState,
+  }) => (
     <>
       <Flex flex={1} sx={{ border: "1px solid #555" }} direction="column">
         <Flex py={2} px={3} color="white" bg="#333" h="35px">
@@ -71,8 +81,8 @@ export default inject(
                         if (/^Error:/.test(res)) {
                           alert("Something went wrong")
                         }
-                        setState(
-                          await fn(read)({ db, m: "getInfo", q: [true] })
+                        setCrons(
+                          await fn(read)({ db, m: "getCrons", q: [true] })
                         )
                       }
                     }}

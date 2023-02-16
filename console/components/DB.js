@@ -93,6 +93,11 @@ export default inject(
                         let state = await fn(read)({
                           db,
                           m: "getInfo",
+                          q: [],
+                        })
+                        state.version = await fn(read)({
+                          db,
+                          m: "getVersion",
                           q: [true],
                         })
                         if (!isNil(state.version)) {
@@ -102,7 +107,9 @@ export default inject(
                           await _setContractTxId(
                             v.contractTxId,
                             v.network,
-                            v.rpc
+                            v.rpc,
+                            null,
+                            state
                           )
                         } else {
                           isErr = true
@@ -288,7 +295,7 @@ export default inject(
                   <Box mr={2} px={3} bg="#ddd" sx={{ borderRadius: "3px" }}>
                     DB Version
                   </Box>
-                  {state.version || "less than 0.7.0"}
+                  {state.version || "-"}
                 </Flex>
                 <Flex align="center" p={2} px={3}>
                   <Box mr={2} px={3} bg="#ddd" sx={{ borderRadius: "3px" }}>

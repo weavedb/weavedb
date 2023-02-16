@@ -61,7 +61,7 @@ export default inject(
                 </Flex>
               )),
               filter(v => v.length > 1)
-            )(indexes)}
+            )(indexes || [])}
           </Box>
         </Box>
       </Flex>
@@ -97,7 +97,7 @@ export default inject(
                 </Flex>
               )),
               filter(v => v.length === 1)
-            )(indexes)}
+            )(indexes || [])}
           </Box>
         </Box>
       </Flex>
