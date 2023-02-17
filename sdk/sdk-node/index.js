@@ -444,10 +444,10 @@ class SDK extends Base {
             console.log(e)
           }
           let cacheResult = {
-            cache: false,
+            cache: true,
             success,
             duration: Date.now() - start,
-            error: null,
+            error: err,
             function: param.function,
             state: cacheState?.state || null,
             results: [],
