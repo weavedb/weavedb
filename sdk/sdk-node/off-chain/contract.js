@@ -1,4 +1,5 @@
 const { ids } = require("./actions/read/ids")
+const { get } = require("./actions/read/get")
 const { getSchema } = require("./actions/read/getSchema")
 const { getRules } = require("./actions/read/getRules")
 const { getIndexes } = require("./actions/read/getIndexes")
@@ -53,12 +54,12 @@ async function handle(state, action) {
     console.log(e)
   }
   switch (action.input.function) {
-    case "getAddressLink":
-      return await getAddressLink(state, action)
-    /*case "get":
+    case "get":
       return await get(state, action)
     case "cget":
-      return await get(state, action, true)*/
+      return await get(state, action, true)
+    case "getAddressLink":
+      return await getAddressLink(state, action)
     case "listCollections":
       return await listCollections(state, action)
     case "getInfo":
