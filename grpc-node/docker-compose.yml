@@ -10,17 +10,12 @@ services:
     build: ./node-server
     ports:
       - "9090:9090"
-    # extra_hosts:
-    #   - "host.docker.internal:host-gateway"
-    # volumes:
-    #   - ./node-server/cache:/weavedb/cache
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./node-server/cache:/weavedb/cache
     depends_on:
       - redis
-    # volumes:
-    #   - ./node-server/cache:/weavedb/cache
-    
-    #extra_hosts:
-    #  - "host.docker.internal:host-gateway"
 
     environment:
       #- REDISHOST=redis
