@@ -88,14 +88,13 @@ class SDK extends Base {
 
   async write(func, query, nocache, bundle, relay = false) {
     if (!includes(func)(this.reads)) {
-      nocache = false
-      if (relay) {
-        return query
-      }
+      if (relay) return query
+      nocache = !nocache
     }
+    let params = query || []
     const request = {
       method: `${func}@${this.contractTxId}`,
-      query: JSON.stringify(isNil(query) ? "" : query),
+      query: JSON.stringify(params),
       nocache,
     }
     const _query = () =>
