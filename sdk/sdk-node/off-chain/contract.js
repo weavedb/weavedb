@@ -1,3 +1,4 @@
+const arweave = require("arweave")
 const { ids } = require("./actions/read/ids")
 const { get } = require("./actions/read/get")
 const { getSchema } = require("./actions/read/getSchema")
@@ -13,6 +14,14 @@ const { listRelayerJobs } = require("./actions/read/listRelayerJobs")
 const { getEvolve } = require("./actions/read/getEvolve")
 const { listCollections } = require("./actions/read/listCollections")
 const { getInfo } = require("./actions/read/getInfo")
+
+const { set } = require("./actions/write/set")
+const { add } = require("./actions/write/add")
+const { upsert } = require("./actions/write/upsert")
+const { update } = require("./actions/write/update")
+const { remove } = require("./actions/write/remove")
+const { addIndex } = require("./actions/write/addIndex")
+const { addOwner } = require("./actions/write/addOwner")
 
 //const { cron } = require( "../common/lib/cron")
 const { err, isEvolving } = require("./lib/utils")
@@ -43,7 +52,18 @@ const writes = [
   "removeAddressLink",
 ]
 
-async function handle(state, action) {
+async function handle(state, action, contractTxId) {
+  let SmartWeave = {
+    contract: { id: contractTxId },
+    arweave,
+    block: { timestamp: Math.round(Date.now() / 1000), height: 0 },
+    transaction: { id: "" },
+    contracts: {
+      viewContractStates: (contract, param) => {
+        return { signer: "xyz" }
+      },
+    },
+  }
   if (isEvolving(state) && includes(action.input.function)(writes)) {
     err("contract needs migration")
   }
@@ -86,6 +106,14 @@ async function handle(state, action) {
       return await getOwner(state, action)
     case "getEvolve":
       return await getEvolve(state, action)
+    case "set":
+      return await set(state, action, null, null, SmartWeave)
+    case "upsert":
+      return await upsert(state, action, null, null, SmartWeave)
+    case "update":
+      return await update(state, action, null, null, SmartWeave)
+    case "delete":
+      return await remove(state, action, null, null, SmartWeave)
 
     default:
       err(
