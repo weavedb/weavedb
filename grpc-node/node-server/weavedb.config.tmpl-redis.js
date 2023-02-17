@@ -19,7 +19,8 @@ module.exports = {
     region: s3region,
   },
 
-  subscribe: false,
+  // subscribe: false,
+  subscribe: true,
 
   cache: "redis",
   redis: {

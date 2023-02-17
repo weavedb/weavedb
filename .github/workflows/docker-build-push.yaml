@@ -28,7 +28,7 @@ jobs:
       - name: docker tag1
         run: docker tag  node-server-redis-9090:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/node-server-redis-9090:latest
       - name: docker tag2
-        run: docker tag  node-server-redis-9090:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/node-server-redis-9090:`date +%Y-%m-%d-%H-%I-%S`-$GITHUB_SHA
+        run: docker tag  node-server-redis-9090:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/node-server-redis-9090:`date +%Y-%m-%d-%H-%I-%S`-$GITHUB_SHA-${GITHUB_REF##*/}
         working-directory: ./grpc-node/node-server
 
 
@@ -44,7 +44,7 @@ jobs:
       - name: docker tag3
         run: docker tag  node-server-9090:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/node-server-9090:latest
       - name: docker tag4
-        run: docker tag  node-server-9090:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/node-server-9090:`date +%Y-%m-%d-%H-%I-%S`-$GITHUB_SHA
+        run: docker tag  node-server-9090:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/node-server-9090:`date +%Y-%m-%d-%H-%I-%S`-$GITHUB_SHA-${GITHUB_REF##*/}
         working-directory: ./grpc-node/node-server
 
 
