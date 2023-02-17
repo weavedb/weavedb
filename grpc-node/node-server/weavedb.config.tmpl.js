@@ -17,9 +17,9 @@ module.exports = {
     url: `redis://${redishost}:${redisport}`,
   },
 
-  subscribe: false,
 
-  // subscribe: true,
+  // subscribe: false,
+  subscribe: true,
 
   s3: {
     bucket: s3bucket,
