@@ -261,11 +261,6 @@ const get = async (state, action, cursor = false, SmartWeave) => {
             id: last(path),
             setter: _data.setter,
             data: _data.__data || null,
-            block: {
-              id: SmartWeave.block.id,
-              height: SmartWeave.block.height,
-              timestamp: SmartWeave.block.timestamp,
-            },
           }
         : _data.__data || null,
     }
@@ -414,11 +409,6 @@ const get = async (state, action, cursor = false, SmartWeave) => {
                 id: v,
                 setter: docs[v].setter,
                 data: docs[v].__data,
-                block: {
-                  id: SmartWeave.block.id,
-                  height: SmartWeave.block.height,
-                  timestamp: SmartWeave.block.timestamp,
-                },
               }
             : docs[v].__data
         )

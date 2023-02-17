@@ -418,22 +418,48 @@ class SDK extends Base {
     return res.result
   }
 
-  async write(func, param, dryWrite, bundle, relay = false) {
+  async write(func, param, dryWrite, bundle, relay = false, onDryWrite) {
     if (relay) {
       return param
     } else {
       const start = Date.now()
-      if (dryWrite) {
-        let dryState = await this.db.dryWrite(param)
-        if (dryState.type !== "ok")
-          return {
-            success: false,
-            duration: Date.now() - start,
-            error: { message: "dryWrite failed", dryWrite: dryState },
-            function: param.function,
+      let dryState = await this.db.dryWrite(param)
+      const dryResult =
+        dryState.type !== "ok"
+          ? {
+              success: false,
+              duration: Date.now() - start,
+              error: { message: "dryWrite failed", dryWrite: dryState },
+              function: param.function,
+              state: null,
+              results: [],
+            }
+          : {
+              success: true,
+              duration: Date.now() - start,
+              error: null,
+              function: param.function,
+              state: dryState.state,
+              results: [],
+            }
+      if (is(Function, onDryWrite?.cb)) {
+        for (const v of onDryWrite.read || []) {
+          let res = { success: false, err: null, result: null }
+          try {
+            res.result = (
+              await handle(dryResult.state, {
+                input: { function: v[0], query: tail(v) },
+              })
+            ).result
+            res.success = true
+          } catch (e) {
+            res.err = e
           }
+          dryResult.results.push(res)
+        }
+        onDryWrite.cb(dryResult)
       }
-      return await this.send(param, bundle, start)
+      return !dryResult.success ? dryResult : this.send(param, bundle, start)
     }
   }
 
