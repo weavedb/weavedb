@@ -204,9 +204,10 @@ class Node {
     return { nocache, res, txid, func, query, isAdmin: func === "admin" }
   }
 
-  async sendQuery({ func, txid, nocache, query }, key) {
+  async sendQuery({ func, txid, nocache, query, res }, key) {
     let result = null
     let err = null
+    let dryWrite = false
     try {
       if (func === "getNonce") {
         result = await this.sdks[txid].getNonce(...JSON.parse(query))
@@ -251,17 +252,29 @@ class Node {
         result = await this.sdks[txid][key.func](..._query)
         this.cache.set(key.key, result)
       } else {
+        dryWrite = !nocache
+        const onDryWrite = nocache
+          ? null
+          : {
+              cb: _res => {
+                delete _res.state
+                res(null, _res)
+              },
+              cache: true,
+            }
         result = await this.sdks[txid].write(
           key.func,
           JSON.parse(query),
           true,
-          true
+          true,
+          false,
+          onDryWrite
         )
       }
     } catch (e) {
       err = e.message
     }
-    return { result, err }
+    return { result, err, dryWrite }
   }
 
   async execUser(parsed) {
@@ -314,9 +327,9 @@ class Node {
         return await this.sendQuery(parsed, key)
       }
     }
-    let result, err
+    let result, err, dryWrite
     ;({ result, err } = await this.sendQuery(parsed, key))
-    res(err, result)
+    if (!dryWrite) res(err, result)
   }
 
   async query(call, callback) {
