@@ -47,10 +47,8 @@ class SDK extends Base {
 
   async write(func, query, nocache, bundle, relay = false) {
     if (!includes(func)(this.reads)) {
-      nocache = false
-      if (relay) {
-        return query
-      }
+      if (relay) return query
+      nocache = !nocache
     }
     const request = new WeaveDBRequest()
     request.setMethod(`${func}@${this.contractTxId}`)
