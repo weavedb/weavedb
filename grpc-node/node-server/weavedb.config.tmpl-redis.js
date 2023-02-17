@@ -1,4 +1,4 @@
-// redis
+
 
 const redishost = process.env.REDISHOST ? process.env.REDISHOST : "localhost" // 'localhost';
 const redisport = process.env.REDISPORT ? process.env.REDISPORT : 6379 // 6379;
@@ -9,14 +9,18 @@ const s3bucket = process.env.S3_BUCKET_NAME
 const s3prefix = process.env.S3_PREFIX
 const wallet = require('./wallet.json')
 module.exports = {
+
   // subscribe: true,
-  // s3: {
-  //   bucket: s3bucket,
-  //   prefix: s3prefix,
-  //   accessKeyId: accessKeyId,
-  //   secretAccessKey: secretAccessKey,
-  //   region: s3region,
-  // },
+  s3: {
+    bucket: s3bucket,
+    prefix: s3prefix,
+    accessKeyId: accessKeyId,
+    secretAccessKey: secretAccessKey,
+    region: s3region,
+  },
+
+  subscribe: false,
+
   cache: "redis",
   redis: {
     url: `redis://${redishost}:${redisport}`,

@@ -16,6 +16,19 @@ services:
       - ./node-server/cache:/weavedb/cache
     depends_on:
       - redis
+
+    environment:
+      #- REDISHOST=redis
+      - REDISHOST=0.0.0.0
+      - REDISPORT=6379
+      - SERVICE_DISCOVERY_ADDRESS=0.0.0.0
+    links:
+      - redis
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+     - "6379:6379"
   envoy:
     build: ./envoy
     ports:
