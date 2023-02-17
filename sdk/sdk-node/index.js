@@ -418,25 +418,100 @@ class SDK extends Base {
     return res.result
   }
 
-  async write(func, param, dryWrite, bundle, relay = false) {
+  async write(func, param, dryWrite, bundle, relay = false, onDryWrite) {
     if (relay) {
       return param
     } else {
       const start = Date.now()
-      if (dryWrite) {
-        let dryState = await this.db.dryWrite(param)
-        if (dryState.type !== "ok")
-          return {
-            success: false,
-            duration: Date.now() - start,
-            error: { message: "dryWrite failed", dryWrite: dryState },
-            function: param.function,
+      if (onDryWrite?.cache) {
+        if (!includes(func)(["set", "upsert", "update", "delete"])) {
+          onDryWrite.cache = false
+        } else {
+          let cacheState = null
+          let err = null
+          let success = true
+          try {
+            cacheState = await handle(
+              clone(states[this.contractTxId]),
+              {
+                input: param,
+              },
+              this.contractTxId
+            )
+          } catch (e) {
+            err = e
+            success = false
+            console.log(e)
           }
+          let cacheResult = {
+            cache: false,
+            success,
+            duration: Date.now() - start,
+            error: null,
+            function: param.function,
+            state: cacheState?.state || null,
+            results: [],
+          }
+          if (success) {
+            cacheResult.results = await this.dryRead(
+              cacheResult.state,
+              onDryWrite.read
+            )
+          }
+          onDryWrite.cb(cacheResult)
+        }
       }
-      return await this.send(param, bundle, start)
+      let dryState = await this.db.dryWrite(param)
+      const dryResult =
+        dryState.type !== "ok"
+          ? {
+              cache: false,
+              success: false,
+              duration: Date.now() - start,
+              error: { message: "dryWrite failed", dryWrite: dryState },
+              function: param.function,
+              state: null,
+              results: [],
+            }
+          : {
+              cache: false,
+              success: true,
+              duration: Date.now() - start,
+              error: null,
+              function: param.function,
+              state: dryState.state,
+              results: [],
+            }
+      if (is(Function, onDryWrite?.cb) && onDryWrite.cache !== true) {
+        if (dryResult.success) {
+          dryResult.results = await this.dryRead(
+            dryResult.state,
+            onDryWrite.read
+          )
+        }
+        onDryWrite.cb(dryResult)
+      }
+      return !dryResult.success ? dryResult : this.send(param, bundle, start)
     }
   }
-
+  async dryRead(state, queries) {
+    let results = []
+    for (const v of queries || []) {
+      let res = { success: false, err: null, result: null }
+      try {
+        res.result = (
+          await handle(state, {
+            input: { function: v[0], query: tail(v) },
+          })
+        ).result
+        res.success = true
+      } catch (e) {
+        res.err = e
+      }
+      results.push(res)
+    }
+    return results
+  }
   async send(param, bundle, start) {
     let tx = await this.db[
       bundle && this.network !== "localhost"

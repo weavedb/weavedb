@@ -222,7 +222,7 @@ class Snapshot {
     })
   }
 
-  async uploadToS3(contractTxId, redis) {
+  async uploadToS3Redis(contractTxId, redis) {
     await this.s3Ins
       .putObject({
         Bucket: this.conf.s3.bucket,

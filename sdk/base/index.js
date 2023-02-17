@@ -154,6 +154,7 @@ class Base {
       privateKey,
       wallet,
       dryWrite,
+      onDryWrite,
       bundle,
       ii,
       ar,
@@ -170,6 +171,7 @@ class Base {
         privateKey,
         wallet,
         dryWrite,
+        onDryWrite,
         bundle,
         ii,
         ar,
@@ -191,6 +193,7 @@ class Base {
       relay,
       jobID,
       multisigs,
+      onDryWrite,
     ]
     return !isNil(intmax)
       ? await this.writeWithIntmax(intmax, ...params)
@@ -209,7 +212,8 @@ class Base {
           extra,
           relay,
           jobID,
-          multisigs
+          multisigs,
+          onDryWrite
         )
   }
 
@@ -326,7 +330,8 @@ class Base {
     extra = {},
     relay,
     jobID,
-    multisigs
+    multisigs,
+    onDryWrite
   ) {
     let signer, caller, pkey
     if (!isNil(privateKey)) {
@@ -391,7 +396,7 @@ class Base {
     if (!isNil(jobID)) param.jobID = jobID
     if (!isNil(multisigs)) param.multisigs = multisigs
     bundle ||= this.network === "mainnet"
-    return await this.write(func, param, dryWrite, bundle, relay)
+    return await this.write(func, param, dryWrite, bundle, relay, onDryWrite)
   }
 
   async writeWithII(
@@ -404,7 +409,8 @@ class Base {
     extra,
     relay,
     jobID,
-    multisigs
+    multisigs,
+    onDryWrite
   ) {
     let addr = ii.toJSON()[0]
     const isaddr = !isNil(addr)
@@ -446,7 +452,7 @@ class Base {
     })
     if (!isNil(jobID)) param.jobID = jobID
     if (!isNil(multisigs)) param.multisigs = multisigs
-    return await this.write(func, param, dryWrite, bundle, relay)
+    return await this.write(func, param, dryWrite, bundle, relay, onDryWrite)
   }
 
   async writeWithAR(
@@ -459,7 +465,8 @@ class Base {
     extra,
     relay,
     jobID,
-    multisigs
+    multisigs,
+    onDryWrite
   ) {
     const wallet = is(Object, ar) && ar.walletName === "ArConnect" ? ar : null
     let addr = null
@@ -512,7 +519,7 @@ class Base {
     })
     if (!isNil(jobID)) param.jobID = jobID
     if (!isNil(multisigs)) param.multisigs = multisigs
-    return await this.write(func, param, dryWrite, bundle, relay)
+    return await this.write(func, param, dryWrite, bundle, relay, onDryWrite)
   }
 
   async writeWithIntmax(
@@ -525,7 +532,8 @@ class Base {
     extra,
     relay,
     jobID,
-    multisigs
+    multisigs,
+    onDryWrite
   ) {
     const wallet = is(Object, intmax) ? intmax : null
     let addr = null
@@ -593,7 +601,7 @@ class Base {
     )
     if (!isNil(jobID)) param.jobID = jobID
     if (!isNil(multisigs)) param.multisigs = multisigs
-    return await this.write(func, param, dryWrite, bundle, relay)
+    return await this.write(func, param, dryWrite, bundle, relay, onDryWrite)
   }
 
   parseQuery(func, query) {
