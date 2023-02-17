@@ -4062,12 +4062,13 @@ weavedb-base@^0.18.6:
     ethereumjs-util "^7.1.5"
     ramda "^0.28.0"
 
-weavedb-sdk-node@^0.20.27:
-  version "0.20.27"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk-node/-/weavedb-sdk-node-0.20.27.tgz#bccbc002189955f88aa37587d0fc8fe95f0a4f1f"
-  integrity sha512-xhtEOeuFC6aXhac7miwAhnUop2DF/Hk82OOSIxFGTJpynyKhDnknr3GbFwWKehWZHryPTL/Gj/wDdtSa4ODvCg==
+weavedb-sdk-node@^0.20.29:
+  version "0.20.29"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk-node/-/weavedb-sdk-node-0.20.29.tgz#2ed0119e7f76fc9c7d45b53793ac6c55fed51b46"
+  integrity sha512-l4qU34GG5x2NdhI4C4AOwFvK2oGmsAYfRLHs9AdWXuPTHYSHJa+HJQGIEL31Njl0RZ1oad+Hsh/a+5xct9084g==
   dependencies:
     "@aws-amplify/api" "^5.0.14"
+    "@metamask/eth-sig-util" "^5.0.2"
     "@metamask/legacy-web3" "^2.0.0"
     arweave "^1.11.4"
     fpjson-lang "^0.1.1"
@@ -4076,6 +4077,7 @@ weavedb-sdk-node@^0.20.27:
     ramda "^0.28.0"
     redis "^4.6.4"
     shortid "^2.2.16"
+    tweetnacl "^1.0.3"
     warp-contracts "1.2.48"
     warp-contracts-lmdb "^1.1.9"
     warp-contracts-old "npm:warp-contracts@1.2.26"
