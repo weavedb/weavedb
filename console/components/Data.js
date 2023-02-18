@@ -150,7 +150,8 @@ export default inject(
             {isNil(loadMore) ? null : (
               <Flex align="center" justify="center">
                 <Flex
-                  px={6}
+                  px={10}
+                  py={1}
                   m={3}
                   bg="#999"
                   color="white"
