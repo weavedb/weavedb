@@ -18,7 +18,8 @@ const remove = async (
     "delete",
     signer,
     0,
-    contractErr
+    contractErr,
+    SmartWeave
   )
   if (isNil(_data.__data)) err(`Data doesn't exist`)
   let ind = getIndex(state, init(path))

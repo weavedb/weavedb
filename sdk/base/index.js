@@ -221,6 +221,7 @@ class Base {
     let addr = ii.toJSON()[0]
     return this._createTempAddress(addr, expiry, {
       ii,
+      dryWrite: false,
     })
   }
 
@@ -235,6 +236,7 @@ class Base {
     }
     return this._createTempAddress(addr, expiry, {
       ar,
+      dryWrite: false,
     })
   }
 
@@ -249,6 +251,7 @@ class Base {
     }
     return this._createTempAddress(addr.toLowerCase(), expiry, {
       intmax,
+      dryWrite: false,
     })
   }
 
@@ -270,6 +273,7 @@ class Base {
     }
     return this._createTempAddress(addr.toLowerCase(), expiry, {
       wallet,
+      dryWrite: false,
     })
   }
 
