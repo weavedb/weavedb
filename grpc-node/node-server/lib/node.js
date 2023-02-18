@@ -258,6 +258,7 @@ class Node {
           : {
               cb: _res => {
                 delete _res.state
+                console.log(_res)
                 res(null, _res)
               },
               cache: true,

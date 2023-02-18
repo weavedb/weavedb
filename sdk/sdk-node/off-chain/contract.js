@@ -16,12 +16,9 @@ const { listCollections } = require("./actions/read/listCollections")
 const { getInfo } = require("./actions/read/getInfo")
 
 const { set } = require("./actions/write/set")
-const { add } = require("./actions/write/add")
 const { upsert } = require("./actions/write/upsert")
 const { update } = require("./actions/write/update")
 const { remove } = require("./actions/write/remove")
-const { addIndex } = require("./actions/write/addIndex")
-const { addOwner } = require("./actions/write/addOwner")
 
 //const { cron } = require( "../common/lib/cron")
 const { err, isEvolving } = require("./lib/utils")
