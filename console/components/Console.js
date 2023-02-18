@@ -1,11 +1,30 @@
 import { Box, Flex, Select, Input } from "@chakra-ui/react"
 import { useState } from "react"
-import { map, isNil } from "ramda"
+import { map, isNil, includes } from "ramda"
 import { inject } from "roidjs"
 import { read, addLog, queryDB } from "../lib/weavedb"
 import { methods } from "../lib/const"
 import dayjs from "dayjs"
-
+const reads = [
+  "get",
+  "cget",
+  "getIndexes",
+  "getCrons",
+  "getSchema",
+  "getRules",
+  "getIds",
+  "getOwner",
+  "getAddressLink",
+  "getAlgorithms",
+  "getLinkedContract",
+  "getEvolve",
+  "getVersion",
+  "getRelayerJob",
+  "listRelayerJobs",
+  "listCollections",
+  "getInfo",
+  "getNonce",
+]
 export default inject(
   ["temp_current", "tx_logs"],
   ({
@@ -63,18 +82,40 @@ export default inject(
               p={1}
             >
               {map(v => (
-                <Flex align="center" px={2} py={1}>
+                <Flex align="center" px={2} py={1} ju>
                   <Flex w="120px">
                     {dayjs(v.date).format("YYYY/MM/DD HH:mm:ss")}
                   </Flex>
                   <Box
                     as="i"
-                    mr={2}
                     className="fas fa-angle-right"
                     color="#6441AF"
                     fontSize="18px"
                   />
-                  <Box>{v.duration} ms</Box>
+                  <Flex justify="flex-end" width="55px">
+                    {v.duration} ms
+                  </Flex>
+                  <Box
+                    as="i"
+                    mx={2}
+                    className="fas fa-angle-right"
+                    color="#6441AF"
+                    fontSize="18px"
+                  />
+                  <Flex
+                    bg={!includes(v.method)(reads) ? "#6441AF" : "#999"}
+                    px={2}
+                    color="white"
+                    mr={2}
+                    fontSize="10px"
+                    w="40px"
+                    justify="center"
+                    sx={{ borderRadius: "3px" }}
+                  >
+                    {!includes(v.method)(reads) ? "Write" : "Read"}
+                  </Flex>
+
+                  <Box>{v.method}</Box>
                   <Box
                     as="i"
                     mx={2}
@@ -99,14 +140,6 @@ export default inject(
                   >
                     {v.contractTxId}
                   </Box>
-                  <Box
-                    as="i"
-                    mx={2}
-                    className="fas fa-angle-right"
-                    color="#6441AF"
-                    fontSize="18px"
-                  />
-                  <Box>{v.method}</Box>
                   {v.success ? null : (
                     <>
                       <Box

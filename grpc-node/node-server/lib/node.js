@@ -258,7 +258,6 @@ class Node {
           : {
               cb: _res => {
                 delete _res.state
-                console.log(_res)
                 res(null, _res)
               },
               cache: true,
@@ -273,6 +272,7 @@ class Node {
         )
       }
     } catch (e) {
+      console.log(e)
       err = e.message
     }
     return { result, err, dryWrite }

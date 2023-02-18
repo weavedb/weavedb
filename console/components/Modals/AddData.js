@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Box, Flex, Input, Textarea, Select } from "@chakra-ui/react"
 import { concat, compose, join, append, map, isNil, includes } from "ramda"
 import { inject } from "roidjs"
-import { read, queryDB } from "../../lib/weavedb"
+import { read, queryDB, plusNonce } from "../../lib/weavedb"
 import Editor from "react-simple-code-editor"
 import { highlight, languages } from "prismjs/components/prism-core"
 import "prismjs/components/prism-clike"
@@ -231,6 +231,7 @@ export default inject(
                       q: [...doc_path, true],
                     })
                   )
+                  fn(plusNonce)()
                 }
                 set(null, "loading")
               }
