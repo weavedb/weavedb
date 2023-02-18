@@ -42,6 +42,7 @@ import {
   switchTempAddress,
   setupWeaveDB,
   read,
+  checkNonce,
 } from "../lib/weavedb"
 
 let db
@@ -203,6 +204,13 @@ export default inject(
         }
       })()
     }, [node])
+
+    useEffect(() => {
+      if (!isNil($.temp_current) && !isNil(currentDB)) {
+        console.log($.temp_current)
+        fn(checkNonce)({ db: currentDB, addr: $.temp_current })
+      }
+    }, [$.temp_current])
 
     useEffect(() => {
       ;(async () => {
