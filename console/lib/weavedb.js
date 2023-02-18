@@ -74,11 +74,12 @@ export const getOpt = async ({ val: { contractTxId }, get }) => {
   }
   let err = null
   const opt = !isNil(ii)
-    ? { ii }
+    ? { ii, dryWrite: true }
     : !isNil(identity) && !isNil(identity.tx)
     ? {
         wallet: current,
         privateKey: identity.privateKey,
+        dryWrite: true,
       }
     : null
   if (isNil(opt)) err = "not logged in"
@@ -243,10 +244,10 @@ export const createTempAddressWithAR = async ({
     const linked = await new Log(
       sdk,
       "getAddressLink",
-      identity.address,
+      [identity.address, true],
       null,
       fn
-    ).rec()
+    ).rec(true)
     if (isNil(linked)) {
       alert("something went wrong")
       return
@@ -345,10 +346,10 @@ export const createTempAddress = async ({
     const linked = await new Log(
       sdk,
       "getAddressLink",
-      identity.address,
+      [identity.address, true],
       null,
       fn
-    ).rec()
+    ).rec(true)
 
     if (isNil(linked)) {
       alert("something went wrong")
@@ -805,6 +806,7 @@ export const queryDB = async ({ val: { query, method, contractTxId }, fn }) => {
     const { err, opt } = includes(method)(sdk.reads)
       ? { err: null, opt: null }
       : await fn(getOpt)({ contractTxId })
+    console.log(opt)
     if (!isNil(err)) return alert(err)
     return ret(await new Log(sdk, method, q, opt, fn).rec(true))
   } catch (e) {

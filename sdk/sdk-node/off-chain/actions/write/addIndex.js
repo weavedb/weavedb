@@ -1,5 +1,5 @@
 const { o, flatten, isNil, mergeLeft, includes, init } = require("ramda")
-const { parse, mergeData } = require("../../lib/utils")
+const { parse } = require("../../lib/utils")
 const { err } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { addIndex: _addIndex, getIndex } = require("../../lib/index")
@@ -10,7 +10,10 @@ const addIndex = async (state, action, signer, SmartWeave) => {
     state,
     action,
     "addIndex",
-    signer
+    signer,
+    null,
+    true,
+    SmartWeave
   )
   let ind = getIndex(state, path)
   if (o(includes("__id__"), flatten)(new_data)) {

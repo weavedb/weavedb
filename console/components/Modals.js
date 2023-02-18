@@ -245,9 +245,6 @@ export default inject(
             setNewAuths,
             newAuths,
             setAddAlgorithms,
-            fn,
-            set,
-            $,
           }}
         />
       ) : addCanEvolve !== false ? (
