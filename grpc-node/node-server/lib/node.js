@@ -208,14 +208,20 @@ class Node {
     let result = null
     let err = null
     let dryWrite = false
+    let _onDryWrite = null
     try {
+      let _query = query === `""` ? [] : JSON.parse(query)
+      if (is(Object, _query) && is(Object, _query.dryWrite)) {
+        _onDryWrite = _query.dryWrite
+        delete _query.dryWirte
+      }
       if (func === "getNonce") {
-        result = await this.sdks[txid].getNonce(...JSON.parse(query))
+        result = await this.sdks[txid].getNonce(..._query)
       } else if (key.func === "cget") {
         if (nocache) {
-          result = await this.sdks[txid].cget(...JSON.parse(query), true)
+          result = await this.sdks[txid].cget(..._query, true)
         } else {
-          result = await this.sdks[txid].cgetCache(...JSON.parse(query))
+          result = await this.sdks[txid].cgetCache(..._query)
         }
         if (key.type === "collection") {
           this.cache.set(key.key, pluck("id", result))
@@ -241,7 +247,6 @@ class Node {
           this.cache.set(key.key, result)
         }
       } else if (includes(func)(this.sdks[txid].reads)) {
-        let _query = query === `""` ? [] : JSON.parse(query)
         if (includes(func)(["getVersion"]) || nocache) {
           try {
             _query.push(true)
@@ -253,6 +258,7 @@ class Node {
         this.cache.set(key.key, result)
       } else {
         dryWrite = !nocache
+        const cache = _onDryWrite?.cache || true
         const onDryWrite = nocache
           ? null
           : {
@@ -260,11 +266,12 @@ class Node {
                 delete _res.state
                 res(null, _res)
               },
-              cache: true,
+              cache,
+              read: _onDryWrite?.read || null,
             }
         result = await this.sdks[txid].write(
           key.func,
-          JSON.parse(query),
+          _query,
           true,
           true,
           false,
