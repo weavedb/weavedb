@@ -12,7 +12,7 @@ import {
   prop,
 } from "ramda"
 import { inject } from "roidjs"
-import { queryDB, read } from "../../lib/weavedb"
+import { queryDB, read, checkNonce, plusNonce } from "../../lib/weavedb"
 import Editor from "react-simple-code-editor"
 import { highlight, languages } from "prismjs/components/prism-core"
 import "prismjs/components/prism-clike"
@@ -130,6 +130,7 @@ export default inject(
                         append({ id: newDoc, data: newDoc })
                       )(documents)
                     )
+                    fn(plusNonce)()
                   }
                 } catch (e) {}
                 set(null, "loading")
