@@ -239,7 +239,7 @@ const bsearch = function (arr, x, sort, db, start = 0, end = arr.length - 1) {
   }
 }
 
-const get = async (state, action, cursor = false) => {
+const get = async (state, action, cursor = false, SmartWeave) => {
   const {
     path,
     _limit,
