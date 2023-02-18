@@ -124,18 +124,13 @@ export default inject(
                     setNewDoc("")
                     setNewData(`{}`)
                     setAddDoc(false)
+                    setDocuments(
+                      o(
+                        sortBy(prop("id")),
+                        append({ id: newDoc, data: newDoc })
+                      )(documents)
+                    )
                   }
-                  const _doc = await fn(read)({
-                    db,
-                    m: "cget",
-                    q: [...base_path, col, res.docID, true],
-                  })
-                  setDocuments(
-                    o(
-                      sortBy(prop("id")),
-                      append({ id: res.docID, data: newDoc })
-                    )(documents)
-                  )
                 } catch (e) {}
                 set(null, "loading")
               }

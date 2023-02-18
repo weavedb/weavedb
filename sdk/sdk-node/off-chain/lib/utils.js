@@ -45,51 +45,8 @@ const getCol = (data, path, _signer) => {
     )
   }
 }
-/*
-const getDoc = (
-  data,
-  path,
-  _signer,
-  func,
-  new_data,
-  secure = false,
-  relayer,
-  jobID,
-  extra
-) => {
-  const [_col, id] = path
-  if (!isValidName(_col)) err(`collection id is not valid: ${_col}`)
-  if (!isValidName(id)) err(`doc id is not valid: ${id}`)
-  data[_col] ||= { __docs: {} }
-  const col = data[_col]
-  const { rules, schema } = col
-  col.__docs[id] ||= { __data: null, subs: {} }
-  const doc = col.__docs[id]
-  if (!isNil(_signer) && isNil(doc.setter)) doc.setter = _signer
-  let next_data = null
-  return path.length >= 4
-    ? getDoc(
-        doc.subs,
-        slice(2, path.length, path),
-        _signer,
-        func,
-        new_data,
-        secure,
-        relayer,
-        jobID,
-        extra
-      )
-    : {
-        doc,
-        schema,
-        rules,
-        col,
-        next_data,
-      }
-}
-*/
 
-const mergeData = (_data, new_data, overwrite = false, signer) => {
+const mergeData = (_data, new_data, overwrite = false, signer, SmartWeave) => {
   if (isNil(_data.__data) || overwrite) _data.__data = {}
   for (let k in new_data) {
     const d = new_data[k]
@@ -128,7 +85,8 @@ const getDoc = (
   relayer,
   jobID,
   extra,
-  state
+  state,
+  SmartWeave
 ) => {
   const [_col, id] = path
   if (!isValidName(_col)) err(`collection id is not valid: ${_col}`)
@@ -142,9 +100,21 @@ const getDoc = (
   let next_data = null
   if (path.length === 2) {
     if (includes(func)(["set", "add"])) {
-      next_data = mergeData(clone(doc), new_data, true, _signer).__data
+      next_data = mergeData(
+        clone(doc),
+        new_data,
+        true,
+        _signer,
+        SmartWeave
+      ).__data
     } else if (includes(func)(["update", "upsert"])) {
-      next_data = mergeData(clone(doc), new_data, false, _signer).__data
+      next_data = mergeData(
+        clone(doc),
+        new_data,
+        false,
+        _signer,
+        SmartWeave
+      ).__data
     }
   }
   if (
@@ -253,7 +223,8 @@ const getDoc = (
         relayer,
         jobID,
         extra,
-        state
+        state,
+        SmartWeave
       )
     : {
         doc,
@@ -269,7 +240,15 @@ const isEvolving = state =>
   !isNil(last(state.evolveHistory)) &&
   isNil(last(state.evolveHistory).newVersion)
 
-const parse = async (state, action, func, signer, salt, contractErr = true) => {
+const parse = async (
+  state,
+  action,
+  func,
+  signer,
+  salt,
+  contractErr = true,
+  SmartWeave
+) => {
   const { data } = state
   const { query } = action.input
   const { relayer, jobID, extra } = action
@@ -371,7 +350,8 @@ const parse = async (state, action, func, signer, salt, contractErr = true) => {
       relayer,
       jobID,
       extra,
-      state
+      state,
+      SmartWeave
     )
     _data = doc.doc
     ;({ next_data, schema, rules, col } = doc)

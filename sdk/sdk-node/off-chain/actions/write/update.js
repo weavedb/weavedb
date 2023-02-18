@@ -1,11 +1,5 @@
 const { isNil, init, last } = require("ramda")
-const {
-  err,
-  clone,
-  parse,
-  mergeData,
-  validateSchema,
-} = require("../../lib/utils")
+const { err, clone, parse, validateSchema } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { updateData, getIndex } = require("../../lib/index")
 
@@ -18,7 +12,7 @@ const update = async (
 ) => {
   signer ||= await validate(state, action, "update", SmartWeave)
   let { data, query, new_data, path, _data, schema, col, next_data } =
-    await parse(state, action, "update", signer, 0, contractErr)
+    await parse(state, action, "update", signer, 0, contractErr, SmartWeave)
   if (isNil(_data.__data)) err(`Data doesn't exist`)
   let prev = clone(_data.__data)
   validateSchema(schema, next_data, contractErr)
