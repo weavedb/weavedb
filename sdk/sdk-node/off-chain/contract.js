@@ -72,9 +72,9 @@ async function handle(state, action, contractTxId) {
   }
   switch (action.input.function) {
     case "get":
-      return await get(state, action)
+      return await get(state, action, false, SmartWeave)
     case "cget":
-      return await get(state, action, true)
+      return await get(state, action, true, SmartWeave)
     case "getAddressLink":
       return await getAddressLink(state, action)
     case "listCollections":

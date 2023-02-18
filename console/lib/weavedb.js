@@ -73,7 +73,7 @@ export const getOpt = async ({ val: { contractTxId }, get }) => {
     ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(identity))
   }
   let err = null
-  const opt = !isNil(ii)
+  let opt = !isNil(ii)
     ? { ii, dryWrite: true }
     : !isNil(identity) && !isNil(identity.tx)
     ? {
@@ -83,6 +83,10 @@ export const getOpt = async ({ val: { contractTxId }, get }) => {
       }
     : null
   if (isNil(opt)) err = "not logged in"
+  let nonces = (await lf.getItem("nonces")) || {}
+  if (!isNil(nonces[contractTxId]?.[identity.address])) {
+    opt.nonce = nonces[contractTxId][identity.address]
+  }
   return { opt, err }
 }
 
@@ -798,16 +802,21 @@ export const _removeOwner = async ({ val: { address, contractTxId }, fn }) => {
   }
 }
 
-export const queryDB = async ({ val: { query, method, contractTxId }, fn }) => {
+export const queryDB = async ({
+  val: { query, method, contractTxId, dryRead },
+  fn,
+}) => {
   try {
     let q
     eval(`q = [${query}]`)
-
-    const { err, opt } = includes(method)(sdk.reads)
+    let { err, opt } = includes(method)(sdk.reads)
       ? { err: null, opt: null }
       : await fn(getOpt)({ contractTxId })
-    console.log(opt)
     if (!isNil(err)) return alert(err)
+    if (!isNil(dryRead)) {
+      opt.dryWrite = { cache: true, read: dryRead }
+    }
+    console.log(opt)
     return ret(await new Log(sdk, method, q, opt, fn).rec(true))
   } catch (e) {
     console.log(e)
@@ -817,3 +826,33 @@ export const queryDB = async ({ val: { query, method, contractTxId }, fn }) => {
 
 export const read = async ({ val: { q, m, db, arr = true }, fn }) =>
   await new Log(db, m, q, null, fn).rec(arr)
+
+export const checkNonce = async ({ val: {}, fn, get }) => {
+  const addr = await lf.getItem(`temp_address:current`)
+  const _addr = await lf.getItem(`temp_address:${sdk.contractTxId}:${addr}`)
+  if (isNil(_addr)) return
+  let nonces = (await lf.getItem("nonces")) || {}
+  nonces[sdk.contractTxId] ||= {}
+  nonces[sdk.contractTxId][_addr.address] = await sdk.getNonce(_addr.address)
+  /*nonces[sdk.contractTxId][_addr.address] = await new Log(
+    sdk,
+    "getNonce",
+    _addr.address,
+    null,
+    fn
+  ).rec()*/
+  await lf.setItem("nonces", nonces)
+}
+
+export const plusNonce = async ({ val: {}, fn, get }) => {
+  const addr = await lf.getItem(`temp_address:current`)
+  const _addr = await lf.getItem(`temp_address:${sdk.contractTxId}:${addr}`)
+  if (isNil(_addr)) return
+  let nonces = (await lf.getItem("nonces")) || {}
+  if (!isNil(nonces[sdk.contractTxId]?.[_addr.address])) {
+    nonces[sdk.contractTxId][_addr.address] =
+      nonces[sdk.contractTxId][_addr.address] + 1
+    await lf.setItem("nonces", nonces)
+    setTimeout(() => fn(checkNonce)(), 5000)
+  }
+}

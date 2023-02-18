@@ -17,7 +17,7 @@ import {
   last,
   mapObjIndexed,
 } from "ramda"
-import { read, queryDB } from "../lib/weavedb.js"
+import { plusNonce, read, queryDB } from "../lib/weavedb.js"
 import { inject } from "roidjs"
 import { per_page } from "../lib/const"
 export default inject(
@@ -134,11 +134,13 @@ export default inject(
                       })
                       if (/^Error:/.test(res)) {
                         alert("Something went wrong")
+                      } else {
+                        if (!isNil(docdata) && v === docdata.id) {
+                          setDocdata(null)
+                        }
+                        setDocuments(reject(propEq("id", v))(documents))
+                        fn(plusNonce)()
                       }
-                      if (!isNil(docdata) && v === docdata.id) {
-                        setDocdata(null)
-                      }
-                      setDocuments(reject(propEq("id", v))(documents))
                     }
                   }}
                 >

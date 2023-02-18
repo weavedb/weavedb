@@ -48,11 +48,19 @@ class SDK extends Base {
   async write(func, query, nocache, bundle, relay = false) {
     if (!includes(func)(this.reads)) {
       if (relay) return query
-      nocache = !nocache
+      if (is(Boolean, nocache)) {
+        nocache = !nocache
+      } else if (is(Object, nocache)) {
+        query.dryWrite = nocache
+        nocache = false
+        query ||= {}
+      }
+    } else {
+      query ||= []
     }
     const request = new WeaveDBRequest()
     request.setMethod(`${func}@${this.contractTxId}`)
-    request.setQuery(JSON.stringify(isNil(query) ? "" : query))
+    request.setQuery(JSON.stringify(query))
     request.setNocache(nocache)
     const _query = () =>
       new Promise(ret => {
