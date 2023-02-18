@@ -32,7 +32,6 @@ const {
   map,
 } = require("ramda")
 
-const SmartWeave = { block: {}, transaction: {} }
 const { getDoc, getCol, err } = require("../../lib/utils")
 const { getIndex } = require("../../lib/index")
 
@@ -161,7 +160,9 @@ const getColIndex = (state, data, path, _sort) => {
     index = _ind._ || []
     if (_sort.length === 1 && _sort[0][1] === "desc") index = reverse(index)
   } else {
-    index = keys(getCol(data, path).__docs)
+    index = !isNil(ind.__id__)
+      ? ind.__id__.asc._
+      : keys(getCol(data, path).__docs)
   }
   return index
 }
@@ -238,7 +239,7 @@ const bsearch = function (arr, x, sort, db, start = 0, end = arr.length - 1) {
   }
 }
 
-const get = async (state, action, cursor = false, SmartWeave) => {
+const get = async (state, action, cursor = false) => {
   const {
     path,
     _limit,
@@ -252,7 +253,19 @@ const get = async (state, action, cursor = false, SmartWeave) => {
   const { data } = state
   if (path.length % 2 === 0) {
     if (any(complement(isNil))([_limit, _sort, _filter])) err()
-    const { doc: _data } = getDoc(data, path)
+    const { doc: _data } = getDoc(
+      data,
+      path,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      SmartWeave
+    )
     return {
       result: isNil(_data.__data)
         ? null
@@ -266,9 +279,23 @@ const get = async (state, action, cursor = false, SmartWeave) => {
     }
   } else {
     let index = getColIndex(state, data, path, _sort)
-    if (isNil(index)) err()
+    if (isNil(index)) err("index doesn't exist")
     const { doc: _data } =
-      path.length === 1 ? { doc: data } : getDoc(data, slice(0, -1, path))
+      path.length === 1
+        ? { doc: data }
+        : getDoc(
+            data,
+            slice(0, -1, path),
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            SmartWeave
+          )
     const docs =
       (path.length === 1 ? _data : _data.subs)[last(path)]?.__docs || {}
     let _docs = []
@@ -280,8 +307,13 @@ const get = async (state, action, cursor = false, SmartWeave) => {
       if (is(Object)(_start[1]) && hasPath([1, "id"])(_start)) {
         start = bsearch(
           index,
-          ["startAt", map(v => docs[_start[1].id].__data[v[0]])(_sort)],
-          _sort,
+          [
+            "startAt",
+            map(v =>
+              v[0] === "__id__" ? _start[1].id : docs[_start[1].id].__data[v[0]]
+            )(_sort || [["__id__"]]),
+          ],
+          _sort || [["__id__"]],
           docs
         )
         for (let i = start; i < index.length; i++) {
@@ -295,7 +327,7 @@ const get = async (state, action, cursor = false, SmartWeave) => {
           index.splice(0, start)
         }
       } else {
-        start = bsearch(index, _start, _sort, docs)
+        start = bsearch(index, _start, _sort || [["__id__"]], docs)
         index.splice(0, start)
       }
     }
@@ -314,8 +346,13 @@ const get = async (state, action, cursor = false, SmartWeave) => {
       if (is(Object)(_end[1]) && hasPath([1, "id"])(_end)) {
         end = bsearch(
           index,
-          ["startAt", map(v => docs[_end[1].id].__data[v[0]])(_sort)],
-          _sort,
+          [
+            "startAt",
+            map(v =>
+              v[0] === "__id__" ? _end[1].id : docs[_end[1].id].__data[v[0]]
+            )(_sort || [["__id__"]]),
+          ],
+          _sort || [["__id__"]],
           docs
         )
         for (let i = end; i < index.length; i++) {
@@ -329,7 +366,7 @@ const get = async (state, action, cursor = false, SmartWeave) => {
           index.splice(end + 1, index.length - end)
         }
       } else {
-        end = bsearch(index, _end, _sort, docs)
+        end = bsearch(index, _end, _sort || [["__id__"]], docs)
         index.splice(end + 1, index.length - end)
       }
     }
@@ -416,5 +453,4 @@ const get = async (state, action, cursor = false, SmartWeave) => {
     }
   }
 }
-
 module.exports = { get, parseQuery }
