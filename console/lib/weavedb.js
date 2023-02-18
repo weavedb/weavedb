@@ -802,14 +802,21 @@ export const _removeOwner = async ({ val: { address, contractTxId }, fn }) => {
   }
 }
 
-export const queryDB = async ({ val: { query, method, contractTxId }, fn }) => {
+export const queryDB = async ({
+  val: { query, method, contractTxId, dryRead },
+  fn,
+}) => {
   try {
     let q
     eval(`q = [${query}]`)
-    const { err, opt } = includes(method)(sdk.reads)
+    let { err, opt } = includes(method)(sdk.reads)
       ? { err: null, opt: null }
       : await fn(getOpt)({ contractTxId })
     if (!isNil(err)) return alert(err)
+    if (!isNil(dryRead)) {
+      opt.dryWrite = { cache: true, read: dryRead }
+    }
+    console.log(opt)
     return ret(await new Log(sdk, method, q, opt, fn).rec(true))
   } catch (e) {
     console.log(e)
