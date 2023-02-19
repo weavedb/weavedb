@@ -139,7 +139,6 @@ export default inject(
                           setDocdata(null)
                         }
                         setDocuments(reject(propEq("id", v))(documents))
-                        fn(plusNonce)()
                       }
                     }
                   }}
