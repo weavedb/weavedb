@@ -131,6 +131,7 @@ export default inject(
     addCron,
     doc_path,
     setSubCollections,
+    subCollections,
     docdata,
     addData,
     setAddData,
@@ -183,7 +184,9 @@ export default inject(
             doc_path,
             docdata,
             db,
+            subCollections,
             setSubCollections,
+            subCollections,
             setDocdata,
             setAddData,
           }}

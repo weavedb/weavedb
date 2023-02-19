@@ -1,6 +1,15 @@
 import { useState } from "react"
 import { Box, Flex, Input, Textarea, Select } from "@chakra-ui/react"
-import { concat, compose, join, append, map, isNil, includes } from "ramda"
+import {
+  concat,
+  compose,
+  join,
+  append,
+  map,
+  isNil,
+  includes,
+  assocPath,
+} from "ramda"
 import { inject } from "roidjs"
 import { read, queryDB } from "../../lib/weavedb"
 import Editor from "react-simple-code-editor"
@@ -20,6 +29,7 @@ export default inject(
     docdata,
     db,
     setSubCollections,
+    subCollections,
     setDocdata,
     setAddData,
     fn,
@@ -221,16 +231,11 @@ export default inject(
                   setNewField("")
                   setNewFieldVal("")
                   setAddData(false)
-                  setDocdata(
-                    await fn(read)({ db, m: "cget", q: [...doc_path, true] })
-                  )
-                  setSubCollections(
-                    await fn(read)({
-                      db,
-                      m: "listCollections",
-                      q: [...doc_path, true],
-                    })
-                  )
+                  if (newFieldType === "sub collection") {
+                    setSubCollections(append(newField, subCollections))
+                  } else {
+                    setDocdata(assocPath(["data", newField], val)(docdata))
+                  }
                 }
                 set(null, "loading")
               }
