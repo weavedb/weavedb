@@ -76,6 +76,8 @@ const no_paths = [
   "removeAddressLink",
 ]
 let states = {}
+let cachedStates = {}
+let timeouts = {}
 let dbs = {}
 let subs = {}
 let submap = {}
@@ -404,8 +406,12 @@ class SDK extends Base {
   async read(params, nocache = false) {
     if (!nocache && !isNil(this.state)) {
       try {
-        return (await handle(states[this.contractTxId], { input: params }))
-          .result
+        return (
+          await handle(
+            cachedStates[this.contractTxId] || states[this.contractTxId],
+            { input: params }
+          )
+        ).result
       } catch (e) {
         console.log(e)
       }
@@ -453,6 +459,11 @@ class SDK extends Base {
             results: [],
           }
           if (success) {
+            clearTimeout(timeouts[this.contractTxId])
+            cachedStates[this.contractTxId] = cacheResult.state
+            timeouts[this.contractTxId] = setTimeout(() => {
+              delete cachedStates[this.contractTxId]
+            }, 5000)
             cacheResult.results = await this.dryRead(
               cacheResult.state,
               onDryWrite.read
@@ -488,6 +499,13 @@ class SDK extends Base {
             dryResult.state,
             onDryWrite.read
           )
+          if (dryResult.success) {
+            clearTimeout(timeouts[this.contractTxId])
+            cachedStates[this.contractTxId] = dryResult.state
+            timeouts[this.contractTxId] = setTimeout(() => {
+              delete cachedStates[this.contractTxId]
+            }, 5000)
+          }
         }
         onDryWrite.cb(dryResult)
       }
