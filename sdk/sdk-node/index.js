@@ -450,6 +450,7 @@ class SDK extends Base {
             console.log(e)
           }
           let cacheResult = {
+            nonce: param.nonce,
             cache: true,
             success,
             duration: Date.now() - start,
@@ -476,6 +477,7 @@ class SDK extends Base {
       const dryResult =
         dryState.type !== "ok"
           ? {
+              nonce: param.nonce,
               cache: false,
               success: false,
               duration: Date.now() - start,
@@ -485,6 +487,7 @@ class SDK extends Base {
               results: [],
             }
           : {
+              nonce: param.nonce,
               cache: false,
               success: true,
               duration: Date.now() - start,
@@ -541,6 +544,7 @@ class SDK extends Base {
     if (isNil(tx.originalTxId)) {
       return {
         success: false,
+        nonce: param.nonce,
         duration: Date.now() - start,
         error: { message: "tx didn't go through" },
         function: param.function,
@@ -551,6 +555,7 @@ class SDK extends Base {
       if (valid === false) {
         return {
           success: false,
+          nonce: param.nonce,
           duration: Date.now() - start,
           error: { message: "tx not valid" },
           function: param.function,
@@ -559,6 +564,7 @@ class SDK extends Base {
       } else if (isNil(valid)) {
         return {
           success: false,
+          nonce: param.nonce,
           duration: Date.now() - start,
           error: { message: "tx validity missing" },
           function: param.function,
@@ -572,6 +578,7 @@ class SDK extends Base {
       error: null,
       function: param.function,
       query: param.query,
+      nonce: param.nonce,
       ...tx,
     }
     let func = param.function
