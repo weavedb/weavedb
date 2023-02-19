@@ -221,7 +221,7 @@ class Node {
         if (nocache) {
           result = await this.sdks[txid].cget(..._query, true)
         } else {
-          result = await this.sdks[txid].cgetCache(..._query)
+          result = await this.sdks[txid].cget(..._query)
         }
         if (key.type === "collection") {
           this.cache.set(key.key, pluck("id", result))
@@ -294,6 +294,7 @@ class Node {
       this.conf.cache_prefix
     )
     let data = null
+    /*
     if (
       !nocache &&
       func !== "getNonce" &&
@@ -301,7 +302,7 @@ class Node {
       includes(func)(this.sdks[txid].reads)
     ) {
       try {
-        data = await this.cache.get(key.key)
+        //data = await this.cache.get(key.key)
         if (!isNil(data)) {
           if (
             key.func === "cget" &&
@@ -331,10 +332,12 @@ class Node {
       } catch (e) {}
 
       if (!isNil(data)) {
+        console.log("perhaps....................", data)
         res(null, data)
         return await this.sendQuery(parsed, key)
       }
-    }
+      }
+    */
     let result, err, dryWrite
     ;({ result, err } = await this.sendQuery(parsed, key))
     if (!dryWrite) res(err, result)
