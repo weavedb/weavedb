@@ -130,8 +130,6 @@ export default inject(
                         append({ id: newDoc, data: newDoc })
                       )(documents)
                     )
-                    console.log("..........................")
-                    console.log(res)
                     fn(plusNonce)()
                   }
                 } catch (e) {}
