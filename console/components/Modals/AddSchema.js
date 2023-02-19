@@ -96,6 +96,14 @@ export default inject(
                       method: "setSchema",
                       query,
                       contractTxId,
+                      dryRead: [
+                        [
+                          "getSchema",
+                          ...(doc_path.length % 2 === 0
+                            ? doc_path.slice(0, -1)
+                            : doc_path),
+                        ],
+                      ],
                     })
                   )
                   if (!res.success) {
@@ -103,18 +111,7 @@ export default inject(
                   } else {
                     setNewSchema("")
                     setAddSchema(false)
-                    setSchema(
-                      await fn(read)({
-                        db,
-                        m: "getSchema",
-                        q: [
-                          ...(doc_path.length % 2 === 0
-                            ? doc_path.slice(0, -1)
-                            : doc_path),
-                          true,
-                        ],
-                      })
-                    )
+                    setSchema(res.results[0].result)
                   }
                 } catch (e) {}
                 set(null, "loading")

@@ -240,14 +240,15 @@ export default inject(
                           query,
                           method,
                           contractTxId,
+                          dryRead: [["getInfo"]],
                         })
                         if (/^Error:/.test(res)) {
                           alert("somethig went wrong")
                         } else {
                           setResult(res)
-                          setState(
-                            await fn(read)({ db, m: "getInfo", q: [true] })
-                          )
+                          if (!isNil(JSON.parse(res).results)) {
+                            setState(JSON.parse(res).results[0].result)
+                          }
                         }
                       } catch (e) {
                         console.log(e)

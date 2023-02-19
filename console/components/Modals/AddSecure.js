@@ -58,8 +58,9 @@ export default inject(
                   })
                   if (/^Error:/.test(res)) {
                     alert("Something went wrong")
+                  } else {
+                    setState(JSON.parse(res).results[0].result)
                   }
-                  setState(await fn(read)({ db, m: "getInfo", q: [true] }))
                   set(null, "loading")
                 }
               }}

@@ -122,6 +122,14 @@ export default inject(
                     method: "addIndex",
                     query,
                     contractTxId,
+                    dryRead: [
+                      [
+                        "getIndexes",
+                        ...(doc_path.length % 2 === 0
+                          ? doc_path.slice(0, -1)
+                          : doc_path),
+                      ],
+                    ],
                   })
                 )
                 if (!res.success) {
@@ -129,18 +137,7 @@ export default inject(
                 } else {
                   setNewIndex("[]")
                   setAddIndex(false)
-                  setIndexes(
-                    await fn(read)({
-                      db,
-                      m: "getIndexes",
-                      q: [
-                        ...(doc_path.length % 2 === 0
-                          ? doc_path.slice(0, -1)
-                          : doc_path),
-                        true,
-                      ],
-                    })
-                  )
+                  setIndexes(res.results[0].result)
                 }
                 set(null, "loading")
               }
