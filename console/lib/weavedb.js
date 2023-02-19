@@ -19,14 +19,15 @@ import {
 import { Buffer } from "buffer"
 import { weavedbSrcTxId, dfinitySrcTxId, ethereumSrcTxId } from "./const"
 let arweave_wallet, sdk
-
+const a = addr =>
+  /^0x.+$/.test(trim(addr)) ? trim(addr).toLowerCase() : trim(addr)
 const ret = res =>
   !isNil(res) && !isNil(res.err)
     ? `Error: ${res.err.errorMessage}`
     : JSON.stringify(res)
 
 class Log {
-  constructor(sdk, method, query, opt, fn) {
+  constructor(sdk, method, query, opt, fn, signer) {
     this.contractTxId = sdk.contractTxId
     this.node = isNil(sdk.client) ? null : sdk.client.hostname_
     this.start = Date.now()
@@ -35,6 +36,7 @@ class Log {
     this.fn = fn
     this.opt = opt
     this.sdk = sdk
+    this.signer = signer
   }
   async rec(array = false) {
     const res = isNil(this.opt)
@@ -56,9 +58,10 @@ class Log {
       res,
       success: isNil(res) || isNil(res.err),
     }
-    this.fn(addLog)({
-      log,
-    })
+    this.fn(addLog)({ log })
+    if (res?.success && !isNil(res.nonce)) {
+      this.fn(setNonce)({ nonce: res.nonce + 1, signer: this.signer })
+    }
     return clone(res)
   }
 }
@@ -84,10 +87,11 @@ export const getOpt = async ({ val: { contractTxId }, get }) => {
     : null
   if (isNil(opt)) err = "not logged in"
   let nonces = (await lf.getItem("nonces")) || {}
-  if (!isNil(nonces[contractTxId]?.[identity.address])) {
-    opt.nonce = nonces[contractTxId][identity.address]
+  const addr = a(identity.address)
+  if (!isNil(nonces[contractTxId]?.[addr])) {
+    opt.nonce = nonces[contractTxId][addr]
   }
-  return { opt, err }
+  return { opt, err, signer: a(identity.address) }
 }
 
 export const getRawDB = async ({
@@ -123,7 +127,7 @@ export const getRawDB = async ({
     if (isNil(ii._inner)) return
     opt.ii = ii
   }
-  return { opt, db }
+  return { opt, db, signer: a(current.address) }
 }
 
 async function addFunds(arweave, wallet) {
@@ -598,9 +602,9 @@ export const deployDB = async ({
 
 export const _setCanEvolve = async ({ val: { value, contractTxId }, fn }) => {
   try {
-    const { err, opt } = await fn(getOpt)({ contractTxId })
+    const { err, opt, signer } = await fn(getOpt)({ contractTxId })
     if (!isNil(err)) return alert(err)
-    return ret(await new Log(sdk, "setCanEvolve", value, opt, fn).rec())
+    return ret(await new Log(sdk, "setCanEvolve", value, opt, fn, signer).rec())
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
@@ -609,9 +613,9 @@ export const _setCanEvolve = async ({ val: { value, contractTxId }, fn }) => {
 
 export const _setSecure = async ({ val: { value, contractTxId }, fn }) => {
   try {
-    const { err, opt } = await fn(getOpt)({ contractTxId })
+    const { err, opt, signer } = await fn(getOpt)({ contractTxId })
     if (!isNil(err)) return alert(err)
-    return ret(await new Log(sdk, "setSecure", value, opt, fn).rec())
+    return ret(await new Log(sdk, "setSecure", value, opt, fn, signer).rec())
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
@@ -623,9 +627,11 @@ export const _setAlgorithms = async ({
   fn,
 }) => {
   try {
-    const { err, opt } = await fn(getOpt)({ contractTxId })
+    const { err, opt, signer } = await fn(getOpt)({ contractTxId })
     if (!isNil(err)) return alert(err)
-    return ret(await new Log(sdk, "setAlgorithms", algorithms, opt, fn).rec())
+    return ret(
+      await new Log(sdk, "setAlgorithms", algorithms, opt, fn, signer).rec()
+    )
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
@@ -634,9 +640,11 @@ export const _setAlgorithms = async ({
 
 export const _evolve = async ({ val: { contractTxId }, fn }) => {
   try {
-    const { err, opt } = await fn(getOpt)({ contractTxId })
+    const { err, opt, signer } = await fn(getOpt)({ contractTxId })
     if (!isNil(err)) return alert(err)
-    return ret(await new Log(sdk, "evolve", weavedbSrcTxId, opt, fn).rec())
+    return ret(
+      await new Log(sdk, "evolve", weavedbSrcTxId, opt, fn, signer).rec()
+    )
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
@@ -645,9 +653,9 @@ export const _evolve = async ({ val: { contractTxId }, fn }) => {
 
 export const _migrate = async ({ val: { contractTxId, version }, fn }) => {
   try {
-    const { err, opt } = await fn(getOpt)({ contractTxId })
+    const { err, opt, signer } = await fn(getOpt)({ contractTxId })
     if (!isNil(err)) return alert(err)
-    return ret(await new Log(sdk, "migrate", version, opt, fn).rec())
+    return ret(await new Log(sdk, "migrate", version, opt, fn, signer).rec())
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
@@ -660,13 +668,13 @@ export const _admin = async ({
 }) => {
   try {
     const _txid = trim(txid)
-    const { db, opt } = await fn(getRawDB)({
+    const { db, opt, signer } = await fn(getRawDB)({
       contractTxId,
       rpc,
       network,
     })
     const query = { op: "add_contract", contractTxId: _txid }
-    return await new Log(db, "admin", query, opt, fn).rec()
+    return await new Log(db, "admin", query, opt, fn, signer).rec()
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
@@ -678,9 +686,13 @@ export const _remove = async ({
   fn,
 }) => {
   try {
-    const { db, opt } = await fn(getRawDB)({ contractTxId, rpc, network })
+    const { db, opt, signer } = await fn(getRawDB)({
+      contractTxId,
+      rpc,
+      network,
+    })
     const query = { op: "remove_contract", contractTxId: txid }
-    return await new Log(db, "admin", query, opt, fn).rec()
+    return await new Log(db, "admin", query, opt, fn, signer).rec()
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
@@ -692,10 +704,13 @@ export const _addNodeOwner = async ({
   fn,
 }) => {
   try {
-    const { db, opt } = await fn(getRawDB)({ contractTxId, rpc, network })
-    const _address = trim(address)
-    const addr = /^0x.+$/.test(_address) ? _address.toLowerCase() : _address
-    return await new Log(db, "addOwner", addr, opt, fn).rec()
+    const { db, opt, signer } = await fn(getRawDB)({
+      contractTxId,
+      rpc,
+      network,
+    })
+    const addr = a(address)
+    return await new Log(db, "addOwner", addr, opt, fn, signer).rec()
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
@@ -707,8 +722,12 @@ export const _removeNodeOwner = async ({
   fn,
 }) => {
   try {
-    const { db, opt } = await fn(getRawDB)({ contractTxId, rpc, network })
-    return await new Log(db, "removeOwner", address, opt, fn).rec()
+    const { db, opt, signer } = await fn(getRawDB)({
+      contractTxId,
+      rpc,
+      network,
+    })
+    return await new Log(db, "removeOwner", address, opt, fn, signer).rec()
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
@@ -720,13 +739,16 @@ export const _whitelist = async ({
   fn,
 }) => {
   try {
-    const { db, opt } = await fn(getRawDB)({ contractTxId, rpc, network })
-    const _address = trim(address)
-    const addr = /^0x.+$/.test(_address) ? _address.toLowerCase() : _address
+    const { db, opt, signer } = await fn(getRawDB)({
+      contractTxId,
+      rpc,
+      network,
+    })
+    const addr = a(address)
     let params = { allow, address: addr }
     if (!isNil(limit)) params.limit = limit
     const query = { op: "whitelist", ...params }
-    return await new Log(db, "admin", query, opt, fn).rec()
+    return await new Log(db, "admin", query, opt, fn, signer).rec()
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
@@ -751,7 +773,7 @@ export const addRelayerJob = async ({
   fn,
 }) => {
   try {
-    const { err, opt } = await fn(getOpt)({ contractTxId })
+    const { err, opt, signer } = await fn(getOpt)({ contractTxId })
     if (!isNil(err)) return alert(err)
     let job = {
       relayers,
@@ -769,7 +791,7 @@ export const addRelayerJob = async ({
 
 export const removeRelayerJob = async ({ val: { name, contractTxId }, fn }) => {
   try {
-    const { err, opt } = await fn(getOpt)({ contractTxId })
+    const { err, opt, signer } = await fn(getOpt)({ contractTxId })
     if (!isNil(err)) return alert(err)
     return ret(await new Log(sdk, "removeRelayerJob", name, opt).rec())
   } catch (e) {
@@ -780,11 +802,10 @@ export const removeRelayerJob = async ({ val: { name, contractTxId }, fn }) => {
 
 export const _addOwner = async ({ val: { address, contractTxId }, fn }) => {
   try {
-    const { err, opt } = await fn(getOpt)({ contractTxId })
+    const { err, opt, signer } = await fn(getOpt)({ contractTxId })
     if (!isNil(err)) return alert(err)
-    const _address = trim(address)
-    const addr = /^0x.+$/.test(_address) ? _address.toLowerCase() : _address
-    return ret(await new Log(sdk, "addOwner", addr, opt, fn).rec())
+    const addr = a(address)
+    return ret(await new Log(sdk, "addOwner", addr, opt, fn, signer).rec())
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
@@ -793,9 +814,11 @@ export const _addOwner = async ({ val: { address, contractTxId }, fn }) => {
 
 export const _removeOwner = async ({ val: { address, contractTxId }, fn }) => {
   try {
-    const { err, opt } = await fn(getOpt)({ contractTxId })
+    const { err, opt, signer } = await fn(getOpt)({ contractTxId })
     if (!isNil(err)) return alert(err)
-    return ret(await new Log(sdk, "removeOwner", address, opt, fn).rec())
+    return ret(
+      await new Log(sdk, "removeOwner", address, opt, fn, signer).rec()
+    )
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
@@ -809,15 +832,14 @@ export const queryDB = async ({
   try {
     let q
     eval(`q = [${query}]`)
-    let { err, opt } = includes(method)(sdk.reads)
+    let { err, opt, signer } = includes(method)(sdk.reads)
       ? { err: null, opt: null }
       : await fn(getOpt)({ contractTxId })
     if (!isNil(err)) return alert(err)
     if (!isNil(dryRead)) {
       opt.dryWrite = { cache: true, read: dryRead }
     }
-    console.log(opt)
-    return ret(await new Log(sdk, method, q, opt, fn).rec(true))
+    return ret(await new Log(sdk, method, q, opt, fn, signer).rec(true))
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
@@ -832,8 +854,9 @@ export const checkNonce = async ({ val: {}, fn, get }) => {
   const _addr = await lf.getItem(`temp_address:${sdk.contractTxId}:${addr}`)
   if (isNil(_addr)) return
   let nonces = (await lf.getItem("nonces")) || {}
+  const __addr = a(_addr.address)
   nonces[sdk.contractTxId] ||= {}
-  nonces[sdk.contractTxId][_addr.address] = await sdk.getNonce(_addr.address)
+  nonces[sdk.contractTxId][__addr] = await sdk.getNonce(__addr)
   /*nonces[sdk.contractTxId][_addr.address] = await new Log(
     sdk,
     "getNonce",
@@ -849,10 +872,18 @@ export const plusNonce = async ({ val: {}, fn, get }) => {
   const _addr = await lf.getItem(`temp_address:${sdk.contractTxId}:${addr}`)
   if (isNil(_addr)) return
   let nonces = (await lf.getItem("nonces")) || {}
-  if (!isNil(nonces[sdk.contractTxId]?.[_addr.address])) {
-    nonces[sdk.contractTxId][_addr.address] =
-      nonces[sdk.contractTxId][_addr.address] + 1
+  const __addr = a(_addr.address)
+  if (!isNil(nonces[sdk.contractTxId]?.[__addr])) {
+    nonces[sdk.contractTxId][__addr] = nonces[sdk.contractTxId][__addr] + 1
     await lf.setItem("nonces", nonces)
     setTimeout(() => fn(checkNonce)(), 5000)
   }
+}
+
+export const setNonce = async ({ val: { nonce, signer }, fn, get }) => {
+  let nonces = (await lf.getItem("nonces")) || {}
+  nonces[sdk.contractTxId] ||= {}
+  const addr = a(signer)
+  nonces[sdk.contractTxId][addr] = nonce
+  await lf.setItem("nonces", nonces)
 }

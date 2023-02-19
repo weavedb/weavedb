@@ -142,6 +142,8 @@ class SDK extends Base {
         if (dryState.type !== "ok")
           return {
             success: false,
+            nonce: param.nonce,
+            signer: param.caller,
             duration: Date.now() - start,
             error: { message: "dryWrite failed", dryWrite: dryState },
             function: param.function,
@@ -162,6 +164,8 @@ class SDK extends Base {
     if (isNil(tx.originalTxId)) {
       return {
         success: false,
+        nonce: param.nonce,
+        signer: param.caller,
         duration: Date.now() - start,
         error: { message: "tx didn't go through" },
         function: param.function,
@@ -172,6 +176,8 @@ class SDK extends Base {
       if (valid === false) {
         return {
           success: false,
+          nonce: param.nonce,
+          signer: param.caller,
           duration: Date.now() - start,
           error: { message: "tx not valid" },
           function: param.function,
@@ -180,6 +186,8 @@ class SDK extends Base {
       } else if (isNil(valid)) {
         return {
           success: false,
+          nonce: param.nonce,
+          signer: param.caller,
           duration: Date.now() - start,
           error: { message: "tx validity missing" },
           function: param.function,
@@ -191,6 +199,8 @@ class SDK extends Base {
     let res = {
       success: true,
       error: null,
+      nonce: param.nonce,
+      signer: param.caller,
       function: param.function,
       query: param.query,
       ...tx,

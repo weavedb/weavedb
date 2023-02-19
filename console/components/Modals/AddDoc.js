@@ -1,3 +1,4 @@
+import { nanoid } from "nanoid"
 import { useState } from "react"
 import { Box, Flex, Input, Textarea } from "@chakra-ui/react"
 import {
@@ -12,7 +13,7 @@ import {
   prop,
 } from "ramda"
 import { inject } from "roidjs"
-import { queryDB, read, checkNonce, plusNonce } from "../../lib/weavedb"
+import { queryDB, read, checkNonce } from "../../lib/weavedb"
 import Editor from "react-simple-code-editor"
 import { highlight, languages } from "prismjs/components/prism-core"
 import "prismjs/components/prism-clike"
@@ -53,9 +54,25 @@ export default inject(
           sx={{ borderRadius: "5px", cursor: "default" }}
           onClick={e => e.stopPropagation()}
         >
+          <Flex
+            justify="flex-end"
+            fontSize="10px"
+            m={1}
+            sx={{
+              textDecoration: "underline",
+              cursor: "pointer",
+              ":hover": { optcity: 0.75 },
+            }}
+            px={2}
+            onClick={() => {
+              setNewDoc(nanoid())
+            }}
+          >
+            Generate Doc ID
+          </Flex>
           <Input
             value={newDoc}
-            placeholder="Doc ID - leave it empty for random generation"
+            placeholder="Doc ID"
             onChange={e => setNewDoc(e.target.value)}
             sx={{
               borderRadius: "3px",
@@ -91,6 +108,7 @@ export default inject(
             onClick={async () => {
               if (isNil($.loading)) {
                 const exID = !/^\s*$/.test(newDoc)
+                if (!exID) return alert("enter doc id")
                 const docmap = indexBy(prop("id"))(documents)
                 if (exID && !isNil(docmap[newDoc])) {
                   alert("Doc exists")
@@ -130,9 +148,6 @@ export default inject(
                         append({ id: newDoc, data: newDoc })
                       )(documents)
                     )
-                    console.log("..........................")
-                    console.log(res)
-                    fn(plusNonce)()
                   }
                 } catch (e) {}
                 set(null, "loading")

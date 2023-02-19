@@ -76,6 +76,8 @@ const no_paths = [
   "removeAddressLink",
 ]
 let states = {}
+let cachedStates = {}
+let timeouts = {}
 let dbs = {}
 let subs = {}
 let submap = {}
@@ -404,8 +406,12 @@ class SDK extends Base {
   async read(params, nocache = false) {
     if (!nocache && !isNil(this.state)) {
       try {
-        return (await handle(states[this.contractTxId], { input: params }))
-          .result
+        return (
+          await handle(
+            cachedStates[this.contractTxId] || states[this.contractTxId],
+            { input: params }
+          )
+        ).result
       } catch (e) {
         console.log(e)
       }
@@ -444,6 +450,8 @@ class SDK extends Base {
             console.log(e)
           }
           let cacheResult = {
+            nonce: param.nonce,
+            signer: param.caller,
             cache: true,
             success,
             duration: Date.now() - start,
@@ -453,6 +461,11 @@ class SDK extends Base {
             results: [],
           }
           if (success) {
+            clearTimeout(timeouts[this.contractTxId])
+            cachedStates[this.contractTxId] = cacheResult.state
+            timeouts[this.contractTxId] = setTimeout(() => {
+              delete cachedStates[this.contractTxId]
+            }, 5000)
             cacheResult.results = await this.dryRead(
               cacheResult.state,
               onDryWrite.read
@@ -465,6 +478,8 @@ class SDK extends Base {
       const dryResult =
         dryState.type !== "ok"
           ? {
+              nonce: param.nonce,
+              signer: param.caller,
               cache: false,
               success: false,
               duration: Date.now() - start,
@@ -474,6 +489,8 @@ class SDK extends Base {
               results: [],
             }
           : {
+              nonce: param.nonce,
+              signer: param.caller,
               cache: false,
               success: true,
               duration: Date.now() - start,
@@ -488,6 +505,13 @@ class SDK extends Base {
             dryResult.state,
             onDryWrite.read
           )
+          if (dryResult.success) {
+            clearTimeout(timeouts[this.contractTxId])
+            cachedStates[this.contractTxId] = dryResult.state
+            timeouts[this.contractTxId] = setTimeout(() => {
+              delete cachedStates[this.contractTxId]
+            }, 5000)
+          }
         }
         onDryWrite.cb(dryResult)
       }
@@ -523,6 +547,8 @@ class SDK extends Base {
     if (isNil(tx.originalTxId)) {
       return {
         success: false,
+        nonce: param.nonce,
+        signer: param.caller,
         duration: Date.now() - start,
         error: { message: "tx didn't go through" },
         function: param.function,
@@ -533,6 +559,8 @@ class SDK extends Base {
       if (valid === false) {
         return {
           success: false,
+          nonce: param.nonce,
+          signer: param.caller,
           duration: Date.now() - start,
           error: { message: "tx not valid" },
           function: param.function,
@@ -541,6 +569,8 @@ class SDK extends Base {
       } else if (isNil(valid)) {
         return {
           success: false,
+          nonce: param.nonce,
+          signer: param.caller,
           duration: Date.now() - start,
           error: { message: "tx validity missing" },
           function: param.function,
@@ -554,6 +584,8 @@ class SDK extends Base {
       error: null,
       function: param.function,
       query: param.query,
+      nonce: param.nonce,
+      signer: param.caller,
       ...tx,
     }
     let func = param.function
