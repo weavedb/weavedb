@@ -287,6 +287,7 @@ class Node {
 
   async execUser(parsed) {
     const { res, nocache, txid, func, query } = parsed
+    console.log(func, query, nocache)
     const _query = JSON.parse(query)
     const key = SDK.getKeyInfo(
       txid,
@@ -308,6 +309,7 @@ class Node {
             key.type === "collection" &&
             data.length !== 0
           ) {
+            console.log("this is cache.....")
             data = map(
               JSON.parse,
               await this.redis.MGET(
