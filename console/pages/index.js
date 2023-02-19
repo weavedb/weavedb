@@ -207,7 +207,6 @@ export default inject(
 
     useEffect(() => {
       if (!isNil($.temp_current) && !isNil(currentDB)) {
-        console.log($.temp_current)
         fn(checkNonce)({ db: currentDB, addr: $.temp_current })
       }
     }, [$.temp_current])
@@ -458,6 +457,7 @@ export default inject(
       Schemas: { col, schema, setAddSchema, setNewSchema, isOwner },
       Rules: { rules, setAddRules, col, setNewRules, isOwner },
       Crons: {
+        cron,
         setAddCron,
         crons,
         setCron,
@@ -645,6 +645,7 @@ export default inject(
         addCron,
         doc_path,
         setSubCollections,
+        subCollections,
         docdata,
         addData,
         setAddData,

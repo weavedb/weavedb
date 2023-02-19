@@ -179,6 +179,7 @@ export default inject(
                       method: "addCron",
                       query,
                       contractTxId,
+                      dryRead: [["getCrons"]],
                     })
                   )
                   if (!res.success) {
@@ -191,7 +192,7 @@ export default inject(
                     setNewTimes("")
                     setNewSpan("")
                     setAddCron(false)
-                    setCrons(await fn(read)({ db, m: "getCrons", q: [true] }))
+                    setCrons(res.results[0].result)
                   }
                 } catch (e) {
                   alert("Something went wrong")
