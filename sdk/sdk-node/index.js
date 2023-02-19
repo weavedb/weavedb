@@ -451,6 +451,7 @@ class SDK extends Base {
           }
           let cacheResult = {
             nonce: param.nonce,
+            signer: param.caller,
             cache: true,
             success,
             duration: Date.now() - start,
@@ -478,6 +479,7 @@ class SDK extends Base {
         dryState.type !== "ok"
           ? {
               nonce: param.nonce,
+              signer: param.caller,
               cache: false,
               success: false,
               duration: Date.now() - start,
@@ -488,6 +490,7 @@ class SDK extends Base {
             }
           : {
               nonce: param.nonce,
+              signer: param.caller,
               cache: false,
               success: true,
               duration: Date.now() - start,
@@ -545,6 +548,7 @@ class SDK extends Base {
       return {
         success: false,
         nonce: param.nonce,
+        signer: param.caller,
         duration: Date.now() - start,
         error: { message: "tx didn't go through" },
         function: param.function,
@@ -556,6 +560,7 @@ class SDK extends Base {
         return {
           success: false,
           nonce: param.nonce,
+          signer: param.caller,
           duration: Date.now() - start,
           error: { message: "tx not valid" },
           function: param.function,
@@ -565,6 +570,7 @@ class SDK extends Base {
         return {
           success: false,
           nonce: param.nonce,
+          signer: param.caller,
           duration: Date.now() - start,
           error: { message: "tx validity missing" },
           function: param.function,
@@ -579,6 +585,7 @@ class SDK extends Base {
       function: param.function,
       query: param.query,
       nonce: param.nonce,
+      signer: param.caller,
       ...tx,
     }
     let func = param.function
