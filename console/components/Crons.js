@@ -9,6 +9,7 @@ export default inject(
   ({
     setCrons,
     setAddCron,
+    cron,
     crons,
     setCron,
     _cron,
@@ -77,13 +78,13 @@ export default inject(
                           method: "removeCron",
                           query,
                           contractTxId,
+                          dryRead: [["getCrons"]],
                         })
                         if (/^Error:/.test(res)) {
                           alert("Something went wrong")
+                        } else {
+                          setCrons(JSON.parse(res).results[0].result)
                         }
-                        setCrons(
-                          await fn(read)({ db, m: "getCrons", q: [true] })
-                        )
                       }
                     }}
                   >
