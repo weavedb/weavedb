@@ -10,7 +10,15 @@ const upsert = async (
   contractErr = true,
   SmartWeave
 ) => {
-  signer ||= await validate(state, action, "upsert", SmartWeave)
+  let original_signer = null
+  if (isNil(signer)) {
+    ;({ signer, original_signer } = await validate(
+      state,
+      action,
+      "upsert",
+      SmartWeave
+    ))
+  }
   let { data, query, _signer, new_data, path, schema, _data, col, next_data } =
     await parse(state, action, "upsert", signer, 0, contractErr, SmartWeave)
   let prev = clone(_data.__data)
@@ -22,6 +30,6 @@ const upsert = async (
     updateData(last(path), next_data, prev, ind, col.__docs)
   }
   _data.__data = next_data
-  return { state }
+  return { state, result: { original_signer } }
 }
 module.exports = { upsert }

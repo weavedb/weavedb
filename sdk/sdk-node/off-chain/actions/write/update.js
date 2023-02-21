@@ -10,7 +10,15 @@ const update = async (
   contractErr = true,
   SmartWeave
 ) => {
-  signer ||= await validate(state, action, "update", SmartWeave)
+  let original_signer = null
+  if (isNil(signer)) {
+    ;({ signer, original_signer } = await validate(
+      state,
+      action,
+      "update",
+      SmartWeave
+    ))
+  }
   let { data, query, new_data, path, _data, schema, col, next_data } =
     await parse(state, action, "update", signer, 0, contractErr, SmartWeave)
   if (isNil(_data.__data)) err(`Data doesn't exist`)
@@ -19,7 +27,7 @@ const update = async (
   let ind = getIndex(state, init(path))
   updateData(last(path), next_data, prev, ind, col.__docs)
   _data.__data = next_data
-  return { state }
+  return { state, result: { original_signer } }
 }
 
 module.exports = { update }
