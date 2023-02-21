@@ -3,7 +3,15 @@ import { validate } from "../../lib/validate"
 import { err, parse } from "../../lib/utils"
 
 export const linkContract = async (state, action, signer) => {
-  signer ||= await validate(state, action, "linkContract")
+  let original_signer = null
+  if (isNil(signer)) {
+    ;({ signer, original_signer } = await validate(
+      state,
+      action,
+      "linkContract"
+    ))
+  }
+
   let { _data, data, query, new_data, path } = await parse(
     state,
     action,
@@ -16,5 +24,5 @@ export const linkContract = async (state, action, signer) => {
   }
   if (isNil(state.contracts)) state.contracts = {}
   state.contracts[key] = address
-  return { state }
+  return { state, result: { original_signer } }
 }

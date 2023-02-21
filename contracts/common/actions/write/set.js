@@ -5,7 +5,10 @@ import { validate } from "../../lib/validate"
 import { updateData, addData, getIndex } from "../../lib/index"
 
 export const set = async (state, action, signer, contractErr = true) => {
-  signer ||= await validate(state, action, "set")
+  let original_signer = null
+  if (isNil(signer)) {
+    ;({ signer, original_signer } = await validate(state, action, "set"))
+  }
   let { _data, data, query, new_data, path, schema, col, next_data } =
     await parse(state, action, "set", signer, 0, contractErr)
   let prev = clone(_data.__data)
@@ -17,5 +20,5 @@ export const set = async (state, action, signer, contractErr = true) => {
     updateData(last(path), next_data, prev, ind, col.__docs)
   }
   _data.__data = next_data
-  return { state }
+  return { state, result: { original_signer } }
 }

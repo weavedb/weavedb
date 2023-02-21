@@ -23,7 +23,11 @@ import { removeOwner } from "./removeOwner"
 import { removeRelayerJob } from "./removeRelayerJob"
 
 export const batch = async (state, action, signer, contractErr = true) => {
-  signer ||= await validate(state, action, "batch")
+  let original_signer = null
+  if (isNil(signer)) {
+    ;({ signer, original_signer } = await validate(state, action, "batch"))
+  }
+
   let _state = state
   let i = 0
   for (let v of action.input.query) {
@@ -109,5 +113,5 @@ export const batch = async (state, action, signer, contractErr = true) => {
     _state = res.state
     i++
   }
-  return { state: _state }
+  return { state: _state, result: { original_signer } }
 }
