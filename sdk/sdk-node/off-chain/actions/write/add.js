@@ -16,7 +16,15 @@ const add = async (
   contractErr = true,
   SmartWeave
 ) => {
-  signer ||= await validate(state, action, "add", SmartWeave)
+  let original_signer = null
+  if (isNil(signer)) {
+    ;({ signer, original_signer } = await validate(
+      state,
+      action,
+      "add",
+      SmartWeave
+    ))
+  }
   let { _data, data, query, new_data, path, schema, col, next_data } =
     await parse(state, action, "add", signer, salt, contractErr, SmartWeave)
   if (!isNil(_data.__data)) err("doc already exists")
@@ -24,7 +32,7 @@ const add = async (
   let ind = getIndex(state, init(path))
   addData(last(path), next_data, ind, col.__docs)
   _data.__data = next_data
-  return { state }
+  return { state, result: { original_signer } }
 }
 
 module.exports = { add }

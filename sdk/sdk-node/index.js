@@ -166,6 +166,7 @@ class SDK extends Base {
     onUpdate,
   }) {
     super()
+    this.virtual_nonces = {}
     this.cache_prefix = cache_prefix
     this.onUpdate = onUpdate
     this.subscribe = subscribe
@@ -428,8 +429,9 @@ class SDK extends Base {
     if (relay) {
       return param
     } else {
+      let dryResult = null
       const start = Date.now()
-      if (onDryWrite?.cache) {
+      if (onDryWrite?.cache || !isNil(cachedStates[this.contractTxId])) {
         if (!includes(func)(["set", "upsert", "update", "delete"])) {
           onDryWrite.cache = false
         } else {
@@ -438,7 +440,9 @@ class SDK extends Base {
           let success = true
           try {
             cacheState = await handle(
-              clone(states[this.contractTxId]),
+              clone(
+                cachedStates[this.contractTxId] || states[this.contractTxId]
+              ),
               {
                 input: param,
               },
@@ -461,44 +465,51 @@ class SDK extends Base {
             results: [],
           }
           if (success) {
+            this.virtual_nonces[cacheState.result.original_signer] = param.nonce
             clearTimeout(timeouts[this.contractTxId])
             cachedStates[this.contractTxId] = cacheResult.state
             timeouts[this.contractTxId] = setTimeout(() => {
               delete cachedStates[this.contractTxId]
+              delete this.virtual_nonces[cacheState.result.original_signer]
             }, 5000)
-            cacheResult.results = await this.dryRead(
-              cacheResult.state,
-              onDryWrite.read
-            )
+            if (!isNil(onDryWrite?.read)) {
+              cacheResult.results = await this.dryRead(
+                cacheResult.state,
+                onDryWrite.read
+              )
+            }
           }
-          onDryWrite.cb(cacheResult)
+          if (!isNil(onDryWrite?.cb)) onDryWrite.cb(cacheResult)
+          dryResult = cacheResult
         }
       }
-      let dryState = await this.db.dryWrite(param)
-      const dryResult =
-        dryState.type !== "ok"
-          ? {
-              nonce: param.nonce,
-              signer: param.caller,
-              cache: false,
-              success: false,
-              duration: Date.now() - start,
-              error: { message: "dryWrite failed", dryWrite: dryState },
-              function: param.function,
-              state: null,
-              results: [],
-            }
-          : {
-              nonce: param.nonce,
-              signer: param.caller,
-              cache: false,
-              success: true,
-              duration: Date.now() - start,
-              error: null,
-              function: param.function,
-              state: dryState.state,
-              results: [],
-            }
+      if (isNil(dryResult)) {
+        let dryState = await this.db.dryWrite(param)
+        dryResult =
+          dryState.type !== "ok"
+            ? {
+                nonce: param.nonce,
+                signer: param.caller,
+                cache: false,
+                success: false,
+                duration: Date.now() - start,
+                error: { message: "dryWrite failed", dryWrite: dryState },
+                function: param.function,
+                state: null,
+                results: [],
+              }
+            : {
+                nonce: param.nonce,
+                signer: param.caller,
+                cache: false,
+                success: true,
+                duration: Date.now() - start,
+                error: null,
+                function: param.function,
+                state: dryState.state,
+                results: [],
+              }
+      }
       if (is(Function, onDryWrite?.cb) && onDryWrite.cache !== true) {
         if (dryResult.success) {
           dryResult.results = await this.dryRead(
@@ -861,6 +872,18 @@ class SDK extends Base {
       },
       input
     )
+  }
+
+  async getNonce(address, nocache) {
+    return !isNil(this.virtual_nonces[address])
+      ? this.virtual_nonces[address] + 1
+      : (await this.read(
+          {
+            function: "nonce",
+            address,
+          },
+          nocache
+        )) + 1
   }
 }
 

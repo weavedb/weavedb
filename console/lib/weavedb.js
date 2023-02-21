@@ -39,7 +39,6 @@ class Log {
     this.signer = signer
   }
   async rec(array = false) {
-    console.log(this.opt, this.query)
     const res = isNil(this.opt)
       ? array
         ? await this.sdk[this.method](...this.query)
@@ -891,27 +890,7 @@ export const checkNonce = async ({ val: {}, fn, get }) => {
   const __addr = a(_addr.address)
   nonces[sdk.contractTxId] ||= {}
   nonces[sdk.contractTxId][__addr] = await sdk.getNonce(__addr)
-  /*nonces[sdk.contractTxId][_addr.address] = await new Log(
-    sdk,
-    "getNonce",
-    _addr.address,
-    null,
-    fn
-  ).rec()*/
   await lf.setItem("nonces", nonces)
-}
-
-export const plusNonce = async ({ val: {}, fn, get }) => {
-  const addr = await lf.getItem(`temp_address:current`)
-  const _addr = await lf.getItem(`temp_address:${sdk.contractTxId}:${addr}`)
-  if (isNil(_addr)) return
-  let nonces = (await lf.getItem("nonces")) || {}
-  const __addr = a(_addr.address)
-  if (!isNil(nonces[sdk.contractTxId]?.[__addr])) {
-    nonces[sdk.contractTxId][__addr] = nonces[sdk.contractTxId][__addr] + 1
-    await lf.setItem("nonces", nonces)
-    setTimeout(() => fn(checkNonce)(), 5000)
-  }
 }
 
 export const setNonce = async ({ val: { nonce, signer }, fn, get }) => {
