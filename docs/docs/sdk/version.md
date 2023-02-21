@@ -15,6 +15,17 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.21.0 (Feb 21, 2023)
+
+#### Source Transaction Id
+
+[nNz22bZG_Y2K9r68iqnL1iOPEu8rvqCWNE4TX17OsgA](https://sonar.warp.cc/#/app/source/nNz22bZG_Y2K9r68iqnL1iOPEu8rvqCWNE4TX17OsgA)
+
+#### Added Features
+
+- copy new `version` to state on [migration](/docs/sdk/evolve#upgrade--evolve-db-contract) (internal change)
+- return `original_signer` for grpc-node optimizations (internal change)
+
 ### v0.20.0 (Feb 8, 2023)
 
 #### Source Transaction Id
