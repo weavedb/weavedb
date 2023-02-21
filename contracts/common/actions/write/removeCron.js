@@ -5,7 +5,10 @@ import { validate } from "../../lib/validate"
 import { addIndex as _addIndex, getIndex } from "../../lib/index"
 
 export const removeCron = async (state, action, signer) => {
-  signer ||= await validate(state, action, "removeCron")
+  let original_signer = null
+  if (isNil(signer)) {
+    ;({ signer, original_signer } = await validate(state, action, "removeCron"))
+  }
   const owner = isOwner(signer, state)
   if (isNil(state.crons)) {
     state.crons = { lastExecuted: SmartWeave.block.timestamp, crons: {} }
@@ -13,5 +16,5 @@ export const removeCron = async (state, action, signer) => {
   const [key] = action.input.query
   if (isNil(state.crons.crons[key])) err("cron doesn't exist")
   delete state.crons.crons[key]
-  return { state }
+  return { state, result: { original_signer } }
 }

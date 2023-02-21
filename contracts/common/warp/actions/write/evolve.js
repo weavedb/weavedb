@@ -1,10 +1,13 @@
-import { is, of, includes, mergeLeft } from "ramda"
+import { isNil, is, of, includes, mergeLeft } from "ramda"
 import { err, isOwner } from "../../../lib/utils"
 import { validate } from "../../../lib/validate"
 import version from "../../../../warp/lib/version"
 
 export const evolve = async (state, action, signer) => {
-  signer ||= await validate(state, action, "evolve")
+  let original_signer = null
+  if (isNil(signer)) {
+    ;({ signer, original_signer } = await validate(state, action, "evolve"))
+  }
   const owner = isOwner(signer, state)
 
   if (action.input.value !== action.input.query.value) {
@@ -26,5 +29,5 @@ export const evolve = async (state, action, signer) => {
     oldVersion: version,
   })
 
-  return { state }
+  return { state, result: { original_signer } }
 }

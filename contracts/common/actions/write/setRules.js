@@ -4,7 +4,10 @@ import { validate } from "../../lib/validate"
 import jsonLogic from "json-logic-js"
 
 export const setRules = async (state, action, signer) => {
-  signer ||= await validate(state, action, "setRules")
+  let original_signer = null
+  if (isNil(signer)) {
+    ;({ signer, original_signer } = await validate(state, action, "setRules"))
+  }
   let { _data, data, query, new_data, path } = await parse(
     state,
     action,
@@ -30,5 +33,5 @@ export const setRules = async (state, action, signer) => {
     }
   }
   _data.rules = new_data
-  return { state }
+  return { state, result: { original_signer } }
 }
