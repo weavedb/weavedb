@@ -18,7 +18,7 @@ import {
   last,
   mapObjIndexed,
 } from "ramda"
-import { plusNonce, read, queryDB } from "../lib/weavedb.js"
+import { read, queryDB } from "../lib/weavedb.js"
 import { inject } from "roidjs"
 import { per_page } from "../lib/const"
 export default inject(

@@ -11,7 +11,15 @@ const remove = async (
   contractErr = true,
   SmartWeave
 ) => {
-  signer ||= await validate(state, action, "delete", SmartWeave)
+  let original_signer = null
+  if (isNil(signer)) {
+    ;({ signer, original_signer } = await validate(
+      state,
+      action,
+      "delete",
+      SmartWeave
+    ))
+  }
   const { data, query, new_data, path, _data, col } = await parse(
     state,
     action,
@@ -25,7 +33,7 @@ const remove = async (
   let ind = getIndex(state, init(path))
   removeData(last(path), ind, col.__docs)
   _data.__data = null
-  return { state }
+  return { state, result: { original_signer } }
 }
 
 module.exports = { remove }
