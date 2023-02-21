@@ -60,7 +60,7 @@ export default inject(
                     q: [...base_path, v, per_page],
                   })
                   setDocuments(_docs)
-                  if (_docs.length === per_page) setLoadMore(last(_docs))
+                  setLoadMore(_docs.length === per_page ? last(_docs) : null)
                 }}
                 bg={col === v ? "#ddd" : ""}
                 py={2}
