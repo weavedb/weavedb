@@ -5,7 +5,10 @@ import { validate } from "../../lib/validate"
 import { validate as validator } from "../../lib/jsonschema"
 
 export const setSchema = async (state, action, signer) => {
-  signer ||= await validate(state, action, "setSchema")
+  let original_signer = null
+  if (isNil(signer)) {
+    ;({ signer, original_signer } = await validate(state, action, "setSchema"))
+  }
   let { _data, data, query, new_data, path } = await parse(
     state,
     action,
@@ -18,5 +21,5 @@ export const setSchema = async (state, action, signer) => {
   } catch (e) {
     err("schema error")
   }
-  return { state }
+  return { state, result: { original_signer } }
 }

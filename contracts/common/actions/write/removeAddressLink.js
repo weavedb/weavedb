@@ -3,7 +3,14 @@ import { validate } from "../../lib/validate"
 import { err } from "../../lib/utils"
 
 export const removeAddressLink = async (state, action, signer) => {
-  signer ||= await validate(state, action, "removeAddressLink")
+  let original_signer = null
+  if (isNil(signer)) {
+    ;({ signer, original_signer } = await validate(
+      state,
+      action,
+      "removeAddressLink"
+    ))
+  }
   const { address } = action.input.query
   const link = state.auth.links[address.toLowerCase()]
   if (isNil(link)) err("link doesn't exist")
@@ -12,5 +19,5 @@ export const removeAddressLink = async (state, action, signer) => {
     err("signer is neither owner nor delegator")
   }
   delete state.auth.links[address.toLowerCase()]
-  return { state }
+  return { state, result: { original_signer } }
 }

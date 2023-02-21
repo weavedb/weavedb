@@ -5,7 +5,10 @@ import { validate } from "../../lib/validate"
 import { addIndex as _addIndex, getIndex } from "../../lib/index"
 
 export const addIndex = async (state, action, signer) => {
-  signer ||= await validate(state, action, "addIndex")
+  let original_signer = null
+  if (isNil(signer)) {
+    ;({ signer, original_signer } = await validate(state, action, "addIndex"))
+  }
   let { col, _data, data, query, new_data, path } = await parse(
     state,
     action,
@@ -17,5 +20,5 @@ export const addIndex = async (state, action, signer) => {
     err("index cannot contain __id__")
   }
   _addIndex(new_data, ind, col.__docs)
-  return { state }
+  return { state, result: { original_signer } }
 }

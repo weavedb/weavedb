@@ -5,7 +5,15 @@ import { validate } from "../../lib/validate"
 import { validate as validator } from "../../lib/jsonschema"
 
 export const addRelayerJob = async (state, action, signer) => {
-  signer ||= await validate(state, action, "addRelayerJob")
+  let original_signer = null
+  if (isNil(signer)) {
+    ;({ signer, original_signer } = await validate(
+      state,
+      action,
+      "addRelayerJob"
+    ))
+  }
+
   let { _data, data, query, new_data, path } = await parse(
     state,
     action,
@@ -28,5 +36,5 @@ export const addRelayerJob = async (state, action, signer) => {
   }
   if (isNil(state.relayers)) state.relayers = {}
   state.relayers[jobID] = job
-  return { state }
+  return { state, result: { original_signer } }
 }
