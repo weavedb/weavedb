@@ -13,6 +13,7 @@ export const migrate = async (state, action, signer) => {
     err(`version doesn't match (${version} : ${action.input.query.version})`)
   }
   if (!isEvolving(state)) err(`contract is not ready to migrate`)
+  state.version = version
   state.evolveHistory[state.evolveHistory.length - 1].newVersion = version
   return { state, result: { original_signer } }
 }

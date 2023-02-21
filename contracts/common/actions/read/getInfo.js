@@ -1,5 +1,4 @@
 const { pick } = require("ramda")
-const version = require("../../../warp/lib/version")
 import { isEvolving } from "../../lib/utils"
 
 export const getInfo = async (state, action) => {
@@ -17,7 +16,7 @@ export const getInfo = async (state, action) => {
     state
   )
   delete info.auth.links
-  info.version = version
+  info.version = state.version
   info.evolveHistory = state.evolveHistory || []
   info.isEvolving = isEvolving(state)
   return {
