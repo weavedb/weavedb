@@ -15,7 +15,7 @@ const getInfo = async (state, action) => {
     state
   )
   delete info.auth.links
-  info.version = null
+  info.version = state.version || null
   info.evolveHistory = state.evolveHistory || []
   info.isEvolving = isEvolving(state)
 

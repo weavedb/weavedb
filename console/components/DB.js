@@ -95,11 +95,13 @@ export default inject(
                           m: "getInfo",
                           q: [],
                         })
-                        state.version = await fn(read)({
-                          db,
-                          m: "getVersion",
-                          q: [true],
-                        })
+                        if (isNil(state.version)) {
+                          state.version = await fn(read)({
+                            db,
+                            m: "getVersion",
+                            q: [true],
+                          })
+                        }
                         if (!isNil(state.version)) {
                           setState(null)
                           setNetwork(v.network)
