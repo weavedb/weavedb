@@ -252,9 +252,7 @@ export default inject(
                     alert("Something went wrong")
                   } else {
                     setAddRelayer(false)
-                    setRelayers(
-                      await fn(read)({ db, m: "listRelayerJobs", q: [true] })
-                    )
+                    setRelayers(res.results[0].result)
                   }
                 } catch (e) {
                   alert("Something went wrong")

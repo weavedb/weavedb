@@ -22,7 +22,11 @@ import { remove } from "./remove"
 import { batch } from "./batch"
 
 export const relay = async (state, action, signer, contractErr = true) => {
-  signer ||= await validate(state, action, "relay")
+  let original_signer = null
+  if (isNil(signer)) {
+    ;({ signer, original_signer } = await validate(state, action, "relay"))
+  }
+
   let jobID = head(action.input.query)
   let input = nth(1, action.input.query)
   let query = nth(2, action.input.query)
@@ -100,5 +104,5 @@ export const relay = async (state, action, signer, contractErr = true) => {
       )
   }
 
-  return { state }
+  return { state, result: { original_signer } }
 }

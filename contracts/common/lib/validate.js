@@ -126,5 +126,5 @@ export const validate = async (state, action, func) => {
   }
   if (isNil(state.nonces[original_signer])) state.nonces[original_signer] = 0
   state.nonces[original_signer] += 1
-  return _signer
+  return { signer: _signer, original_signer }
 }

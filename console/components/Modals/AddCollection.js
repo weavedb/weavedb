@@ -98,6 +98,7 @@ export default inject(
                 try {
                   const res = JSON.parse(
                     await fn(queryDB)({
+                      dryRead: [["listCollections", ...base_path]],
                       method: "setRules",
                       query: `${newRules}, ${compose(
                         join(", "),
@@ -113,13 +114,7 @@ export default inject(
                     setNewCollection("")
                     setNewRules(`{"allow write": true}`)
                     setAddCollection(false)
-                    setCollections(
-                      await fn(read)({
-                        db,
-                        m: "listCollections",
-                        q: [...base_path, true],
-                      })
-                    )
+                    setCollections(res.results[0].result)
                   }
                 } catch (e) {
                   alert("Something went wrong")

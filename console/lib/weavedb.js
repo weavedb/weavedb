@@ -66,7 +66,7 @@ class Log {
   }
 }
 
-export const getOpt = async ({ val: { contractTxId }, get }) => {
+export const getOpt = async ({ val: { contractTxId, read = [] }, get }) => {
   const current = get("temp_current")
   const identity = isNil(current)
     ? null
@@ -77,12 +77,12 @@ export const getOpt = async ({ val: { contractTxId }, get }) => {
   }
   let err = null
   let opt = !isNil(ii)
-    ? { ii, dryWrite: true }
+    ? { ii, dryWrite: { cache: true, read } }
     : !isNil(identity) && !isNil(identity.tx)
     ? {
         wallet: current,
         privateKey: identity.privateKey,
-        dryWrite: true,
+        dryWrite: { cache: true, read },
       }
     : null
   if (isNil(opt)) err = "not logged in"
@@ -602,7 +602,10 @@ export const deployDB = async ({
 
 export const _setCanEvolve = async ({ val: { value, contractTxId }, fn }) => {
   try {
-    const { err, opt, signer } = await fn(getOpt)({ contractTxId })
+    const { err, opt, signer } = await fn(getOpt)({
+      contractTxId,
+      read: [["getInfo"]],
+    })
     if (!isNil(err)) return alert(err)
     return ret(await new Log(sdk, "setCanEvolve", value, opt, fn, signer).rec())
   } catch (e) {
@@ -613,7 +616,10 @@ export const _setCanEvolve = async ({ val: { value, contractTxId }, fn }) => {
 
 export const _setSecure = async ({ val: { value, contractTxId }, fn }) => {
   try {
-    const { err, opt, signer } = await fn(getOpt)({ contractTxId })
+    const { err, opt, signer } = await fn(getOpt)({
+      contractTxId,
+      read: [["getInfo"]],
+    })
     if (!isNil(err)) return alert(err)
     return ret(await new Log(sdk, "setSecure", value, opt, fn, signer).rec())
   } catch (e) {
@@ -627,7 +633,10 @@ export const _setAlgorithms = async ({
   fn,
 }) => {
   try {
-    const { err, opt, signer } = await fn(getOpt)({ contractTxId })
+    const { err, opt, signer } = await fn(getOpt)({
+      contractTxId,
+      read: [["getInfo"]],
+    })
     if (!isNil(err)) return alert(err)
     return ret(
       await new Log(sdk, "setAlgorithms", algorithms, opt, fn, signer).rec()
@@ -640,7 +649,10 @@ export const _setAlgorithms = async ({
 
 export const _evolve = async ({ val: { contractTxId }, fn }) => {
   try {
-    const { err, opt, signer } = await fn(getOpt)({ contractTxId })
+    const { err, opt, signer } = await fn(getOpt)({
+      contractTxId,
+      read: [["getInfo"]],
+    })
     if (!isNil(err)) return alert(err)
     return ret(
       await new Log(sdk, "evolve", weavedbSrcTxId, opt, fn, signer).rec()
@@ -653,7 +665,10 @@ export const _evolve = async ({ val: { contractTxId }, fn }) => {
 
 export const _migrate = async ({ val: { contractTxId, version }, fn }) => {
   try {
-    const { err, opt, signer } = await fn(getOpt)({ contractTxId })
+    const { err, opt, signer } = await fn(getOpt)({
+      contractTxId,
+      read: [["getInfo"]],
+    })
     if (!isNil(err)) return alert(err)
     return ret(await new Log(sdk, "migrate", version, opt, fn, signer).rec())
   } catch (e) {
@@ -773,7 +788,10 @@ export const addRelayerJob = async ({
   fn,
 }) => {
   try {
-    const { err, opt, signer } = await fn(getOpt)({ contractTxId })
+    const { err, opt, signer } = await fn(getOpt)({
+      contractTxId,
+      read: [["listRelayerJobs"]],
+    })
     if (!isNil(err)) return alert(err)
     let job = {
       relayers,
@@ -782,7 +800,11 @@ export const addRelayerJob = async ({
       multisig_type,
     }
     if (!/^\s*$/.test(schema)) job.schema = schema
-    return ret(await new Log(sdk, "addRelayerJob", name, job, opt).rec())
+    return ret(
+      await new Log(sdk, "addRelayerJob", [name, job], opt, fn, signer).rec(
+        true
+      )
+    )
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
@@ -791,9 +813,14 @@ export const addRelayerJob = async ({
 
 export const removeRelayerJob = async ({ val: { name, contractTxId }, fn }) => {
   try {
-    const { err, opt, signer } = await fn(getOpt)({ contractTxId })
+    const { err, opt, signer } = await fn(getOpt)({
+      contractTxId,
+      read: [["listRelayerJobs"]],
+    })
     if (!isNil(err)) return alert(err)
-    return ret(await new Log(sdk, "removeRelayerJob", name, opt).rec())
+    return ret(
+      await new Log(sdk, "removeRelayerJob", name, opt, fn, signer).rec()
+    )
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
@@ -802,7 +829,10 @@ export const removeRelayerJob = async ({ val: { name, contractTxId }, fn }) => {
 
 export const _addOwner = async ({ val: { address, contractTxId }, fn }) => {
   try {
-    const { err, opt, signer } = await fn(getOpt)({ contractTxId })
+    const { err, opt, signer } = await fn(getOpt)({
+      contractTxId,
+      read: [["getInfo"]],
+    })
     if (!isNil(err)) return alert(err)
     const addr = a(address)
     return ret(await new Log(sdk, "addOwner", addr, opt, fn, signer).rec())
@@ -814,7 +844,10 @@ export const _addOwner = async ({ val: { address, contractTxId }, fn }) => {
 
 export const _removeOwner = async ({ val: { address, contractTxId }, fn }) => {
   try {
-    const { err, opt, signer } = await fn(getOpt)({ contractTxId })
+    const { err, opt, signer } = await fn(getOpt)({
+      contractTxId,
+      read: [["getInfo"]],
+    })
     if (!isNil(err)) return alert(err)
     return ret(
       await new Log(sdk, "removeOwner", address, opt, fn, signer).rec()
@@ -833,7 +866,7 @@ export const queryDB = async ({
     let q
     eval(`q = [${query}]`)
     let { err, opt, signer } = includes(method)(sdk.reads)
-      ? { err: null, opt: null }
+      ? { err: null, opt: {} }
       : await fn(getOpt)({ contractTxId })
     if (!isNil(err)) return alert(err)
     if (!isNil(dryRead)) {
@@ -857,27 +890,7 @@ export const checkNonce = async ({ val: {}, fn, get }) => {
   const __addr = a(_addr.address)
   nonces[sdk.contractTxId] ||= {}
   nonces[sdk.contractTxId][__addr] = await sdk.getNonce(__addr)
-  /*nonces[sdk.contractTxId][_addr.address] = await new Log(
-    sdk,
-    "getNonce",
-    _addr.address,
-    null,
-    fn
-  ).rec()*/
   await lf.setItem("nonces", nonces)
-}
-
-export const plusNonce = async ({ val: {}, fn, get }) => {
-  const addr = await lf.getItem(`temp_address:current`)
-  const _addr = await lf.getItem(`temp_address:${sdk.contractTxId}:${addr}`)
-  if (isNil(_addr)) return
-  let nonces = (await lf.getItem("nonces")) || {}
-  const __addr = a(_addr.address)
-  if (!isNil(nonces[sdk.contractTxId]?.[__addr])) {
-    nonces[sdk.contractTxId][__addr] = nonces[sdk.contractTxId][__addr] + 1
-    await lf.setItem("nonces", nonces)
-    setTimeout(() => fn(checkNonce)(), 5000)
-  }
 }
 
 export const setNonce = async ({ val: { nonce, signer }, fn, get }) => {

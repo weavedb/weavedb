@@ -1,9 +1,16 @@
 import { err, isOwner } from "../../lib/utils"
-import { without, includes, is, of } from "ramda"
+import { isNil, without, includes, is, of } from "ramda"
 import { validate } from "../../lib/validate"
 
 export const removeOwner = async (state, action, signer) => {
-  signer ||= await validate(state, action, "removeOwner")
+  let original_signer = null
+  if (isNil(signer)) {
+    ;({ signer, original_signer } = await validate(
+      state,
+      action,
+      "removeOwner"
+    ))
+  }
   const owner = isOwner(signer, state)
 
   if (!is(String)(action.input.query.address)) {
@@ -14,5 +21,5 @@ export const removeOwner = async (state, action, signer) => {
     err("The owner doesn't exist.")
   }
   state.owner = without([action.input.query.address], owner)
-  return { state }
+  return { state, result: { original_signer } }
 }

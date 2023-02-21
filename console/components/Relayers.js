@@ -4,7 +4,7 @@ import { map, isNil } from "ramda"
 import { inject } from "roidjs"
 import { read, removeRelayerJob } from "../lib/weavedb"
 export default inject(
-  ["loading", "tx_logs"],
+  ["loading", "tx_logs", "temp_current"],
   ({
     contractTxId,
     setRelayers,
@@ -81,6 +81,7 @@ export default inject(
                     if (isNil($.loading)) {
                       set("remove_relayer", "loading")
                       try {
+                        console.log(contractTxId)
                         const res = JSON.parse(
                           await fn(removeRelayerJob)({
                             name: v,
@@ -93,13 +94,7 @@ export default inject(
                           if (!isNil(relayer) && relayer.name === v) {
                             setRelayer(null)
                           }
-                          setRelayers(
-                            await fn(read)({
-                              db,
-                              m: "listRelayerJobs",
-                              q: [true],
-                            })
-                          )
+                          setRelayers(res.results[0].result)
                         }
                       } catch (e) {
                         alert("Something went wrong")

@@ -4,7 +4,10 @@ import { validate } from "../../lib/validate"
 import { executeCron } from "../../lib/cron"
 
 export const addCron = async (state, action, signer) => {
-  signer ||= await validate(state, action, "addCron")
+  let original_signer = null
+  if (isNil(signer)) {
+    ;({ signer, original_signer } = await validate(state, action, "addCron"))
+  }
   const owner = isOwner(signer, state)
 
   if (isNil(state.crons)) {
@@ -36,5 +39,5 @@ export const addCron = async (state, action, signer) => {
       err("cron failed to execute")
     }
   }
-  return { state }
+  return { state, result: { original_signer } }
 }

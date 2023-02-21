@@ -1,5 +1,6 @@
 import { Box, Flex } from "@chakra-ui/react"
 import {
+  dissocPath,
   sortBy,
   is,
   concat,
@@ -17,7 +18,7 @@ import {
   last,
   mapObjIndexed,
 } from "ramda"
-import { plusNonce, read, queryDB } from "../lib/weavedb.js"
+import { read, queryDB } from "../lib/weavedb.js"
 import { inject } from "roidjs"
 import { per_page } from "../lib/const"
 export default inject(
@@ -317,21 +318,9 @@ export default inject(
                           })
                           if (/^Error:/.test(res)) {
                             alert("Something went wrong")
+                          } else {
+                            setDocdata(dissocPath(["data", k])(docdata))
                           }
-                          setDocdata(
-                            await fn(read)({
-                              db,
-                              m: "cget",
-                              q: [...doc_path],
-                            })
-                          )
-                          setSubCollections(
-                            await fn(read)({
-                              db,
-                              m: "listCollections",
-                              q: [...doc_path],
-                            })
-                          )
                         }
                       }}
                     >
