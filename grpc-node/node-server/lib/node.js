@@ -339,7 +339,7 @@ class Node {
       }
     */
     let result, err, dryWrite
-    ;({ result, err } = await this.sendQuery(parsed, key))
+    ;({ result, err, dryWrite } = await this.sendQuery(parsed, key))
     if (!dryWrite) res(err, result)
   }
 
