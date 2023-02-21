@@ -2639,7 +2639,7 @@
   // contracts/warp/lib/version.js
   var require_version = __commonJS({
     "contracts/warp/lib/version.js"(exports, module) {
-      module.exports = "0.20.0";
+      module.exports = "0.21.0";
     }
   });
 
@@ -14931,7 +14931,6 @@
 
   // contracts/common/actions/read/getInfo.js
   var { pick: pick3 } = require_src();
-  var version2 = require_version();
   var getInfo = async (state, action) => {
     let info = pick3(
       [
@@ -14947,7 +14946,7 @@
       state
     );
     delete info.auth.links;
-    info.version = version2;
+    info.version = state.version;
     info.evolveHistory = state.evolveHistory || [];
     info.isEvolving = isEvolving(state);
     return {
@@ -15069,12 +15068,16 @@
     if (isNil_default(state.nonces[original_signer]))
       state.nonces[original_signer] = 0;
     state.nonces[original_signer] += 1;
-    return _signer;
+    return { signer: _signer, original_signer };
   };
 
   // contracts/common/actions/write/add.js
   var add3 = async (state, action, signer, salt = 0, contractErr = true) => {
-    signer ||= await validate(state, action, "add");
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(state, action, "add"));
+    }
     let { _data, data, query, new_data, path: path3, schema, col, next_data } = await parse(state, action, "add", signer, salt, contractErr);
     if (!isNil_default(_data.__data))
       err("doc already exists");
@@ -15082,12 +15085,16 @@
     let ind = getIndex(state, init_default(path3));
     addData(last_default(path3), next_data, ind, col.__docs);
     _data.__data = next_data;
-    return { state };
+    return { state, result: { original_signer } };
   };
 
   // contracts/common/actions/write/set.js
   var set3 = async (state, action, signer, contractErr = true) => {
-    signer ||= await validate(state, action, "set");
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(state, action, "set"));
+    }
     let { _data, data, query, new_data, path: path3, schema, col, next_data } = await parse(state, action, "set", signer, 0, contractErr);
     let prev = clone_default(_data.__data);
     validateSchema(schema, next_data, contractErr);
@@ -15098,22 +15105,17 @@
       updateData(last_default(path3), next_data, prev, ind, col.__docs);
     }
     _data.__data = next_data;
-    return { state };
+    return { state, result: { original_signer } };
   };
 
   // contracts/common/actions/write/update.js
   var update3 = async (state, action, signer, contractErr = true) => {
-    signer ||= await validate(state, action, "update");
-    let {
-      data,
-      query,
-      new_data,
-      path: path3,
-      _data,
-      schema,
-      col,
-      next_data
-    } = await parse(state, action, "update", signer, 0, contractErr);
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(state, action, "update"));
+    }
+    let { data, query, new_data, path: path3, _data, schema, col, next_data } = await parse(state, action, "update", signer, 0, contractErr);
     if (isNil_default(_data.__data))
       err(`Data doesn't exist`);
     let prev = clone3(_data.__data);
@@ -15121,23 +15123,17 @@
     let ind = getIndex(state, init_default(path3));
     updateData(last_default(path3), next_data, prev, ind, col.__docs);
     _data.__data = next_data;
-    return { state };
+    return { state, result: { original_signer } };
   };
 
   // contracts/common/actions/write/upsert.js
   var upsert = async (state, action, signer, contractErr = true) => {
-    signer ||= await validate(state, action, "upsert");
-    let {
-      data,
-      query,
-      _signer,
-      new_data,
-      path: path3,
-      schema,
-      _data,
-      col,
-      next_data
-    } = await parse(state, action, "upsert", signer, 0, contractErr);
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(state, action, "upsert"));
+    }
+    let { data, query, _signer, new_data, path: path3, schema, _data, col, next_data } = await parse(state, action, "upsert", signer, 0, contractErr);
     let prev = clone3(_data.__data);
     validateSchema(schema, next_data, contractErr);
     let ind = getIndex(state, init_default(path3));
@@ -15147,12 +15143,16 @@
       updateData(last_default(path3), next_data, prev, ind, col.__docs);
     }
     _data.__data = next_data;
-    return { state };
+    return { state, result: { original_signer } };
   };
 
   // contracts/common/actions/write/remove.js
   var remove3 = async (state, action, signer, contractErr = true) => {
-    signer ||= await validate(state, action, "delete");
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(state, action, "delete"));
+    }
     const { data, query, new_data, path: path3, _data, col } = await parse(
       state,
       action,
@@ -15166,13 +15166,17 @@
     let ind = getIndex(state, init_default(path3));
     removeData(last_default(path3), ind, col.__docs);
     _data.__data = null;
-    return { state };
+    return { state, result: { original_signer } };
   };
 
   // contracts/common/actions/write/setRules.js
   var import_json_logic_js2 = __toESM(require_logic());
   var setRules = async (state, action, signer) => {
-    signer ||= await validate(state, action, "setRules");
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(state, action, "setRules"));
+    }
     let { _data, data, query, new_data, path: path3 } = await parse(
       state,
       action,
@@ -15197,13 +15201,17 @@
       }
     }
     _data.rules = new_data;
-    return { state };
+    return { state, result: { original_signer } };
   };
 
   // contracts/common/actions/write/setSchema.js
   var import_jsonschema2 = __toESM(require_jsonschema());
   var setSchema = async (state, action, signer) => {
-    signer ||= await validate(state, action, "setSchema");
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(state, action, "setSchema"));
+    }
     let { _data, data, query, new_data, path: path3 } = await parse(
       state,
       action,
@@ -15216,34 +15224,54 @@
     } catch (e) {
       err("schema error");
     }
-    return { state };
+    return { state, result: { original_signer } };
   };
 
   // contracts/common/actions/write/setCanEvolve.js
   var setCanEvolve = async (state, action, signer) => {
-    signer ||= await validate(state, action, "setCanEvolve");
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(
+        state,
+        action,
+        "setCanEvolve"
+      ));
+    }
     const owner = isOwner(signer, state);
     if (!is_default(Boolean)(action.input.query.value)) {
       err("Value must be a boolean.");
     }
     state.canEvolve = action.input.query.value;
-    return { state };
+    return { state, result: { original_signer } };
   };
 
   // contracts/common/actions/write/setSecure.js
   var setSecure = async (state, action, signer) => {
-    signer ||= await validate(state, action, "setSecure");
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(state, action, "setSecure"));
+    }
     const owner = isOwner(signer, state);
     if (!is_default(Boolean)(action.input.query.value)) {
       err("Value must be a boolean.");
     }
     state.secure = action.input.query.value;
-    return { state };
+    return { state, result: { original_signer } };
   };
 
   // contracts/common/actions/write/setAlgorithms.js
   var setAlgorithms = async (state, action, signer) => {
-    signer ||= await validate(state, action, "setAlgorithms");
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(
+        state,
+        action,
+        "setAlgorithms"
+      ));
+    }
     let { _data, data, query, new_data, path: path3 } = await parse(
       state,
       action,
@@ -15254,12 +15282,16 @@
       throw new ContractError(`The wrong algorithms`);
     }
     state.auth.algorithms = new_data;
-    return { state };
+    return { state, result: { original_signer } };
   };
 
   // contracts/common/actions/write/addIndex.js
   var addIndex4 = async (state, action, signer) => {
-    signer ||= await validate(state, action, "addIndex");
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(state, action, "addIndex"));
+    }
     let { col, _data, data, query, new_data, path: path3 } = await parse(
       state,
       action,
@@ -15271,12 +15303,16 @@
       err("index cannot contain __id__");
     }
     addIndex3(new_data, ind, col.__docs);
-    return { state };
+    return { state, result: { original_signer } };
   };
 
   // contracts/common/actions/write/addOwner.js
   var addOwner = async (state, action, signer) => {
-    signer ||= await validate(state, action, "addOwner");
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(state, action, "addOwner"));
+    }
     const owner = isOwner(signer, state);
     if (!is_default(String)(action.input.query.address)) {
       err("Value must be string.");
@@ -15288,13 +15324,21 @@
       err("The owner already exists.");
     }
     state.owner = append_default(action.input.query.address, owner);
-    return { state };
+    return { state, result: { original_signer } };
   };
 
   // contracts/common/actions/write/addRelayerJob.js
   var import_jsonschema3 = __toESM(require_jsonschema());
   var addRelayerJob = async (state, action, signer) => {
-    signer ||= await validate(state, action, "addRelayerJob");
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(
+        state,
+        action,
+        "addRelayerJob"
+      ));
+    }
     let { _data, data, query, new_data, path: path3 } = await parse(
       state,
       action,
@@ -15318,7 +15362,7 @@
     if (isNil_default(state.relayers))
       state.relayers = {};
     state.relayers[jobID] = job;
-    return { state };
+    return { state, result: { original_signer } };
   };
 
   // contracts/common/lib/cron.js
@@ -15414,7 +15458,11 @@
 
   // contracts/common/actions/write/addCron.js
   var addCron = async (state, action, signer) => {
-    signer ||= await validate(state, action, "addCron");
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(state, action, "addCron"));
+    }
     const owner = isOwner(signer, state);
     if (isNil_default(state.crons)) {
       state.crons = { lastExecuted: SmartWeave.block.timestamp, crons: {} };
@@ -15445,12 +15493,16 @@
         err("cron failed to execute");
       }
     }
-    return { state };
+    return { state, result: { original_signer } };
   };
 
   // contracts/common/actions/write/removeCron.js
   var removeCron = async (state, action, signer) => {
-    signer ||= await validate(state, action, "removeCron");
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(state, action, "removeCron"));
+    }
     const owner = isOwner(signer, state);
     if (isNil_default(state.crons)) {
       state.crons = { lastExecuted: SmartWeave.block.timestamp, crons: {} };
@@ -15459,12 +15511,20 @@
     if (isNil_default(state.crons.crons[key]))
       err("cron doesn't exist");
     delete state.crons.crons[key];
-    return { state };
+    return { state, result: { original_signer } };
   };
 
   // contracts/common/actions/write/removeIndex.js
   var removeIndex2 = async (state, action, signer) => {
-    signer ||= await validate(state, action, "removeIndex");
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(
+        state,
+        action,
+        "removeIndex"
+      ));
+    }
     let { col, _data, data, query, new_data, path: path3 } = await parse(
       state,
       action,
@@ -15473,12 +15533,20 @@
     );
     let ind = getIndex(state, path3);
     removeIndex(new_data, ind, col.__docs);
-    return { state };
+    return { state, result: { original_signer } };
   };
 
   // contracts/common/actions/write/removeOwner.js
   var removeOwner = async (state, action, signer) => {
-    signer ||= await validate(state, action, "removeOwner");
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(
+        state,
+        action,
+        "removeOwner"
+      ));
+    }
     const owner = isOwner(signer, state);
     if (!is_default(String)(action.input.query.address)) {
       err("Value must be string.");
@@ -15487,13 +15555,21 @@
       err("The owner doesn't exist.");
     }
     state.owner = without_default([action.input.query.address], owner);
-    return { state };
+    return { state, result: { original_signer } };
   };
 
   // contracts/common/actions/write/removeRelayerJob.js
   var import_jsonschema4 = __toESM(require_jsonschema());
   var removeRelayerJob = async (state, action, signer) => {
-    signer ||= await validate(state, action, "removeRelayerJob");
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(
+        state,
+        action,
+        "removeRelayerJob"
+      ));
+    }
     let { _data, data, query, new_data, path: path3 } = await parse(
       state,
       action,
@@ -15504,12 +15580,16 @@
     if (isNil_default(state.relayers[jobID]))
       err("relayer job doesn't exist");
     delete state.relayers[jobID];
-    return { state };
+    return { state, result: { original_signer } };
   };
 
   // contracts/common/actions/write/batch.js
   var batch = async (state, action, signer, contractErr = true) => {
-    signer ||= await validate(state, action, "batch");
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(state, action, "batch"));
+    }
     let _state = state;
     let i = 0;
     for (let v of action.input.query) {
@@ -15588,12 +15668,16 @@
       _state = res.state;
       i++;
     }
-    return { state: _state };
+    return { state: _state, result: { original_signer } };
   };
 
   // contracts/common/actions/write/relay.js
   var relay = async (state, action, signer, contractErr = true) => {
-    signer ||= await validate(state, action, "relay");
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(state, action, "relay"));
+    }
     let jobID = head_default(action.input.query);
     let input = nth_default(1, action.input.query);
     let query = nth_default(2, action.input.query);
@@ -15666,12 +15750,20 @@
           `No function supplied or function not recognised: "${action2.input.function}"`
         );
     }
-    return { state };
+    return { state, result: { original_signer } };
   };
 
   // contracts/common/actions/write/linkContract.js
   var linkContract = async (state, action, signer) => {
-    signer ||= await validate(state, action, "linkContract");
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(
+        state,
+        action,
+        "linkContract"
+      ));
+    }
     let { _data, data, query, new_data, path: path3 } = await parse(
       state,
       action,
@@ -15685,12 +15777,20 @@
     if (isNil_default(state.contracts))
       state.contracts = {};
     state.contracts[key] = address;
-    return { state };
+    return { state, result: { original_signer } };
   };
 
   // contracts/common/actions/write/unlinkContract.js
   var unlinkContract = async (state, action, signer) => {
-    signer ||= await validate(state, action, "unlinkContract");
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(
+        state,
+        action,
+        "unlinkContract"
+      ));
+    }
     let { _data, data, query, new_data, path: path3 } = await parse(
       state,
       action,
@@ -15704,13 +15804,17 @@
     if (isNil_default(state.contracts))
       state.contracts = {};
     delete state.contracts[key];
-    return { state };
+    return { state, result: { original_signer } };
   };
 
   // contracts/common/warp/actions/write/evolve.js
   var import_version2 = __toESM(require_version());
   var evolve3 = async (state, action, signer) => {
-    signer ||= await validate(state, action, "evolve");
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(state, action, "evolve"));
+    }
     const owner = isOwner(signer, state);
     if (action.input.value !== action.input.query.value) {
       err("Values don't match.");
@@ -15728,26 +15832,39 @@
       srcTxId: action.input.value,
       oldVersion: import_version2.default
     });
-    return { state };
+    return { state, result: { original_signer } };
   };
 
   // contracts/common/warp/actions/write/migrate.js
   var import_version3 = __toESM(require_version());
   var migrate = async (state, action, signer) => {
-    signer ||= await validate(state, action, "migrate");
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(state, action, "migrate"));
+    }
     const owner = isOwner(signer, state);
     if (import_version3.default !== action.input.query.version) {
       err(`version doesn't match (${import_version3.default} : ${action.input.query.version})`);
     }
     if (!isEvolving(state))
       err(`contract is not ready to migrate`);
+    state.version = import_version3.default;
     state.evolveHistory[state.evolveHistory.length - 1].newVersion = import_version3.default;
-    return { state };
+    return { state, result: { original_signer } };
   };
 
   // contracts/common/actions/write/addAddressLink.js
   var addAddressLink = async (state, action, signer) => {
-    signer ||= await validate(state, action, "addAddressLink");
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(
+        state,
+        action,
+        "addAddressLink"
+      ));
+    }
     const { address, signature, expiry } = action.input.query;
     if (!isNil_default(expiry) && !is_default(Number, expiry))
       err("expiry must be a number");
@@ -15802,12 +15919,20 @@
       address: signer,
       expiry: expiry === 0 ? 0 : SmartWeave.block.timestamp + expiry
     };
-    return { state };
+    return { state, result: { original_signer } };
   };
 
   // contracts/common/actions/write/removeAddressLink.js
   var removeAddressLink = async (state, action, signer) => {
-    signer ||= await validate(state, action, "removeAddressLink");
+    let original_signer = null;
+    if (isNil_default(signer)) {
+      ;
+      ({ signer, original_signer } = await validate(
+        state,
+        action,
+        "removeAddressLink"
+      ));
+    }
     const { address } = action.input.query;
     const link = state.auth.links[address.toLowerCase()];
     if (isNil_default(link))
@@ -15817,7 +15942,7 @@
       err("signer is neither owner nor delegator");
     }
     delete state.auth.links[address.toLowerCase()];
-    return { state };
+    return { state, result: { original_signer } };
   };
 
   // contracts/warp/contract.js
