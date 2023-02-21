@@ -3,7 +3,15 @@ import { err } from "../../lib/utils"
 import { validate } from "../../lib/validate"
 
 export const addAddressLink = async (state, action, signer) => {
-  signer ||= await validate(state, action, "addAddressLink")
+  let original_signer = null
+  if (isNil(signer)) {
+    ;({ signer, original_signer } = await validate(
+      state,
+      action,
+      "addAddressLink"
+    ))
+  }
+
   const { address, signature, expiry } = action.input.query
   if (!isNil(expiry) && !is(Number, expiry)) err("expiry must be a number")
   const { nonce } = action.input
@@ -63,5 +71,5 @@ export const addAddressLink = async (state, action, signer) => {
     address: signer,
     expiry: expiry === 0 ? 0 : SmartWeave.block.timestamp + expiry,
   }
-  return { state }
+  return { state, result: { original_signer } }
 }

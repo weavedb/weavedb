@@ -4,7 +4,15 @@ import { err } from "../../lib/utils"
 import { validate } from "../../lib/validate"
 
 export const setAlgorithms = async (state, action, signer) => {
-  signer ||= await validate(state, action, "setAlgorithms")
+  let original_signer = null
+  if (isNil(signer)) {
+    ;({ signer, original_signer } = await validate(
+      state,
+      action,
+      "setAlgorithms"
+    ))
+  }
+
   let { _data, data, query, new_data, path } = await parse(
     state,
     action,
@@ -19,5 +27,5 @@ export const setAlgorithms = async (state, action, signer) => {
     throw new ContractError(`The wrong algorithms`)
   }
   state.auth.algorithms = new_data
-  return { state }
+  return { state, result: { original_signer } }
 }

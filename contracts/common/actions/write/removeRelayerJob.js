@@ -5,7 +5,14 @@ import { validate } from "../../lib/validate"
 import { validate as validator } from "../../lib/jsonschema"
 
 export const removeRelayerJob = async (state, action, signer) => {
-  signer ||= await validate(state, action, "removeRelayerJob")
+  let original_signer = null
+  if (isNil(signer)) {
+    ;({ signer, original_signer } = await validate(
+      state,
+      action,
+      "removeRelayerJob"
+    ))
+  }
   let { _data, data, query, new_data, path } = await parse(
     state,
     action,
@@ -15,5 +22,5 @@ export const removeRelayerJob = async (state, action, signer) => {
   const [jobID] = query
   if (isNil(state.relayers[jobID])) err("relayer job doesn't exist")
   delete state.relayers[jobID]
-  return { state }
+  return { state, result: { original_signer } }
 }
