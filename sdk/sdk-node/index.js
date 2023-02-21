@@ -432,9 +432,32 @@ class SDK extends Base {
       let dryResult = null
       const start = Date.now()
       if (onDryWrite?.cache || !isNil(cachedStates[this.contractTxId])) {
-        if (!includes(func)(["set", "upsert", "update", "delete"])) {
+        if (
+          !includes(func)([
+            "set",
+            "upsert",
+            "update",
+            "delete",
+            "addOwner",
+            "removeOwner",
+            "setAlgorithms",
+            "setCanEvolve",
+            "setSecure",
+            "addIndex",
+            "setSchema",
+            "removeIndex",
+            "setRules",
+            "removeCron",
+            "addRelayerJob",
+            "removeRelayerJob",
+            "linkContract",
+            "unlinkContract",
+            "removeAddressLink",
+          ])
+        ) {
           onDryWrite.cache = false
         } else {
+          console.log("should be here/??")
           let cacheState = null
           let err = null
           let success = true
