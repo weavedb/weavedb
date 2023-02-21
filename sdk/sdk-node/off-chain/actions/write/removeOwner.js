@@ -1,8 +1,8 @@
 const { err, isOwner } = require("../../lib/utils")
-const { includes, is, of, append, isNil } = require("ramda")
+const { isNil, without, includes, is, of } = require("ramda")
 const { validate } = require("../../lib/validate")
 
-const addOwner = async (
+const removeOwner = async (
   state,
   action,
   signer,
@@ -14,23 +14,21 @@ const addOwner = async (
     ;({ signer, original_signer } = await validate(
       state,
       action,
-      "addOwner",
+      "removeOwner",
       SmartWeave
     ))
   }
-
   const owner = isOwner(signer, state)
-  if (!is(String)(action.input.query.address)) {
-    err("Value must be string.")
-  }
 
   if (!is(String)(action.input.query.address)) {
     err("Value must be string.")
   }
-  if (includes(action.input.query.address, owner)) {
-    err("The owner already exists.")
+
+  if (!includes(action.input.query.address, owner)) {
+    err("The owner doesn't exist.")
   }
-  state.owner = append(action.input.query.address, owner)
+  state.owner = without([action.input.query.address], owner)
   return { state, result: { original_signer } }
 }
-module.exports = { addOwner }
+
+module.exports = { removeOwner }
