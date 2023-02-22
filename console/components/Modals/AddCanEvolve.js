@@ -52,14 +52,18 @@ export default inject(
               onClick={async () => {
                 if (isNil($.loading)) {
                   set("set_canevolve", "loading")
-                  const res = await fn(_setCanEvolve)({
-                    value: !state.canEvolve,
-                    contractTxId,
-                  })
-                  if (/^Error:/.test(res)) {
-                    alert("Something went wrong")
-                  } else {
-                    setState(JSON.parse(res).results[0].result)
+                  try {
+                    const res = await fn(_setCanEvolve)({
+                      value: !state.canEvolve,
+                      contractTxId,
+                    })
+                    if (/^Error:/.test(res)) {
+                      alert("Something went wrong")
+                    } else {
+                      setState(JSON.parse(res).results[0].result)
+                    }
+                  } catch (e) {
+                    console.log(e)
                   }
                   set(null, "loading")
                 }

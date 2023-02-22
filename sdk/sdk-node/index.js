@@ -457,7 +457,6 @@ class SDK extends Base {
         ) {
           onDryWrite.cache = false
         } else {
-          console.log("should be here/??")
           let cacheState = null
           let err = null
           let success = true
@@ -558,7 +557,7 @@ class SDK extends Base {
       let res = { success: false, err: null, result: null }
       try {
         res.result = (
-          await handle(state, {
+          await handle(clone(state), {
             input: { function: v[0], query: tail(v) },
           })
         ).result
