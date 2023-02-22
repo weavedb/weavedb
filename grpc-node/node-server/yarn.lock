@@ -4062,10 +4062,10 @@ weavedb-base@^0.20.2:
     ethereumjs-util "^7.1.5"
     ramda "^0.28.0"
 
-weavedb-sdk-node@^0.21.1:
-  version "0.21.1"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk-node/-/weavedb-sdk-node-0.21.1.tgz#7e6217784e2b910e09338e6a233e1cb01b4fcb02"
-  integrity sha512-GL4Q3UxAZ5NeZrAVLkJJdEPJ/J65lKHVo9XtQ7pWfyQGDD89hABPkaHTNTArSSz93BRT2zQG9HetnOJJfjI18A==
+weavedb-sdk-node@^0.21.2:
+  version "0.21.2"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk-node/-/weavedb-sdk-node-0.21.2.tgz#bcd1e9441c5a5f3e26df557ae1b705624867a306"
+  integrity sha512-r8D2U0ol5WJrF8lQdtUPLQAPHQcTLvJh7TFxUxG6DxDctfuPhSKq9FTRsNHXqRoSGi2szMlWo0AUBK2cpg/ODg==
   dependencies:
     "@aws-amplify/api" "^5.0.14"
     "@metamask/eth-sig-util" "^5.0.2"
