@@ -113,7 +113,9 @@ export default inject(
                     setAddSchema(false)
                     setSchema(res.results[0].result)
                   }
-                } catch (e) {}
+                } catch (e) {
+                  alert("Something went wrong")
+                }
                 set(null, "loading")
               }
             }}

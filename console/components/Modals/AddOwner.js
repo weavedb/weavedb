@@ -45,14 +45,18 @@ export default inject(
                       } else if (!confirm(`Would you like to remove ${v}?`)) {
                         return
                       }
-                      const res = await fn(_removeOwner)({
-                        address: v,
-                        contractTxId,
-                      })
-                      if (/^Error:/.test(res)) {
+                      try {
+                        const res = await fn(_removeOwner)({
+                          address: v,
+                          contractTxId,
+                        })
+                        if (/^Error:/.test(res)) {
+                          alert("Something went wrong")
+                        } else {
+                          setState(JSON.parse(res).results[0].result)
+                        }
+                      } catch (e) {
                         alert("Something went wrong")
-                      } else {
-                        setState(JSON.parse(res).results[0].result)
                       }
                     }}
                     className="fas fa-trash"

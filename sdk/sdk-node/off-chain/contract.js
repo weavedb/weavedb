@@ -27,7 +27,6 @@ const { setSecure } = require("./actions/write/setSecure")
 const { setSchema } = require("./actions/write/setSchema")
 const { addIndex } = require("./actions/write/addIndex")
 const { removeIndex } = require("./actions/write/removeIndex")
-
 const { setRules } = require("./actions/write/setRules")
 const { removeCron } = require("./actions/write/removeCron")
 const { addRelayerJob } = require("./actions/write/addRelayerJob")
@@ -35,6 +34,11 @@ const { removeRelayerJob } = require("./actions/write/removeRelayerJob")
 const { linkContract } = require("./actions/write/linkContract")
 const { unlinkContract } = require("./actions/write/unlinkContract")
 const { removeAddressLink } = require("./actions/write/removeAddressLink")
+
+const { addCron } = require("./actions/write/addCron")
+const { addAddressLink } = require("./actions/write/addAddressLink")
+const { evolve } = require("./actions/write/evolve")
+const { add } = require("./actions/write/add")
 
 //const { cron } = require( "../common/lib/cron")
 const { err, isEvolving } = require("./lib/utils")
@@ -120,6 +124,8 @@ async function handle(state, action, contractTxId) {
     case "getEvolve":
       return await getEvolve(state, action)
 
+    case "add":
+      return await add(state, action, null, null, SmartWeave)
     case "set":
       return await set(state, action, null, null, SmartWeave)
     case "upsert":
@@ -159,6 +165,13 @@ async function handle(state, action, contractTxId) {
       return await unlinkContract(state, action, null, null, SmartWeave)
     case "removeAddressLink":
       return await removeAddressLink(state, action, null, null, SmartWeave)
+
+    case "addCron":
+      return await addCron(state, action, null, null, SmartWeave)
+    case "addAddressLink":
+      return await addAddressLink(state, action, null, null, SmartWeave)
+    case "evolve":
+      return await evolve(state, action, null, null, SmartWeave)
 
     default:
       err(

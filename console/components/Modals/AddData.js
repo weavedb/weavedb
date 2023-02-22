@@ -148,8 +148,8 @@ export default inject(
                 const exVal =
                   includes(newFieldType)(["bool", "null"]) ||
                   !/^\s*$/.test(_val)
-                if (!exVal) alert("Enter a value")
-                if (!exID) alert("Enter field key")
+                if (!exVal) return alert("Enter a value")
+                if (!exID) return alert("Enter field key")
                 if (
                   exID &&
                   newFieldType !== "sub collection" &&
@@ -218,24 +218,28 @@ export default inject(
                   )([col, doc])
                   query = `{ "${newField}": ${val}}, ${_doc_path}`
                 }
-                const res = JSON.parse(
-                  await fn(queryDB)({
-                    method,
-                    query,
-                    contractTxId,
-                  })
-                )
-                if (!res.success) {
-                  alert("Something went wrong")
-                } else {
-                  setNewField("")
-                  setNewFieldVal("")
-                  setAddData(false)
-                  if (newFieldType === "sub collection") {
-                    setSubCollections(append(newField, subCollections))
+                try {
+                  const res = JSON.parse(
+                    await fn(queryDB)({
+                      method,
+                      query,
+                      contractTxId,
+                    })
+                  )
+                  if (!res.success) {
+                    alert("Something went wrong")
                   } else {
-                    setDocdata(assocPath(["data", newField], val)(docdata))
+                    setNewField("")
+                    setNewFieldVal("")
+                    setAddData(false)
+                    if (newFieldType === "sub collection") {
+                      setSubCollections(append(newField, subCollections))
+                    } else {
+                      setDocdata(assocPath(["data", newField], val)(docdata))
+                    }
                   }
+                } catch (e) {
+                  alert("Something went wrong")
                 }
                 set(null, "loading")
               }

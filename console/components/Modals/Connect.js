@@ -159,20 +159,24 @@ export default inject(
                 }}
                 onClick={async () => {
                   set(true, "signing_in")
-                  if ($.owner_signing_in_modal) {
-                    await fn(connectAddressWithAR)({
-                      network: newNetwork,
-                    })
-                  } else {
-                    await fn(createTempAddressWithAR)({
-                      contractTxId,
-                      network,
-                      node: tab === "Nodes",
-                    })
+                  try {
+                    if ($.owner_signing_in_modal) {
+                      await fn(connectAddressWithAR)({
+                        network: newNetwork,
+                      })
+                    } else {
+                      await fn(createTempAddressWithAR)({
+                        contractTxId,
+                        network,
+                        node: tab === "Nodes",
+                      })
+                    }
+                    set(false, "signing_in")
+                    set(false, "signing_in_modal")
+                    set(false, "owner_signing_in_modal")
+                  } catch (e) {
+                    alert("Something went wrong")
                   }
-                  set(false, "signing_in")
-                  set(false, "signing_in_modal")
-                  set(false, "owner_signing_in_modal")
                 }}
               >
                 <Image height="100px" src="/static/images/arconnect.png" />

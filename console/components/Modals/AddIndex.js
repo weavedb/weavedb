@@ -111,33 +111,37 @@ export default inject(
                   return
                 }
                 set("add_index", "loading")
-                let col_path = compose(
-                  join(", "),
-                  map(v => `"${v}"`),
-                  append(col)
-                )(base_path)
-                let query = `${newIndex}, ${col_path}`
-                const res = JSON.parse(
-                  await fn(queryDB)({
-                    method: "addIndex",
-                    query,
-                    contractTxId,
-                    dryRead: [
-                      [
-                        "getIndexes",
-                        ...(doc_path.length % 2 === 0
-                          ? doc_path.slice(0, -1)
-                          : doc_path),
+                try {
+                  let col_path = compose(
+                    join(", "),
+                    map(v => `"${v}"`),
+                    append(col)
+                  )(base_path)
+                  let query = `${newIndex}, ${col_path}`
+                  const res = JSON.parse(
+                    await fn(queryDB)({
+                      method: "addIndex",
+                      query,
+                      contractTxId,
+                      dryRead: [
+                        [
+                          "getIndexes",
+                          ...(doc_path.length % 2 === 0
+                            ? doc_path.slice(0, -1)
+                            : doc_path),
+                        ],
                       ],
-                    ],
-                  })
-                )
-                if (!res.success) {
+                    })
+                  )
+                  if (!res.success) {
+                    alert("Something went wrong")
+                  } else {
+                    setNewIndex("[]")
+                    setAddIndex(false)
+                    setIndexes(res.results[0].result)
+                  }
+                } catch (e) {
                   alert("Something went wrong")
-                } else {
-                  setNewIndex("[]")
-                  setAddIndex(false)
-                  setIndexes(res.results[0].result)
                 }
                 set(null, "loading")
               }
