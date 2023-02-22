@@ -19,6 +19,26 @@ const { set } = require("./actions/write/set")
 const { upsert } = require("./actions/write/upsert")
 const { update } = require("./actions/write/update")
 const { remove } = require("./actions/write/remove")
+const { addOwner } = require("./actions/write/addOwner")
+const { removeOwner } = require("./actions/write/removeOwner")
+const { setAlgorithms } = require("./actions/write/setAlgorithms")
+const { setCanEvolve } = require("./actions/write/setCanEvolve")
+const { setSecure } = require("./actions/write/setSecure")
+const { setSchema } = require("./actions/write/setSchema")
+const { addIndex } = require("./actions/write/addIndex")
+const { removeIndex } = require("./actions/write/removeIndex")
+const { setRules } = require("./actions/write/setRules")
+const { removeCron } = require("./actions/write/removeCron")
+const { addRelayerJob } = require("./actions/write/addRelayerJob")
+const { removeRelayerJob } = require("./actions/write/removeRelayerJob")
+const { linkContract } = require("./actions/write/linkContract")
+const { unlinkContract } = require("./actions/write/unlinkContract")
+const { removeAddressLink } = require("./actions/write/removeAddressLink")
+
+const { addCron } = require("./actions/write/addCron")
+const { addAddressLink } = require("./actions/write/addAddressLink")
+const { evolve } = require("./actions/write/evolve")
+const { add } = require("./actions/write/add")
 
 //const { cron } = require( "../common/lib/cron")
 const { err, isEvolving } = require("./lib/utils")
@@ -103,6 +123,9 @@ async function handle(state, action, contractTxId) {
       return await getOwner(state, action)
     case "getEvolve":
       return await getEvolve(state, action)
+
+    case "add":
+      return await add(state, action, null, null, SmartWeave)
     case "set":
       return await set(state, action, null, null, SmartWeave)
     case "upsert":
@@ -111,6 +134,44 @@ async function handle(state, action, contractTxId) {
       return await update(state, action, null, null, SmartWeave)
     case "delete":
       return await remove(state, action, null, null, SmartWeave)
+    case "addOwner":
+      return await addOwner(state, action, null, null, SmartWeave)
+    case "removeOwner":
+      return await removeOwner(state, action, null, null, SmartWeave)
+    case "setAlgorithms":
+      return await setAlgorithms(state, action, null, null, SmartWeave)
+    case "setCanEvolve":
+      return await setCanEvolve(state, action, null, null, SmartWeave)
+    case "setSecure":
+      return await setSecure(state, action, null, null, SmartWeave)
+    case "setSchema":
+      return await setSchema(state, action, null, null, SmartWeave)
+    case "addIndex":
+      return await addIndex(state, action, null, null, SmartWeave)
+    case "removeIndex":
+      return await removeIndex(state, action, null, null, SmartWeave)
+
+    case "setRules":
+      return await setRules(state, action, null, null, SmartWeave)
+    case "removeCron":
+      return await removeCron(state, action, null, null, SmartWeave)
+    case "addRelayerJob":
+      return await addRelayerJob(state, action, null, null, SmartWeave)
+    case "removeRelayerJob":
+      return await removeRelayerJob(state, action, null, null, SmartWeave)
+    case "linkContract":
+      return await linkContract(state, action, null, null, SmartWeave)
+    case "unlinkContract":
+      return await unlinkContract(state, action, null, null, SmartWeave)
+    case "removeAddressLink":
+      return await removeAddressLink(state, action, null, null, SmartWeave)
+
+    case "addCron":
+      return await addCron(state, action, null, null, SmartWeave)
+    case "addAddressLink":
+      return await addAddressLink(state, action, null, null, SmartWeave)
+    case "evolve":
+      return await evolve(state, action, null, null, SmartWeave)
 
     default:
       err(

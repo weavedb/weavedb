@@ -52,14 +52,18 @@ export default inject(
               onClick={async () => {
                 if (isNil($.loading)) {
                   set("set_secure", "loading")
-                  const res = await fn(_setSecure)({
-                    value: !state.secure,
-                    contractTxId,
-                  })
-                  if (/^Error:/.test(res)) {
+                  try {
+                    const res = await fn(_setSecure)({
+                      value: !state.secure,
+                      contractTxId,
+                    })
+                    if (/^Error:/.test(res)) {
+                      alert("Something went wrong")
+                    } else {
+                      setState(JSON.parse(res).results[0].result)
+                    }
+                  } catch (e) {
                     alert("Something went wrong")
-                  } else {
-                    setState(JSON.parse(res).results[0].result)
                   }
                   set(null, "loading")
                 }

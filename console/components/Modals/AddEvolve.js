@@ -59,22 +59,26 @@ export default inject(
               onClick={async () => {
                 if (state.version !== latest && isNil($.loading)) {
                   set("set_evolve", "loading")
-                  let res
-                  if (state.isEvolving) {
-                    res = await fn(_migrate)({
-                      version: latest,
-                      contractTxId,
-                    })
-                  } else {
-                    res = await fn(_evolve)({
-                      value: !state.canEvolve,
-                      contractTxId,
-                    })
-                  }
-                  if (/^Error:/.test(res)) {
+                  try {
+                    let res
+                    if (state.isEvolving) {
+                      res = await fn(_migrate)({
+                        version: latest,
+                        contractTxId,
+                      })
+                    } else {
+                      res = await fn(_evolve)({
+                        value: !state.canEvolve,
+                        contractTxId,
+                      })
+                    }
+                    if (/^Error:/.test(res)) {
+                      alert("Something went wrong")
+                    } else {
+                      setState(JSON.parse(res).results[0].result)
+                    }
+                  } catch (e) {
                     alert("Something went wrong")
-                  } else {
-                    setState(JSON.parse(res).results[0].result)
                   }
                   set(null, "loading")
                 }

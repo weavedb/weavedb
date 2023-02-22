@@ -432,7 +432,34 @@ class SDK extends Base {
       let dryResult = null
       const start = Date.now()
       if (onDryWrite?.cache || !isNil(cachedStates[this.contractTxId])) {
-        if (!includes(func)(["set", "upsert", "update", "delete"])) {
+        if (
+          !includes(func)([
+            "set",
+            "upsert",
+            "update",
+            "delete",
+            "addOwner",
+            "removeOwner",
+            "setAlgorithms",
+            "setCanEvolve",
+            "setSecure",
+            "addIndex",
+            "setSchema",
+            "removeIndex",
+            "setRules",
+            "removeCron",
+            "addRelayerJob",
+            "removeRelayerJob",
+            "linkContract",
+            "unlinkContract",
+            "removeAddressLink",
+            "addCron",
+            "addAddressLink",
+            "evolve",
+            "add",
+            "batch",
+          ])
+        ) {
           onDryWrite.cache = false
         } else {
           let cacheState = null
@@ -535,7 +562,7 @@ class SDK extends Base {
       let res = { success: false, err: null, result: null }
       try {
         res.result = (
-          await handle(state, {
+          await handle(clone(state), {
             input: { function: v[0], query: tail(v) },
           })
         ).result

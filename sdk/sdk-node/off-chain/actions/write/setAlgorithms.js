@@ -1,10 +1,9 @@
-const { o, flatten, isNil, mergeLeft, includes, init } = require("ramda")
+const { isNil, is, intersection } = require("ramda")
 const { parse } = require("../../lib/utils")
 const { err } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
-const { addIndex: _addIndex, getIndex } = require("../../lib/index")
 
-const addIndex = async (
+const setAlgorithms = async (
   state,
   action,
   signer,
@@ -16,25 +15,29 @@ const addIndex = async (
     ;({ signer, original_signer } = await validate(
       state,
       action,
-      "addIndex",
+      "setAlgorithms",
       SmartWeave
     ))
   }
-  let { col, _data, data, query, new_data, path } = await parse(
+
+  let { _data, data, query, new_data, path } = await parse(
     state,
     action,
-    "addIndex",
+    "setAlgorithms",
     signer,
     null,
     contractErr,
     SmartWeave
   )
-  let ind = getIndex(state, path)
-  if (o(includes("__id__"), flatten)(new_data)) {
-    err("index cannot contain __id__")
+  if (
+    !is(Array)(new_data) ||
+    intersection(new_data)(["secp256k1", "ed25519", "rsa256", "secp256k1-2"])
+      .length !== new_data.length
+  ) {
+    err(`The wrong algorithms`)
   }
-  _addIndex(new_data, ind, col.__docs)
+  state.auth.algorithms = new_data
   return { state, result: { original_signer } }
 }
 
-module.exports = { addIndex }
+module.exports = { setAlgorithms }
