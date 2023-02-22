@@ -149,7 +149,9 @@ export default inject(
                       )(documents)
                     )
                   }
-                } catch (e) {}
+                } catch (e) {
+                  alert("Something went wrong")
+                }
                 set(null, "loading")
               }
             }}

@@ -217,15 +217,13 @@ class Base {
         )
   }
 
-  async createTempAddressWithII(ii, expiry) {
+  async createTempAddressWithII(ii, expiry, opt = {}) {
     let addr = ii.toJSON()[0]
-    return this._createTempAddress(addr, expiry, {
-      ii,
-      dryWrite: false,
-    })
+    opt.ii = ii
+    return this._createTempAddress(addr, expiry, opt)
   }
 
-  async createTempAddressWithAR(ar, expiry) {
+  async createTempAddressWithAR(ar, expiry, opt = {}) {
     const wallet = is(Object, ar) && ar.walletName === "ArConnect" ? ar : null
     let addr = null
     if (!isNil(wallet)) {
@@ -234,13 +232,11 @@ class Base {
     } else {
       addr = await this.arweave.wallets.jwkToAddress(ar)
     }
-    return this._createTempAddress(addr, expiry, {
-      ar,
-      dryWrite: false,
-    })
+    opt.ar = ar
+    return this._createTempAddress(addr, expiry, opt)
   }
 
-  async createTempAddressWithIntmax(intmax, expiry) {
+  async createTempAddressWithIntmax(intmax, expiry, opt = {}) {
     const wallet = is(Object, intmax) ? intmax : null
     let addr = null
     if (!isNil(wallet)) {
@@ -249,13 +245,11 @@ class Base {
       throw Error("No Intmax wallet")
       return
     }
-    return this._createTempAddress(addr.toLowerCase(), expiry, {
-      intmax,
-      dryWrite: false,
-    })
+    opt.intmax = intmax
+    return this._createTempAddress(addr.toLowerCase(), expiry, opt)
   }
 
-  async createTempAddress(evm, expiry) {
+  async createTempAddress(evm, expiry, opt = {}) {
     const wallet = is(Object, evm) ? evm : this.wallet
     let addr = null
     if (!isNil(wallet)) {
@@ -271,19 +265,14 @@ class Base {
     } else if (is(String, evm)) {
       addr = evm
     }
-    return this._createTempAddress(addr.toLowerCase(), expiry, {
-      wallet,
-      dryWrite: false,
-    })
+    opt.wallet = wallet
+    return this._createTempAddress(addr.toLowerCase(), expiry, opt)
   }
 
   async _createTempAddress(addr, expiry, opt) {
     const identity = EthCrypto.createIdentity()
     const nonce = await this.getNonce(addr)
-    const query =
-      typeof expiry === "undefined"
-        ? { address: addr }
-        : { address: addr, expiry }
+    const query = isNil(expiry) ? { address: addr } : { address: addr, expiry }
     const message = {
       nonce,
       query: JSON.stringify({
@@ -308,10 +297,9 @@ class Base {
       data,
       version: "V4",
     })
-    const tx = await this.addAddressLink(
-      { signature, address: identity.address.toLowerCase(), expiry },
-      { nonce, ...opt }
-    )
+    let param = { signature, address: identity.address.toLowerCase() }
+    if (!isNil(expiry)) param.expiry = expiry
+    const tx = await this.addAddressLink(param, { nonce, ...opt })
     return isNil(tx.err) ? { tx, identity } : null
   }
 

@@ -24,9 +24,10 @@ const setAlgorithms = async (
     state,
     action,
     "setAlgorithms",
+    signer,
     null,
     contractErr,
-    signer
+    SmartWeave
   )
   if (
     !is(Array)(new_data) ||
