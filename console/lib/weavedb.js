@@ -252,10 +252,10 @@ export const createTempAddressWithAR = async ({
     const linked = await new Log(
       sdk,
       "getAddressLink",
-      [identity.address, true],
+      identity.address,
       null,
       fn
-    ).rec(true)
+    ).rec()
     if (isNil(linked)) {
       alert("something went wrong")
       return
@@ -354,10 +354,10 @@ export const createTempAddress = async ({
     const linked = await new Log(
       sdk,
       "getAddressLink",
-      [identity.address, true],
+      identity.address,
       null,
       fn
-    ).rec(true)
+    ).rec()
 
     if (isNil(linked)) {
       alert("something went wrong")

@@ -93,24 +93,29 @@ export default inject(
               onClick={async () => {
                 if (isNil($.loading)) {
                   set("add_owner", "loading")
-                  const res = await fn(_addNodeOwner)({
-                    address: newOwner,
-                    contractTxId: node.contract,
-                    rpc: node.rpc,
-                  })
-                  if (/^Error:/.test(res)) {
+                  try {
+                    const res = await fn(_addNodeOwner)({
+                      address: newOwner,
+                      contractTxId: node.contract,
+                      rpc: node.rpc,
+                    })
+                    if (/^Error:/.test(res)) {
+                      alert("Something went wrong")
+                      return
+                    }
+                    const _node = assoc(
+                      "owners",
+                      append(newOwner, node.owners),
+                      node
+                    )
+                    await updateGRPCNode(_node)
+                    setNode(_node)
+
+                    setNewOwner("")
+                  } catch (e) {
                     alert("Something went wrong")
-                    return
                   }
-                  const _node = assoc(
-                    "owners",
-                    append(newOwner, node.owners),
-                    node
-                  )
-                  await updateGRPCNode(_node)
-                  setNode(_node)
                   set(null, "loading")
-                  setNewOwner("")
                 }
               }}
               sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}

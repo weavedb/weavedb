@@ -453,6 +453,11 @@ class SDK extends Base {
             "linkContract",
             "unlinkContract",
             "removeAddressLink",
+            "addCron",
+            "addAddressLink",
+            "evolve",
+            "add",
+            "batch",
           ])
         ) {
           onDryWrite.cache = false
