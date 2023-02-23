@@ -11,4 +11,3 @@ else
   p JSON.parse(ret)
   exit(0)
 end
-# echo '{"user_id": "12345"}' | grpc-client-cli -service UserService -method GetUser localhost:5050
