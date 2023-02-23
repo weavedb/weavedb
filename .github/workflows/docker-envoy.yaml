@@ -13,19 +13,19 @@ jobs:
 
       # build 
       - name: docker build
-        run: docker build -t weavedb-node-server . 
-        working-directory: ./grpc-node/node-server
+        run: docker build -t weavedb-envoy . 
+        working-directory: ./grpc-node/envoy
 
       # tags for ECR 
       - name: docker tag1
-        run: docker tag  weavedb-node-server:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/weavedb-node-server:latest
+        run: docker tag  weavedb-envoy:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/weavedb-envoy:latest
       - name: docker tag2
-        run: docker tag  weavedb-node-server:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/weavedb-node-server:`date +%Y-%m-%d-%H-%I-%S`-$GITHUB_SHA-${GITHUB_REF##*/}
+        run: docker tag  weavedb-envoy:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/weavedb-envoy:`date +%Y-%m-%d-%H-%I-%S`-$GITHUB_SHA-${GITHUB_REF##*/}
       - name: docker tag3 ( docker hub )
-        run: docker tag  weavedb-node-server:latest 0xkaz/weavedb-node-server:latest
+        run: docker tag  weavedb-envoy:latest 0xkaz/weavedb-envoy:latest
       - name: docker tag4 ( docker hub )
-        run: docker tag  weavedb-node-server:latest 0xkaz/weavedb-node-server:`date +%Y-%m-%d-%H-%I-%S`-$GITHUB_SHA-${GITHUB_REF##*/}
-        # working-directory: ./grpc-node/node-server
+        run: docker tag  weavedb-envoy:latest 0xkaz/weavedb-envoy:`date +%Y-%m-%d-%H-%I-%S`-$GITHUB_SHA-${GITHUB_REF##*/}
+        # working-directory: ./grpc-node/envoy
 
       # docker login (ECR/AWS)
 
@@ -61,11 +61,11 @@ jobs:
 
       # push 
       - name: docker push
-        run: docker push  --all-tags ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/weavedb-node-server
+        run: docker push  --all-tags ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/weavedb-envoy
       
       # delete old images
-      - name: delete old docker image 1 ( weavedb-node-server )
-        run: ./scripts/delete_old_docker_images_on_ecr.sh weavedb-node-server eu-west-1
+      - name: delete old docker image 1 ( weavedb-envoy )
+        run: ./scripts/delete_old_docker_images_on_ecr.sh weavedb-envoy eu-west-1
         working-directory: ./grpc-node
       
       # docker hub 
@@ -80,7 +80,7 @@ jobs:
 
       # push (docker hub)
       - name: docker push ( docker hub )
-        run: docker push  --all-tags 0xkaz/weavedb-node-server
+        run: docker push  --all-tags 0xkaz/weavedb-envoy
 
 
       - name: Send custom JSON data to Slack workflow
@@ -90,13 +90,13 @@ jobs:
           # For posting a rich message using Block Kit
           payload: |
             {
-              "text": "GitHub Action Docker Build/Push result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}\nDocker Repository URL: weavedb-node-server  \nhttps://${{ secrets.AWS_MAIN_REGION }}.console.aws.amazon.com/ecr/repositories/private/${{ secrets.AWS_ACCOUNT_ID }}/weavedb-node-server?region=${{ secrets.AWS_MAIN_REGION }}\n",
+              "text": "GitHub Action Docker Build/Push result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}\nDocker Repository URL: weavedb-envoy  \nhttps://${{ secrets.AWS_MAIN_REGION }}.console.aws.amazon.com/ecr/repositories/private/${{ secrets.AWS_ACCOUNT_ID }}/weavedb-envoy?region=${{ secrets.AWS_MAIN_REGION }}\n",
               "blocks": [
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "GitHub Action Docker Build/Push result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}\nDocker Repository URL: weavedb-node-server  \nhttps://${{ secrets.AWS_MAIN_REGION }}.console.aws.amazon.com/ecr/repositories/private/${{ secrets.AWS_ACCOUNT_ID }}/weavedb-node-server?region=${{ secrets.AWS_MAIN_REGION }}\n"
+                    "text": "GitHub Action Docker Build/Push result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}\nDocker Repository URL: weavedb-envoy  \nhttps://${{ secrets.AWS_MAIN_REGION }}.console.aws.amazon.com/ecr/repositories/private/${{ secrets.AWS_ACCOUNT_ID }}/weavedb-envoy?region=${{ secrets.AWS_MAIN_REGION }}\n"
                   }
                 }
               ]
