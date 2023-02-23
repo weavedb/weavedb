@@ -43,17 +43,25 @@ jobs:
       - name: echo5
         run: echo "region = ${{ secrets.AWS_MAIN_REGION }}" >> ~/.aws/config
 
+      # 
+      # docker-compose 
+      - name: docker-compose build  
+        run: sudo docker-compose -f dc.yml build 
+        working-directory: ./grpc-node/
 
-      # # TODO TEST
-      # # docker-compose 
-      # - name: docker-compose build  
-      #   run: sudo docker-compose build 
-      #   working-directory: ./grpc-node/
+      - name: dockere-compose up -d 
+        run: sudo docker-compose -f dc.yml up -d ; sleep 120 ; docker ps ;  ./scripts/check_docker_compose_ps.sh
+        working-directory: ./grpc-node/
 
-      # - name: dockere-compose up -d 
-      #   run: sudo docker-compose up -d ; sleep 20 ; docker ps
-      #   working-directory: ./grpc-node/
 
+      ## install grpc-client-cli
+      - name: install grpc-client-cli
+        -run: curl -L https://github.com/vadimi/grpc-client-cli/releases/download/v1.17.0/grpc-client-cli_linux_x86_64.tar.gz | tar -C /usr/local/bin -xz 
+
+
+      - name: gRPC test by grpc-client-cli
+        run: ./scripts/grpc_client_test.sh
+        working-directory: ./grpc-node/
 
       # docker login (ECR/AWS)
       - name: docker login

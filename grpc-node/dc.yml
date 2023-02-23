@@ -6,7 +6,7 @@ services:
     command: redis-server --save 20 1
   node-server:
     build: ./node-server
-    image: 0xkaz/weavedb-node-server
+    #image: 0xkaz/weavedb-node-server
     ports:
       - "9090:9090"
     extra_hosts:
