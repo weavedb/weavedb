@@ -1,16 +1,12 @@
 version: '3'
 services:
   redis:
-    #image: redis:latest
     image: redis:6.2-alpine
     restart: always
     command: redis-server --save 60 1
     volumes:
       - ./node-server/cache/redis:/data
-    container_name: redis
-    ports:
-     - "6379:6379"
-node-server:
+  node-server:
     # build: ./node-server
     image: 0xkaz/weavedb-node-server:latest
     ports:
@@ -22,9 +18,6 @@ node-server:
     depends_on:
       - redis
     env_file: .env
-    links:
-      - redis
-
   envoy:
     # build: ./envoy
     image: 0xkaz/weavedb-envoy:latest

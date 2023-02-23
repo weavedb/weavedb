@@ -13,4 +13,3 @@ target
 .settings
 zig-out
 zig-cache
-wallet.json
