@@ -11,14 +11,16 @@ const s3bucket = process.env.S3_AWS_BUCKET
 const s3prefix = process.env.S3_AWS_PREFIX
 const s3region = process.env.S3_AWS_REGION
 const wallet_string = process.env.ARWEAVE_WALLET_CREDENTIAL
+let wallet = {}
 if (!isNil(wallet_string) && wallet_string!="") {
   try {
-    JSON.parse(wallet_string)
+    wallet = JSON.parse(wallet_string)
   } catch(e) {
     console.log("WARNING: wrong wallet setting")
     console.log(e.message)
   }
 }
+// wallet = require("wallet.json")
 
 const cacheengine =
   process.env.CACHE_ENGINE == "redis"
@@ -31,7 +33,6 @@ const adminContractTxId = process.env.ADMIN_CONTRACT_TX_ID
   ? process.env.ADMIN_CONTRACT_TX_ID
   : "" // "XoHBBLZfrrpQIcvnrsWs69OoHfXwWMQWdAbYOifcTQA"
 const contractTxId = process.env.CONTRACT_TX_ID
-const wallet = require("wallet.json")
 
 let config = {
   subscribe: subscribe,
