@@ -115,12 +115,12 @@ await db.setRules(rules_bookmarks, "bookmarks")
 ### mirror collection
 
 ```js
-const rules_mirrro = {
+const rules_mirror = {
   "allow write": {
     "==": [{ var: "request.auth.signer" }, ADMIN_ADDRESS],
   },
 }
-await db.setRules(conf_rules, "mirror")
+await db.setRules(rules_mirror, "mirror")
 ```
 
 `mirror` articles will be recorded when calculating bookmark counts and only `ADMIN_ADDRESS` can write.
@@ -133,7 +133,7 @@ const rules_conf = {
     "==": [{ var: "request.auth.signer" }, ADMIN_ADDRESS],
   },
 }
-await db.setRules(conf_rules, "conf")
+await db.setRules(rules_conf, "conf")
 ```
 
 `conf` will be used for periodic bookmark counting and only `ADMIN_ADDRESS` can write.
