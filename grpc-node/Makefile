@@ -1,14 +1,16 @@
-compose: 
-	DOCKER_BUILDKIT=0 docker-compose build
+build: 
+	DOCKER_BUILDKIT=0 docker-compose -f ./dc.yml build 
+
+up: 
+	docker-compose -f ./dc.yml up 
+	
+pull: 
+	docker-compose pull
 
 run: 
 	./scripts/check_env.sh
 	docker-compose up 
-up: run
-	
-pull:
-	docker-compose pull
-	
+
 build-node:
 	docker build  --platform linux/amd64 ./node-server -t weavedb/node-server 
 run-node:

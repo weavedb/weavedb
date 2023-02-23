@@ -6,6 +6,7 @@ services:
     command: redis-server --save 20 1
   node-server:
     build: ./node-server
+    image: 0xkaz/weavedb-node-server
     ports:
       - "9090:9090"
     extra_hosts:
@@ -14,8 +15,10 @@ services:
       - ./node-server/cache:/weavedb/cache
     depends_on:
       - cache    
+    env_file: .env
   envoy:
-    build: ./envoy
+    # build: ./envoy
+    image: 0xkaz/weavedb-envoy
     ports:
       - "8080:8080"
     links:
