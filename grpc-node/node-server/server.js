@@ -1,4 +1,4 @@
-const { port = 9090, config = "./weavedb.config.js" } = require("yargs")(
+const { port = 9090, config = "./weavedb.env.config.js" } = require("yargs")(
   process.argv.slice(2)
 ).argv
 

@@ -3,3 +3,4 @@ package-lock.json
 cache/
 weavedb.config.js
 gcs.json
+wallet.json

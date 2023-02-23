@@ -16,6 +16,9 @@ services:
       - ./node-server/cache:/weavedb/cache
     depends_on:
       - redis
+    env_file: .env
+
+
   envoy:
     build: ./envoy
     ports:
