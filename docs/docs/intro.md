@@ -32,7 +32,7 @@ A v0.5 demo dapp (The Wall 2) is deployed at [xdiw4-hiaaa-aaaai-qnnbq-cai.ic0.ap
 
 A v0.2 demo dapp (Todo Manager) is deployed at [weavedb-todos.asteroid.ac](https://weavedb-todos.asteroid.ac).
 
-- [Dapp Building Tutorial](/docs/examples/bookmarks)
+- [Dapp Building Tutorial](/docs/examples/todos)
 
 ### Mirror Social Bookmarking
 
