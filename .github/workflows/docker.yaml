@@ -10,7 +10,7 @@ jobs:
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
-        
+
       # build 
       - name: docker build
         run: docker build -t weavedb-node-server . 
@@ -63,10 +63,10 @@ jobs:
       - name: docker push
         run: docker push  --all-tags ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/weavedb-node-server
       
-      # delete old images
-      - name: delete old docker image 1 ( weavedb-node-server )
-        run: ./scripts/delete_old_docker_images.rb weavedb-node-server eu-west-1
-        working-directory: ./grpc-node/node-server
+      # # delete old images
+      # - name: delete old docker image 1 ( weavedb-node-server )
+      #   run: ./scripts/delete_old_docker_images.rb weavedb-node-server eu-west-1
+      #   working-directory: ./grpc-node/node-server
       
       # docker hub 
       # - name: Log in to Docker Hub
