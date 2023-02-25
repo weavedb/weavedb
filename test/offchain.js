@@ -61,7 +61,7 @@ describe("WeaveDB", function () {
     */
     contractTxId = "offchain"
     const walletAddress = await arweave.wallets.jwkToAddress(arweave_wallet)
-    db = new DB({ secure: false, owner: walletAddress })
+    db = new DB({ state: { secure: false, owner: walletAddress } })
     db.setEthWallet(wallet)
   })
 

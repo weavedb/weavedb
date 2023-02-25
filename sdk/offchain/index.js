@@ -1,12 +1,30 @@
-const { clone, mergeLeft } = require("ramda")
+const { isNil, clone, mergeLeft } = require("ramda")
 const { handle } = require("./contracts/weavedb/contract")
 const Base = require("weavedb-base")
 const arweave = require("arweave")
 const { createId } = require("@paralleldrive/cuid2")
 
 class OffChain extends Base {
-  constructor(state = {}) {
+  constructor({ state = {}, cache = "memory", redis }) {
     super()
+    this.cache = cache
+    if (cache === "redis") {
+      try {
+        const { createClient } = require("redis")
+        const opt = { url: redis?.url || null }
+        this.redis_client = createClient(opt)
+        this.redis_prefix = isNil(redis?.prefix)
+          ? "weavedb-offchain."
+          : `${redis.prefix}.`
+        this.redis_client.connect()
+      } catch (e) {
+        console.log(e)
+        this.cache = "memory"
+      }
+    }
+
+    this.validity = {}
+    this.txs = []
     this.arweave = arweave.init()
     this.contractTxId = "offchain"
     this.domain = {
@@ -37,6 +55,21 @@ class OffChain extends Base {
     })
     this.initialState = clone(this.state)
     this.height = 0
+  }
+  async initialize() {
+    if (this.cache === "redis") {
+      const cache = await this.redis_client.get(
+        `${this.redis_prefix}state`,
+        JSON.stringify(this.state)
+      )
+      if (!isNil(cache)) {
+        try {
+          const json = JSON.parse(cache)
+          this.state = json.state
+          this.height = json.height
+        } catch (e) {}
+      }
+    }
   }
   getSW() {
     return {
@@ -69,13 +102,30 @@ class OffChain extends Base {
     } else {
       let error = null
       let tx = null
+      let sw = this.getSW()
       try {
-        tx = await handle(clone(this.state), { input: param }, this.getSW())
+        tx = await handle(clone(this.state), { input: param }, sw)
         this.state = tx.state
+        if (this.cache === "redis") {
+          await this.redis_client.set(
+            `${this.redis_prefix}state`,
+            JSON.stringify({
+              height: tx?.result?.block?.height || 0,
+              state: this.state,
+            })
+          )
+        }
       } catch (e) {
         error = e
       }
       const start = Date.now()
+      this.validity[sw.transaction.id] = error === null
+      this.txs.push({
+        transaction: sw.transaction,
+        block: sw.block,
+        param,
+        func,
+      })
       return {
         originalTxId: tx?.result?.transaction?.id || null,
         transaction: tx?.result?.transaction || null,
