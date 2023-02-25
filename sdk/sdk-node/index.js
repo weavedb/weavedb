@@ -85,6 +85,7 @@ let submap = {}
 let Arweave = require("arweave")
 Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
 const Base = require("weavedb-base")
+
 const { handle } = require("./off-chain/contract")
 
 const _on = async (state, input) => {
@@ -164,8 +165,10 @@ class SDK extends Base {
     redis = {},
     old = false,
     onUpdate,
+    progress,
   }) {
     super()
+    this.progress = progress
     this.virtual_nonces = {}
     this.cache_prefix = cache_prefix
     this.onUpdate = onUpdate
@@ -369,6 +372,18 @@ class SDK extends Base {
         this.warp.use(
           new CustomSubscriptionPlugin(this.contractTxId, this.warp)
         )
+        if (is(Function, this.progress)) {
+          class EvaluationProgressPlugin {
+            constructor(emitter, notificationFreq) {}
+            process(input) {
+              self.progress(input)
+            }
+            type() {
+              return "evaluation-progress"
+            }
+          }
+          this.warp.use(new EvaluationProgressPlugin())
+        }
       }
       this.db
         .readState()
