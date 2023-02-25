@@ -1,7 +1,8 @@
 const { clone, mergeLeft } = require("ramda")
-const { handle } = require("./contract")
+const { handle } = require("./contracts/weavedb/contract")
 const Base = require("weavedb-base")
 const arweave = require("arweave")
+const { createId } = require("@paralleldrive/cuid2")
 
 class OffChain extends Base {
   constructor(state = {}) {
@@ -32,15 +33,34 @@ class OffChain extends Base {
         lastExecuted: 0,
         crons: {},
       },
-      contracts: {},
+      contracts: { ethereum: "ethereum", dfinity: "dfinity" },
     })
     this.initialState = clone(this.state)
     this.height = 0
   }
-
+  getSW() {
+    return {
+      contract: { id: this.contractTxId },
+      arweave,
+      block: {
+        timestamp: Math.round(Date.now() / 1000),
+        height: ++this.height,
+      },
+      transaction: { id: createId() },
+      contracts: {
+        viewContractState: async (contract, param, SmartWeave) => {
+          const { handle } = require(`./contracts/${contract}/contract`)
+          try {
+            return await handle({}, { input: param }, SmartWeave)
+          } catch (e) {
+            console.log(e)
+          }
+        },
+      },
+    }
+  }
   async read(input) {
-    return (await handle(clone(this.state), { input }, this.contractTxId))
-      .result
+    return (await handle(clone(this.state), { input }, this.getSW())).result
   }
 
   async write(func, param, dryWrite, bundle, relay = false) {
@@ -50,12 +70,7 @@ class OffChain extends Base {
       let error = null
       let tx = null
       try {
-        tx = await handle(
-          clone(this.state),
-          { input: param },
-          this.contractTxId,
-          ++this.height
-        )
+        tx = await handle(clone(this.state), { input: param }, this.getSW())
         this.state = tx.state
       } catch (e) {
         error = e

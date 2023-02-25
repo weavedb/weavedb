@@ -877,7 +877,7 @@ describe("WeaveDB", function () {
         version: "1",
       },
       canEvolve: true,
-      contracts: {},
+      contracts: { ethereum: "ethereum", dfinity: "dfinity" },
       evolve: null,
       isEvolving: false,
       secure: false,
