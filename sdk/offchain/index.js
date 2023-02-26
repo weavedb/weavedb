@@ -1,5 +1,5 @@
 const { isNil, clone, mergeLeft } = require("ramda")
-const { handle } = require("./contracts/weavedb/contract")
+const { handle } = require("weavedb-contracts/weavedb/contract")
 const Base = require("weavedb-base")
 const arweave = require("arweave")
 const { createId } = require("@paralleldrive/cuid2")
@@ -82,7 +82,7 @@ class OffChain extends Base {
       transaction: { id: createId() },
       contracts: {
         viewContractState: async (contract, param, SmartWeave) => {
-          const { handle } = require(`./contracts/${contract}/contract`)
+          const { handle } = require(`weavedb-contracts/${contract}/contract`)
           try {
             return await handle({}, { input: param }, SmartWeave)
           } catch (e) {
