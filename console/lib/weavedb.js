@@ -131,9 +131,11 @@ export const getRawDB = async ({
 }
 
 async function addFunds(arweave, wallet) {
-  const walletAddress = await arweave.wallets.getAddress(wallet)
-  await arweave.api.get(`/mint/${walletAddress}/1000000000000000`)
-  await arweave.api.get("mine")
+  try {
+    const walletAddress = await arweave.wallets.getAddress(wallet)
+    await arweave.api.get(`/mint/${walletAddress}/1000000000000000`)
+    await arweave.api.get("mine")
+  } catch (e) {}
 }
 
 export const connectLocalhost = async ({ val: { port } }) => {
@@ -872,6 +874,7 @@ export const queryDB = async ({
     if (!isNil(dryRead)) {
       opt.dryWrite = { cache: true, read: dryRead }
     }
+    console.log(method, q, opt, signer)
     return ret(await new Log(sdk, method, q, opt, fn, signer).rec(true))
   } catch (e) {
     console.log(e)
