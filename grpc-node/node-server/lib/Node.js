@@ -183,7 +183,7 @@ class Node {
     }
     if (!isNil(this.conf.admin)) {
       const stat = await this.db.get("contracts", v)
-      if (isNil(stat)) {
+      if (isNil(stat) || no_snapshot === true) {
         await this.db.set(this.progresses[v], "contracts", v, {
           ar: this.conf.admin.owner,
         })
