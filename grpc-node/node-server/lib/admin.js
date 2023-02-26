@@ -1,5 +1,5 @@
 const { validate } = require("./validate")
-const { indexBy, includes, isNil, last, prop } = require("ramda")
+const { keys, indexBy, includes, isNil, last, prop } = require("ramda")
 const users_schema = {
   type: "object",
   required: ["address", "allow"],
@@ -188,15 +188,36 @@ const execAdmin = async ({ query, res, txid, node }) => {
       const { contractTxId: txid2 } = _query.query
       try {
         const contract = await db.get("contracts", txid2)
-        if (isNil(contract)) {
-          return res(`${txid2} doesn't exist`, txs)
+        if (isNil(contract)) return res(`${txid2} doesn't exist`, txs)
+        if (node.node_type !== "contract_manager") {
+          try {
+            if (contract.address !== signer) {
+              return res(`${signer} is not contract registrator`, txs)
+            }
+            txs.push(
+              await node.manager.admin(
+                { op: "remove_contract", contractTxId: txid2 },
+                { ar: node.conf.admin.owner, nonce: 1 }
+              )
+            )
+          } catch (e) {
+            console.log(e)
+          }
+        } else {
+          if (!includes(signer)(owners)) {
+            return res(`${signer} is not admin`, txs)
+          }
+          try {
+            txs.push(await db.delete("contracts", txid2, auth))
+            if (!last(txs).success) throw new Error()
+          } catch (e) {
+            console.log(e)
+          }
         }
-        if (contract.address !== signer) {
-          return res(`${signer} is not contract registrator`, txs)
-        }
-        txs.push(await db.delete("contracts", txid2, auth))
-        if (!last(txs).success) throw new Error()
         res(null, txs)
+        await node.db.delete("contracts", txid2, {
+          ar: node.conf.admin.owner,
+        })
         delete node.sdks[txid2]
         return
       } catch (e) {
@@ -208,7 +229,7 @@ const execAdmin = async ({ query, res, txid, node }) => {
         isErr = "operation not allowed"
         res(isErr, txs)
       } else {
-        let { contractTxId: txid3 } = _query.query
+        const { contractTxId: txid3 } = _query.query
         res(isErr, txs)
         if (isNil(node.sdks[txid3])) node.initSDK(txid3)
       }
@@ -229,28 +250,45 @@ const execAdmin = async ({ query, res, txid, node }) => {
       return res(isErr, txs)
 
     case "reset_cache":
-      let { contractTxId } = _query.query
+      const { contractTxId } = _query.query
       const cache_type = node.conf.cache || "lmdb"
       if (isNil(node.sdks[contractTxId])) {
-        isErr = "cache doesn't exist"
+        isErr = `cache doesn't exist[${node.node_type || "gateway"}]`
       } else {
-        delete node.sdks[contractTxId]
-        if (cache_type === "redis") {
+        await node.db.delete("contracts", contractTxId, {
+          ar: node.conf.admin.owner,
+        })
+        if (node.node_type !== "contract_manager") {
           try {
-            const prefix =
-              isNil(node.conf.redis) || isNil(node.conf.redis.prefix)
-                ? "warp"
-                : node.conf.redis.prefix
-            for (const key of await node.redis.KEYS(
-              `${prefix}.${contractTxId}.*`
-            )) {
-              await node.redis.del(key)
-            }
-          } catch (e) {}
-        } else if (cache_type === "lmdb") {
-          await node.snapshot.delete(contractTxId)
+            txs.push(
+              await node.manager.admin(
+                { op: "reset_cache", contractTxId },
+                { ar: node.conf.admin.owner, nonce: 1 }
+              )
+            )
+          } catch (e) {
+            console.log(e)
+          }
+          node.addContract(contractTxId)
+        } else {
+          delete node.sdks[contractTxId]
+          if (cache_type === "redis") {
+            try {
+              const prefix =
+                isNil(node.conf.redis) || isNil(node.conf.redis.prefix)
+                  ? "warp"
+                  : node.conf.redis.prefix
+              for (const key of await node.redis.KEYS(
+                `${prefix}.${contractTxId}.*`
+              )) {
+                await node.redis.del(key)
+              }
+            } catch (e) {}
+          } else if (cache_type === "lmdb") {
+            await node.snapshot.delete(contractTxId)
+          }
+          node.initSDK(contractTxId, true)
         }
-        node.initSDK(contractTxId, true)
       }
       return res(isErr, txs)
 
