@@ -28,11 +28,7 @@ class Snapshot {
     try {
       if (!isNil(conf.gcs)) {
         this.initGCS()
-      } else if (
-        !isNil(conf.s3) &&
-        !isNil(conf.s3.bucket) &&
-        !isNil(conf.s3.prefix)
-      ) {
+      } else if (!isNil(conf.s3?.bucket) && !isNil(conf.s3?.prefix)) {
         this.initS3()
       }
     } catch (e) {
@@ -113,7 +109,7 @@ class Snapshot {
             Key: `${this.conf.s3.prefix}${contractTxId}.zip`,
           })
           .promise()
-        if (isNil(s3data) || isNil(s3data.Body)) {
+        if (isNil(s3data?.Body)) {
           console.log(`snapshot(${contractTxId}) downloaded error! (s3)`)
         } else {
           fs.writeFileSync(src, s3data.Body)
@@ -157,7 +153,7 @@ class Snapshot {
               Key: `${this.conf.s3.prefix}${contractTxId}-redis.json`,
             })
             .promise()
-          if (isNil(s3data) || isNil(s3data.Body)) {
+          if (isNil(s3data?.Body)) {
             console.log(`snapshot(${contractTxId}) downloaded error! (s3)`)
           } else {
             fs.writeFileSync(src, s3data.Body)
@@ -179,7 +175,6 @@ class Snapshot {
         await redis.client.MSET(vals)
         console.log(`snapshot(${contractTxId}) recovered to redis!`)
       } catch (e) {
-        console.log(e)
         console.log(`snapshot(${contractTxId}]) doesn't exist`)
       }
     } catch (e) {
