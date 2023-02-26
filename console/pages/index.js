@@ -307,6 +307,8 @@ export default inject(
           }))
         let info = state || (await fn(read)({ db, m: "getInfo", q: [] }))
         setState(info)
+        setDocuments([])
+        setDocdata(null)
         set(null, "loading_contract")
         fn(switchTempAddress)({ contractTxId: _contractTxId })
         if (isNil(info.version)) {
