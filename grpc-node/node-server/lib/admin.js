@@ -77,7 +77,7 @@ const execAdminRead = async ({ query, res, txid, node }) => {
   }
   switch (op) {
     case "stats":
-      let stats = {}
+      let stats = { start: node.start }
       if (!isNil(node.conf.admin) && !isNil(node.conf.admin.contractTxId)) {
         stats.contractTxId = node.conf.admin.contractTxId
       }
@@ -172,7 +172,13 @@ const execAdmin = async ({ query, res, txid, node }) => {
         )
         if (!last(txs).success) throw new Error()
         res(null, txs)
-        if (isNil(node.sdks[txid])) await node.initSDK(txid)
+        if (isNil(node.sdks[txid])) {
+          await node.addContract(txid)
+          await node.manager.admin(
+            { op: "init_contract", contractTxId: txid },
+            { ar: node.conf.admin.owner, nonce: 1 }
+          )
+        }
         return
       } catch (e) {
         console.log(e)
@@ -197,6 +203,17 @@ const execAdmin = async ({ query, res, txid, node }) => {
         console.log(e)
         return res("something went wrong", txs)
       }
+    case "init_contract":
+      if (node.node_type !== "contract_manager") {
+        isErr = "operation not allowed"
+        res(isErr, txs)
+      } else {
+        let { contractTxId: txid3 } = _query.query
+        res(isErr, txs)
+        if (isNil(node.sdks[txid3])) node.initSDK(txid3)
+      }
+      return
+
     case "whitelist":
       let { address, allow, limit } = _query.query
       if (/^0x.+$/.test(address)) address = address.toLowerCase()

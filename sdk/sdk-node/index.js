@@ -166,6 +166,7 @@ class SDK extends Base {
     old = false,
     onUpdate,
     progress,
+    logLevel = "error",
   }) {
     super()
     this.progress = progress
@@ -203,7 +204,7 @@ class SDK extends Base {
       }
     }
     this.arweave = Arweave.init(arweave)
-    this.Warp.LoggerFactory.INST.logLevel("error")
+    this.Warp.LoggerFactory.INST.logLevel(logLevel)
     if (typeof window === "object") {
       require("@metamask/legacy-web3")
       this.web3 = window.web3
@@ -338,9 +339,9 @@ class SDK extends Base {
     dbs[this.contractTxId] = this
     this.domain = { name, version, verifyingContract: this.contractTxId }
     if (!isNil(EthWallet)) this.setEthWallet(EthWallet)
+    const self = this
     if (this.network !== "localhost") {
       if (this.subscribe) {
-        const self = this
         class CustomSubscriptionPlugin extends WarpSubscriptionPlugin {
           async process(input) {
             try {
@@ -372,18 +373,30 @@ class SDK extends Base {
         this.warp.use(
           new CustomSubscriptionPlugin(this.contractTxId, this.warp)
         )
-        if (is(Function, this.progress)) {
-          class EvaluationProgressPlugin {
-            constructor(emitter, notificationFreq) {}
-            process(input) {
-              self.progress(input)
-            }
-            type() {
-              return "evaluation-progress"
-            }
+      }
+      if (is(Function, this.progress)) {
+        class EvaluationProgressPlugin {
+          constructor(emitter, notificationFreq) {}
+          process(input) {
+            self.progress(input)
           }
-          this.warp.use(new EvaluationProgressPlugin())
+          type() {
+            return "evaluation-progress"
+          }
         }
+        this.warp.use(new EvaluationProgressPlugin())
+      }
+      if (is(Function, this.progress)) {
+        class EvaluationProgressPlugin {
+          constructor(emitter, notificationFreq) {}
+          process(input) {
+            self.progress(input)
+          }
+          type() {
+            return "evaluation-progress"
+          }
+        }
+        this.warp.use(new EvaluationProgressPlugin())
       }
       this.db
         .readState()
