@@ -69,7 +69,10 @@ class Node {
       this.db = new DB({
         state: { owner: this.admin, secure: false },
         cache: "redis",
-        redis: { prefix: this.conf.offchain_db?.prefix },
+        redis: {
+          prefix: this.conf.offchain_db?.prefix,
+          url: this.conf.offchain_db?.url || null,
+        },
       })
       await this.db.initialize()
     }
