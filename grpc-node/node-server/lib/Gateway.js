@@ -82,7 +82,7 @@ class Gateway extends Node {
       }
       this.sdks[txid] = new SDK(__conf)
       if (isNil(_conf.wallet)) await this.sdks[txid].initializeWithoutWallet()
-      await this.sdks[txid].db.readState()
+      await this.readState(txid)
       if (this.isLmdb && !no_snapshot) await this.snapshot.save(txid)
       if (this.isRedis && !no_snapshot) {
         await this.snapshot.save(txid, this.redis)

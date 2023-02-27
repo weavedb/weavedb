@@ -174,7 +174,18 @@ class Node {
     }
     return { len, err, done, all, current }
   }
-
+  async readState(txid, attempt = 1) {
+    try {
+      await this.sdks[txid].db.readState()
+    } catch (e) {
+      console.log(`readState(${txid}) error! attempt #${attempt}`)
+      if (attempt < 5) {
+        await this.readState(txid, ++attempt)
+      } else {
+        throw new Error(e)
+      }
+    }
+  }
   async initSDK(v, no_snapshot = false) {
     console.log("initializing contract..." + v)
     this.progresses[v] = {
@@ -236,7 +247,7 @@ class Node {
       }
       this.sdks[txid] = new SDK(__conf)
       if (isNil(_conf.wallet)) await this.sdks[txid].initializeWithoutWallet()
-      await this.sdks[txid].db.readState()
+      await this.readState(txid)
       if (this.isLmdb && !no_snapshot) await this.snapshot.save(txid)
       if (this.isRedis && !no_snapshot) {
         await this.snapshot.save(txid, this.redis)
@@ -270,8 +281,9 @@ class Node {
         }
       }
     } catch (e) {
-      this.progresses[v].err = true
       console.log(`sdk(${v}) error!`)
+      console.log(e)
+      this.progresses[v].err = true
       success = false
       this.calcProgress()
       await this.db.set(this.progresses[v], "contracts", v, {
