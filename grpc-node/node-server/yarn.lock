@@ -4174,21 +4174,21 @@ weavedb-offchain@^0.21.1:
     redis "^4.6.5"
     weavedb-base "^0.21.0"
 
-weavedb-sdk-node@^0.21.22:
-  version "0.21.22"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk-node/-/weavedb-sdk-node-0.21.22.tgz#bb0a9856a906562273d4342c1202ca7295554169"
-  integrity sha512-k5TUmTJWG9l149Jl+ZBu3dfLJlU/P+YEQcAbmF8u6OHxjwizkPkWww10VP/nKxIq9GaXaoRzUBtE6steJSxvew==
+weavedb-sdk-node@^0.21.23:
+  version "0.21.23"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk-node/-/weavedb-sdk-node-0.21.23.tgz#826826ecd9054fb76715fe02802ddf009888536c"
+  integrity sha512-ksX0Po1vWz2fIgOgymVHjjNBc1SMDZdGxk9nv/TxaBhJpdxCu/OlV5PpvT1HDVp5huIhLTe+/oy8pqHAXX+d+w==
   dependencies:
     "@aws-amplify/api" "^5.0.14"
     warp-contracts-lmdb "^1.1.9"
     warp-contracts-pubsub "^1.0.5"
     weavedb-contracts "^0.21.0"
-    weavedb-sdk "^0.21.4"
+    weavedb-sdk "^0.21.5"
 
-weavedb-sdk@^0.21.4:
-  version "0.21.4"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.21.4.tgz#ca1bab971465e6d847d4b90239298357b11cb49c"
-  integrity sha512-QHlR9Tfhu/f+P5e97P+xLqpWM/Pr9Z3l8bFz/LLnVZGM81l2nF8pSXezW4S9iClUIMpumhHjD4ekJlZAuQH27A==
+weavedb-sdk@^0.21.5:
+  version "0.21.5"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.21.5.tgz#c31cda81263ec6ae0ff36cb0918073f1b1b00094"
+  integrity sha512-9PLBpDVi+/JXzQLLNalh5Tsot8ejPBV7hnLhy34aaO5QD3cKF1RJkxeSPXKeZVtQUFKh0dQqNJ5RDcLQbXklFQ==
   dependencies:
     "@metamask/legacy-web3" "^2.0.0"
     "@paralleldrive/cuid2" "^2.2.0"

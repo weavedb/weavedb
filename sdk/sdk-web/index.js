@@ -240,7 +240,10 @@ class SDK extends Base {
       })
     }
   }
-
+  async readState() {
+    this.state = (await this.db.readState()).cachedValue.state
+    states[this.contractTxId] = this.state
+  }
   async addFunds(wallet) {
     const walletAddress = await this.arweave.wallets.getAddress(wallet)
     await this.arweave.api.get(`/mint/${walletAddress}/1000000000000000`)
@@ -445,7 +448,10 @@ class SDK extends Base {
       transaction: { id: createId() },
       contracts: {
         viewContractState: async (contract, param, SmartWeave) => {
-          const key = invertObj(this.state.contracts)[contract]
+          const key = invertObj(
+            (cachedStates[this.contractTxId] || states[this.contractTxId])
+              .contracts
+          )[contract]
           const { handle } = require(`weavedb-contracts/${key}/contract`)
           try {
             return await handle({}, { input: param }, SmartWeave)
