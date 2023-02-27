@@ -1,4 +1,5 @@
 const {
+  invertObj,
   uniq,
   map,
   drop,
@@ -35,9 +36,9 @@ const {
 const {
   WarpSubscriptionPlugin,
 } = require("./warp-contracts-plugin-subscription")
-const { get, parseQuery } = require("./off-chain/actions/read/get")
-const { ids } = require("./off-chain/actions/read/ids")
+const { parseQuery } = require("weavedb-contracts/weavedb/lib/utils")
 const md5 = require("md5")
+const { createId } = require("@paralleldrive/cuid2")
 const is_data = [
   "set",
   "setSchema",
@@ -86,7 +87,7 @@ let Arweave = require("arweave")
 Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
 const Base = require("weavedb-base")
 
-const { handle } = require("./off-chain/contract")
+const { handle } = require("weavedb-contracts/weavedb/contract")
 
 const _on = async (state, input) => {
   const block = input.interaction.block
@@ -96,13 +97,12 @@ const _on = async (state, input) => {
       for (const hash in subs[txid]) {
         const query = subs[txid][hash].query
         try {
-          const res = await get(
+          const res = await handle(
             clone(state),
             {
-              input: { query },
+              input: { function: "cget", query },
             },
-            true,
-            { block }
+            this.getSW()
           )
           if (!isNil(res)) {
             if (subs[txid][hash].height < block.height) {
@@ -167,8 +167,10 @@ class SDK extends Base {
     onUpdate,
     progress,
     logLevel = "error",
+    nocache = false,
   }) {
     super()
+    this.nocache_default = nocache
     this.progress = progress
     this.virtual_nonces = {}
     this.cache_prefix = cache_prefix
@@ -431,14 +433,36 @@ class SDK extends Base {
       }
     }
   }
-
-  async read(params, nocache = false) {
+  getSW() {
+    return {
+      contract: { id: this.contractTxId },
+      arweave: this.arweave,
+      block: {
+        timestamp: Math.round(Date.now() / 1000),
+        height: ++this.height,
+      },
+      transaction: { id: createId() },
+      contracts: {
+        viewContractState: async (contract, param, SmartWeave) => {
+          const key = invertObj(this.state.contracts)[contract]
+          const { handle } = require(`weavedb-contracts/${key}/contract`)
+          try {
+            return await handle({}, { input: param }, SmartWeave)
+          } catch (e) {
+            console.log(e)
+          }
+        },
+      },
+    }
+  }
+  async read(params, nocache = this.nocache_default) {
     if (!nocache && !isNil(this.state)) {
       try {
         return (
           await handle(
             cachedStates[this.contractTxId] || states[this.contractTxId],
-            { input: params }
+            { input: params },
+            this.getSW()
           )
         ).result
       } catch (e) {
@@ -501,7 +525,7 @@ class SDK extends Base {
               {
                 input: param,
               },
-              this.contractTxId
+              this.getSW()
             )
           } catch (e) {
             err = e
@@ -534,6 +558,7 @@ class SDK extends Base {
               )
             }
           }
+
           if (!isNil(onDryWrite?.cb)) onDryWrite.cb(cacheResult)
           dryResult = cacheResult
         }
@@ -590,9 +615,13 @@ class SDK extends Base {
       let res = { success: false, err: null, result: null }
       try {
         res.result = (
-          await handle(clone(state), {
-            input: { function: v[0], query: tail(v) },
-          })
+          await handle(
+            clone(state),
+            {
+              input: { function: v[0], query: tail(v) },
+            },
+            this.getSW()
+          )
         ).result
         res.success = true
       } catch (e) {
@@ -666,9 +695,13 @@ class SDK extends Base {
       try {
         if (func === "add") {
           res.docID = (
-            await ids(state.cachedValue.state, {
-              input: { tx: tx.originalTxId },
-            })
+            await handle(
+              state.cachedValue.state,
+              {
+                input: { function: "ids", tx: tx.originalTxId },
+              },
+              this.getSW()
+            )
           ).result[0]
           res.path = o(append(res.docID), tail)(query)
         } else {
@@ -676,9 +709,13 @@ class SDK extends Base {
           res.docID = last(res.path)
         }
         res.doc = (
-          await get(clone(state.cachedValue.state), {
-            input: { query: res.path },
-          })
+          await handle(
+            clone(state.cachedValue.state),
+            {
+              input: { function: "get", query: res.path },
+            },
+            this.getSW()
+          )
         ).result
       } catch (e) {
         console.log(e)
@@ -873,7 +910,14 @@ class SDK extends Base {
       let _query = null
       if (v.func === "add") {
         const docID = (
-          await ids(clone(state), { input: { tx: input.interaction.id } })
+          await handle(
+            clone(state),
+            {
+              function: "ids",
+              input: { tx: input.interaction.id },
+            },
+            this.getSW()
+          )
         ).result[0]
         _query = append(docID, v.path)
       } else if (includes(v.func)(["upsert", "set", "update"])) {
