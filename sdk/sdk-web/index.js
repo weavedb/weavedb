@@ -167,8 +167,6 @@ class SDK extends Base {
     this.nocache_default = !isNil(nocache)
       ? nocache
       : typeof window !== "undefined"
-      ? true
-      : nocache
     this.progress = progress
     this.virtual_nonces = {}
     this.cache_prefix = cache_prefix
@@ -803,13 +801,12 @@ class SDK extends Base {
   async getCache(...query) {
     if (isNil(states[this.contractTxId])) return null
     return (
-      await get(
+      await handle(
         clone(states[this.contractTxId]),
         {
-          input: { query },
+          input: { function: "get", query },
         },
-        false,
-        { block: {} }
+        this.getSW()
       )
     ).result
   }
@@ -817,13 +814,12 @@ class SDK extends Base {
   async cgetCache(...query) {
     if (isNil(states[this.contractTxId])) return null
     return (
-      await get(
+      await handle(
         clone(states[this.contractTxId]),
         {
-          input: { query },
+          input: { function: "cget", query },
         },
-        true,
-        { block: {} }
+        this.getSW()
       )
     ).result
   }
@@ -936,13 +932,12 @@ class SDK extends Base {
       }
       if (!isNil(_query)) {
         let val = (
-          await get(
+          await handle(
             clone(state),
             {
-              input: { query: _query },
+              input: { function: "cget", query: _query },
             },
-            true,
-            { block: {} }
+            this.getSW()
           )
         ).result
         if (!isNil(val)) delete val.block

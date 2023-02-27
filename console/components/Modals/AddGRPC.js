@@ -177,6 +177,7 @@ export default inject(
                       )
                     }
                   } catch (e) {
+                    console.log(e)
                     alert(
                       "couldn't connect to the contract. Web Console is only compatible with v0.18 and above."
                     )
