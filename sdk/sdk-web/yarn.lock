@@ -635,6 +635,18 @@
   resolved "https://registry.yarnpkg.com/@metamask/legacy-web3/-/legacy-web3-2.0.0.tgz#10c506791ef248d79909ff6321a6b25a3f3d2549"
   integrity sha512-hR5sbVR0wU3sXMXx2btRBKYzzTkBNTYoZbPHqqB7UARwxm9yEe9C/Y79YyciyzC9cnKetNV6s6VAwNQp5LNpLw==
 
+"@noble/hashes@^1.1.5":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@noble/hashes/-/hashes-1.2.0.tgz#a3150eeb09cc7ab207ebf6d7b9ad311a9bdbed12"
+  integrity sha512-FZfhjEDbT5GRswV3C6uvLPHMiVD6lQBmpoX5+eSiPaMTXte/IKqI5dykDxzZB/WBeK/CDuQRBWarPdi3FNY2zQ==
+
+"@paralleldrive/cuid2@^2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@paralleldrive/cuid2/-/cuid2-2.2.0.tgz#105b31311994c18d816cb0d31f31ecaf425d32b4"
+  integrity sha512-CVQDpPIUHrUGGLdrMGz1NmqZvqmsB2j2rCIQEu1EvxWjlFh4fhvEGmgR409cY20/67/WlJsggenq0no3p3kYsw==
+  dependencies:
+    "@noble/hashes" "^1.1.5"
+
 "@types/bn.js@5.1.0", "@types/bn.js@^5.1.0":
   version "5.1.0"
   resolved "https://registry.yarnpkg.com/@types/bn.js/-/bn.js-5.1.0.tgz#32c5d271503a12653c62cf4d2b45e6eab8cebc68"
@@ -2736,10 +2748,10 @@ vm2@3.9.11:
     unzipit "^1.4.0"
     vm2 "3.9.11"
 
-warp-contracts@1.2.36:
-  version "1.2.36"
-  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.2.36.tgz#fa83224ca1268c3ebb4739b65b583639e9ef847a"
-  integrity sha512-XJQp4YfIwIcj+SqhvKMfsWs4mICaksOqwQT6gojXGZooWFkMpGkQzVO4MiWb2gXKaRG3jlBOqXdyb7873EvrRQ==
+warp-contracts@1.2.48:
+  version "1.2.48"
+  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.2.48.tgz#2a325e80093eb54ed59af495e21c3b2c98b796a9"
+  integrity sha512-TBZJ/VZdr+9mFjH2gjf55kTeHc9/tXQ3bsym41+ujq6m1kIreyhL1I0G7bn6qSHpAbOIZKIjP5GC5+pp9pm8Ew==
   dependencies:
     "@assemblyscript/loader" "^0.19.23"
     "@idena/vrf-js" "^1.0.1"
@@ -2751,21 +2763,48 @@ warp-contracts@1.2.36:
     level "^8.0.0"
     memory-level "^1.0.0"
     redstone-isomorphic "1.1.8"
-    redstone-wasm-metering "1.0.3"
     safe-stable-stringify "2.4.1"
     stream-buffers "^3.0.2"
     unzipit "^1.4.0"
     vm2 "3.9.11"
+    warp-wasm-metering "1.0.0"
 
-weavedb-base@^0.21.0:
-  version "0.21.0"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.21.0.tgz#775a3815b9a2c9b6d3563942cc5202710a003e7b"
-  integrity sha512-r0d0SgB0zUSvwzx1BHWfW0/4fbVZC4FAHvXKN0Jf4BzqKBMUc4MzqfivSV1L22rdxOx/3k0QeML+j1hK5107cg==
+warp-wasm-json-toolkit@1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/warp-wasm-json-toolkit/-/warp-wasm-json-toolkit-1.0.0.tgz#f08b555b64fac2b102450e6a5e94f4bf71405508"
+  integrity sha512-pFJpP3djS6GvDu5ohgBjSjkYQrKs1Toi7hsvjW5FIJO1Q/msclbeoUY3Poiyx0Hz6oRVfuO2MZkmCreDnNaUTg==
+  dependencies:
+    buffer-pipe "0.0.3"
+    leb128 "0.0.4"
+    redstone-isomorphic "1.1.0"
+
+warp-wasm-metering@1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/warp-wasm-metering/-/warp-wasm-metering-1.0.0.tgz#ff2ded687885af22c8fc6560409a582e127c3af3"
+  integrity sha512-lOlVz7BDTnTMuvhrtIbVtozGJANoVgVn6gD3dTEFyIMehC250CKHmsqenX1jy5OM2DNL/VuFNdCTLHCGaPg64w==
+  dependencies:
+    leb128 "^0.0.4"
+    warp-wasm-json-toolkit "1.0.0"
+
+weavedb-base@^0.21.1:
+  version "0.21.1"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.21.1.tgz#0029853db8901efbacae2c91d94087a8d4b06226"
+  integrity sha512-O2CO0J4NLl3cm6CT/QtPw6H1mjTnyi1rQMrT5ecdH4tbg2EYOdWJw/J0Dxcuc8tnLC9k/Nwwi7XX/sMDBvkruQ==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"
     eth-crypto "^2.3.0"
     ethereumjs-util "^7.1.5"
+    ramda "^0.28.0"
+
+weavedb-contracts@^0.21.0:
+  version "0.21.0"
+  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.21.0.tgz#13b9ca28d030035db88afe10b6554bf024eb1016"
+  integrity sha512-DzmdiLYgsEcrPCd3shbVxHvKKtmftQUBNGL/j+yUJyJRjB79UDC+pbqWrlS5X153Si3RbGDRSqx+LdouJOI+IQ==
+  dependencies:
+    fpjson-lang "^0.1.3"
+    json-logic-js "^2.0.2"
+    md5 "^2.3.0"
     ramda "^0.28.0"
 
 which-boxed-primitive@^1.0.2:
