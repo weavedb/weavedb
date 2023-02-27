@@ -209,7 +209,7 @@ const execAdmin = async ({ query, res, txid, node }) => {
           }
           try {
             txs.push(await db.delete("contracts", txid2, auth))
-            if (!last(txs).success) throw new Error()
+            if (!last(txs).success) throw new Error(last(txs).success.error)
           } catch (e) {
             console.log(e)
           }

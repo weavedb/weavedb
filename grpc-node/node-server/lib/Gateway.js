@@ -114,7 +114,8 @@ class Gateway extends Node {
     const contract = await this.db.get("contracts", txid)
     if (contract?.done === true) {
       this.initSDK(txid)
-    } else {
+    } else if (isNil(this.polling[txid])) {
+      this.polling[txid] = true
       this.pollContract(txid)
     }
   }
@@ -130,8 +131,10 @@ class Gateway extends Node {
     const contract = await this.db.get("contracts", txid)
     if (contract?.err === true) {
       console.log(`contract[${txid}] err!`)
+      delete this.polling[txid]
     } else if (contract?.done === true) {
       console.log(`contract[${txid}] cache building complete!`)
+      delete this.polling[txid]
       this.initSDK(txid)
     } else {
       setTimeout(() => {
@@ -146,8 +149,16 @@ class Gateway extends Node {
     if (await this.rateLimit(txid)) return res("rate limit error")
     if (isAdmin) return await execAdmin({ query, res, node: this, txid })
     if (!(await this.isAllowed(txid))) return res(`${txid} not allowed`)
-    if (isNil(this.sdks[txid]) && !(await this.initSDK(txid))) {
-      return res(`contract[${txid}] init failed`)
+    if (isNil(this.sdks[txid])) {
+      await this.db.initialize()
+      const contract = await this.db.get("contracts", txid)
+      let per = 0
+      if (!isNil(contract) && contract.all !== 0) {
+        per = Math.floor((contract.current / contract.all) * 100)
+      }
+      res(`contract[${txid}] is not ready: ${per}%`)
+      this.addContract(txid)
+      return
     }
     this.execUser(parsed)
   }
