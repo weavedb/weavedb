@@ -66,6 +66,7 @@ export default inject(
                     const db = await fn(setupWeaveDB)({
                       contractTxId: v.contract,
                       rpc: v.rpc,
+                      temp: true,
                     })
                     const start = Date.now()
                     const stats = await fn(read)({
