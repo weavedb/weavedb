@@ -8008,10 +8008,10 @@ weavedb-contracts@^0.21.0:
     md5 "^2.3.0"
     ramda "^0.28.0"
 
-weavedb-sdk@^0.21.4:
-  version "0.21.4"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.21.4.tgz#ca1bab971465e6d847d4b90239298357b11cb49c"
-  integrity sha512-QHlR9Tfhu/f+P5e97P+xLqpWM/Pr9Z3l8bFz/LLnVZGM81l2nF8pSXezW4S9iClUIMpumhHjD4ekJlZAuQH27A==
+weavedb-sdk@^0.21.5:
+  version "0.21.5"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.21.5.tgz#c31cda81263ec6ae0ff36cb0918073f1b1b00094"
+  integrity sha512-9PLBpDVi+/JXzQLLNalh5Tsot8ejPBV7hnLhy34aaO5QD3cKF1RJkxeSPXKeZVtQUFKh0dQqNJ5RDcLQbXklFQ==
   dependencies:
     "@metamask/legacy-web3" "^2.0.0"
     "@paralleldrive/cuid2" "^2.2.0"

@@ -176,7 +176,7 @@ class Node {
   }
   async readState(txid, attempt = 1) {
     try {
-      await this.sdks[txid].db.readState()
+      await this.sdks[txid].readState()
     } catch (e) {
       console.log(`readState(${txid}) error! attempt #${attempt}`)
       if (attempt < 5) {
@@ -436,7 +436,6 @@ class Node {
       } catch (e) {}
 
       if (!isNil(data)) {
-        console.log("perhaps....................", data)
         res(null, data)
         return await this.sendQuery(parsed, key)
       }
