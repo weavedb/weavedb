@@ -105,6 +105,7 @@ class Gateway extends Node {
         }
       }
     } catch (e) {
+      console.log(e)
       console.log(`sdk(${v}) error!`)
       success = false
     }
