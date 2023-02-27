@@ -38,6 +38,7 @@ async function init(sdk_type = "web") {
   const _SDK = sdk_type === "node" ? SDKNODE : SDK
   sdk = new _SDK({
     network: "localhost",
+    nocache: true,
   })
   arweave = sdk.arweave
   warp = sdk.warp

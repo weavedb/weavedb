@@ -597,7 +597,7 @@ class Base {
   }
 
   parseQuery(func, query) {
-    let nocache = false
+    let nocache = this.nocache_default || false
     if (includes(func)(this.reads) && is(Boolean, last(query))) {
       nocache = last(query)
       query = init(query)
@@ -606,7 +606,7 @@ class Base {
   }
 
   async readQuery(func, ...query) {
-    let nocache = false
+    let nocache = this.nocache_default || false
     ;({ nocache, query } = this.parseQuery(func, query))
     return await this.read({ function: func, query }, nocache)
   }
