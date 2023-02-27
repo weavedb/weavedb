@@ -360,6 +360,7 @@ export default inject(
           const db = await fn(setupWeaveDB)({
             contractTxId: node.contract,
             rpc: node.rpc,
+            temp: true,
           })
           const addr = /^0x.+$/.test($.temp_current_all.addr)
             ? $.temp_current_all.addr.toLowerCase()

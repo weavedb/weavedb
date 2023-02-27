@@ -18,7 +18,7 @@ import {
 } from "ramda"
 import { Buffer } from "buffer"
 import { weavedbSrcTxId, dfinitySrcTxId, ethereumSrcTxId } from "./const"
-let arweave_wallet, sdk
+let arweave_wallet, sdk, nodesdk
 const a = addr =>
   /^0x.+$/.test(trim(addr)) ? trim(addr).toLowerCase() : trim(addr)
 const ret = res =>
@@ -153,12 +153,13 @@ export const connectLocalhost = async ({ val: { port } }) => {
 }
 
 export const setupWeaveDB = async ({
-  val: { network, contractTxId, port, rpc },
+  val: { network, contractTxId, port, rpc, temp = false },
 }) => {
+  let _sdk
   let isRPC = !isNil(rpc) && !/^\s*$/.test(rpc)
   if (isRPC) {
     try {
-      sdk = new Client({
+      _sdk = new Client({
         rpc,
         contractTxId,
       })
@@ -166,7 +167,7 @@ export const setupWeaveDB = async ({
       console.log(e)
     }
   } else {
-    sdk = new SDK({
+    _sdk = new SDK({
       network: network.toLowerCase(),
       port,
       contractTxId,
@@ -184,13 +185,14 @@ export const setupWeaveDB = async ({
     } catch (e) {}
   }
   if (!isRPC && !isNil(contractTxId)) {
-    sdk.initialize({
+    _sdk.initialize({
       contractTxId: contractTxId,
       wallet: arweave_wallet,
     })
   }
   window.Buffer = Buffer
-  return sdk
+  if (!temp) sdk = _sdk
+  return _sdk
 }
 
 export const createTempAddressWithII = async ({
