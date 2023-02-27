@@ -309,6 +309,7 @@ export default inject(
         setState(info)
         setDocuments([])
         setDocdata(null)
+        setDocPath([])
         set(null, "loading_contract")
         fn(switchTempAddress)({ contractTxId: _contractTxId })
         if (isNil(info.version)) {
