@@ -170,6 +170,7 @@ export const setupWeaveDB = async ({
       network: network.toLowerCase(),
       port,
       contractTxId,
+      nocache: false,
     })
   }
   if (isNil(arweave_wallet)) {
@@ -874,7 +875,6 @@ export const queryDB = async ({
     if (!isNil(dryRead)) {
       opt.dryWrite = { cache: true, read: dryRead }
     }
-    console.log(method, q, opt, signer)
     return ret(await new Log(sdk, method, q, opt, fn, signer).rec(true))
   } catch (e) {
     console.log(e)
