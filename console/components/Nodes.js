@@ -204,25 +204,29 @@ export default inject(
                       onClick={async e => {
                         e.stopPropagation()
                         if (confirm("Would you like to remove the contract?")) {
-                          await fn(_remove)({
+                          const res = await fn(_remove)({
                             contractTxId: node.contract,
                             txid: v.txid,
                             rpc: node.rpc,
                           })
-                          const db = await fn(setupWeaveDB)({
-                            contractTxId: node.contract,
-                            rpc: node.rpc,
-                          })
-                          const addr = /^0x.+$/.test($.temp_current_all.addr)
-                            ? $.temp_current_all.addr.toLowerCase()
-                            : $.temp_current_all.addr
-                          setContracts(
-                            await fn(read)({
-                              db,
-                              m: "get",
-                              q: ["contracts", ["address", "=", addr], true],
+                          if (!res[0]?.[0]?.success) {
+                            alert("something went wrong")
+                          } else {
+                            const db = await fn(setupWeaveDB)({
+                              contractTxId: node.contract,
+                              rpc: node.rpc,
                             })
-                          )
+                            const addr = /^0x.+$/.test($.temp_current_all.addr)
+                              ? $.temp_current_all.addr.toLowerCase()
+                              : $.temp_current_all.addr
+                            setContracts(
+                              await fn(read)({
+                                db,
+                                m: "get",
+                                q: ["contracts", ["address", "=", addr], true],
+                              })
+                            )
+                          }
                         }
                       }}
                     >

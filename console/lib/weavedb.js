@@ -127,7 +127,7 @@ export const getRawDB = async ({
     if (isNil(ii._inner)) return
     opt.ii = ii
   }
-  return { opt, db, signer: a(current.address) }
+  return { opt, db, signer: a(current.addr) }
 }
 
 async function addFunds(arweave, wallet) {
@@ -170,7 +170,6 @@ export const setupWeaveDB = async ({
       network: network.toLowerCase(),
       port,
       contractTxId,
-      nocache: false,
     })
   }
   if (isNil(arweave_wallet)) {
@@ -394,7 +393,7 @@ export const switchTempAddress = async function ({
     set(!isNil(identity) ? current : null, "temp_current")
     if (!isNil(identity)) {
       set(
-        { addr: current, type: "evm", network: identity.network },
+        { addr: current, type: identity.type, network: identity.network },
         "temp_current_all"
       )
     }
