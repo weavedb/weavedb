@@ -2786,10 +2786,10 @@ warp-wasm-metering@1.0.0:
     leb128 "^0.0.4"
     warp-wasm-json-toolkit "1.0.0"
 
-weavedb-base@^0.21.1:
-  version "0.21.1"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.21.1.tgz#0029853db8901efbacae2c91d94087a8d4b06226"
-  integrity sha512-O2CO0J4NLl3cm6CT/QtPw6H1mjTnyi1rQMrT5ecdH4tbg2EYOdWJw/J0Dxcuc8tnLC9k/Nwwi7XX/sMDBvkruQ==
+weavedb-base@^0.21.2:
+  version "0.21.2"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.21.2.tgz#3f19d870d8879f4c833e69a90dda4f2794fbce92"
+  integrity sha512-WwuetNvc44ObF0D03GSfyccf5q/X/Fy60HeyeBSpJojiJHwTbPGK1mLCdX8tX5bfnTDb0y6XRv7eV+1V55xN5A==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"

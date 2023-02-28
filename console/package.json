@@ -40,6 +40,6 @@
     "roidjs": "^0.1.6",
     "warp-contracts": "1.2.36",
     "weavedb-client": "^0.21.0",
-    "weavedb-sdk": "^0.21.5"
+    "weavedb-sdk": "^0.21.6"
   }
 }

@@ -202,7 +202,7 @@ class Base {
       : !isNil(ar)
       ? await this.writeWithAR(ar, ...params)
       : await this.writeWithEVM(
-          wallet || this.wallet,
+          wallet,
           func,
           query,
           nonce,
@@ -250,7 +250,7 @@ class Base {
   }
 
   async createTempAddress(evm, expiry, opt = {}) {
-    const wallet = is(Object, evm) ? evm : this.wallet
+    const wallet = is(Object, evm) ? evm : null
     let addr = null
     if (!isNil(wallet)) {
       addr = is(String, evm)
