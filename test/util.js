@@ -4,11 +4,9 @@ const fs = require("fs")
 const path = require("path")
 const { expect } = require("chai")
 const Wallet = require("ethereumjs-wallet").default
-
 const { isNil } = require("ramda")
 const ArLocal = require("arlocal").default
 const Constants = require("../contracts/intmax/lib/circomlibjs/poseidon_constants_opt.js")
-
 async function addFunds(arweave, wallet) {
   const walletAddress = await arweave.wallets.getAddress(wallet)
   await arweave.api.get(`/mint/${walletAddress}/1000000000000000`)
