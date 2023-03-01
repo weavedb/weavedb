@@ -40,13 +40,14 @@
     "url": "^0.11.0",
     "url-polyfill": "^1.1.12",
     "url-shim": "^1.0.1",
-    "warp-contracts": "1.2.48",
+    "warp-contracts": "1.2.54",
     "warp-contracts-lmdb": "^1.1.6",
+    "warp-contracts-plugin-deploy": "^1.0.0",
     "warp-contracts-plugin-subscription": "^1.0.5",
     "wasmbuilder": "^0.0.16",
     "wasmcurves": "^0.2.0",
-    "weavedb-sdk": "^0.21.9",
-    "weavedb-sdk-node": "^0.21.29",
+    "weavedb-sdk": "^0.21.10",
+    "weavedb-sdk-node": "^0.21.30",
     "yargs": "^17.6.2"
   },
   "engines": {

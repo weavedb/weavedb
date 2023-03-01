@@ -6,6 +6,7 @@ import Client from "weavedb-client"
 import { ethers } from "ethers"
 import { AuthClient } from "@dfinity/auth-client"
 import { WarpFactory } from "warp-contracts"
+const { DeployPlugin, ArweaveSigner } = require("warp-contracts-plugin-deploy")
 import {
   trim,
   clone,
@@ -455,7 +456,7 @@ async function deployFromSrc({ src, warp, init, extra, algorithms }) {
     wallet = await arweave.wallets.generate()
   }
   const { contractTxId } = await warp.createContract.deployFromSourceTx({
-    wallet,
+    wallet: new ArweaveSigner(wallet),
     initState: JSON.stringify(initialState),
     srcTxId: src,
   })
@@ -491,7 +492,7 @@ export const deployDB = async ({
     owner = owner.toLowerCase()
   }
   if (network === "Mainnet") {
-    const warp = WarpFactory.forMainnet()
+    const warp = WarpFactory.forMainnet().use(new DeployPlugin())
     const contractTxId = await deployFromSrc({
       src: weavedbSrcTxId,
       init: "initial-state",
@@ -511,7 +512,7 @@ export const deployDB = async ({
     })
     return { contractTxId, network, port }
   } else {
-    const warp = WarpFactory.forLocal(port)
+    const warp = WarpFactory.forLocal(port).use(new DeployPlugin())
     const arweave = Arweave.init({
       host: "localhost",
       port: port || 1820,
