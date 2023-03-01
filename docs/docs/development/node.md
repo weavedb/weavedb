@@ -47,6 +47,19 @@ module.exports = {
 
 Then build and run the docker container.
 
+#### State Cache
+
+You can choose state cache DB for `weavedb-sdk-node` from `lmdb`(default), `leveldb`, and `redis`.
+
+Set a prefix for Redis keys with `cache_prefix` option.
+
+```js
+module.exports = {
+  cache: "redis",
+  cache_prefix: "grpc_node"
+}
+```
+
 #### Store Snapshots in Google Cloud Storage
 
 Due to the concept of lazy evaluation, initializing contracts with a large number of transactions is extremely slow.
@@ -100,17 +113,30 @@ module.exports = {
 }
 ```
 
-#### Redis for Remote In-Memory Cache
+#### Redis for Remote Query Cache
 
-You can use Redis for multiple nodes to share the same remote cache.
+You can use Redis for multiple nodes to share the same remote cache for queries.
 
 Use `redis` option in `weavedb.config.js`.
 
 ```js
 module.exports = {
   redis: {
-    url: "redis://localhost:6379",
+    url: "redis://localhost:6379",  // or redis://redis:6379 for docker containers
 	prefix: "weavedb" // prefix for cache keys
+  }
+}
+```
+
+#### WeaveDB Offchain
+
+The node uses `weavedb-offchain` for internal contract management, which is backed by Redis.
+
+```js
+module.exports = {
+  offchain_db: {
+    url: "redis://redis:6379", // for docker containers
+	prefix: "contract_manager" // prefix for cache keys
   }
 }
 ```
