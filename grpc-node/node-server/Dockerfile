@@ -8,4 +8,5 @@ RUN npm install
 
 EXPOSE 9090
 
-CMD ["node", "server.js"]
+# CMD ["node", "server.js"]
+ENTRYPOINT ["./start-node-server.sh"]
