@@ -38,8 +38,9 @@
     "react-simple-code-editor": "^0.13.1",
     "recoil": "^0.5.2",
     "roidjs": "^0.1.6",
-    "warp-contracts": "1.2.36",
+    "warp-contracts": "1.2.54",
+    "warp-contracts-plugin-deploy": "^1.0.0",
     "weavedb-client": "^0.21.0",
-    "weavedb-sdk": "^0.21.6"
+    "weavedb-sdk": "^0.21.12"
   }
 }

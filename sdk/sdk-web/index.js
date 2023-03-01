@@ -33,6 +33,7 @@ const {
 const { parseQuery } = require("weavedb-contracts/weavedb/lib/utils")
 const md5 = require("md5")
 const { createId } = require("@paralleldrive/cuid2")
+const { DeployPlugin } = require("warp-contracts-plugin-deploy")
 const is_data = [
   "set",
   "setSchema",
@@ -234,6 +235,7 @@ class SDK extends Base {
     } else {
       this.warp = this.Warp.WarpFactory.forMainnet()
     }
+    this.warp.use(new DeployPlugin())
     this.contractTxId = contractTxId
     if (all(complement(isNil))([contractTxId, wallet, name, version])) {
       this.initialize({
@@ -357,9 +359,19 @@ class SDK extends Base {
         class CustomSubscriptionPlugin extends this.WarpSubscriptionPlugin {
           async process(input) {
             try {
-              let data = await dbs[self.contractTxId].db.readState(
-                input.sortKey
-              )
+              const lastStoredKey = (
+                await self.warp.stateEvaluator.latestAvailableState(
+                  self.contractTxId
+                )
+              )?.sortKey
+              let data =
+                lastStoredKey?.localeCompare(input.lastSortKey) === 0
+                  ? await dbs[self.contractTxId].db.readStateFor(
+                      input.lastSortKey,
+                      [input.interaction]
+                    )
+                  : await dbs[self.contractTxId].db.readState()
+
               const state = data.cachedValue.state
 
               try {

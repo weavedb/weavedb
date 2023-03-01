@@ -190,3 +190,31 @@ To enable Arweave, and disable the others.
 ```javascript
 await db.setAlgorithms([ "rsa256" ])
 ```
+
+## setDefaultWallet
+
+You can set a default wallet and it will be used if no wallet is specified with queries.
+
+### MetaMask (EVM)
+
+```js
+db.setDefaultWallet(wallet, "evm")
+```
+
+### Internet Identity (DFINITY)
+
+```js
+db.setDefaultWallet(wallet, "ii")
+```
+
+### ArConnect (Arweave)
+
+```js
+db.setDefaultWallet(wallet, "ar")
+```
+
+### IntmaxWallet (Intmax)
+
+```js
+db.setDefaultWallet(wallet, "intmax")
+```

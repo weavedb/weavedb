@@ -64,9 +64,9 @@ describe("WeaveDB", function () {
   })
 
   it("should get nonce", async () => {
-    expect(await db.getNonce(wallet.getAddressString())).to.equal(1)
+    expect(await db.getNonce(walletAddress)).to.equal(1)
     await db.set({ id: 1 }, "col", "doc")
-    expect(await db.getNonce(wallet.getAddressString())).to.equal(2)
+    expect(await db.getNonce(walletAddress)).to.equal(2)
   })
 
   it("should add & get", async () => {

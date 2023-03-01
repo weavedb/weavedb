@@ -195,6 +195,29 @@ class Base {
       multisigs,
       onDryWrite,
     ]
+    if (
+      isNil(intmax) &&
+      isNil(ii) &&
+      isNil(ar) &&
+      isNil(wallet) &&
+      isNil(privateKey) &&
+      !isNil(this.defaultWallet)
+    ) {
+      switch (this.defaultWallet.type) {
+        case "ar":
+          ar = this.defaultWallet.wallet
+          break
+        case "ii":
+          ii = this.defaultWallet.wallet
+          break
+        case "intmax":
+          intmax = this.defaultWallet.wallet
+          break
+        case "evm":
+          wallet = this.defaultWallet.wallet
+          break
+      }
+    }
     return !isNil(intmax)
       ? await this.writeWithIntmax(intmax, ...params)
       : !isNil(ii)
@@ -215,6 +238,10 @@ class Base {
           multisigs,
           onDryWrite
         )
+  }
+
+  setDefaultWallet(wallet, type = "evm") {
+    this.defaultWallet = { wallet, type }
   }
 
   async createTempAddressWithII(ii, expiry, opt = {}) {
