@@ -2435,6 +2435,11 @@
   resolved "https://registry.yarnpkg.com/@noble/hashes/-/hashes-1.1.2.tgz#e9e035b9b166ca0af657a7848eb2718f0f22f183"
   integrity sha512-KYRCASVTv6aeUi1tsF8/vpyR7zpfs3FUzy2Jqm+MU+LmUKhQ0y2FpfwqkCcxSg2ua4GALJd8k2R76WxwZGbQpA==
 
+"@noble/hashes@^1.1.5":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@noble/hashes/-/hashes-1.2.0.tgz#a3150eeb09cc7ab207ebf6d7b9ad311a9bdbed12"
+  integrity sha512-FZfhjEDbT5GRswV3C6uvLPHMiVD6lQBmpoX5+eSiPaMTXte/IKqI5dykDxzZB/WBeK/CDuQRBWarPdi3FNY2zQ==
+
 "@noble/hashes@~1.1.1":
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/@noble/hashes/-/hashes-1.1.3.tgz#360afc77610e0a61f3417e497dcf36862e4f8111"
@@ -2460,6 +2465,13 @@
   dependencies:
     mkdirp "^1.0.4"
     rimraf "^3.0.2"
+
+"@paralleldrive/cuid2@^2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@paralleldrive/cuid2/-/cuid2-2.2.0.tgz#105b31311994c18d816cb0d31f31ecaf425d32b4"
+  integrity sha512-CVQDpPIUHrUGGLdrMGz1NmqZvqmsB2j2rCIQEu1EvxWjlFh4fhvEGmgR409cY20/67/WlJsggenq0no3p3kYsw==
+  dependencies:
+    "@noble/hashes" "^1.1.5"
 
 "@peculiar/asn1-schema@^2.1.6":
   version "2.3.0"
@@ -2563,10 +2575,10 @@
   resolved "https://registry.yarnpkg.com/@redis/bloom/-/bloom-1.2.0.tgz#d3fd6d3c0af3ef92f26767b56414a370c7b63b71"
   integrity sha512-HG2DFjYKbpNmVXsa0keLHp/3leGJz1mjh09f2RLGGLQZzSHpkmZWuwJbAvo3QcRY8p80m5+ZdXZdYOSBLlp7Cg==
 
-"@redis/client@1.5.5":
-  version "1.5.5"
-  resolved "https://registry.yarnpkg.com/@redis/client/-/client-1.5.5.tgz#330aa9c2dafe1e2a2aa603619e58095fe33c3a1e"
-  integrity sha512-fuMnpDYSjT5JXR9rrCW1YWA4L8N/9/uS4ImT3ZEC/hcaQRI1D/9FvwjriRj1UvepIgzZXthFVKMNRzP/LNL7BQ==
+"@redis/client@1.5.6":
+  version "1.5.6"
+  resolved "https://registry.yarnpkg.com/@redis/client/-/client-1.5.6.tgz#869cc65718d7d5493ef655a71dc40f3bc64a1b28"
+  integrity sha512-dFD1S6je+A47Lj22jN/upVU2fj4huR7S9APd7/ziUXsIXDL+11GPYti4Suv5y8FuXaN+0ZG4JF+y1houEJ7ToA==
   dependencies:
     cluster-key-slot "1.1.2"
     generic-pool "3.9.0"
@@ -2582,10 +2594,10 @@
   resolved "https://registry.yarnpkg.com/@redis/json/-/json-1.0.4.tgz#f372b5f93324e6ffb7f16aadcbcb4e5c3d39bda1"
   integrity sha512-LUZE2Gdrhg0Rx7AN+cZkb1e6HjoSKaeeW8rYnt89Tly13GBI5eP4CwDVr+MY8BAYfCg4/N15OUrtLoona9uSgw==
 
-"@redis/search@1.1.1":
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/@redis/search/-/search-1.1.1.tgz#f547b76b74f267831d3b368e3d7bba3a6a9e32bd"
-  integrity sha512-pqCXTc5e7wJJgUuJiC3hBgfoFRoPxYzwn0BEfKgejTM7M/9zP3IpUcqcjgfp8hF+LoV8rHZzcNTz7V+pEIY7LQ==
+"@redis/search@1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@redis/search/-/search-1.1.2.tgz#6a8f66ba90812d39c2457420f859ce8fbd8f3838"
+  integrity sha512-/cMfstG/fOh/SsE+4/BQGeuH/JJloeWuH+qJzM8dbxuWvdWibWAOAHHCZTMPhV3xIlH4/cUEIA8OV5QnYpaVoA==
 
 "@redis/time-series@1.0.4":
   version "1.0.4"
@@ -6186,7 +6198,7 @@ formidable@^1.1.1, formidable@^1.2.2:
   resolved "https://registry.yarnpkg.com/formidable/-/formidable-1.2.6.tgz#d2a51d60162bbc9b4a055d8457a7c75315d1a168"
   integrity sha512-KcpbcpuLNOwrEjnbpMC0gS+X8ciDoZE1kkqzat4a8vrprf+s9pKNQ/QIwWfbfs4ltgmFl3MD177SNTkve3BwGQ==
 
-fpjson-lang@^0.1.1, fpjson-lang@^0.1.3:
+fpjson-lang@^0.1.3:
   version "0.1.3"
   resolved "https://registry.yarnpkg.com/fpjson-lang/-/fpjson-lang-0.1.3.tgz#850a3bac1da2b4488118000acf4aab1bb06109e6"
   integrity sha512-GBLFEQmeoTdFLp1yfDhierzozniCClzeuu+Y9Xny+JIf1gOGM8n/gqZqn0sneKikt71K6qxFVZDrpfkPTA53nA==
@@ -8372,11 +8384,6 @@ nanoid@3.3.3:
   resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.3.tgz#fd8e8b7aa761fe807dba2d1b98fb7241bb724a25"
   integrity sha512-p1sjXuopFs0xg+fPASzQ28agW1oHD7xDsd9Xkf3T15H3c/cifrFHVwrh74PdoklAPi+i7MdRsE47vm2r6JoB+w==
 
-nanoid@^2.1.0:
-  version "2.1.11"
-  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-2.1.11.tgz#ec24b8a758d591561531b4176a01e3ab4f0f0280"
-  integrity sha512-s/snB+WGm6uwi0WjsZdaVcuf3KJXlfGl2LcxgwkEwJF0D/BWzVWAZW/XY4bFaiR7s0Jk3FPvlnepg1H1b1UwlA==
-
 nanoid@^3.3.4:
   version "3.3.4"
   resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.4.tgz#730b67e3cd09e2deacf03c027c81c9d9dbc5e8ab"
@@ -9161,16 +9168,16 @@ rechoir@0.7.0:
   dependencies:
     resolve "^1.9.0"
 
-redis@^4.6.4:
-  version "4.6.4"
-  resolved "https://registry.yarnpkg.com/redis/-/redis-4.6.4.tgz#fe84169de000b247009c70c2740f22d1f85bc2de"
-  integrity sha512-wi2tgDdQ+Q8q+PR5FLRx4QvDiWaA+PoJbrzsyFqlClN5R4LplHqN3scs/aGjE//mbz++W19SgxiEnQ27jnCRaA==
+redis@^4.6.5:
+  version "4.6.5"
+  resolved "https://registry.yarnpkg.com/redis/-/redis-4.6.5.tgz#f32fbde44429e96f562bb0c9b1db0143ab8cfa4f"
+  integrity sha512-O0OWA36gDQbswOdUuAhRL6mTZpHFN525HlgZgDaVNgCJIAZR3ya06NTESb0R+TUZ+BFaDpz6NnnVvoMx9meUFg==
   dependencies:
     "@redis/bloom" "1.2.0"
-    "@redis/client" "1.5.5"
+    "@redis/client" "1.5.6"
     "@redis/graph" "1.1.0"
     "@redis/json" "1.0.4"
-    "@redis/search" "1.1.1"
+    "@redis/search" "1.1.2"
     "@redis/time-series" "1.0.4"
 
 redstone-isomorphic@1.1.0:
@@ -9491,13 +9498,6 @@ shebang-regex@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/shebang-regex/-/shebang-regex-3.0.0.tgz#ae16f1644d873ecad843b0307b143362d4c42172"
   integrity sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==
-
-shortid@^2.2.16:
-  version "2.2.16"
-  resolved "https://registry.yarnpkg.com/shortid/-/shortid-2.2.16.tgz#b742b8f0cb96406fd391c76bfc18a67a57fe5608"
-  integrity sha512-Ugt+GIZqvGXCIItnsL+lvFJOiN7RYqlGy7QE41O3YC1xbNSeDGIRO7xg2JJXIAj1cAGnOeC1r7/T9pgrtQbv4g==
-  dependencies:
-    nanoid "^2.1.0"
 
 side-channel@^1.0.4:
   version "1.0.4"
@@ -10473,27 +10473,6 @@ warp-contracts-pubsub@^1.0.5:
     isomorphic-ws "^5.0.0"
     ws "^8.11.0"
 
-warp-contracts@1.2.36:
-  version "1.2.36"
-  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.2.36.tgz#fa83224ca1268c3ebb4739b65b583639e9ef847a"
-  integrity sha512-XJQp4YfIwIcj+SqhvKMfsWs4mICaksOqwQT6gojXGZooWFkMpGkQzVO4MiWb2gXKaRG3jlBOqXdyb7873EvrRQ==
-  dependencies:
-    "@assemblyscript/loader" "^0.19.23"
-    "@idena/vrf-js" "^1.0.1"
-    archiver "^5.3.0"
-    arweave "1.11.8"
-    elliptic "^6.5.4"
-    events "3.3.0"
-    fast-copy "^3.0.0"
-    level "^8.0.0"
-    memory-level "^1.0.0"
-    redstone-isomorphic "1.1.8"
-    redstone-wasm-metering "1.0.3"
-    safe-stable-stringify "2.4.1"
-    stream-buffers "^3.0.2"
-    unzipit "^1.4.0"
-    vm2 "3.9.11"
-
 warp-contracts@1.2.48:
   version "1.2.48"
   resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.2.48.tgz#2a325e80093eb54ed59af495e21c3b2c98b796a9"
@@ -10556,10 +10535,10 @@ weak-lru-cache@^1.2.2:
   resolved "https://registry.yarnpkg.com/weak-lru-cache/-/weak-lru-cache-1.2.2.tgz#fdbb6741f36bae9540d12f480ce8254060dccd19"
   integrity sha512-DEAoo25RfSYMuTGc9vPJzZcZullwIqRDSI9LOy+fkCJPi6hykCnfKaXTuPBDuXAUcqHXyOgFtHNp/kB2FjYHbw==
 
-weavedb-base@^0.18.5:
-  version "0.18.5"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.18.5.tgz#f258c565c981d1a7d0bffa6eb5068da056df8ca2"
-  integrity sha512-geMSxXhD6rGmWLhFwjQrrQrhfORIOJ4hh0hSwH1megDtJ0NIiRYBiu47IOjmeF13vgwrIKG6EHCs6PFT2vGPEg==
+weavedb-base@^0.21.2:
+  version "0.21.2"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.21.2.tgz#3f19d870d8879f4c833e69a90dda4f2794fbce92"
+  integrity sha512-WwuetNvc44ObF0D03GSfyccf5q/X/Fy60HeyeBSpJojiJHwTbPGK1mLCdX8tX5bfnTDb0y6XRv7eV+1V55xN5A==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"
@@ -10567,41 +10546,43 @@ weavedb-base@^0.18.5:
     ethereumjs-util "^7.1.5"
     ramda "^0.28.0"
 
-weavedb-sdk-node@^0.20.20:
-  version "0.20.20"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk-node/-/weavedb-sdk-node-0.20.20.tgz#2de693ae0d2540f425a827557cbaf1350ad79f45"
-  integrity sha512-ZeSu7Q81/qPRcZthu53F63NgF2txgiizu3esBLzCrKFJNckz+qUpejUrQgCOqjAZ//QbppWcFdils3u+XqmPDg==
+weavedb-contracts@^0.21.0:
+  version "0.21.0"
+  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.21.0.tgz#13b9ca28d030035db88afe10b6554bf024eb1016"
+  integrity sha512-DzmdiLYgsEcrPCd3shbVxHvKKtmftQUBNGL/j+yUJyJRjB79UDC+pbqWrlS5X153Si3RbGDRSqx+LdouJOI+IQ==
   dependencies:
-    "@aws-amplify/api" "^5.0.14"
-    "@metamask/legacy-web3" "^2.0.0"
-    arweave "^1.11.4"
-    fpjson-lang "^0.1.1"
-    json-logic-js "^2.0.2"
-    md5 "^2.3.0"
-    ramda "^0.28.0"
-    redis "^4.6.4"
-    shortid "^2.2.16"
-    warp-contracts "1.2.48"
-    warp-contracts-lmdb "^1.1.9"
-    warp-contracts-old "npm:warp-contracts@1.2.26"
-    warp-contracts-plugin-subscription "^1.0.5"
-    warp-contracts-pubsub "^1.0.5"
-    weavedb-base "^0.18.5"
-
-weavedb-sdk@^0.18.5:
-  version "0.18.5"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.18.5.tgz#a34b969f637417bf6953dc7f69844738321a9c13"
-  integrity sha512-WuFfJN1W5yudnLo7XwaNmZWE2S+9gu2sjNP3ldKk9LQr9Po9tjr95XSQvXKI5WU+/BEx50yqtqX/bb+CFNVd1Q==
-  dependencies:
-    "@metamask/legacy-web3" "^2.0.0"
-    arweave "^1.11.4"
     fpjson-lang "^0.1.3"
     json-logic-js "^2.0.2"
     md5 "^2.3.0"
     ramda "^0.28.0"
-    warp-contracts "1.2.36"
+
+weavedb-sdk-node@^0.21.28:
+  version "0.21.28"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk-node/-/weavedb-sdk-node-0.21.28.tgz#6287f20160be956affafcb5a71aece6f208f9aad"
+  integrity sha512-/GFQ3zJX9EublxMPwU54JVZ/vSadQafW9DTsDlMhekSbeg5I7FHaMA4HwuIBDW/zroHFCE7Y6Vg45+oGqwcp1w==
+  dependencies:
+    "@aws-amplify/api" "^5.0.14"
+    redis "^4.6.5"
+    warp-contracts-lmdb "^1.1.9"
+    warp-contracts-pubsub "^1.0.5"
+    weavedb-contracts "^0.21.0"
+    weavedb-sdk "^0.21.7"
+
+weavedb-sdk@^0.21.7:
+  version "0.21.7"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.21.7.tgz#51a4f94e51dd88f5f4ead1f3b1813f51f30a316b"
+  integrity sha512-C4eTUFbRSFzhUcJtqpzd9HJB0EHGeclVWdrQQecswwt7ARzavVkVRrh8MWwac6JKRBeywXqMSUaZFuwgwI2nMw==
+  dependencies:
+    "@metamask/legacy-web3" "^2.0.0"
+    "@paralleldrive/cuid2" "^2.2.0"
+    arweave "^1.11.4"
+    buffer "^6.0.3"
+    md5 "^2.3.0"
+    ramda "^0.28.0"
+    warp-contracts "1.2.48"
     warp-contracts-old "npm:warp-contracts@1.2.26"
-    weavedb-base "^0.18.5"
+    weavedb-base "^0.21.2"
+    weavedb-contracts "^0.21.0"
 
 web-streams-polyfill@^3.0.3:
   version "3.2.1"

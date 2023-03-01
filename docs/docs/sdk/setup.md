@@ -58,6 +58,9 @@ e.g. `{host: "arweave.net", port: 443, protocol: "https"}`
 - **old** : `true` | `false` (default : `false`)  
 WeaveDB contracts v0.7 and less are not compatible with the latest warp SDK. Set this `true` to make it work with old DB instances.
 
+- **nocache** : `true` | `false` (default : `true` for node, `false` for web)  
+Set the default `nocache` value. If set `false`, the SDK returns dryWrite result before sending the tx to Warp. dryWrite is performed on virtual state kept by the WeaveDB SDK, or cached state kept by the Warp SDK without making any http requests, so it's just a matter of milliseconds to return the result.
+
 #### weavedb-sdk-node only parameters
 
 - **subscribe** : `true` | `false` (default : `true`)  
@@ -100,3 +103,52 @@ The Redis cache keys will be
 - `[prefix].[contractTxId].state.[sortKey]`
 - `[prefix].[contractTxId].contracts.[sortKey]`
 - `[prefix].[contractTxId].src.[sortKey]`
+
+## onDryWrite
+
+With `onDryWrite` option, the SDK returns a virtually calculated result before sending the query to Warp.
+
+You can execute `dryRead` queries immediately after `dryWrite` to include in the returnd object.
+
+This is great performance optimization to achieve web2-like speed and UX with the smart contract DB.
+
+```js
+const result = await db.set({ name: "Bob" }, "ppl", "Bob", {
+  onDryWrite: {
+    cache: true,
+    cb: async ({ nonce, signer, cache, success, duration, error, func, state, results }) => {
+	  console.log(`dryRead results: ${results}`)
+	  console.log(`Bob: ${results[0].result}`)
+	},
+    read: [["get", "ppl"], ["get", "ppl", "Bob"]], // an array of dryRead queries
+  },
+})
+console.log(`regular result: ${result}`)
+```
+
+- `cache`: if set `true`, it will be caluculated against the virtual state kept by the WeaveDB SDK, which is much faster (a few ms) than against the Warp SDK dryWrite (a few hundred ms due to checking the latest state with a http request). `false` is still faster than a regular tx execution process (a few seconds). The difference is `true` might return the wrong `dryRead` results if some parallel queries are ongoing on other nodes, which will be solved and roll-backed within 5 seconds.
+- `cb`: a callback function to immediately execute upon dryWrite.
+- `read`: read queries to immediately execute against the virtual state after dryWrite. The `results` come in the write query return object. This is a great performance optimization compared with separate read queries after a write query.
+
+The code below is equivalent to the above, but it will take 3-5 seconds, where as the above takes only around 50 milliseconds.
+
+```js
+const result = await db.set({ name: "Bob" }, "ppl", "Bob")
+console.log(`regular result: ${result}`)
+const Bob = await db.get("ppl", "Bob", true)
+console.log(`this will take 3 - 5 sec: ${Bob}`)
+```
+
+### with Light Client
+
+`onDryWrite` can be used with `weavedb-client` / `weavedb-node-client` too. But in that case, there is no `cb` option and the returned value of the entire function will be the result from `dryWrite` execution. This is because the connection to the gRPC node is a one-off gRPC request, which returns a result only once.
+
+```js
+const dryWriteResult = await client.set({ name: "Bob" }, "ppl", "Bob", {
+  onDryWrite: {
+    cache: true,
+    read: [["get", "ppl"], ["get", "ppl", "Bob"]], // an array of dryRead queries
+  },
+})
+console.log(`dryWrite result: ${result}`)
+```
