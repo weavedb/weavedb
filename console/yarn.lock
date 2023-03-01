@@ -4015,7 +4015,7 @@ arweave@1.11.6:
     bignumber.js "^9.0.2"
     util "^0.12.4"
 
-arweave@1.11.8, arweave@^1.10.13:
+arweave@^1.10.13:
   version "1.11.8"
   resolved "https://registry.yarnpkg.com/arweave/-/arweave-1.11.8.tgz#09376e0c6cec40a661cbb27a306cb11c0a663cd8"
   integrity sha512-58ODeNPIC4OjaOCl2bXjKbOFGsiVZFs+DkQg3BvQGvFWNqw1zTJ4Jp01xGUz+GbdOaDyJcCC0g3l0HwdJfFPyw==
@@ -10435,27 +10435,6 @@ warp-contracts-plugin-deploy@^1.0.0:
     arlocal "^1.1.59"
     node-stdlib-browser "^1.2.0"
 
-warp-contracts@1.2.48:
-  version "1.2.48"
-  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.2.48.tgz#2a325e80093eb54ed59af495e21c3b2c98b796a9"
-  integrity sha512-TBZJ/VZdr+9mFjH2gjf55kTeHc9/tXQ3bsym41+ujq6m1kIreyhL1I0G7bn6qSHpAbOIZKIjP5GC5+pp9pm8Ew==
-  dependencies:
-    "@assemblyscript/loader" "^0.19.23"
-    "@idena/vrf-js" "^1.0.1"
-    archiver "^5.3.0"
-    arweave "1.11.8"
-    elliptic "^6.5.4"
-    events "3.3.0"
-    fast-copy "^3.0.0"
-    level "^8.0.0"
-    memory-level "^1.0.0"
-    redstone-isomorphic "1.1.8"
-    safe-stable-stringify "2.4.1"
-    stream-buffers "^3.0.2"
-    unzipit "^1.4.0"
-    vm2 "3.9.11"
-    warp-wasm-metering "1.0.0"
-
 warp-contracts@1.2.54:
   version "1.2.54"
   resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.2.54.tgz#6f79cc5ff42c615a81d26114f5025e58711e5db3"
@@ -10494,15 +10473,6 @@ warp-isomorphic@1.0.4:
     buffer "^6.0.3"
     undici "^5.8.0"
 
-warp-wasm-json-toolkit@1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/warp-wasm-json-toolkit/-/warp-wasm-json-toolkit-1.0.0.tgz#f08b555b64fac2b102450e6a5e94f4bf71405508"
-  integrity sha512-pFJpP3djS6GvDu5ohgBjSjkYQrKs1Toi7hsvjW5FIJO1Q/msclbeoUY3Poiyx0Hz6oRVfuO2MZkmCreDnNaUTg==
-  dependencies:
-    buffer-pipe "0.0.3"
-    leb128 "0.0.4"
-    redstone-isomorphic "1.1.0"
-
 warp-wasm-json-toolkit@1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/warp-wasm-json-toolkit/-/warp-wasm-json-toolkit-1.0.2.tgz#16ca399e5b20da804c01ff0d00979341b689a0e7"
@@ -10511,14 +10481,6 @@ warp-wasm-json-toolkit@1.0.2:
     buffer-pipe "0.0.3"
     leb128 "0.0.4"
     warp-isomorphic "1.0.0"
-
-warp-wasm-metering@1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/warp-wasm-metering/-/warp-wasm-metering-1.0.0.tgz#ff2ded687885af22c8fc6560409a582e127c3af3"
-  integrity sha512-lOlVz7BDTnTMuvhrtIbVtozGJANoVgVn6gD3dTEFyIMehC250CKHmsqenX1jy5OM2DNL/VuFNdCTLHCGaPg64w==
-  dependencies:
-    leb128 "^0.0.4"
-    warp-wasm-json-toolkit "1.0.0"
 
 warp-wasm-metering@1.0.1:
   version "1.0.1"
@@ -10546,10 +10508,10 @@ weavedb-base@^0.21.0:
     ethereumjs-util "^7.1.5"
     ramda "^0.28.0"
 
-weavedb-base@^0.21.2:
-  version "0.21.2"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.21.2.tgz#3f19d870d8879f4c833e69a90dda4f2794fbce92"
-  integrity sha512-WwuetNvc44ObF0D03GSfyccf5q/X/Fy60HeyeBSpJojiJHwTbPGK1mLCdX8tX5bfnTDb0y6XRv7eV+1V55xN5A==
+weavedb-base@^0.21.4:
+  version "0.21.4"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.21.4.tgz#41db0d414b377dab662f9dd50cd9f7397914aa63"
+  integrity sha512-+FYe1JftOA/hUrAdW9wpn6SLsbsV8MvapoYBDzwIBKLPMujbjy+8Vt/mSb3Upl5MoecVycICbXRfHrgmd/ll7Q==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"
@@ -10579,10 +10541,10 @@ weavedb-contracts@^0.21.0:
     md5 "^2.3.0"
     ramda "^0.28.0"
 
-weavedb-sdk@^0.21.6:
-  version "0.21.6"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.21.6.tgz#b674b9218cc06f030a3d63ca51cfaea63dafbfa1"
-  integrity sha512-Wz1oC7BKPaGehm8PHMJ4Gc3rpVTe2hTsBsIiYXOlx4RodrfDh8f3/Pu2B2py4WDOKAN8ii0UxthhcQO33LKPdg==
+weavedb-sdk@^0.21.12:
+  version "0.21.12"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.21.12.tgz#74f246c51e3ea127242a5ee9ae6ed2836ac36242"
+  integrity sha512-iXLTs5XrUUFTeEPYxAqeAiRUoP31SOm2s1E32SGu52zQj2Zk1MzhAq3MC/1l1zDqF8gyWsGTL5PtXboEfQki/g==
   dependencies:
     "@metamask/legacy-web3" "^2.0.0"
     "@paralleldrive/cuid2" "^2.2.0"
@@ -10590,9 +10552,10 @@ weavedb-sdk@^0.21.6:
     buffer "^6.0.3"
     md5 "^2.3.0"
     ramda "^0.28.0"
-    warp-contracts "1.2.48"
+    warp-contracts "1.2.54"
     warp-contracts-old "npm:warp-contracts@1.2.26"
-    weavedb-base "^0.21.2"
+    warp-contracts-plugin-deploy "^1.0.0"
+    weavedb-base "^0.21.4"
     weavedb-contracts "^0.21.0"
 
 web-namespaces@^2.0.0:
