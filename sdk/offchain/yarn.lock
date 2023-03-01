@@ -1079,10 +1079,10 @@ util-deprecate@^1.0.1:
   resolved "https://registry.yarnpkg.com/util-deprecate/-/util-deprecate-1.0.2.tgz#450d4dc9fa70de732762fbd2d4a28981419a0ccf"
   integrity sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==
 
-weavedb-base@^0.21.0:
-  version "0.21.0"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.21.0.tgz#775a3815b9a2c9b6d3563942cc5202710a003e7b"
-  integrity sha512-r0d0SgB0zUSvwzx1BHWfW0/4fbVZC4FAHvXKN0Jf4BzqKBMUc4MzqfivSV1L22rdxOx/3k0QeML+j1hK5107cg==
+weavedb-base@^0.21.4:
+  version "0.21.4"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.21.4.tgz#41db0d414b377dab662f9dd50cd9f7397914aa63"
+  integrity sha512-+FYe1JftOA/hUrAdW9wpn6SLsbsV8MvapoYBDzwIBKLPMujbjy+8Vt/mSb3Upl5MoecVycICbXRfHrgmd/ll7Q==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"

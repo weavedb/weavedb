@@ -6060,10 +6060,10 @@ wcwidth@^1.0.1:
   dependencies:
     defaults "^1.0.3"
 
-weavedb-base@^0.21.2:
-  version "0.21.2"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.21.2.tgz#3f19d870d8879f4c833e69a90dda4f2794fbce92"
-  integrity sha512-WwuetNvc44ObF0D03GSfyccf5q/X/Fy60HeyeBSpJojiJHwTbPGK1mLCdX8tX5bfnTDb0y6XRv7eV+1V55xN5A==
+weavedb-base@^0.21.4:
+  version "0.21.4"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.21.4.tgz#41db0d414b377dab662f9dd50cd9f7397914aa63"
+  integrity sha512-+FYe1JftOA/hUrAdW9wpn6SLsbsV8MvapoYBDzwIBKLPMujbjy+8Vt/mSb3Upl5MoecVycICbXRfHrgmd/ll7Q==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"

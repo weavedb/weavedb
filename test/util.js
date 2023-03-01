@@ -273,6 +273,7 @@ async function initBeforeEach(secure = false, subscribe = false) {
     EthWallet: wallet,
     subscribe,
   })
+  sdk.setDefaultWallet(wallet, "evm")
   await sdk.mineBlock()
 
   return {
