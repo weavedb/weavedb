@@ -162,8 +162,14 @@ class SDK extends Base {
     progress,
     logLevel = "error",
     nocache,
+    LmdbCache,
+    createClient,
+    WarpSubscriptionPlugin,
   }) {
     super()
+    this.LmdbCache = LmdbCache
+    this.createClient = createClient
+    this.WarpSubscriptionPlugin = WarpSubscriptionPlugin
     this.nocache_default = !isNil(nocache)
       ? nocache
       : typeof window !== "undefined"

@@ -71,4 +71,3 @@ const db = new WeaveDB({
   cert: YOUR_CERT // optional
 })
 ```
-

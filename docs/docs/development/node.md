@@ -431,3 +431,19 @@ The user must be the contract registrator.
 ```js
 await db.admin({ op: "remove_contract", contractTxId }, { ar: user_wallet })
 ```
+
+### Remove Contract from Node
+
+The user must be the contract registrator.
+
+```js
+await db.admin({ op: "remove_contract", contractTxId }, { ar: user_wallet })
+```
+
+### Get Node Stats
+
+`db.node` is for read queries to the node, whereas `db.admin` is for write queries. To get some node stats,
+
+```js
+await db.node({ op: "stats" })
+```
