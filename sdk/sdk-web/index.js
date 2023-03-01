@@ -357,9 +357,19 @@ class SDK extends Base {
         class CustomSubscriptionPlugin extends this.WarpSubscriptionPlugin {
           async process(input) {
             try {
-              let data = await dbs[self.contractTxId].db.readState(
-                input.sortKey
-              )
+              const lastStoredKey = (
+                await self.warp.stateEvaluator.latestAvailableState(
+                  self.contractTxId
+                )
+              )?.sortKey
+              let data =
+                lastStoredKey?.localeCompare(input.lastSortKey) === 0
+                  ? await dbs[self.contractTxId].db.readStateFor(
+                      input.lastSortKey,
+                      [input.interaction]
+                    )
+                  : await dbs[self.contractTxId].db.readState()
+
               const state = data.cachedValue.state
 
               try {
