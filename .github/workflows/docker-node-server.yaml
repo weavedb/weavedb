@@ -1,0 +1,100 @@
+name: Docker Build and Push ( weavedb-node-server )
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      # build 
+      - name: docker build
+        run: docker build -t weavedb-node-server . 
+        working-directory: ./grpc-node/node-server
+
+      # tags for ECR 
+      - name: docker tag1
+        run: docker tag  weavedb-node-server:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/weavedb-node-server:latest
+      - name: docker tag2
+        run: docker tag  weavedb-node-server:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/weavedb-node-server:`date +%Y-%m-%d-%H-%I-%S`-$GITHUB_SHA-${GITHUB_REF##*/}
+      - name: docker tag3 ( docker hub )
+        run: docker tag  weavedb-node-server:latest 0xkaz/weavedb-node-server:latest
+      - name: docker tag4 ( docker hub )
+        run: docker tag  weavedb-node-server:latest 0xkaz/weavedb-node-server:`date +%Y-%m-%d-%H-%I-%S`-$GITHUB_SHA-${GITHUB_REF##*/}
+        # working-directory: ./grpc-node/node-server
+
+      # docker login (ECR/AWS)
+
+      - name: create .aws
+        run: mkdir ~/.aws
+      - name: echo1
+        run: echo '[default]' > ~/.aws/credentials
+      - name: echo2
+        run: echo "aws_access_key_id = ${{ secrets.AWS_ACCESS_KEY_ID }}" >> ~/.aws/credentials
+      - name: echo3
+        run: echo "aws_secret_access_key = ${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ~/.aws/credentials
+      
+      - name: echo4
+        run: echo '[default]' > ~/.aws/config
+      - name: echo5
+        run: echo "region = ${{ secrets.AWS_MAIN_REGION }}" >> ~/.aws/config
+
+
+      # # TODO TEST
+      # # docker-compose 
+      # - name: docker-compose build  
+      #   run: sudo docker-compose build 
+      #   working-directory: ./grpc-node/
+
+      # - name: dockere-compose up -d 
+      #   run: sudo docker-compose up -d ; sleep 20 ; docker ps
+      #   working-directory: ./grpc-node/
+
+
+      # docker login (ECR/AWS)
+      - name: docker login
+        run: aws ecr get-login-password --region ${{ secrets.AWS_MAIN_REGION }} |  docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION}}.amazonaws.com
+
+      # push 
+      - name: docker push
+        run: docker push  --all-tags ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_MAIN_REGION }}.amazonaws.com/weavedb-node-server
+      
+      # delete old images
+      - name: delete old docker image 1 ( weavedb-node-server )
+        run: ./scripts/delete_old_docker_images_on_ecr.sh weavedb-node-server eu-west-1
+        working-directory: ./grpc-node
+      
+      # docker hub 
+      - name: Log in to Docker Hub
+        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_ACCESS_TOKEN }}
+
+      # push (docker hub)
+      - name: docker push ( docker hub )
+        run: docker push  --all-tags 0xkaz/weavedb-node-server
+
+
+      - name: Send custom JSON data to Slack workflow
+        id: slack
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          # For posting a rich message using Block Kit
+          payload: |
+            {
+              "text": "GitHub Action Docker Build/Push result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}\nDocker Repository URL: weavedb-node-server  \nhttps://${{ secrets.AWS_MAIN_REGION }}.console.aws.amazon.com/ecr/repositories/private/${{ secrets.AWS_ACCOUNT_ID }}/weavedb-node-server?region=${{ secrets.AWS_MAIN_REGION }}\n",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "GitHub Action Docker Build/Push result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}\nDocker Repository URL: weavedb-node-server  \nhttps://${{ secrets.AWS_MAIN_REGION }}.console.aws.amazon.com/ecr/repositories/private/${{ secrets.AWS_ACCOUNT_ID }}/weavedb-node-server?region=${{ secrets.AWS_MAIN_REGION }}\n"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
