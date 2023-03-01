@@ -3949,6 +3949,16 @@ arweave@1.11.8:
     bignumber.js "^9.0.2"
     util "^0.12.4"
 
+arweave@^1.12.4:
+  version "1.13.1"
+  resolved "https://registry.yarnpkg.com/arweave/-/arweave-1.13.1.tgz#acc70c07cb8505ddaa84548332c82fb45aa8f7c5"
+  integrity sha512-B6+N/5Ngvm0w1XTcboRbHGhyJkLmneqz8F5FaoVtd8KHVrzJ8cGq/dBAToP+QL4QJXlRudjLMxX7Mm9tzJt2xQ==
+  dependencies:
+    arconnect "^0.4.2"
+    asn1.js "^5.4.1"
+    base64-js "^1.5.1"
+    bignumber.js "^9.0.2"
+
 arweave@^1.12.6:
   version "1.12.6"
   resolved "https://registry.yarnpkg.com/arweave/-/arweave-1.12.6.tgz#de2314618afa040e7f6fc99ab1a178d17042339c"
@@ -3982,6 +3992,13 @@ assertion-error@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/assertion-error/-/assertion-error-1.1.0.tgz#e60b6b0e8f301bd97e5375215bda406c85118c0b"
   integrity sha512-jgsaNduz+ndvGyFt3uSuWqvy4lCnIJiovtouQN5JZHOKCS2QuhEdbcQHFhVksz2N2U9hXJo8odG7ETyWlEeuDw==
+
+async-mutex@^0.4.0:
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/async-mutex/-/async-mutex-0.4.0.tgz#ae8048cd4d04ace94347507504b3cf15e631c25f"
+  integrity sha512-eJFZ1YhRR8UN8eBLoNzcDPcy/jqjsg6I1AP+KvWQX80BqOSW1oJPJXDylPUEeMr2ZQvHgnQ//Lp6f3RQ1zI7HA==
+  dependencies:
+    tslib "^2.4.0"
 
 async-retry@^1.2.1:
   version "1.3.3"
@@ -4132,6 +4149,11 @@ bech32@1.1.4:
   version "1.1.4"
   resolved "https://registry.yarnpkg.com/bech32/-/bech32-1.1.4.tgz#e38c9f37bf179b8eb16ae3a772b40c356d4832e9"
   integrity sha512-s0IrSOzLlbvX7yp4WBfPITzpAU8sqQcpsmwXDiKwrG4r491vwCO/XpejasRNl0piBMe/DvP4Tz0mIS/X1DPJBQ==
+
+bignumber.js@9.1.1:
+  version "9.1.1"
+  resolved "https://registry.yarnpkg.com/bignumber.js/-/bignumber.js-9.1.1.tgz#c4df7dc496bd849d4c9464344c1aa74228b4dac6"
+  integrity sha512-pHm4LsMJ6lzgNGVfZHjMoO8sdoRhOzOH4MLmY65Jg70bpxCKu5iOHNJyfF6OyvYw7t8Fpf35RuzUyqnQsj8Vig==
 
 bignumber.js@^9.0.0, bignumber.js@^9.0.2:
   version "9.1.0"
@@ -10398,6 +10420,14 @@ vm2@3.9.11:
     acorn "^8.7.0"
     acorn-walk "^8.2.0"
 
+vm2@3.9.13:
+  version "3.9.13"
+  resolved "https://registry.yarnpkg.com/vm2/-/vm2-3.9.13.tgz#774a1a3d73b9b90b1aa45bcc5f25e349f2eef649"
+  integrity sha512-0rvxpB8P8Shm4wX2EKOiMp7H2zq+HUE/UwodY0pCZXs9IffIKZq6vUti5OgkVCTakKo9e/fgO4X1fkwfjWxE3Q==
+  dependencies:
+    acorn "^8.7.0"
+    acorn-walk "^8.2.0"
+
 walker@^1.0.8:
   version "1.0.8"
   resolved "https://registry.yarnpkg.com/walker/-/walker-1.0.8.tgz#bd498db477afe573dc04185f011d3ab8a8d7653f"
@@ -10494,6 +10524,44 @@ warp-contracts@1.2.48:
     vm2 "3.9.11"
     warp-wasm-metering "1.0.0"
 
+warp-contracts@1.2.54:
+  version "1.2.54"
+  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.2.54.tgz#6f79cc5ff42c615a81d26114f5025e58711e5db3"
+  integrity sha512-L+axxbyJmk9JwILjddjKYVxJhofgRwXU2K8gDZxGotSA2632YkYVcXOZN7VOKgeXK+tzxEQniB4n4csnO+/GKA==
+  dependencies:
+    "@idena/vrf-js" "^1.0.1"
+    archiver "^5.3.0"
+    arweave "^1.12.4"
+    async-mutex "^0.4.0"
+    bignumber.js "9.1.1"
+    elliptic "^6.5.4"
+    events "3.3.0"
+    fast-copy "^3.0.0"
+    level "^8.0.0"
+    memory-level "^1.0.0"
+    safe-stable-stringify "2.4.1"
+    stream-buffers "^3.0.2"
+    unzipit "^1.4.0"
+    vm2 "3.9.13"
+    warp-isomorphic "1.0.4"
+    warp-wasm-metering "1.0.1"
+
+warp-isomorphic@1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/warp-isomorphic/-/warp-isomorphic-1.0.0.tgz#dccccfc046bc6ac77919f8be1024ced1385c70ea"
+  integrity sha512-E+9+brlrnZoNpNvpz8foIZiCk9fIVukRBZYEy/yefM+oAG+zNgDPb/xNaZyUJWC8rSZxE1DqrhRl0JxjtLVltA==
+  dependencies:
+    buffer "^6.0.3"
+    undici "^5.8.0"
+
+warp-isomorphic@1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/warp-isomorphic/-/warp-isomorphic-1.0.4.tgz#1017eba260e0f0228b33b94b9e36a1afe54e09d8"
+  integrity sha512-W77IoLjq/eu5bY1uRrlmVt5lLDoIHeZ0ozJ/j67FTnxvZRXu887biEnom1nx8q1UgOKyJh8eQYFQaE2FLlKhFg==
+  dependencies:
+    buffer "^6.0.3"
+    undici "^5.8.0"
+
 warp-wasm-json-toolkit@1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/warp-wasm-json-toolkit/-/warp-wasm-json-toolkit-1.0.0.tgz#f08b555b64fac2b102450e6a5e94f4bf71405508"
@@ -10503,6 +10571,15 @@ warp-wasm-json-toolkit@1.0.0:
     leb128 "0.0.4"
     redstone-isomorphic "1.1.0"
 
+warp-wasm-json-toolkit@1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/warp-wasm-json-toolkit/-/warp-wasm-json-toolkit-1.0.2.tgz#16ca399e5b20da804c01ff0d00979341b689a0e7"
+  integrity sha512-T6pKJz9mO0ZFYiu4jB2v8j8t8Cw21n/+uFh0QKbc/7cJSssGd3I26sV/VXjoDbGuG7bGzK9BewlFd+ukvxABOA==
+  dependencies:
+    buffer-pipe "0.0.3"
+    leb128 "0.0.4"
+    warp-isomorphic "1.0.0"
+
 warp-wasm-metering@1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/warp-wasm-metering/-/warp-wasm-metering-1.0.0.tgz#ff2ded687885af22c8fc6560409a582e127c3af3"
@@ -10510,6 +10587,14 @@ warp-wasm-metering@1.0.0:
   dependencies:
     leb128 "^0.0.4"
     warp-wasm-json-toolkit "1.0.0"
+
+warp-wasm-metering@1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/warp-wasm-metering/-/warp-wasm-metering-1.0.1.tgz#1496b0b9a936985cf21a910e909b87630faa1c43"
+  integrity sha512-s2NtOPTGIDPWeDKyrY5UiUUf3oOjbjwGF9sgmRR3nqXzjxdgppvuf+6VYquzYM3xRMXIOq+AWMK2H/D/Yv+4tg==
+  dependencies:
+    leb128 "^0.0.4"
+    warp-wasm-json-toolkit "1.0.2"
 
 wasmbuilder@0.0.16, wasmbuilder@^0.0.16:
   version "0.0.16"
@@ -10580,6 +10665,22 @@ weavedb-sdk@^0.21.7:
     md5 "^2.3.0"
     ramda "^0.28.0"
     warp-contracts "1.2.48"
+    warp-contracts-old "npm:warp-contracts@1.2.26"
+    weavedb-base "^0.21.2"
+    weavedb-contracts "^0.21.0"
+
+weavedb-sdk@^0.21.8:
+  version "0.21.8"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.21.8.tgz#1eebfa199676b9f8e29e882acaecaf64bccbb248"
+  integrity sha512-7sFv5P/wWvMq0Eam2+uw6/udIredD1L/9mdPJgHna1QGlv+BhsyRTXUOOHOeDxSyB9JoDDNP3YgyAA56vun9rw==
+  dependencies:
+    "@metamask/legacy-web3" "^2.0.0"
+    "@paralleldrive/cuid2" "^2.2.0"
+    arweave "^1.11.4"
+    buffer "^6.0.3"
+    md5 "^2.3.0"
+    ramda "^0.28.0"
+    warp-contracts "1.2.54"
     warp-contracts-old "npm:warp-contracts@1.2.26"
     weavedb-base "^0.21.2"
     weavedb-contracts "^0.21.0"
