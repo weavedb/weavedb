@@ -89,7 +89,7 @@ if (
 
 const configJS = JSON.stringify(config)
 
-console.log("configJS: ", configJS)
+// console.log("configJS: ", configJS)
 fs.writeFile(
   "./weavedb.config.js",
   `module.exports = ${configJS}`,
@@ -98,9 +98,7 @@ fs.writeFile(
       console.error(err)
       process.exit(1)
     }
-    
-    // export
-    require ('./server.js')
-
+    console.log("weavedb.config.js created")
+    require("./server.js")
   }
 )
