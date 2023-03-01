@@ -8,5 +8,4 @@ RUN npm install
 
 EXPOSE 9090
 
-# CMD ["node", "server.js"]
-ENTRYPOINT ["./start-node-server.sh"]
+# CMD ["node", "start-with-gen-config.js"]
