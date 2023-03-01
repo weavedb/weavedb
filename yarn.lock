@@ -10641,38 +10641,22 @@ weavedb-contracts@^0.21.0:
     md5 "^2.3.0"
     ramda "^0.28.0"
 
-weavedb-sdk-node@^0.21.28:
-  version "0.21.28"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk-node/-/weavedb-sdk-node-0.21.28.tgz#6287f20160be956affafcb5a71aece6f208f9aad"
-  integrity sha512-/GFQ3zJX9EublxMPwU54JVZ/vSadQafW9DTsDlMhekSbeg5I7FHaMA4HwuIBDW/zroHFCE7Y6Vg45+oGqwcp1w==
+weavedb-sdk-node@^0.21.29:
+  version "0.21.29"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk-node/-/weavedb-sdk-node-0.21.29.tgz#fbf34df1f4169cf5f6b6f4aed586ed67331fb537"
+  integrity sha512-ehb+AoQchUIn2s6ptTWEd67oDMj3dr8Wa102rpb2zt4+WjeIPThu7xEwxYxvV6tz+aVDc7OaBsM5yevxru1RJg==
   dependencies:
     "@aws-amplify/api" "^5.0.14"
     redis "^4.6.5"
     warp-contracts-lmdb "^1.1.9"
     warp-contracts-pubsub "^1.0.5"
     weavedb-contracts "^0.21.0"
-    weavedb-sdk "^0.21.7"
+    weavedb-sdk "^0.21.9"
 
-weavedb-sdk@^0.21.7:
-  version "0.21.7"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.21.7.tgz#51a4f94e51dd88f5f4ead1f3b1813f51f30a316b"
-  integrity sha512-C4eTUFbRSFzhUcJtqpzd9HJB0EHGeclVWdrQQecswwt7ARzavVkVRrh8MWwac6JKRBeywXqMSUaZFuwgwI2nMw==
-  dependencies:
-    "@metamask/legacy-web3" "^2.0.0"
-    "@paralleldrive/cuid2" "^2.2.0"
-    arweave "^1.11.4"
-    buffer "^6.0.3"
-    md5 "^2.3.0"
-    ramda "^0.28.0"
-    warp-contracts "1.2.48"
-    warp-contracts-old "npm:warp-contracts@1.2.26"
-    weavedb-base "^0.21.2"
-    weavedb-contracts "^0.21.0"
-
-weavedb-sdk@^0.21.8:
-  version "0.21.8"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.21.8.tgz#1eebfa199676b9f8e29e882acaecaf64bccbb248"
-  integrity sha512-7sFv5P/wWvMq0Eam2+uw6/udIredD1L/9mdPJgHna1QGlv+BhsyRTXUOOHOeDxSyB9JoDDNP3YgyAA56vun9rw==
+weavedb-sdk@^0.21.9:
+  version "0.21.9"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.21.9.tgz#ae36614aaa7c593bf8f7c776798abb84ba0835a2"
+  integrity sha512-bLS6lLrInTLTUBvNTTrjgG1jNfslIppeMiloWKoE+ep22sxUBDSiSELNl5RSuNz7UEh/8R34NqBGg7wDdgNTNw==
   dependencies:
     "@metamask/legacy-web3" "^2.0.0"
     "@paralleldrive/cuid2" "^2.2.0"
