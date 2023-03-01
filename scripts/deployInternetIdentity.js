@@ -4,6 +4,7 @@ const Arweave = require("arweave")
 const wallet_name = process.argv[2]
 const { isNil } = require("ramda")
 const { Warp, WarpFactory, LoggerFactory } = require("warp-contracts")
+const { DeployPlugin, ArweaveSigner } = require("warp-contracts-plugin-deploy")
 
 if (isNil(wallet_name)) {
   console.log("no wallet name given")
@@ -30,7 +31,7 @@ async function deployContract() {
     },
   }
   const res = await warp.createContract.deploy({
-    wallet: wallet,
+    wallet: new ArweaveSigner(wallet),
     initState: JSON.stringify(initialState),
     src: contractSrc,
   })
@@ -46,7 +47,7 @@ const deploy = async () => {
     protocol: "https",
   })
   LoggerFactory.INST.logLevel("error")
-  warp = WarpFactory.forMainnet()
+  warp = WarpFactory.forMainnet().use(new DeployPlugin())
   const wallet_path = path.resolve(
     __dirname,
     ".wallets",

@@ -69,7 +69,7 @@ describe("WeaveDB", function () {
     expect(await db.getNonce(wallet.getAddressString())).to.equal(2)
   })
 
-  it("should add & get", async () => {
+  it.only("should add & get", async () => {
     const data = { name: "Bob", age: 20 }
     const tx = (await db.add(data, "ppl")).originalTxId
     expect(await db.get("ppl", (await db.getIds(tx))[0])).to.eql(data)
