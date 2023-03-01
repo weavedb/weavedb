@@ -1,6 +1,6 @@
 const fs = require("fs")
 const path = require("path")
-const SDK = require("../sdk/sdk-web")
+const SDK = require("weavedb-sdk-node")
 const { isNil } = require("ramda")
 
 const send = async (sdk, wallet, queries) => {
@@ -37,6 +37,7 @@ const initSetup = async ({ wallet_name, contractTxId, network }) => {
     wallet,
     contractTxId,
     network,
+    nocache: true,
   })
 
   console.log("init WeaveDB..." + contractTxId)
