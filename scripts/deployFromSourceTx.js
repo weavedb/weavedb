@@ -12,6 +12,7 @@ const contractTxId_II = process.argv[4] || process.env.II_SOURCE_TX_ID
 const contractTxId_ETH = process.argv[5] || process.env.ETH_SOURCE_TX_ID
 
 const { Warp, WarpFactory, LoggerFactory } = require("warp-contracts")
+const { DeployPlugin, ArweaveSigner } = require("warp-contracts-plugin-deploy")
 
 if (isNil(wallet_name)) {
   console.log("no wallet name given")
@@ -27,7 +28,7 @@ const deploy = async () => {
   })
 
   LoggerFactory.INST.logLevel("error")
-  warp = WarpFactory.forMainnet()
+  warp = WarpFactory.forMainnet().use(new DeployPlugin())
   const wallet_path = path.resolve(
     __dirname,
     `.wallets/wallet-${wallet || wallet_name}.json`
@@ -55,7 +56,7 @@ const deploy = async () => {
   initialState.contracts.dfinity = contractTxId_II
   initialState.contracts.ethereum = contractTxId_ETH
   const res = await warp.createContract.deployFromSourceTx({
-    wallet: _wallet,
+    wallet: new ArweaveSigner(_wallet),
     initState: JSON.stringify(initialState),
     srcTxId,
   })
