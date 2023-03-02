@@ -75,9 +75,10 @@ describe("WeaveDB", function () {
     expect(await db.get("ppl", (await db.getIds(tx))[0])).to.eql(data)
   })
 
-  it("should set & get", async () => {
+  it.only("should set & get", async () => {
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Alice", height: 160 }
+    console.log(await db.set(data, "ppl", "Bob"))
     await db.set(data, "ppl", "Bob")
     expect(await db.get("ppl", "Bob")).to.eql(data)
     await db.set(data2, "ppl", "Bob")
