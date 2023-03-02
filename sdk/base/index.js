@@ -34,6 +34,7 @@ class Base {
       "getLinkedContract",
       "getEvolve",
       "getVersion",
+      "getHash",
       "getRelayerJob",
       "listRelayerJobs",
       "listCollections",
@@ -71,6 +72,10 @@ class Base {
 
   async getVersion(nocache) {
     return await this.read({ function: "version" }, nocache)
+  }
+
+  async getHash(nocache) {
+    return await this.read({ function: "hash" }, nocache)
   }
 
   async getAddressLink(address, nocache) {

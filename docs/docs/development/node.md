@@ -113,7 +113,7 @@ module.exports = {
 }
 ```
 
-### Periodical Snapshot Dump
+#### Periodical Snapshot Dump
 
 To set up the span to update snapshot, use `snapshot_span`. It defaults to 3 hours.
 
