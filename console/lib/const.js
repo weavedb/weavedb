@@ -39,6 +39,7 @@ export const methods = [
     methods: [
       "getInfo",
       "getVersion",
+      "getHash",
       "getEvolve",
       "getAlgorithms",
       "getOwner",
