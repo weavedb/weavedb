@@ -113,6 +113,16 @@ module.exports = {
 }
 ```
 
+### Periodical Snapshot Dump
+
+To set up the span to update snapshot, use `snapshot_span`. It defaults to 3 hours.
+
+```js
+module.exports = {
+  snapshot_span: 1000 * 60 * 60 * 3 // every 3 hours
+}
+```
+
 #### Redis for Remote Query Cache
 
 You can use Redis for multiple nodes to share the same remote cache for queries.
