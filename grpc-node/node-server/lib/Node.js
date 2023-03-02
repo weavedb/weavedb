@@ -37,6 +37,7 @@ const SDK = require("weavedb-sdk-node")
 
 class Node {
   constructor({ conf, port }) {
+    this.timeouts = {}
     this.start = Date.now()
     this.conf = conf
     this.port = port
@@ -150,7 +151,51 @@ class Node {
     }
     return allowed
   }
-
+  async setSDK(txid, old, no_snapshot) {
+    let _conf = clone(this.conf)
+    _conf.contractTxId = txid
+    if (old === "old") _conf.old = true
+    if (this.isLmdb) {
+      _conf.lmdb = {
+        state: { dbLocation: `./cache/warp/${_conf.contractTxId}/state` },
+        contracts: {
+          dbLocation: `./cache/warp/${_conf.contractTxId}/contracts`,
+        },
+        src: {
+          dbLocation: `./cache/warp/${_conf.contractTxId}/src`,
+        },
+      }
+      if (!no_snapshot) await this.snapshot.recover(txid)
+    } else if (this.isRedis) {
+      if (!no_snapshot) await this.snapshot.recoverRedis(txid, this.redis)
+    }
+    let __conf = clone(_conf)
+    if (__conf.cache === "redis") {
+      __conf.redis ||= {}
+      __conf.redis.client = this.redis
+      __conf.progress = async input => {
+        this.progresses[txid].current = input.currentInteraction
+        this.progresses[txid].all = input.allInteractions
+        if (this.last_reported < Date.now() - 1000 * 10) {
+          this.last_reported = Date.now()
+          this.calcProgress()
+        }
+        if (
+          (this.progresses[txid].last_checked || 0) <
+          Date.now() - 1000 * 10
+        ) {
+          this.progresses[txid].last_checked = Date.now()
+          await this.db.set(this.progresses[txid], "contracts", txid, {
+            ar: this.conf.admin.owner,
+          })
+        }
+      }
+      __conf.logLevel = "none"
+      __conf.subscribe = this.conf.admin?.contractTxId === txid
+    }
+    this.sdks[txid] = new SDK(__conf)
+    if (isNil(_conf.wallet)) await this.sdks[txid].initializeWithoutWallet()
+  }
   calcProgress() {
     const len = keys(this.progresses).length
     const ongoing = map(
@@ -188,7 +233,8 @@ class Node {
   }
   async initSDK(v, no_snapshot = false) {
     console.log("initializing contract..." + v)
-    this.progresses[v] = {
+    let [txid, old] = v.split("@")
+    this.progresses[txid] = {
       current: 0,
       all: 0,
       done: false,
@@ -199,71 +245,51 @@ class Node {
     if (!isNil(this.conf.admin)) {
       const stat = await this.db.get("contracts", v)
       if (isNil(stat) || no_snapshot === true) {
-        await this.db.set(this.progresses[v], "contracts", v, {
+        await this.db.set(this.progresses[txid], "contracts", v, {
           ar: this.conf.admin.owner,
         })
       }
     }
-    let success = true
+    await this.updateState(txid, old, no_snapshot)
+  }
+  setUpdate(txid, old) {
+    clearTimeout(this.timeouts[txid])
+    this.timeouts[txid] = setTimeout(async () => {
+      console.log(`updating snapshot[${txid}]`)
+      await this.updateState(txid, old, false, true, true)
+    }, this.conf.snapshot_span || 1000 * 60 * 60 * 3)
+  }
+  async updateState(txid, old, no_snapshot, no_admin, update) {
     try {
-      let _conf = clone(this.conf)
-      let [txid, old] = v.split("@")
-      _conf.contractTxId = txid
-      if (old === "old") _conf.old = true
-      if (this.isLmdb) {
-        _conf.lmdb = {
-          state: { dbLocation: `./cache/warp/${_conf.contractTxId}/state` },
-          contracts: {
-            dbLocation: `./cache/warp/${_conf.contractTxId}/contracts`,
-          },
-          src: {
-            dbLocation: `./cache/warp/${_conf.contractTxId}/src`,
-          },
+      if (isNil(this.progresses[txid])) {
+        this.progresses[txid] = {
+          current: 0,
+          all: 0,
+          done: false,
+          err: false,
+          start: Date.now(),
+          last_checked: 0,
         }
-        if (!no_snapshot) await this.snapshot.recover(txid)
-      } else if (this.isRedis) {
-        if (!no_snapshot) await this.snapshot.recoverRedis(txid, this.redis)
       }
-      let __conf = clone(_conf)
-      if (__conf.cache === "redis") {
-        __conf.redis ||= {}
-        __conf.redis.client = this.redis
-        __conf.progress = async input => {
-          this.progresses[v].current = input.currentInteraction
-          this.progresses[v].all = input.allInteractions
-          if (this.last_reported < Date.now() - 1000 * 10) {
-            this.last_reported = Date.now()
-            this.calcProgress()
-          }
-          if ((this.progresses[v].last_checked || 0) < Date.now() - 1000 * 10) {
-            this.progresses[v].last_checked = Date.now()
-            await this.db.set(this.progresses[v], "contracts", v, {
-              ar: this.conf.admin.owner,
-            })
-          }
-        }
-        __conf.logLevel = "none"
-        __conf.subscribe = this.conf.admin?.contractTxId === v
-      }
-      this.sdks[txid] = new SDK(__conf)
-      if (isNil(_conf.wallet)) await this.sdks[txid].initializeWithoutWallet()
+      this.progresses[txid].start = Date.now()
+      if (isNil(this.sdks[txid])) await this.setSDK(txid, old, no_snapshot)
       await this.readState(txid)
       if (this.isLmdb && !no_snapshot) await this.snapshot.save(txid)
       if (this.isRedis && !no_snapshot) {
         await this.snapshot.save(txid, this.redis)
       }
-      this.progresses[v].done = true
-      this.progresses[v].current = this.progresses[v].all
-      console.log(`sdk(${v}) ready!`)
+      this.progresses[txid].done = true
+      this.progresses[txid].current = this.progresses[txid].all
+      console.log(`sdk(${txid}) ${update ? "updated" : "ready"}!`)
       this.calcProgress()
-      if (!isNil(this.conf.admin)) {
-        await this.db.set(this.progresses[v], "contracts", v, {
+      if (!isNil(this.conf.admin) && no_admin !== true) {
+        await this.db.set(this.progresses[txid], "contracts", txid, {
           ar: this.conf.admin.owner,
         })
         if (
           !no_snapshot &&
           !isNil(this.conf.admin.contractTxId) &&
-          this.conf.admin.contractTxId === v
+          this.conf.admin.contractTxId === txid
         ) {
           try {
             const contracts = await this.sdks[txid].get("contracts")
@@ -275,24 +301,27 @@ class Node {
                 contract?.done !== true
               ) {
                 this.initSDK(v2)
+              } else {
+                this.setUpdate(v2, false)
               }
             }
           } catch (e) {}
         }
       }
     } catch (e) {
-      console.log(`sdk(${v}) error!`)
-      console.log(e)
-      this.progresses[v].err = true
-      success = false
-      this.calcProgress()
-      await this.db.set(this.progresses[v], "contracts", v, {
-        ar: this.conf.admin.owner,
-      })
+      await this.errSDK(txid, e)
     }
-    return success
+    this.setUpdate(txid, old)
   }
-
+  async errSDK(txid, e) {
+    console.log(`sdk(${txid}) error!`)
+    console.log(e)
+    this.progresses[txid].err = true
+    this.calcProgress()
+    await this.db.set(this.progresses[txid], "contracts", txid, {
+      ar: this.conf.admin.owner,
+    })
+  }
   startServer() {
     const server = new grpc.Server()
     server.addService(weavedb.DB.service, {
