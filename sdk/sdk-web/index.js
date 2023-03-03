@@ -33,7 +33,6 @@ const {
 const { parseQuery } = require("weavedb-contracts/weavedb/lib/utils")
 const md5 = require("md5")
 const { createId } = require("@paralleldrive/cuid2")
-const { DeployPlugin } = require("warp-contracts-plugin-deploy")
 const is_data = [
   "set",
   "setSchema",
@@ -235,7 +234,6 @@ class SDK extends Base {
     } else {
       this.warp = this.Warp.WarpFactory.forMainnet()
     }
-    this.warp.use(new DeployPlugin())
     this.contractTxId = contractTxId
     if (all(complement(isNil))([contractTxId, wallet, name, version])) {
       this.initialize({

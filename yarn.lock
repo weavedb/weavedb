@@ -3899,34 +3899,7 @@ argparse@^2.0.1:
   resolved "https://registry.yarnpkg.com/argparse/-/argparse-2.0.1.tgz#246f50f3ca78a3240f6c997e8a9bd1eac49e4b38"
   integrity sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==
 
-arlocal@1.1.42:
-  version "1.1.42"
-  resolved "https://registry.yarnpkg.com/arlocal/-/arlocal-1.1.42.tgz#807e24d447a642d81848094ad35c04aea3deecd9"
-  integrity sha512-nDj/adr3kQZGjoMUgr6Yhrc+WZAigJBKxf0Nf4BvgUf6SBej7J1Dx/ZSXz4eeplFB89iSE1zgaJBMiKMPMznmw==
-  dependencies:
-    "@koa/cors" "^3.1.0"
-    apollo-server-koa "^3.6.2"
-    arbundles "^0.6.19"
-    arweave-bundles "^1.0.3"
-    bignumber.js "^9.0.2"
-    graphql "^16.2.0"
-    knex "^0.95.6"
-    koa "^2.13.4"
-    koa-body "^4.2.0"
-    koa-bodyparser "^4.3.0"
-    koa-json "^2.0.2"
-    koa-logger "^3.2.1"
-    koa-router "^10.1.1"
-    lodash "^4.17.21"
-    mime "^3.0.0"
-    minimist "^1.2.5"
-    moment "^2.29.1"
-    rfc4648 "^1.5.1"
-    smartweave "^0.4.46"
-    sqlite3 "^5.0.3"
-    tsc-watch "^4.6.0"
-
-arlocal@^1.1.59:
+arlocal@^1.1.59, arlocal@^1.1.60:
   version "1.1.60"
   resolved "https://registry.yarnpkg.com/arlocal/-/arlocal-1.1.60.tgz#a5b52a360bb72bbc6eb64137bbb120d8d0a43ef0"
   integrity sha512-oKS5f4X1XMkbFM4WfId6N6leu3k0te9B/vj5l/hE42nxKbV3QTtd1wgvOcpaKMITexZS8WyC12YcEXgiVggttA==
@@ -10994,6 +10967,22 @@ weavedb-sdk@^0.22.2:
     warp-contracts "1.2.54"
     warp-contracts-old "npm:warp-contracts@1.2.26"
     warp-contracts-plugin-deploy "^1.0.0"
+    weavedb-base "^0.22.0"
+    weavedb-contracts "^0.22.2"
+
+weavedb-sdk@^0.22.3:
+  version "0.22.3"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.22.3.tgz#405c702244eb6f7b3193625d1b2f1caf4c5b8f75"
+  integrity sha512-WiMnTldYgKX+0O4YV6wIX1wgRLflDE1+grp61GUqL0W4xoEej3xXXMqrvjaFRuwsymN5vcmOujzj6YrklhmhHQ==
+  dependencies:
+    "@metamask/legacy-web3" "^2.0.0"
+    "@paralleldrive/cuid2" "^2.2.0"
+    arweave "^1.11.4"
+    buffer "^6.0.3"
+    md5 "^2.3.0"
+    ramda "^0.28.0"
+    warp-contracts "1.2.54"
+    warp-contracts-old "npm:warp-contracts@1.2.26"
     weavedb-base "^0.22.0"
     weavedb-contracts "^0.22.2"
 
