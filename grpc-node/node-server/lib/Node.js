@@ -234,7 +234,7 @@ class Node {
   async initSDK(v, no_snapshot = false) {
     console.log("initializing contract..." + v)
     let [txid, old] = v.split("@")
-    this.progresses[txid] = {
+    this.progresses[txid] ||= {
       current: 0,
       all: 0,
       done: false,
@@ -259,6 +259,58 @@ class Node {
       await this.updateState(txid, old, false, true, true)
     }, this.conf.snapshot_span || 1000 * 60 * 60 * 3)
   }
+  async healthcheck(txid) {
+    try {
+      const json = await fetch(
+        `https://dre-1.warp.cc/contract?id=${txid}&query=hash`
+      ).then(v => v.json())
+      const remote_hash = json.result[0]
+      const sortKey = json.sortKey
+      if (!isNil(remote_hash)) {
+        const lastStoredKey = (
+          await this.sdks[txid].warp.stateEvaluator.latestAvailableState(txid)
+        )?.sortKey
+        if (lastStoredKey === sortKey) {
+          const local_hash = await this.sdks[txid].getHash()
+          if (local_hash === remote_hash) {
+            console.log(`hash valid (${txid})`)
+            await this.saveSnapShot(txid, "valid")
+            this.progresses[txid].valid = lastStoredKey
+            this.progresses[txid].invalid = false
+          } else {
+            console.log(`hash broken (${txid})`)
+            let invalid = this.progresses[txid].invalid
+            if (isNil(invalid) || !invalid) this.progresses[txid].invalid = 0
+            this.progresses[txid].invalid += 1
+            if (this.progresses[txid].invalid < 3) {
+              delete this.sdks[txid]
+              const cache_type = this.conf.cache || "lmdb"
+              if (cache_type === "redis") {
+                try {
+                  const prefix =
+                    isNil(this.conf.redis) || isNil(this.conf.redis.prefix)
+                      ? "warp"
+                      : this.conf.redis.prefix
+                  for (const key of await this.redis.KEYS(
+                    `${prefix}.${txid}.*`
+                  )) {
+                    await this.redis.del(key)
+                  }
+                } catch (e) {}
+              } else if (cache_type === "lmdb") {
+                await this.snapshot.delete(txid)
+              }
+              this.initSDK(txid)
+            }
+          }
+        }
+      }
+    } catch (e) {}
+  }
+  async saveSnapShot(txid, suffix = null) {
+    if (this.isLmdb) await this.snapshot.save(txid, undefined, suffix)
+    if (this.isRedis) await this.snapshot.save(txid, this.redis, suffix)
+  }
   async updateState(txid, old, no_snapshot, no_admin, update) {
     try {
       if (isNil(this.progresses[txid])) {
@@ -274,13 +326,11 @@ class Node {
       this.progresses[txid].start = Date.now()
       if (isNil(this.sdks[txid])) await this.setSDK(txid, old, no_snapshot)
       await this.readState(txid)
-      if (this.isLmdb && !no_snapshot) await this.snapshot.save(txid)
-      if (this.isRedis && !no_snapshot) {
-        await this.snapshot.save(txid, this.redis)
-      }
+      if (!no_snapshot) await this.saveSnapShot(txid)
       this.progresses[txid].done = true
       this.progresses[txid].current = this.progresses[txid].all
       console.log(`sdk(${txid}) ${update ? "updated" : "ready"}!`)
+      await this.healthcheck(txid)
       this.calcProgress()
       if (!isNil(this.conf.admin) && no_admin !== true) {
         await this.db.set(this.progresses[txid], "contracts", txid, {
