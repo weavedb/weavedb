@@ -139,7 +139,9 @@ class SDK extends Base {
 
     return await this.write(params.function, query, nocache)
   }
-
+  async getHash(nocache) {
+    return this.readQuery("getHash", null, nocache)
+  }
   async getNonce(addr) {
     return this.readQuery("getNonce", addr, true)
   }
