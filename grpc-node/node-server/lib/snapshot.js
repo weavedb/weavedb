@@ -87,39 +87,106 @@ class Snapshot {
     }
   }
 
-  async recover(contractTxId) {
+  async recover(contractTxId, suffix) {
     try {
       fs.mkdirSync(cacheDirPath, { recursive: true })
     } catch (e) {
       console.log(e)
     }
-    const src = path.resolve(cacheDirPath, `${contractTxId}-downloaded.zip`)
+    if (!(await this._recover(contractTxId, "valid"))) {
+      await this._recoverRedis(contractTxId)
+    }
+  }
+
+  async _recover(contractTxId, suffix) {
+    let exist = false
+    const src = path.resolve(
+      cacheDirPath,
+      `${contractTxId}${isNil(suffix) ? "" : `-${suffix}`}-downloaded.zip`
+    )
     const dest = path.resolve(cacheDirPath, `${contractTxId}/`)
     try {
       if (!isNil(this.gcsBucket)) {
-        await this.gcsBucket.file(`${contractTxId}.zip`).download({
-          destination: src,
-        })
+        await this.gcsBucket
+          .file(`${contractTxId}${isNil(suffix) ? "" : `-${suffix}`}.zip`)
+          .download({
+            destination: src,
+          })
         await extract(src, { dir: dest })
-        console.log(`snapshot(${contractTxId}) downloaded!`)
+        console.log(`${suffix} snapshot(${contractTxId}) downloaded!`)
+        exist = true
       } else if (!isNil(this.s3Ins)) {
         const s3data = await this.s3Ins
           .getObject({
             Bucket: this.conf.s3.bucket,
-            Key: `${this.conf.s3.prefix}${contractTxId}.zip`,
+            Key: `${this.conf.s3.prefix}${contractTxId}${
+              isNil(suffix) ? "" : `-${suffix}`
+            }.zip`,
           })
           .promise()
         if (isNil(s3data?.Body)) {
-          console.log(`snapshot(${contractTxId}) downloaded error! (s3)`)
+          console.log(
+            `${suffix} snapshot(${contractTxId}) downloaded error! (s3)`
+          )
         } else {
           fs.writeFileSync(src, s3data.Body)
           await extract(src, { dir: dest })
-          console.log(`snapshot(${contractTxId}) downloaded! (s3)`)
+          console.log(`${suffix} snapshot(${contractTxId}) downloaded! (s3)`)
+          exist = true
         }
       }
     } catch (e) {
-      console.log(`snapshot(${contractTxId}]) doesn't exist`)
+      console.log(`${suffix} snapshot(${contractTxId}]) doesn't exist`)
     }
+    return exist
+  }
+
+  async _recoverRedis(redis, contractTxId, client, suffix) {
+    const destination = `${contractTxId}-redis${
+      isNil(suffix) ? "" : `-${suffix}`
+    }.json`
+    const src = path.resolve(cacheDirPath, destination)
+    let exist = false
+    try {
+      if (!isNil(this.gcsBucket)) {
+        await this.gcsBucket.file(destination).download({
+          destination: src,
+        })
+      } else if (!isNil(this.s3Ins)) {
+        const s3data = await this.s3Ins
+          .getObject({
+            Bucket: this.conf.s3.bucket,
+            Key: `${this.conf.s3.prefix}${destination}`,
+          })
+          .promise()
+        if (isNil(s3data?.Body)) {
+          console.log(
+            `${suffix} snapshot(${contractTxId}) downloaded error! (s3)`
+          )
+        } else {
+          fs.writeFileSync(src, s3data.Body)
+        }
+      }
+      const json = JSON.parse(fs.readFileSync(src, "utf8"))
+      for (const v of json.keys) {
+        await redis.client.ZADD(
+          `${redis.prefix}.${v.key}`,
+          map(v2 => ({ score: 0, value: v2 }), v.sets)
+        )
+      }
+      const vals = compose(
+        flatten,
+        reject(v => isNil(v[1])),
+        values,
+        mapObjIndexed((v, k) => [`${redis.prefix}.${k}`, v])
+      )(json.vals)
+      await redis.client.MSET(vals)
+      console.log(`${suffix} snapshot(${contractTxId}) recovered to redis!`)
+      exist = true
+    } catch (e) {
+      console.log(`${suffix} snapshot(${contractTxId}]) doesn't exist`)
+    }
+    return exist
   }
   async recoverRedis(contractTxId, client) {
     try {
@@ -133,49 +200,10 @@ class Snapshot {
         `${redis.prefix}.${contractTxId}.*.keys`
       )
       if (keys.length > 0) {
-        console.log(`redis data(${contractTxId}) exists`)
-        return
+        return console.log(`redis data(${contractTxId}) exists`)
       }
-      const src = path.resolve(
-        cacheDirPath,
-        `${contractTxId}-redis-${redis.prefix}.json`
-      )
-      const destination = `${contractTxId}-redis.json`
-      try {
-        if (!isNil(this.gcsBucket)) {
-          await this.gcsBucket.file(destination).download({
-            destination: src,
-          })
-        } else if (!isNil(this.s3Ins)) {
-          const s3data = await this.s3Ins
-            .getObject({
-              Bucket: this.conf.s3.bucket,
-              Key: `${this.conf.s3.prefix}${contractTxId}-redis.json`,
-            })
-            .promise()
-          if (isNil(s3data?.Body)) {
-            console.log(`snapshot(${contractTxId}) downloaded error! (s3)`)
-          } else {
-            fs.writeFileSync(src, s3data.Body)
-          }
-        }
-        const json = JSON.parse(fs.readFileSync(src, "utf8"))
-        for (const v of json.keys) {
-          await redis.client.ZADD(
-            `${redis.prefix}.${v.key}`,
-            map(v2 => ({ score: 0, value: v2 }), v.sets)
-          )
-        }
-        const vals = compose(
-          flatten,
-          reject(v => isNil(v[1])),
-          values,
-          mapObjIndexed((v, k) => [`${redis.prefix}.${k}`, v])
-        )(json.vals)
-        await redis.client.MSET(vals)
-        console.log(`snapshot(${contractTxId}) recovered to redis!`)
-      } catch (e) {
-        console.log(`snapshot(${contractTxId}]) doesn't exist`)
+      if (!(await this._recoverRedis(redis, contractTxId, client, "valid"))) {
+        await this._recoverRedis(redis, contractTxId, client)
       }
     } catch (e) {
       console.log(e)
@@ -189,13 +217,13 @@ class Snapshot {
     return null
   }
 
-  async save(contractTxId, redis) {
+  async save(contractTxId, redis, suffix) {
     try {
       if (!isNil(this.gcsBucket)) {
-        this.saveSnapShotGCS(contractTxId, this.getRedis(redis))
+        this.saveSnapShotGCS(contractTxId, this.getRedis(redis), suffix)
         console.log(`snapshot(${contractTxId}) saved!`)
       } else if (!isNil(this.s3Ins)) {
-        this.saveSnapShotS3(contractTxId, this.getRedis(redis))
+        this.saveSnapShotS3(contractTxId, this.getRedis(redis), suffix)
         console.log(`snapshot(${contractTxId}) saved! (s3)`)
       }
     } catch (e) {
@@ -204,50 +232,67 @@ class Snapshot {
     }
   }
 
-  async uploadToGCSRedis(contractTxId, redis) {
-    const destination = `${contractTxId}-redis.json`
+  async uploadToGCSRedis(contractTxId, redis, suffix) {
+    const destination = `${contractTxId}-redis${
+      isNil(suffix) ? "" : `-${suffix}`
+    }.json`
     const json_path = path.resolve(cacheDirPath, destination)
     await this.gcsBucket.upload(json_path, { destination })
   }
 
-  async uploadToGCS(contractTxId) {
-    const destination = `${contractTxId}.zip`
+  async uploadToGCS(contractTxId, suffix) {
+    const destination = `${contractTxId}${
+      isNil(suffix) ? "" : `-${suffix}`
+    }.zip`
     await this.gcsBucket.upload(path.resolve(cacheDirPath, destination), {
       destination,
     })
   }
 
-  async uploadToS3Redis(contractTxId, redis) {
+  async uploadToS3Redis(contractTxId, redis, suffix) {
     await this.s3Ins
       .putObject({
         Bucket: this.conf.s3.bucket,
-        Key: `${this.conf.s3.prefix}${contractTxId}-redis.json`,
+        Key: `${this.conf.s3.prefix}${contractTxId}-redis${
+          isNil(suffix) ? "" : `-${suffix}`
+        }.json`,
         Body: fs.readFileSync(
-          path.resolve(cacheDirPath, `${contractTxId}-redis.json`)
+          path.resolve(
+            cacheDirPath,
+            `${contractTxId}-redis${isNil(suffix) ? "" : `-${suffix}`}.json`
+          )
         ),
       })
       .promise()
   }
 
-  async uploadToS3(contractTxId) {
+  async uploadToS3(contractTxId, suffix) {
     await this.s3Ins
       .putObject({
         Bucket: this.conf.s3.bucket,
-        Key: `${this.conf.s3.prefix}${contractTxId}.zip`,
+        Key: `${this.conf.s3.prefix}${contractTxId}${
+          isNil(suffix) ? "" : `-${suffix}`
+        }.zip`,
         Body: fs.readFileSync(
-          path.resolve(cacheDirPath, `${contractTxId}.zip`)
+          path.resolve(
+            cacheDirPath,
+            `${contractTxId}${isNil(suffix) ? "" : `-${suffix}`}.zip`
+          )
         ),
       })
       .promise()
   }
 
-  async archiveRedis(contractTxId, uploader, redis) {
+  async archiveRedis(contractTxId, uploader, redis, suffix) {
     try {
       fs.mkdirSync(cacheDirPath, { recursive: true })
     } catch (e) {
       console.log(e)
     }
-    const json_path = path.resolve(cacheDirPath, `${contractTxId}-redis.json`)
+    const json_path = path.resolve(
+      cacheDirPath,
+      `${contractTxId}-redis${isNil(suffix) ? "" : `-${suffix}`}.json`
+    )
     try {
       const _keys = await redis.client.KEYS(`${redis.prefix}.${contractTxId}.*`)
       const sets = partition(v => last(v.split(".")) === "keys")(_keys)
@@ -264,46 +309,51 @@ class Snapshot {
           })
         }
         fs.writeFileSync(json_path, JSON.stringify({ vals, keys }))
-        uploader(contractTxId, redis)
+        uploader(contractTxId, redis, suffix)
       }
     } catch (e) {
       console.log(e)
     }
   }
 
-  async saveSnapShotGCS(contractTxId, redis) {
+  async saveSnapShotGCS(contractTxId, redis, suffix) {
     if (!isNil(redis)) {
       await this.archiveRedis(
         contractTxId,
         this.uploadToGCSRedis.bind(this),
-        redis
+        redis,
+        suffix
       )
     } else {
-      this.archive(contractTxId, this.uploadToGCS.bind(this))
+      this.archive(contractTxId, this.uploadToGCS.bind(this), suffix)
     }
   }
 
-  async saveSnapShotS3(contractTxId, redis) {
+  async saveSnapShotS3(contractTxId, redis, suffix) {
     if (!isNil(redis)) {
       await this.archiveRedis(
         contractTxId,
         this.uploadToS3Redis.bind(this),
-        redis
+        redis,
+        suffix
       )
     } else {
-      this.archive(contractTxId, this.uploadToS3.bind(this))
+      this.archive(contractTxId, this.uploadToS3.bind(this), suffix)
     }
   }
 
-  archive(contractTxId, uploader) {
+  archive(contractTxId, uploader, suffix) {
     const output = fs.createWriteStream(
-      path.resolve(cacheDirPath, `${contractTxId}.zip`)
+      path.resolve(
+        cacheDirPath,
+        `${contractTxId}${isNil(suffix) ? "" : `-${suffix}`}.zip`
+      )
     )
     const archive = archiver("zip", {
       zlib: { level: 9 },
     })
     archive.on("error", err => console.log(err))
-    output.on("close", () => uploader(contractTxId))
+    output.on("close", () => uploader(contractTxId, suffix))
     archive.pipe(output)
     archive.directory(
       path.resolve(cacheDirPath, `${contractTxId}/state/`),
