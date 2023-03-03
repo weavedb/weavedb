@@ -72,7 +72,7 @@ describe("WeaveDB", function () {
   })
 
   it("should get version", async () => {
-    const version = require("../contracts/warp/lib/version")
+    const version = require("../sdk/contracts/weavedb/lib/version")
     expect(await db.getVersion()).to.equal(version)
   })
 
@@ -213,7 +213,7 @@ describe("WeaveDB", function () {
     ])
 
     // where =
-    expect(await db.get("ppl", ["age", "=", 30])).to.eql([Alice, Beth])
+    expect(await db.get("ppl", ["age", "==", 30])).to.eql([Alice, Beth])
 
     // where >
     expect(await db.get("ppl", ["age"], ["age", ">", 30])).to.eql([John])

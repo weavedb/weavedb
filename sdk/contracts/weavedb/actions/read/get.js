@@ -81,7 +81,8 @@ const parseQuery = query => {
         if (
           includes(v[1])([
             ">",
-            "=",
+            "=", // deprecated at v0.23
+            "==",
             "!=",
             "<",
             ">=",
@@ -408,7 +409,8 @@ const get = async (state, action, cursor = false, SmartWeave) => {
             case "<=":
               ok = v[v2[0]] <= v2[2]
               break
-            case "=":
+            case "=": // deprecated at v0.23
+            case "==":
               ok = v[v2[0]] === v2[2]
               break
             case "!=":

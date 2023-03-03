@@ -33,7 +33,7 @@ export default function App() {
     setTasks(
       await db.cget(
         "tasks",
-        ["user_address", "=", user.wallet.toLowerCase()],
+        ["user_address", "==", user.wallet.toLowerCase()],
         ["date", "desc"]
       )
     )
