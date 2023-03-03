@@ -4187,10 +4187,10 @@ weavedb-contracts@^0.23.0:
     md5 "^2.3.0"
     ramda "^0.28.0"
 
-weavedb-node-client@^0.22.0:
-  version "0.22.0"
-  resolved "https://registry.yarnpkg.com/weavedb-node-client/-/weavedb-node-client-0.22.0.tgz#b52d894a101838707471f3c6f8fd9fbe2ef969ca"
-  integrity sha512-5B94XRGoSfnJMeGEdRp/oSKTOe4HwDRN6p4FY04qSUU1oZvqWdidbixCLkrR/2FlUVZAjTil4Qx3eWW5aHOmUw==
+weavedb-node-client@^0.23.2:
+  version "0.23.2"
+  resolved "https://registry.yarnpkg.com/weavedb-node-client/-/weavedb-node-client-0.23.2.tgz#bf75006f0a9bff36b4b4ae4d7f99ea78687c0e37"
+  integrity sha512-2BWbxi3h4TxZ9CdkBbitBTVreE7sSV3m79lOB7lDh/Qoap/YyLiz2pvyRgXBI+YPpugJeNA6jGKilJb0Vuiw4A==
   dependencies:
     "@grpc/grpc-js" "^1.1.0"
     "@grpc/proto-loader" "^0.5.0"
