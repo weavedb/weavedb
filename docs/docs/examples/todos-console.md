@@ -161,7 +161,7 @@ const tasks = await db.get("tasks", ["date", "desc"])
 Get all tasks of a user sorted by date.
 
 ```js
-const tasks = await db.get("tasks", ["user_address", "=", USER_ADDRESS], ["date", "desc"])
+const tasks = await db.get("tasks", ["user_address", "==", USER_ADDRESS], ["date", "desc"])
 ```
 
 We will implement these queries in the frontend code.
@@ -270,7 +270,7 @@ export default function App() {
     setTasks(
       await db.cget(
         "tasks",
-        ["user_address", "=", user.wallet.toLowerCase()],
+        ["user_address", "==", user.wallet.toLowerCase()],
         ["date", "desc"]
       )
     )
@@ -624,7 +624,7 @@ export default function App() {
     setTasks(
       await db.cget(
         "tasks",
-        ["user_address", "=", user.wallet.toLowerCase()],
+        ["user_address", "==", user.wallet.toLowerCase()],
         ["date", "desc"]
       )
     )

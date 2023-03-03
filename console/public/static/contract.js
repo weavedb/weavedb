@@ -10135,6 +10135,7 @@
               if (includes(v[1])([
                 ">",
                 "=",
+                "==",
                 "!=",
                 "<",
                 ">=",
@@ -10464,6 +10465,7 @@
                     ok = v[v2[0]] <= v2[2];
                     break;
                   case "=":
+                  case "==":
                     ok = v[v2[0]] === v2[2];
                     break;
                   case "!=":
@@ -12350,7 +12352,7 @@
   // sdk/contracts/weavedb/lib/version.js
   var require_version2 = __commonJS({
     "sdk/contracts/weavedb/lib/version.js"(exports, module) {
-      module.exports = "0.22.0";
+      module.exports = "0.23.0";
     }
   });
 

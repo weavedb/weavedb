@@ -84,7 +84,11 @@ Where
 await db.get("collection_name", ["age"], [ "age", ">", 20 ])
 ```
 
-`=` `>` `>=` `<` `<=` `!=` `in` `not-in` `array-contains` `array-contains-any` are supported.
+`==` `>` `>=` `<` `<=` `!=` `in` `not-in` `array-contains` `array-contains-any` are supported.
+
+:::caution deprecated
+`=` is deprecated and replaced by `==` at `v0.23.0`. You can still use it for backward compatibility.
+:::
 
 Skip
 
