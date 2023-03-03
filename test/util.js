@@ -7,6 +7,7 @@ const Wallet = require("ethereumjs-wallet").default
 const { isNil } = require("ramda")
 const ArLocal = require("arlocal").default
 const Constants = require("../contracts/intmax/lib/circomlibjs/poseidon_constants_opt.js")
+const { DeployPlugin } = require("warp-contracts-plugin-deploy")
 async function addFunds(arweave, wallet) {
   const walletAddress = await arweave.wallets.getAddress(wallet)
   await arweave.api.get(`/mint/${walletAddress}/1000000000000000`)
@@ -40,6 +41,7 @@ async function init(sdk_type = "web") {
   })
   arweave = sdk.arweave
   warp = sdk.warp
+  warp.use(new DeployPlugin())
   return sdk
 }
 async function stop() {

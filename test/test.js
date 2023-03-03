@@ -59,7 +59,7 @@ describe("WeaveDB", function () {
     } catch (e) {}
   })
 
-  it.only("should get version", async () => {
+  it("should get version", async () => {
     const version = require("../sdk/contracts/weavedb/lib/version")
     expect(await db.getVersion()).to.equal(version)
   })
