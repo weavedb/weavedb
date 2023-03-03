@@ -289,7 +289,7 @@ This is how you would get a note in the frontend code.
 
 ```js
 // getting 5 notes of the account in descending order by published date
-const notes = await db.get("notes", ["author", "=", account], ["date", "desc"], 5)
+const notes = await db.get("notes", ["author", "==", account], ["date", "desc"], 5)
 
 // fetching the body of the first note
 const note = await fetch(`https://arweave.net/${notes[0].id}`).then(v => v.json())
