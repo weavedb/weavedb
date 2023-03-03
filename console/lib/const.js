@@ -39,6 +39,7 @@ export const methods = [
     methods: [
       "getInfo",
       "getVersion",
+      "getHash",
       "getEvolve",
       "getAlgorithms",
       "getOwner",
@@ -103,8 +104,8 @@ export const preset_rpcs = [
   "http://localhost:8080",
 ]
 
-export const latest = "0.21.0"
-export const weavedbSrcTxId = "nNz22bZG_Y2K9r68iqnL1iOPEu8rvqCWNE4TX17OsgA"
+export const latest = "0.22.0"
+export const weavedbSrcTxId = "JglKj1PoKu1moG7H3uAP1HxnXRH4kDIuqQzil1ZlbLc"
 //export const intmaxSrcTxId = "OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94"
 export const dfinitySrcTxId = "3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8"
 export const ethereumSrcTxId = "Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w"

@@ -8,7 +8,7 @@
     "@execution-machine/sdk": "^0.1.6",
     "@metamask/eth-sig-util": "^5.0.0",
     "@peculiar/webcrypto": "^1.4.0",
-    "arlocal": "1.1.42",
+    "arlocal": "^1.1.60",
     "arweave": "^1.12.6",
     "asn1.js": "^5.4.1",
     "base64-js": "^1.5.1",
@@ -46,15 +46,15 @@
     "warp-contracts-plugin-subscription": "^1.0.5",
     "wasmbuilder": "^0.0.16",
     "wasmcurves": "^0.2.0",
-    "weavedb-sdk": "^0.21.12",
-    "weavedb-sdk-node": "^0.21.32",
+    "weavedb-sdk": "^0.22.3",
+    "weavedb-sdk-node": "^0.22.1",
     "yargs": "^17.6.2"
   },
   "engines": {
     "node": ">=16.5"
   },
   "scripts": {
-    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet nNz22bZG_Y2K9r68iqnL1iOPEu8rvqCWNE4TX17OsgA 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w",
+    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet JglKj1PoKu1moG7H3uAP1HxnXRH4kDIuqQzil1ZlbLc 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w",
     "deploy-exm": "yarn build && node scripts/deployEXM.js mainnet",
     "test": "yarn build && mocha",
     "build": "yarn clean && node build.js && npm run cp && node scripts/mod.js",

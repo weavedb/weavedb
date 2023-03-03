@@ -27,6 +27,7 @@ describe("WeaveDB", function () {
     contractTxId,
     dfinityTxId,
     ethereumTxId
+  const Arweave = require("arweave")
   const _ii = [
     "302a300506032b6570032100ccd1d1f725fc35a681d8ef5d563a3c347829bf3f0fe822b4a4b004ee0224fc0d",
     "010925abb4cf8ccb7accbcfcbf0a6adf1bbdca12644694bb47afc7182a4ade66ccd1d1f725fc35a681d8ef5d563a3c347829bf3f0fe822b4a4b004ee0224fc0d",
@@ -59,8 +60,23 @@ describe("WeaveDB", function () {
   })
 
   it("should get version", async () => {
-    const version = require("../contracts/warp/lib/version")
+    const version = require("../sdk/contracts/weavedb/lib/version")
     expect(await db.getVersion()).to.equal(version)
+  })
+
+  it("should get hash", async () => {
+    expect(await db.getHash()).to.equal(null)
+    const tx = await db.set({ id: 1 }, "col", "doc")
+    expect(await db.getHash()).to.eql(tx.originalTxId)
+    const tx2 = await db.set({ id: 2 }, "col", "doc2")
+
+    const hashes = Arweave.utils.concatBuffers([
+      Arweave.utils.stringToBuffer(tx.originalTxId),
+      Arweave.utils.stringToBuffer(tx2.originalTxId),
+    ])
+    const hash = await Arweave.crypto.hash(hashes, "SHA-384")
+    const new_hash = Arweave.utils.bufferTob64(hash)
+    expect(await db.getHash()).to.eql(new_hash)
   })
 
   it("should get nonce", async () => {
@@ -75,10 +91,9 @@ describe("WeaveDB", function () {
     expect(await db.get("ppl", (await db.getIds(tx))[0])).to.eql(data)
   })
 
-  it.only("should set & get", async () => {
+  it("should set & get", async () => {
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Alice", height: 160 }
-    console.log(await db.set(data, "ppl", "Bob"))
     await db.set(data, "ppl", "Bob")
     expect(await db.get("ppl", "Bob")).to.eql(data)
     await db.set(data2, "ppl", "Bob")

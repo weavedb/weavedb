@@ -13,6 +13,19 @@ Get configurations
 await db.getInfo()
 ```
 
+### getHash
+
+Get current hash of chained txs. 
+
+:::info
+WeaveDB contracts keep track of valid transactions by hashing chained txIds like blockchain.  
+`latest_hash` = hash( [ `last_hash`, `current_txId` ] )
+:::
+
+```js
+await db.getHash()
+```
+
 ### getNonce
 
 To get the next nonce for an address. Nonces are internally used for signature verification to write data.

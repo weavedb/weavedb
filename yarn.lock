@@ -3899,34 +3899,7 @@ argparse@^2.0.1:
   resolved "https://registry.yarnpkg.com/argparse/-/argparse-2.0.1.tgz#246f50f3ca78a3240f6c997e8a9bd1eac49e4b38"
   integrity sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==
 
-arlocal@1.1.42:
-  version "1.1.42"
-  resolved "https://registry.yarnpkg.com/arlocal/-/arlocal-1.1.42.tgz#807e24d447a642d81848094ad35c04aea3deecd9"
-  integrity sha512-nDj/adr3kQZGjoMUgr6Yhrc+WZAigJBKxf0Nf4BvgUf6SBej7J1Dx/ZSXz4eeplFB89iSE1zgaJBMiKMPMznmw==
-  dependencies:
-    "@koa/cors" "^3.1.0"
-    apollo-server-koa "^3.6.2"
-    arbundles "^0.6.19"
-    arweave-bundles "^1.0.3"
-    bignumber.js "^9.0.2"
-    graphql "^16.2.0"
-    knex "^0.95.6"
-    koa "^2.13.4"
-    koa-body "^4.2.0"
-    koa-bodyparser "^4.3.0"
-    koa-json "^2.0.2"
-    koa-logger "^3.2.1"
-    koa-router "^10.1.1"
-    lodash "^4.17.21"
-    mime "^3.0.0"
-    minimist "^1.2.5"
-    moment "^2.29.1"
-    rfc4648 "^1.5.1"
-    smartweave "^0.4.46"
-    sqlite3 "^5.0.3"
-    tsc-watch "^4.6.0"
-
-arlocal@^1.1.59:
+arlocal@^1.1.59, arlocal@^1.1.60:
   version "1.1.60"
   resolved "https://registry.yarnpkg.com/arlocal/-/arlocal-1.1.60.tgz#a5b52a360bb72bbc6eb64137bbb120d8d0a43ef0"
   integrity sha512-oKS5f4X1XMkbFM4WfId6N6leu3k0te9B/vj5l/hE42nxKbV3QTtd1wgvOcpaKMITexZS8WyC12YcEXgiVggttA==
@@ -10937,10 +10910,10 @@ weak-lru-cache@^1.2.2:
   resolved "https://registry.yarnpkg.com/weak-lru-cache/-/weak-lru-cache-1.2.2.tgz#fdbb6741f36bae9540d12f480ce8254060dccd19"
   integrity sha512-DEAoo25RfSYMuTGc9vPJzZcZullwIqRDSI9LOy+fkCJPi6hykCnfKaXTuPBDuXAUcqHXyOgFtHNp/kB2FjYHbw==
 
-weavedb-base@^0.21.4:
-  version "0.21.4"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.21.4.tgz#41db0d414b377dab662f9dd50cd9f7397914aa63"
-  integrity sha512-+FYe1JftOA/hUrAdW9wpn6SLsbsV8MvapoYBDzwIBKLPMujbjy+8Vt/mSb3Upl5MoecVycICbXRfHrgmd/ll7Q==
+weavedb-base@^0.22.0:
+  version "0.22.0"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.22.0.tgz#10bdcc52484709dd1dc1a73e07107a0b2dff1ead"
+  integrity sha512-bz0F3sh8ZI3t/1VsdKzXqQhgmBuqC/5gTRDhxBdKZyoj5pynS2Z+YUhK9S9mKuOLuYCcfqOaNQFEnkEQeuP/5g==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"
@@ -10958,22 +10931,32 @@ weavedb-contracts@^0.21.0:
     md5 "^2.3.0"
     ramda "^0.28.0"
 
-weavedb-sdk-node@^0.21.32:
-  version "0.21.32"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk-node/-/weavedb-sdk-node-0.21.32.tgz#c2951e098cf75d61b7d4a699501dbe624833b3e3"
-  integrity sha512-Q2iAJvPsom/1tSDaX2cAWeICatbSbnv0QNLVM8TiFFEN07NV1z6/w05vgPbRMpEI/m9+hoXQ7vpwzoxhq28pVA==
+weavedb-contracts@^0.22.2:
+  version "0.22.2"
+  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.22.2.tgz#cd8f26c3b8f9670c0b84bc7cc3526b8ade0e1149"
+  integrity sha512-0WZV/Qcf8KiCLKUk+UFCWb4RN0Mm28h+qpt670POyEC4uIi5MQ+YVVcyLnDH7AdRVCVVGRuU27vNV1Z44IZasQ==
+  dependencies:
+    fpjson-lang "^0.1.3"
+    json-logic-js "^2.0.2"
+    md5 "^2.3.0"
+    ramda "^0.28.0"
+
+weavedb-sdk-node@^0.22.1:
+  version "0.22.1"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk-node/-/weavedb-sdk-node-0.22.1.tgz#830b39a1645fbb6441c857ce987dc60b982e40bf"
+  integrity sha512-2lNKfSs3OND57Pynt9Rafx+ksRTYGs1FoVKtGVRHB06Sl1ZvyvBu0vDgbi+wDvzexY/Jd6OlEd+RUVjfO46kKw==
   dependencies:
     "@aws-amplify/api" "^5.0.14"
     redis "^4.6.5"
     warp-contracts-lmdb "^1.1.9"
     warp-contracts-pubsub "^1.0.5"
     weavedb-contracts "^0.21.0"
-    weavedb-sdk "^0.21.12"
+    weavedb-sdk "^0.22.2"
 
-weavedb-sdk@^0.21.12:
-  version "0.21.12"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.21.12.tgz#74f246c51e3ea127242a5ee9ae6ed2836ac36242"
-  integrity sha512-iXLTs5XrUUFTeEPYxAqeAiRUoP31SOm2s1E32SGu52zQj2Zk1MzhAq3MC/1l1zDqF8gyWsGTL5PtXboEfQki/g==
+weavedb-sdk@^0.22.2:
+  version "0.22.2"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.22.2.tgz#9df92c9ec196620c056920c7aba50d20a41214fc"
+  integrity sha512-uv4vGkA6be64CxC76jY4l8HJdsTGowcdZTgiYhzgU/eiszSmmYquQ6sidtD/VQXFMSQCctqS5utScLSfFnW9OQ==
   dependencies:
     "@metamask/legacy-web3" "^2.0.0"
     "@paralleldrive/cuid2" "^2.2.0"
@@ -10984,8 +10967,24 @@ weavedb-sdk@^0.21.12:
     warp-contracts "1.2.54"
     warp-contracts-old "npm:warp-contracts@1.2.26"
     warp-contracts-plugin-deploy "^1.0.0"
-    weavedb-base "^0.21.4"
-    weavedb-contracts "^0.21.0"
+    weavedb-base "^0.22.0"
+    weavedb-contracts "^0.22.2"
+
+weavedb-sdk@^0.22.3:
+  version "0.22.3"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.22.3.tgz#405c702244eb6f7b3193625d1b2f1caf4c5b8f75"
+  integrity sha512-WiMnTldYgKX+0O4YV6wIX1wgRLflDE1+grp61GUqL0W4xoEej3xXXMqrvjaFRuwsymN5vcmOujzj6YrklhmhHQ==
+  dependencies:
+    "@metamask/legacy-web3" "^2.0.0"
+    "@paralleldrive/cuid2" "^2.2.0"
+    arweave "^1.11.4"
+    buffer "^6.0.3"
+    md5 "^2.3.0"
+    ramda "^0.28.0"
+    warp-contracts "1.2.54"
+    warp-contracts-old "npm:warp-contracts@1.2.26"
+    weavedb-base "^0.22.0"
+    weavedb-contracts "^0.22.2"
 
 web-streams-polyfill@^3.0.3:
   version "3.2.1"
