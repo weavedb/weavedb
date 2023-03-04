@@ -271,8 +271,11 @@ class SDK extends Base {
     subscribe,
     onUpdate,
     cache_prefix,
+    type = 1,
+    useVM2,
   }) {
     if (!isNil(contractTxId)) this.contractTxId = contractTxId
+    if (!isNil(useVM2)) this.useVM2 = useVM2
     if (!isNil(subscribe)) this.subscribe = subscribe
     if (!isNil(onUpdate)) this.onUpdate = onUpdate
     if (!isNil(cache_prefix)) this.cache_prefix = cache_prefix
@@ -346,7 +349,9 @@ class SDK extends Base {
       .connect(wallet)
       .setEvaluationOptions({
         allowBigInt: true,
-        useVM2: typeof window !== "undefined" ? false : !this.old,
+        useVM2:
+          this.useVM2 || (typeof window !== "undefined" ? false : !this.old),
+        useKVStorage: this.type !== 1,
       })
     dbs[this.contractTxId] = this
     this.domain = { name, version, verifyingContract: this.contractTxId }
