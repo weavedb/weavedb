@@ -37,6 +37,7 @@ const SDK = require("weavedb-sdk-node")
 
 class Node {
   constructor({ conf, port }) {
+    this.results = {}
     this.timeouts = {}
     this.start = Date.now()
     this.conf = conf
@@ -441,6 +442,7 @@ class Node {
         this.cache.set(key.key, result)
       } else {
         dryWrite = !nocache
+        let virtual_txid = null
         const cache = _onDryWrite?.cache || true
         const onDryWrite = nocache
           ? null
@@ -448,6 +450,7 @@ class Node {
               cb: _res => {
                 delete _res.state
                 res(null, _res)
+                virtual_txid = _res?.result?.transaction?.id || null
               },
               cache,
               read: _onDryWrite?.read || null,
@@ -460,6 +463,7 @@ class Node {
           false,
           onDryWrite
         )
+        if (!isNil(virtual_txid)) this.results[virtual_txid] = result
       }
     } catch (e) {
       console.log(e)

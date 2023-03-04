@@ -49,6 +49,7 @@ class Log {
       : await this.sdk[this.method](this.query, this.opt)
     const date = Date.now()
     let log = {
+      virtual_txid: res?.result?.transaction?.id || null,
       txid: !isNil(res) && !isNil(res.originalTxId) ? res.originalTxId : null,
       node: this.node,
       date,
@@ -62,6 +63,18 @@ class Log {
     this.fn(addLog)({ log })
     if (res?.success && !isNil(res.nonce)) {
       this.fn(setNonce)({ nonce: res.nonce + 1, signer: this.signer })
+    }
+    if (!isNil(res?.getResult)) {
+      res
+        .getResult()
+        .then(result => {
+          if (!isNil(result))
+            this.fn(updateLog)({
+              virtual_txid: log.virtual_txid,
+              txid: result.originalTxId,
+            })
+        })
+        .catch(e => {})
     }
     return clone(res)
   }
@@ -778,6 +791,14 @@ export const _whitelist = async ({
 export const addLog = async ({ set, get, val: { log } }) => {
   let logs = get("tx_logs") || []
   set(prepend(log, logs), "tx_logs")
+}
+
+export const updateLog = async ({ set, get, val: { virtual_txid, txid } }) => {
+  let logs = clone(get("tx_logs") || [])
+  for (let v of logs) {
+    if (v.virtual_txid === virtual_txid) v.txid = txid
+  }
+  set(logs, "tx_logs")
 }
 
 export const addRelayerJob = async ({
