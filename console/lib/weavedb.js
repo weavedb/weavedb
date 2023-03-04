@@ -40,15 +40,22 @@ class Log {
     this.signer = signer
   }
   async rec(array = false) {
-    const res = isNil(this.opt)
-      ? array
-        ? await this.sdk[this.method](...this.query)
-        : await this.sdk[this.method](this.query)
-      : array
-      ? await this.sdk[this.method](...this.query, this.opt)
-      : await this.sdk[this.method](this.query, this.opt)
+    let res = {},
+      err
+    try {
+      res = isNil(this.opt)
+        ? array
+          ? await this.sdk[this.method](...this.query)
+          : await this.sdk[this.method](this.query)
+        : array
+        ? await this.sdk[this.method](...this.query, this.opt)
+        : await this.sdk[this.method](this.query, this.opt)
+    } catch (e) {
+      err = e
+    }
     const date = Date.now()
     let log = {
+      err: err?.message || res?.error || res?.error?.code || null,
       virtual_txid: res?.result?.transaction?.id || null,
       txid: !isNil(res) && !isNil(res.originalTxId) ? res.originalTxId : null,
       node: this.node,
@@ -76,6 +83,7 @@ class Log {
         })
         .catch(e => {})
     }
+    if (!isNil(err)) throw new Error(err?.message)
     return clone(res)
   }
 }

@@ -152,7 +152,18 @@ export default inject(
                       <Box color="#6441AF">Error</Box>
                     </>
                   )}
-                  {isNil(v.txid) ? null : (
+                  {!isNil(v.err) ? (
+                    <>
+                      <Box
+                        as="i"
+                        mx={2}
+                        className="fas fa-times"
+                        color="tomato"
+                        fontSize="18px"
+                      />
+                      <Box color="tomato">{v.err}</Box>
+                    </>
+                  ) : isNil(v.txid) ? null : (
                     <>
                       <Box
                         as="i"
