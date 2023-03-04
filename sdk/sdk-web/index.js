@@ -489,13 +489,15 @@ class SDK extends Base {
           )
         ).result
       } catch (e) {
-        console.log(e)
+        throw e
       }
     }
     const res = await this.db.viewState(params)
     if (res.type === "ok") {
       this.state = res.state
       states[this.contractTxId] = this.state
+    } else {
+      throw new Error(res?.errorMessage || "unknown error")
     }
     return res.result
   }
@@ -555,13 +557,21 @@ class SDK extends Base {
             success = false
             console.log(e)
           }
+          console.log(err)
           let cacheResult = {
             nonce: param.nonce,
             signer: param.caller,
             cache: true,
             success,
             duration: Date.now() - start,
-            error: err,
+            error:
+              typeof err === "string"
+                ? err
+                : typeof err?.message === "string"
+                ? err.message
+                : !isNil(err)
+                ? "unknown error"
+                : null,
             function: param.function,
             state: cacheState?.state || null,
             result: cacheState?.result || null,
