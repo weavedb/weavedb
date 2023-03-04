@@ -467,8 +467,16 @@ class Node {
       }
     } catch (e) {
       console.log(e)
-      err = e.message
+      err =
+        typeof e === "string"
+          ? e
+          : typeof e.message === "string"
+          ? e.message
+          : "unknown error"
     }
+    console.log("..............................")
+    console.log(result)
+    console.log(err)
     return { result, err, dryWrite }
   }
 
