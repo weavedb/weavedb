@@ -82,8 +82,9 @@ Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
 const Base = require("weavedb-base")
 
 const { handle } = require("weavedb-contracts/weavedb/contract")
-
-const _on = async (state, input) => {
+//const { handle: handle_kv } = require("weavedb-contracts/weavedb-kv/contract")
+const { handle: handle_kv } = require("../contracts/weavedb-kv/contract")
+const _on = async (state, input, handle) => {
   const block = input.interaction.block
   if (!isNil(state)) {
     states[input.contractTxId] = state
@@ -165,8 +166,14 @@ class SDK extends Base {
     LmdbCache,
     createClient,
     WarpSubscriptionPlugin,
+    useVM2,
+    type = 1,
   }) {
     super()
+    this.kvs = {}
+    this.type = type
+    this.handle = this.type === 1 ? handle : handle_kv
+    if (!isNil(useVM2)) this.useVM2 = useVM2
     this.LmdbCache = LmdbCache
     this.createClient = createClient
     this.WarpSubscriptionPlugin = WarpSubscriptionPlugin
@@ -346,7 +353,9 @@ class SDK extends Base {
       .connect(wallet)
       .setEvaluationOptions({
         allowBigInt: true,
-        useVM2: typeof window !== "undefined" ? false : !this.old,
+        useVM2:
+          this.useVM2 || (typeof window !== "undefined" ? false : !this.old),
+        useKVStorage: this.type !== 1,
       })
     dbs[this.contractTxId] = this
     this.domain = { name, version, verifyingContract: this.contractTxId }
@@ -455,6 +464,19 @@ class SDK extends Base {
   }
   getSW() {
     return {
+      kv: {
+        get: async key => {
+          let val = this.kvs[key] || null
+          if (isNil(val)) {
+            const result = (await this.db.getStorageValues([key])).cachedValue
+            val = result.get(key) || null
+          }
+          return val
+        },
+        put: async (key, val) => {
+          this.kvs[key] = val
+        },
+      },
       contract: { id: this.contractTxId },
       arweave: this.arweave,
       block: {
@@ -482,20 +504,22 @@ class SDK extends Base {
     if (!nocache && !isNil(this.state)) {
       try {
         return (
-          await handle(
+          await this.handle(
             cachedStates[this.contractTxId] || states[this.contractTxId],
             { input: params },
             this.getSW()
           )
         ).result
       } catch (e) {
-        console.log(e)
+        throw e
       }
     }
     const res = await this.db.viewState(params)
     if (res.type === "ok") {
       this.state = res.state
       states[this.contractTxId] = this.state
+    } else {
+      throw new Error(res?.errorMessage || "unknown error")
     }
     return res.result
   }
@@ -541,7 +565,7 @@ class SDK extends Base {
           let err = null
           let success = true
           try {
-            cacheState = await handle(
+            cacheState = await this.handle(
               clone(
                 cachedStates[this.contractTxId] || states[this.contractTxId]
               ),
@@ -555,13 +579,21 @@ class SDK extends Base {
             success = false
             console.log(e)
           }
+          console.log(err)
           let cacheResult = {
             nonce: param.nonce,
             signer: param.caller,
             cache: true,
             success,
             duration: Date.now() - start,
-            error: err,
+            error:
+              typeof err === "string"
+                ? err
+                : typeof err?.message === "string"
+                ? err.message
+                : !isNil(err)
+                ? "unknown error"
+                : null,
             function: param.function,
             state: cacheState?.state || null,
             result: cacheState?.result || null,
@@ -627,6 +659,7 @@ class SDK extends Base {
             cachedStates[this.contractTxId] = dryResult.state
             timeouts[this.contractTxId] = setTimeout(() => {
               delete cachedStates[this.contractTxId]
+              this.kvs = {}
             }, 5000)
           }
         }
@@ -645,7 +678,7 @@ class SDK extends Base {
       let res = { success: false, err: null, result: null }
       try {
         res.result = (
-          await handle(
+          await this.handle(
             clone(state),
             {
               input: { function: v[0], query: tail(v) },
@@ -729,7 +762,7 @@ class SDK extends Base {
       try {
         if (func === "add") {
           res.docID = (
-            await handle(
+            await this.handle(
               state.cachedValue.state,
               {
                 input: { function: "ids", tx: tx.originalTxId },
@@ -743,7 +776,7 @@ class SDK extends Base {
           res.docID = last(res.path)
         }
         res.doc = (
-          await handle(
+          await this.handle(
             clone(state.cachedValue.state),
             {
               input: { function: "get", query: res.path },
@@ -772,16 +805,20 @@ class SDK extends Base {
           interaction: { id: res.originalTxId },
         })
       }, 0)
-      await _on(state, {
-        contractTxId: this.contractTxId,
-        interaction: {
-          block: {
-            height: info.height,
-            timestamp: Math.round(Date.now() / 1000),
-            id: info.current,
+      await _on(
+        state,
+        {
+          contractTxId: this.contractTxId,
+          interaction: {
+            block: {
+              height: info.height,
+              timestamp: Math.round(Date.now() / 1000),
+              id: info.current,
+            },
           },
         },
-      })
+        this.handle
+      )
     }
     return res
   }
@@ -826,7 +863,7 @@ class SDK extends Base {
   async getCache(...query) {
     if (isNil(states[this.contractTxId])) return null
     return (
-      await handle(
+      await this.handle(
         clone(states[this.contractTxId]),
         {
           input: { function: "get", query },
@@ -839,7 +876,7 @@ class SDK extends Base {
   async cgetCache(...query) {
     if (isNil(states[this.contractTxId])) return null
     return (
-      await handle(
+      await this.handle(
         clone(states[this.contractTxId]),
         {
           input: { function: "cget", query },
@@ -942,7 +979,7 @@ class SDK extends Base {
       let _query = null
       if (v.func === "add") {
         const docID = (
-          await handle(
+          await this.handle(
             clone(state),
             {
               function: "ids",
@@ -957,7 +994,7 @@ class SDK extends Base {
       }
       if (!isNil(_query)) {
         let val = (
-          await handle(
+          await this.handle(
             clone(state),
             {
               input: { function: "cget", query: _query },
