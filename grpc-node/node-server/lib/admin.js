@@ -67,6 +67,21 @@ const contracts_rules = {
   },
 }
 
+const _getResult = ({ res, txid, node, sec = 1 }) => {
+  if (!isNil(node.results[txid])) {
+    res(node.results[txid])
+  } else if (sec > 5) {
+    res(null)
+  } else {
+    setTimeout(() => {
+      _getResult({ txid, node, sec: sec + 1, res })
+    }, 1000)
+  }
+}
+
+const getResult = ({ txid, node }) =>
+  new Promise(res => _getResult({ txid, node, res }))
+
 const execAdminRead = async ({ query, res, txid, node }) => {
   let _query, op
   try {
@@ -88,6 +103,8 @@ const execAdminRead = async ({ query, res, txid, node }) => {
         console.log(e)
       }
       return res(null, stats)
+    case "tx_result":
+      return res(null, await getResult({ txid: _query.query?.txid, node }))
     default:
       return res(`operation not found: ${op}`)
   }
@@ -108,7 +125,7 @@ const execAdmin = async ({ query, res, txid, node }) => {
   }
 
   const nonAdmin = ["remove_contract", "add_contract"]
-  const reads = ["stats"]
+  const reads = ["stats", "tx_result"]
 
   if (includes(op)(reads)) {
     return execAdminRead({ query, res, txid, node })
