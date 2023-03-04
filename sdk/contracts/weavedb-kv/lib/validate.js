@@ -122,7 +122,6 @@ const validate = async (state, action, func, SmartWeave) => {
     }
   }
   if (_signer !== _caller) err(`signer[${_signer}] is not caller[${_caller}]`)
-  //let next_nonce = (state.nonces[original_signer] || 0) + 1
   let next_nonce =
     ((await SmartWeave.kv.get(`nonce.${original_signer}`)) || 0) + 1
   if (next_nonce !== nonce) {
@@ -130,8 +129,6 @@ const validate = async (state, action, func, SmartWeave) => {
       `The wrong nonce[${nonce}] for ${original_signer}: expected ${next_nonce}`
     )
   }
-  //if (isNil(state.nonces[original_signer])) state.nonces[original_signer] = 0
-  //state.nonces[original_signer] += 1
   await SmartWeave.kv.put(`nonce.${original_signer}`, next_nonce)
   return { signer: _signer, original_signer }
 }
