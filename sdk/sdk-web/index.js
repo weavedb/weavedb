@@ -564,6 +564,7 @@ class SDK extends Base {
             error: err,
             function: param.function,
             state: cacheState?.state || null,
+            result: cacheState?.result || null,
             results: [],
           }
           if (success) {
@@ -599,6 +600,7 @@ class SDK extends Base {
                 error: { message: "dryWrite failed", dryWrite: dryState },
                 function: param.function,
                 state: null,
+                result: null,
                 results: [],
               }
             : {
@@ -610,6 +612,7 @@ class SDK extends Base {
                 error: null,
                 function: param.function,
                 state: dryState.state,
+                result: dryState?.result || null,
                 results: [],
               }
       }
