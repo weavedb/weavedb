@@ -4187,10 +4187,10 @@ weavedb-contracts@^0.23.0:
     md5 "^2.3.0"
     ramda "^0.28.0"
 
-weavedb-node-client@^0.23.2:
-  version "0.23.2"
-  resolved "https://registry.yarnpkg.com/weavedb-node-client/-/weavedb-node-client-0.23.2.tgz#bf75006f0a9bff36b4b4ae4d7f99ea78687c0e37"
-  integrity sha512-2BWbxi3h4TxZ9CdkBbitBTVreE7sSV3m79lOB7lDh/Qoap/YyLiz2pvyRgXBI+YPpugJeNA6jGKilJb0Vuiw4A==
+weavedb-node-client@^0.23.3:
+  version "0.23.3"
+  resolved "https://registry.yarnpkg.com/weavedb-node-client/-/weavedb-node-client-0.23.3.tgz#1542218b7c2a2e80f7da44e262faa0566e935083"
+  integrity sha512-WeOmgRdkJAxD51ljZBxBhT/4bMDWR4RhwgGf3FaibNXkRphGml9FX5XQOm+qCwQpdJgUpAgt5+N58el3qTfPvw==
   dependencies:
     "@grpc/grpc-js" "^1.1.0"
     "@grpc/proto-loader" "^0.5.0"
@@ -4211,21 +4211,21 @@ weavedb-offchain@^0.22.1:
     weavedb-base "^0.22.0"
     weavedb-contracts "^0.22.2"
 
-weavedb-sdk-node@^0.23.0:
-  version "0.23.0"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk-node/-/weavedb-sdk-node-0.23.0.tgz#0eb92e7e2a7e676a8277710754049af16ff6ff36"
-  integrity sha512-ed4MsLGHLH6HMaUK6QVXmo6W+Ru7oBfAy808sxrXXX2Grsex2hC5vX6kwMsotIA/5RPyhMNi1Q5ubngrvDxnYA==
+weavedb-sdk-node@^0.23.1:
+  version "0.23.1"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk-node/-/weavedb-sdk-node-0.23.1.tgz#2ab5b5551e378d352d33fe2bd12e88a64967f8ee"
+  integrity sha512-shXoKtwmd7hBENk0yB6Im8bXaieKfAZdtKYr3XPv86jSHeDftZZSeLBZ8KUL3SzQpMgEQ7u+toTP21elZOIjqQ==
   dependencies:
     "@aws-amplify/api" "^5.0.14"
     redis "^4.6.5"
     warp-contracts-lmdb "^1.1.9"
     warp-contracts-pubsub "^1.0.5"
-    weavedb-sdk "^0.23.0"
+    weavedb-sdk "^0.23.1"
 
-weavedb-sdk@^0.23.0:
-  version "0.23.0"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.23.0.tgz#206270f4bdf673c68d302fc1b30a145557d39a5c"
-  integrity sha512-VGg7SfA5+EJz1iLhSC0FbGIyJLtUqwF6jAvf228RIcHJt2X6N4/ds8XQFEsfQ/dY5WkJR/7XTdnXJXyPphURtw==
+weavedb-sdk@^0.23.1:
+  version "0.23.1"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.23.1.tgz#84192f3489d0eed4285226576106f8887ff0fbab"
+  integrity sha512-ccMCtiS2W4XYjWGaen03RZGmXLTtN8d2mBIUCrmEKX1Wn/0idGgRwu8JiSP+8cJHqGjDOjjcG2w2PUKI20UIMA==
   dependencies:
     "@metamask/legacy-web3" "^2.0.0"
     "@paralleldrive/cuid2" "^2.2.0"

@@ -73,6 +73,13 @@ class SDK extends Base {
                 response.toObject().result === ""
                   ? null
                   : JSON.parse(response.toObject().result)
+              if (!isNil(result?.result?.transaction?.id)) {
+                result.getResult = async () =>
+                  await this.node({
+                    op: "tx_result",
+                    txid: result?.result?.transaction?.id,
+                  })
+              }
               ret({ result, err: null })
             } catch (e) {
               ret({ result: null, err: e })
