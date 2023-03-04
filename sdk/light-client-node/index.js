@@ -114,6 +114,13 @@ class SDK extends Base {
               try {
                 const result =
                   response.result === "" ? null : JSON.parse(response.result)
+                if (!isNil(result?.result?.transaction?.id)) {
+                  result.getResult = async () =>
+                    await this.node({
+                      op: "tx_result",
+                      txid: result?.result?.transaction?.id,
+                    })
+                }
                 ret({ result, err: null })
               } catch (e) {
                 ret({ result: null, err: e })
@@ -139,7 +146,9 @@ class SDK extends Base {
 
     return await this.write(params.function, query, nocache)
   }
-
+  async getHash(nocache) {
+    return this.readQuery("getHash", null, nocache)
+  }
   async getNonce(addr) {
     return this.readQuery("getNonce", addr, true)
   }

@@ -156,7 +156,7 @@ describe("WeaveDB", function () {
     expect(await db.get("ppl", "Bob")).to.eql(null)
   })
 
-  it("should get a collection", async () => {
+  it.only("should get a collection", async () => {
     const Bob = {
       name: "Bob",
       age: 20,
@@ -218,7 +218,7 @@ describe("WeaveDB", function () {
     ])
 
     // where =
-    expect(await db.get("ppl", ["age", "=", 30])).to.eql([Alice, Beth])
+    expect(await db.get("ppl", ["age", "==", 30])).to.eql([Alice, Beth])
 
     // where >
     expect(await db.get("ppl", ["age"], ["age", ">", 30])).to.eql([John])

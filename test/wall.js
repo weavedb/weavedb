@@ -25,14 +25,8 @@ describe("Wall Example", function () {
   })
 
   beforeEach(async () => {
-    ;({
-      walletAddress,
-      wallet,
-      wallet2,
-      wallet3,
-      wallet4,
-      arweave_wallet,
-    } = await initBeforeEach(true))
+    ;({ walletAddress, wallet, wallet2, wallet3, wallet4, arweave_wallet } =
+      await initBeforeEach(true))
   })
 
   const initDB = async () => {
@@ -181,7 +175,7 @@ describe("Wall Example", function () {
     const addr = wallet.getAddressString().toLowerCase()
     expect((await db.get("wall", ["date", "desc"])).length).to.eql(10)
     expect(
-      (await db.get("wall", ["user", "=", addr], ["date", "desc"])).length
+      (await db.get("wall", ["user", "==", addr], ["date", "desc"])).length
     ).to.eql(5)
     const arweave_wallet = await db.arweave.wallets.generate()
     const { identity } = await db.createTempAddressWithAR(arweave_wallet)

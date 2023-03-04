@@ -33,7 +33,7 @@ class OffChain extends Base {
       verifyingContract: this.contractTxId,
     }
     this.state = mergeLeft(state, {
-      version: "0.21.0",
+      version: "0.23.0",
       canEvolve: true,
       evolve: null,
       secure: true,

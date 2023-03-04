@@ -143,6 +143,8 @@ console.log(`this will take 3 - 5 sec: ${Bob}`)
 
 `onDryWrite` can be used with `weavedb-client` / `weavedb-node-client` too. But in that case, there is no `cb` option and the returned value of the entire function will be the result from `dryWrite` execution. This is because the connection to the gRPC node is a one-off gRPC request, which returns a result only once.
 
+After getting a dryWrite result, you can use `getResult()` to fetch the finalized result.
+
 ```js
 const dryWriteResult = await client.set({ name: "Bob" }, "ppl", "Bob", {
   onDryWrite: {
@@ -150,5 +152,6 @@ const dryWriteResult = await client.set({ name: "Bob" }, "ppl", "Bob", {
     read: [["get", "ppl"], ["get", "ppl", "Bob"]], // an array of dryRead queries
   },
 })
-console.log(`dryWrite result: ${result}`)
+console.log(`dryWrite result: ${result}`) // 50-200 ms
+console.log(`finalized result: ${await result.getResult()}`) // 3-4 sec
 ```

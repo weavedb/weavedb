@@ -3890,30 +3890,20 @@ weavedb-base@^0.22.0:
     ethereumjs-util "^7.1.5"
     ramda "^0.28.0"
 
-weavedb-contracts@^0.21.0:
-  version "0.21.0"
-  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.21.0.tgz#13b9ca28d030035db88afe10b6554bf024eb1016"
-  integrity sha512-DzmdiLYgsEcrPCd3shbVxHvKKtmftQUBNGL/j+yUJyJRjB79UDC+pbqWrlS5X153Si3RbGDRSqx+LdouJOI+IQ==
+weavedb-contracts@^0.23.0:
+  version "0.23.0"
+  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.23.0.tgz#47270469f1ad4bdb04460f279948ea55e2efab06"
+  integrity sha512-VRNrjGL7xXO0x1yKN8gdUfA1Cl7lBhp2A35seiXGMhc51u/2o/bqxmMokBLWiRL3zpIZWzqcvik/LQgoaojrmA==
   dependencies:
     fpjson-lang "^0.1.3"
     json-logic-js "^2.0.2"
     md5 "^2.3.0"
     ramda "^0.28.0"
 
-weavedb-contracts@^0.22.2:
-  version "0.22.2"
-  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.22.2.tgz#cd8f26c3b8f9670c0b84bc7cc3526b8ade0e1149"
-  integrity sha512-0WZV/Qcf8KiCLKUk+UFCWb4RN0Mm28h+qpt670POyEC4uIi5MQ+YVVcyLnDH7AdRVCVVGRuU27vNV1Z44IZasQ==
-  dependencies:
-    fpjson-lang "^0.1.3"
-    json-logic-js "^2.0.2"
-    md5 "^2.3.0"
-    ramda "^0.28.0"
-
-weavedb-sdk@^0.22.3:
-  version "0.22.3"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.22.3.tgz#405c702244eb6f7b3193625d1b2f1caf4c5b8f75"
-  integrity sha512-WiMnTldYgKX+0O4YV6wIX1wgRLflDE1+grp61GUqL0W4xoEej3xXXMqrvjaFRuwsymN5vcmOujzj6YrklhmhHQ==
+weavedb-sdk@^0.23.1:
+  version "0.23.1"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.23.1.tgz#84192f3489d0eed4285226576106f8887ff0fbab"
+  integrity sha512-ccMCtiS2W4XYjWGaen03RZGmXLTtN8d2mBIUCrmEKX1Wn/0idGgRwu8JiSP+8cJHqGjDOjjcG2w2PUKI20UIMA==
   dependencies:
     "@metamask/legacy-web3" "^2.0.0"
     "@paralleldrive/cuid2" "^2.2.0"
@@ -3924,7 +3914,7 @@ weavedb-sdk@^0.22.3:
     warp-contracts "1.2.54"
     warp-contracts-old "npm:warp-contracts@1.2.26"
     weavedb-base "^0.22.0"
-    weavedb-contracts "^0.22.2"
+    weavedb-contracts "^0.23.0"
 
 webidl-conversions@^3.0.0:
   version "3.0.1"
