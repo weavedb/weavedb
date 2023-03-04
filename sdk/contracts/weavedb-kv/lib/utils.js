@@ -309,10 +309,10 @@ const parse = async (
     ;[new_data, ...path] = query
     if (func === "add") {
       const id = await genId(action, salt, SmartWeave)
-      if (isNil(state.ids[SmartWeave.transaction.id])) {
-        state.ids[SmartWeave.transaction.id] = []
-      }
-      state.ids[SmartWeave.transaction.id].push(id)
+      let tx_ids =
+        (await SmartWeave.kv.get(`tx_ids.${SmartWeave.transaction.id}`)) || []
+      tx_ids.push(id)
+      await SmartWeave.kv.put(`tx_ids.${SmartWeave.transaction.id}`, tx_ids)
       path.push(id)
     }
   }

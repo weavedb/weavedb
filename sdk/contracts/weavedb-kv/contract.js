@@ -125,7 +125,7 @@ async function handle(state, action, _SmartWeave) {
     case "getRules":
       return await getRules(state, action)
     case "ids":
-      return await ids(state, action)
+      return await ids(state, action, _SmartWeave)
     case "nonce":
       return await nonce(state, action, _SmartWeave)
     case "hash":
