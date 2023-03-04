@@ -50,7 +50,7 @@ describe("WeaveDB", function () {
       dfinityTxId,
       ethereumTxId,
       contractTxId,
-    } = await initBeforeEach())
+    } = await initBeforeEach(false, false, "ar", true, false))
   })
 
   afterEach(async () => {
@@ -79,10 +79,10 @@ describe("WeaveDB", function () {
     expect(await db.getHash()).to.eql(new_hash)
   })
 
-  it("should get nonce", async () => {
-    expect(await db.getNonce(wallet.getAddressString())).to.equal(1)
+  it.only("should get nonce", async () => {
+    expect(await db.getNonce(walletAddress)).to.equal(1)
     await db.set({ id: 1 }, "col", "doc")
-    expect(await db.getNonce(wallet.getAddressString())).to.equal(2)
+    expect(await db.getNonce(walletAddress)).to.equal(2)
   })
 
   it("should add & get", async () => {

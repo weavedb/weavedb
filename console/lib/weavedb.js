@@ -54,8 +54,9 @@ class Log {
       err = e
     }
     const date = Date.now()
+    err = err?.message || res?.error || res?.error?.code || null
     let log = {
-      err: err?.message || res?.error || res?.error?.code || null,
+      err,
       virtual_txid: res?.result?.transaction?.id || null,
       txid: !isNil(res) && !isNil(res.originalTxId) ? res.originalTxId : null,
       node: this.node,
