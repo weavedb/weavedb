@@ -24,12 +24,17 @@ const upsert = async (
   let prev = clone(_data.__data)
   validateSchema(schema, next_data, contractErr)
   let ind = getIndex(state, init(path))
+  const db = async id => {
+    const doc_key = `data.${path.slice(0, -1).join("/")}/${id}`
+    return (await SmartWeave.kv.get(doc_key)) || { __data: null, subs: {} }
+  }
   if (isNil(prev)) {
-    addData(last(path), next_data, ind, col.__docs)
+    await addData(last(path), next_data, ind, db)
   } else {
-    updateData(last(path), next_data, prev, ind, col.__docs)
+    await updateData(last(path), next_data, prev, ind, db)
   }
   _data.__data = next_data
+  await SmartWeave.kv.put(`data.${path.join("/")}`, _data)
   return {
     state,
     result: {

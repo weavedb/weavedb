@@ -1,4 +1,5 @@
 const {
+  then,
   hasPath,
   uniq,
   pluck,
@@ -143,7 +144,7 @@ const parseQuery = query => {
   }
 }
 
-const getColIndex = (state, data, path, _sort) => {
+const getColIndex = async (state, data, path, _sort, SmartWeave) => {
   let index = []
   let ind = getIndex(state, path)
   if (!isNil(_sort)) {
@@ -163,7 +164,7 @@ const getColIndex = (state, data, path, _sort) => {
   } else {
     index = !isNil(ind.__id__)
       ? ind.__id__.asc._
-      : keys(getCol(data, path).__docs)
+      : keys((await getCol(data, path, undefined, SmartWeave)).__docs)
   }
   return index
 }
@@ -188,29 +189,42 @@ const comp = (val, x) => {
   return res
 }
 
-const bsearch = function (arr, x, sort, db, start = 0, end = arr.length - 1) {
+const bsearch = async function (
+  arr,
+  x,
+  sort,
+  db,
+  start = 0,
+  end = arr.length - 1
+) {
   if (start > end) return null
   let mid = Math.floor((start + end) / 2)
-  const val = addIndex(map)((v, i) => ({
-    desc: sort[i][1] === "desc",
-    val: db[arr[mid]].__data[sort[i][0]],
-  }))(tail(x))
+  const val = await Promise.all(
+    addIndex(map)(async (v, i) => ({
+      desc: sort[i][1] === "desc",
+      val: (await db(arr[mid])).__data[sort[i][0]],
+    }))(tail(x))
+  )
   let res = comp(val, tail(x))
   let res2 = 1
   if (includes(x[0])(["startAt", "startAfter"])) {
     if (mid > 0) {
-      const val2 = addIndex(map)((v, i) => ({
-        desc: sort[i][1] === "desc",
-        val: db[arr[mid - 1]].__data[sort[i][0]],
-      }))(tail(x))
+      const val2 = await Promise.all(
+        addIndex(map)(async (v, i) => ({
+          desc: sort[i][1] === "desc",
+          val: (await db(arr[mid - 1])).__data[sort[i][0]],
+        }))(tail(x))
+      )
       res2 = comp(val2, tail(x))
     }
   } else {
     if (mid < arr.length - 1) {
-      const val2 = addIndex(map)((v, i) => ({
-        desc: sort[i][1] === "desc",
-        val: db[arr[mid + 1]].__data[sort[i][0]],
-      }))(tail(x))
+      const val2 = await Promise.all(
+        addIndex(map)(async (v, i) => ({
+          desc: sort[i][1] === "desc",
+          val: (await db(arr[mid + 1])).__data[sort[i][0]],
+        }))(tail(x))
+      )
       res2 = comp(val2, tail(x))
     }
   }
@@ -234,9 +248,9 @@ const bsearch = function (arr, x, sort, db, start = 0, end = arr.length - 1) {
       break
   }
   if (down) {
-    return bsearch(arr, x, sort, db, start, mid - 1)
+    return await bsearch(arr, x, sort, db, start, mid - 1)
   } else {
-    return bsearch(arr, x, sort, db, mid + 1, end)
+    return await bsearch(arr, x, sort, db, mid + 1, end)
   }
 }
 
@@ -254,8 +268,8 @@ const get = async (state, action, cursor = false, SmartWeave) => {
   const { data } = state
   if (path.length % 2 === 0) {
     if (any(complement(isNil))([_limit, _sort, _filter])) err()
-    const { doc: _data } = getDoc(
-      data,
+    const { doc: _data } = await getDoc(
+      null,
       path,
       null,
       null,
@@ -279,13 +293,13 @@ const get = async (state, action, cursor = false, SmartWeave) => {
         : _data.__data || null,
     }
   } else {
-    let index = getColIndex(state, data, path, _sort)
+    let index = await getColIndex(state, data, path, _sort, SmartWeave)
     if (isNil(index)) err("index doesn't exist")
     const { doc: _data } =
       path.length === 1
         ? { doc: data }
-        : getDoc(
-            data,
+        : await getDoc(
+            null,
             slice(0, -1, path),
             null,
             null,
@@ -297,8 +311,22 @@ const get = async (state, action, cursor = false, SmartWeave) => {
             null,
             SmartWeave
           )
-    const docs =
-      (path.length === 1 ? _data : _data.subs)[last(path)]?.__docs || {}
+    /*const docs =
+      (path.length === 1 ? _data : _data.subs)[last(path)]?.__docs || {}*/
+    const test = async v => {
+      return v
+    }
+    const prAll = ps => Promise.all(ps)
+    /*
+    const prs = await Promise.all(map(async v => await test(v))([1, 2, 3]))
+    console.log(prs)
+    console.log(await Promise.all(prs))
+    */
+    const docs = async id => {
+      const doc_key = `data.${path.join("/")}/${id}`
+      return (await SmartWeave.kv.get(doc_key)) || { __data: null, subs: {} }
+    }
+
     let _docs = []
     let start = null
     let end = null
@@ -306,13 +334,19 @@ const get = async (state, action, cursor = false, SmartWeave) => {
     let _end = _endAt || _endBefore
     if (!isNil(_start)) {
       if (is(Object)(_start[1]) && hasPath([1, "id"])(_start)) {
-        start = bsearch(
+        start = await bsearch(
           index,
           [
             "startAt",
-            map(v =>
-              v[0] === "__id__" ? _start[1].id : docs[_start[1].id].__data[v[0]]
-            )(_sort || [["__id__"]]),
+            await Promise.all(
+              map(async v =>
+                v[0] === "__id__"
+                  ? _start[1].id
+                  : (
+                      await docs(_start[1].id)
+                    ).__data[v[0]]
+              )(_sort || [["__id__"]])
+            ),
           ],
           _sort || [["__id__"]],
           docs
@@ -328,7 +362,7 @@ const get = async (state, action, cursor = false, SmartWeave) => {
           index.splice(0, start)
         }
       } else {
-        start = bsearch(index, _start, _sort || [["__id__"]], docs)
+        start = await bsearch(index, _start, _sort || [["__id__"]], docs)
         index.splice(0, start)
       }
     }
@@ -345,13 +379,19 @@ const get = async (state, action, cursor = false, SmartWeave) => {
         if (comp(val, tail(_end)) === -1) err()
       }
       if (is(Object)(_end[1]) && hasPath([1, "id"])(_end)) {
-        end = bsearch(
+        end = await bsearch(
           index,
           [
             "startAt",
-            map(v =>
-              v[0] === "__id__" ? _end[1].id : docs[_end[1].id].__data[v[0]]
-            )(_sort || [["__id__"]]),
+            await Promise.all(
+              map(async v =>
+                v[0] === "__id__"
+                  ? _end[1].id
+                  : (
+                      await docs(_end[1].id)
+                    ).__data[v[0]]
+              )(_sort || [["__id__"]])
+            ),
           ],
           _sort || [["__id__"]],
           docs
@@ -367,7 +407,7 @@ const get = async (state, action, cursor = false, SmartWeave) => {
           index.splice(end + 1, index.length - end)
         }
       } else {
-        end = bsearch(index, _end, _sort || [["__id__"]], docs)
+        end = await bsearch(index, _end, _sort || [["__id__"]], docs)
         index.splice(end + 1, index.length - end)
       }
     }
@@ -390,7 +430,7 @@ const get = async (state, action, cursor = false, SmartWeave) => {
         err()
       }
       for (let _v of index) {
-        const v = docs[_v].__data
+        const v = (await docs(_v)).__data
         let ok = true
         for (let v2 of values(_filter)) {
           if (isNil(v[v2[0]]) && v[v2[0]] !== null) {
@@ -438,20 +478,20 @@ const get = async (state, action, cursor = false, SmartWeave) => {
         }
       }
     }
-
+    const _res = await Promise.all(
+      map(async v => {
+        const doc = await docs(v)
+        return cursor
+          ? {
+              id: v,
+              setter: doc.setter,
+              data: doc.__data,
+            }
+          : doc.__data
+      })(res)
+    )
     return {
-      result: compose(
-        when(o(complement(isNil), always(_limit)), take(_limit)),
-        map(v =>
-          cursor
-            ? {
-                id: v,
-                setter: docs[v].setter,
-                data: docs[v].__data,
-              }
-            : docs[v].__data
-        )
-      )(res),
+      result: when(o(complement(isNil), always(_limit)), take(_limit))(_res),
     }
   }
 }
