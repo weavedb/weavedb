@@ -1,14 +1,18 @@
 const { keys, isNil, mergeLeft } = require("ramda")
 const { parse } = require("../../lib/utils")
 
-const listCollections = async (state, action) => {
+const listCollections = async (state, action, SmartWeave) => {
   let { _data, data, query, new_data, path } = await parse(
     state,
     action,
-    "listCollections"
+    "listCollections",
+    undefined,
+    undefined,
+    undefined,
+    SmartWeave
   )
   return {
-    result: keys(path.length === 0 ? data : _data.subs),
+    result: keys((await SmartWeave.kv.get(`data.${path.join("/")}`)) || {}),
   }
 }
 
