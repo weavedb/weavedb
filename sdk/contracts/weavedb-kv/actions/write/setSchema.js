@@ -35,6 +35,7 @@ const setSchema = async (
   } catch (e) {
     err("schema error")
   }
+  await SmartWeave.kv.put(`data.${path.join("/")}`, _data)
   return {
     state,
     result: {
