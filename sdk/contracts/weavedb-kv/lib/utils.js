@@ -25,10 +25,23 @@ const err = (msg = `The wrong query`, contractErr = false) => {
   }
 }
 
-const getCol = (data, path, _signer) => {
+const getCol = async (data, path, _signer, SmartWeave, current_path = []) => {
+  if (isNil(data)) {
+    const _data = await SmartWeave.kv.get(`data.${current_path.join("/")}`)
+    if (isNil(_data)) {
+      data = {}
+    } else {
+      data = _data
+    }
+  }
   const [col, id] = path
   if (!isValidName(col)) err(`collection id is not valid: ${col}`)
-  data[col] ||= { __docs: {} }
+  if (isNil(data[col])) {
+    data[col] = { __docs: {} }
+    await SmartWeave.kv.put(`data.${current_path.join("/")}`, data)
+  }
+  current_path.push(col)
+  current_path.push(id)
   if (isNil(id)) {
     return data[col]
   } else {
@@ -37,10 +50,12 @@ const getCol = (data, path, _signer) => {
     if (!isNil(_signer) && isNil(data[col].__docs[id].setter)) {
       data[col].__docs[id].setter = _signer
     }
-    return getCol(
+    return await getCol(
       data[col].__docs[id].subs,
       slice(2, path.length, path),
-      _signer
+      _signer,
+      SmartWeave,
+      current_path
     )
   }
 }
@@ -74,48 +89,21 @@ const mergeData = (_data, new_data, overwrite = false, signer, SmartWeave) => {
   return _data
 }
 
-const getDoc = (
-  data,
-  path,
-  _signer,
+const validateData = ({
   func,
-  new_data,
-  secure = false,
+  secure,
+  rules,
+  doc,
+  SmartWeave,
+  state,
+  _signer,
   relayer,
   jobID,
   extra,
-  state,
-  SmartWeave
-) => {
-  const [_col, id] = path
-  if (!isValidName(_col)) err(`collection id is not valid: ${_col}`)
-  if (!isValidName(id)) err(`doc id is not valid: ${id}`)
-  data[_col] ||= { __docs: {} }
-  const col = data[_col]
-  const { rules, schema } = col
-  col.__docs[id] ||= { __data: null, subs: {} }
-  const doc = col.__docs[id]
-  if (!isNil(_signer) && isNil(doc.setter)) doc.setter = _signer
-  let next_data = null
-  if (path.length === 2) {
-    if (includes(func)(["set", "add"])) {
-      next_data = mergeData(
-        clone(doc),
-        new_data,
-        true,
-        _signer,
-        SmartWeave
-      ).__data
-    } else if (includes(func)(["update", "upsert"])) {
-      next_data = mergeData(
-        clone(doc),
-        new_data,
-        false,
-        _signer,
-        SmartWeave
-      ).__data
-    }
-  }
+  new_data,
+  next_data,
+  path,
+}) => {
   if (
     includes(func)(["set", "add", "update", "upsert", "delete"]) &&
     (secure || !isNil(rules))
@@ -211,8 +199,83 @@ const getDoc = (
     }
     if (!allowed) err("operation not allowed")
   }
+}
+
+const getDoc = async (
+  data,
+  path,
+  _signer,
+  func,
+  new_data,
+  secure = false,
+  relayer,
+  jobID,
+  extra,
+  state,
+  SmartWeave,
+  current_path = []
+) => {
+  if (isNil(data)) {
+    const _data = await SmartWeave.kv.get(`data.${current_path.join("/")}`)
+    if (isNil(_data)) {
+      data = {}
+    } else {
+      data = _data
+    }
+  }
+  const [_col, id] = path
+  if (!isValidName(_col)) err(`collection id is not valid: ${_col}`)
+  if (!isValidName(id)) err(`doc id is not valid: ${id}`)
+  if (isNil(data[_col])) {
+    data[_col] = { __docs: {} }
+    await SmartWeave.kv.put(`data.${current_path.join("/")}`, data)
+  }
+  current_path.push(_col)
+  current_path.push(id)
+  const col_key = `data.${current_path.slice(0, -1).join("/")}`
+  const doc_key = `data.${current_path.join("/")}`
+  const col = (await SmartWeave.kv.get(col_key)) || { __docs: {} }
+  const { rules, schema } = col
+  const doc = (await SmartWeave.kv.get(doc_key)) || { __data: null, subs: {} }
+  if (!isNil(_signer) && isNil(doc.setter)) doc.setter = _signer
+  let next_data = null
+  if (path.length === 2) {
+    if (includes(func)(["set", "add"])) {
+      next_data = mergeData(
+        clone(doc),
+        new_data,
+        true,
+        _signer,
+        SmartWeave
+      ).__data
+    } else if (includes(func)(["update", "upsert"])) {
+      next_data = mergeData(
+        clone(doc),
+        new_data,
+        false,
+        _signer,
+        SmartWeave
+      ).__data
+    }
+  }
+  validateData({
+    func,
+    secure,
+    rules,
+    doc,
+    SmartWeave,
+    state,
+    _signer,
+    relayer,
+    jobID,
+    extra,
+    new_data,
+    next_data,
+    path,
+  })
+
   return path.length >= 4
-    ? getDoc(
+    ? await getDoc(
         doc.subs,
         slice(2, path.length, path),
         _signer,
@@ -223,7 +286,8 @@ const getDoc = (
         jobID,
         extra,
         state,
-        SmartWeave
+        SmartWeave,
+        current_path
       )
     : {
         doc,
@@ -362,7 +426,7 @@ const parse = async (
       "getRules",
     ])
   ) {
-    _data = getCol(data, path, signer, func)
+    _data = await getCol(null, path, signer, SmartWeave)
     col = _data
   } else if (
     !includes(func)([
@@ -375,8 +439,8 @@ const parse = async (
     ]) &&
     path.length !== 0
   ) {
-    const doc = getDoc(
-      data,
+    const doc = await getDoc(
+      null,
       path,
       signer,
       func,

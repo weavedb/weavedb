@@ -353,8 +353,11 @@ class SDK extends Base {
       .connect(wallet)
       .setEvaluationOptions({
         allowBigInt: true,
-        useVM2:
-          this.useVM2 || (typeof window !== "undefined" ? false : !this.old),
+        useVM2: !isNil(this.useVM2)
+          ? this.useVM2
+          : typeof window !== "undefined"
+          ? false
+          : !this.old,
         useKVStorage: this.type !== 1,
       })
     dbs[this.contractTxId] = this
@@ -579,7 +582,6 @@ class SDK extends Base {
             success = false
             console.log(e)
           }
-          console.log(err)
           let cacheResult = {
             nonce: param.nonce,
             signer: param.caller,
