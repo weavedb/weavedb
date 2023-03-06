@@ -152,6 +152,6 @@ const dryWriteResult = await client.set({ name: "Bob" }, "ppl", "Bob", {
     read: [["get", "ppl"], ["get", "ppl", "Bob"]], // an array of dryRead queries
   },
 })
-console.log(`dryWrite result: ${result}`) // 50-200 ms
-console.log(`finalized result: ${await result.getResult()}`) // 3-4 sec
+console.log(`dryWrite result: ${dryWriteResult}`) // 50-200 ms
+console.log(`finalized result: ${await dryWriteResult.getResult()}`) // 3-4 sec
 ```
