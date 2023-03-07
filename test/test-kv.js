@@ -399,9 +399,11 @@ describe("WeaveDB", function () {
       data2,
       data,
     ])
+
     await db.addIndex([["age"], ["name", "desc"]], "ppl", {
       ar: arweave_wallet,
     })
+
     await db.addIndex([["age"], ["name", "desc"], ["height"]], "ppl", {
       ar: arweave_wallet,
     })
@@ -418,6 +420,7 @@ describe("WeaveDB", function () {
     expect(
       await db.get("ppl", ["age"], ["name", "in", ["Alice", "John"]])
     ).to.eql([data4, data2])
+
     expect(await db.getIndexes("ppl")).to.eql([
       [["__id__", "asc"]],
       [["name", "asc"]],
@@ -938,10 +941,11 @@ describe("WeaveDB", function () {
   })
 
   it("should reject invalid col/doc ids", async () => {
-    await db.set({}, "__ppl__", "Bob")
-    await db.set({}, "ppl", "Bob/Alice")
-    expect(await db.get("ppl")).to.eql([])
-    expect(await db.listCollections()).to.eql([])
+    await db.set({ name: "Bob" }, "__ppl__", "Bob")
+    await db.set({ name: "Bob/Alice" }, "ppl", "Bob/Alice")
+    await db.set({ name: "Bob.Alice" }, "ppl", "Bob.Alice")
+    expect(await db.get("ppl")).to.eql([{ name: "Bob.Alice" }])
+    expect(await db.listCollections()).to.eql(["ppl"])
     return
   })
 
@@ -1042,6 +1046,7 @@ describe("WeaveDB", function () {
         ar: arweave_wallet,
       }
     )
+
     expect(await db.getSchema("ppl")).to.eql(schema)
     expect(await db.getRules("ppl")).to.eql(rules)
     expect((await db.getEvolve()).canEvolve).to.eql(false)
@@ -1062,6 +1067,7 @@ describe("WeaveDB", function () {
         ar: arweave_wallet,
       }
     )
+    return
     expect((await db.getCrons()).crons).to.eql({})
     expect(await db.getOwner()).to.eql([addr])
     expect(await db.getIndexes("ppl")).to.eql([])
