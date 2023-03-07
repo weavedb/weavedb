@@ -30,12 +30,11 @@ const remove = async (
     SmartWeave
   )
   if (isNil(_data.__data)) err(`Data doesn't exist`)
-  let ind = getIndex(state, init(path))
   const db = async id => {
     const doc_key = `data.${path.slice(0, -1).join("/")}/${id}`
     return (await SmartWeave.kv.get(doc_key)) || { __data: null, subs: {} }
   }
-  await removeData(last(path), ind, db)
+  await removeData(last(path), db, init(path), SmartWeave)
   _data.__data = null
   await SmartWeave.kv.put(`data.${path.join("/")}`, _data)
   return {
