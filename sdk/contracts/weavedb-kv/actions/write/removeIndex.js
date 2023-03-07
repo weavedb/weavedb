@@ -29,8 +29,7 @@ const removeIndex = async (
     contractErr,
     SmartWeave
   )
-  let ind = getIndex(state, path)
-  _removeIndex(new_data, ind, col.__docs)
+  await _removeIndex(new_data, path, SmartWeave)
   return {
     state,
     result: {
