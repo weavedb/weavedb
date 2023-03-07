@@ -34,7 +34,7 @@ const {
 } = require("ramda")
 
 const { getDoc, getCol, err } = require("../../lib/utils")
-const { getIndex } = require("../../lib/index")
+const { getKey } = require("../../lib/index")
 
 const parseQuery = query => {
   const [path, opt] = splitWhen(complement(is)(String), query)
@@ -144,29 +144,15 @@ const parseQuery = query => {
   }
 }
 
-const getColIndex = async (state, data, path, _sort, SmartWeave) => {
-  let index = []
-  let ind = getIndex(state, path)
-  if (!isNil(_sort)) {
-    let i = 0
-    let _ind = ind
-    for (let v of _sort) {
-      let subs = i === 0 ? _ind : _ind.subs
-      if (isNil(subs[v[0]])) {
-        if (i === 0) break
-        err()
-      }
-      _ind = subs[v[0]][_sort.length === 1 ? "asc" : v[1] || "asc"]
-      i++
-    }
-    index = _ind._ || []
-    if (_sort.length === 1 && _sort[0][1] === "desc") index = reverse(index)
-  } else {
-    index = !isNil(ind.__id__)
-      ? ind.__id__.asc._
-      : keys((await getCol(data, path, undefined, SmartWeave)).__docs)
+const getColIndex = async (path, _sort, SmartWeave) => {
+  if (isNil(_sort)) _sort = [["__id__"]]
+  let _reverse = false
+  if (!isNil(_sort) && _sort.length === 1 && _sort[0][1] === "desc") {
+    _sort[0][1] = "asc"
+    _reverse = true
   }
-  return index
+  const indexes = await SmartWeave.kv.get(getKey(path, _sort))
+  return _reverse ? reverse(indexes) : indexes
 }
 
 const comp = (val, x) => {
@@ -293,7 +279,7 @@ const get = async (state, action, cursor = false, SmartWeave) => {
         : _data.__data || null,
     }
   } else {
-    let index = await getColIndex(state, data, path, _sort, SmartWeave)
+    let index = await getColIndex(path, _sort, SmartWeave)
     if (isNil(index)) err("index doesn't exist")
     const { doc: _data } =
       path.length === 1

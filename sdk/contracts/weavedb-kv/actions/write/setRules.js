@@ -48,6 +48,7 @@ const setRules = async (
   }
   _data.rules = new_data
   await SmartWeave.kv.put(`data.${path.join("/")}`, _data)
+
   return {
     state,
     result: {
