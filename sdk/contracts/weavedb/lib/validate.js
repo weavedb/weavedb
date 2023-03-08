@@ -96,11 +96,15 @@ const validate = async (state, action, func, SmartWeave) => {
     ).signer
   } else if (type == "secp256k1-2") {
     signer = (
-      await read(state.contracts.ethereum, {
-        function: "verify",
-        data: _data,
-        signature,
-      })
+      await read(
+        state.contracts.ethereum,
+        {
+          function: "verify",
+          data: _data,
+          signature,
+        },
+        SmartWeave
+      )
     ).signer
   }
 

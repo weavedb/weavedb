@@ -31,7 +31,6 @@ const relay = async (state, action, signer, contractErr = true, SmartWeave) => {
       SmartWeave
     ))
   }
-
   let jobID = head(action.input.query)
   let input = nth(1, action.input.query)
   let query = nth(2, action.input.query)
