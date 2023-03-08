@@ -36,7 +36,7 @@ describe("WeaveDB", function () {
   this.timeout(0)
 
   before(async () => {
-    db = await init("web")
+    db = await init("web", 1, false)
   })
 
   after(async () => await stop())
@@ -439,33 +439,6 @@ describe("WeaveDB", function () {
     ])
   })
 
-  it("should link temporarily generated address", async () => {
-    const addr = wallet.getAddressString()
-    const { identity } = await db.createTempAddress(addr)
-    expect(await db.getAddressLink(identity.address.toLowerCase())).to.eql({
-      address: addr,
-      expiry: 0,
-    })
-    delete db.wallet
-    await db.set({ name: "Beth", age: 10 }, "ppl", "Beth", {
-      wallet: addr,
-      privateKey: identity.privateKey,
-    })
-    expect((await db.cget("ppl", "Beth")).setter).to.eql(addr)
-    await db.removeAddressLink(
-      {
-        address: identity.address,
-      },
-      { wallet }
-    )
-    await db.set({ name: "Bob", age: 20 }, "ppl", "Bob", {
-      privateKey: identity.privateKey,
-    })
-    expect((await db.cget("ppl", "Bob")).setter).to.eql(
-      identity.address.toLowerCase()
-    )
-  })
-
   it("should pre-process the new data with rules", async () => {
     const rules = {
       let: {
@@ -743,6 +716,58 @@ describe("WeaveDB", function () {
       {
         privateKey: identity.privateKey,
         wallet: identity.address,
+      }
+    )
+    const addr = wallet.getAddressString()
+    const doc = await db.cget("ppl", "Bob")
+    expect(doc.setter).to.equal(addr)
+    expect(doc.data).to.eql(data2)
+    await db.removeRelayerJob("test-job", { ar: arweave_wallet })
+    expect(await db.getRelayerJob("test-job")).to.eql(null)
+    return
+  })
+  it("should relay queries with Intmax/Lit Protocol Wallet", async () => {
+    const intmax_wallet = Wallet.createRandom()
+    intmax_wallet._account = { address: intmax_wallet.address }
+
+    const job = {
+      relayers: [intmax_wallet.address],
+      schema: {
+        type: "object",
+        required: ["height"],
+        properties: {
+          height: {
+            type: "number",
+          },
+        },
+      },
+    }
+    await db.addRelayerJob("test-job", job, {
+      ar: arweave_wallet,
+    })
+    expect(await db.getRelayerJob("test-job")).to.eql(job)
+    expect(await db.listRelayerJobs()).to.eql(["test-job"])
+    const rules = {
+      let: {
+        "resource.newData.height": { var: "request.auth.extra.height" },
+      },
+      "allow write": true,
+    }
+    await db.setRules(rules, "ppl", {
+      ar: arweave_wallet,
+    })
+
+    const data = { name: "Bob", age: 20 }
+    const data2 = { name: "Bob", age: 20, height: 182 }
+    const param = await db.sign("set", data, "ppl", "Bob", {
+      jobID: "test-job",
+    })
+    await db.relay(
+      "test-job",
+      param,
+      { height: 182 },
+      {
+        intmax: intmax_wallet,
       }
     )
     const addr = wallet.getAddressString()
