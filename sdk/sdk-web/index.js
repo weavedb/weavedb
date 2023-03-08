@@ -82,8 +82,7 @@ Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
 const Base = require("weavedb-base")
 
 const { handle } = require("weavedb-contracts/weavedb/contract")
-//const { handle: handle_kv } = require("weavedb-contracts/weavedb-kv/contract")
-const { handle: handle_kv } = require("../contracts/weavedb-kv/contract")
+const { handle: handle_kv } = require("weavedb-contracts/weavedb-kv/contract")
 const _on = async (state, input, handle) => {
   const block = input.interaction.block
   if (!isNil(state)) {
@@ -290,6 +289,15 @@ class SDK extends Base {
       throw new Error(". and | are not allowed in prefix")
     }
     if (typeof window === "undefined") {
+      if (this.cache !== "leveldb") {
+        this.warp.useKVStorageFactory(
+          contractTxId =>
+            new this.LmdbCache({
+              ...defaultCacheOptions,
+              dbLocation: `./cache/warp/kv/lmdb/${contractTxId}`,
+            })
+        )
+      }
       if (this.cache === "lmdb") {
         this.warp
           .useStateCache(

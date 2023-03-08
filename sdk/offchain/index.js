@@ -1,13 +1,17 @@
 const { isNil, clone, mergeLeft } = require("ramda")
 const { handle } = require("weavedb-contracts/weavedb/contract")
+const { handle: handle_kv } = require("weavedb-contracts/weavedb-kv/contract")
 const Base = require("weavedb-base")
 const arweave = require("arweave")
 const { createId } = require("@paralleldrive/cuid2")
 
 class OffChain extends Base {
-  constructor({ state = {}, cache = "memory", redis }) {
+  constructor({ state = {}, cache = "memory", redis, type = 1 }) {
     super()
+    this.kvs = {}
     this.cache = cache
+    this.type = type
+    this.handle = this.type === 1 ? handle : handle_kv
     if (cache === "redis") {
       try {
         const { createClient } = require("redis")
@@ -32,27 +36,48 @@ class OffChain extends Base {
       version: "1",
       verifyingContract: this.contractTxId,
     }
-    this.state = mergeLeft(state, {
-      version: "0.23.0",
-      canEvolve: true,
-      evolve: null,
-      secure: true,
-      data: {},
-      nonces: {},
-      ids: {},
-      indexes: {},
-      auth: {
-        algorithms: ["secp256k1", "secp256k1-2", "ed25519", "rsa256"],
-        name: "weavedb",
-        version: "1",
-        links: {},
-      },
-      crons: {
-        lastExecuted: 0,
-        crons: {},
-      },
-      contracts: { ethereum: "ethereum", dfinity: "dfinity" },
-    })
+    this.state = mergeLeft(
+      state,
+      this.type === 1
+        ? {
+            version: "0.23.0",
+            canEvolve: true,
+            evolve: null,
+            secure: true,
+            data: {},
+            nonces: {},
+            ids: {},
+            indexes: {},
+            auth: {
+              algorithms: ["secp256k1", "secp256k1-2", "ed25519", "rsa256"],
+              name: "weavedb",
+              version: "1",
+              links: {},
+            },
+            crons: {
+              lastExecuted: 0,
+              crons: {},
+            },
+            contracts: { ethereum: "ethereum", dfinity: "dfinity" },
+          }
+        : {
+            version: "0.24.0",
+            canEvolve: true,
+            evolve: null,
+            secure: true,
+            auth: {
+              algorithms: ["rsa256"],
+              name: "weavedb",
+              version: "1",
+              links: {},
+            },
+            crons: {
+              lastExecuted: 0,
+              crons: {},
+            },
+            contracts: { ethereum: "ethereum", dfinity: "dfinity" },
+          }
+    )
     this.initialState = clone(this.state)
     this.height = 0
   }
@@ -73,6 +98,10 @@ class OffChain extends Base {
   }
   getSW() {
     return {
+      kv: {
+        get: async key => (!isNil(this.kvs[key]) ? clone(this.kvs[key]) : null),
+        put: async (key, val) => (this.kvs[key] = val),
+      },
       contract: { id: this.contractTxId },
       arweave,
       block: {
@@ -93,7 +122,8 @@ class OffChain extends Base {
     }
   }
   async read(input) {
-    return (await handle(clone(this.state), { input }, this.getSW())).result
+    return (await this.handle(clone(this.state), { input }, this.getSW()))
+      .result
   }
 
   async write(func, param, dryWrite, bundle, relay = false) {
@@ -104,7 +134,7 @@ class OffChain extends Base {
       let tx = null
       let sw = this.getSW()
       try {
-        tx = await handle(clone(this.state), { input: param }, sw)
+        tx = await this.handle(clone(this.state), { input: param }, sw)
         this.state = tx.state
         if (this.cache === "redis") {
           await this.redis_client.set(
