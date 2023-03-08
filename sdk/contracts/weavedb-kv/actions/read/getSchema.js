@@ -11,7 +11,6 @@ const getSchema = async (state, action, SmartWeave) => {
     undefined,
     SmartWeave
   )
-
   return { result: _data.schema || null }
 }
 

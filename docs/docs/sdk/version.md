@@ -15,6 +15,17 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.24.0 (Mar 08, 2023)
+
+#### Source Transaction Id
+
+[YOFMeoH0HsNmhtnRUGnNw3hf828EnIl7xuSusF-L3VY](https://sonar.warp.cc/#/app/source/YOFMeoH0HsNmhtnRUGnNw3hf828EnIl7xuSusF-L3VY)
+
+#### Added Features
+
+- WeaveDB2 using [KV Storage](https://academy.warp.cc/docs/sdk/advanced/kv-storage) for unlimited scalability
+- Relayer and Authentication with EVM, Intmax, Dfinity are temporariliy disabled due to the foerign read/write restrictions
+
 ### v0.23.0 (Mar 03, 2023)
 
 #### Source Transaction Id
