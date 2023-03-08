@@ -439,6 +439,72 @@ describe("WeaveDB", function () {
     ])
   })
 
+  it("should link temporarily generated address with Lens Protocol", async () => {
+    const intmax_wallet = Wallet.createRandom()
+    intmax_wallet._account = { address: intmax_wallet.address }
+    const { identity, tx: param } = await db._createTempAddress(
+      wallet.getAddressString(),
+      null,
+      "lens:123",
+      {
+        evm: wallet,
+        relay: true,
+        jobID: "auth:lens",
+      }
+    )
+    const job = {
+      relayers: [intmax_wallet.address.toLowerCase()],
+      schema: {
+        type: "object",
+        required: ["linkTo"],
+        properties: {
+          linkTo: {
+            type: "string",
+          },
+        },
+      },
+    }
+    await db.addRelayerJob("auth:lens", job, {
+      ar: arweave_wallet,
+    })
+    await db.relay(
+      "auth:lens",
+      param,
+      { linkTo: "lens:123" },
+      { intmax: intmax_wallet }
+    )
+    expect((await db.getAddressLink(identity.address)).address).to.eql(
+      "lens:123"
+    )
+  })
+
+  it("should link temporarily generated address", async () => {
+    const addr = wallet.getAddressString()
+    const { identity } = await db.createTempAddress(addr)
+    expect(await db.getAddressLink(identity.address.toLowerCase())).to.eql({
+      address: addr,
+      expiry: 0,
+    })
+    delete db.wallet
+    await db.set({ name: "Beth", age: 10 }, "ppl", "Beth", {
+      wallet: addr,
+      privateKey: identity.privateKey,
+    })
+    expect((await db.cget("ppl", "Beth")).setter).to.eql(addr)
+    await db.removeAddressLink(
+      {
+        address: identity.address,
+      },
+      { wallet }
+    )
+    await db.set({ name: "Bob", age: 20 }, "ppl", "Bob", {
+      privateKey: identity.privateKey,
+    })
+    expect((await db.cget("ppl", "Bob")).setter).to.eql(
+      identity.address.toLowerCase()
+    )
+  })
+
   it("should pre-process the new data with rules", async () => {
     const rules = {
       let: {
@@ -726,7 +792,7 @@ describe("WeaveDB", function () {
     expect(await db.getRelayerJob("test-job")).to.eql(null)
     return
   })
-  it("should relay queries with Intmax/Lit Protocol Wallet", async () => {
+  it("should relay queries with Intmax Wallet / Lit Protocol PKP", async () => {
     const intmax_wallet = Wallet.createRandom()
     intmax_wallet._account = { address: intmax_wallet.address }
 
