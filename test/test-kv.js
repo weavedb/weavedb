@@ -868,7 +868,7 @@ describe("WeaveDB", function () {
 
   it("should get info", async () => {
     const addr = await db.arweave.wallets.jwkToAddress(arweave_wallet)
-    const version = require("../contracts/warp/lib/version")
+    const version = require("../contracts/weavedb-kv/lib/version")
     const initial_state = JSON.parse(
       readFileSync(
         resolve(__dirname, "../dist/warp/initial-state.json"),
