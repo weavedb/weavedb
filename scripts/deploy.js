@@ -5,9 +5,11 @@ const wallet_name = process.argv[2]
 //const contractTxIdIntmax = process.argv[3]
 const contractTxIdInternetIdentity = process.argv[3]
 const contractTxIdEthereum = process.argv[4]
+const contractType = (process.argv[5] || 1) * 1
 const { isNil } = require("ramda")
 const { WarpFactory, LoggerFactory } = require("warp-contracts")
 const { DeployPlugin, ArweaveSigner } = require("warp-contracts-plugin-deploy")
+
 if (isNil(wallet_name)) {
   console.log("no wallet name given")
   process.exit()
@@ -17,13 +19,21 @@ let warp, walletAddress, arweave, wallet
 
 async function deployContract(secure) {
   const contractSrc = fs.readFileSync(
-    path.join(__dirname, "../dist/warp/contract.js"),
+    path.join(
+      __dirname,
+      `../dist/${contractType === 1 ? "warp" : "weavedb-kv"}/contract.js`
+    ),
     "utf8"
   )
 
   const stateFromFile = JSON.parse(
     fs.readFileSync(
-      path.join(__dirname, "../dist/warp/initial-state.json"),
+      path.join(
+        __dirname,
+        `../dist/${
+          contractType === 1 ? "warp" : "weavedb-kv"
+        }/initial-state.json`
+      ),
       "utf8"
     )
   )

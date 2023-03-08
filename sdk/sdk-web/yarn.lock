@@ -2837,10 +2837,10 @@ weavedb-base@^0.22.0:
     ethereumjs-util "^7.1.5"
     ramda "^0.28.0"
 
-weavedb-contracts@^0.23.0:
-  version "0.23.0"
-  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.23.0.tgz#47270469f1ad4bdb04460f279948ea55e2efab06"
-  integrity sha512-VRNrjGL7xXO0x1yKN8gdUfA1Cl7lBhp2A35seiXGMhc51u/2o/bqxmMokBLWiRL3zpIZWzqcvik/LQgoaojrmA==
+weavedb-contracts@^0.24.1:
+  version "0.24.1"
+  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.24.1.tgz#4b642fdef2140666e6f53dbd15ff91540fa7f6a7"
+  integrity sha512-TPw+h/Rwd6PNkNdwE5eygWNCvB/xy6SEty3qmu4QXjddNFUhaWQxFqc4OFK37+Ec55iOjftDrpnawYK/LFRx9Q==
   dependencies:
     fpjson-lang "^0.1.3"
     json-logic-js "^2.0.2"
