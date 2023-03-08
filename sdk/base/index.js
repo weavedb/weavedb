@@ -249,13 +249,13 @@ class Base {
     this.defaultWallet = { wallet, type }
   }
 
-  async createTempAddressWithII(ii, expiry, opt = {}) {
+  async createTempAddressWithII(ii, expiry, linkTo, opt = {}) {
     let addr = ii.toJSON()[0]
     opt.ii = ii
-    return this._createTempAddress(addr, expiry, opt)
+    return this._createTempAddress(addr, expiry, linkTo, opt)
   }
 
-  async createTempAddressWithAR(ar, expiry, opt = {}) {
+  async createTempAddressWithAR(ar, expiry, linkTo, opt = {}) {
     const wallet = is(Object, ar) && ar.walletName === "ArConnect" ? ar : null
     let addr = null
     if (!isNil(wallet)) {
@@ -265,10 +265,10 @@ class Base {
       addr = await this.arweave.wallets.jwkToAddress(ar)
     }
     opt.ar = ar
-    return this._createTempAddress(addr, expiry, opt)
+    return this._createTempAddress(addr, expiry, linkTo, opt)
   }
 
-  async createTempAddressWithIntmax(intmax, expiry, opt = {}) {
+  async createTempAddressWithIntmax(intmax, expiry, linkTo, opt = {}) {
     const wallet = is(Object, intmax) ? intmax : null
     let addr = null
     if (!isNil(wallet)) {
@@ -278,10 +278,10 @@ class Base {
       return
     }
     opt.intmax = intmax
-    return this._createTempAddress(addr.toLowerCase(), expiry, opt)
+    return this._createTempAddress(addr.toLowerCase(), expiry, linkTo, opt)
   }
 
-  async createTempAddress(evm, expiry, opt = {}) {
+  async createTempAddress(evm, expiry, linkTo, opt = {}) {
     const wallet = is(Object, evm) ? evm : null
     let addr = null
     if (!isNil(wallet)) {
@@ -298,13 +298,14 @@ class Base {
       addr = evm
     }
     opt.wallet = wallet
-    return this._createTempAddress(addr.toLowerCase(), expiry, opt)
+    return this._createTempAddress(addr.toLowerCase(), expiry, linkTo, opt)
   }
 
-  async _createTempAddress(addr, expiry, opt) {
+  async _createTempAddress(addr, expiry, linkTo, opt) {
     const identity = EthCrypto.createIdentity()
     const nonce = await this.getNonce(addr)
-    const query = isNil(expiry) ? { address: addr } : { address: addr, expiry }
+    let query = isNil(expiry) ? { address: addr } : { address: addr, expiry }
+    if (!isNil(linkTo)) query.linkTo = linkTo
     const message = {
       nonce,
       query: JSON.stringify({
@@ -331,6 +332,7 @@ class Base {
     })
     let param = { signature, address: identity.address.toLowerCase() }
     if (!isNil(expiry)) param.expiry = expiry
+    if (!isNil(linkTo)) param.linkTo = linkTo
     const tx = await this.addAddressLink(param, { nonce, ...opt })
     return isNil(tx.err) ? { tx, identity } : null
   }
