@@ -6,6 +6,7 @@
     "node": ">=18.13"
   },
   "scripts": {
+    "codegen": "grpc_tools_node_protoc --js_out=import_style=commonjs,binary:./static_codegen/ --grpc_out=./static_codegen/ --descriptor_set_out=./static_codegen/descriptor_set.bin --include_imports --plugin=protoc-gen-grpc=`which grpc_tools_node_protoc_plugin`  weavedb.proto",
     "dev": "node-dev --respawn server.js",
     "prettier": "prettier *.js --write"
   },
@@ -18,6 +19,7 @@
     "aws-sdk": "^2.1306.0",
     "extract-zip": "^2.0.1",
     "google-protobuf": "~3.14.0",
+    "grpc-server-reflection": "^0.1.5",
     "md5": "^2.3.0",
     "ramda": "^0.28.0",
     "redis": "^4.6.4",

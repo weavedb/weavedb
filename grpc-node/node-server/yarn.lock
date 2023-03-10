@@ -2683,6 +2683,11 @@ google-p12-pem@^4.0.0:
   dependencies:
     node-forge "^1.3.1"
 
+google-protobuf@^3.19.1:
+  version "3.21.2"
+  resolved "https://registry.yarnpkg.com/google-protobuf/-/google-protobuf-3.21.2.tgz#4580a2bea8bbb291ee579d1fefb14d6fa3070ea4"
+  integrity sha512-3MSOYFO5U9mPGikIYCzK0SaThypfGgS6bHqrUGXG3DPHCrb+txNqeEcns1W0lkGfk0rCyNXm7xB9rMxnCiZOoA==
+
 google-protobuf@~3.14.0:
   version "3.14.0"
   resolved "https://registry.yarnpkg.com/google-protobuf/-/google-protobuf-3.14.0.tgz#20373d22046e63831a5110e11a84f713cc43651e"
@@ -2714,6 +2719,13 @@ growly@^1.3.0:
   version "1.3.0"
   resolved "https://registry.yarnpkg.com/growly/-/growly-1.3.0.tgz#f10748cbe76af964b7c96c93c6bcc28af120c081"
   integrity sha512-+xGQY0YyAWCnqy7Cd++hc2JqMYzlm0dG30Jd0beaA64sROr8C4nt8Yc9V5Ro3avlSUDTN0ulqP/VBKi1/lLygw==
+
+grpc-server-reflection@^0.1.5:
+  version "0.1.5"
+  resolved "https://registry.yarnpkg.com/grpc-server-reflection/-/grpc-server-reflection-0.1.5.tgz#76ba71649fd71b0ebae7d5254ddc781ba61054d0"
+  integrity sha512-i69RYu6v65enzknNAPUgerFuVQfo+L3n9g4c1A/Sv5jUHMpxMIjSbBA+YWls9Sr4Flac4oohp4Gx8f389CaHuw==
+  dependencies:
+    google-protobuf "^3.19.1"
 
 gtoken@^5.0.4:
   version "5.3.2"
