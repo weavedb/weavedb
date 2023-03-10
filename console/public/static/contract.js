@@ -10843,11 +10843,15 @@
             SmartWeave2
           )).signer;
         } else if (type == "secp256k1-2") {
-          signer = (await read(state.contracts.ethereum, {
-            function: "verify",
-            data: _data,
-            signature
-          })).signer;
+          signer = (await read(
+            state.contracts.ethereum,
+            {
+              function: "verify",
+              data: _data,
+              signature
+            },
+            SmartWeave2
+          )).signer;
         }
         if (includes(type)(["secp256k1", "secp256k1-2"])) {
           if (/^0x/.test(signer))
@@ -12100,7 +12104,7 @@
       var { is, isNil } = require_src();
       var { err } = require_utils();
       var { validate } = require_validate();
-      var addAddressLink = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var addAddressLink = async (state, action, signer, contractErr = true, SmartWeave2, _linkTo) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -12111,7 +12115,9 @@
             SmartWeave2
           ));
         }
-        const { address, signature, expiry } = action.input.query;
+        const { address, signature, expiry, linkTo } = action.input.query;
+        if ((!isNil(linkTo) || !isNil(_linkTo)) && linkTo !== _linkTo)
+          err("linkTo doesn't match");
         if (!isNil(expiry) && !is(Number, expiry))
           err("expiry must be a number");
         const { nonce } = action.input;
@@ -12126,7 +12132,9 @@
           version: state.auth.version,
           verifyingContract: SmartWeave2.contract.id
         };
-        const query = typeof expiry === "undefined" ? { address: signer } : { address: signer, expiry };
+        let query = typeof expiry === "undefined" ? { address: signer } : { address: signer, expiry };
+        if (!isNil(linkTo))
+          query.linkTo = linkTo;
         const message = {
           nonce,
           query: JSON.stringify({
@@ -12162,7 +12170,7 @@
           }
         }
         state.auth.links[address.toLowerCase()] = {
-          address: signer,
+          address: linkTo || signer,
           expiry: expiry === 0 ? 0 : SmartWeave2.block.timestamp + expiry
         };
         return {
@@ -12248,6 +12256,7 @@
       var { update } = require_update2();
       var { upsert } = require_upsert();
       var { remove } = require_remove2();
+      var { addAddressLink } = require_addAddressLink();
       var { batch } = require_batch();
       var relay = async (state, action, signer, contractErr = true, SmartWeave2) => {
         let original_signer = null;
@@ -12331,6 +12340,15 @@
             return await remove(state, action2, null, null, SmartWeave2);
           case "batch":
             return await batch(state, action2, null, null, SmartWeave2);
+          case "addAddressLink":
+            return await addAddressLink(
+              state,
+              action2,
+              null,
+              null,
+              SmartWeave2,
+              action2.extra.linkTo
+            );
           default:
             err(
               `No function supplied or function not recognised: "${action2.input.function}"`

@@ -32,9 +32,7 @@ const relay = async (state, action, signer, contractErr = true, SmartWeave) => {
       SmartWeave
     ))
   }
-  let jobID = head(action.input.query)
-  let input = nth(1, action.input.query)
-  let query = nth(2, action.input.query)
+  let [jobID, input, query] = action.input.query
   if (input.jobID !== jobID) err("the wrong jobID")
   let action2 = { input, relayer: signer, extra: query, jobID }
   const relayers = state.relayers || {}
