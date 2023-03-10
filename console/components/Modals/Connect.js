@@ -1,10 +1,12 @@
 import { Box, Flex, Image } from "@chakra-ui/react"
 import { inject } from "roidjs"
+import { isNil } from "ramda"
 import {
   connectAddress,
   createTempAddress,
   connectAddressWithII,
   createTempAddressWithII,
+  createTempAddressWithLens,
   connectAddressWithAR,
   createTempAddressWithAR,
 } from "../../lib/weavedb"
@@ -19,7 +21,8 @@ export default inject(
     "signing_in_modal",
     "tx_logs",
   ],
-  ({ newNetwork, contractTxId, network, tab, fn, set, $ }) => {
+  ({ newNetwork, state, contractTxId, network, tab, fn, set, $ }) => {
+    const version = isNil(state?.version) ? 0 : state?.version.split(".")[1] * 1
     return (
       <Flex
         align="center"
@@ -40,7 +43,6 @@ export default inject(
         }}
       >
         <Flex
-          width="580px"
           wrap="wrap"
           p={4}
           justify="center"
@@ -182,6 +184,39 @@ export default inject(
                 <Image height="100px" src="/static/images/arconnect.png" />
                 <Box textAlign="center">ArConnect</Box>
               </Flex>
+              {version < 25 || $.owner_signing_in_modal ? null : (
+                <Flex
+                  justify="center"
+                  align="center"
+                  direction="column"
+                  boxSize="150px"
+                  p={4}
+                  m={4}
+                  bg="#00501E"
+                  color="white"
+                  sx={{
+                    borderRadius: "10px",
+                    cursor: "pointer",
+                    ":hover": { opacity: 0.75 },
+                  }}
+                  onClick={async () => {
+                    set(true, "signing_in")
+                    if ($.owner_signing_in_modal) {
+                    } else {
+                      await fn(createTempAddressWithLens)({
+                        contractTxId,
+                        network,
+                        node: tab === "Nodes",
+                      })
+                    }
+                    set(false, "signing_in")
+                    set(false, "signing_in_modal")
+                    set(false, "owner_signing_in_modal")
+                  }}
+                >
+                  <Image height="120px" src="/static/images/lens.png" />
+                </Flex>
+              )}
             </>
           )}
         </Flex>

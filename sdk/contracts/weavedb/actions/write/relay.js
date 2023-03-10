@@ -29,7 +29,8 @@ const relay = async (state, action, signer, contractErr = true, SmartWeave) => {
       state,
       action,
       "relay",
-      SmartWeave
+      SmartWeave,
+      false
     ))
   }
   let [jobID, input, query] = action.input.query

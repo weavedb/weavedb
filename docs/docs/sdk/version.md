@@ -15,16 +15,26 @@ await db.getVersion()
 
 ## Change Logs
 
-### v0.24.0 (Mar 08, 2023)
+### v0.25.0 (Mar 10, 2023)
 
 #### Source Transaction Id
 
-[YOFMeoH0HsNmhtnRUGnNw3hf828EnIl7xuSusF-L3VY](https://sonar.warp.cc/#/app/source/YOFMeoH0HsNmhtnRUGnNw3hf828EnIl7xuSusF-L3VY)
+[-DaZ9ySjE59PaJZUtxeTaB9_BhVzML1ZmJ3i7pl6OrI](https://sonar.warp.cc/#/app/source/-DaZ9ySjE59PaJZUtxeTaB9_BhVzML1ZmJ3i7pl6OrI)
 
 #### Added Features
 
-- WeaveDB2 using [KV Storage](https://academy.warp.cc/docs/sdk/advanced/kv-storage) for unlimited scalability
-- Relayer and Authentication with EVM, Intmax, Dfinity are temporariliy disabled due to the foerign read/write restrictions
+-  built-in Lens Profile authentication
+
+### v0.24.0 (Mar 09, 2023)
+
+#### Source Transaction Id
+
+[fuSpwZIxJtIq3eTdbRgBSwsFYd5f6oMwKB91RR3hXOo](https://sonar.warp.cc/#/app/source/fuSpwZIxJtIq3eTdbRgBSwsFYd5f6oMwKB91RR3hXOo)
+
+#### Added Features
+
+- relay `addAddressLink` with `linkTo`
+
 
 ### v0.23.0 (Mar 03, 2023)
 
