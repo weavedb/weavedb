@@ -305,6 +305,63 @@ export const createTempAddressWithAR = async ({
   }
 }
 
+export const createTempAddressWithLens = async ({
+  set,
+  fn,
+  val: { contractTxId, network, node },
+}) => {
+  //  const { identity, tx } = await sdk.createTempAddressWithLens()
+  //return
+  /*
+  const wallet = window.arweaveWallet
+  await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
+  let addr = await wallet.getActiveAddress()
+  if (node) {
+    set({ addr, type: "ar", network }, "temp_current_all")
+    return
+  }*/
+  const ex_identity = null //await lf.getItem(`temp_address:${contractTxId}:${addr}`)
+  let identity = ex_identity
+  let tx, addr
+  if (isNil(identity)) {
+    ;({ tx, identity } = await new Log(
+      sdk,
+      "createTempAddressWithLens",
+      null,
+      null,
+      fn
+    ).rec())
+    const linked = await new Log(
+      sdk,
+      "getAddressLink",
+      identity.address,
+      null,
+      fn
+    ).rec()
+    if (isNil(linked)) {
+      alert("something went wrong")
+      return
+    } else {
+      addr = linked.address
+    }
+  } else {
+    /*await lf.setItem("temp_address:current", addr)
+    set(addr, "temp_current")
+    set({ addr, type: "ar", network }, "temp_current_all")
+    return*/
+  }
+  if (!isNil(tx) && isNil(tx.err)) {
+    identity.tx = tx
+    identity.linked_address = addr
+    await lf.setItem("temp_address:current", addr)
+    identity.network = network
+    identity.type = "lens"
+    await lf.setItem(`temp_address:${contractTxId}:${addr}`, identity)
+    set(addr, "temp_current")
+    set({ addr, type: "lens", network }, "temp_current_all")
+  }
+}
+
 export const connectAddress = async ({ set, val: { network } }) => {
   const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
   await provider.send("eth_requestAccounts", [])
