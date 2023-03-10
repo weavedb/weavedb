@@ -1645,7 +1645,7 @@
     bech32 "1.1.4"
     ws "7.4.6"
 
-"@ethersproject/providers@^5.2.0":
+"@ethersproject/providers@5.7.2", "@ethersproject/providers@^5.2.0":
   version "5.7.2"
   resolved "https://registry.yarnpkg.com/@ethersproject/providers/-/providers-5.7.2.tgz#f8b1a4f275d7ce58cf0a2eec222269a08beb18cb"
   integrity sha512-g34EWZ1WWAVgr4aptGlVBF8mhl3VWjv+8hoAnzStu8Ah22VHBsuGzP17eb6xDVRzw895G4W7vvx60lFFur/1Rg==
@@ -2321,6 +2321,34 @@
   integrity sha512-/sG9NlpGZ/aBpnRamIlGs+wX+C/IJ5DodNK7iPQIVCG4eUQdGeshGhWQ6JCi7tpnD9sCtFXcS04iTimuaJfh4Q==
   dependencies:
     vary "^1.1.2"
+
+"@lit-protocol/sdk-browser@^1.3.3":
+  version "1.3.3"
+  resolved "https://registry.yarnpkg.com/@lit-protocol/sdk-browser/-/sdk-browser-1.3.3.tgz#66df9f03469df62795661f69c7b3345619387e89"
+  integrity sha512-NAK3twHCZ28WyVIjXwe2FTsJbrHYK1xh45eybW+a/dAbseaM6OsQ+JXfo+vAYrhW9ugC73JJt16irCpVxQP/iQ==
+  dependencies:
+    "@ethersproject/bytes" "^5.5.0"
+    "@ethersproject/contracts" "^5.2.0"
+    "@ethersproject/hash" "^5.4.0"
+    "@ethersproject/providers" "^5.2.0"
+    "@ethersproject/strings" "^5.5.0"
+    "@ethersproject/transactions" "^5.7.0"
+    "@ethersproject/units" "^5.4.0"
+    "@ethersproject/wallet" "^5.2.0"
+    "@walletconnect/ethereum-provider" "1.7.8"
+    buffer "^6.0.3"
+    bufferutil "^4.0.6"
+    cross-blob "^3.0.1"
+    js-base64 "^3.7.2"
+    jszip "^3.6.0"
+    lit-connect-modal "^0.1.11"
+    lit-siwe "^1.1.8"
+    node-fetch "^3.2.3"
+    pako "^2.0.4"
+    tslib "^2.3.1"
+    tweetnacl "^1.0.3"
+    tweetnacl-util "^0.15.1"
+    utf-8-validate "^5.0.8"
 
 "@lmdb/lmdb-darwin-arm64@2.7.2":
   version "2.7.2"
@@ -6012,6 +6040,42 @@ ethers@5.6.4:
     "@ethersproject/web" "5.6.0"
     "@ethersproject/wordlists" "5.6.0"
 
+ethers@5.7.2:
+  version "5.7.2"
+  resolved "https://registry.yarnpkg.com/ethers/-/ethers-5.7.2.tgz#3a7deeabbb8c030d4126b24f84e525466145872e"
+  integrity sha512-wswUsmWo1aOK8rR7DIKiWSw9DbLWe6x98Jrn8wcTflTVvaXhAMaB5zGAXy0GYQEQp9iO1iSHWVyARQm11zUtyg==
+  dependencies:
+    "@ethersproject/abi" "5.7.0"
+    "@ethersproject/abstract-provider" "5.7.0"
+    "@ethersproject/abstract-signer" "5.7.0"
+    "@ethersproject/address" "5.7.0"
+    "@ethersproject/base64" "5.7.0"
+    "@ethersproject/basex" "5.7.0"
+    "@ethersproject/bignumber" "5.7.0"
+    "@ethersproject/bytes" "5.7.0"
+    "@ethersproject/constants" "5.7.0"
+    "@ethersproject/contracts" "5.7.0"
+    "@ethersproject/hash" "5.7.0"
+    "@ethersproject/hdnode" "5.7.0"
+    "@ethersproject/json-wallets" "5.7.0"
+    "@ethersproject/keccak256" "5.7.0"
+    "@ethersproject/logger" "5.7.0"
+    "@ethersproject/networks" "5.7.1"
+    "@ethersproject/pbkdf2" "5.7.0"
+    "@ethersproject/properties" "5.7.0"
+    "@ethersproject/providers" "5.7.2"
+    "@ethersproject/random" "5.7.0"
+    "@ethersproject/rlp" "5.7.0"
+    "@ethersproject/sha2" "5.7.0"
+    "@ethersproject/signing-key" "5.7.0"
+    "@ethersproject/solidity" "5.7.0"
+    "@ethersproject/strings" "5.7.0"
+    "@ethersproject/transactions" "5.7.0"
+    "@ethersproject/units" "5.7.0"
+    "@ethersproject/wallet" "5.7.0"
+    "@ethersproject/web" "5.7.1"
+    "@ethersproject/wordlists" "5.7.0"
+
 ethers@^5.5.1:
   version "5.7.0"
   resolved "https://registry.yarnpkg.com/ethers/-/ethers-5.7.0.tgz#0055da174b9e076b242b8282638bc94e04b39835"
@@ -7982,6 +8046,13 @@ lit-connect-modal@^0.1.10:
   version "0.1.10"
   resolved "https://registry.yarnpkg.com/lit-connect-modal/-/lit-connect-modal-0.1.10.tgz#b9f6008aaa10a19e9accd2bf447853429fbe270c"
   integrity sha512-hiE/0yrl15EDNH08OqcntiNXDOvU4zviiaOOCT4jG2N3L2dyMFLOwXXrkNobQ6B8/8MgXmMJu2TCp6RwhmCzNw==
+  dependencies:
+    micromodal "^0.4.10"
+
+lit-connect-modal@^0.1.11:
+  version "0.1.11"
+  resolved "https://registry.yarnpkg.com/lit-connect-modal/-/lit-connect-modal-0.1.11.tgz#688fa9601b920c917856a5dbe8491a4fbaf1d6ab"
+  integrity sha512-EG6pcCqdxZQJt3MPDq3gJ5Sz4E5sJdydtAF7VFJu6z6GDHO1Ybp8WrTx8CUnHiF54/MQBRi6Nb7cbTvv+BKWvQ==
   dependencies:
     micromodal "^0.4.10"
 
@@ -10910,10 +10981,10 @@ weak-lru-cache@^1.2.2:
   resolved "https://registry.yarnpkg.com/weak-lru-cache/-/weak-lru-cache-1.2.2.tgz#fdbb6741f36bae9540d12f480ce8254060dccd19"
   integrity sha512-DEAoo25RfSYMuTGc9vPJzZcZullwIqRDSI9LOy+fkCJPi6hykCnfKaXTuPBDuXAUcqHXyOgFtHNp/kB2FjYHbw==
 
-weavedb-base@^0.22.0:
-  version "0.22.0"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.22.0.tgz#10bdcc52484709dd1dc1a73e07107a0b2dff1ead"
-  integrity sha512-bz0F3sh8ZI3t/1VsdKzXqQhgmBuqC/5gTRDhxBdKZyoj5pynS2Z+YUhK9S9mKuOLuYCcfqOaNQFEnkEQeuP/5g==
+weavedb-base@^0.24.0:
+  version "0.24.0"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.24.0.tgz#c93fb123398b7bcc0a6145d4a91241539cef0728"
+  integrity sha512-aDMVgHJ+PqWWYSJOkQsE2R0Kbh6rLpIdA/VvrdgXbbPu8YhdO5s0kMG6Im5B+rdzMBnwh7+vlufxZkcRe9z7Dg==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"
@@ -10921,42 +10992,53 @@ weavedb-base@^0.22.0:
     ethereumjs-util "^7.1.5"
     ramda "^0.28.0"
 
-weavedb-contracts@^0.21.0:
-  version "0.21.0"
-  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.21.0.tgz#13b9ca28d030035db88afe10b6554bf024eb1016"
-  integrity sha512-DzmdiLYgsEcrPCd3shbVxHvKKtmftQUBNGL/j+yUJyJRjB79UDC+pbqWrlS5X153Si3RbGDRSqx+LdouJOI+IQ==
+weavedb-base@^0.25.2:
+  version "0.25.2"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.25.2.tgz#28e2fe39395b4db5e4c1590dec367e14f6689e89"
+  integrity sha512-saVGKqPN5OB++E3jcTLR4EfQNS+b5BPdmMNqYLCZx3k6k2EAGxhbRj0ozYUtX3OeZCF84X6LL2xBL4N7tdftFw==
+  dependencies:
+    "@metamask/eth-sig-util" "^4.0.1"
+    "@metamask/legacy-web3" "^2.0.0"
+    eth-crypto "^2.3.0"
+    ethereumjs-util "^7.1.5"
+    ethers "5.7.2"
+    ramda "^0.28.0"
+
+weavedb-contracts@^0.24.2:
+  version "0.24.2"
+  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.24.2.tgz#3385a8214bd550bb10168e40c33c6efbb0a66484"
+  integrity sha512-GhIrNFLJ5hgjiaMjgbIHcwiXHOQKOn5iqhroYCZqc/dQ3g3xAhVbcOBDIEhI5cCFI7MKsQC8YSg1/xjZ+hEq+g==
   dependencies:
     fpjson-lang "^0.1.3"
     json-logic-js "^2.0.2"
     md5 "^2.3.0"
     ramda "^0.28.0"
 
-weavedb-contracts@^0.22.2:
-  version "0.22.2"
-  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.22.2.tgz#cd8f26c3b8f9670c0b84bc7cc3526b8ade0e1149"
-  integrity sha512-0WZV/Qcf8KiCLKUk+UFCWb4RN0Mm28h+qpt670POyEC4uIi5MQ+YVVcyLnDH7AdRVCVVGRuU27vNV1Z44IZasQ==
+weavedb-contracts@^0.25.0:
+  version "0.25.0"
+  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.25.0.tgz#d6aeced3d5015677a52c1d8cd20f654ba78ac323"
+  integrity sha512-ZGRZXOB1YqXCrBV+3mCEHIAF7ZK5KVYYPEGHxI/JHNW5151026rhJjQtbwYtHi4e74B+VbO13Dw4Vip0kMvY5g==
   dependencies:
     fpjson-lang "^0.1.3"
     json-logic-js "^2.0.2"
     md5 "^2.3.0"
     ramda "^0.28.0"
 
-weavedb-sdk-node@^0.22.1:
-  version "0.22.1"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk-node/-/weavedb-sdk-node-0.22.1.tgz#830b39a1645fbb6441c857ce987dc60b982e40bf"
-  integrity sha512-2lNKfSs3OND57Pynt9Rafx+ksRTYGs1FoVKtGVRHB06Sl1ZvyvBu0vDgbi+wDvzexY/Jd6OlEd+RUVjfO46kKw==
+weavedb-sdk-node@^0.24.2:
+  version "0.24.2"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk-node/-/weavedb-sdk-node-0.24.2.tgz#9f955027b2200f74926264d20d340497412d7571"
+  integrity sha512-7rD3uhM9Ak4lCBPAjWKSjYApf2BhRqwCqjlLvIgVGcNMciDAbpHX60XMLtz/zJScDZjmB7ju8706wH1ySdeu7A==
   dependencies:
     "@aws-amplify/api" "^5.0.14"
     redis "^4.6.5"
     warp-contracts-lmdb "^1.1.9"
     warp-contracts-pubsub "^1.0.5"
-    weavedb-contracts "^0.21.0"
-    weavedb-sdk "^0.22.2"
+    weavedb-sdk "^0.24.3"
 
-weavedb-sdk@^0.22.2:
-  version "0.22.2"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.22.2.tgz#9df92c9ec196620c056920c7aba50d20a41214fc"
-  integrity sha512-uv4vGkA6be64CxC76jY4l8HJdsTGowcdZTgiYhzgU/eiszSmmYquQ6sidtD/VQXFMSQCctqS5utScLSfFnW9OQ==
+weavedb-sdk@^0.24.3:
+  version "0.24.3"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.24.3.tgz#77ba4563f5d918c4b2c9aae76ec7125f8125ecf4"
+  integrity sha512-LFQmv/YaEU0W67fMf6YodbNPJfQl+cLrkVwe+SjLPXNVA5oD/8BXAopX9mEIzM44Jx7qCmzGCOfLMhD0hhbeBA==
   dependencies:
     "@metamask/legacy-web3" "^2.0.0"
     "@paralleldrive/cuid2" "^2.2.0"
@@ -10966,15 +11048,15 @@ weavedb-sdk@^0.22.2:
     ramda "^0.28.0"
     warp-contracts "1.2.54"
     warp-contracts-old "npm:warp-contracts@1.2.26"
-    warp-contracts-plugin-deploy "^1.0.0"
-    weavedb-base "^0.22.0"
-    weavedb-contracts "^0.22.2"
+    weavedb-base "^0.24.0"
+    weavedb-contracts "^0.24.2"
 
-weavedb-sdk@^0.22.3:
-  version "0.22.3"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.22.3.tgz#405c702244eb6f7b3193625d1b2f1caf4c5b8f75"
-  integrity sha512-WiMnTldYgKX+0O4YV6wIX1wgRLflDE1+grp61GUqL0W4xoEej3xXXMqrvjaFRuwsymN5vcmOujzj6YrklhmhHQ==
+weavedb-sdk@^0.25.3:
+  version "0.25.3"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.25.3.tgz#381a0b75c8ca7c76aa2e51d020a2be632690421c"
+  integrity sha512-Pa8+kryvAziheoCcBf+8GtYY6RKVxxbTsXge0eS62s80sSgKIMrCsWgiUWbWb8eQLGBccaRfR9zZuwhRy949pA==
   dependencies:
+    "@lit-protocol/sdk-browser" "^1.3.3"
     "@metamask/legacy-web3" "^2.0.0"
     "@paralleldrive/cuid2" "^2.2.0"
     arweave "^1.11.4"
@@ -10983,8 +11065,8 @@ weavedb-sdk@^0.22.3:
     ramda "^0.28.0"
     warp-contracts "1.2.54"
     warp-contracts-old "npm:warp-contracts@1.2.26"
-    weavedb-base "^0.22.0"
-    weavedb-contracts "^0.22.2"
+    weavedb-base "^0.25.2"
+    weavedb-contracts "^0.25.0"
 
 web-streams-polyfill@^3.0.3:
   version "3.2.1"

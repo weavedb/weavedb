@@ -10757,7 +10757,7 @@
     "sdk/contracts/weavedb/lib/validate.js"(exports, module) {
       var { is, includes, isNil } = require_src();
       var { err, read } = require_utils();
-      var validate = async (state, action, func, SmartWeave2) => {
+      var validate = async (state, action, func, SmartWeave2, use_nonce = true) => {
         const {
           query,
           nonce,
@@ -10881,7 +10881,8 @@
         }
         if (isNil(state.nonces[original_signer]))
           state.nonces[original_signer] = 0;
-        state.nonces[original_signer] += 1;
+        if (use_nonce !== false)
+          state.nonces[original_signer] += 1;
         return { signer: _signer, original_signer };
       };
       module.exports = { validate };
@@ -12266,12 +12267,11 @@
             state,
             action,
             "relay",
-            SmartWeave2
+            SmartWeave2,
+            false
           ));
         }
-        let jobID = head(action.input.query);
-        let input = nth(1, action.input.query);
-        let query = nth(2, action.input.query);
+        let [jobID, input, query] = action.input.query;
         if (input.jobID !== jobID)
           err("the wrong jobID");
         let action2 = { input, relayer: signer, extra: query, jobID };
@@ -12370,7 +12370,7 @@
   // sdk/contracts/weavedb/lib/version.js
   var require_version2 = __commonJS({
     "sdk/contracts/weavedb/lib/version.js"(exports, module) {
-      module.exports = "0.23.0";
+      module.exports = "0.25.0";
     }
   });
 

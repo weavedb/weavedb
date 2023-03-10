@@ -224,7 +224,7 @@ export default inject(
                     />
                     {v}
                   </Box>
-                ))(["Arweave", "EVM", "DFINITY", "Intmax"])}
+                ))(["Arweave", "EVM", "DFINITY", "Intmax", "Lens"])}
               </Flex>
             </>
           ) : (
