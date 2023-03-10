@@ -16,6 +16,7 @@ import {
   mergeLeft,
   isNil,
   includes,
+  uniq,
 } from "ramda"
 import { Buffer } from "buffer"
 import { weavedbSrcTxId, dfinitySrcTxId, ethereumSrcTxId } from "./const"
@@ -534,6 +535,7 @@ async function deployFromSrc({ src, warp, init, extra, algorithms }) {
     })
     wallet = await arweave.wallets.generate()
   }
+  console.log("this is fun: ", initialState)
   const { contractTxId } = await warp.createContract.deployFromSourceTx({
     wallet: new ArweaveSigner(wallet),
     initState: JSON.stringify(initialState),
@@ -561,6 +563,9 @@ export const deployDB = async ({
       case "DFINITY":
         algorithms.push("ed25519")
         break
+      case "Lens":
+        algorithms.push("secp256k1-2")
+        break
     }
   }
   if (isNil(owner)) {
@@ -572,11 +577,11 @@ export const deployDB = async ({
   }
   if (network === "Mainnet") {
     const warp = WarpFactory.forMainnet().use(new DeployPlugin())
-    const contractTxId = await deployFromSrc({
+    let initial_state = {
       src: weavedbSrcTxId,
       init: "initial-state",
       warp,
-      algorithms,
+      algorithms: uniq(algorithms),
       extra: {
         secure: false,
         owner,
@@ -588,7 +593,26 @@ export const deployDB = async ({
         secure,
         canEvolve,
       },
-    })
+    }
+    if (includes("Lens", auths)) {
+      initial_state.extra.relayers = {
+        "auth:lens": {
+          relayers: [
+            "0xF810D4a6F0118E6a6a86A9FBa0dd9EA669e1CC2E".toLowerCase(),
+          ],
+          schema: {
+            type: "object",
+            required: ["linkTo"],
+            properties: {
+              linkTo: {
+                type: "string",
+              },
+            },
+          },
+        },
+      }
+    }
+    const contractTxId = await deployFromSrc(initial_state)
     return { contractTxId, network, port }
   } else {
     const warp = WarpFactory.forLocal(port).use(new DeployPlugin())
