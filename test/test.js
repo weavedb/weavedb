@@ -439,9 +439,7 @@ describe("WeaveDB", function () {
     ])
   })
 
-  it("should link temporarily generated address with Lens Protocol", async () => {
-    const intmax_wallet = Wallet.createRandom()
-    intmax_wallet._account = { address: intmax_wallet.address }
+  it.only("should link temporarily generated address with Lens Protocol", async () => {
     const { identity, tx: param } = await db._createTempAddress(
       wallet.getAddressString(),
       null,
@@ -452,8 +450,10 @@ describe("WeaveDB", function () {
         jobID: "auth:lens",
       }
     )
+    const pkp = Wallet.createRandom()
+    pkp._account = { address: pkp.address }
     const job = {
-      relayers: [intmax_wallet.address.toLowerCase()],
+      relayers: [pkp.address.toLowerCase()],
       schema: {
         type: "object",
         required: ["linkTo"],
@@ -467,12 +467,13 @@ describe("WeaveDB", function () {
     await db.addRelayerJob("auth:lens", job, {
       ar: arweave_wallet,
     })
-    await db.relay(
+    const sig = await db.relay(
       "auth:lens",
       param,
       { linkTo: "lens:123" },
-      { intmax: intmax_wallet }
+      { intmax: pkp, relay: true }
     )
+    await db.write("relay", sig)
     expect((await db.getAddressLink(identity.address)).address).to.eql(
       "lens:123"
     )

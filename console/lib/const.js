@@ -104,8 +104,8 @@ export const preset_rpcs = [
   "http://localhost:8080",
 ]
 
-export const latest = "0.23.0"
-export const weavedbSrcTxId = "_gUR1-XzkZhsMlzZLIUEYp-rg73b9W-bhSrRIb06zKk"
+export const latest = "0.24.0"
+export const weavedbSrcTxId = "fuSpwZIxJtIq3eTdbRgBSwsFYd5f6oMwKB91RR3hXOo"
 //export const intmaxSrcTxId = "OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94"
 export const dfinitySrcTxId = "3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8"
 export const ethereumSrcTxId = "Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w"
