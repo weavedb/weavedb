@@ -91,7 +91,7 @@ const ConnectWallet = inject(
               mr={3}
             />
             {isLens
-              ? $.temp_current.split(":")[1]
+              ? $.temp_current.split(":")[2]
               : `${$.temp_current.slice(0, 6)}...${$.temp_current.slice(-4)}`}
           </Flex>
         )}
