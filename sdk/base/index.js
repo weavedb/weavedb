@@ -1,4 +1,5 @@
 const EthCrypto = require("eth-crypto")
+const { providers, Contract, utils } = require("ethers")
 //const buildEddsa = require("circomlibjs").buildEddsa
 const {
   includes,
@@ -17,6 +18,23 @@ const EIP712Domain = [
   { name: "version", type: "string" },
   { name: "verifyingContract", type: "string" },
 ]
+
+const lens = {
+  contract: "0xDb46d1Dc155634FbC732f92E853b10B288AD5a1d",
+  pkp_address: "0xF810D4a6F0118E6a6a86A9FBa0dd9EA669e1CC2E".toLowerCase(),
+  pkp_publicKey:
+    "0x04e1d2e8be025a1b8bb10b9c9a5ae9f11c02dbde892fee28e5060e146ae0df58182bdba7c7e801b75b80185c9e20a06944556a81355f117fcc5bd9a4851ac243e7",
+  ipfsId: "QmYq1RhS5A1LaEFZqN5rCBGnggYC9orEgHc9qEwnPfJci8",
+  abi: [
+    {
+      inputs: [{ internalType: "address", name: "wallet", type: "address" }],
+      name: "defaultProfile",
+      outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+      stateMutability: "view",
+      type: "function",
+    },
+  ],
+}
 
 class Base {
   constructor() {
@@ -249,13 +267,105 @@ class Base {
     this.defaultWallet = { wallet, type }
   }
 
-  async createTempAddressWithII(ii, expiry, opt = {}) {
-    let addr = ii.toJSON()[0]
-    opt.ii = ii
-    return this._createTempAddress(addr, expiry, opt)
+  async createTempAddressWithLens(expiry, linkTo, opt = {}) {
+    try {
+      if (typeof window === "undefined") {
+        throw new Error("Lens is only compaitble with browser")
+      }
+      try {
+        await window.ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: "0x89" }],
+        })
+      } catch (e) {
+        await window.ethereum.request({
+          method: "wallet_addEthereumChain",
+          params: [
+            {
+              chainId: "0x89",
+              chainName: "Polygon Mainnet",
+              nativeCurrency: { name: "MATIC", symbol: "MATIC", decimals: 18 },
+              rpcUrls: ["https://polygon-rpc.com"],
+              blockExplorerUrls: ["https://www.polygonscan.com"],
+            },
+          ],
+        })
+        await window.ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: "0x89" }],
+        })
+      }
+      const provider = new providers.Web3Provider(window.ethereum)
+      const signer = provider.getSigner()
+      const contract = new Contract(lens.contract, lens.abi, signer)
+      const tokenID = (
+        await contract.defaultProfile(signer.getAddress())
+      ).toNumber()
+      if (isNil(tokenID) || tokenID === 0) {
+        throw new Error("You don't have a Lens profile")
+      }
+      const { identity, tx: param } = await this._createTempAddress(
+        (await signer.getAddress()).toLowerCase(),
+        null,
+        `lens:${tokenID}`,
+        {
+          evm: signer,
+          relay: true,
+          jobID: "auth:lens",
+        }
+      )
+      if (isNil(this.litNodeClient)) {
+        this.litNodeClient = new this.LitJsSdk.LitNodeClient({
+          litNetwork: "serrano",
+        })
+        await this.litNodeClient.connect()
+      }
+      const authSig = await this.LitJsSdk.checkAndSignAuthMessage({
+        chain: "polygon",
+      })
+      const nonce = await this.getNonce(lens.pkp_address)
+      const _res = await this.litNodeClient.executeJs({
+        ipfsId: lens.ipfsId,
+        authSig,
+        jsParams: {
+          nonce,
+          params: param,
+          authSig,
+          contractTxId: this.contractTxId,
+          publicKey: lens.pkp_publicKey,
+        },
+      })
+      if (!isNil(_res.signatures?.sig1)) {
+        const _sig = _res.signatures.sig1
+        const signature = utils.joinSignature({
+          r: "0x" + _sig.r,
+          s: "0x" + _sig.s,
+          v: _sig.recid,
+        })
+        let relay_params = {
+          function: "relay",
+          query: ["auth:lens", param, { linkTo: param.query.linkTo }],
+          signature,
+          nonce,
+          caller: lens.pkp_address,
+          type: "secp256k1-2",
+        }
+        return { identity, tx: await this.write("relay", relay_params) }
+      } else {
+        throw new Error("lit validation failed")
+      }
+    } catch (e) {
+      throw new Error(e.toString())
+    }
   }
 
-  async createTempAddressWithAR(ar, expiry, opt = {}) {
+  async createTempAddressWithII(ii, expiry, linkTo, opt = {}) {
+    let addr = ii.toJSON()[0]
+    opt.ii = ii
+    return this._createTempAddress(addr, expiry, linkTo, opt)
+  }
+
+  async createTempAddressWithAR(ar, expiry, linkTo, opt = {}) {
     const wallet = is(Object, ar) && ar.walletName === "ArConnect" ? ar : null
     let addr = null
     if (!isNil(wallet)) {
@@ -265,10 +375,10 @@ class Base {
       addr = await this.arweave.wallets.jwkToAddress(ar)
     }
     opt.ar = ar
-    return this._createTempAddress(addr, expiry, opt)
+    return this._createTempAddress(addr, expiry, linkTo, opt)
   }
 
-  async createTempAddressWithIntmax(intmax, expiry, opt = {}) {
+  async createTempAddressWithIntmax(intmax, expiry, linkTo, opt = {}) {
     const wallet = is(Object, intmax) ? intmax : null
     let addr = null
     if (!isNil(wallet)) {
@@ -278,10 +388,10 @@ class Base {
       return
     }
     opt.intmax = intmax
-    return this._createTempAddress(addr.toLowerCase(), expiry, opt)
+    return this._createTempAddress(addr.toLowerCase(), expiry, linkTo, opt)
   }
 
-  async createTempAddress(evm, expiry, opt = {}) {
+  async createTempAddress(evm, expiry, linkTo, opt = {}) {
     const wallet = is(Object, evm) ? evm : null
     let addr = null
     if (!isNil(wallet)) {
@@ -298,13 +408,14 @@ class Base {
       addr = evm
     }
     opt.wallet = wallet
-    return this._createTempAddress(addr.toLowerCase(), expiry, opt)
+    return this._createTempAddress(addr.toLowerCase(), expiry, linkTo, opt)
   }
 
-  async _createTempAddress(addr, expiry, opt) {
+  async _createTempAddress(addr, expiry, linkTo, opt) {
     const identity = EthCrypto.createIdentity()
     const nonce = await this.getNonce(addr)
-    const query = isNil(expiry) ? { address: addr } : { address: addr, expiry }
+    let query = isNil(expiry) ? { address: addr } : { address: addr, expiry }
+    if (!isNil(linkTo)) query.linkTo = linkTo
     const message = {
       nonce,
       query: JSON.stringify({
@@ -331,6 +442,7 @@ class Base {
     })
     let param = { signature, address: identity.address.toLowerCase() }
     if (!isNil(expiry)) param.expiry = expiry
+    if (!isNil(linkTo)) param.linkTo = linkTo
     const tx = await this.addAddressLink(param, { nonce, ...opt })
     return isNil(tx.err) ? { tx, identity } : null
   }

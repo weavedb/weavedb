@@ -36,7 +36,7 @@ describe("WeaveDB", function () {
   this.timeout(0)
 
   before(async () => {
-    db = await init("web")
+    db = await init("web", 1, false)
   })
 
   after(async () => await stop())
@@ -439,6 +439,46 @@ describe("WeaveDB", function () {
     ])
   })
 
+  it.only("should link temporarily generated address with Lens Protocol", async () => {
+    const { identity, tx: param } = await db._createTempAddress(
+      wallet.getAddressString(),
+      null,
+      "lens:123",
+      {
+        evm: wallet,
+        relay: true,
+        jobID: "auth:lens",
+      }
+    )
+    const pkp = Wallet.createRandom()
+    pkp._account = { address: pkp.address }
+    const job = {
+      relayers: [pkp.address.toLowerCase()],
+      schema: {
+        type: "object",
+        required: ["linkTo"],
+        properties: {
+          linkTo: {
+            type: "string",
+          },
+        },
+      },
+    }
+    await db.addRelayerJob("auth:lens", job, {
+      ar: arweave_wallet,
+    })
+    const sig = await db.relay(
+      "auth:lens",
+      param,
+      { linkTo: "lens:123" },
+      { intmax: pkp, relay: true }
+    )
+    await db.write("relay", sig)
+    expect((await db.getAddressLink(identity.address)).address).to.eql(
+      "lens:123"
+    )
+  })
+
   it("should link temporarily generated address", async () => {
     const addr = wallet.getAddressString()
     const { identity } = await db.createTempAddress(addr)
@@ -743,6 +783,58 @@ describe("WeaveDB", function () {
       {
         privateKey: identity.privateKey,
         wallet: identity.address,
+      }
+    )
+    const addr = wallet.getAddressString()
+    const doc = await db.cget("ppl", "Bob")
+    expect(doc.setter).to.equal(addr)
+    expect(doc.data).to.eql(data2)
+    await db.removeRelayerJob("test-job", { ar: arweave_wallet })
+    expect(await db.getRelayerJob("test-job")).to.eql(null)
+    return
+  })
+  it("should relay queries with Intmax Wallet / Lit Protocol PKP", async () => {
+    const intmax_wallet = Wallet.createRandom()
+    intmax_wallet._account = { address: intmax_wallet.address }
+
+    const job = {
+      relayers: [intmax_wallet.address],
+      schema: {
+        type: "object",
+        required: ["height"],
+        properties: {
+          height: {
+            type: "number",
+          },
+        },
+      },
+    }
+    await db.addRelayerJob("test-job", job, {
+      ar: arweave_wallet,
+    })
+    expect(await db.getRelayerJob("test-job")).to.eql(job)
+    expect(await db.listRelayerJobs()).to.eql(["test-job"])
+    const rules = {
+      let: {
+        "resource.newData.height": { var: "request.auth.extra.height" },
+      },
+      "allow write": true,
+    }
+    await db.setRules(rules, "ppl", {
+      ar: arweave_wallet,
+    })
+
+    const data = { name: "Bob", age: 20 }
+    const data2 = { name: "Bob", age: 20, height: 182 }
+    const param = await db.sign("set", data, "ppl", "Bob", {
+      jobID: "test-job",
+    })
+    await db.relay(
+      "test-job",
+      param,
+      { height: 182 },
+      {
+        intmax: intmax_wallet,
       }
     )
     const addr = wallet.getAddressString()
