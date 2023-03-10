@@ -1079,10 +1079,10 @@ util-deprecate@^1.0.1:
   resolved "https://registry.yarnpkg.com/util-deprecate/-/util-deprecate-1.0.2.tgz#450d4dc9fa70de732762fbd2d4a28981419a0ccf"
   integrity sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==
 
-weavedb-base@^0.22.0:
-  version "0.22.0"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.22.0.tgz#10bdcc52484709dd1dc1a73e07107a0b2dff1ead"
-  integrity sha512-bz0F3sh8ZI3t/1VsdKzXqQhgmBuqC/5gTRDhxBdKZyoj5pynS2Z+YUhK9S9mKuOLuYCcfqOaNQFEnkEQeuP/5g==
+weavedb-base@^0.24.0:
+  version "0.24.0"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.24.0.tgz#c93fb123398b7bcc0a6145d4a91241539cef0728"
+  integrity sha512-aDMVgHJ+PqWWYSJOkQsE2R0Kbh6rLpIdA/VvrdgXbbPu8YhdO5s0kMG6Im5B+rdzMBnwh7+vlufxZkcRe9z7Dg==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"
@@ -1090,10 +1090,10 @@ weavedb-base@^0.22.0:
     ethereumjs-util "^7.1.5"
     ramda "^0.28.0"
 
-weavedb-contracts@^0.24.0:
-  version "0.24.0"
-  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.24.0.tgz#2c8760299106d5cf531c34dd311819813f426205"
-  integrity sha512-1+OveFMelTn02sUR+BHF2Ck0Vqmoo0ebeBH7qPywFaHjPEUKqHtk0K5Z6WpZBfW/WOBXPywOEeqX5Bs1Rc99IQ==
+weavedb-contracts@^0.24.2:
+  version "0.24.2"
+  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.24.2.tgz#3385a8214bd550bb10168e40c33c6efbb0a66484"
+  integrity sha512-GhIrNFLJ5hgjiaMjgbIHcwiXHOQKOn5iqhroYCZqc/dQ3g3xAhVbcOBDIEhI5cCFI7MKsQC8YSg1/xjZ+hEq+g==
   dependencies:
     fpjson-lang "^0.1.3"
     json-logic-js "^2.0.2"

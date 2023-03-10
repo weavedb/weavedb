@@ -83,6 +83,7 @@ const Base = require("weavedb-base")
 
 const { handle } = require("weavedb-contracts/weavedb/contract")
 const { handle: handle_kv } = require("weavedb-contracts/weavedb-kv/contract")
+
 const _on = async (state, input, handle) => {
   const block = input.interaction.block
   if (!isNil(state)) {
@@ -169,6 +170,7 @@ class SDK extends Base {
     type = 1,
   }) {
     super()
+    this.LitJsSdk = require("@lit-protocol/sdk-browser")
     this.kvs = {}
     this.type = type
     this.handle = this.type === 1 ? handle : handle_kv
