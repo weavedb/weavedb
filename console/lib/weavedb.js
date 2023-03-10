@@ -1,4 +1,12 @@
 const { Ed25519KeyIdentity } = require("@dfinity/identity")
+const lens = {
+  contract: "0xDb46d1Dc155634FbC732f92E853b10B288AD5a1d",
+  pkp_address: "0xF810D4a6F0118E6a6a86A9FBa0dd9EA669e1CC2E".toLowerCase(),
+  pkp_publicKey:
+    "0x04e1d2e8be025a1b8bb10b9c9a5ae9f11c02dbde892fee28e5060e146ae0df58182bdba7c7e801b75b80185c9e20a06944556a81355f117fcc5bd9a4851ac243e7",
+  ipfsId: "QmYq1RhS5A1LaEFZqN5rCBGnggYC9orEgHc9qEwnPfJci8",
+  abi: require("./lens.json"),
+}
 import Arweave from "arweave"
 import lf from "localforage"
 import SDK from "weavedb-sdk"
@@ -352,6 +360,12 @@ export const createTempAddressWithLens = async ({
     return*/
   }
   if (!isNil(tx) && isNil(tx.err)) {
+    const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
+    await provider.send("eth_requestAccounts", [])
+    const signer = provider.getSigner()
+    const contract = new ethers.Contract(lens.contract, lens.abi, signer)
+    const handle = await contract.getHandle(addr.split(":")[1])
+    addr += `:${handle}`
     identity.tx = tx
     identity.linked_address = addr
     await lf.setItem("temp_address:current", addr)
