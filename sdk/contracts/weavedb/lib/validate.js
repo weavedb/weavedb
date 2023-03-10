@@ -1,6 +1,6 @@
 const { is, includes, isNil } = require("ramda")
 const { err, read } = require("./utils")
-const validate = async (state, action, func, SmartWeave) => {
+const validate = async (state, action, func, SmartWeave, use_nonce = true) => {
   const {
     query,
     nonce,
@@ -133,7 +133,7 @@ const validate = async (state, action, func, SmartWeave) => {
     )
   }
   if (isNil(state.nonces[original_signer])) state.nonces[original_signer] = 0
-  state.nonces[original_signer] += 1
+  if (use_nonce !== false) state.nonces[original_signer] += 1
   return { signer: _signer, original_signer }
 }
 

@@ -46,8 +46,9 @@
     "warp-contracts-plugin-subscription": "^1.0.5",
     "wasmbuilder": "^0.0.16",
     "wasmcurves": "^0.2.0",
-    "weavedb-sdk": "^0.22.3",
-    "weavedb-sdk-node": "^0.22.1",
+    "weavedb-contracts": "^0.25.0",
+    "weavedb-sdk": "^0.25.3",
+    "weavedb-sdk-node": "^0.24.2",
     "yargs": "^17.6.2"
   },
   "engines": {

@@ -344,7 +344,7 @@ export default inject(
         <ConnectLocal {...{ newPort, setNewPort, setConnect, setPort }} />
       ) : null}
       {$.signing_in_modal || $.owner_signing_in_modal ? (
-        <Connect {...{ newNetwork, contractTxId, network, tab }} />
+        <Connect {...{ newNetwork, contractTxId, network, tab, state }} />
       ) : null}
     </>
   )
