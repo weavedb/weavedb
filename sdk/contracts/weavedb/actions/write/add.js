@@ -5,6 +5,7 @@ const {
   mergeData,
   getCol,
   validateSchema,
+  wrapResult,
 } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { addData, getIndex } = require("../../lib/index")
@@ -32,14 +33,7 @@ const add = async (
   let ind = getIndex(state, init(path))
   addData(last(path), next_data, ind, col.__docs)
   _data.__data = next_data
-  return {
-    state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { add }

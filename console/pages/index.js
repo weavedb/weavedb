@@ -350,6 +350,7 @@ export default inject(
     useEffect(() => {
       ;(async () => {
         if (!isNil(node) && !isNil($.temp_current_all)) {
+          if (/^lens:/.test($.temp_current_all.addr)) return
           let isNodeOwner = false
           if (!isNil($.temp_current_all) && !isNil(node)) {
             const addr = /^0x.+$/.test($.temp_current_all.addr)

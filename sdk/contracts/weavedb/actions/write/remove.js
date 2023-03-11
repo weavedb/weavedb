@@ -1,6 +1,5 @@
 const { isNil, last, init } = require("ramda")
-const { parse } = require("../../lib/utils")
-const { err } = require("../../lib/utils")
+const { wrapResult, err, parse } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { removeData, getIndex } = require("../../lib/index")
 
@@ -33,14 +32,7 @@ const remove = async (
   let ind = getIndex(state, init(path))
   removeData(last(path), ind, col.__docs)
   _data.__data = null
-  return {
-    state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { remove }
