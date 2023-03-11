@@ -94,6 +94,7 @@ class Node {
 
   parseQuery(call, callback) {
     const res = (err, result = null) => {
+      console.log(result)
       callback(null, {
         result: isNil(result) ? null : JSON.stringify(result),
         err,
@@ -474,9 +475,6 @@ class Node {
           ? e.message
           : "unknown error"
     }
-    console.log("..............................")
-    console.log(result)
-    console.log(err)
     return { result, err, dryWrite }
   }
 

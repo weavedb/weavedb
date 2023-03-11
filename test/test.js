@@ -439,7 +439,7 @@ describe("WeaveDB", function () {
     ])
   })
 
-  it.only("should link temporarily generated address with Lens Protocol", async () => {
+  it("should link temporarily generated address with Lens Protocol", async () => {
     const { identity, tx: param } = await db._createTempAddress(
       wallet.getAddressString(),
       null,
