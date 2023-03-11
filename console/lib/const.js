@@ -105,7 +105,7 @@ export const preset_rpcs = [
 ]
 
 export const latest = "0.25.0"
-export const weavedbSrcTxId = "-DaZ9ySjE59PaJZUtxeTaB9_BhVzML1ZmJ3i7pl6OrI"
+export const weavedbSrcTxId = "_156pyhqtRr6Zh3KX-Hp4q3-CIrMa2leTqKdu2HpXB8"
 //export const intmaxSrcTxId = "OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94"
 export const dfinitySrcTxId = "3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8"
 export const ethereumSrcTxId = "Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w"

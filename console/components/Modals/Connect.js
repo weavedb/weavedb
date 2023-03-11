@@ -177,6 +177,7 @@ export default inject(
                     set(false, "signing_in_modal")
                     set(false, "owner_signing_in_modal")
                   } catch (e) {
+                    console.log(e)
                     alert("Something went wrong")
                   }
                 }}

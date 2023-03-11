@@ -1,6 +1,6 @@
 const { o, flatten, isNil, mergeLeft, includes, init } = require("ramda")
 const { parse } = require("../../lib/utils")
-const { err } = require("../../lib/utils")
+const { wrapResult, err } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { addIndex: _addIndex, getIndex } = require("../../lib/index")
 
@@ -34,14 +34,7 @@ const addIndex = async (
     err("index cannot contain __id__")
   }
   _addIndex(new_data, ind, col.__docs)
-  return {
-    state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { addIndex }
