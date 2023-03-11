@@ -27,6 +27,7 @@ class SDK extends Base {
     arweave_wallet,
   }) {
     super()
+    this.LitJsSdk = require("@lit-protocol/sdk-browser")
     this.contractTxId = contractTxId
     this.arweave = Arweave.init()
     this.arweave_wallet = arweave_wallet

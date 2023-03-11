@@ -1,6 +1,5 @@
 const { isNil, is, intersection } = require("ramda")
-const { parse } = require("../../lib/utils")
-const { err, clone } = require("../../lib/utils")
+const { parse, wrapResult, err, clone } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { validate: validator } = require("../../lib/jsonschema")
 
@@ -46,14 +45,7 @@ const addRelayerJob = async (
   }
   if (isNil(state.relayers)) state.relayers = {}
   state.relayers[jobID] = job
-  return {
-    state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { addRelayerJob }

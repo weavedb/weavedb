@@ -1,5 +1,5 @@
 const { is, isNil } = require("ramda")
-const { err } = require("../../lib/utils")
+const { err, wrapResult } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 
 const addAddressLink = async (
@@ -80,14 +80,7 @@ const addAddressLink = async (
     address: linkTo || signer,
     expiry: expiry === 0 ? 0 : SmartWeave.block.timestamp + expiry,
   }
-  return {
-    state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { addAddressLink }
