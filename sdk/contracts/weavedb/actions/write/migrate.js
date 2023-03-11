@@ -1,5 +1,5 @@
 const { isNil, is, of, includes, mergeLeft, last } = require("ramda")
-const { isEvolving, err, isOwner } = require("../../lib/utils")
+const { wrapResult, isEvolving, err, isOwner } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const version = require("../../lib/version")
 
@@ -26,14 +26,7 @@ const migrate = async (
   if (!isEvolving(state)) err(`contract is not ready to migrate`)
   state.version = version
   state.evolveHistory[state.evolveHistory.length - 1].newVersion = version
-  return {
-    state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { migrate }

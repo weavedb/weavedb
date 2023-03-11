@@ -38,10 +38,12 @@ const ConnectWallet = inject(
           "Connect Wallet"
         ) : (
           <Flex align="center">
-            {`${$.temp_current_all.addr.slice(
-              0,
-              6
-            )}...${$.temp_current_all.addr.slice(-4)}`}
+            {isLens
+              ? $.temp_current_all.addr.split(":")[2]
+              : `${$.temp_current_all.addr.slice(
+                  0,
+                  6
+                )}...${$.temp_current_all.addr.slice(-4)}`}
           </Flex>
         )}
       </Flex>
@@ -91,7 +93,7 @@ const ConnectWallet = inject(
               mr={3}
             />
             {isLens
-              ? $.temp_current.split(":")[1]
+              ? $.temp_current.split(":")[2]
               : `${$.temp_current.slice(0, 6)}...${$.temp_current.slice(-4)}`}
           </Flex>
         )}

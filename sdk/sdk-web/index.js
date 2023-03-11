@@ -570,6 +570,7 @@ class SDK extends Base {
             "evolve",
             "add",
             "batch",
+            "relay",
           ])
         ) {
           onDryWrite.cache = false
