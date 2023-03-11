@@ -1,6 +1,6 @@
 const { isNil, is } = require("ramda")
 const { validate } = require("../../lib/validate")
-const { err, parse } = require("../../lib/utils")
+const { wrapResult, err, parse } = require("../../lib/utils")
 
 const unlinkContract = async (
   state,
@@ -33,14 +33,7 @@ const unlinkContract = async (
   }
   if (isNil(state.contracts)) state.contracts = {}
   delete state.contracts[key]
-  return {
-    state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { unlinkContract }

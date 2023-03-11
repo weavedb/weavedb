@@ -1,6 +1,6 @@
 {
   "name": "weavedb-offchain",
-  "version": "0.24.1",
+  "version": "0.25.1",
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
@@ -9,7 +9,7 @@
     "arweave": "^1.11.4",
     "ramda": "^0.28.0",
     "redis": "^4.6.5",
-    "weavedb-base": "^0.24.0",
-    "weavedb-contracts": "^0.24.2"
+    "weavedb-base": "^0.25.2",
+    "weavedb-contracts": "^0.25.1"
   }
 }
