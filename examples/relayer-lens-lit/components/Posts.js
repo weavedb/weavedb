@@ -101,10 +101,15 @@ export default function Posts({
                         v.user === `lens:${user.id}` &&
                         confirm("Would you like to delete the post?")
                       ) {
-                        const tx = await sdk.delete("posts", v.id, {
-                          privateKey: user.privateKey,
-                          wallet: user.address,
-                        })
+                        const tx = await sdk.delete(
+                          "posts",
+                          `${v.user}:${v.id}`,
+                          {
+                            privateKey: user.privateKey,
+                            wallet: user.address,
+                          }
+                        )
+                        console.log(tx)
                         if (tx.success) {
                           setPosts(reject(propEq("id", v.id)), posts)
                           toast({
@@ -117,7 +122,7 @@ export default function Posts({
                         } else {
                           toast({
                             description: "Something went wrong...",
-                            status: "danger",
+                            status: "error",
                             duration: 3000,
                             isClosable: true,
                             position: "bottom-right",

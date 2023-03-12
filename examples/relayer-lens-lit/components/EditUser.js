@@ -102,7 +102,7 @@ export default function EditUser({
                 console.log(tx)
                 toast({
                   description: "Something went wrong...",
-                  status: "danger",
+                  status: "erorr",
                   duration: 3000,
                   isClosable: true,
                   position: "bottom-right",

@@ -68,14 +68,15 @@ export default function EditPost({
               if (body.length > 280) {
                 return alert("Comment cannot be more than 280 characters.")
               }
-              const id = `lens:${user.id}:${nanoid()}`
+              const id = nanoid()
+              const key = `lens:${user.id}:${id}`
               const post = {
                 user: `lens:${user.id}`,
                 body,
                 date: Date.now(),
                 id,
               }
-              const tx = await sdk.set(post, "posts", id, {
+              const tx = await sdk.set(post, "posts", key, {
                 wallet: user.address,
                 privateKey: user.privateKey,
               })
@@ -94,7 +95,7 @@ export default function EditPost({
                 console.log(tx)
                 toast({
                   description: "Something went wrong...",
-                  status: "danger",
+                  status: "error",
                   duration: 3000,
                   isClosable: true,
                   position: "bottom-right",
