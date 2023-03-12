@@ -7,8 +7,9 @@ import { isNil } from "ramda"
 
 const ConnectWallet = inject(
   ["temp_current_all", "temp_current", "temp_wallet", "signing_in_modal"],
-  ({ $, set, fn, tab, node, contractTxId, setAddInstance }) =>
-    tab === "Nodes" ? (
+  ({ $, set, fn, tab, node, contractTxId, setAddInstance }) => {
+    const isLens = /^lens:/.test($.temp_current || "")
+    return tab === "Nodes" ? (
       <Flex
         py={2}
         px={6}
@@ -37,10 +38,12 @@ const ConnectWallet = inject(
           "Connect Wallet"
         ) : (
           <Flex align="center">
-            {`${$.temp_current_all.addr.slice(
-              0,
-              6
-            )}...${$.temp_current_all.addr.slice(-4)}`}
+            {isLens
+              ? $.temp_current_all.addr.split(":")[2]
+              : `${$.temp_current_all.addr.slice(
+                  0,
+                  6
+                )}...${$.temp_current_all.addr.slice(-4)}`}
           </Flex>
         )}
       </Flex>
@@ -48,7 +51,7 @@ const ConnectWallet = inject(
       <Flex
         py={2}
         px={6}
-        bg={isNil(contractTxId) ? "#6441AF" : "#333"}
+        bg={isNil(contractTxId) ? "#6441AF" : isLens ? "#00501E" : "#333"}
         color="white"
         sx={{
           borderRadius: "25px",
@@ -82,16 +85,21 @@ const ConnectWallet = inject(
                   : $.temp_current.length < 88
                   ? /^0x/.test($.temp_current)
                     ? "/static/images/metamask.png"
+                    : /^lens:/.test($.temp_current)
+                    ? "/static/images/lens.png"
                     : "/static/images/arconnect.png"
                   : "/static/images/dfinity.png"
               }
               mr={3}
             />
-            {`${$.temp_current.slice(0, 6)}...${$.temp_current.slice(-4)}`}
+            {isLens
+              ? $.temp_current.split(":")[2]
+              : `${$.temp_current.slice(0, 6)}...${$.temp_current.slice(-4)}`}
           </Flex>
         )}
       </Flex>
     )
+  }
 )
 
 export default ({

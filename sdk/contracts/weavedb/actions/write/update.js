@@ -1,5 +1,11 @@
 const { isNil, init, last } = require("ramda")
-const { err, clone, parse, validateSchema } = require("../../lib/utils")
+const {
+  wrapResult,
+  err,
+  clone,
+  parse,
+  validateSchema,
+} = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { updateData, getIndex } = require("../../lib/index")
 
@@ -27,14 +33,7 @@ const update = async (
   let ind = getIndex(state, init(path))
   updateData(last(path), next_data, prev, ind, col.__docs)
   _data.__data = next_data
-  return {
-    state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { update }

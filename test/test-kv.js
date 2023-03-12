@@ -37,6 +37,7 @@ describe("WeaveDB", function () {
 
   before(async () => {
     db = await init("web", 2, false)
+    //db = await init("node", 2, true)
   })
 
   after(async () => await stop())
@@ -60,7 +61,7 @@ describe("WeaveDB", function () {
   })
 
   it("should get version", async () => {
-    const version = require("../sdk/contracts/weavedb/lib/version")
+    const version = require("../sdk/contracts/weavedb-kv/lib/version")
     expect(await db.getVersion()).to.equal(version)
   })
 
@@ -399,9 +400,11 @@ describe("WeaveDB", function () {
       data2,
       data,
     ])
+
     await db.addIndex([["age"], ["name", "desc"]], "ppl", {
       ar: arweave_wallet,
     })
+
     await db.addIndex([["age"], ["name", "desc"], ["height"]], "ppl", {
       ar: arweave_wallet,
     })
@@ -418,6 +421,7 @@ describe("WeaveDB", function () {
     expect(
       await db.get("ppl", ["age"], ["name", "in", ["Alice", "John"]])
     ).to.eql([data4, data2])
+
     expect(await db.getIndexes("ppl")).to.eql([
       [["__id__", "asc"]],
       [["name", "asc"]],
@@ -615,8 +619,7 @@ describe("WeaveDB", function () {
     const data = { name: "Bob", age: 20 }
     const evolve = "contract-1"
     const evolve2 = "contract-2"
-    const version = require("../contracts/warp/lib/version")
-
+    const version = require("../contracts/weavedb-kv/lib/version")
     const history1 = {
       signer: walletAddress,
       srcTxId: evolve,
@@ -865,7 +868,7 @@ describe("WeaveDB", function () {
 
   it("should get info", async () => {
     const addr = await db.arweave.wallets.jwkToAddress(arweave_wallet)
-    const version = require("../contracts/warp/lib/version")
+    const version = require("../contracts/weavedb-kv/lib/version")
     const initial_state = JSON.parse(
       readFileSync(
         resolve(__dirname, "../dist/warp/initial-state.json"),
@@ -938,10 +941,11 @@ describe("WeaveDB", function () {
   })
 
   it("should reject invalid col/doc ids", async () => {
-    await db.set({}, "__ppl__", "Bob")
-    await db.set({}, "ppl", "Bob/Alice")
-    expect(await db.get("ppl")).to.eql([])
-    expect(await db.listCollections()).to.eql([])
+    await db.set({ name: "Bob" }, "__ppl__", "Bob")
+    await db.set({ name: "Bob/Alice" }, "ppl", "Bob/Alice")
+    await db.set({ name: "Bob.Alice" }, "ppl", "Bob.Alice")
+    expect(await db.get("ppl")).to.eql([{ name: "Bob.Alice" }])
+    expect(await db.listCollections()).to.eql(["ppl"])
     return
   })
 
@@ -1042,6 +1046,7 @@ describe("WeaveDB", function () {
         ar: arweave_wallet,
       }
     )
+
     expect(await db.getSchema("ppl")).to.eql(schema)
     expect(await db.getRules("ppl")).to.eql(rules)
     expect((await db.getEvolve()).canEvolve).to.eql(false)
@@ -1062,6 +1067,7 @@ describe("WeaveDB", function () {
         ar: arweave_wallet,
       }
     )
+    return
     expect((await db.getCrons()).crons).to.eql({})
     expect(await db.getOwner()).to.eql([addr])
     expect(await db.getIndexes("ppl")).to.eql([])

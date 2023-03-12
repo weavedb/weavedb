@@ -9669,7 +9669,27 @@
         }
         return owner;
       };
+      var wrapResult = (state, original_signer, SmartWeave2) => ({
+        state,
+        result: {
+          original_signer,
+          transaction: {
+            id: SmartWeave2?.transaction?.id || null,
+            owner: SmartWeave2?.transaction?.owner || null,
+            tags: SmartWeave2?.transaction?.tags || null,
+            quantity: SmartWeave2?.transaction?.quantity || null,
+            target: SmartWeave2?.transaction?.target || null,
+            reward: SmartWeave2?.transaction?.reward || null
+          },
+          block: {
+            height: SmartWeave2?.block?.height || null,
+            timestamp: SmartWeave2?.block?.timestamp || null,
+            indep_hash: SmartWeave2?.block?.indep_hash || null
+          }
+        }
+      });
       module.exports = {
+        wrapResult,
         isOwner,
         clone,
         err,
@@ -10757,7 +10777,7 @@
     "sdk/contracts/weavedb/lib/validate.js"(exports, module) {
       var { is, includes, isNil } = require_src();
       var { err, read } = require_utils();
-      var validate = async (state, action, func, SmartWeave2) => {
+      var validate = async (state, action, func, SmartWeave2, use_nonce = true) => {
         const {
           query,
           nonce,
@@ -10843,11 +10863,15 @@
             SmartWeave2
           )).signer;
         } else if (type == "secp256k1-2") {
-          signer = (await read(state.contracts.ethereum, {
-            function: "verify",
-            data: _data,
-            signature
-          })).signer;
+          signer = (await read(
+            state.contracts.ethereum,
+            {
+              function: "verify",
+              data: _data,
+              signature
+            },
+            SmartWeave2
+          )).signer;
         }
         if (includes(type)(["secp256k1", "secp256k1-2"])) {
           if (/^0x/.test(signer))
@@ -10877,7 +10901,8 @@
         }
         if (isNil(state.nonces[original_signer]))
           state.nonces[original_signer] = 0;
-        state.nonces[original_signer] += 1;
+        if (use_nonce !== false)
+          state.nonces[original_signer] += 1;
         return { signer: _signer, original_signer };
       };
       module.exports = { validate };
@@ -10888,8 +10913,7 @@
   var require_set2 = __commonJS({
     "sdk/contracts/weavedb/actions/write/set.js"(exports, module) {
       var { init, last, isNil, clone } = require_src();
-      var { parse, validateSchema } = require_utils();
-      var { err } = require_utils();
+      var { err, wrapResult, parse, validateSchema } = require_utils();
       var { validate } = require_validate();
       var { updateData, addData, getIndex } = require_lib();
       var set = async (state, action, signer, contractErr = true, SmartWeave2) => {
@@ -10913,14 +10937,7 @@
           updateData(last(path), next_data, prev, ind, col.__docs);
         }
         _data.__data = next_data;
-        return {
-          state,
-          result: {
-            original_signer,
-            transaction: SmartWeave2.transaction,
-            block: SmartWeave2.block
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { set };
     }
@@ -10930,7 +10947,7 @@
   var require_upsert = __commonJS({
     "sdk/contracts/weavedb/actions/write/upsert.js"(exports, module) {
       var { isNil, init, last } = require_src();
-      var { parse, clone, validateSchema } = require_utils();
+      var { wrapResult, parse, clone, validateSchema } = require_utils();
       var { validate } = require_validate();
       var { updateData, addData, getIndex } = require_lib();
       var upsert = async (state, action, signer, contractErr = true, SmartWeave2) => {
@@ -10954,14 +10971,7 @@
           updateData(last(path), next_data, prev, ind, col.__docs);
         }
         _data.__data = next_data;
-        return {
-          state,
-          result: {
-            original_signer,
-            transaction: SmartWeave2.transaction,
-            block: SmartWeave2.block
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { upsert };
     }
@@ -10971,7 +10981,13 @@
   var require_update2 = __commonJS({
     "sdk/contracts/weavedb/actions/write/update.js"(exports, module) {
       var { isNil, init, last } = require_src();
-      var { err, clone, parse, validateSchema } = require_utils();
+      var {
+        wrapResult,
+        err,
+        clone,
+        parse,
+        validateSchema
+      } = require_utils();
       var { validate } = require_validate();
       var { updateData, getIndex } = require_lib();
       var update = async (state, action, signer, contractErr = true, SmartWeave2) => {
@@ -10993,14 +11009,7 @@
         let ind = getIndex(state, init(path));
         updateData(last(path), next_data, prev, ind, col.__docs);
         _data.__data = next_data;
-        return {
-          state,
-          result: {
-            original_signer,
-            transaction: SmartWeave2.transaction,
-            block: SmartWeave2.block
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { update };
     }
@@ -11010,8 +11019,7 @@
   var require_remove2 = __commonJS({
     "sdk/contracts/weavedb/actions/write/remove.js"(exports, module) {
       var { isNil, last, init } = require_src();
-      var { parse } = require_utils();
-      var { err } = require_utils();
+      var { wrapResult, err, parse } = require_utils();
       var { validate } = require_validate();
       var { removeData, getIndex } = require_lib();
       var remove = async (state, action, signer, contractErr = true, SmartWeave2) => {
@@ -11039,14 +11047,7 @@
         let ind = getIndex(state, init(path));
         removeData(last(path), ind, col.__docs);
         _data.__data = null;
-        return {
-          state,
-          result: {
-            original_signer,
-            transaction: SmartWeave2.transaction,
-            block: SmartWeave2.block
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { remove };
     }
@@ -11055,7 +11056,7 @@
   // sdk/contracts/weavedb/actions/write/addOwner.js
   var require_addOwner = __commonJS({
     "sdk/contracts/weavedb/actions/write/addOwner.js"(exports, module) {
-      var { err, isOwner } = require_utils();
+      var { err, wrapResult, isOwner } = require_utils();
       var { includes, is, of, append, isNil } = require_src();
       var { validate } = require_validate();
       var addOwner = async (state, action, signer, contractErr = true, SmartWeave2) => {
@@ -11080,14 +11081,7 @@
           err("The owner already exists.");
         }
         state.owner = append(action.input.query.address, owner);
-        return {
-          state,
-          result: {
-            original_signer,
-            transaction: SmartWeave2.transaction,
-            block: SmartWeave2.block
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { addOwner };
     }
@@ -11096,7 +11090,7 @@
   // sdk/contracts/weavedb/actions/write/removeOwner.js
   var require_removeOwner = __commonJS({
     "sdk/contracts/weavedb/actions/write/removeOwner.js"(exports, module) {
-      var { err, isOwner } = require_utils();
+      var { wrapResult, err, isOwner } = require_utils();
       var { isNil, without, includes, is, of } = require_src();
       var { validate } = require_validate();
       var removeOwner = async (state, action, signer, contractErr = true, SmartWeave2) => {
@@ -11118,14 +11112,7 @@
           err("The owner doesn't exist.");
         }
         state.owner = without([action.input.query.address], owner);
-        return {
-          state,
-          result: {
-            original_signer,
-            transaction: SmartWeave2.transaction,
-            block: SmartWeave2.block
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { removeOwner };
     }
@@ -11135,8 +11122,7 @@
   var require_setAlgorithms = __commonJS({
     "sdk/contracts/weavedb/actions/write/setAlgorithms.js"(exports, module) {
       var { isNil, is, intersection } = require_src();
-      var { parse } = require_utils();
-      var { err } = require_utils();
+      var { parse, err, wrapResult } = require_utils();
       var { validate } = require_validate();
       var setAlgorithms = async (state, action, signer, contractErr = true, SmartWeave2) => {
         let original_signer = null;
@@ -11162,14 +11148,7 @@
           err(`The wrong algorithms`);
         }
         state.auth.algorithms = new_data;
-        return {
-          state,
-          result: {
-            original_signer,
-            transaction: SmartWeave2.transaction,
-            block: SmartWeave2.block
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { setAlgorithms };
     }
@@ -11178,7 +11157,7 @@
   // sdk/contracts/weavedb/actions/write/setCanEvolve.js
   var require_setCanEvolve = __commonJS({
     "sdk/contracts/weavedb/actions/write/setCanEvolve.js"(exports, module) {
-      var { err, isOwner } = require_utils();
+      var { wrapResult, err, isOwner } = require_utils();
       var { isNil, is } = require_src();
       var { validate } = require_validate();
       var setCanEvolve = async (state, action, signer, contractErr = true, SmartWeave2) => {
@@ -11197,14 +11176,7 @@
           err("Value must be a boolean.");
         }
         state.canEvolve = action.input.query.value;
-        return {
-          state,
-          result: {
-            original_signer,
-            transaction: SmartWeave2.transaction,
-            block: SmartWeave2.block
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { setCanEvolve };
     }
@@ -11213,7 +11185,7 @@
   // sdk/contracts/weavedb/actions/write/setSecure.js
   var require_setSecure = __commonJS({
     "sdk/contracts/weavedb/actions/write/setSecure.js"(exports, module) {
-      var { err, isOwner } = require_utils();
+      var { wrapResult, err, isOwner } = require_utils();
       var { isNil, is } = require_src();
       var { validate } = require_validate();
       var setSecure = async (state, action, signer, contractErr = true, SmartWeave2) => {
@@ -11232,14 +11204,7 @@
           err("Value must be a boolean.");
         }
         state.secure = action.input.query.value;
-        return {
-          state,
-          result: {
-            original_signer,
-            transaction: SmartWeave2.transaction,
-            block: SmartWeave2.block
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { setSecure };
     }
@@ -11249,8 +11214,7 @@
   var require_setSchema = __commonJS({
     "sdk/contracts/weavedb/actions/write/setSchema.js"(exports, module) {
       var { isNil, mergeLeft } = require_src();
-      var { clone, parse, mergeData } = require_utils();
-      var { err } = require_utils();
+      var { err, wrapResult, clone, parse, mergeData } = require_utils();
       var { validate } = require_validate();
       var { validate: validator } = require_jsonschema();
       var setSchema = async (state, action, signer, contractErr = true, SmartWeave2) => {
@@ -11279,14 +11243,7 @@
         } catch (e) {
           err("schema error");
         }
-        return {
-          state,
-          result: {
-            original_signer,
-            transaction: SmartWeave2.transaction,
-            block: SmartWeave2.block
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { setSchema };
     }
@@ -11297,7 +11254,7 @@
     "sdk/contracts/weavedb/actions/write/addIndex.js"(exports, module) {
       var { o, flatten, isNil, mergeLeft, includes, init } = require_src();
       var { parse } = require_utils();
-      var { err } = require_utils();
+      var { wrapResult, err } = require_utils();
       var { validate } = require_validate();
       var { addIndex: _addIndex, getIndex } = require_lib();
       var addIndex = async (state, action, signer, contractErr = true, SmartWeave2) => {
@@ -11325,14 +11282,7 @@
           err("index cannot contain __id__");
         }
         _addIndex(new_data, ind, col.__docs);
-        return {
-          state,
-          result: {
-            original_signer,
-            transaction: SmartWeave2.transaction,
-            block: SmartWeave2.block
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { addIndex };
     }
@@ -11342,8 +11292,7 @@
   var require_removeIndex = __commonJS({
     "sdk/contracts/weavedb/actions/write/removeIndex.js"(exports, module) {
       var { isNil, mergeLeft, init } = require_src();
-      var { parse, mergeData } = require_utils();
-      var { err } = require_utils();
+      var { err, wrapResult, parse, mergeData } = require_utils();
       var { validate } = require_validate();
       var { removeIndex: _removeIndex, getIndex } = require_lib();
       var removeIndex = async (state, action, signer, contractErr = true, SmartWeave2) => {
@@ -11368,14 +11317,7 @@
         );
         let ind = getIndex(state, path);
         _removeIndex(new_data, ind, col.__docs);
-        return {
-          state,
-          result: {
-            original_signer,
-            transaction: SmartWeave2.transaction,
-            block: SmartWeave2.block
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { removeIndex };
     }
@@ -11385,7 +11327,7 @@
   var require_setRules = __commonJS({
     "sdk/contracts/weavedb/actions/write/setRules.js"(exports, module) {
       var { isNil, mergeLeft, includes, difference, is } = require_src();
-      var { err, parse, mergeData } = require_utils();
+      var { wrapResult, err, parse, mergeData } = require_utils();
       var { validate } = require_validate();
       var jsonLogic = require_logic();
       var setRules = async (state, action, signer, contractErr = true, SmartWeave2) => {
@@ -11426,14 +11368,7 @@
           }
         }
         _data.rules = new_data;
-        return {
-          state,
-          result: {
-            original_signer,
-            transaction: SmartWeave2.transaction,
-            block: SmartWeave2.block
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { setRules };
     }
@@ -11443,8 +11378,13 @@
   var require_removeCron = __commonJS({
     "sdk/contracts/weavedb/actions/write/removeCron.js"(exports, module) {
       var { isNil, mergeLeft, init } = require_src();
-      var { parse, mergeData } = require_utils();
-      var { err, isOwner } = require_utils();
+      var {
+        wrapResult,
+        err,
+        isOwner,
+        parse,
+        mergeData
+      } = require_utils();
       var { validate } = require_validate();
       var { addIndex: _addIndex, getIndex } = require_lib();
       var removeCron = async (state, action, signer, contractErr = true, SmartWeave2) => {
@@ -11466,17 +11406,7 @@
         if (isNil(state.crons.crons[key]))
           err("cron doesn't exist");
         delete state.crons.crons[key];
-        return {
-          state,
-          result: {
-            original_signer,
-            result: {
-              original_signer,
-              transaction: SmartWeave2.transaction,
-              block: SmartWeave2.block
-            }
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { removeCron };
     }
@@ -11486,8 +11416,7 @@
   var require_addRelayerJob = __commonJS({
     "sdk/contracts/weavedb/actions/write/addRelayerJob.js"(exports, module) {
       var { isNil, is, intersection } = require_src();
-      var { parse } = require_utils();
-      var { err, clone } = require_utils();
+      var { parse, wrapResult, err, clone } = require_utils();
       var { validate } = require_validate();
       var { validate: validator } = require_jsonschema();
       var addRelayerJob = async (state, action, signer, contractErr = true, SmartWeave2) => {
@@ -11527,14 +11456,7 @@
         if (isNil(state.relayers))
           state.relayers = {};
         state.relayers[jobID] = job;
-        return {
-          state,
-          result: {
-            original_signer,
-            transaction: SmartWeave2.transaction,
-            block: SmartWeave2.block
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { addRelayerJob };
     }
@@ -11544,8 +11466,7 @@
   var require_removeRelayerJob = __commonJS({
     "sdk/contracts/weavedb/actions/write/removeRelayerJob.js"(exports, module) {
       var { isNil, is, intersection } = require_src();
-      var { parse } = require_utils();
-      var { err, clone } = require_utils();
+      var { parse, wrapResult, err, clone } = require_utils();
       var { validate } = require_validate();
       var { validate: validator } = require_jsonschema();
       var removeRelayerJob = async (state, action, signer, contractErr = true, SmartWeave2) => {
@@ -11572,14 +11493,7 @@
         if (isNil(state.relayers[jobID]))
           err("relayer job doesn't exist");
         delete state.relayers[jobID];
-        return {
-          state,
-          result: {
-            original_signer,
-            transaction: SmartWeave2.transaction,
-            block: SmartWeave2.block
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { removeRelayerJob };
     }
@@ -11590,7 +11504,7 @@
     "sdk/contracts/weavedb/actions/write/linkContract.js"(exports, module) {
       var { isNil, is } = require_src();
       var { validate } = require_validate();
-      var { err, parse } = require_utils();
+      var { wrapResult, err, parse } = require_utils();
       var linkContract = async (state, action, signer, contractErr = true, SmartWeave2) => {
         let original_signer = null;
         if (isNil(signer)) {
@@ -11618,14 +11532,7 @@
         if (isNil(state.contracts))
           state.contracts = {};
         state.contracts[key] = address;
-        return {
-          state,
-          result: {
-            original_signer,
-            transaction: SmartWeave2.transaction,
-            block: SmartWeave2.block
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { linkContract };
     }
@@ -11636,7 +11543,7 @@
     "sdk/contracts/weavedb/actions/write/unlinkContract.js"(exports, module) {
       var { isNil, is } = require_src();
       var { validate } = require_validate();
-      var { err, parse } = require_utils();
+      var { wrapResult, err, parse } = require_utils();
       var unlinkContract = async (state, action, signer, contractErr = true, SmartWeave2) => {
         let original_signer = null;
         if (isNil(signer)) {
@@ -11664,14 +11571,7 @@
         if (isNil(state.contracts))
           state.contracts = {};
         delete state.contracts[key];
-        return {
-          state,
-          result: {
-            original_signer,
-            transaction: SmartWeave2.transaction,
-            block: SmartWeave2.block
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { unlinkContract };
     }
@@ -11682,7 +11582,7 @@
     "sdk/contracts/weavedb/actions/write/removeAddressLink.js"(exports, module) {
       var { is, isNil } = require_src();
       var { validate } = require_validate();
-      var { err } = require_utils();
+      var { err, wrapResult } = require_utils();
       var removeAddressLink = async (state, action, signer, contractErr = true, SmartWeave2) => {
         let original_signer = null;
         if (isNil(signer)) {
@@ -11703,14 +11603,7 @@
           err("signer is neither owner nor delegator");
         }
         delete state.auth.links[address.toLowerCase()];
-        return {
-          state,
-          result: {
-            original_signer,
-            transaction: SmartWeave2.transaction,
-            block: SmartWeave2.block
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { removeAddressLink };
     }
@@ -11725,7 +11618,8 @@
         parse,
         mergeData,
         getCol,
-        validateSchema
+        validateSchema,
+        wrapResult
       } = require_utils();
       var { validate } = require_validate();
       var { addData, getIndex } = require_lib();
@@ -11747,14 +11641,7 @@
         let ind = getIndex(state, init(path));
         addData(last(path), next_data, ind, col.__docs);
         _data.__data = next_data;
-        return {
-          state,
-          result: {
-            original_signer,
-            transaction: SmartWeave2.transaction,
-            block: SmartWeave2.block
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { add };
     }
@@ -11764,7 +11651,7 @@
   var require_batch = __commonJS({
     "sdk/contracts/weavedb/actions/write/batch.js"(exports, module) {
       var { includes, isNil, clone } = require_src();
-      var { err, parse, mergeData } = require_utils();
+      var { wrapResult, err, parse, mergeData } = require_utils();
       var { validate } = require_validate();
       var { set } = require_set2();
       var { add } = require_add2();
@@ -11909,14 +11796,7 @@
           _state = res.state;
           i++;
         }
-        return {
-          state: _state,
-          result: {
-            original_signer,
-            transaction: SmartWeave2.transaction,
-            block: SmartWeave2.block
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { batch };
     }
@@ -12033,7 +11913,7 @@
   var require_addCron = __commonJS({
     "sdk/contracts/weavedb/actions/write/addCron.js"(exports, module) {
       var { isNil } = require_src();
-      var { err, clone, isOwner } = require_utils();
+      var { wrapResult, err, clone, isOwner } = require_utils();
       var { validate } = require_validate();
       var { executeCron } = require_cron();
       var c = require_cron();
@@ -12078,17 +11958,7 @@
             err("cron failed to execute");
           }
         }
-        return {
-          state,
-          result: {
-            original_signer,
-            result: {
-              original_signer,
-              transaction: SmartWeave2.transaction,
-              block: SmartWeave2.block
-            }
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { addCron };
     }
@@ -12098,9 +11968,9 @@
   var require_addAddressLink = __commonJS({
     "sdk/contracts/weavedb/actions/write/addAddressLink.js"(exports, module) {
       var { is, isNil } = require_src();
-      var { err } = require_utils();
+      var { err, wrapResult } = require_utils();
       var { validate } = require_validate();
-      var addAddressLink = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var addAddressLink = async (state, action, signer, contractErr = true, SmartWeave2, _linkTo) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -12111,7 +11981,9 @@
             SmartWeave2
           ));
         }
-        const { address, signature, expiry } = action.input.query;
+        const { address, signature, expiry, linkTo } = action.input.query;
+        if ((!isNil(linkTo) || !isNil(_linkTo)) && linkTo !== _linkTo)
+          err("linkTo doesn't match");
         if (!isNil(expiry) && !is(Number, expiry))
           err("expiry must be a number");
         const { nonce } = action.input;
@@ -12126,7 +11998,9 @@
           version: state.auth.version,
           verifyingContract: SmartWeave2.contract.id
         };
-        const query = typeof expiry === "undefined" ? { address: signer } : { address: signer, expiry };
+        let query = typeof expiry === "undefined" ? { address: signer } : { address: signer, expiry };
+        if (!isNil(linkTo))
+          query.linkTo = linkTo;
         const message = {
           nonce,
           query: JSON.stringify({
@@ -12162,17 +12036,10 @@
           }
         }
         state.auth.links[address.toLowerCase()] = {
-          address: signer,
+          address: linkTo || signer,
           expiry: expiry === 0 ? 0 : SmartWeave2.block.timestamp + expiry
         };
-        return {
-          state,
-          result: {
-            original_signer,
-            transaction: SmartWeave2.transaction,
-            block: SmartWeave2.block
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { addAddressLink };
     }
@@ -12182,7 +12049,7 @@
   var require_evolve2 = __commonJS({
     "sdk/contracts/weavedb/actions/write/evolve.js"(exports, module) {
       var { isNil, is, of, includes, mergeLeft } = require_src();
-      var { err, isOwner } = require_utils();
+      var { wrapResult, err, isOwner } = require_utils();
       var { validate } = require_validate();
       var evolve = async (state, action, signer, contractErr = true, SmartWeave2) => {
         let original_signer = null;
@@ -12212,14 +12079,7 @@
           srcTxId: action.input.value,
           oldVersion: state.version
         });
-        return {
-          state,
-          result: {
-            original_signer,
-            transaction: SmartWeave2.transaction,
-            block: SmartWeave2.block
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { evolve };
     }
@@ -12241,13 +12101,14 @@
         head,
         nth
       } = require_src();
-      var { err, read, validateSchema } = require_utils();
+      var { wrapResult, err, read, validateSchema } = require_utils();
       var { validate } = require_validate();
       var { add } = require_add2();
       var { set } = require_set2();
       var { update } = require_update2();
       var { upsert } = require_upsert();
       var { remove } = require_remove2();
+      var { addAddressLink } = require_addAddressLink();
       var { batch } = require_batch();
       var relay = async (state, action, signer, contractErr = true, SmartWeave2) => {
         let original_signer = null;
@@ -12257,12 +12118,11 @@
             state,
             action,
             "relay",
-            SmartWeave2
+            SmartWeave2,
+            false
           ));
         }
-        let jobID = head(action.input.query);
-        let input = nth(1, action.input.query);
-        let query = nth(2, action.input.query);
+        let [jobID, input, query] = action.input.query;
         if (input.jobID !== jobID)
           err("the wrong jobID");
         let action2 = { input, relayer: signer, extra: query, jobID };
@@ -12331,19 +12191,21 @@
             return await remove(state, action2, null, null, SmartWeave2);
           case "batch":
             return await batch(state, action2, null, null, SmartWeave2);
+          case "addAddressLink":
+            return await addAddressLink(
+              state,
+              action2,
+              null,
+              null,
+              SmartWeave2,
+              action2.extra.linkTo
+            );
           default:
             err(
               `No function supplied or function not recognised: "${action2.input.function}"`
             );
         }
-        return {
-          state,
-          result: {
-            original_signer,
-            transaction: SmartWeave2.transaction,
-            block: SmartWeave2.block
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { relay };
     }
@@ -12352,7 +12214,7 @@
   // sdk/contracts/weavedb/lib/version.js
   var require_version2 = __commonJS({
     "sdk/contracts/weavedb/lib/version.js"(exports, module) {
-      module.exports = "0.23.0";
+      module.exports = "0.25.0";
     }
   });
 
@@ -12360,7 +12222,7 @@
   var require_migrate = __commonJS({
     "sdk/contracts/weavedb/actions/write/migrate.js"(exports, module) {
       var { isNil, is, of, includes, mergeLeft, last } = require_src();
-      var { isEvolving, err, isOwner } = require_utils();
+      var { wrapResult, isEvolving, err, isOwner } = require_utils();
       var { validate } = require_validate();
       var version = require_version2();
       var migrate = async (state, action, signer, contractErr = true, SmartWeave2) => {
@@ -12382,14 +12244,7 @@
           err(`contract is not ready to migrate`);
         state.version = version;
         state.evolveHistory[state.evolveHistory.length - 1].newVersion = version;
-        return {
-          state,
-          result: {
-            original_signer,
-            transaction: SmartWeave2.transaction,
-            block: SmartWeave2.block
-          }
-        };
+        return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { migrate };
     }
