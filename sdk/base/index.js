@@ -273,6 +273,7 @@ class Base {
         throw new Error("Lens is only compaitble with browser")
       }
       try {
+        await window.ethereum.request({ method: "eth_requestAccounts" })
         await window.ethereum.request({
           method: "wallet_switchEthereumChain",
           params: [{ chainId: "0x89" }],

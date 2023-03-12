@@ -428,7 +428,7 @@ class Node {
           }
           if (func === "get") result = pluck("data", result)
         } else {
-          if (func === "get") result = result.data
+          if (func === "get") result = isNil(result) ? null : result.data
           this.cache.set(key.key, result)
         }
       } else if (includes(func)(this.sdks[txid].reads)) {
