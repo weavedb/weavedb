@@ -20,13 +20,13 @@
     "framer-motion": "^6",
     "lit-js-sdk": "^1.3.3",
     "localforage": "^1.10.0",
+    "nanoid": "^4.0.1",
     "next": "13.1.1",
     "ramda": "^0.28.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-jdenticon": "^1.0.0",
-    "weavedb-client": "^0.25.0",
-    "weavedb-node-client": "^0.24.0",
-    "weavedb-sdk": "^0.25.2"
+    "weavedb-client": "^0.25.1",
+    "weavedb-sdk": "^0.25.5"
   }
 }

@@ -3935,10 +3935,10 @@ warp-wasm-metering@1.0.1:
     leb128 "^0.0.4"
     warp-wasm-json-toolkit "1.0.2"
 
-weavedb-base@^0.25.2:
-  version "0.25.2"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.25.2.tgz#28e2fe39395b4db5e4c1590dec367e14f6689e89"
-  integrity sha512-saVGKqPN5OB++E3jcTLR4EfQNS+b5BPdmMNqYLCZx3k6k2EAGxhbRj0ozYUtX3OeZCF84X6LL2xBL4N7tdftFw==
+weavedb-base@^0.25.3:
+  version "0.25.3"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.25.3.tgz#c6b277db4de178522ce0557953dcd49eed7e0925"
+  integrity sha512-G3EoVYTNhnF+MDHVLuPXYCl0BmNfpTSUq4xb9WcqIIwWwnkiuWoHmLNv/4M9SG48pLA7rve8WV9dGUX7Qi4K5w==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"
