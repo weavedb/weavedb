@@ -1,0 +1,7 @@
+{
+  "https://unpkg.com/yargs-parser@19.0.0/browser.js": { "integrity": "sha512-kUOeXH+8KLuPpwwaI7I1IyhM0EkktUEkfeOQKcC4c0Przsb+0/ttbI2DPzR4Rte9S1QdfFUCDLYosTCfhFRaCA==", "contentType": "application/javascript; charset=utf-8" },
+  "https://unpkg.com/yargs-parser@19.0.0/build/lib/string-utils.js": { "integrity": "sha512-zB3yj5nsYr+kIJ6G/aQX4yMm17Vt+zkz8x2VlSU0lwALvtYwj5oCFO9j3MthQuzW7HnFgn40lGo407nbCnPwFg==", "contentType": "application/javascript; charset=utf-8" },
+  "https://unpkg.com/yargs-parser@19.0.0/build/lib/tokenize-arg-string.js": { "integrity": "sha512-W36UMrWq5gBqGWadCctxNwucGU6p897cNHrs9H5DgKWvvnN7L2M44I3i5XMRkgSekGbV611wivjzKRRomYHlQw==", "contentType": "application/javascript; charset=utf-8" },
+  "https://unpkg.com/yargs-parser@19.0.0/build/lib/yargs-parser.js": { "integrity": "sha512-4rDdSKMKn1zAD18J+aKt1poHbHuRz0SdUrbOanzEsgcesMmZmRasrZ9gT+hbnB1QfZS+SKY32I++b8c2gUpFRw==", "contentType": "application/javascript; charset=utf-8" },
+  "version": 1
+}
