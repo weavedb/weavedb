@@ -50,6 +50,7 @@ let db
 export default inject(
   ["temp_current_all", "temp_current", "loading_contract", "tx_logs"],
   ({ set, init, router, conf, fn, $ }) => {
+    const [deployMode, setDeployMode] = useState("Connect")
     const [loadMore, setLoadMore] = useState(null)
     const [whitelist, setWhitelist] = useState([])
     const [editGRPC, setEditGRPC] = useState(null)
@@ -504,6 +505,8 @@ export default inject(
         setAddContract,
       },
       DB: {
+        deployMode,
+        setDeployMode,
         editGRPC,
         setEditGRPC,
         setPresetRPC,
@@ -554,6 +557,8 @@ export default inject(
         doc,
       },
       Modals: {
+        deployMode,
+        setDeployMode,
         newIndex,
         setNewIndex,
         newRules,

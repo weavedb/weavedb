@@ -1,3 +1,4 @@
+import { useToast } from "@chakra-ui/react"
 import { Box, Flex, Image } from "@chakra-ui/react"
 import { inject } from "roidjs"
 import { isNil } from "ramda"
@@ -23,6 +24,7 @@ export default inject(
   ],
   ({ newNetwork, state, contractTxId, network, tab, fn, set, $ }) => {
     const version = isNil(state?.version) ? 0 : state?.version.split(".")[1] * 1
+    const toast = useToast()
     return (
       <Flex
         align="center"
@@ -204,11 +206,29 @@ export default inject(
                     set(true, "signing_in")
                     if ($.owner_signing_in_modal) {
                     } else {
-                      await fn(createTempAddressWithLens)({
-                        contractTxId,
-                        network,
-                        node: tab === "Nodes",
-                      })
+                      let err = null
+                      try {
+                        const tx = await fn(createTempAddressWithLens)({
+                          contractTxId,
+                          network,
+                          node: tab === "Nodes",
+                        })
+                        console.log(tx)
+                      } catch (e) {
+                        err = e.message || e.toString?.()
+                      }
+                      if (!isNil(err)) {
+                        toast({
+                          description:
+                            typeof err === "string"
+                              ? err.replace(/^Error: /, "")
+                              : "Something went wrong...",
+                          status: "error",
+                          duration: 3000,
+                          isClosable: true,
+                          position: "bottom-right",
+                        })
+                      }
                     }
                     set(false, "signing_in")
                     set(false, "signing_in_modal")
