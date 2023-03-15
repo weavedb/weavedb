@@ -1,3 +1,4 @@
+import { nanoid } from "nanoid"
 const { Ed25519KeyIdentity } = require("@dfinity/identity")
 const lens = {
   contract: "0xDb46d1Dc155634FbC732f92E853b10B288AD5a1d",
@@ -38,7 +39,7 @@ const ret = res =>
     : JSON.stringify(res)
 
 class Log {
-  constructor(sdk, method, query, opt, fn, signer) {
+  constructor(sdk, method, query, opt, fn, signer, id) {
     this.contractTxId = sdk.contractTxId
     this.node = isNil(sdk.client) ? null : sdk.client.hostname_
     this.start = Date.now()
@@ -48,6 +49,7 @@ class Log {
     this.opt = opt
     this.sdk = sdk
     this.signer = signer
+    this.id = id || nanoid()
   }
   async rec(array = false) {
     let res = {},
@@ -69,6 +71,7 @@ class Log {
     err = err?.message || _res?.error || _res?.error?.code || null
 
     let log = {
+      id: this.id,
       err,
       virtual_txid: _res?.result?.transaction?.id || null,
       txid:
@@ -994,6 +997,25 @@ export const queryDB = async ({
       opt.dryWrite = { cache: true, read: dryRead }
     }
     return ret(await new Log(sdk, method, q, opt, fn, signer).rec(true))
+  } catch (e) {
+    console.log(e)
+    return `Error: Something went wrong`
+  }
+}
+
+export const queryDB2 = async ({
+  val: { query, method, contractTxId, dryRead, id },
+  fn,
+}) => {
+  try {
+    let { err, opt, signer } = includes(method)(sdk.reads)
+      ? { err: null, opt: {} }
+      : await fn(getOpt)({ contractTxId })
+    if (!isNil(err)) return alert(err)
+    if (!isNil(dryRead)) {
+      opt.dryWrite = { cache: true, read: dryRead }
+    }
+    return ret(await new Log(sdk, method, query, opt, fn, signer, id).rec(true))
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`

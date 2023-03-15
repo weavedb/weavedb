@@ -109,7 +109,6 @@ export default function Posts({
                             wallet: user.address,
                           }
                         )
-                        console.log(tx)
                         if (tx.success) {
                           setPosts(reject(propEq("id", v.id)), posts)
                           toast({
