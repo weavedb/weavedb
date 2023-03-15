@@ -312,25 +312,22 @@ export default inject(
                     <TxLog v={_tx} />
                   </Box>
                 ) : (
-                  <Flex p={2} color={isDB ? "#333" : "#6441AF"} height="35px">
+                  <Flex p={2} color={"#6441AF"} height="35px">
                     <Box width="9px" mr={2} />
                     {isDB
-                      ? `${method}(${query})`
+                      ? `Enter a query.`
                       : "To execute queries, connect with a WeaveDB instance."}
                   </Flex>
                 )}
                 <Box
-                  height="120px"
+                  height="170px"
                   px={3}
                   color="#6441AF"
                   sx={{ wordBreak: "break-all", overflowY: "auto" }}
                 >
                   {isNil(_tx) ? null : (
                     <>
-                      <Flex
-                        align={!isNil(_tx.err) ? "flex-start" : "center"}
-                        mb={2}
-                      >
+                      <Flex mb={2}>
                         <Box>
                           <Flex
                             bg={
@@ -352,7 +349,10 @@ export default inject(
                           {map(v => JSON.stringify(v), _tx.query).join(", ")})
                         </Box>
                       </Flex>
-                      <Flex align="center">
+                      <Flex
+                        align="center"
+                        align={isNil(_tx.err) ? "flex-start" : "center"}
+                      >
                         <Box>
                           <Flex
                             bg={isNil(_tx.err) ? "#6441AF" : "tomato"}
@@ -379,8 +379,8 @@ export default inject(
                               <ReactJson
                                 name={false}
                                 src={json}
-                                collapsed={true}
                                 displayDataTypes={false}
+                                collapsed={true}
                               />
                             )
                           ) : (
