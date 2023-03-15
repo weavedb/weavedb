@@ -740,7 +740,7 @@ export default inject(
                 <Modals {...props.Modals} />
               </Box>
             </Flex>
-            <Flex height="200px">
+            <Flex height="250px">
               <Console {...props.Console} />
             </Flex>
           </Flex>
