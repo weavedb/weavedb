@@ -1021,7 +1021,7 @@ export const queryDB2 = async ({
         sdk,
         method,
         query,
-        isEmpty(opt) ? null : opt,
+        includes(method)(sdk.reads) && isEmpty(opt) ? null : opt,
         fn,
         signer,
         id
