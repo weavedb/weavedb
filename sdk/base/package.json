@@ -1,6 +1,6 @@
 {
   "name": "weavedb-base",
-  "version": "0.25.3",
+  "version": "0.25.5",
   "description": "A decentralized NoSQL database powered by Arweave.",
   "homepage": "https://weavedb.dev",
   "repository": {

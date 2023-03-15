@@ -3,6 +3,7 @@ import { Box, Flex, Select, Input } from "@chakra-ui/react"
 let ReactJson
 import { useRef, useState, useEffect } from "react"
 import {
+  head,
   propEq,
   findIndex,
   addIndex,
@@ -186,7 +187,8 @@ export default inject(
     )
     const parseQuery = txt => {
       let err = false
-      let func = null
+      const parsed = parser(txt)._
+      let func = head(parsed)
       let query = addIndex(map)((v, i) => {
         switch (v) {
           case "null":
@@ -207,25 +209,19 @@ export default inject(
               str = v.replace(/^'(.*)'$/, "$1")
             } else if (/^".*"$/.test(v)) {
               str = v.replace(/^"(.*)"$/, "$1")
-            }
-            if (!isNil(str)) {
-              if (/^\{.*\}$/.test(str) || /^\[.*\]$/.test(str)) {
-                try {
-                  let json
-                  eval(`json = ${str}`)
-                  return json
-                } catch (e) {}
-              }
-              return str
-            }
-            if (i !== 0) {
-              err = true
             } else {
-              func = v
+              str = v
             }
-            return v
+            if (/^\{.*\}$/.test(str) || /^\[.*\]$/.test(str)) {
+              try {
+                let json
+                eval(`json = ${str}`)
+                return json
+              } catch (e) {}
+            }
+            return str
         }
-      })(parser(txt)._)
+      })(tail(parsed))
       return { func, query, err }
     }
     let _tx = null
@@ -300,6 +296,7 @@ export default inject(
               flex={1}
               bg="white"
               w="100%"
+              height="250px"
               sx={{ borderTop: "1px solid #999", overflowY: "auto" }}
               p={1}
             >
@@ -452,7 +449,7 @@ export default inject(
                               const id = nanoid()
                               const res = await fn(queryDB2)({
                                 method: func,
-                                query: tail(query),
+                                query,
                                 contractTxId,
                                 dryRead: [["getInfo"]],
                                 id,

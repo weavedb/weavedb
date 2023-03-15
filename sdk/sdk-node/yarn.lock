@@ -4966,10 +4966,10 @@ weak-lru-cache@^1.2.2:
   resolved "https://registry.yarnpkg.com/weak-lru-cache/-/weak-lru-cache-1.2.2.tgz#fdbb6741f36bae9540d12f480ce8254060dccd19"
   integrity sha512-DEAoo25RfSYMuTGc9vPJzZcZullwIqRDSI9LOy+fkCJPi6hykCnfKaXTuPBDuXAUcqHXyOgFtHNp/kB2FjYHbw==
 
-weavedb-base@^0.25.2:
-  version "0.25.2"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.25.2.tgz#28e2fe39395b4db5e4c1590dec367e14f6689e89"
-  integrity sha512-saVGKqPN5OB++E3jcTLR4EfQNS+b5BPdmMNqYLCZx3k6k2EAGxhbRj0ozYUtX3OeZCF84X6LL2xBL4N7tdftFw==
+weavedb-base@^0.25.5:
+  version "0.25.5"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.25.5.tgz#7f68dcd281932998ebe6dfacfdb944b27fb0b647"
+  integrity sha512-UQrnrXe4+ET7CUhxcGSIBZHQ4RDEuU9ivI9MfWswx/AEM5bCYcFP6VDflzqG8i2v6lCQ0eJRZz9gy5vG9xxfkA==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"
@@ -4988,10 +4988,10 @@ weavedb-contracts@^0.25.1:
     md5 "^2.3.0"
     ramda "^0.28.0"
 
-weavedb-sdk@^0.25.5:
-  version "0.25.5"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.25.5.tgz#8b4bdddfbe33c9306be9a56e1f1a09647d297ae7"
-  integrity sha512-q8smqt82pz+flUX0a0WFIflojJggUatTcJNzeUcBsODXlsagT2ZTkxr1yln4oyZMDD9pkK0WThQsgllxJ94oog==
+weavedb-sdk@^0.25.8:
+  version "0.25.8"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.25.8.tgz#0cbb28803dbf738d2f57be4131a20cf18b6fa781"
+  integrity sha512-N1my0ZHUSzgasxLURmxJWcls6aHGT40PWbPpCp2NRnBN0J+t1RPILXlVAFeG8smvXlLXSOFIJ3/bo1oIoca8rQ==
   dependencies:
     "@lit-protocol/sdk-browser" "^1.3.3"
     "@metamask/legacy-web3" "^2.0.0"
@@ -5002,7 +5002,7 @@ weavedb-sdk@^0.25.5:
     ramda "^0.28.0"
     warp-contracts "1.2.54"
     warp-contracts-old "npm:warp-contracts@1.2.26"
-    weavedb-base "^0.25.2"
+    weavedb-base "^0.25.5"
     weavedb-contracts "^0.25.1"
 
 web-streams-polyfill@^3.0.3:
