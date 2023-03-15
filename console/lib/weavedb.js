@@ -27,6 +27,7 @@ import {
   includes,
   uniq,
   dissoc,
+  isEmpty,
 } from "ramda"
 import { Buffer } from "buffer"
 import { weavedbSrcTxId, dfinitySrcTxId, ethereumSrcTxId } from "./const"
@@ -1012,10 +1013,20 @@ export const queryDB2 = async ({
       ? { err: null, opt: {} }
       : await fn(getOpt)({ contractTxId })
     if (!isNil(err)) return alert(err)
-    if (!isNil(dryRead)) {
+    if (!includes(method)(sdk.reads) && !isNil(dryRead)) {
       opt.dryWrite = { cache: true, read: dryRead }
     }
-    return ret(await new Log(sdk, method, query, opt, fn, signer, id).rec(true))
+    return ret(
+      await new Log(
+        sdk,
+        method,
+        query,
+        isEmpty(opt) ? null : opt,
+        fn,
+        signer,
+        id
+      ).rec(true)
+    )
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
