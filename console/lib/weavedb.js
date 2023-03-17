@@ -105,7 +105,14 @@ class Log {
         })
         .catch(e => {})
     }
-    if (!isNil(err)) throw new Error(err?.message)
+    if (!isNil(err))
+      throw new Error(
+        typeof err === "string"
+          ? err
+          : typeof err?.message === "string"
+          ? err.message
+          : "unknown error"
+      )
     return clone(res)
   }
 }
@@ -124,7 +131,9 @@ export const getOpt = async ({ val: { contractTxId, read = [] }, get }) => {
     ? { ii, dryWrite: { cache: true, read } }
     : !isNil(identity) && !isNil(identity.tx)
     ? {
-        wallet: current,
+        wallet: /^lens:/.test(current)
+          ? current.split(":").slice(0, -1).join(":")
+          : current,
         privateKey: identity.privateKey,
         dryWrite: { cache: true, read },
       }
@@ -334,14 +343,19 @@ export const createTempAddressWithLens = async ({
   fn,
   val: { contractTxId, network, node },
 }) => {
-  let identity, tx, addr
-  ;({ tx, identity } = await new Log(
-    sdk,
-    "createTempAddressWithLens",
-    null,
-    null,
-    fn
-  ).rec())
+  let identity, tx, addr, err
+  try {
+    ;({ tx, identity } = await new Log(
+      sdk,
+      "createTempAddressWithLens",
+      null,
+      null,
+      fn
+    ).rec())
+    console.log(tx)
+  } catch (e) {
+    throw e
+  }
   const linked = await new Log(
     sdk,
     "getAddressLink",
@@ -350,7 +364,7 @@ export const createTempAddressWithLens = async ({
     fn
   ).rec()
   if (isNil(linked)) {
-    alert("something went wrong")
+    throw new Error("something went wrong")
     return
   } else {
     addr = linked.address
@@ -360,7 +374,9 @@ export const createTempAddressWithLens = async ({
     await provider.send("eth_requestAccounts", [])
     const signer = provider.getSigner()
     const contract = new ethers.Contract(lens.contract, lens.abi, signer)
-    const handle = await contract.getHandle(addr.split(":")[1])
+    const handle = await sdk.repeatQuery(contract.getHandle, [
+      addr.split(":")[1],
+    ])
     addr += `:${handle}`
     identity.tx = dissoc("getResult", tx)
     identity.linked_address = addr
@@ -1021,7 +1037,7 @@ export const queryDB2 = async ({
         sdk,
         method,
         query,
-        isEmpty(opt) ? null : opt,
+        includes(method)(sdk.reads) && isEmpty(opt) ? null : opt,
         fn,
         signer,
         id

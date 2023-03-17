@@ -54,41 +54,47 @@ export default function Header({
                 try {
                   setLogging(true)
                   const { identity, tx } = await sdk.createTempAddressWithLens()
-                  const id = (
-                    await sdk.getAddressLink(identity.address)
-                  ).address.split(":")[1]
-                  const provider = new ethers.providers.Web3Provider(
-                    window.ethereum,
-                    "any"
-                  )
-                  const signer = provider.getSigner()
-                  await provider.send("eth_requestAccounts", [])
+                  if (tx.success) {
+                    const id = (
+                      await sdk.getAddressLink(identity.address)
+                    ).address.split(":")[1]
+                    const provider = new ethers.providers.Web3Provider(
+                      window.ethereum,
+                      "any"
+                    )
+                    const signer = provider.getSigner()
+                    await provider.send("eth_requestAccounts", [])
 
-                  const contract = new ethers.Contract(
-                    lens.contract,
-                    lens.abi,
-                    signer
-                  )
-                  const profile = await contract.getProfile(id)
-                  let _user = {
-                    id: id * 1,
-                    handle: profile.handle,
-                    ...identity,
-                  }
-                  if (!isNil(profile.imageURI)) {
-                    _user.image = `https://cloudflare-ipfs.com/ipfs/${last(
-                      profile.imageURI.split("/")
-                    )}`
-                  }
-                  const uid = `lens:${_user.id}`
-                  setUserMap(assoc(uid, _user, userMap))
-                  setUser(_user)
-                  await lf.setItem("user", _user)
-                  const wuser = await sdk.get("users", uid)
-                  if (isNil(wuser)) {
-                    setEditUser(true)
+                    const contract = new ethers.Contract(
+                      lens.contract,
+                      lens.abi,
+                      signer
+                    )
+                    const profile = await sdk.repeatQuery(contract.getProfile, [
+                      id,
+                    ])
+                    let _user = {
+                      id: id * 1,
+                      handle: profile.handle,
+                      ...identity,
+                    }
+                    if (!isNil(profile.imageURI)) {
+                      _user.image = `https://cloudflare-ipfs.com/ipfs/${last(
+                        profile.imageURI.split("/")
+                      )}`
+                    }
+                    const uid = `lens:${_user.id}`
+                    setUserMap(assoc(uid, _user, userMap))
+                    setUser(_user)
+                    await lf.setItem("user", _user)
+                    const wuser = await sdk.get("users", uid)
+                    if (isNil(wuser)) {
+                      setEditUser(true)
+                    } else {
+                      setUserMap(assoc(uid, wuser, userMap))
+                    }
                   } else {
-                    setUserMap(assoc(uid, wuser, userMap))
+                    alert("Something went wrong. Please try again.")
                   }
                 } catch (e) {
                   alert(

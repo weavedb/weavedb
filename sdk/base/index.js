@@ -266,7 +266,30 @@ class Base {
   setDefaultWallet(wallet, type = "evm") {
     this.defaultWallet = { wallet, type }
   }
-
+  _repeatQuery(func, query, attempt = 1) {
+    return new Promise((req, rej) => {
+      setTimeout(async () => {
+        try {
+          req(await func(...query))
+        } catch (e) {
+          console.log(e)
+          if (attempt < 5) {
+            req(await this._repeatQuery(func, query, ++attempt))
+          } else {
+            rej(e)
+          }
+        }
+      }, 1000)
+    })
+  }
+  async repeatQuery(func, query, attempt = 1) {
+    try {
+      return await func(...query)
+    } catch (e) {
+      console.log(e)
+      return this._repeatQuery(func, query)
+    }
+  }
   async createTempAddressWithLens(expiry, linkTo, opt = {}) {
     try {
       if (typeof window === "undefined") {
@@ -300,7 +323,7 @@ class Base {
       const signer = provider.getSigner()
       const contract = new Contract(lens.contract, lens.abi, signer)
       const tokenID = (
-        await contract.defaultProfile(signer.getAddress())
+        await this.repeatQuery(contract.defaultProfile, [signer.getAddress()])
       ).toNumber()
       if (isNil(tokenID) || tokenID === 0) {
         throw new Error("You don't have a Lens profile")

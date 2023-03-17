@@ -47,8 +47,9 @@ export default inject(
     fn,
     set,
     $,
+    deployMode,
+    setDeployMode,
   }) => {
-    const [deployMode, setDeployMode] = useState("Connect")
     const [secure, setSecure] = useState(true)
     const [canEvolve, setCanEvolve] = useState(true)
     const [auths, setAuths] = useState(wallet_chains)
