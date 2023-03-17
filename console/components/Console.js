@@ -277,6 +277,7 @@ export default inject(
                     ref.focus()
                   } catch (e) {}
                   setValue(`${e.target.value} `)
+                  setMethod(e.target.value)
                 }}
                 sx={{
                   borderRadius: 0,
