@@ -32,6 +32,8 @@ export default inject(
     "temp_current_all",
   ],
   ({
+    deployMode,
+    setDeployMode,
     newIndex,
     setNewIndex,
     newRules,
@@ -276,6 +278,8 @@ export default inject(
       ) : addInstance !== false ? (
         <AddInstance
           {...{
+            deployMode,
+            setDeployMode,
             newNetwork,
             setNewNetwork,
             newRPC2,

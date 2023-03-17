@@ -3,6 +3,7 @@ import { Box, Flex, Select, Input } from "@chakra-ui/react"
 let ReactJson
 import { useRef, useState, useEffect } from "react"
 import {
+  head,
   propEq,
   findIndex,
   addIndex,
@@ -38,6 +39,7 @@ const reads = [
   "getNonce",
 ]
 import parser from "https://unpkg.com/yargs-parser@19.0.0/browser.js"
+let ref
 export default inject(
   ["temp_current", "tx_logs"],
   ({
@@ -56,7 +58,6 @@ export default inject(
     useEffect(() => {
       ReactJson = require("react-json-view").default
     }, [])
-    const ref = useRef()
     const toast = useToast()
     const [querying, setQuerying] = useState(false)
     const [panel, setPanel] = useState("logs")
@@ -126,6 +127,9 @@ export default inject(
           sx={{ textDecoration: "underline" }}
           target="_blank"
           href={`https://sonar.warp.cc/?#/app/contract/${v.contractTxId}`}
+          onClick={e => {
+            e.stopPropagation()
+          }}
         >
           {v.contractTxId}
         </Box>
@@ -150,7 +154,11 @@ export default inject(
               color="tomato"
               fontSize="18px"
             />
-            <Box color="tomato">{v.err}</Box>
+            <Box color="tomato">
+              {typeof v.err === "string"
+                ? v.err
+                : v.err?.dryWrite?.errorMessage || "unknown error"}
+            </Box>
           </>
         ) : isNil(v.txid) ? null : (
           <>
@@ -167,6 +175,9 @@ export default inject(
               sx={{ textDecoration: "underline" }}
               target="_blank"
               href={`https://sonar.warp.cc/#/app/interaction/${v.txid}`}
+              onClick={e => {
+                e.stopPropagation()
+              }}
             >
               {v.txid}
             </Box>
@@ -176,7 +187,8 @@ export default inject(
     )
     const parseQuery = txt => {
       let err = false
-      let func = null
+      const parsed = parser(txt)._
+      let func = head(parsed)
       let query = addIndex(map)((v, i) => {
         switch (v) {
           case "null":
@@ -197,30 +209,25 @@ export default inject(
               str = v.replace(/^'(.*)'$/, "$1")
             } else if (/^".*"$/.test(v)) {
               str = v.replace(/^"(.*)"$/, "$1")
-            }
-            if (!isNil(str)) {
-              if (/^\{.*\}$/.test(str) || /^\[.*\]$/.test(str)) {
-                try {
-                  let json
-                  eval(`json = ${str}`)
-                  return json
-                } catch (e) {}
-              }
-              return str
-            }
-            if (i !== 0) {
-              err = true
             } else {
-              func = v
+              str = v
             }
-            return v
+            if (/^\{.*\}$/.test(str) || /^\[.*\]$/.test(str)) {
+              try {
+                let json
+                eval(`json = ${str}`)
+                return json
+              } catch (e) {}
+            }
+            return str
         }
-      })(parser(txt)._)
+      })(tail(parsed))
       return { func, query, err }
     }
-    const _ind = findIndex(propEq("id", tx))($.tx_logs || [])
     let _tx = null
+    const _ind = findIndex(propEq("id", tx))($.tx_logs || [])
     let json = null
+
     if (_ind !== -1) {
       _tx = $.tx_logs[_ind]
       try {
@@ -266,8 +273,11 @@ export default inject(
                 disabled={!isDB}
                 value={method}
                 onChange={e => {
-                  ref.current.focus()
+                  try {
+                    ref.focus()
+                  } catch (e) {}
                   setValue(`${e.target.value} `)
+                  setMethod(e.target.value)
                 }}
                 sx={{
                   borderRadius: 0,
@@ -287,6 +297,7 @@ export default inject(
               flex={1}
               bg="white"
               w="100%"
+              height="250px"
               sx={{ borderTop: "1px solid #999", overflowY: "auto" }}
               p={1}
             >
@@ -301,7 +312,7 @@ export default inject(
               justify="center"
             >
               <Flex flex={1} direction="column">
-                {!isNil(tx) ? (
+                {!isNil(_tx) ? (
                   <Box
                     bg="white"
                     w="100%"
@@ -371,7 +382,12 @@ export default inject(
                           {isDB ? (
                             !isNil(_tx.err) ? (
                               <Box color="tomato" fontSize="12px">
-                                {_tx.err}
+                                {typeof _tx?.err?.dryWrite?.errorMessage ===
+                                "string"
+                                  ? _tx.err.dryWrite.errorMessage
+                                  : typeof _tx?.err === "string"
+                                  ? _tx.err
+                                  : "unknown error"}
                               </Box>
                             ) : isNil(json) ? (
                               _tx.res
@@ -416,7 +432,11 @@ export default inject(
                     disabled={querying || !isDB}
                     color="#6441AF"
                     ref={input => {
-                      ref.current = input
+                      try {
+                        ref = input
+                      } catch (e) {
+                        console.log(e)
+                      }
                     }}
                     onKeyDown={async e => {
                       if (e.key === "Enter") {
@@ -430,7 +450,7 @@ export default inject(
                               const id = nanoid()
                               const res = await fn(queryDB2)({
                                 method: func,
-                                query: tail(query),
+                                query,
                                 contractTxId,
                                 dryRead: [["getInfo"]],
                                 id,
@@ -481,10 +501,7 @@ export default inject(
                         ? value
                         : "To execute queries, connect with a WeaveDB instance."
                     }
-                    onChange={e => {
-                      console.log(parseQuery(e.target.value))
-                      setValue(e.target.value)
-                    }}
+                    onChange={e => setValue(e.target.value)}
                     sx={{
                       padding: 0,
                       border: "0px",

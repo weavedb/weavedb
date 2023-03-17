@@ -16,6 +16,8 @@ import { preset_rpcs } from "../lib/const"
 export default inject(
   ["loading_contract", "tx_logs"],
   ({
+    deployMode,
+    setDeployMode,
     setEditGRPC,
     editGRPC,
     setPresetRPC,
@@ -205,7 +207,46 @@ export default inject(
           >
             {isNil(contractTxId) || isNil(currentDB) ? (
               <Flex justify="center" align="center" height="100%">
-                Please connect with a DB instance.
+                <Flex
+                  py={2}
+                  px={6}
+                  mx={2}
+                  w="150px"
+                  bg={"#6441AF"}
+                  color="white"
+                  sx={{
+                    borderRadius: "25px",
+                    cursor: "pointer",
+                    ":hover": { opacity: 0.75 },
+                  }}
+                  justifyContent="center"
+                  onClick={async () => {
+                    setDeployMode("Connect")
+                    setAddInstance(true)
+                  }}
+                >
+                  Connect with DB
+                </Flex>
+                <Flex
+                  mx={2}
+                  py={2}
+                  px={6}
+                  w="150px"
+                  bg={"#6441AF"}
+                  color="white"
+                  sx={{
+                    borderRadius: "25px",
+                    cursor: "pointer",
+                    ":hover": { opacity: 0.75 },
+                  }}
+                  justifyContent="center"
+                  onClick={async () => {
+                    setDeployMode("Deploy")
+                    setAddInstance(true)
+                  }}
+                >
+                  Deploy WeaveDB
+                </Flex>
               </Flex>
             ) : contractTxId === $.loading_contract ? (
               <Flex justify="center" align="center" height="100%">
