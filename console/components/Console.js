@@ -3,6 +3,8 @@ import { Box, Flex, Select, Input } from "@chakra-ui/react"
 let ReactJson
 import { useRef, useState, useEffect } from "react"
 import {
+  o,
+  flatten,
   head,
   propEq,
   findIndex,
@@ -12,6 +14,7 @@ import {
   tail,
   includes,
   last,
+  pluck,
 } from "ramda"
 import { inject } from "roidjs"
 import { read, addLog, queryDB, queryDB2 } from "../lib/weavedb"
@@ -60,6 +63,7 @@ export default inject(
     }, [])
     const toast = useToast()
     const [querying, setQuerying] = useState(false)
+    const [validQuery, setValidQuery] = useState(false)
     const [panel, setPanel] = useState("logs")
     const [value, setValue] = useState("")
     const isDB = !isNil(contractTxId)
@@ -278,6 +282,7 @@ export default inject(
                   } catch (e) {}
                   setValue(`${e.target.value} `)
                   setMethod(e.target.value)
+                  setValidQuery(true)
                 }}
                 sx={{
                   borderRadius: 0,
@@ -430,7 +435,7 @@ export default inject(
                   </Flex>
                   <Input
                     disabled={querying || !isDB}
-                    color="#6441AF"
+                    color={validQuery ? "#6441AF" : "tomato"}
                     ref={input => {
                       try {
                         ref = input
@@ -441,7 +446,7 @@ export default inject(
                     onKeyDown={async e => {
                       if (e.key === "Enter") {
                         let { err, func, query } = parseQuery(value)
-                        if (err || isNil(func)) {
+                        if (!validQuery || err || isNil(func)) {
                           err = true
                         } else {
                           if (!querying) {
@@ -501,7 +506,12 @@ export default inject(
                         ? value
                         : "To execute queries, connect with a WeaveDB instance."
                     }
-                    onChange={e => setValue(e.target.value)}
+                    onChange={e => {
+                      let { err, func, query } = parseQuery(e.target.value)
+                      setValue(e.target.value)
+                      const _methods = o(flatten, pluck("methods"))(methods)
+                      setValidQuery(includes(func)(_methods))
+                    }}
                     sx={{
                       padding: 0,
                       border: "0px",
