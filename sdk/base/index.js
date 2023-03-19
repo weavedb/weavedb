@@ -431,6 +431,10 @@ class Base {
     } else if (is(String, evm)) {
       addr = evm
     }
+    if (isNil(addr) && !isNil(this.web3)) {
+      const accounts = await ethereum.request({ method: "eth_accounts" })
+      addr = accounts[0]
+    }
     opt.wallet = wallet
     return this._createTempAddress(addr.toLowerCase(), expiry, linkTo, opt)
   }

@@ -28,7 +28,11 @@ export default function EditUser({
         left: 0,
         cursor: "pointer",
       }}
-      onClick={() => setEditUser(false)}
+      onClick={() => {
+        if (!isNil(userMap[`lens:${user.id}`])) {
+          if (!isNil(user)) setEditUser(false)
+        }
+      }}
     >
       <Box
         wrap="wrap"

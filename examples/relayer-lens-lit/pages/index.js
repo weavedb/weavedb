@@ -47,7 +47,11 @@ export default function Home() {
       setUser(_user)
       if (!isNil(_user)) {
         const wuser = await sdk.get("users", `lens:${_user.id}`)
-        setUserMap(assoc(`lens:${_user.id}`, wuser, userMap))
+        if (!isNil(wuser)) {
+          setUserMap(assoc(`lens:${_user.id}`, wuser, userMap))
+        } else {
+          setEditUser(true)
+        }
       }
       const _posts = await sdk.cget("posts", ["date", "desc"], limit)
       setPosts(pluck("data", _posts))
