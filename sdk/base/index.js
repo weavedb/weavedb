@@ -185,7 +185,8 @@ class Base {
       extra,
       relay,
       jobID,
-      multisigs
+      multisigs,
+      address
     if (!isNil(opt)) {
       ;({
         jobID,
@@ -201,8 +202,10 @@ class Base {
         intmax,
         extra,
         multisigs,
+        address,
       } = opt)
     }
+    if (isNil(address)) wallet = address
     if (all(isNil)([wallet, ii, intmax, ar]) && !isNil(this.arweave_wallet)) {
       ar = this.arweave_wallet
     }
