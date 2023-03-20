@@ -178,9 +178,7 @@ class SDK extends Base {
     this.LmdbCache = LmdbCache
     this.createClient = createClient
     this.WarpSubscriptionPlugin = WarpSubscriptionPlugin
-    this.nocache_default = !isNil(nocache)
-      ? nocache
-      : typeof window !== "undefined"
+    this.nocache_default = !isNil(nocache) ? nocache : false
     this.progress = progress
     this.virtual_nonces = {}
     this.cache_prefix = cache_prefix
