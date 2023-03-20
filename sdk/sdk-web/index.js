@@ -543,6 +543,9 @@ class SDK extends Base {
   }
 
   async write(func, param, dryWrite, bundle, relay = false, onDryWrite) {
+    const cache = !isNil(onDryWrite?.cache)
+      ? onDryWrite.cache
+      : !this.nocache_default
     return new Promise(async (_res, rej) => {
       if (relay) {
         _res(param)
@@ -550,10 +553,7 @@ class SDK extends Base {
         let sent = false
         let dryResult = null
         const start = Date.now()
-        if (
-          onDryWrite?.cache !== false ||
-          !isNil(cachedStates[this.contractTxId])
-        ) {
+        if (cache !== false || !isNil(cachedStates[this.contractTxId])) {
           if (
             !includes(func)([
               "set",
@@ -583,7 +583,7 @@ class SDK extends Base {
               "relay",
             ])
           ) {
-            onDryWrite.cache = false
+            cache = false
           } else {
             let cacheState = null
             let err = null
@@ -686,7 +686,7 @@ class SDK extends Base {
                   results: [],
                 }
         }
-        if (is(Function, onDryWrite?.cb) && onDryWrite.cache === false) {
+        if (is(Function, onDryWrite?.cb) && cache === false) {
           if (dryResult.success) {
             dryResult.results = await this.dryRead(
               dryResult.state,

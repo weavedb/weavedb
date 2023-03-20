@@ -205,7 +205,7 @@ class Base {
         address,
       } = opt)
     }
-    if (isNil(address)) wallet = address
+    if (!isNil(address)) wallet = address
     if (all(isNil)([wallet, ii, intmax, ar]) && !isNil(this.arweave_wallet)) {
       ar = this.arweave_wallet
     }
