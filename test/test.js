@@ -69,7 +69,6 @@ describe("WeaveDB", function () {
     const tx = await db.set({ id: 1 }, "col", "doc")
     expect(await db.getHash()).to.eql(tx.originalTxId)
     const tx2 = await db.set({ id: 2 }, "col", "doc2")
-
     const hashes = Arweave.utils.concatBuffers([
       Arweave.utils.stringToBuffer(tx.originalTxId),
       Arweave.utils.stringToBuffer(tx2.originalTxId),
@@ -492,6 +491,7 @@ describe("WeaveDB", function () {
       privateKey: identity.privateKey,
     })
     expect((await db.cget("ppl", "Beth")).setter).to.eql(addr)
+
     await db.removeAddressLink(
       {
         address: identity.address,
