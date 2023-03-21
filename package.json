@@ -29,6 +29,7 @@
     "jsonschema": "^1.4.1",
     "jsrsasign": "^10.5.27",
     "lit-js-sdk": "^1.2.57",
+    "pako": "^2.1.0",
     "ramda": "^0.28.0",
     "readable-stream": "^4.2.0",
     "replace-in-file": "^6.3.5",
@@ -55,7 +56,7 @@
     "node": ">=16.5"
   },
   "scripts": {
-    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet _156pyhqtRr6Zh3KX-Hp4q3-CIrMa2leTqKdu2HpXB8 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w",
+    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet vCLFHaj0Yx_z116i0FFLRV6DIEwLwVTxzMIAWaMmKfk 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w",
     "deploy-kv": "yarn build && node scripts/deployFromSourceTx.js mainnet YOFMeoH0HsNmhtnRUGnNw3hf828EnIl7xuSusF-L3VY 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w",
     "deploy-exm": "yarn build && node scripts/deployEXM.js mainnet",
     "test": "yarn build && mocha",

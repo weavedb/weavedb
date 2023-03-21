@@ -108,6 +108,7 @@ export default inject(
                       contractTxId,
                     })
                   )
+                  console.log(res)
                   if (!res.success) {
                     alert("Something went wrong")
                   } else {
@@ -117,6 +118,7 @@ export default inject(
                     setCollections(res.results[0].result)
                   }
                 } catch (e) {
+                  console.log(e)
                   alert("Something went wrong")
                 }
                 set(null, "loading")

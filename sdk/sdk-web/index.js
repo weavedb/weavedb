@@ -1,4 +1,7 @@
+const { compareVersions } = require("compare-versions")
+
 const {
+  reject,
   invertObj,
   uniq,
   map,
@@ -149,7 +152,6 @@ class SDK extends Base {
     wallet,
     name = "weavedb",
     version = "1",
-    EthWallet,
     web3,
     subscribe = true,
     network,
@@ -171,6 +173,7 @@ class SDK extends Base {
   }) {
     super()
     this.queue = []
+    this.ongoing = false
     this.results = {}
     this.LitJsSdk = require("@lit-protocol/sdk-browser")
     this.kvs = {}
@@ -249,7 +252,6 @@ class SDK extends Base {
         wallet,
         name,
         version,
-        EthWallet,
         subscribe,
       })
     }
@@ -277,7 +279,6 @@ class SDK extends Base {
     wallet,
     name = "weavedb",
     version = "1",
-    EthWallet,
     subscribe,
     onUpdate,
     cache_prefix,
@@ -364,6 +365,7 @@ class SDK extends Base {
       .contract(this.contractTxId)
       .connect(wallet)
       .setEvaluationOptions({
+        remoteStateSyncEnabled: this.network !== "localhost",
         allowBigInt: true,
         useVM2: !isNil(this.useVM2)
           ? this.useVM2
@@ -374,7 +376,6 @@ class SDK extends Base {
       })
     dbs[this.contractTxId] = this
     this.domain = { name, version, verifyingContract: this.contractTxId }
-    if (!isNil(EthWallet)) this.setEthWallet(EthWallet)
     const self = this
     if (this.network !== "localhost") {
       if (this.subscribe) {
@@ -722,18 +723,55 @@ class SDK extends Base {
     })
   }
   async execNext() {
-    const q = this.queue[0]
-    if (!isNil(q)) {
-      const [param, bundle, start, read] = q.query
-      try {
-        const res = await this.send(param, bundle, start, read)
-        if (!isNil(q.id)) this.results[q.id] = res
-        if (!isNil(q.res)) q.res(res)
-      } catch (e) {
-        console.log(e)
+    if (!this.ongoing) {
+      this.ongoing = true
+      if (
+        this.queue.length > 1 &&
+        compareVersions(await this.getVersion(), "0.26.0") >= 0
+      ) {
+        const queue = clone(this.queue)
+        const param = await this.sign("bundle", map(v => v.query[0])(queue), {
+          ar: this.wallet,
+        })
+        const res = await this.send(
+          param,
+          this.network === "mainnet",
+          Date.now(),
+          []
+        )
+        let i = 0
+        for (let v of queue) {
+          this.results[v.id] = {
+            originalTxId: res.originalTxId,
+            bundle: true,
+            function: v.query[0].function,
+            nonce: v.query[0].nonce,
+            signer: v.query[0].caller,
+            duration: res.duration,
+            success: res.success,
+            results: [],
+            error: res.error,
+          }
+          i++
+        }
+        this.queue = reject(v => includes(v.id)(pluck("id")(queue)))(this.queue)
+        this.ongoing = false
+      } else {
+        const q = this.queue[0]
+        if (!isNil(q)) {
+          const [param, bundle, start, read] = q.query
+          try {
+            const res = await this.send(param, bundle, start, read)
+            if (!isNil(q.id)) this.results[q.id] = res
+            if (!isNil(q.res)) q.res(res)
+          } catch (e) {
+            console.log(e)
+          }
+          this.queue.shift()
+        }
+        this.ongoing = false
+        if (this.queue.length !== 0) this.execNext()
       }
-      this.queue.shift()
-      if (this.queue.length !== 0) this.execNext()
     }
   }
   async checkResult(id, self) {

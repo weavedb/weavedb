@@ -67,6 +67,7 @@ class Log {
       _res = res?.tx || res
     } catch (e) {
       err = e
+      console.log(e)
     }
     const date = Date.now()
     err = err?.message || _res?.error || _res?.error?.code || null
@@ -128,14 +129,14 @@ export const getOpt = async ({ val: { contractTxId, read = [] }, get }) => {
   }
   let err = null
   let opt = !isNil(ii)
-    ? { ii, dryWrite: { cache: true, read } }
+    ? { ii, onDryWrite: { cache: true, read } }
     : !isNil(identity) && !isNil(identity.tx)
     ? {
         wallet: /^lens:/.test(current)
           ? current.split(":").slice(0, -1).join(":")
           : current,
         privateKey: identity.privateKey,
-        dryWrite: { cache: true, read },
+        onDryWrite: { cache: true, read },
       }
     : null
   if (isNil(opt)) err = "not logged in"
@@ -352,7 +353,6 @@ export const createTempAddressWithLens = async ({
       null,
       fn
     ).rec())
-    console.log(tx)
   } catch (e) {
     throw e
   }
@@ -1011,7 +1011,7 @@ export const queryDB = async ({
       : await fn(getOpt)({ contractTxId })
     if (!isNil(err)) return alert(err)
     if (!isNil(dryRead)) {
-      opt.dryWrite = { cache: true, read: dryRead }
+      opt.onDryWrite = { cache: true, read: dryRead }
     }
     return ret(await new Log(sdk, method, q, opt, fn, signer).rec(true))
   } catch (e) {
@@ -1030,7 +1030,7 @@ export const queryDB2 = async ({
       : await fn(getOpt)({ contractTxId })
     if (!isNil(err)) return alert(err)
     if (!includes(method)(sdk.reads) && !isNil(dryRead)) {
-      opt.dryWrite = { cache: true, read: dryRead }
+      opt.onDryWrite = { cache: true, read: dryRead }
     }
     return ret(
       await new Log(

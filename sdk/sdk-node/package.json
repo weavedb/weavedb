@@ -1,6 +1,6 @@
 {
   "name": "weavedb-sdk-node",
-  "version": "0.25.12",
+  "version": "0.26.0",
   "description": "A decentralized NoSQL database powered by Arweave.",
   "homepage": "https://weavedb.dev",
   "repository": {
@@ -17,7 +17,7 @@
     "redis": "^4.6.5",
     "warp-contracts-lmdb": "^1.1.9",
     "warp-contracts-pubsub": "^1.0.5",
-    "weavedb-sdk": "^0.25.17"
+    "weavedb-sdk": "^0.26.0"
   },
   "devDependencies": {
     "esbuild": "^0.14.50",

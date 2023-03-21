@@ -1,3 +1,4 @@
+const pako = require("pako")
 const EthCrypto = require("eth-crypto")
 const { providers, Contract, utils } = require("ethers")
 //const buildEddsa = require("circomlibjs").buildEddsa
@@ -84,10 +85,6 @@ class Base {
     return { __op: "arrayRemove", arr: args }
   }
 
-  setEthWallet(wallet) {
-    this.wallet = wallet
-  }
-
   async getVersion(nocache) {
     return await this.read({ function: "version" }, nocache)
   }
@@ -123,6 +120,13 @@ class Base {
       },
       nocache
     )
+  }
+
+  async bundle(queries, opt) {
+    const input = JSON.stringify(queries)
+    const output = pako.deflate(input)
+    const base64 = btoa(String.fromCharCode.apply(null, output))
+    return this._write2("bundle", base64, opt)
   }
 
   async addOwner(address, opt) {

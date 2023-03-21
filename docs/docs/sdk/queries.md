@@ -238,7 +238,7 @@ await db.delete("collection_name", "doc_id")
 
 ### batch
 
-Atomic batch write
+Atomic batch write from a single signer
 
 ```js
 await db.batch([
@@ -256,3 +256,35 @@ await db.batch([
   ["addOwner", "0xABC"]
 ], { ar : admin_arweave_wallet })
 ```
+
+### sign
+
+Sign a query without sending a transaction
+
+```js
+await db.sign("set", {name: "Bob", age: 20}, "collection_name", "doc_id")
+```
+
+### relay
+
+Relay a query
+
+```js
+const param = await db.sign("set", {name: "Bob"}, "collection_name", "doc_id")
+const extra = { age: 20 }
+await db.relay("jobID", param, extra, {evm: relayer_wallet})
+```
+
+### bundle
+
+Bundle multiple queries from multiple signers
+
+```js
+const query1 = await db.sign("set", {name: "Bob"}, "people", "Bob", {evm: wallet1})
+const query2 = await db.sign("set", {name: "Alice"}, "people", "Alice", {ii: wallet2})
+const query3 = await db.sign("set", {name: "Beth"}, "people", "Beth", {ar: wallet3})
+
+await db.bundle([query1, query2, query3], {ar: bundler_wallet})
+```
+
+
