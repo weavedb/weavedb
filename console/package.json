@@ -41,8 +41,8 @@
     "roidjs": "^0.1.6",
     "warp-contracts": "1.2.54",
     "warp-contracts-plugin-deploy": "^1.0.0",
-    "weavedb-client": "^0.25.1",
-    "weavedb-sdk": "^0.25.7",
+    "weavedb-client": "^0.25.6",
+    "weavedb-sdk": "^0.25.18",
     "yargs-parser": "^21.1.1"
   }
 }
