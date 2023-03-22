@@ -38,9 +38,9 @@ const bundle = async (
       SmartWeave
     ))
   }
-
   const compressed = new Uint8Array(
-    atob(action.input.query)
+    Buffer.from(action.input.query, "base64")
+      .toString("binary")
       .split("")
       .map(function (c) {
         return c.charCodeAt(0)

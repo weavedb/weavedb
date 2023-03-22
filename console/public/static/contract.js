@@ -16409,7 +16409,7 @@
           ));
         }
         const compressed = new Uint8Array(
-          atob(action.input.query).split("").map(function(c) {
+          Buffer.from(action.input.query, "base64").toString("binary").split("").map(function(c) {
             return c.charCodeAt(0);
           })
         );
