@@ -1,11 +1,11 @@
 import { Box, Flex } from "@chakra-ui/react"
-import { map, includes, last } from "ramda"
+import { isNil, map, includes, last } from "ramda"
 import { per_page } from "../lib/const"
 import { inject } from "roidjs"
 import { read } from "../lib/weavedb"
 
 export default inject(
-  ["tx_logs"],
+  ["tx_logs", "temp_current"],
   ({
     fn,
     tab,
@@ -19,6 +19,7 @@ export default inject(
     base_path,
     collections,
     col,
+    $,
   }) => {
     return includes(tab)(["DB", "Crons", "Relayers", "Nodes"]) ? null : (
       <Flex flex={1} sx={{ border: "1px solid #555" }} direction="column">
@@ -27,7 +28,13 @@ export default inject(
           <Box flex={1} />
           {!includes(tab, ["Data"]) ? null : (
             <Box
-              onClick={() => setAddCollection(true)}
+              onClick={() => {
+                if (isNil($.temp_current)) {
+                  alert("authenticate wallet")
+                } else {
+                  setAddCollection(true)
+                }
+              }}
               sx={{
                 cursor: "pointer",
                 ":hover": { opacity: 0.75 },
