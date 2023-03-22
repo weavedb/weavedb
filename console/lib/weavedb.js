@@ -1026,7 +1026,6 @@ export const queryDB = async ({
     if (!isNil(dryRead)) {
       opt.onDryWrite = { cache: true, read: dryRead }
     }
-    console.log(q, opt)
     return ret(await new Log(sdk, method, q, opt, fn, signer).rec(true))
   } catch (e) {
     console.log(e)

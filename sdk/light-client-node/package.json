@@ -1,6 +1,6 @@
 {
   "name": "weavedb-node-client",
-  "version": "0.25.5",
+  "version": "0.26.0",
   "main": "index.js",
   "license": "MIT",
   "engines": {
@@ -11,6 +11,6 @@
     "@grpc/proto-loader": "^0.5.0",
     "arweave": "^1.12.2",
     "ramda": "^0.28.0",
-    "weavedb-base": "^0.25.8"
+    "weavedb-base": "^0.26.1"
   }
 }
