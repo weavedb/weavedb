@@ -11246,22 +11246,10 @@ wcwidth@^1.0.1:
   dependencies:
     defaults "^1.0.3"
 
-weavedb-base@^0.25.8:
-  version "0.25.8"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.25.8.tgz#31af96b76d05566114841d051bbedd6c1a7edbed"
-  integrity sha512-W6x2nSOGyvixDFPXCB7DhYryz00dAWgVqliZsdOIepG1eFX637BIekgVxi1qsgdkbjAEj0mNMdcgYi7ws7ZGmw==
-  dependencies:
-    "@metamask/eth-sig-util" "^4.0.1"
-    "@metamask/legacy-web3" "^2.0.0"
-    eth-crypto "^2.3.0"
-    ethereumjs-util "^7.1.5"
-    ethers "5.7.2"
-    ramda "^0.28.0"
-
-weavedb-base@^0.26.0:
-  version "0.26.0"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.26.0.tgz#d38eb7632628d7744799d0d5e8fa094840fce17c"
-  integrity sha512-kzxH+v5VioRL4ksUhqbs3KIQ71Xm0do12TOma2K1qaz1gzgtD2Uzux9u4McFuTl++YsnwUU+v6ZxKVvG1LOL9w==
+weavedb-base@^0.26.1:
+  version "0.26.1"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.26.1.tgz#904d48250623afaebc3f58eb1456c6ef1f4a61b9"
+  integrity sha512-+FTKKo4pN8ccGqG6cWKWFtwc59T8F/o7bDaZDS4+FcWQKUyraf4fy09HC8ihQzcY7NyRl6yQ/NuhKWnubXWupw==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"
@@ -11271,10 +11259,10 @@ weavedb-base@^0.26.0:
     pako "^2.1.0"
     ramda "^0.28.0"
 
-weavedb-client@^0.25.6:
-  version "0.25.6"
-  resolved "https://registry.yarnpkg.com/weavedb-client/-/weavedb-client-0.25.6.tgz#081383655ada6a8e9f8a2fada67f8cc71fcebf46"
-  integrity sha512-tHrtqj5AlO7QDwrq3WysP6G8fQWo3ehGPWrpEaWnC2DfaepOQ5pnKJCgP4yhV8pu23wNP7D8XdNrvUNUZH0y/A==
+weavedb-client@^0.26.0:
+  version "0.26.0"
+  resolved "https://registry.yarnpkg.com/weavedb-client/-/weavedb-client-0.26.0.tgz#f051d460c6c7abc4439b333b58c4078540769b45"
+  integrity sha512-qRStYUMnubtqiRo0iQl18bA7D6q0RGlZJEfTVnRISstSbhFVKM+YcMOIEeBQ0shYbkzwpRqLeXcMCwQoI+jh4g==
   dependencies:
     "@lit-protocol/sdk-browser" "^1.3.3"
     "@metamask/legacy-web3" "^2.0.0"
@@ -11282,7 +11270,7 @@ weavedb-client@^0.25.6:
     google-protobuf "^3.21.0"
     grpc-web "^1.3.1"
     ramda "^0.28.0"
-    weavedb-base "^0.25.8"
+    weavedb-base "^0.26.1"
 
 weavedb-contracts@^0.26.0:
   version "0.26.0"
@@ -11294,10 +11282,10 @@ weavedb-contracts@^0.26.0:
     md5 "^2.3.0"
     ramda "^0.28.0"
 
-weavedb-sdk@^0.26.2:
-  version "0.26.2"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.26.2.tgz#c1240b6441e0e2f7dc0aa6879af20043cf35489d"
-  integrity sha512-bYXtLnkDW771oYfFz6no9ScwqWlGDYsgw+J7jCT8iaZQbp2MCB7dPFPOoaoP8Ah+2Puds+7i5CiUaL9d+XniSQ==
+weavedb-sdk@^0.26.3:
+  version "0.26.3"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.26.3.tgz#1d670d7b7a1ab968378ffe8c9bb564977c33083d"
+  integrity sha512-dTB9wBPqVWGfFf3AsFg/4P6H1ov2TfNlKGxZZTtqa2Vu8liCip5xftXyeIUrrfuPRwIo0fmkWm1aYDs5+WH7ng==
   dependencies:
     "@lit-protocol/sdk-browser" "^1.3.3"
     "@metamask/legacy-web3" "^2.0.0"
@@ -11309,7 +11297,7 @@ weavedb-sdk@^0.26.2:
     ramda "^0.28.0"
     warp-contracts "^1.2.57"
     warp-contracts-old "npm:warp-contracts@1.2.26"
-    weavedb-base "^0.26.0"
+    weavedb-base "^0.26.1"
     weavedb-contracts "^0.26.0"
 
 web-namespaces@^2.0.0:
