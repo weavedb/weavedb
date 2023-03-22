@@ -6,6 +6,7 @@ import { read, removeRelayerJob } from "../lib/weavedb"
 export default inject(
   ["loading", "tx_logs", "temp_current"],
   ({
+    isOwner,
     contractTxId,
     setRelayers,
     setAddRelayer,
@@ -23,7 +24,10 @@ export default inject(
           Relayer Jobs
           <Box flex={1} />
           <Box
-            onClick={() => setAddRelayer(true)}
+            onClick={() => {
+              if (!isOwner) return alert("connect the owner wallet to DB")
+              setAddRelayer(true)
+            }}
             sx={{
               cursor: "pointer",
               ":hover": { opacity: 0.75 },
@@ -75,6 +79,7 @@ export default inject(
                   }}
                   onClick={async e => {
                     e.stopPropagation()
+                    if (!isOwner) return alert("connect the owner wallet to DB")
                     if (!confirm("Would you like to remove the relayer job?")) {
                       return
                     }

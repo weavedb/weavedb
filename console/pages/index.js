@@ -463,6 +463,7 @@ export default inject(
       Schemas: { col, schema, setAddSchema, setNewSchema, isOwner },
       Rules: { rules, setAddRules, col, setNewRules, isOwner },
       Crons: {
+        isOwner,
         cron,
         setAddCron,
         crons,
@@ -474,6 +475,7 @@ export default inject(
         setState,
       },
       Relayers: {
+        isOwner,
         contractTxId,
         setRelayers,
         setAddRelayer,

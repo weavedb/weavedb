@@ -12,16 +12,13 @@ export default inject(
         {isNil(col) ? null : (
           <Box
             onClick={() => {
-              if (!isOwner) {
-                alert("connect the owner wallet to DB")
-              } else {
-                setNewSchema(
-                  JSON.stringify(
-                    schema || { type: "object", required: [], properties: {} }
-                  )
+              if (!isOwner) return alert("connect the owner wallet to DB")
+              setNewSchema(
+                JSON.stringify(
+                  schema || { type: "object", required: [], properties: {} }
                 )
-                setAddSchema(true)
-              }
+              )
+              setAddSchema(true)
             }}
             sx={{
               cursor: "pointer",
