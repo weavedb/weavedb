@@ -64,14 +64,6 @@ describe("WeaveDB", function () {
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Alice", age: 30 }
     const data3 = { name: "Beth", age: 40 }
-    /*
-    const params = await db.sign("set", data, "ppl", "Bob", {
-      ar: arweave_wallet2,
-    })
-    const params2 = await db.sign("upsert", data2, "ppl", "Alice", {
-      ar: arweave_wallet3,
-      })*/
-
     const tx = await db.set(data, "ppl", "Bob")
     const tx2 = await db.set(data2, "ppl", "Alice")
     const tx3 = await db.set(data3, "ppl", "Beth")

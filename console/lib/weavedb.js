@@ -69,9 +69,22 @@ class Log {
       err = e
       console.log(e)
     }
-    const date = Date.now()
     err = err?.message || _res?.error || _res?.error?.code || null
-
+    if (!isNil(err) && typeof err === "string" && /wrong nonce/.test(err)) {
+      this.opt ||= {}
+      delete this.opt.nonce
+      try {
+        res = array
+          ? await this.sdk[this.method](...this.query, this.opt)
+          : await this.sdk[this.method](this.query, this.opt)
+        _res = res?.tx || res
+      } catch (e) {
+        err = e
+        console.log(e)
+      }
+      err = err?.message || _res?.error || _res?.error?.code || null
+    }
+    const date = Date.now()
     let log = {
       id: this.id,
       err,
@@ -1013,6 +1026,7 @@ export const queryDB = async ({
     if (!isNil(dryRead)) {
       opt.onDryWrite = { cache: true, read: dryRead }
     }
+    console.log(q, opt)
     return ret(await new Log(sdk, method, q, opt, fn, signer).rec(true))
   } catch (e) {
     console.log(e)

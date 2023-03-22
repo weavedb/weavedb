@@ -56,7 +56,7 @@
     "node": ">=16.5"
   },
   "scripts": {
-    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet vCLFHaj0Yx_z116i0FFLRV6DIEwLwVTxzMIAWaMmKfk 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w",
+    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet zdP_QTSZ2zO9Nxa1sPAKhyR4geua1_a621_fZm2XPKU 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w",
     "deploy-kv": "yarn build && node scripts/deployFromSourceTx.js mainnet YOFMeoH0HsNmhtnRUGnNw3hf828EnIl7xuSusF-L3VY 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w",
     "deploy-exm": "yarn build && node scripts/deployEXM.js mainnet",
     "test": "yarn build && mocha",
