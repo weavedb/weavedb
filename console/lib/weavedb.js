@@ -117,7 +117,9 @@ class Log {
             })
           }
         })
-        .catch(e => {})
+        .catch(e => {
+          console.log(e)
+        })
     }
     if (!isNil(err))
       throw new Error(
@@ -915,17 +917,18 @@ export const _whitelist = async ({
     return `Error: Something went wrong`
   }
 }
-
+let tx_logs = []
 export const addLog = async ({ set, get, val: { log } }) => {
-  let logs = get("tx_logs") || []
-  set(prepend(log, logs), "tx_logs")
+  tx_logs = prepend(log, tx_logs)
+  set(tx_logs, "tx_logs")
 }
 
 export const updateLog = async ({ set, get, val: { virtual_txid, txid } }) => {
-  let logs = clone(get("tx_logs") || [])
+  let logs = clone(tx_logs)
   for (let v of logs) {
     if (v.virtual_txid === virtual_txid) v.txid = txid
   }
+  tx_logs = logs
   set(logs, "tx_logs")
 }
 
