@@ -83,7 +83,6 @@ let submap = {}
 let Arweave = require("arweave")
 Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
 const Base = require("weavedb-base")
-
 const { handle } = require("weavedb-contracts/weavedb/contract")
 const { handle: handle_kv } = require("weavedb-contracts/weavedb-kv/contract")
 
@@ -256,12 +255,29 @@ class SDK extends Base {
       })
     }
   }
-  async readState() {
-    const _state = await this.db.readState()
-    this.state = _state.cachedValue.state
-    states[this.contractTxId] = this.state
-    return _state
+  async readState(attempt = 1) {
+    return new Promise(async res => {
+      setTimeout(async () => {
+        let _state = null
+        try {
+          _state = await this.db.readState()
+        } catch (e) {}
+        if (!isNil(_state) && this.sortKey !== _state.sortKey) {
+          this.state = _state.cachedValue.state
+          this.sortKey = _state.sortKey
+          states[this.contractTxId] = this.state
+          res(_state)
+        } else {
+          if (attempt > 5) {
+            res(_state)
+          } else {
+            res(await this.readState((attempt += 1)))
+          }
+        }
+      }, 1000)
+    })
   }
+
   async addFunds(wallet) {
     const walletAddress = await this.arweave.wallets.getAddress(wallet)
     await this.arweave.api.get(`/mint/${walletAddress}/1000000000000000`)
@@ -445,13 +461,7 @@ class SDK extends Base {
         }
         this.warp.use(new EvaluationProgressPlugin())
       }
-      this.db
-        .readState()
-        .then(data => {
-          states[this.contractTxId] = data.cachedValue.state
-          this.state = data.cachedValue.state
-        })
-        .catch(() => {})
+      this.readState()
     } else {
       if (this.subscribe) {
         /*

@@ -1177,7 +1177,7 @@ describe("WeaveDB", function () {
     expect(await db.get("ppl", "Bob")).to.eql(data)
   })
 
-  it.only("should bundle mulitple transactions", async () => {
+  it("should bundle mulitple transactions", async () => {
     const arweave_wallet2 = await db.arweave.wallets.generate()
     const arweave_wallet3 = await db.arweave.wallets.generate()
     const data = { name: "Bob", age: 20 }

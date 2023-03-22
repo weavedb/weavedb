@@ -672,7 +672,9 @@ class Base {
     const enc = new TextEncoder()
     const encoded = enc.encode(JSON.stringify(data))
     const signature = isNil(wallet)
-      ? (await this.arweave.wallets.crypto.sign(ar, encoded)).toString("hex")
+      ? Array.from(await this.arweave.wallets.crypto.sign(ar, encoded))
+          .map(byte => byte.toString(16).padStart(2, "0"))
+          .join("")
       : Buffer.from(
           await wallet.signature(encoded, {
             name: "RSA-PSS",
