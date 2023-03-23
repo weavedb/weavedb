@@ -94,6 +94,7 @@ class Node {
 
   parseQuery(call, callback) {
     const res = (err, result = null) => {
+      console.log(result)
       callback(null, {
         result: isNil(result) ? null : JSON.stringify(result),
         err,
@@ -427,7 +428,7 @@ class Node {
           }
           if (func === "get") result = pluck("data", result)
         } else {
-          if (func === "get") result = result.data
+          if (func === "get") result = isNil(result) ? null : result.data
           this.cache.set(key.key, result)
         }
       } else if (includes(func)(this.sdks[txid].reads)) {
@@ -474,9 +475,6 @@ class Node {
           ? e.message
           : "unknown error"
     }
-    console.log("..............................")
-    console.log(result)
-    console.log(err)
     return { result, err, dryWrite }
   }
 

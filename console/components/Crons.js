@@ -7,6 +7,7 @@ import { read, queryDB } from "../lib/weavedb"
 export default inject(
   ["temp_current", "tx_logs"],
   ({
+    isOwner,
     setCrons,
     setAddCron,
     cron,
@@ -24,7 +25,10 @@ export default inject(
           Crons
           <Box flex={1} />
           <Box
-            onClick={() => setAddCron(true)}
+            onClick={() => {
+              if (!isOwner) return alert("connect the owner wallet to DB")
+              setAddCron(true)
+            }}
             sx={{
               cursor: "pointer",
               ":hover": { opacity: 0.75 },

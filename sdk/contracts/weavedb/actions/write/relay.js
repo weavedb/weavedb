@@ -11,7 +11,7 @@ const {
   head,
   nth,
 } = require("ramda")
-const { err, read, validateSchema } = require("../../lib/utils")
+const { wrapResult, err, read, validateSchema } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 
 const { add } = require("./add")
@@ -19,6 +19,7 @@ const { set } = require("./set")
 const { update } = require("./update")
 const { upsert } = require("./upsert")
 const { remove } = require("./remove")
+const { addAddressLink } = require("./addAddressLink")
 const { batch } = require("./batch")
 
 const relay = async (state, action, signer, contractErr = true, SmartWeave) => {
@@ -28,13 +29,11 @@ const relay = async (state, action, signer, contractErr = true, SmartWeave) => {
       state,
       action,
       "relay",
-      SmartWeave
+      SmartWeave,
+      false
     ))
   }
-
-  let jobID = head(action.input.query)
-  let input = nth(1, action.input.query)
-  let query = nth(2, action.input.query)
+  let [jobID, input, query] = action.input.query
   if (input.jobID !== jobID) err("the wrong jobID")
   let action2 = { input, relayer: signer, extra: query, jobID }
   const relayers = state.relayers || {}
@@ -107,20 +106,22 @@ const relay = async (state, action, signer, contractErr = true, SmartWeave) => {
       return await remove(state, action2, null, null, SmartWeave)
     case "batch":
       return await batch(state, action2, null, null, SmartWeave)
+    case "addAddressLink":
+      return await addAddressLink(
+        state,
+        action2,
+        null,
+        null,
+        SmartWeave,
+        action2.extra.linkTo
+      )
+
     default:
       err(
         `No function supplied or function not recognised: "${action2.input.function}"`
       )
   }
-
-  return {
-    state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { relay }

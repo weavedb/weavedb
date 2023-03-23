@@ -26,7 +26,7 @@ let arlocal,
 
 let isInit = false
 let stopto = null
-async function init(sdk_type = "web", db_type = 1, useVM2) {
+async function init(sdk_type = "web", db_type = 1, useVM2, nocache = true) {
   if (isInit === false) {
     isInit = true
     arlocal = new ArLocal(1820, false)
@@ -37,7 +37,7 @@ async function init(sdk_type = "web", db_type = 1, useVM2) {
   const _SDK = sdk_type === "node" ? SDKNODE : SDK
   sdk = new _SDK({
     network: "localhost",
-    nocache: true,
+    nocache,
     type: db_type,
     useVM2,
   })

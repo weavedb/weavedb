@@ -15,6 +15,37 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.26.0 (Mar 21, 2023)
+
+#### Source Transaction Id
+
+[zdP_QTSZ2zO9Nxa1sPAKhyR4geua1_a621_fZm2XPKU](https://sonar.warp.cc/#/app/source/zdP_QTSZ2zO9Nxa1sPAKhyR4geua1_a621_fZm2XPKU)
+
+#### Added Features
+
+-  [bundle query](/docs/sdk/queries#bundle)
+
+### v0.25.0 (Mar 10, 2023)
+
+#### Source Transaction Id
+
+[_156pyhqtRr6Zh3KX-Hp4q3-CIrMa2leTqKdu2HpXB8](https://sonar.warp.cc/#/app/source/_156pyhqtRr6Zh3KX-Hp4q3-CIrMa2leTqKdu2HpXB8)
+
+#### Added Features
+
+-  built-in Lens Profile authentication
+
+### v0.24.0 (Mar 09, 2023)
+
+#### Source Transaction Id
+
+[fuSpwZIxJtIq3eTdbRgBSwsFYd5f6oMwKB91RR3hXOo](https://sonar.warp.cc/#/app/source/fuSpwZIxJtIq3eTdbRgBSwsFYd5f6oMwKB91RR3hXOo)
+
+#### Added Features
+
+- relay `addAddressLink` with `linkTo`
+
+
 ### v0.23.0 (Mar 03, 2023)
 
 #### Source Transaction Id

@@ -1,5 +1,5 @@
 const { includes, isNil, clone } = require("ramda")
-const { err, parse, mergeData } = require("../../lib/utils")
+const { wrapResult, err, parse, mergeData } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { set } = require("./set")
 const { add } = require("./add")
@@ -154,14 +154,7 @@ const batch = async (state, action, signer, contractErr = true, SmartWeave) => {
     _state = res.state
     i++
   }
-  return {
-    state: _state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { batch }

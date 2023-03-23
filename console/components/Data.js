@@ -43,6 +43,7 @@ export default inject(
     doc_path,
     doc,
     fn,
+    $,
   }) => (
     <>
       <Flex
@@ -55,7 +56,13 @@ export default inject(
           <Box flex={1} />
           {isNil(col) ? null : (
             <Box
-              onClick={() => setAddDoc(true)}
+              onClick={() => {
+                if (isNil($.temp_current)) {
+                  alert("authenticate wallet")
+                } else {
+                  setAddDoc(true)
+                }
+              }}
               sx={{
                 cursor: "pointer",
                 ":hover": { opacity: 0.75 },
@@ -117,9 +124,11 @@ export default inject(
                   }}
                   onClick={async e => {
                     e.stopPropagation()
+                    if (isNil($.temp_current)) {
+                      return alert("authenticate wallet")
+                    }
                     if (isNil(indexBy(prop("id"), documents)[v])) {
-                      alert("Doc doesn't exist")
-                      return
+                      return alert("Doc doesn't exist")
                     }
                     let col_path = compose(
                       join(", "),
@@ -205,7 +214,12 @@ export default inject(
           <Box flex={1} />
           {isNil(docdata) ? null : (
             <Box
-              onClick={() => setAddData(true)}
+              onClick={() => {
+                if (isNil($.temp_current)) {
+                  return alert("authenticate wallet")
+                }
+                setAddData(true)
+              }}
               sx={{
                 cursor: "pointer",
                 ":hover": { opacity: 0.75 },
@@ -296,6 +310,9 @@ export default inject(
                       }}
                       onClick={async e => {
                         e.stopPropagation()
+                        if (isNil($.temp_current)) {
+                          return alert("authenticate wallet")
+                        }
                         if (isNil(docdata.data[k])) {
                           alert("Field doesn't exist")
                           return

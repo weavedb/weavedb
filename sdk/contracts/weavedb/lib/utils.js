@@ -2,6 +2,7 @@ let fpjson = require("fpjson-lang")
 fpjson = fpjson.default || fpjson
 const jsonLogic = require("json-logic-js")
 const {
+  mergeLeft,
   of,
   concat,
   without,
@@ -433,7 +434,28 @@ const isOwner = (signer, state) => {
   return owner
 }
 
+const wrapResult = (state, original_signer, SmartWeave, extra = {}) => ({
+  state,
+  result: mergeLeft(extra, {
+    original_signer,
+    transaction: {
+      id: SmartWeave?.transaction?.id || null,
+      owner: SmartWeave?.transaction?.owner || null,
+      tags: SmartWeave?.transaction?.tags || null,
+      quantity: SmartWeave?.transaction?.quantity || null,
+      target: SmartWeave?.transaction?.target || null,
+      reward: SmartWeave?.transaction?.reward || null,
+    },
+    block: {
+      height: SmartWeave?.block?.height || null,
+      timestamp: SmartWeave?.block?.timestamp || null,
+      indep_hash: SmartWeave?.block?.indep_hash || null,
+    },
+  }),
+})
+
 module.exports = {
+  wrapResult,
   isOwner,
   clone,
   err,

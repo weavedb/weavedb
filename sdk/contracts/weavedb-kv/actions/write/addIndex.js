@@ -29,7 +29,6 @@ const addIndex = async (
     contractErr,
     SmartWeave
   )
-  let ind = getIndex(state, path)
   if (o(includes("__id__"), flatten)(new_data)) {
     err("index cannot contain __id__")
   }
@@ -37,8 +36,7 @@ const addIndex = async (
     const doc_key = `data.${path.join("/")}/${id}`
     return (await SmartWeave.kv.get(doc_key)) || { __data: null, subs: {} }
   }
-  const docs = ind?.__id__?.asc?._ || []
-  await _addIndex(new_data, ind, docs, db)
+  await _addIndex(new_data, path, db, SmartWeave)
   return {
     state,
     result: {

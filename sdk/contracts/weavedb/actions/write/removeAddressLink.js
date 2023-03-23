@@ -1,6 +1,6 @@
 const { is, isNil } = require("ramda")
 const { validate } = require("../../lib/validate")
-const { err } = require("../../lib/utils")
+const { err, wrapResult } = require("../../lib/utils")
 
 const removeAddressLink = async (
   state,
@@ -26,14 +26,7 @@ const removeAddressLink = async (
     err("signer is neither owner nor delegator")
   }
   delete state.auth.links[address.toLowerCase()]
-  return {
-    state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { removeAddressLink }

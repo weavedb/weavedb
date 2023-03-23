@@ -1,5 +1,5 @@
 const { isNil, init, last } = require("ramda")
-const { parse, clone, validateSchema } = require("../../lib/utils")
+const { wrapResult, parse, clone, validateSchema } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { updateData, addData, getIndex } = require("../../lib/index")
 
@@ -30,13 +30,6 @@ const upsert = async (
     updateData(last(path), next_data, prev, ind, col.__docs)
   }
   _data.__data = next_data
-  return {
-    state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 module.exports = { upsert }
