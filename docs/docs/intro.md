@@ -20,6 +20,10 @@ Database access is permissionless and authentication is done with pure cryptogra
 
 Other types of crypto accounts will be supported in the future such as Arweave and Polkadot.
 
+## Quick Start
+
+You can follow this [quick start guide](/docs/quick-start) to dive into WeaveDB.
+
 ## Demo Dapps
 
 The the latest contract can be found [here](/docs/sdk/version).
