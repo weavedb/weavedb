@@ -50,6 +50,7 @@ let db
 export default inject(
   ["temp_current_all", "temp_current", "loading_contract", "tx_logs"],
   ({ set, init, router, conf, fn, $ }) => {
+    const [deployMode, setDeployMode] = useState("Connect")
     const [loadMore, setLoadMore] = useState(null)
     const [whitelist, setWhitelist] = useState([])
     const [editGRPC, setEditGRPC] = useState(null)
@@ -350,6 +351,7 @@ export default inject(
     useEffect(() => {
       ;(async () => {
         if (!isNil(node) && !isNil($.temp_current_all)) {
+          if (/^lens:/.test($.temp_current_all.addr)) return
           let isNodeOwner = false
           if (!isNil($.temp_current_all) && !isNil(node)) {
             const addr = /^0x.+$/.test($.temp_current_all.addr)
@@ -461,6 +463,7 @@ export default inject(
       Schemas: { col, schema, setAddSchema, setNewSchema, isOwner },
       Rules: { rules, setAddRules, col, setNewRules, isOwner },
       Crons: {
+        isOwner,
         cron,
         setAddCron,
         crons,
@@ -472,6 +475,7 @@ export default inject(
         setState,
       },
       Relayers: {
+        isOwner,
         contractTxId,
         setRelayers,
         setAddRelayer,
@@ -503,6 +507,8 @@ export default inject(
         setAddContract,
       },
       DB: {
+        deployMode,
+        setDeployMode,
         editGRPC,
         setEditGRPC,
         setPresetRPC,
@@ -553,6 +559,8 @@ export default inject(
         doc,
       },
       Modals: {
+        deployMode,
+        setDeployMode,
         newIndex,
         setNewIndex,
         newRules,
@@ -739,7 +747,7 @@ export default inject(
                 <Modals {...props.Modals} />
               </Box>
             </Flex>
-            <Flex height="200px">
+            <Flex height="250px">
               <Console {...props.Console} />
             </Flex>
           </Flex>

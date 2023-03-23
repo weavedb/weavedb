@@ -32,6 +32,8 @@ export default inject(
     "temp_current_all",
   ],
   ({
+    deployMode,
+    setDeployMode,
     newIndex,
     setNewIndex,
     newRules,
@@ -276,6 +278,8 @@ export default inject(
       ) : addInstance !== false ? (
         <AddInstance
           {...{
+            deployMode,
+            setDeployMode,
             newNetwork,
             setNewNetwork,
             newRPC2,
@@ -344,7 +348,7 @@ export default inject(
         <ConnectLocal {...{ newPort, setNewPort, setConnect, setPort }} />
       ) : null}
       {$.signing_in_modal || $.owner_signing_in_modal ? (
-        <Connect {...{ newNetwork, contractTxId, network, tab }} />
+        <Connect {...{ newNetwork, contractTxId, network, tab, state }} />
       ) : null}
     </>
   )

@@ -12,6 +12,7 @@ const {
   includes,
   last,
   intersection,
+  append,
 } = require("ramda")
 const { isValidName } = require("./pure")
 const clone = state => JSON.parse(JSON.stringify(state))
@@ -25,33 +26,27 @@ const err = (msg = `The wrong query`, contractErr = false) => {
   }
 }
 
-const getCol = async (data, path, _signer, SmartWeave, current_path = []) => {
-  if (isNil(data)) {
-    const _data = await SmartWeave.kv.get(`data.${current_path.join("/")}`)
-    if (isNil(_data)) {
-      data = {}
-    } else {
-      data = _data
-    }
-  }
+const getCol = async (path, _signer, SmartWeave, current_path = []) => {
   const [col, id] = path
   if (!isValidName(col)) err(`collection id is not valid: ${col}`)
-  if (isNil(data[col])) {
-    data[col] = { __docs: {} }
-    await SmartWeave.kv.put(`data.${current_path.join("/")}`, data)
+  let key = `data.${append(col)(current_path).join("/")}`
+  let _data = await SmartWeave.kv.get(key)
+  if (isNil(_data)) {
+    _data = { __docs: {} }
+    await SmartWeave.kv.put(key, _data)
   }
-  current_path.push(col)
-  current_path.push(id)
   if (isNil(id)) {
-    return data[col]
+    return _data
   } else {
     if (!isValidName(id)) err(`doc id is not valid: ${id}`)
-    data[col].__docs[id] ||= { __data: null, subs: {} }
+    current_path.push(col)
+    current_path.push(id)
+    /*
+    data.__docs[id] ||= { __data: null, subs: {} }
     if (!isNil(_signer) && isNil(data[col].__docs[id].setter)) {
-      data[col].__docs[id].setter = _signer
-    }
+      data.__docs[id].setter = _signer
+    }*/
     return await getCol(
-      data[col].__docs[id].subs,
       slice(2, path.length, path),
       _signer,
       SmartWeave,
@@ -426,7 +421,7 @@ const parse = async (
       "getRules",
     ])
   ) {
-    _data = await getCol(null, path, signer, SmartWeave)
+    _data = await getCol(path, signer, SmartWeave)
     col = _data
   } else if (
     !includes(func)([

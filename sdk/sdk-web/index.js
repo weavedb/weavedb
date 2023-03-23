@@ -1,4 +1,7 @@
+const { compareVersions } = require("compare-versions")
+
 const {
+  reject,
   invertObj,
   uniq,
   map,
@@ -80,10 +83,9 @@ let submap = {}
 let Arweave = require("arweave")
 Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
 const Base = require("weavedb-base")
-
 const { handle } = require("weavedb-contracts/weavedb/contract")
-//const { handle: handle_kv } = require("weavedb-contracts/weavedb-kv/contract")
-const { handle: handle_kv } = require("../contracts/weavedb-kv/contract")
+const { handle: handle_kv } = require("weavedb-contracts/weavedb-kv/contract")
+
 const _on = async (state, input, handle) => {
   const block = input.interaction.block
   if (!isNil(state)) {
@@ -149,7 +151,6 @@ class SDK extends Base {
     wallet,
     name = "weavedb",
     version = "1",
-    EthWallet,
     web3,
     subscribe = true,
     network,
@@ -170,6 +171,10 @@ class SDK extends Base {
     type = 1,
   }) {
     super()
+    this.queue = []
+    this.ongoing = false
+    this.results = {}
+    this.LitJsSdk = require("@lit-protocol/sdk-browser")
     this.kvs = {}
     this.type = type
     this.handle = this.type === 1 ? handle : handle_kv
@@ -177,9 +182,7 @@ class SDK extends Base {
     this.LmdbCache = LmdbCache
     this.createClient = createClient
     this.WarpSubscriptionPlugin = WarpSubscriptionPlugin
-    this.nocache_default = !isNil(nocache)
-      ? nocache
-      : typeof window !== "undefined"
+    this.nocache_default = !isNil(nocache) ? nocache : false
     this.progress = progress
     this.virtual_nonces = {}
     this.cache_prefix = cache_prefix
@@ -248,15 +251,33 @@ class SDK extends Base {
         wallet,
         name,
         version,
-        EthWallet,
         subscribe,
       })
     }
   }
-  async readState() {
-    this.state = (await this.db.readState()).cachedValue.state
-    states[this.contractTxId] = this.state
+  async readState(attempt = 1) {
+    return new Promise(async res => {
+      setTimeout(async () => {
+        let _state = null
+        try {
+          _state = await this.db.readState()
+        } catch (e) {}
+        if (!isNil(_state) && this.sortKey !== _state.sortKey) {
+          this.state = _state.cachedValue.state
+          this.sortKey = _state.sortKey
+          states[this.contractTxId] = this.state
+          res(_state)
+        } else {
+          if (attempt > 5) {
+            res(_state)
+          } else {
+            res(await this.readState((attempt += 1)))
+          }
+        }
+      }, 1000)
+    })
   }
+
   async addFunds(wallet) {
     const walletAddress = await this.arweave.wallets.getAddress(wallet)
     await this.arweave.api.get(`/mint/${walletAddress}/1000000000000000`)
@@ -274,7 +295,6 @@ class SDK extends Base {
     wallet,
     name = "weavedb",
     version = "1",
-    EthWallet,
     subscribe,
     onUpdate,
     cache_prefix,
@@ -290,6 +310,15 @@ class SDK extends Base {
       throw new Error(". and | are not allowed in prefix")
     }
     if (typeof window === "undefined") {
+      if (this.cache !== "leveldb") {
+        this.warp.useKVStorageFactory(
+          contractTxId =>
+            new this.LmdbCache({
+              ...defaultCacheOptions,
+              dbLocation: `./cache/warp/kv/lmdb/${contractTxId}`,
+            })
+        )
+      }
       if (this.cache === "lmdb") {
         this.warp
           .useStateCache(
@@ -352,6 +381,7 @@ class SDK extends Base {
       .contract(this.contractTxId)
       .connect(wallet)
       .setEvaluationOptions({
+        remoteStateSyncEnabled: this.network !== "localhost",
         allowBigInt: true,
         useVM2: !isNil(this.useVM2)
           ? this.useVM2
@@ -362,7 +392,6 @@ class SDK extends Base {
       })
     dbs[this.contractTxId] = this
     this.domain = { name, version, verifyingContract: this.contractTxId }
-    if (!isNil(EthWallet)) this.setEthWallet(EthWallet)
     const self = this
     if (this.network !== "localhost") {
       if (this.subscribe) {
@@ -432,10 +461,7 @@ class SDK extends Base {
         }
         this.warp.use(new EvaluationProgressPlugin())
       }
-      this.db
-        .readState()
-        .then(data => (states[this.contractTxId] = data.cachedValue.state))
-        .catch(() => {})
+      this.readState()
     } else {
       if (this.subscribe) {
         /*
@@ -528,151 +554,244 @@ class SDK extends Base {
   }
 
   async write(func, param, dryWrite, bundle, relay = false, onDryWrite) {
-    if (relay) {
-      return param
-    } else {
-      let dryResult = null
-      const start = Date.now()
-      if (onDryWrite?.cache || !isNil(cachedStates[this.contractTxId])) {
-        if (
-          !includes(func)([
-            "set",
-            "upsert",
-            "update",
-            "delete",
-            "addOwner",
-            "removeOwner",
-            "setAlgorithms",
-            "setCanEvolve",
-            "setSecure",
-            "addIndex",
-            "setSchema",
-            "removeIndex",
-            "setRules",
-            "removeCron",
-            "addRelayerJob",
-            "removeRelayerJob",
-            "linkContract",
-            "unlinkContract",
-            "removeAddressLink",
-            "addCron",
-            "addAddressLink",
-            "evolve",
-            "add",
-            "batch",
-          ])
-        ) {
-          onDryWrite.cache = false
-        } else {
-          let cacheState = null
-          let err = null
-          let success = true
-          try {
-            cacheState = await this.handle(
-              clone(
-                cachedStates[this.contractTxId] || states[this.contractTxId]
-              ),
-              {
-                input: param,
-              },
-              this.getSW()
-            )
-          } catch (e) {
-            err = e
-            success = false
-            console.log(e)
-          }
-          let cacheResult = {
-            nonce: param.nonce,
-            signer: param.caller,
-            cache: true,
-            success,
-            duration: Date.now() - start,
-            error:
-              typeof err === "string"
-                ? err
-                : typeof err?.message === "string"
-                ? err.message
-                : !isNil(err)
-                ? "unknown error"
-                : null,
-            function: param.function,
-            state: cacheState?.state || null,
-            result: cacheState?.result || null,
-            results: [],
-          }
-          if (success) {
-            this.virtual_nonces[cacheState.result.original_signer] = param.nonce
-            clearTimeout(timeouts[this.contractTxId])
-            cachedStates[this.contractTxId] = cacheResult.state
-            timeouts[this.contractTxId] = setTimeout(() => {
-              delete cachedStates[this.contractTxId]
-              delete this.virtual_nonces[cacheState.result.original_signer]
-            }, 5000)
-            if (!isNil(onDryWrite?.read)) {
-              cacheResult.results = await this.dryRead(
-                cacheResult.state,
-                onDryWrite.read
+    const cache = !isNil(onDryWrite?.cache)
+      ? onDryWrite.cache
+      : !this.nocache_default
+    return new Promise(async (_res, rej) => {
+      if (relay) {
+        _res(param)
+      } else {
+        let sent = false
+        let dryResult = null
+        const start = Date.now()
+        if (cache !== false || !isNil(cachedStates[this.contractTxId])) {
+          if (
+            !includes(func)([
+              "set",
+              "upsert",
+              "update",
+              "delete",
+              "addOwner",
+              "removeOwner",
+              "setAlgorithms",
+              "setCanEvolve",
+              "setSecure",
+              "addIndex",
+              "setSchema",
+              "removeIndex",
+              "setRules",
+              "removeCron",
+              "addRelayerJob",
+              "removeRelayerJob",
+              "linkContract",
+              "unlinkContract",
+              "removeAddressLink",
+              "addCron",
+              "addAddressLink",
+              "evolve",
+              "add",
+              "batch",
+              "relay",
+            ])
+          ) {
+            cache = false
+          } else {
+            let cacheState = null
+            let err = null
+            let success = true
+            try {
+              cacheState = await this.handle(
+                clone(
+                  cachedStates[this.contractTxId] || states[this.contractTxId]
+                ),
+                {
+                  input: param,
+                },
+                this.getSW()
               )
+            } catch (e) {
+              err = e
+              success = false
+              console.log(e)
+            }
+            const self = this
+            let cacheResult = {
+              nonce: param.nonce,
+              signer: param.caller,
+              cache: true,
+              success,
+              duration: Date.now() - start,
+              error:
+                typeof err === "string"
+                  ? err
+                  : typeof err?.message === "string"
+                  ? err.message
+                  : !isNil(err)
+                  ? "unknown error"
+                  : null,
+              function: param.function,
+              state: cacheState?.state || null,
+              result: cacheState?.result || null,
+              results: [],
+              getResult: isNil(cacheState?.result?.transaction?.id)
+                ? null
+                : async () =>
+                    new Promise(async res =>
+                      res(
+                        await self.checkResult(
+                          cacheState.result.transaction.id,
+                          self
+                        )
+                      )
+                    ),
+            }
+            sent = true
+            if (success) {
+              this.virtual_nonces[cacheState.result.original_signer] =
+                param.nonce
+              clearTimeout(timeouts[this.contractTxId])
+              cachedStates[this.contractTxId] = cacheResult.state
+              timeouts[this.contractTxId] = setTimeout(() => {
+                delete cachedStates[this.contractTxId]
+                delete this.virtual_nonces[cacheState.result.original_signer]
+              }, 5000)
+              if (!isNil(onDryWrite?.read)) {
+                cacheResult.results = await this.dryRead(
+                  cacheResult.state,
+                  onDryWrite.read
+                )
+              }
+            }
+
+            if (!isNil(onDryWrite?.cb)) onDryWrite.cb(cacheResult)
+            dryResult = cacheResult
+            _res(cacheResult)
+          }
+        }
+        if (isNil(dryResult)) {
+          let dryState = await this.db.dryWrite(param)
+          dryResult =
+            dryState.type !== "ok"
+              ? {
+                  nonce: param.nonce,
+                  signer: param.caller,
+                  cache: false,
+                  success: false,
+                  duration: Date.now() - start,
+                  error: { message: "dryWrite failed", dryWrite: dryState },
+                  function: param.function,
+                  state: null,
+                  result: null,
+                  results: [],
+                }
+              : {
+                  nonce: param.nonce,
+                  signer: param.caller,
+                  cache: false,
+                  success: true,
+                  duration: Date.now() - start,
+                  error: null,
+                  function: param.function,
+                  state: dryState.state,
+                  result: dryState?.result || null,
+                  results: [],
+                }
+        }
+        if (is(Function, onDryWrite?.cb) && cache === false) {
+          if (dryResult.success) {
+            dryResult.results = await this.dryRead(
+              dryResult.state,
+              onDryWrite.read
+            )
+            if (dryResult.success) {
+              clearTimeout(timeouts[this.contractTxId])
+              cachedStates[this.contractTxId] = dryResult.state
+              timeouts[this.contractTxId] = setTimeout(() => {
+                delete cachedStates[this.contractTxId]
+                this.kvs = {}
+              }, 5000)
             }
           }
-
-          if (!isNil(onDryWrite?.cb)) onDryWrite.cb(cacheResult)
-          dryResult = cacheResult
+          onDryWrite.cb(dryResult)
         }
-      }
-      if (isNil(dryResult)) {
-        let dryState = await this.db.dryWrite(param)
-        dryResult =
-          dryState.type !== "ok"
-            ? {
-                nonce: param.nonce,
-                signer: param.caller,
-                cache: false,
-                success: false,
-                duration: Date.now() - start,
-                error: { message: "dryWrite failed", dryWrite: dryState },
-                function: param.function,
-                state: null,
-                result: null,
-                results: [],
-              }
-            : {
-                nonce: param.nonce,
-                signer: param.caller,
-                cache: false,
-                success: true,
-                duration: Date.now() - start,
-                error: null,
-                function: param.function,
-                state: dryState.state,
-                result: dryState?.result || null,
-                results: [],
-              }
-      }
-      if (is(Function, onDryWrite?.cb) && onDryWrite.cache !== true) {
-        if (dryResult.success) {
-          dryResult.results = await this.dryRead(
-            dryResult.state,
-            onDryWrite.read
-          )
-          if (dryResult.success) {
-            clearTimeout(timeouts[this.contractTxId])
-            cachedStates[this.contractTxId] = dryResult.state
-            timeouts[this.contractTxId] = setTimeout(() => {
-              delete cachedStates[this.contractTxId]
-              this.kvs = {}
-            }, 5000)
+        let read = onDryWrite?.read
+        if (isNil(read) && is(Object, dryWrite?.read)) read = dryWrite.read
+        if (!dryResult.success) {
+          if (!isNil(dryResult?.result?.transaction?.id)) {
+            this.results[dryResult.result.transaction.id] = dryResult
           }
+          if (!sent) _res(dryResult)
+        } else {
+          this.queue.push({
+            id: dryResult?.result?.transaction?.id || null,
+            res: !sent ? _res : null,
+            query: [param, bundle, start, read],
+          })
+          if (this.queue.length === 1) this.execNext()
         }
-        onDryWrite.cb(dryResult)
       }
-      let read = onDryWrite?.read
-      if (isNil(read) && is(Object, dryWrite?.read)) read = dryWrite.read
-      return !dryResult.success
-        ? dryResult
-        : this.send(param, bundle, start, read)
+    })
+  }
+  async execNext() {
+    if (!this.ongoing) {
+      this.ongoing = true
+      if (
+        this.queue.length > 1 &&
+        compareVersions(await this.getVersion(), "0.26.0") >= 0
+      ) {
+        const queue = clone(this.queue)
+        const param = await this.sign("bundle", map(v => v.query[0])(queue), {
+          ar: this.wallet,
+        })
+        const res = await this.send(
+          param,
+          this.network === "mainnet",
+          Date.now(),
+          []
+        )
+        let i = 0
+        for (let v of queue) {
+          this.results[v.id] = {
+            originalTxId: res.originalTxId,
+            bundle: true,
+            function: v.query[0].function,
+            nonce: v.query[0].nonce,
+            signer: v.query[0].caller,
+            duration: res.duration,
+            success: res.success,
+            results: [],
+            error: res.error,
+          }
+          i++
+        }
+        this.queue = reject(v => includes(v.id)(pluck("id")(queue)))(this.queue)
+        this.ongoing = false
+      } else {
+        const q = this.queue[0]
+        if (!isNil(q)) {
+          const [param, bundle, start, read] = q.query
+          try {
+            const res = await this.send(param, bundle, start, read)
+            if (!isNil(q.id)) this.results[q.id] = res
+            if (!isNil(q.res)) q.res(res)
+          } catch (e) {
+            console.log(e)
+          }
+          this.queue.shift()
+        }
+        this.ongoing = false
+        if (this.queue.length !== 0) this.execNext()
+      }
     }
+  }
+  async checkResult(id, self) {
+    return new Promise(res => {
+      if (!isNil(self.results[id])) {
+        res(self.results[id])
+      } else {
+        setTimeout(async () => res(await self.checkResult(id, self)), 500)
+      }
+    })
   }
   async dryRead(state, queries) {
     let results = []
@@ -697,11 +816,16 @@ class SDK extends Base {
     return results
   }
   async send(param, bundle, start, read) {
-    let tx = await this.db[
-      bundle && this.network !== "localhost"
-        ? "bundleInteraction"
-        : "writeInteraction"
-    ](param, {})
+    let tx = null
+    try {
+      tx = await this.db[
+        bundle && this.network !== "localhost"
+          ? "bundleInteraction"
+          : "writeInteraction"
+      ](param, {})
+    } catch (e) {
+      console.log(e)
+    }
     if (this.network === "localhost") await this.mineBlock()
     let state
     if (isNil(tx.originalTxId)) {
@@ -715,7 +839,7 @@ class SDK extends Base {
         results: [],
       }
     } else {
-      state = await this.db.readState()
+      state = await this.readState()
       const valid = state.cachedValue.validity[tx.originalTxId]
       if (valid === false) {
         return {
@@ -798,9 +922,7 @@ class SDK extends Base {
       !isNil(this.onUpdate) &&
       res.success
     ) {
-      const state = await this.db.readState()
-      this.state = state
-      states[this.contractTxId] = state
+      const state = await this.readState()
       const info = await this.arweave.network.getInfo()
       setTimeout(async () => {
         await this.pubsubReceived(state.cachedValue.state, param, {
@@ -851,9 +973,7 @@ class SDK extends Base {
           cb(isCon ? v : isDoc ? (isNil(v) ? null : v.data) : pluck("data", v))
         }
       })
-      .catch(e => {
-        console.log("cget error")
-      })
+      .catch(e => console.log("cget error"))
     return () => {
       try {
         delete subs[this.contractTxId][hash].subs[id]

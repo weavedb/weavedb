@@ -1,4 +1,13 @@
+import { nanoid } from "nanoid"
 const { Ed25519KeyIdentity } = require("@dfinity/identity")
+const lens = {
+  contract: "0xDb46d1Dc155634FbC732f92E853b10B288AD5a1d",
+  pkp_address: "0xF810D4a6F0118E6a6a86A9FBa0dd9EA669e1CC2E".toLowerCase(),
+  pkp_publicKey:
+    "0x04e1d2e8be025a1b8bb10b9c9a5ae9f11c02dbde892fee28e5060e146ae0df58182bdba7c7e801b75b80185c9e20a06944556a81355f117fcc5bd9a4851ac243e7",
+  ipfsId: "QmYq1RhS5A1LaEFZqN5rCBGnggYC9orEgHc9qEwnPfJci8",
+  abi: require("./lens.json"),
+}
 import Arweave from "arweave"
 import lf from "localforage"
 import SDK from "weavedb-sdk"
@@ -16,6 +25,9 @@ import {
   mergeLeft,
   isNil,
   includes,
+  uniq,
+  dissoc,
+  isEmpty,
 } from "ramda"
 import { Buffer } from "buffer"
 import { weavedbSrcTxId, dfinitySrcTxId, ethereumSrcTxId } from "./const"
@@ -28,7 +40,7 @@ const ret = res =>
     : JSON.stringify(res)
 
 class Log {
-  constructor(sdk, method, query, opt, fn, signer) {
+  constructor(sdk, method, query, opt, fn, signer, id) {
     this.contractTxId = sdk.contractTxId
     this.node = isNil(sdk.client) ? null : sdk.client.hostname_
     this.start = Date.now()
@@ -38,10 +50,12 @@ class Log {
     this.opt = opt
     this.sdk = sdk
     this.signer = signer
+    this.id = id || nanoid()
   }
   async rec(array = false) {
     let res = {},
-      err
+      err,
+      _res
     try {
       res = isNil(this.opt)
         ? array
@@ -50,41 +64,71 @@ class Log {
         : array
         ? await this.sdk[this.method](...this.query, this.opt)
         : await this.sdk[this.method](this.query, this.opt)
+      _res = res?.tx || res
     } catch (e) {
       err = e
+      console.log(e)
+    }
+    err = err?.message || _res?.error || _res?.error?.code || null
+    if (!isNil(err) && typeof err === "string" && /wrong nonce/.test(err)) {
+      this.opt ||= {}
+      delete this.opt.nonce
+      try {
+        res = array
+          ? await this.sdk[this.method](...this.query, this.opt)
+          : await this.sdk[this.method](this.query, this.opt)
+        _res = res?.tx || res
+      } catch (e) {
+        err = e
+        console.log(e)
+      }
+      err = err?.message || _res?.error || _res?.error?.code || null
     }
     const date = Date.now()
-    err = err?.message || res?.error || res?.error?.code || null
     let log = {
+      id: this.id,
       err,
-      virtual_txid: res?.result?.transaction?.id || null,
-      txid: !isNil(res) && !isNil(res.originalTxId) ? res.originalTxId : null,
+      virtual_txid: _res?.result?.transaction?.id || null,
+      txid:
+        !isNil(_res) && !isNil(_res.originalTxId) ? _res.originalTxId : null,
       node: this.node,
       date,
       duration: date - this.start,
       method: this.method,
       query: this.query,
       contractTxId: this.contractTxId,
-      res,
-      success: isNil(res) || isNil(res.err),
+      res: _res,
+      success: isNil(_res) || isNil(_res.err),
     }
     this.fn(addLog)({ log })
-    if (res?.success && !isNil(res.nonce)) {
-      this.fn(setNonce)({ nonce: res.nonce + 1, signer: this.signer })
+    if (_res?.success && !isNil(_res.nonce)) {
+      if (!isNil(this.signer)) {
+        this.fn(setNonce)({ nonce: _res.nonce + 1, signer: this.signer })
+      }
     }
-    if (!isNil(res?.getResult)) {
-      res
+    if (!isNil(_res?.getResult)) {
+      _res
         .getResult()
         .then(result => {
-          if (!isNil(result))
+          if (!isNil(result)) {
             this.fn(updateLog)({
               virtual_txid: log.virtual_txid,
               txid: result.originalTxId,
             })
+          }
         })
-        .catch(e => {})
+        .catch(e => {
+          console.log(e)
+        })
     }
-    if (!isNil(err)) throw new Error(err?.message)
+    if (!isNil(err))
+      throw new Error(
+        typeof err === "string"
+          ? err
+          : typeof err?.message === "string"
+          ? err.message
+          : "unknown error"
+      )
     return clone(res)
   }
 }
@@ -100,21 +144,26 @@ export const getOpt = async ({ val: { contractTxId, read = [] }, get }) => {
   }
   let err = null
   let opt = !isNil(ii)
-    ? { ii, dryWrite: { cache: true, read } }
+    ? { ii, onDryWrite: { cache: true, read } }
     : !isNil(identity) && !isNil(identity.tx)
     ? {
-        wallet: current,
+        wallet: /^lens:/.test(current)
+          ? current.split(":").slice(0, -1).join(":")
+          : current,
         privateKey: identity.privateKey,
-        dryWrite: { cache: true, read },
+        onDryWrite: { cache: true, read },
       }
     : null
   if (isNil(opt)) err = "not logged in"
   let nonces = (await lf.getItem("nonces")) || {}
-  const addr = a(identity.address)
-  if (!isNil(nonces[contractTxId]?.[addr])) {
-    opt.nonce = nonces[contractTxId][addr]
+  let addr = null
+  if (!isNil(identity.address)) {
+    addr = a(identity.address)
+    if (!isNil(nonces[contractTxId]?.[addr])) {
+      opt.nonce = nonces[contractTxId][addr]
+    }
   }
-  return { opt, err, signer: a(identity.address) }
+  return { opt, err, signer: addr }
 }
 
 export const getRawDB = async ({
@@ -294,7 +343,7 @@ export const createTempAddressWithAR = async ({
     return
   }
   if (!isNil(tx) && isNil(tx.err)) {
-    identity.tx = tx
+    identity.tx = dissoc("getResult", tx)
     identity.linked_address = addr
     await lf.setItem("temp_address:current", addr)
     identity.network = network
@@ -302,6 +351,56 @@ export const createTempAddressWithAR = async ({
     await lf.setItem(`temp_address:${contractTxId}:${addr}`, identity)
     set(addr, "temp_current")
     set({ addr, type: "ar", network }, "temp_current_all")
+  }
+}
+
+export const createTempAddressWithLens = async ({
+  set,
+  fn,
+  val: { contractTxId, network, node },
+}) => {
+  let identity, tx, addr, err
+  try {
+    ;({ tx, identity } = await new Log(
+      sdk,
+      "createTempAddressWithLens",
+      null,
+      null,
+      fn
+    ).rec())
+  } catch (e) {
+    throw e
+  }
+  const linked = await new Log(
+    sdk,
+    "getAddressLink",
+    identity.address,
+    null,
+    fn
+  ).rec()
+  if (isNil(linked)) {
+    throw new Error("something went wrong")
+    return
+  } else {
+    addr = linked.address
+  }
+  if (!isNil(tx) && isNil(tx.err)) {
+    const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
+    await provider.send("eth_requestAccounts", [])
+    const signer = provider.getSigner()
+    const contract = new ethers.Contract(lens.contract, lens.abi, signer)
+    const handle = await sdk.repeatQuery(contract.getHandle, [
+      addr.split(":")[1],
+    ])
+    addr += `:${handle}`
+    identity.tx = dissoc("getResult", tx)
+    identity.linked_address = addr
+    await lf.setItem("temp_address:current", addr)
+    identity.network = network
+    identity.type = "lens"
+    await lf.setItem(`temp_address:${contractTxId}:${addr}`, identity)
+    set(addr, "temp_current")
+    set({ addr, type: "lens", network }, "temp_current_all")
   }
 }
 
@@ -397,7 +496,7 @@ export const createTempAddress = async ({
     return
   }
   if (!isNil(tx) && isNil(tx.err)) {
-    identity.tx = tx
+    identity.tx = dissoc("getResult", tx)
     identity.linked_address = addr
     identity.network = network
     identity.type = "evm"
@@ -504,6 +603,9 @@ export const deployDB = async ({
       case "DFINITY":
         algorithms.push("ed25519")
         break
+      case "Lens":
+        algorithms.push("secp256k1-2")
+        break
     }
   }
   if (isNil(owner)) {
@@ -515,11 +617,11 @@ export const deployDB = async ({
   }
   if (network === "Mainnet") {
     const warp = WarpFactory.forMainnet().use(new DeployPlugin())
-    const contractTxId = await deployFromSrc({
+    let initial_state = {
       src: weavedbSrcTxId,
       init: "initial-state",
       warp,
-      algorithms,
+      algorithms: uniq(algorithms),
       extra: {
         secure: false,
         owner,
@@ -531,7 +633,26 @@ export const deployDB = async ({
         secure,
         canEvolve,
       },
-    })
+    }
+    if (includes("Lens", auths)) {
+      initial_state.extra.relayers = {
+        "auth:lens": {
+          relayers: [
+            "0xF810D4a6F0118E6a6a86A9FBa0dd9EA669e1CC2E".toLowerCase(),
+          ],
+          schema: {
+            type: "object",
+            required: ["linkTo"],
+            properties: {
+              linkTo: {
+                type: "string",
+              },
+            },
+          },
+        },
+      }
+    }
+    const contractTxId = await deployFromSrc(initial_state)
     return { contractTxId, network, port }
   } else {
     const warp = WarpFactory.forLocal(port).use(new DeployPlugin())
@@ -796,17 +917,18 @@ export const _whitelist = async ({
     return `Error: Something went wrong`
   }
 }
-
+let tx_logs = []
 export const addLog = async ({ set, get, val: { log } }) => {
-  let logs = get("tx_logs") || []
-  set(prepend(log, logs), "tx_logs")
+  tx_logs = prepend(log, tx_logs)
+  set(tx_logs, "tx_logs")
 }
 
 export const updateLog = async ({ set, get, val: { virtual_txid, txid } }) => {
-  let logs = clone(get("tx_logs") || [])
+  let logs = clone(tx_logs)
   for (let v of logs) {
     if (v.virtual_txid === virtual_txid) v.txid = txid
   }
+  tx_logs = logs
   set(logs, "tx_logs")
 }
 
@@ -892,7 +1014,15 @@ export const _removeOwner = async ({ val: { address, contractTxId }, fn }) => {
     return `Error: Something went wrong`
   }
 }
-
+export const checkJSON = val => {
+  let json = null
+  try {
+    eval(`json = ${val}`)
+  } catch (e) {
+    console.log(e)
+  }
+  return isNil(json)
+}
 export const queryDB = async ({
   val: { query, method, contractTxId, dryRead },
   fn,
@@ -905,9 +1035,38 @@ export const queryDB = async ({
       : await fn(getOpt)({ contractTxId })
     if (!isNil(err)) return alert(err)
     if (!isNil(dryRead)) {
-      opt.dryWrite = { cache: true, read: dryRead }
+      opt.onDryWrite = { cache: true, read: dryRead }
     }
     return ret(await new Log(sdk, method, q, opt, fn, signer).rec(true))
+  } catch (e) {
+    console.log(e)
+    return `Error: Something went wrong`
+  }
+}
+
+export const queryDB2 = async ({
+  val: { query, method, contractTxId, dryRead, id },
+  fn,
+}) => {
+  try {
+    let { err, opt, signer } = includes(method)(sdk.reads)
+      ? { err: null, opt: {} }
+      : await fn(getOpt)({ contractTxId })
+    if (!isNil(err)) return alert(err)
+    if (!includes(method)(sdk.reads) && !isNil(dryRead)) {
+      opt.onDryWrite = { cache: true, read: dryRead }
+    }
+    return ret(
+      await new Log(
+        sdk,
+        method,
+        query,
+        includes(method)(sdk.reads) && isEmpty(opt) ? null : opt,
+        fn,
+        signer,
+        id
+      ).rec(true)
+    )
   } catch (e) {
     console.log(e)
     return `Error: Something went wrong`
@@ -922,7 +1081,7 @@ export const checkNonce = async ({ val: {}, fn, get }) => {
   const _addr = await lf.getItem(`temp_address:${sdk.contractTxId}:${addr}`)
   if (isNil(_addr)) return
   let nonces = (await lf.getItem("nonces")) || {}
-  const __addr = a(_addr.address)
+  const __addr = a(_addr.address || "")
   nonces[sdk.contractTxId] ||= {}
   nonces[sdk.contractTxId][__addr] = await sdk.getNonce(__addr)
   await lf.setItem("nonces", nonces)
@@ -931,7 +1090,9 @@ export const checkNonce = async ({ val: {}, fn, get }) => {
 export const setNonce = async ({ val: { nonce, signer }, fn, get }) => {
   let nonces = (await lf.getItem("nonces")) || {}
   nonces[sdk.contractTxId] ||= {}
-  const addr = a(signer)
-  nonces[sdk.contractTxId][addr] = nonce
-  await lf.setItem("nonces", nonces)
+  if (!isNil(signer)) {
+    const addr = a(signer)
+    nonces[sdk.contractTxId][addr] = nonce
+    await lf.setItem("nonces", nonces)
+  }
 }

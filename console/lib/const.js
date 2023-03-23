@@ -83,7 +83,7 @@ export const tabmap = {
   Nodes: { name: "gRPC Nodes" },
 }
 
-export const wallet_chains = ["Arweave", "EVM", "DFINITY", "Intmax"]
+export const wallet_chains = ["Arweave", "EVM", "DFINITY", "Intmax", "Lens"]
 
 export const default_nodes = [
   {
@@ -104,8 +104,8 @@ export const preset_rpcs = [
   "http://localhost:8080",
 ]
 
-export const latest = "0.23.0"
-export const weavedbSrcTxId = "_gUR1-XzkZhsMlzZLIUEYp-rg73b9W-bhSrRIb06zKk"
+export const latest = "0.26.0"
+export const weavedbSrcTxId = "zdP_QTSZ2zO9Nxa1sPAKhyR4geua1_a621_fZm2XPKU"
 //export const intmaxSrcTxId = "OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94"
 export const dfinitySrcTxId = "3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8"
 export const ethereumSrcTxId = "Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w"

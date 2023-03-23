@@ -36,7 +36,7 @@ describe("WeaveDB", function () {
   this.timeout(0)
 
   before(async () => {
-    db = await init("web")
+    db = await init("web", 1, false)
   })
 
   after(async () => await stop())
@@ -69,7 +69,6 @@ describe("WeaveDB", function () {
     const tx = await db.set({ id: 1 }, "col", "doc")
     expect(await db.getHash()).to.eql(tx.originalTxId)
     const tx2 = await db.set({ id: 2 }, "col", "doc2")
-
     const hashes = Arweave.utils.concatBuffers([
       Arweave.utils.stringToBuffer(tx.originalTxId),
       Arweave.utils.stringToBuffer(tx2.originalTxId),
@@ -439,6 +438,46 @@ describe("WeaveDB", function () {
     ])
   })
 
+  it("should link temporarily generated address with Lens Protocol", async () => {
+    const { identity, tx: param } = await db._createTempAddress(
+      wallet.getAddressString(),
+      null,
+      "lens:123",
+      {
+        evm: wallet,
+        relay: true,
+        jobID: "auth:lens",
+      }
+    )
+    const pkp = Wallet.createRandom()
+    pkp._account = { address: pkp.address }
+    const job = {
+      relayers: [pkp.address.toLowerCase()],
+      schema: {
+        type: "object",
+        required: ["linkTo"],
+        properties: {
+          linkTo: {
+            type: "string",
+          },
+        },
+      },
+    }
+    await db.addRelayerJob("auth:lens", job, {
+      ar: arweave_wallet,
+    })
+    const sig = await db.relay(
+      "auth:lens",
+      param,
+      { linkTo: "lens:123" },
+      { intmax: pkp, relay: true }
+    )
+    await db.write("relay", sig)
+    expect((await db.getAddressLink(identity.address)).address).to.eql(
+      "lens:123"
+    )
+  })
+
   it("should link temporarily generated address", async () => {
     const addr = wallet.getAddressString()
     const { identity } = await db.createTempAddress(addr)
@@ -452,6 +491,7 @@ describe("WeaveDB", function () {
       privateKey: identity.privateKey,
     })
     expect((await db.cget("ppl", "Beth")).setter).to.eql(addr)
+
     await db.removeAddressLink(
       {
         address: identity.address,
@@ -743,6 +783,58 @@ describe("WeaveDB", function () {
       {
         privateKey: identity.privateKey,
         wallet: identity.address,
+      }
+    )
+    const addr = wallet.getAddressString()
+    const doc = await db.cget("ppl", "Bob")
+    expect(doc.setter).to.equal(addr)
+    expect(doc.data).to.eql(data2)
+    await db.removeRelayerJob("test-job", { ar: arweave_wallet })
+    expect(await db.getRelayerJob("test-job")).to.eql(null)
+    return
+  })
+  it("should relay queries with Intmax Wallet / Lit Protocol PKP", async () => {
+    const intmax_wallet = Wallet.createRandom()
+    intmax_wallet._account = { address: intmax_wallet.address }
+
+    const job = {
+      relayers: [intmax_wallet.address],
+      schema: {
+        type: "object",
+        required: ["height"],
+        properties: {
+          height: {
+            type: "number",
+          },
+        },
+      },
+    }
+    await db.addRelayerJob("test-job", job, {
+      ar: arweave_wallet,
+    })
+    expect(await db.getRelayerJob("test-job")).to.eql(job)
+    expect(await db.listRelayerJobs()).to.eql(["test-job"])
+    const rules = {
+      let: {
+        "resource.newData.height": { var: "request.auth.extra.height" },
+      },
+      "allow write": true,
+    }
+    await db.setRules(rules, "ppl", {
+      ar: arweave_wallet,
+    })
+
+    const data = { name: "Bob", age: 20 }
+    const data2 = { name: "Bob", age: 20, height: 182 }
+    const param = await db.sign("set", data, "ppl", "Bob", {
+      jobID: "test-job",
+    })
+    await db.relay(
+      "test-job",
+      param,
+      { height: 182 },
+      {
+        intmax: intmax_wallet,
       }
     )
     const addr = wallet.getAddressString()
@@ -1083,5 +1175,21 @@ describe("WeaveDB", function () {
     expect(await db.get("ppl", "Bob")).to.eql(null)
     await db.set(data, "ppl", "Bob", { ar: arweave_wallet })
     expect(await db.get("ppl", "Bob")).to.eql(data)
+  })
+
+  it("should bundle mulitple transactions", async () => {
+    const arweave_wallet2 = await db.arweave.wallets.generate()
+    const arweave_wallet3 = await db.arweave.wallets.generate()
+    const data = { name: "Bob", age: 20 }
+    const data2 = { name: "Alice", age: 30 }
+    const params = await db.sign("set", data, "ppl", "Bob", {
+      ar: arweave_wallet2,
+    })
+    const params2 = await db.sign("upsert", data2, "ppl", "Alice", {
+      ar: arweave_wallet3,
+    })
+    await db.bundle([params, params2])
+    expect(await db.get("ppl", "Bob")).to.eql(data)
+    expect(await db.get("ppl", "Alice")).to.eql(data2)
   })
 })
