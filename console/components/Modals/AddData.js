@@ -11,7 +11,7 @@ import {
   assocPath,
 } from "ramda"
 import { inject } from "roidjs"
-import { read, queryDB } from "../../lib/weavedb"
+import { checkJSON, read, queryDB } from "../../lib/weavedb"
 import Editor from "react-simple-code-editor"
 import { highlight, languages } from "prismjs/components/prism-core"
 import "prismjs/components/prism-clike"
@@ -174,14 +174,7 @@ export default inject(
                     val = eval(newFieldBool)
                     break
                   case "object":
-                    try {
-                      eval(`const obj = ${_val}`)
-                      val = _val
-                    } catch (e) {
-                      alert("Wrong JSON format")
-                      return
-                    }
-                    break
+                    if (checkJSON(_val)) return alert("Wrong JSON format")
                   case "sub collection":
                     if (/^\s*$/.test(newField)) {
                       alert("Enter Collection ID")
@@ -190,14 +183,7 @@ export default inject(
                       alert("Collection exists")
                       return
                     }
-                    try {
-                      JSON.parse(_val)
-                      val = _val
-                    } catch (e) {
-                      alert("Wrong JSON format")
-                      return
-                    }
-                    break
+                    if (checkJSON(_val)) return alert("Wrong JSON format")
                 }
                 set("add_data", "loading")
                 let query = ""

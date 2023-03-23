@@ -1014,7 +1014,15 @@ export const _removeOwner = async ({ val: { address, contractTxId }, fn }) => {
     return `Error: Something went wrong`
   }
 }
-
+export const checkJSON = val => {
+  let json = null
+  try {
+    eval(`json = ${val}`)
+  } catch (e) {
+    console.log(e)
+  }
+  return isNil(json)
+}
 export const queryDB = async ({
   val: { query, method, contractTxId, dryRead },
   fn,
