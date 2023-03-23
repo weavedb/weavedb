@@ -89,12 +89,11 @@ export default inject(
                   return
                 }
                 set("add_collection", "loading")
+                let json = null
                 try {
-                  JSON.parse(newRules)
-                } catch (e) {
-                  alert("Wrong JSON format")
-                  return
-                }
+                  eval(`json = ${newRules}`)
+                } catch (e) {}
+                if (isNil(json)) return alert("Wrong JSON format")
                 try {
                   const res = JSON.parse(
                     await fn(queryDB)({
