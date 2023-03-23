@@ -13,7 +13,7 @@ import {
   prop,
 } from "ramda"
 import { inject } from "roidjs"
-import { queryDB, read, checkNonce } from "../../lib/weavedb"
+import { checkJSON, queryDB, read, checkNonce } from "../../lib/weavedb"
 import Editor from "react-simple-code-editor"
 import { highlight, languages } from "prismjs/components/prism-core"
 import "prismjs/components/prism-clike"
@@ -114,12 +114,7 @@ export default inject(
                   alert("Doc exists")
                   return
                 }
-                try {
-                  JSON.parse(newData)
-                } catch (e) {
-                  alert("Wrong JSON format")
-                  return
-                }
+                if (checkJSON(newData)) return alert("Wrong JSON format")
                 set("add_doc", "loading")
                 let col_path = compose(
                   join(", "),

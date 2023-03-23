@@ -1,4 +1,4 @@
-import SDK from "weavedb-client"
+import SDK from "weavedb-sdk"
 import lf from "localforage"
 import { useEffect, useState } from "react"
 import { useToast } from "@chakra-ui/react"
@@ -41,8 +41,8 @@ export default function Home() {
     ;(async () => {
       sdk = new SDK({
         contractTxId,
-        rpc: process.env.NEXT_PUBLIC_WEAVEDB_RPC_WEB,
       })
+      await sdk.initializeWithoutWallet()
       const _user = (await lf.getItem("user")) || null
       setUser(_user)
       if (!isNil(_user)) {

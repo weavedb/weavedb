@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Box, Flex, Input, Select, Textarea } from "@chakra-ui/react"
 import { isNil, without, o, uniq, append, map } from "ramda"
 import { inject } from "roidjs"
-import { read, addRelayerJob } from "../../lib/weavedb"
+import { checkJSON, read, addRelayerJob } from "../../lib/weavedb"
 import Editor from "react-simple-code-editor"
 import { highlight, languages } from "prismjs/components/prism-core"
 import "prismjs/components/prism-clike"
@@ -229,12 +229,8 @@ export default inject(
                   }
                   let _schema = null
                   if (!/^\s.*$/.test(newJobSchema)) {
-                    try {
-                      _schema = JSON.parse(newJobSchema)
-                    } catch (e) {
-                      alert("schema is not a valid JSON format")
-                      return
-                    }
+                    if (checkJSON(newJobSchema))
+                      return alert("Wrong JSON format")
                   }
                   set("add_relayer", "loading")
                   const res = JSON.parse(
