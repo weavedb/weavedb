@@ -109,6 +109,18 @@ describe("WeaveDB", function () {
           },
         ],
       },
+      "allow update": {
+        and: [
+          { "==": [{ var: "resource.data.uid" }, { var: "request.id" }] },
+          {
+            "==": [
+              { var: "resource.data.uid" },
+              { var: "request.auth.signer" },
+            ],
+          },
+        ],
+      },
+
       "allow delete": {
         and: [
           {
