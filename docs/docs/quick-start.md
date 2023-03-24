@@ -204,9 +204,9 @@ set {age:25}
 Let's add some people for the following tutorial.
 
 ```bash
-set '{name: "Bob", age: 20}' "people" "Bob"
-set '{name: "Alice", age: 30}' "people" "Alice"
-set '{name: "Mike", age: 40}' "people" "Mike"
+set {name:"Bob",age:20} people Bob
+set {name: "Alice", age:30} people Alice
+set {name:"Mike",age:40} people Mike
 ```
 
 To get a single doc.
@@ -231,10 +231,10 @@ get people 2
 
 ##### where
 
-To get docs where the age is 10.
+To get docs where the age is 20.
 
 ```bash
-get people ["age","==",10]
+get people ["age","==",20]
 ```
 
 :::info
@@ -250,7 +250,7 @@ get people ["age","desc"]
 ```
 
 :::info
-Single field indexes are auto-matically generate. But to sort by more than 1 field, multi-field indexes need to be added explicitly. Read onto the following section.
+Single field indexes are automatically generated. But to sort by more than 1 field, multi-field indexes need to be added explicitly. Read onto the following section.
 :::
 
 ### Add Indexes
@@ -337,7 +337,7 @@ For example, let's set a schema to the `people` collection.
 
 This means 
 
-- the document must be a `object`
+- the document must be an `object`
 - `name` and `age` fields are required
 - `name` must be `string`
 - `age` must be `number`
@@ -379,15 +379,15 @@ Within the rules, you can access [various information](https://docs.weavedb.dev/
 }
 ```
 
-And with JsonLogic, you can use `var` to access variables, such as `{var: "resource.newData.user"` to access the `user` field of the newly updated data.
+And with JsonLogic, you can use `var` to access variables, such as `{var: "resource.newData.user"}` to access the `user` field of the newly updated data.
 
-For example, the following rules ensure that the uploader's wallet address(`request.auth.signer`) is set to `user` field of the updated data(`resource.newData.user`) on `create`, and he uploader's wallet address(`request.auth.signer`) equals to the existing `user` field(`resource.data.user`) on `update`.
+For example, the following rules ensure that the uploader's wallet address(`request.auth.signer`) is set to `user` field of the updated data(`resource.newData.user`) on `create`, and the uploader's wallet address(`request.auth.signer`) equals to the existing `user` field(`resource.data.user`) on `update`.
 
 `resource.newData` is the data after the query is applied, and `resource.data` is the existing data before the query is applied.
 
 This ensures only the original data updaters can update their own data.
 
-```json
+```javascript
 {
   "allow create": {
     "==": [{ var: "request.auth.signer" }, { var: "resource.newData.user" }]
@@ -400,7 +400,7 @@ This ensures only the original data updaters can update their own data.
 
 To combine multiple operations, chain them with `,` like `allow create,update`.
 
-To add the rules, click `Access Control Rules` in the side menu, select `people` from collection list, then click `+` in the top right corner of the Rules box. You can copy & paste the rules object above to the popped-up textarea and hit `Add`.
+To add the rules, click `Access Control Rules` in the side menu, select `people` from the Collection list, then click `+` in the top right corner of the Rules box. You can copy & paste the rules object above to the popped-up textarea and hit `Add`.
 
 ![](https://i.imgur.com/KkVlQTH.png)
 
@@ -413,21 +413,22 @@ With [FPJSON](https://fpjson.weavedb.dev/), you can do powerful things such as m
 
 ## Intermediate
 
+Now, let's connect with the DB instance from a front-end dapp. You need to use `weavedb-sdk` for that.
 
 To install,
 
 ```bash
 yarn add weavedb-sdk
 ```
-To use in the front-end dapp,
+To use in a front-end dapp,
 
 ```javascript
-import SDK = from "weavedb-sdk"
+import SDK from "weavedb-sdk"
 
 const db = new SDK({ contractTxId })
 await db.initializeWithoutWallet()
 
-const tasks = await db.get("people")
+const people = await db.get("people")
 ```
 
 ### Execute Queries
@@ -530,7 +531,7 @@ export default function Home() {
 
 ```
 
-The WeaveDB SDK keeps a virtual state locally and immediately returns a result (dryWrite) without sending the transaction first, which takes only around 10ms. If you need to get the actuall transaction, you can use `getResult`, which takes around 3-4 seconds.
+The WeaveDB SDK keeps a virtual state locally and immediately returns a result (dryWrite) without sending the transaction first, which takes only around 10ms. If you need to get the actual transaction result, you can use `getResult`, which takes around 3-4 seconds.
 
 You can also pack any number of dryRead queries with `onDryWrite.read` to immediately execute on the result of the dryWrite.
 
