@@ -53,7 +53,7 @@ const setup = async () => {
     },
   }
   const rules_users = {
-    "allow create,update": {
+    "allow create": {
       and: [
         { "==": [{ var: "resource.newData.uid" }, { var: "request.id" }] },
         {
@@ -61,6 +61,14 @@ const setup = async () => {
             { var: "resource.newData.uid" },
             { var: "request.auth.signer" },
           ],
+        },
+      ],
+    },
+    "allow update": {
+      and: [
+        { "==": [{ var: "resource.data.uid" }, { var: "request.id" }] },
+        {
+          "==": [{ var: "resource.data.uid" }, { var: "request.auth.signer" }],
         },
       ],
     },

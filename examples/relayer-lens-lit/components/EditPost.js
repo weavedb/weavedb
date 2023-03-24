@@ -77,7 +77,7 @@ export default function EditPost({
                 id,
               }
               const tx = await sdk.set(post, "posts", key, {
-                wallet: user.address,
+                wallet: `lens:${user.id}`,
                 privateKey: user.privateKey,
               })
               if (tx.success) {
