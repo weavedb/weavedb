@@ -40,10 +40,10 @@ const signer = provider.getSigner()
 const addr = await signer.getAddress()
 const expiry = 60 * 60 * 24 * 7 // set expiry to a week
 
-const { identity } = db.createTempAddress(addr, expiry)
+const { identity } = await db.createTempAddress(addr, expiry)
 
 // or set no expiry
-const { identity } = db.createTempAddress(addr)
+const { identity } = await db.createTempAddress(addr)
 ```
 
 Dapps can store the `identity` in the IndexedDB and auto-sign when the user creates transactions.

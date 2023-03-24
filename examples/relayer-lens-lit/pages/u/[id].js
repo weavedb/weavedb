@@ -1,5 +1,5 @@
 import { useRouter } from "next/router"
-import SDK from "weavedb-client"
+import SDK from "weavedb-sdk"
 import lf from "localforage"
 import { useEffect, useState } from "react"
 import { useToast } from "@chakra-ui/react"
@@ -42,10 +42,8 @@ export default function Home() {
   useEffect(() => {
     ;(async () => {
       if (!isNil(router?.query?.id)) {
-        sdk = new SDK({
-          contractTxId,
-          rpc: process.env.NEXT_PUBLIC_WEAVEDB_RPC_WEB,
-        })
+        sdk = new SDK({ contractTxId })
+        await sdk.initializeWithoutWallet()
         setUser((await lf.getItem("user")) || null)
         const handle = `${router.query.id}.lens`
         const wuser = await sdk.get("users", ["handle", "==", handle])
