@@ -1,8 +1,7 @@
 import { Image, Box, Flex } from "@chakra-ui/react"
 import { isNil } from "ramda"
 export default function Profile({ pageUser, user, setName, setEditUser }) {
-  const isUser =
-    !isNil(user) && `lens:${user.id}` === pageUser.uid ? "pointer" : "default"
+  const isUser = !isNil(user) && `lens:${user.id}` === pageUser.uid
   return (
     <Box w="350px">
       {isNil(pageUser) ? (
