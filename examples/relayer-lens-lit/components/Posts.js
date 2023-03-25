@@ -104,10 +104,7 @@ export default function Posts({
                         const tx = await sdk.delete(
                           "posts",
                           `${v.user}:${v.id}`,
-                          {
-                            privateKey: user.privateKey,
-                            wallet: user.address,
-                          }
+                          user
                         )
                         if (tx.success) {
                           setPosts(reject(propEq("id", v.id)), posts)
