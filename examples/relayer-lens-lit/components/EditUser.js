@@ -85,10 +85,7 @@ export default function EditUser({
                 uid,
                 handle: user.handle,
               }
-              const tx = await sdk.set(new_user, "users", uid, {
-                wallet: `lens:${user.id}`,
-                privateKey: user.privateKey,
-              })
+              const tx = await sdk.set(new_user, "users", uid, user)
               if (tx.success) {
                 setName("")
                 setEditUser(false)
