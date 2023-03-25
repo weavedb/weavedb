@@ -63,6 +63,7 @@ export const methods = [
       "removeCron",
       "evolve",
       "migrate",
+      "setAlgorithms",
       "setCanEvolve",
       "setSecure",
       "addOwner",

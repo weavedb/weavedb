@@ -5,7 +5,7 @@ sidebar_position: 8
 
 When writing to the DB, Ethereum-based addresses are authenticated with [EIP-712](https://eips.ethereum.org/EIPS/eip-712) signatures. However, this requires dapp users to sign with Metamask for every action, and it's a very poor UX. To solve this, WeaveDB allows internal address linking, so dapp users can use disposal addresses for auto-signing.
 
-WeaveDB has integrated 4 types of cryptography (secp256k1, ed25519, rsa256, poseidon), which enables [MetaMask](https://metamask.io/), [Internet Identity](https://identity.ic0.app/), [ArConnect](https://www.arconnect.io/) and [IntmaxWallet](https://www.intmaxwallet.io).
+WeaveDB has integrated 4 types of cryptography (secp256k1, ed25519, rsa256, poseidon), which enables [MetaMask](https://metamask.io/), [Internet Identity](https://identity.ic0.app/), [ArConnect](https://www.arconnect.io/), [IntmaxWallet](https://www.intmaxwallet.io), and [Lens Profile](https://www.lens.xyz/).
 
 ![](/img/wallets.png)
 
@@ -32,18 +32,14 @@ This will create a great UX for dapps where users only sign once for address lin
 Create a temporary address. Dapps would do this only once when users sign in.
 
 ```js
-import { ethers } from "ethers"
-
-const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
-await provider.send("eth_requestAccounts", [])
-const signer = provider.getSigner()
-const addr = await signer.getAddress()
 const expiry = 60 * 60 * 24 * 7 // set expiry to a week
 
-const { identity } = await db.createTempAddress(addr, expiry)
+// the first argument is to manually set a wallet.
+// null will automatically use the browser-connected Metamask
+const { identity } = await db.createTempAddress(null, expiry)
 
 // or set no expiry
-const { identity } = await db.createTempAddress(addr)
+const { identity } = await db.createTempAddress()
 ```
 
 Dapps can store the `identity` in the IndexedDB and auto-sign when the user creates transactions.
@@ -51,14 +47,7 @@ Dapps can store the `identity` in the IndexedDB and auto-sign when the user crea
 Query DB with the temporary address
 
 ```js
-await db.add(
-  { name: "Bob", age: 20 },
-  "people",
-  {
-    wallet: addr,
-    privateKey: identity.privateKey,
-  }
-)
+await db.add({ name: "Bob", age: 20 }, "people", identity)
 ```
 
 ### Internet Identity (DFINITY)
@@ -94,15 +83,12 @@ const { identity } = await db.createTempAddressWithII(ii)
 [ArConnect](https://arconnect.io) is a simple browser wallet for Arweave.
 
 ```js
-const wallet = window.arweaveWallet
-await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
-const addr = await wallet.getActiveAddress()
 const expiry = 60 * 60 * 24 * 7 // set expiry to a week
 
-const { identity } = await db.createTempAddressWithAR(wallet, expiry)
+const { identity } = await db.createTempAddressWithAR(null, expiry)
 
 // or set no expiry
-const { identity } = await db.createTempAddressWithAR(wallet)
+const { identity } = await db.createTempAddressWithAR()
 ```
 
 ### IntmaxWallet (Intmax)
@@ -126,6 +112,19 @@ const { identity } = db.createTempAddressWithIntmax(signer, expiry)
 
 // or set no expiry
 const { identity } = db.createTempAddressWithIntmax(signer)
+```
+
+### Lens Profile (Lens Protocol)
+
+[Lens Protocol](https://lens.xyz) is a Polygon-based NFT social protocol. WeaveDB utilizes [Lit Protocol](https://litprotocol.com/) to securely authenticate Lens Profile NFT.
+
+```js
+const expiry = 60 * 60 * 24 * 7 // set expiry to a week
+
+const { identity } = db.createTempAddressWithLens(expiry)
+
+// or set no expiry
+const { identity } = db.createTempAddressWithLens()
 ```
 
 ## Get Address Link
@@ -181,7 +180,7 @@ WeaveDB defaults to use all algorithms, but you can specify authentication algor
 - `ed25519` : for DFINITY ( Internet Identity )
 - `rsa256` : for Arweave ( ArConnect )
 - `poseidon` : for IntmaxWallet with Zero Knowledge Proof ( temporaliry disabled )
-- `secp256k1-2` : for IntmaxWallet with EVM-based accounts
+- `secp256k1-2` : for Lens Profile, and IntmaxWallet with EVM-based accounts
 
 ### Set Algorithms
 

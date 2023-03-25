@@ -160,6 +160,7 @@ const getDoc = (
         path,
       },
     }
+    console.log(rule_data)
     const setElm = (k, val) => {
       let elm = rule_data
       let elm_path = k.split(".")
