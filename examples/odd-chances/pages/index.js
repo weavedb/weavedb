@@ -93,7 +93,7 @@ export default function Home() {
       await lf.setItem("temp_address:current", wallet_address)
       await lf.setItem(
         `temp_address:${contractTxId}:${wallet_address}`,
-        identity
+        JSON.parse(JSON.stringify(identity))
       )
       setUser({
         wallet: wallet_address,
@@ -140,9 +140,9 @@ export default function Home() {
         toast(result.error.dryWrite.errorMessage)
       } else {
         const str = result?.doc?.is_even ? "EVEN" : "ODD"
-        result.doc.has_won
-          ? toast("You won! Your guess is " + str + "=" + result.doc.date)
-          : toast("You lost! Your guess is " + str + "=" + result.doc.date)
+        result?.doc?.has_won
+          ? toast("You won! Your guess is " + str + "==" + result?.doc?.date)
+          : toast("You lost! Your guess is " + str + "==" + result?.doc?.date)
 
         getMyGameResults()
       }
@@ -157,7 +157,7 @@ export default function Home() {
       if (!isNil(user)) {
         const result = await db.cget(
           COLLECTION_NAME,
-          ["user_address", "=", user.wallet.toLowerCase()],
+          ["user_address", "==", user.wallet.toLowerCase()],
           ["date", "desc"]
         )
         setLastGuessDate(result[0]?.data?.date ?? LAST_GUESS_DATE_DEFAULT)
