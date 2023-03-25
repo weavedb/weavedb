@@ -69,7 +69,7 @@ Clik `Connect Owner Wallet` and connect your wallet. This will be the admin acco
 
 Set `Secure` to `False` for this tutorial (never do that for production dapps).
 
-Finally, `Deploy DB Instance`. Your DB will be deployed to mainnet in a few seconds. You can view the transaction for the deployment via the `contractTxId` link.
+Finally, `Deploy DB Instance`. Your DB will be deployed to the mainnet in a few seconds. You can view the transaction for the deployment via the `contractTxId` link.
 
 ![](https://i.imgur.com/vL4d75W.png)
 
@@ -790,7 +790,138 @@ You can try the working demo at [relayer-lens-lit.vercel.app](https://relayer-le
 
 ![](/img/lensweave.png)
 
-Coming Soon...
+#### 1. Deploy DB Instance
+
+The first step is [to deploy a WeaveDB contract](/docs/quick-start#deploy-contract) to the mainnet. Set `Secure` to `false` so no one can update by default. Take note of the `contractTxId`.
+
+#### 2. Set up Schemas
+
+For this dapp, we will define 2 collections - `users` and `posts`. For example, the following is how we want the data to be.
+
+```javascript
+const user = { 
+  name: "Tomoya | WeaveDB", 
+  uid: "lens:97912", 
+  handle: "tomoya.lens",
+  image: "https://cloudflare-ipfs.com/ipfs/QmU51aQqJb6rwsjTYbUodMWRLJUVimdrHKcWwZARXVajzP"
+}
+
+const post = {
+  id: "YeIXjVbsUqHL4SYl0tW-I",
+  body: "WeaveLens is fully decentralized!",
+  user: "lens:97912",
+  date: 1678587066647
+}
+```
+
+The JSON schema for each collection would be something like the following.
+
+```javascript
+// for users, note `image` is not required
+{
+  "type": "object",
+  "required": [ "name", "uid", "handle" ],
+  "properties": {
+    "name": { "type": "string" },
+    "uid": { "type": "string" },
+    "handle": { "type": "string" },
+    "image": { "type": "string" }
+  }
+}
+
+// for posts
+{
+  "type": "object",
+  "required": [ "user", "body", "date", "id" ],
+  "properties": {
+    "id": { "type": "string" },
+    "body": { "type": "string" },
+    "user": { "type": "string" },
+    "date": { "type": "number" }
+  }
+}
+```
+
+Set these up using [the Web Console](/docs/quick-start#set-up-schema).
+
+#### 3. Set up Access Control Rules
+
+For users, we want the docid to be the same as `uid` and users can only update theire own data.
+
+```javascript
+{
+  "allow create": {
+    "and": [
+      // docid must be the same as uid
+      { "==": [{ "var": "request.id" }, { "var": "resource.newData.uid" }] },
+	  
+	  // uid must be the same as signer
+      { "==": [{ "var": "resource.newData.uid" }, { "var": "request.auth.signer" }] }
+    ]
+  },
+  "allow update": {
+    "and": [
+      // docid must be the same as uid	
+      { "==": [{ "var": "request.id" }, { "var": "resource.newData.uid" }] },
+	  
+	  // uid must be the same as signer	  
+      { "==": [{ "var": "resource.data.uid" }, { "var": "request.auth.signer" }] },
+	  
+	  // uid cannot be updated
+	  { "==": [{ "var": "resource.data.uid" }, { "var": "resource.newData.uid" }] },
+	  
+	  // handle cannot be updated
+	  { "==": [{ "var": "resource.data.handle" }, { "var": "resource.newData.handle" }] }
+    ]
+  }
+}
+```
+
+For posts, we want the docid to be in the format of `[user]:[id]`, and users can only delete their own posts.
+
+```javascript
+{
+  "let create": { // define `id` variable to use later
+    id: [ "join", ":", [{ var: "resource.newData.user" }, { var: "resource.newData.id" }] ]
+  },
+  "allow create": {
+    and: [
+	  // the signer must be `user`
+      { "==": [{ var: "resource.newData.user" }, { var: "request.auth.signer" }] },
+	  
+	  // the docid must be the same as the predefined `id`
+      { "==": [{ var: "request.id" }, { var: "id" }] }
+    ]
+  },
+  "allow delete": { // the signer must be `user`
+    "==": [{ var: "request.auth.signer" }, { var: "resource.data.user" }]
+  }
+}
+```
+Set these up using [the Web Console](/docs/quick-start#set-up-access-control-rules).
+
+#### 4. Frontend Dapp
+
+You can view the entire frontend code [here](https://github.com/weavedb/weavedb/tree/master/examples/relayer-lens-lit).
+
+To run it,
+
+```bash
+git clone https://github.com/weavedb/weavedb.git
+cd weavedb/examples/relayer-lens-lit
+yarn
+```
+Create `.env.local` and set your `contractTxId` to `NEXT_PUBLIC_WEAVEDB_CONTRACT_TX_ID`.
+
+```bash
+NEXT_PUBLIC_WEAVEDB_CONTRACT_TX_ID="your_contractTxId"
+```
+
+Then, 
+
+```bash
+yarn dev
+```
 
 ## Going Further
 

@@ -16,7 +16,7 @@ import {
   prop,
   uniq,
 } from "ramda"
-import { Image, Box, Flex, ChakraProvider } from "@chakra-ui/react"
+import { Box, Flex, ChakraProvider } from "@chakra-ui/react"
 let sdk
 const contractTxId = process.env.NEXT_PUBLIC_WEAVEDB_CONTRACT_TX_ID
 import Posts from "../../components/Posts"
