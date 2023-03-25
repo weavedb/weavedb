@@ -7,121 +7,121 @@ import {
   Stat,
   StatLabel,
   StatNumber,
-} from "@chakra-ui/react";
-import { MoonIcon, SunIcon } from "@chakra-ui/icons";
-import { isNil, map } from "ramda";
-import { useEffect, useRef, useState } from "react";
-import { ethers } from "ethers";
-import lf from "localforage";
-import SDK from "weavedb-sdk";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { Chart } from "chart.js/auto";
-import { Buffer } from "buffer";
+} from "@chakra-ui/react"
+import { MoonIcon, SunIcon } from "@chakra-ui/icons"
+import { isNil, map } from "ramda"
+import { useEffect, useRef, useState } from "react"
+import { ethers } from "ethers"
+import lf from "localforage"
+import SDK from "weavedb-sdk"
+import { ToastContainer, toast } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
+import { Chart } from "chart.js/auto"
+import { Buffer } from "buffer"
 
-let db;
-const contractTxId = "lbOlx5cpz1xQA_8-FyIgFj6Nakjkdp6EoJBhE4Y-hnk";
-const COLLECTION_NAME = "game_results";
-const LAST_GUESS_DATE_DEFAULT = 0;
+let db
+const contractTxId = "lbOlx5cpz1xQA_8-FyIgFj6Nakjkdp6EoJBhE4Y-hnk"
+const COLLECTION_NAME = "game_results"
+const LAST_GUESS_DATE_DEFAULT = 0
 
 export default function Home() {
-  const [user, setUser] = useState(null);
-  const [initDB, setInitDB] = useState(false);
-  const [winCount, setWinCount] = useState(0);
-  const [lossCount, setLossCount] = useState(0);
-  const [totalCount, setTotalCount] = useState(-1);
-  const [lastGuessDate, setLastGuessDate] = useState(LAST_GUESS_DATE_DEFAULT);
-  const [chart, setChart] = useState(null);
-  const chartRef = useRef(null);
+  const [user, setUser] = useState(null)
+  const [initDB, setInitDB] = useState(false)
+  const [winCount, setWinCount] = useState(0)
+  const [lossCount, setLossCount] = useState(0)
+  const [totalCount, setTotalCount] = useState(-1)
+  const [lastGuessDate, setLastGuessDate] = useState(LAST_GUESS_DATE_DEFAULT)
+  const [chart, setChart] = useState(null)
+  const chartRef = useRef(null)
 
   const setupWeaveDB = async () => {
-    window.Buffer = Buffer;
+    window.Buffer = Buffer
     db = new SDK({
       contractTxId,
-    });
-    await db.initializeWithoutWallet();
-    setInitDB(true);
-    console.log("<<setupWeaveDB()");
-  };
+    })
+    await db.initializeWithoutWallet()
+    setInitDB(true)
+    console.log("<<setupWeaveDB()")
+  }
 
   const checkUser = async () => {
-    const wallet_address = await lf.getItem(`temp_address:current`);
+    const wallet_address = await lf.getItem(`temp_address:current`)
     if (!isNil(wallet_address)) {
       const identity = await lf.getItem(
         `temp_address:${contractTxId}:${wallet_address}`
-      );
+      )
       if (!isNil(identity)) {
         setUser({
           wallet: wallet_address,
           privateKey: identity.privateKey,
-        });
+        })
       }
     }
-    console.log("<<checkUser()");
-  };
+    console.log("<<checkUser()")
+  }
 
   const login = async () => {
-    console.log(">>login()");
-    const provider = new ethers.BrowserProvider(window.ethereum, "any");
-    const signer = await provider.getSigner();
-    await provider.send("eth_requestAccounts", []);
-    const wallet_address = await signer.getAddress();
+    console.log(">>login()")
+    const provider = new ethers.BrowserProvider(window.ethereum, "any")
+    const signer = await provider.getSigner()
+    await provider.send("eth_requestAccounts", [])
+    const wallet_address = await signer.getAddress()
     let identity = await lf.getItem(
       `temp_address:${contractTxId}:${wallet_address}`
-    );
-    let tx;
-    let err;
+    )
+    let tx
+    let err
     if (isNil(identity)) {
-      ({ tx, identity, err } = await db.createTempAddress(wallet_address));
-      const linked = await db.getAddressLink(identity.address);
+      ;({ tx, identity, err } = await db.createTempAddress(wallet_address))
+      const linked = await db.getAddressLink(identity.address)
       if (isNil(linked)) {
-        alert("something went wrong");
-        return;
+        alert("something went wrong")
+        return
       }
     } else {
-      await lf.setItem("temp_address:current", wallet_address);
+      await lf.setItem("temp_address:current", wallet_address)
 
       setUser({
         wallet: wallet_address,
         privateKey: identity.privateKey,
-      });
-      return;
+      })
+      return
     }
     if (!isNil(tx) && isNil(tx.err)) {
-      identity.tx = tx;
-      identity.linked_address = wallet_address;
-      await lf.setItem("temp_address:current", wallet_address);
+      identity.tx = tx
+      identity.linked_address = wallet_address
+      await lf.setItem("temp_address:current", wallet_address)
       await lf.setItem(
         `temp_address:${contractTxId}:${wallet_address}`,
         identity
-      );
+      )
       setUser({
         wallet: wallet_address,
         privateKey: identity.privateKey,
-      });
+      })
     }
-    console.log("<<login()");
-  };
+    console.log("<<login()")
+  }
 
   const logout = async () => {
     if (confirm("Would you like to sign out?")) {
-      await lf.removeItem("temp_address:current");
-      setUser(null, "temp_current");
+      await lf.removeItem("temp_address:current")
+      setUser(null, "temp_current")
     }
-    console.log("<<logout()");
-  };
+    console.log("<<logout()")
+  }
 
   const onClickOdd = async () => {
-    addGuess(false);
-  };
+    addGuess(false)
+  }
 
   const onClickEven = async () => {
-    addGuess(true);
-  };
+    addGuess(true)
+  }
 
   const addGuess = async (isEven) => {
-    console.log("addGuess() : isEven", isEven);
-    console.log("addGuess() : lastGuessDate", lastGuessDate);
+    console.log("addGuess() : isEven", isEven)
+    console.log("addGuess() : lastGuessDate", lastGuessDate)
 
     try {
       const result = await db.add(
@@ -133,24 +133,24 @@ export default function Home() {
         },
         COLLECTION_NAME,
         user
-      );
+      )
 
       if (result.success === false) {
-        console.log(result);
-        toast(result.error.dryWrite.errorMessage);
+        console.log(result)
+        toast(result.error.dryWrite.errorMessage)
       } else {
-        const str = result?.doc?.is_even ? "EVEN" : "ODD";
+        const str = result?.doc?.is_even ? "EVEN" : "ODD"
         result.doc.has_won
           ? toast("You won! Your guess is " + str + "=" + result.doc.date)
-          : toast("You lost! Your guess is " + str + "=" + result.doc.date);
+          : toast("You lost! Your guess is " + str + "=" + result.doc.date)
 
-        getMyGameResults();
+        getMyGameResults()
       }
     } catch (e) {
-      toast(e.message);
-      console.log(e);
+      toast(e.message)
+      console.log(e)
     }
-  };
+  }
 
   const getMyGameResults = async () => {
     try {
@@ -159,25 +159,25 @@ export default function Home() {
           COLLECTION_NAME,
           ["user_address", "=", user.wallet.toLowerCase()],
           ["date", "desc"]
-        );
-        setLastGuessDate(result[0]?.data?.date ?? LAST_GUESS_DATE_DEFAULT);
+        )
+        setLastGuessDate(result[0]?.data?.date ?? LAST_GUESS_DATE_DEFAULT)
 
-        let winCount = 0;
-        let lossCount = 0;
+        let winCount = 0
+        let lossCount = 0
         map((v) => {
-          v.data.has_won ? winCount++ : lossCount++;
-        })(result);
-        setWinCount(winCount);
-        setLossCount(lossCount);
-        setTotalCount(winCount + lossCount);
+          v.data.has_won ? winCount++ : lossCount++
+        })(result)
+        setWinCount(winCount)
+        setLossCount(lossCount)
+        setTotalCount(winCount + lossCount)
       }
     } catch (e) {
-      toast(e.message);
-      console.log(e);
+      toast(e.message)
+      console.log(e)
     }
-    console.log("<<getMyGameResults()");
-    setupPieChart();
-  };
+    console.log("<<getMyGameResults()")
+    setupPieChart()
+  }
 
   const chart_data = {
     labels: ["Win", "Loss"],
@@ -187,25 +187,25 @@ export default function Home() {
         backgroundColor: ["#0080ff", "#ff0080"],
       },
     ],
-  };
+  }
 
   const chart_config = {
     type: "doughnut",
     data: chart_data,
-  };
+  }
 
   const setupPieChart = async () => {
     if (!isNil(chart)) {
-      chart.destroy();
+      chart.destroy()
     }
-    const context = chartRef.current;
-    const chartInstance = new Chart(context, chart_config);
-    setChart(chartInstance);
-    console.log("<<setupPieChart()");
-  };
+    const context = chartRef.current
+    const chartInstance = new Chart(context, chart_config)
+    setChart(chartInstance)
+    console.log("<<setupPieChart()")
+  }
 
   const NavBar = () => {
-    const { colorMode, toggleColorMode } = useColorMode();
+    const { colorMode, toggleColorMode } = useColorMode()
     return (
       <Flex p={3} position="fixed" top={0} w="100%" bg="#7928ca" color="white">
         <Box flex={1} />
@@ -233,11 +233,11 @@ export default function Home() {
           )}
         </Box>
       </Flex>
-    );
-  };
+    )
+  }
 
   const AnswerButton = (props) => {
-    const { btnText, btnClick } = props;
+    const { btnText, btnClick } = props
 
     return (
       <Box
@@ -259,8 +259,8 @@ export default function Home() {
           {btnText}
         </Text>
       </Box>
-    );
-  };
+    )
+  }
 
   const AnswerButtons = () => {
     return (
@@ -268,8 +268,8 @@ export default function Home() {
         <AnswerButton btnText="ODD" btnClick={onClickOdd} />
         <AnswerButton btnText="EVEN" btnClick={onClickEven} />
       </Flex>
-    );
-  };
+    )
+  }
 
   const GameResultStats = () => {
     return (
@@ -285,8 +285,8 @@ export default function Home() {
           </Stat>
         </Flex>
       </>
-    );
-  };
+    )
+  }
 
   const Transactions = () => {
     return (
@@ -300,20 +300,20 @@ export default function Home() {
           view transactions
         </Box>
       </Flex>
-    );
-  };
+    )
+  }
 
   useEffect(() => {
-    checkUser();
-    setupWeaveDB();
-  }, []);
+    checkUser()
+    setupWeaveDB()
+  }, [])
 
   useEffect(() => {
-    console.log("useEffect() initDB", initDB);
+    console.log("useEffect() initDB", initDB)
     if (initDB) {
-      if (!isNil(user)) getMyGameResults();
+      if (!isNil(user)) getMyGameResults()
     }
-  }, [initDB, totalCount, winCount, lossCount, user]);
+  }, [initDB, totalCount, winCount, lossCount, user])
 
   return (
     <>
@@ -333,5 +333,5 @@ export default function Home() {
         <Transactions />
       </ChakraProvider>
     </>
-  );
+  )
 }
