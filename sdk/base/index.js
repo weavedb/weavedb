@@ -1,8 +1,8 @@
-const pako = require("pako")
 const EthCrypto = require("eth-crypto")
 const { providers, Contract, utils } = require("ethers")
 //const buildEddsa = require("circomlibjs").buildEddsa
 const {
+  pick,
   includes,
   all,
   complement,
@@ -31,6 +31,27 @@ const lens = {
       inputs: [{ internalType: "address", name: "wallet", type: "address" }],
       name: "defaultProfile",
       outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+      stateMutability: "view",
+      type: "function",
+    },
+    {
+      inputs: [{ internalType: "uint256", name: "profileId", type: "uint256" }],
+      name: "getProfile",
+      outputs: [
+        {
+          components: [
+            { internalType: "uint256", name: "pubCount", type: "uint256" },
+            { internalType: "address", name: "followModule", type: "address" },
+            { internalType: "address", name: "followNFT", type: "address" },
+            { internalType: "string", name: "handle", type: "string" },
+            { internalType: "string", name: "imageURI", type: "string" },
+            { internalType: "string", name: "followNFTURI", type: "string" },
+          ],
+          internalType: "struct DataTypes.ProfileStruct",
+          name: "",
+          type: "tuple",
+        },
+      ],
       stateMutability: "view",
       type: "function",
     },
@@ -85,6 +106,10 @@ class Base {
     return { __op: "arrayRemove", arr: args }
   }
 
+  setEthWallet(wallet) {
+    this.wallet = wallet
+  }
+
   async getVersion(nocache) {
     return await this.read({ function: "version" }, nocache)
   }
@@ -120,13 +145,6 @@ class Base {
       },
       nocache
     )
-  }
-
-  async bundle(queries, opt) {
-    const input = JSON.stringify(queries)
-    const output = pako.deflate(input)
-    const base64 = btoa(String.fromCharCode.apply(null, output))
-    return this._write2("bundle", base64, opt)
   }
 
   async addOwner(address, opt) {
@@ -190,7 +208,7 @@ class Base {
       relay,
       jobID,
       multisigs,
-      address
+      linkedAccount
     if (!isNil(opt)) {
       ;({
         jobID,
@@ -206,10 +224,10 @@ class Base {
         intmax,
         extra,
         multisigs,
-        address,
+        linkedAccount,
       } = opt)
     }
-    if (!isNil(address)) wallet = address
+    if (!isNil(linkedAccount)) wallet = linkedAccount
     if (all(isNil)([wallet, ii, intmax, ar]) && !isNil(this.arweave_wallet)) {
       ar = this.arweave_wallet
     }
@@ -335,7 +353,7 @@ class Base {
       if (isNil(tokenID) || tokenID === 0) {
         throw new Error("You don't have a Lens profile")
       }
-      const { identity, tx: param } = await this._createTempAddress(
+      let { identity, tx: param } = await this._createTempAddress(
         (await signer.getAddress()).toLowerCase(),
         null,
         `lens:${tokenID}`,
@@ -343,8 +361,22 @@ class Base {
           evm: signer,
           relay: true,
           jobID: "auth:lens",
-        }
+        },
+        "lens"
       )
+      const profile = await this.repeatQuery(contract.getProfile, [tokenID])
+      identity.profile = pick(
+        [
+          "followModule",
+          "followNFT",
+          "followNFTURI",
+          "handle",
+          "imageURI",
+          "pubCount",
+        ],
+        profile
+      )
+      identity.profile.pubCount = identity.profile.pubCount.toNumber()
       if (isNil(this.litNodeClient)) {
         this.litNodeClient = new this.LitJsSdk.LitNodeClient({
           litNetwork: "serrano",
@@ -393,11 +425,16 @@ class Base {
   async createTempAddressWithII(ii, expiry, linkTo, opt = {}) {
     let addr = ii.toJSON()[0]
     opt.ii = ii
-    return this._createTempAddress(addr, expiry, linkTo, opt)
+    return this._createTempAddress(addr, expiry, linkTo, opt, "ii")
   }
 
   async createTempAddressWithAR(ar, expiry, linkTo, opt = {}) {
-    const wallet = is(Object, ar) && ar.walletName === "ArConnect" ? ar : null
+    if (isNil(ar)) {
+      ar = window.arweaveWallet
+      await ar.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
+    }
+    if (isNil(ar)) throw Error("No Arweave wallet")
+    let wallet = is(Object, ar) && ar.walletName === "ArConnect" ? ar : null
     let addr = null
     if (!isNil(wallet)) {
       await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
@@ -406,7 +443,7 @@ class Base {
       addr = await this.arweave.wallets.jwkToAddress(ar)
     }
     opt.ar = ar
-    return this._createTempAddress(addr, expiry, linkTo, opt)
+    return this._createTempAddress(addr, expiry, linkTo, opt, "ar")
   }
 
   async createTempAddressWithIntmax(intmax, expiry, linkTo, opt = {}) {
@@ -419,7 +456,13 @@ class Base {
       return
     }
     opt.intmax = intmax
-    return this._createTempAddress(addr.toLowerCase(), expiry, linkTo, opt)
+    return this._createTempAddress(
+      addr.toLowerCase(),
+      expiry,
+      linkTo,
+      opt,
+      "intmax"
+    )
   }
 
   async createTempAddress(evm, expiry, linkTo, opt = {}) {
@@ -443,11 +486,17 @@ class Base {
       addr = accounts[0]
     }
     opt.wallet = wallet
-    return this._createTempAddress(addr.toLowerCase(), expiry, linkTo, opt)
+    return this._createTempAddress(
+      addr.toLowerCase(),
+      expiry,
+      linkTo,
+      opt,
+      "evm"
+    )
   }
 
-  async _createTempAddress(addr, expiry, linkTo, opt) {
-    const identity = EthCrypto.createIdentity()
+  async _createTempAddress(addr, expiry, linkTo, opt, type = "evm") {
+    let identity = EthCrypto.createIdentity()
     const nonce = await this.getNonce(addr)
     let query = isNil(expiry) ? { address: addr } : { address: addr, expiry }
     if (!isNil(linkTo)) query.linkTo = linkTo
@@ -479,7 +528,14 @@ class Base {
     if (!isNil(expiry)) param.expiry = expiry
     if (!isNil(linkTo)) param.linkTo = linkTo
     const tx = await this.addAddressLink(param, { nonce, ...opt })
-    return isNil(tx.err) ? { tx, identity } : null
+    if (isNil(tx.err)) {
+      identity.signer = tx.signer
+      identity.type = type
+      identity.linkedAccount = linkTo || tx.signer
+      return { tx, identity }
+    } else {
+      return null
+    }
   }
 
   async addAddressLink(query, opt) {
@@ -672,9 +728,7 @@ class Base {
     const enc = new TextEncoder()
     const encoded = enc.encode(JSON.stringify(data))
     const signature = isNil(wallet)
-      ? Array.from(await this.arweave.wallets.crypto.sign(ar, encoded))
-          .map(byte => byte.toString(16).padStart(2, "0"))
-          .join("")
+      ? (await this.arweave.wallets.crypto.sign(ar, encoded)).toString("hex")
       : Buffer.from(
           await wallet.signature(encoded, {
             name: "RSA-PSS",

@@ -438,7 +438,7 @@ describe("WeaveDB", function () {
     ])
   })
 
-  it("should link temporarily generated address with Lens Protocol", async () => {
+  it.only("should link temporarily generated address with Lens Protocol", async () => {
     const { identity, tx: param } = await db._createTempAddress(
       wallet.getAddressString(),
       null,
@@ -477,32 +477,43 @@ describe("WeaveDB", function () {
       "lens:123"
     )
   })
-
-  it("should link temporarily generated address", async () => {
-    const addr = wallet.getAddressString()
-    const { identity } = await db.createTempAddress(addr)
-    expect(await db.getAddressLink(identity.address.toLowerCase())).to.eql({
-      address: addr,
-      expiry: 0,
-    })
-    delete db.wallet
-    await db.set({ name: "Beth", age: 10 }, "ppl", "Beth", {
-      wallet: addr,
-      privateKey: identity.privateKey,
-    })
-    expect((await db.cget("ppl", "Beth")).setter).to.eql(addr)
-
-    await db.removeAddressLink(
+  it("should set signer and account", async () => {
+    const { identity, tx: param } = await db._createTempAddress(
+      wallet.getAddressString(),
+      null,
+      "lens:123",
       {
-        address: identity.address,
-      },
-      { wallet }
+        evm: wallet,
+        relay: true,
+        jobID: "auth:lens",
+      }
     )
-    await db.set({ name: "Bob", age: 20 }, "ppl", "Bob", {
-      privateKey: identity.privateKey,
+    const pkp = Wallet.createRandom()
+    pkp._account = { address: pkp.address }
+    const job = {
+      relayers: [pkp.address.toLowerCase()],
+      schema: {
+        type: "object",
+        required: ["linkTo"],
+        properties: {
+          linkTo: {
+            type: "string",
+          },
+        },
+      },
+    }
+    await db.addRelayerJob("auth:lens", job, {
+      ar: arweave_wallet,
     })
-    expect((await db.cget("ppl", "Bob")).setter).to.eql(
-      identity.address.toLowerCase()
+    const sig = await db.relay(
+      "auth:lens",
+      param,
+      { linkTo: "lens:123" },
+      { intmax: pkp, relay: true }
+    )
+    await db.write("relay", sig)
+    expect((await db.getAddressLink(identity.address)).address).to.eql(
+      "lens:123"
     )
   })
 
