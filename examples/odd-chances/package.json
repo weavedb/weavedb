@@ -1,0 +1,28 @@
+{
+  "name": "odd-chances",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@chakra-ui/icons": "^2.0.17",
+    "@chakra-ui/react": "^2.5.3",
+    "@emotion/react": "^11.10.6",
+    "@emotion/styled": "^11.10.6",
+    "buffer": "^6.0.3",
+    "chart.js": "^4.2.1",
+    "ethers": "^6.2.2",
+    "framer-motion": "^10.8.5",
+    "localforage": "^1.10.0",
+    "next": "13.2.4",
+    "ramda": "^0.28.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-toastify": "^9.1.2",
+    "weavedb-sdk": "^0.26.5"
+  }
+}
