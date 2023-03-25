@@ -103,7 +103,7 @@ For example always add `signer` address field as `address` field.
 
 ```js
 const rules = {
-  let : { "resource.newData.address" : "request.auth.signer" },
+  let : { "resource.newData.address" : { var: "request.auth.signer" } },
   "allow create" : true
 }
 await db.setRules(rules, "people", { ar : arweave_wallet })
