@@ -1,16 +1,7 @@
 import { Image, Box, Flex } from "@chakra-ui/react"
 import lf from "localforage"
-import { utils, ethers } from "ethers"
 import { last, assoc, isNil } from "ramda"
 import Link from "next/link"
-const lens = {
-  contract: "0xDb46d1Dc155634FbC732f92E853b10B288AD5a1d",
-  pkp_address: "0xF810D4a6F0118E6a6a86A9FBa0dd9EA669e1CC2E".toLowerCase(),
-  pkp_publicKey:
-    "0x04e1d2e8be025a1b8bb10b9c9a5ae9f11c02dbde892fee28e5060e146ae0df58182bdba7c7e801b75b80185c9e20a06944556a81355f117fcc5bd9a4851ac243e7",
-  ipfsId: "QmYq1RhS5A1LaEFZqN5rCBGnggYC9orEgHc9qEwnPfJci8",
-  abi: require("../lib/lens.json"),
-}
 
 export default function Header({
   sdk,
@@ -55,35 +46,17 @@ export default function Header({
                   setLogging(true)
                   const { identity, tx } = await sdk.createTempAddressWithLens()
                   if (tx.success) {
-                    const id = (
-                      await sdk.getAddressLink(identity.address)
-                    ).address.split(":")[1]
-                    const provider = new ethers.providers.Web3Provider(
-                      window.ethereum,
-                      "any"
-                    )
-                    const signer = provider.getSigner()
-                    await provider.send("eth_requestAccounts", [])
-
-                    const contract = new ethers.Contract(
-                      lens.contract,
-                      lens.abi,
-                      signer
-                    )
-                    const profile = await sdk.repeatQuery(contract.getProfile, [
-                      id,
-                    ])
+                    const uid = identity.linkedAccount
                     let _user = {
-                      id: id * 1,
-                      handle: profile.handle,
+                      id: uid.split(":")[1] * 1,
+                      handle: identity.profile.handle,
                       ...identity,
+                      image: !isNil(identity.profile.imageURI)
+                        ? `https://cloudflare-ipfs.com/ipfs/${last(
+                            identity.profile.imageURI.split("/")
+                          )}`
+                        : null,
                     }
-                    if (!isNil(profile.imageURI)) {
-                      _user.image = `https://cloudflare-ipfs.com/ipfs/${last(
-                        profile.imageURI.split("/")
-                      )}`
-                    }
-                    const uid = `lens:${_user.id}`
                     setUserMap(assoc(uid, _user, userMap))
                     setUser(_user)
                     await lf.setItem("user", _user)

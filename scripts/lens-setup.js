@@ -19,43 +19,35 @@ const setup = async () => {
       },
     },
   }
+
   const schema_users = {
     type: "object",
     required: ["name", "uid", "handle"],
     properties: {
-      name: {
-        type: "string",
-      },
-      uid: {
-        type: "string",
-      },
-      handle: {
-        type: "string",
-      },
+      name: { type: "string" },
+      uid: { type: "string" },
+      handle: { type: "string" },
+      image: { type: "string" },
     },
   }
+
   const schema_posts = {
     type: "object",
     required: ["user", "body", "date", "id"],
     properties: {
-      id: {
-        type: "string",
-      },
-      body: {
-        type: "string",
-      },
-      user: {
-        type: "string",
-      },
-      date: {
-        type: "number",
-      },
+      id: { type: "string" },
+      body: { type: "string" },
+      user: { type: "string" },
+      date: { type: "number" },
     },
   }
   const rules_users = {
     "allow create": {
       and: [
-        { "==": [{ var: "resource.newData.uid" }, { var: "request.id" }] },
+        // docid must be the same as uid
+        { "==": [{ var: "request.id" }, { var: "resource.newData.uid" }] },
+
+        // uid must be the same as signer
         {
           "==": [
             { var: "resource.newData.uid" },
@@ -66,57 +58,55 @@ const setup = async () => {
     },
     "allow update": {
       and: [
-        { "==": [{ var: "resource.data.uid" }, { var: "request.id" }] },
+        // docid must be the same as uid
+        { "==": [{ var: "request.id" }, { var: "resource.newData.uid" }] },
+
+        // uid must be the same as signer
         {
           "==": [{ var: "resource.data.uid" }, { var: "request.auth.signer" }],
         },
-      ],
-    },
-    "allow delete": {
-      and: [
+
+        // uid cannot be updated
         {
-          "==": [{ var: "request.id" }, { var: "resource.data.uid" }],
+          "==": [{ var: "resource.data.uid" }, { var: "resource.newData.uid" }],
+        },
+
+        // handle cannot be updated
+        {
+          "==": [
+            { var: "resource.data.handle" },
+            { var: "resource.newData.handle" },
+          ],
         },
       ],
     },
   }
   const rules_posts = {
     "let create": {
+      // define `id` variable to use later
       id: [
         "join",
         ":",
         [{ var: "resource.newData.user" }, { var: "resource.newData.id" }],
       ],
     },
-    "let delete": {
-      id: [
-        "join",
-        ":",
-        [{ var: "resource.data.user" }, { var: "resource.data.id" }],
-      ],
-    },
     "allow create": {
       and: [
+        // the signer must be `user`
         {
           "==": [
             { var: "resource.newData.user" },
             { var: "request.auth.signer" },
           ],
         },
-        {
-          "==": [{ var: "id" }, { var: "request.id" }],
-        },
+
+        // the docid must be the same as the predefined `id`
+        { "==": [{ var: "request.id" }, { var: "id" }] },
       ],
     },
     "allow delete": {
-      and: [
-        {
-          "==": [{ var: "resource.data.user" }, { var: "request.auth.signer" }],
-        },
-        {
-          "==": [{ var: "id" }, { var: "request.id" }],
-        },
-      ],
+      // the signer must be `user`
+      "==": [{ var: "request.auth.signer" }, { var: "resource.data.user" }],
     },
   }
   await send(sdk, wallet, [

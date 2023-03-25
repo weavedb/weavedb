@@ -76,10 +76,7 @@ export default function EditPost({
                 date: Date.now(),
                 id,
               }
-              const tx = await sdk.set(post, "posts", key, {
-                wallet: `lens:${user.id}`,
-                privateKey: user.privateKey,
-              })
+              const tx = await sdk.set(post, "posts", key, user)
               if (tx.success) {
                 setBody("")
                 setEdit(false)
