@@ -55,6 +55,7 @@ export default inject(
     const [whitelist, setWhitelist] = useState([])
     const [editGRPC, setEditGRPC] = useState(null)
     const [addCollection, setAddCollection] = useState(false)
+    const [addCollectionSchema, setAddCollectionSchema] = useState(false)
     const [addSchema, setAddSchema] = useState(false)
     const [schema, setSchema] = useState(null)
     const [rules, setRules] = useState(null)
@@ -450,6 +451,7 @@ export default inject(
       Collections: {
         tab,
         setAddCollection,
+        setAddCollectionSchema,
         setDocPath,
         setDocdata,
         setDocuments,
@@ -672,7 +674,9 @@ export default inject(
         contractTxId,
         base_path,
         addCollection,
+        addCollectionSchema,
         setAddCollection,
+        setAddCollectionSchema,
       },
       Console: {
         result,
