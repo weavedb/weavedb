@@ -46,6 +46,18 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      metadata: [
+        {
+          name: "twitter:image",
+          content:
+            "https://mirror-media.imgix.net/publication-images/oiiz3ON1zBm9UJbEbzgIs.jpeg",
+        },
+        {
+          name: "og:image",
+          content:
+            "https://mirror-media.imgix.net/publication-images/oiiz3ON1zBm9UJbEbzgIs.jpeg",
+        },
+      ],
       navbar: {
         title: "WeaveDB",
         logo: {
