@@ -25,7 +25,7 @@ export default inject(
               ":hover": { opacity: 0.75 },
             }}
           >
-            <Box as="i" className="fas fa-plus" />
+            <Box as="i" className="fas fa-edit" />
           </Box>
         )}
       </Flex>
