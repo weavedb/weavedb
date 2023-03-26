@@ -10,6 +10,7 @@ export default inject(
     fn,
     tab,
     setAddCollection,
+    setAddCollectionSchema,
     setDocPath,
     setDocdata,
     setDocuments,
@@ -26,11 +27,13 @@ export default inject(
         <Flex py={2} px={3} color="white" bg="#333" h="35px">
           <Box>Collections</Box>
           <Box flex={1} />
-          {!includes(tab, ["Data"]) ? null : (
+          {!includes(tab, ["Data", "Rules", "Schemas"]) ? null : (
             <Box
               onClick={() => {
                 if (isNil($.temp_current)) {
                   alert("authenticate wallet")
+                } else if (tab === "Schemas") {
+                  setAddCollectionSchema(true)
                 } else {
                   setAddCollection(true)
                 }

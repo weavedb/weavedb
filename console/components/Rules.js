@@ -22,7 +22,7 @@ export default ({ rules, isOwner, setNewRules, setAddRules, col }) => (
             ":hover": { opacity: 0.75 },
           }}
         >
-          <Box as="i" className="fas fa-plus" />
+          <Box as="i" className="fas fa-edit" />
         </Box>
       )}
     </Flex>

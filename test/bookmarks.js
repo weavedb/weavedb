@@ -35,14 +35,8 @@ describe("Bookmarks Example", function () {
   })
 
   beforeEach(async () => {
-    ;({
-      arweave_wallet,
-      walletAddress,
-      wallet,
-      wallet2,
-      wallet3,
-      wallet4,
-    } = await initBeforeEach(true))
+    ;({ arweave_wallet, walletAddress, wallet, wallet2, wallet3, wallet4 } =
+      await initBeforeEach(true))
   })
 
   const initDB = async () => {
