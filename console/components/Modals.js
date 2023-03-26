@@ -1,6 +1,7 @@
 import { inject } from "roidjs"
 
 import AddCollection from "./Modals/AddCollection"
+import AddCollectionSchema from "./Modals/AddCollectionSchema"
 import AddDoc from "./Modals/AddDoc"
 import AddData from "./Modals/AddData"
 import AddSchema from "./Modals/AddSchema"
@@ -149,11 +150,24 @@ export default inject(
     base_path,
     addCollection,
     setAddCollection,
+    addCollectionSchema,
+    setAddCollectionSchema,
     $,
     set,
   }) => (
     <>
-      {addCollection !== false ? (
+      {addCollectionSchema !== false ? (
+        <AddCollectionSchema
+          {...{
+            setAddCollectionSchema,
+            documents,
+            base_path,
+            contractTxId,
+            setCollections,
+            db,
+          }}
+        />
+      ) : addCollection !== false ? (
         <AddCollection
           {...{
             setAddCollection,
