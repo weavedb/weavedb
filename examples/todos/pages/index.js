@@ -100,7 +100,7 @@ export default function App() {
       await lf.setItem("temp_address:current", wallet_address)
       await lf.setItem(
         `temp_address:${contractTxId}:${wallet_address}`,
-        identity
+        JSON.parse(JSON.stringify(identity))
       )
       setUser({
         wallet: wallet_address,
