@@ -25,7 +25,7 @@ A new wallet is stored at `/scripts/.wallets/wallet-mainnet.json`.
 
 We will only use one collection `tasks` to keep it simple.
 
-## Set up Data Schemas
+### Set up Data Schemas
 
 ```js
 const schemas = {
@@ -51,7 +51,7 @@ await db.setSchema(schemas, "tasks")
 
 - `tasks` collection must have 4 fields (`task`, `date`, `user_address`, `done`).
 
-## Set up Access Control Rules
+### Set up Access Control Rules
 
 ```js
 const rules = {
@@ -103,6 +103,8 @@ await db.setRules(rules, "tasks")
 - Only `done` can be updated to `true` by the task owner (`user_address`)
 - Only the task owner (`user_address`) can delete the task
 
+### Set up Everything with Script
+
 To set up the schemas and the rules, you can simply run the pre-defined script in the repo.
 
 Replace `CONTRACT_TX_ID` with the `contractTxId` returned when deplying the WeaveDB contract.
@@ -148,6 +150,8 @@ We will implement these queries in the frontend code.
 
 ## Frontend Dapp
 
+### Create NextJS Project
+
 Set up a next.js project with the app name `todos`.
 
 ```bash
@@ -174,7 +178,7 @@ We use these minimum dependencies.
 - [localForage](https://localforage.github.io/localForage/) - IndexedDB wrapper to store a disposal wallet
 
 ```bash
-yarn add ramda localforage weavedb-sdk buffer ethers @chakra-ui/react @emotion/react@^11 @emotion/styled@^11 framer-motion@^6
+yarn add ramda localforage weavedb-sdk buffer ethers@5.7.2 @chakra-ui/react @emotion/react@^11 @emotion/styled@^11 framer-motion@^6
 ```
 ### Import Dependencies
 
@@ -337,7 +341,7 @@ We will generate a disposal account the first time a user logs in, link it with 
       await lf.setItem("temp_address:current", wallet_address)
       await lf.setItem(
         `temp_address:${contractTxId}:${wallet_address}`,
-        identity
+        JSON.parse(JSON.stringify(identity))
       )
       setUser({
         wallet: wallet_address,

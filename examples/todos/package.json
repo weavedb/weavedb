@@ -9,18 +9,18 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@chakra-ui/react": "^2.4.4",
+    "@chakra-ui/react": "^2.5.4",
     "@emotion/react": "^11",
     "@emotion/styled": "^11",
     "@next/font": "13.0.7",
     "buffer": "^6.0.3",
-    "ethers": "^5.7.2",
+    "ethers": "5.7.2",
     "framer-motion": "^6",
     "localforage": "^1.10.0",
     "next": "13.0.7",
     "ramda": "^0.28.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "weavedb-sdk": "^0.7.32"
+    "weavedb-sdk": "^0.26.5"
   }
 }
