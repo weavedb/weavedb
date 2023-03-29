@@ -211,7 +211,6 @@ export default function App() {
   const [tasks, setTasks] = useState([])
   const [tab, setTab] = useState("All")
   const [initDB, setInitDB] = useState(false)
-  let task = useRef()
   const tabs = isNil(user) ? ["All"] : ["All", "Yours"]
   return (...)
 }
@@ -220,7 +219,6 @@ export default function App() {
 - `tasks` - tasks to do
 - `tab` - current page tab
 - `initDB` - to determine if the WeaveDB is ready to use
-- `task` - a new task name linked with the input form
 - `tabs` - page tab options, `All` to display everyone's tasks, `Yours` for only your tasks
 
 ### Define Functions
@@ -499,37 +497,41 @@ When the page is loaded, check if the user is logged in.
 #### NewTask
 
 ```jsx
-  const NewTask = () => (
-    <Flex mb={4}>
-      <Input
-        placeholder="Enter New Task"
-        value={task.current}
-        onChange={e => {
-          task.current = e.target.value
-        }}
-        sx={{ borderRadius: "5px 0 0 5px" }}
-      />
-      <Flex
-        bg="#111"
-        color="white"
-        py={2}
-        px={6}
-        sx={{
-          borderRadius: "0 5px 5px 0",
-          cursor: "pointer",
-          ":hover": { opacity: 0.75 },
-        }}
-        onClick={async () => {
-          if (!/^\s*$/.test(task.current)) {
-            await addTask(task.current)
-            task.current = ""
-          }
-        }}
-      >
-        add
+  const NewTask = () => {
+    const [newTask, setNewTask] = useState("")
+
+    const handleAddBtnClick = async () => {
+      if (!/^\s*$/.test(newTask)) {
+        await addTask(newTask)
+        setNewTask("")
+      }
+    }
+
+    return (
+      <Flex mb={4}>
+        <Input
+          placeholder="Enter New Task"
+          value={newTask}
+          onChange={(e) => setNewTask(e.target.value)}
+          sx={{ borderRadius: "5px 0 0 5px" }}
+        />
+        <Flex
+          bg="#111"
+          color="white"
+          py={2}
+          px={6}
+          sx={{
+            borderRadius: "0 5px 5px 0",
+            cursor: "pointer",
+            ":hover": { opacity: 0.75 },
+          }}
+          onClick={handleAddBtnClick}
+        >
+          add
+        </Flex>
       </Flex>
-    </Flex>
-  )
+    )
+  }
 ```
 
 #### Transactions
@@ -797,37 +799,41 @@ export default function App() {
       </Flex>
     ))(tasks)
 
-  const NewTask = () => (
-    <Flex mb={4}>
-      <Input
-        placeholder="Enter New Task"
-        value={task.current}
-        onChange={e => {
-          task.current = e.target.value
-        }}
-        sx={{ borderRadius: "5px 0 0 5px" }}
-      />
-      <Flex
-        bg="#111"
-        color="white"
-        py={2}
-        px={6}
-        sx={{
-          borderRadius: "0 5px 5px 0",
-          cursor: "pointer",
-          ":hover": { opacity: 0.75 },
-        }}
-        onClick={async () => {
-          if (!/^\s*$/.test(task.current)) {
-            await addTask(task.current)
-            task.current = ""
-          }
-        }}
-      >
-        add
+  const NewTask = () => {
+    const [newTask, setNewTask] = useState("")
+
+    const handleAddBtnClick = async () => {
+      if (!/^\s*$/.test(newTask)) {
+        await addTask(newTask)
+        setNewTask("")
+      }
+    }
+
+    return (
+      <Flex mb={4}>
+        <Input
+          placeholder="Enter New Task"
+          value={newTask}
+          onChange={(e) => setNewTask(e.target.value)}
+          sx={{ borderRadius: "5px 0 0 5px" }}
+        />
+        <Flex
+          bg="#111"
+          color="white"
+          py={2}
+          px={6}
+          sx={{
+            borderRadius: "0 5px 5px 0",
+            cursor: "pointer",
+            ":hover": { opacity: 0.75 },
+          }}
+          onClick={handleAddBtnClick}
+        >
+          add
+        </Flex>
       </Flex>
-    </Flex>
-  )
+    )
+  }
   
   const Transactions = () => {
     return (
