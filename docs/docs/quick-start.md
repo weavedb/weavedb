@@ -123,7 +123,7 @@ The defferences between `set`, `upsert`, `update` are:
 
 - `set` will reset the whole doc if the doc already exists.
 - `update` will fail if the doc does not exist.
-- `upsert` will update with the new data if the doc exists or will add a new doc if it does not already exist.
+- `upsert` will merge the new data with an existing doc or will add a new doc if it does not already exist.
 
 
 ### Read
