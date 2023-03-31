@@ -4,34 +4,17 @@ sidebar_position: 2
 
 # Quick Start
 
-## Introduction
+This tutorial will guide you through the process of deploying your first WeaveDB database and teach you how to interact with it.
 
-### What is WeaveDB?
+## Database Structure
 
-Decentralized NoSQL(document-based) Database as a smart contract on [Arweave](https://www.arweave.org/).
+WeaveDB is structured in a hierarchical manner, with each instance consisting of collections, each collection consisting of documents, and each document containing data fields and sub-collections.
 
-It's fully decentralized [Firestore](https://firebase.google.com/docs/firestore) for web3 that provides features such as
-
-- cross-chain authentication
-- comparable performance with web2 alternatives
-- virtually unlimited scalability
-- cross-chain data composability via [Lit Protocol](https://litprotocol.com/)
-- encryption for private data
-- large data uploading via [Bundlr](https://bundlr.network/)
-- cron jobs without transactions
-- on-chain indexing
-- web2-like smooth UX for dapp users
-- native integration with social protocol such as [Lens Protocol](https://www.lens.xyz/)
-
-and many more.
-
-### Database Structure
-
-A WeaveDB instance has collections, each collection has docs, and each doc has data fields and sub-collections.
+Here's an illustration to help visualize this hierarchy:
 
 ![](https://i.imgur.com/aiLhOha.png)
 
-For example, let's define a collection called `people` and it could contain 3 docs as following.
+As an example, let's say we define a collection called people, which could contain three documents, as shown below:
 
 ```bash
 - people
@@ -52,186 +35,130 @@ For example, let's define a collection called `people` and it could contain 3 do
      |- age: 40
 ```
 
+## Create a Database
 
-## Basic
+To deploy a WeaveDB database, follow these steps:
 
-### Deploy Contract
+1. Go to [console.weavedb.dev](https://console.weavedb.dev/).
 
-Go to [console.weavedb.dev](https://console.weavedb.dev).
-
-Click `Deploy WeaveDB`.
+2. Click on the Deploy WeaveDB button.
 
 ![](https://i.imgur.com/4kzNNZr.png)
 
-Clik `Connect Owner Wallet` and connect your wallet. This will be the admin account to configure the DB.
+3. Connect your wallet by clicking on Connect Owner Wallet. This wallet will serve as the admin account for configuring your database.
 
 ![](https://i.imgur.com/dSZfEQ1.png)
 
-Set `Secure` to `False` for this tutorial (never do that for production dapps).
+4. Set `Secure` to `False` for the purposes of this tutorial. (Note: In a production setting, you should never set `Secure` to `False`.)
 
-Finally, `Deploy DB Instance`. Your DB will be deployed to the mainnet in a few seconds. You can view the transaction for the deployment via the `contractTxId` link.
+5. Finally, click on `Deploy DB Instance`. Your WeaveDB database will be deployed to the mainnet in just a few seconds. You can view the transaction for the deployment by clicking on the `contractTxId` link.
 
 ![](https://i.imgur.com/vL4d75W.png)
 
-### Play Around with Basic Queries
+## Query your Database
 
-WeaveDB has [the same queries as Firestore](https://firebase.google.com/docs/firestore/query-data/get-data) and more, but the syntax is simplified.
+WeaveDB has a similar syntax to [Firestore](https://firebase.google.com/docs/firestore/query-data/get-data) but simplified and expressed as a simple JSON array (e.g.`["get", "people", "Bob"]`). It is stored as a smart contract state and composed with other snippets. This is the key to the WeaveDB's advanced logic building using [FPJSON](https://fpjson.weavedb.dev), which is out of the scope of this tutorial.
 
-For example, this is an example query with Firestore.
+To begin interacting with your WeaveDB database, sign in with your owner wallet by following these steps:
 
-```javascript
-(await firestore.collection("people").doc("Bob").get()).data()
-```
-
-It's simplified with WeaveDB SDK,
-
-```javascript
-await db.get("people", "Bob")
-```
-
-and even shorter in WeaveDB terminal.
-
-```bash
-get people Bob
-```
-
-:::info
-The reason for this simplified syntax is it can be expressed as a simple JSON array (e.g.`["get", "people", "Bob"]`) and stored as a smart contract state and composed with other snippets. This is the key to the WeaveDB's advanced logic building using [FPJSON](https://fpjson.weavedb.dev), which is out of the scope of this tutorial.
-:::
-
-To play around with queries, `Sign Into DB` with your owner wallet first.
+1. Click on the `Sign Into DB` button.
 
 ![](https://i.imgur.com/UDaASKa.png)
 
-You can type and execute arbitrary queries in the bottom terminal.
+2. Once signed in, you can execute queries in the bottom terminal.
 
 ![](https://i.imgur.com/N0K8st0.png)
 
 :::caution
 When using the bottom terminal, try not to insert spaces in objects. Spaces are used to separate arguments so it will be parsed incorrectly, or wrap the object with `'` or `"`.
-
-This is wrong as there is a space after `{name:`.
-
-> set {name: "Bob"} people Bob
-
-These are correct.
-> set '{name: "Bob"}' people Bob
-
-> set {name:"Bob"} people Bob
 :::
 
-#### getInfo
+### Get Info
 
-To get general information about the instance.
+To get general information about your database:
 
 ```bash
 getInfo
 ```
 
-#### add : data_JSON : collection_name
+### Create
 
-To add a doc to a collection. The doc id will be auto-generated.
+To add a doc to a collection. The doc ID will be auto-generated:
 
 ```bash
+# add : data_JSON : collection_name
 add {name:"Bob",age:20} people
 ```
 
-#### set : data_JSON : collection_name : doc_name
+To set, update, delete, or upsert a doc, you can use the following commands followed by the new data, the collection name, and the doc name as arguments:
 
-To set a doc.
+### Set
 
 ```bash
+# set : data_JSON : collection_name : doc_name
 set {name:"Bob",age:20} people Bob
 ```
 
-#### update : data_JSON : collection_name : doc_name
-
-To update a doc.
+### Update
 
 ```bash
+# update : data_JSON : collection_name : doc_name
 update {age:30} people Bob
 ```
-#### delete : collection_name : doc_name
-
-To delete a doc.
+### Delete
 
 ```bash
+# delete : collection_name : doc_name
 delete people Bob
 ```
 
-#### upsert : data_JSON : collection_name : doc_name
-
-To upsert a doc.
+### Upsert
 
 ```bash
+# upsert : data_JSON : collection_name : doc_name
 upsert {name:"Bob",age:20} people Bob
 ```
 
-The defferences between `set`, `upsert`, `update` are
+The defferences between `set`, `upsert`, `update` are:
 
 - `set` will reset the whole doc if the doc already exists.
-- `update` will fail if the doc exists.
-- `upsert` works like `update` but will merge if the doc already exists.
+- `update` will fail if the doc does not exist.
+- `upsert` will merge the new data with an existing doc or will add a new doc if it does not already exist.
 
-Let's say there exists no doc at `peopoe` -> `Bob`.
 
-```bash
-update {name:"Bob",age:20}
-# this willl fail
+### Read
 
-upsert {name:"Bob",age:20}
-# {name: "Bob", age: 20}
-
-set {name:"Bob",age:20}
-# {name: "Bob", age: 20}
-```
-
-Let's say we have `{name: "Bob", age: 20}` at `peopoe` -> `Bob`.
-
-```bash
-update {age:25}
-# {name: "Bob", age: 25}
-
-upsert {age:25}
-# {name: "Bob", age: 25}
-
-set {age:25}
-# {age: 25}
-```
-
-#### get
-
-Let's add some people for the following tutorial.
+Let's add some people for the following tutorial:
 
 ```bash
 set {name:"Bob",age:20} people Bob
-set {name: "Alice",age:30} people Alice
+set {name:"Alice",age:30} people Alice
 set {name:"Mike",age:40} people Mike
 ```
 
-To get a single doc.
+To get a single doc:
 
 ```bash
 get people Bob 
 ```
 
-To get the docs in a collection.
+To get the docs in a collection:
 
 ```bash
 get people
 ```
 
-##### limit
+#### Limit
 
-To limit the number of docs returned.
+To limit the number of docs returned:
 
 ```bash
 get people 2
 ```
 
-##### where
+#### Where
 
-To get docs where the age is 20.
+To get docs where the age is 20:
 
 ```bash
 get people ["age","==",20]
@@ -243,7 +170,7 @@ You can use [the same operators as Firestore](https://firebase.google.com/docs/f
 
 ##### sort
 
-To sort by age in descending order.
+To sort by age in descending order:
 
 ```bash
 get people ["age","desc"]
@@ -254,7 +181,7 @@ Single field indexes are automatically generated. But to sort by more than 1 fie
 :::
 
 ### Add Multi-Field Indexes
-To set an index to sort people first by age in descending order, then by name in ascending order.
+To set an index to sort people first by age in descending order, then by name in ascending order:
 
 ```bash
 addIndex [["age","desc"],["name","asc"]] people
@@ -264,11 +191,11 @@ get people ["age","desc"] ["name"]
 
 ### Special Operations
 
-WeaveDB has shortcuts for common operations which only work with the SDK and not with the terminal for now.
+WeaveDB has shortcuts for common operations which only work with the [SDK](https://docs.weavedb.dev/docs/category/weavedb-sdk) and not with the terminal for now.
 
 ##### inc
 
-To increment a number, or add an arbitrary number to a field,
+To increment a number, or add an arbitrary number to a field:
 
 ```javascript
 // increment
@@ -283,21 +210,21 @@ await db.update({age: db.inc(-10)}, "people", "Bob")
 
 ##### union
 
-To add elements to an array,
+To add elements to an array:
 
 ```javascript
 await db.update({fav_foods: db.union("beef", "milk")}, "people", "Bob")
 ```
 ##### remove
 
-To remove elements from an array,
+To remove elements from an array:
 
 ```javascript
 await db.update({fav_foods: db.remove("beef", "milk")}, "people", "Bob")
 ```
 ##### del
 
-To delete a field,
+To delete a field:
 
 ```javascript
 await db.update({age: db.del()}, "people", "Bob")
@@ -305,14 +232,14 @@ await db.update({age: db.del()}, "people", "Bob")
 
 ##### ts
 
-To set the block timestamp to a field,
+To set the block timestamp to a field:
 
 ```javascript
 await db.update({birthday: db.ts()}, "people", "Bob")
 ```
 ##### signer
 
-To set the query signer to a field,
+To set the query signer to a field:
 
 ```javascript
 await db.update({wallet_address: db.signer()}, "people", "Bob")
@@ -335,7 +262,7 @@ For example, let's set a schema to the `people` collection.
 }
 ```
 
-This means 
+This means:
 
 - the document must be an `object`
 - `name` and `age` fields are required
@@ -346,7 +273,7 @@ To add the schema, click `Schema` in the side menu, select `people` from collect
 
 ![](https://i.imgur.com/DC4ROIm.png)
 
-Now you cannot add a document to `people` violating the schema, such as
+Now you cannot add a document to `people` violating the schema, such as:
 
 ```bash
 set {name:123,age:"Bob"} people Bob
@@ -385,7 +312,7 @@ For example, the following rules ensure that the uploader's wallet address(`requ
 
 `resource.newData` is the data after the query is applied, and `resource.data` is the existing data before the query is applied.
 
-This ensures only the original data updaters can update their own data.
+This ensures only the original data updaters can update their own data:
 
 ```javascript
 {
@@ -417,12 +344,12 @@ With [FPJSON](https://fpjson.weavedb.dev/), you can do powerful things such as m
 
 Now, let's connect with the DB instance from a front-end dapp. You need to use `weavedb-sdk` for that.
 
-To install,
+To install:
 
 ```bash
 yarn add weavedb-sdk
 ```
-To use in a front-end dapp,
+To use in a front-end dapp:
 
 ```javascript
 import SDK from "weavedb-sdk"
@@ -435,7 +362,7 @@ const people = await db.get("people")
 
 #### Execute Queries
 
-To add a doc with the browser connected Metamask,
+To add a doc with the browser connected Metamask:
 
 ```javascript
 const bob = {
@@ -450,7 +377,7 @@ const await db.add(bob, "people")
 Other wallets can also be authenticated, which includes Arweave, Internet Identity, IntmaxWallet and Lens Profile.
 :::
 
-To authenticate a user by generating a disposal address,
+To authenticate a user by generating a disposal address:
 
 ```javascript
 const { identity } = await db.createTempAddress()
@@ -551,7 +478,7 @@ The SDK needs to be initialized with an Arweave wallet to send transactions to A
 
 User authentication on WeaveDB is purely done by cryptography without any centralized components.
 
-There are 5 wallet integrations at the moment, which includes
+There are 5 wallet integrations at the moment, which includes:
 
 - [Metamask](https://metamask.io/) ([EVM](https://ethereum.org/en/developers/docs/evm/)) - `secp256k1`
 - [Internet Identity](https://identity.ic0.app/) ([Dfinity](https://dfinity.org/)) - `ed25519`
