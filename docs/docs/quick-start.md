@@ -524,13 +524,13 @@ We will explore the disposal key flow, but for any other usages, refer to [the A
 
 ```javascript
 // with Metamask
-const { tx, identity } = await db.generateTempAddress()
+const { tx, identity } = await db.createTempAddress()
 
 // with ArConnect
-const { tx, identity } = await db.generateTempAddressWithAR()
+const { tx, identity } = await db.createTempAddressWithAR()
 
 // with Lens Profile
-const { tx, identity } = await db.generateTempAddressWithLens()
+const { tx, identity } = await db.createTempAddressWithLens()
 ```
 
 You can also set an expiry date to disposal keys.
@@ -539,13 +539,13 @@ You can also set an expiry date to disposal keys.
 const expiry = 60 * 60 * 24 * 3 // 3 days
 
 // with Metamask, the first argument is to manually set the wallet
-const { tx, identity } = await db.generateTempAddress(null, expiry)
+const { tx, identity } = await db.createTempAddress(null, expiry)
 
 // with ArConnect
-const { tx, identity } = await db.generateTempAddressWithAR(null, expiry)
+const { tx, identity } = await db.createTempAddressWithAR(null, expiry)
 
 // with Lens Profile
-const { tx, identity } = await db.generateTempAddressWithLens(null, expiry)
+const { tx, identity } = await db.createTempAddressWithLens(null, expiry)
 ```
 
 The `identity` object.
