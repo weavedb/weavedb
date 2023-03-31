@@ -201,9 +201,9 @@ export default inject(
               <Flex fontSize="10px" mx={1} my={1}>
                 Authentication
               </Flex>
-              <Flex>
+              <Flex wrap="wrap">
                 {map(v => (
-                  <Box mx={3}>
+                  <Flex mx={2} align="center">
                     <Box
                       onClick={() => {
                         if (includes(v)(auths)) {
@@ -223,9 +223,9 @@ export default inject(
                         ":hover": { opacity: 0.75 },
                       }}
                     />
-                    {v}
-                  </Box>
-                ))(["Arweave", "EVM", "DFINITY", "Intmax", "Lens"])}
+                    <Box>{v}</Box>
+                  </Flex>
+                ))(["Arweave", "EVM", "DFINITY", "Intmax", "Lens", "WebAuthn"])}
               </Flex>
             </>
           ) : (

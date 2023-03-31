@@ -84,7 +84,14 @@ export const tabmap = {
   Nodes: { name: "gRPC Nodes" },
 }
 
-export const wallet_chains = ["Arweave", "EVM", "DFINITY", "Intmax", "Lens"]
+export const wallet_chains = [
+  "Arweave",
+  "EVM",
+  "DFINITY",
+  "Intmax",
+  "Lens",
+  "WebAuthn",
+]
 
 export const default_nodes = [
   {
@@ -110,3 +117,11 @@ export const weavedbSrcTxId = "zdP_QTSZ2zO9Nxa1sPAKhyR4geua1_a621_fZm2XPKU"
 //export const intmaxSrcTxId = "OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94"
 export const dfinitySrcTxId = "3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8"
 export const ethereumSrcTxId = "Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w"
+export const lens = {
+  contract: "0xDb46d1Dc155634FbC732f92E853b10B288AD5a1d",
+  pkp_address: "0xF810D4a6F0118E6a6a86A9FBa0dd9EA669e1CC2E".toLowerCase(),
+  pkp_publicKey:
+    "0x04e1d2e8be025a1b8bb10b9c9a5ae9f11c02dbde892fee28e5060e146ae0df58182bdba7c7e801b75b80185c9e20a06944556a81355f117fcc5bd9a4851ac243e7",
+  ipfsId: "QmYq1RhS5A1LaEFZqN5rCBGnggYC9orEgHc9qEwnPfJci8",
+  abi: require("./lens.json"),
+}

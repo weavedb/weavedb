@@ -77,6 +77,8 @@ const writes = [
 
 async function handle(state, action, _SmartWeave) {
   if (typeof SmartWeave !== "undefined") _SmartWeave = SmartWeave
+  const _crypto = SmartWeave.arweave.crypto || SmartWeave.arweave.wallets.crypto
+  console.log(_crypto)
   if (isEvolving(state) && includes(action.input.function)(writes)) {
     err("contract needs migration")
   }
