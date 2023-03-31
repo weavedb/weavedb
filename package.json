@@ -8,6 +8,7 @@
     "@execution-machine/sdk": "^0.1.6",
     "@metamask/eth-sig-util": "^5.0.0",
     "@peculiar/webcrypto": "^1.4.0",
+    "@simplewebauthn/server": "^7.2.0",
     "arlocal": "^1.1.60",
     "arweave": "^1.12.6",
     "asn1.js": "^5.4.1",
