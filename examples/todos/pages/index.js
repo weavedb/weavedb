@@ -14,7 +14,6 @@ export default function App() {
   const [tasks, setTasks] = useState([])
   const [tab, setTab] = useState("All")
   const [initDB, setInitDB] = useState(false)
-  let task = useRef()
   const tabs = isNil(user) ? ["All"] : ["All", "Yours"]
 
   const setupWeaveDB = async () => {
@@ -100,7 +99,7 @@ export default function App() {
       await lf.setItem("temp_address:current", wallet_address)
       await lf.setItem(
         `temp_address:${contractTxId}:${wallet_address}`,
-        identity
+        JSON.parse(JSON.stringify(identity))
       )
       setUser({
         wallet: wallet_address,
@@ -221,37 +220,41 @@ export default function App() {
       </Flex>
     ))(tasks)
 
-  const NewTask = () => (
-    <Flex mb={4}>
-      <Input
-        placeholder="Enter New Task"
-        value={task.current}
-        onChange={e => {
-          task.current = e.target.value
-        }}
-        sx={{ borderRadius: "5px 0 0 5px" }}
-      />
-      <Flex
-        bg="#111"
-        color="white"
-        py={2}
-        px={6}
-        sx={{
-          borderRadius: "0 5px 5px 0",
-          cursor: "pointer",
-          ":hover": { opacity: 0.75 },
-        }}
-        onClick={async () => {
-          if (!/^\s*$/.test(task.current)) {
-            await addTask(task.current)
-            task.current = ""
-          }
-        }}
-      >
-        add
+  const NewTask = () => {
+    const [newTask, setNewTask] = useState("")
+
+    const handleAddBtnClick = async () => {
+      if (!/^\s*$/.test(newTask)) {
+        await addTask(newTask)
+        setNewTask("")
+      }
+    }
+
+    return (
+      <Flex mb={4}>
+        <Input
+          placeholder="Enter New Task"
+          value={newTask}
+          onChange={(e) => setNewTask(e.target.value)}
+          sx={{ borderRadius: "5px 0 0 5px" }}
+        />
+        <Flex
+          bg="#111"
+          color="white"
+          py={2}
+          px={6}
+          sx={{
+            borderRadius: "0 5px 5px 0",
+            cursor: "pointer",
+            ":hover": { opacity: 0.75 },
+          }}
+          onClick={handleAddBtnClick}
+        >
+          add
+        </Flex>
       </Flex>
-    </Flex>
-  )
+    )
+  }
 
   const Transactions = () => {
     return (
