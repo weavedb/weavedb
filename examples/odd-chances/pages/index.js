@@ -17,10 +17,10 @@ import SDK from "weavedb-sdk"
 import { ToastContainer, toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import { Chart } from "chart.js/auto"
-import { Buffer } from "buffer"
+import { nanoid } from "nanoid"
 
 let db
-const contractTxId = "lbOlx5cpz1xQA_8-FyIgFj6Nakjkdp6EoJBhE4Y-hnk"
+const contractTxId = "I-4lx8uOt-tOR6ebAEDw4jw3X4ntokdIBE7l4bXIHnM"
 const COLLECTION_NAME = "game_results"
 const LAST_GUESS_DATE_DEFAULT = 0
 
@@ -35,13 +35,11 @@ export default function Home() {
   const chartRef = useRef(null)
 
   const setupWeaveDB = async () => {
-    window.Buffer = Buffer
-    db = new SDK({
-      contractTxId,
+    db = await new SDK({
+      contractTxId: contractTxId,
     })
     await db.initializeWithoutWallet()
     setInitDB(true)
-    console.log("<<setupWeaveDB()")
   }
 
   const checkUser = async () => {
@@ -120,11 +118,13 @@ export default function Home() {
   }
 
   const addGuess = async (isEven) => {
+    const docId = nanoid()
+    console.log("docId", docId)
     console.log("addGuess() : isEven", isEven)
     console.log("addGuess() : lastGuessDate", lastGuessDate)
 
     try {
-      const result = await db.add(
+      const tx = await db.set(
         {
           is_even: isEven,
           date: db.ts(),
@@ -132,20 +132,25 @@ export default function Home() {
           last_guess_date: lastGuessDate,
         },
         COLLECTION_NAME,
+        docId,
         user
       )
+      console.log("tx", tx)
 
-      if (result.success === false) {
-        console.log(result)
-        toast(result.error.dryWrite.errorMessage)
+      const newDocument = await db.get(COLLECTION_NAME, docId)
+      console.log("addGuess newDocument", newDocument)
+      if (isNil(newDocument)) {
+        const txResult = await db.getResult()
+        console.log("addGuess txResult", txResult)
+        toast(txResult.error)
       } else {
-        const str = result?.doc?.is_even ? "EVEN" : "ODD"
-        result?.doc?.has_won
-          ? toast("You won! Your guess is " + str + "==" + result?.doc?.date)
-          : toast("You lost! Your guess is " + str + "==" + result?.doc?.date)
-
-        getMyGameResults()
+        const str = isEven ? "EVEN" : "ODD"
+        newDocument.has_won
+          ? toast("You won! Your guess is " + str + "==" + newDocument.date)
+          : toast("You lost! Your guess is " + str + "==" + newDocument.date)
       }
+
+      getMyGameResults()
     } catch (e) {
       toast(e.message)
       console.log(e)
@@ -160,6 +165,7 @@ export default function Home() {
           ["user_address", "==", user.wallet.toLowerCase()],
           ["date", "desc"]
         )
+        console.log("getMyGameResults result", result)
         setLastGuessDate(result[0]?.data?.date ?? LAST_GUESS_DATE_DEFAULT)
 
         let winCount = 0
