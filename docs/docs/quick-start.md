@@ -545,7 +545,7 @@ const { tx, identity } = await db.createTempAddress(null, expiry)
 const { tx, identity } = await db.createTempAddressWithAR(null, expiry)
 
 // with Lens Profile
-const { tx, identity } = await db.createTempAddressWithLens(null, expiry)
+const { tx, identity } = await db.createTempAddressWithLens(expiry)
 ```
 
 The `identity` object.
