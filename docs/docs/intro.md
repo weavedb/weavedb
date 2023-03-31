@@ -2,48 +2,41 @@
 sidebar_position: 1
 ---
 
-# Introduction
+# About WeaveDB
 
-## What is WeaveDB?
+## What WeaveDB Is
 
-WeaveDB is a NoSQL database powered by [Warp Contracts](https://warp.cc/) (SmartWeave) on the [Arweave](https://www.arweave.org/) blockchain.
+WeaveDB is a NoSQL database powered by [Warp Contracts](https://warp.cc/) on the [Arweave](https://www.arweave.org/) blockchain.
 
-The query APIs are similar to [Firestore](https://firebase.google.com/docs/firestore) from Google but completely decentralized.
+While web3 dapps may use decentralized technologies like blockchain to facilitate trust and transparency, they may still rely on centralized components like databases for storing data. This can lead to a certain level of centralization, as these components are often controlled by a single entity or organization.
 
-- Data is stored on the Arweave permanent storage where anyone can access without permission.
-- User authentication is done by pure cryptography using crypto wallets such as MetaMask and ArConnect.
-- SmartWeave makes it possible to apply complex computation to stored data for web-centric large-scale dapps just like web2 apps.
+WeaveDB is addressing this issue by offering a decentralized database layer that is not only scalable but also free to use and faster than many traditional web2 solutions.
 
-## Crypto Account Authentication
+## How WeaveDB Works
 
-Database access is permissionless and authentication is done with pure cryptography, which authorizes EVM-based accounts with [EIP-712](https://eips.ethereum.org/EIPS/eip-712) signatures on SmartWeave contracts.
+WeaveDB is a decentralized database system that uses the Arweave network as its underlying storage layer. It is designed to offer a scalable, secure, and fast solution for data storage.
 
-Other types of crypto accounts will be supported in the future such as Arweave and Polkadot.
+It also provides instant finality where transaction fees can be paid in advance with tokens from different chains thanks to [Bundlr](https://bundlr.network/).
 
-## Quick Start
+Each WeaveDB database instance is a [Warp](https://warp.cc/) smart contract on the Arweave blockchain.
 
-You can follow this [quick start guide](/docs/quick-start) to dive into WeaveDB.
+Overall, WeaveDB operates using a hybrid architecture that brings the benefits of traditional centralized databases to the web3 space in a decentralized manner.
 
-## Demo Dapps
+## Why WeaveDB
 
-The the latest contract can be found [here](/docs/sdk/version).
+WeaveDB offers several advantages over traditional web2 solutions:
 
-### The Wall 2 on DEFINITY
-
-A v0.5 demo dapp (The Wall 2) is deployed at [xdiw4-hiaaa-aaaai-qnnbq-cai.ic0.app](https://xdiw4-hiaaa-aaaai-qnnbq-cai.ic0.app).
-
-### Todo Manager
-
-A v0.2 demo dapp (Todo Manager) is deployed at [weavedb-todos.asteroid.ac](https://weavedb-todos.asteroid.ac).
-
-- [Dapp Building Tutorial](/docs/examples/todos)
-
-### Mirror Social Bookmarking
-
-A v0.2 demo dapp (Social Bookmarking) is deployed at [asteroid.ac](https://asteroid.ac).
-
-- [Dapp Building Tutorial](/docs/examples/bookmarks)
+- **Fast query performance**: The query performance is often faster than web2 solutions.
+- **Cheap permanent storage**: Data is stored on [Arweave](https://arweave.org).
+- **Prepaid gas fees**: With [Bundlr](https://bundlr.network/), developer can cover gas fees upfront.
+- **Cross-chain crypto authentication**: WeaveDB supports authentication using any EVM-based, DFINITY, and ArConnect wallets.
+- **Decentralized APIs**: APIs similar to [Firestore](https://firebase.google.com/docs/firestore) but completely decentralized.
+- **Cross-chain data bridges**: Allowing developers to easily import their data from different blockchain networks and even web2 APIs.
+- **Data encryption**: You can use Lit protocol to encrypt data, ensuring data privacy and security.
+- **Scalability**: WeaveDB is virtually infinitely scalable, making it ideal for large-scale decentralized applications.
+- **Built-in decentralized indexer**: Making it easy to search and query large datasets without relying on a centralzied indexer.
+- **Scheduled tasks**: Allowing developers to execute actions on-chain at specified times.
 
 :::caution
-WeaveDB is still in its infancy. Everything is subject to change.
+WeaveDB is still in Alpha. Everything is subject to change.
 :::
