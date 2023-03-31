@@ -1,13 +1,5 @@
 import { nanoid } from "nanoid"
 const { Ed25519KeyIdentity } = require("@dfinity/identity")
-const lens = {
-  contract: "0xDb46d1Dc155634FbC732f92E853b10B288AD5a1d",
-  pkp_address: "0xF810D4a6F0118E6a6a86A9FBa0dd9EA669e1CC2E".toLowerCase(),
-  pkp_publicKey:
-    "0x04e1d2e8be025a1b8bb10b9c9a5ae9f11c02dbde892fee28e5060e146ae0df58182bdba7c7e801b75b80185c9e20a06944556a81355f117fcc5bd9a4851ac243e7",
-  ipfsId: "QmYq1RhS5A1LaEFZqN5rCBGnggYC9orEgHc9qEwnPfJci8",
-  abi: require("./lens.json"),
-}
 import Arweave from "arweave"
 import lf from "localforage"
 import SDK from "weavedb-sdk"
@@ -30,7 +22,7 @@ import {
   isEmpty,
 } from "ramda"
 import { Buffer } from "buffer"
-import { weavedbSrcTxId, dfinitySrcTxId, ethereumSrcTxId } from "./const"
+import { weavedbSrcTxId, dfinitySrcTxId, ethereumSrcTxId, lens } from "./const"
 let arweave_wallet, sdk, nodesdk
 const a = addr =>
   /^0x.+$/.test(trim(addr)) ? trim(addr).toLowerCase() : trim(addr)
@@ -404,6 +396,59 @@ export const createTempAddressWithLens = async ({
   }
 }
 
+export const createTempAddressWithWebAuthn = async ({
+  set,
+  fn,
+  val: { contractTxId, network, node },
+}) => {
+  alert("coming soon")
+  return
+  let identity, tx, addr, err
+  try {
+    ;({ tx, identity } = await new Log(
+      sdk,
+      "createTempAddressWithWebAuthn",
+      [],
+      null,
+      fn
+    ).rec())
+  } catch (e) {
+    throw e
+  }
+  throw new Error("something went wrong")
+  const linked = await new Log(
+    sdk,
+    "getAddressLink",
+    identity.address,
+    null,
+    fn
+  ).rec()
+  if (isNil(linked)) {
+    throw new Error("something went wrong")
+    return
+  } else {
+    addr = linked.address
+  }
+  if (!isNil(tx) && isNil(tx.err)) {
+    const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
+    await provider.send("eth_requestAccounts", [])
+    const signer = provider.getSigner()
+    const contract = new ethers.Contract(lens.contract, lens.abi, signer)
+    const handle = await sdk.repeatQuery(contract.getHandle, [
+      addr.split(":")[1],
+    ])
+    addr += `:${handle}`
+    identity.tx = dissoc("getResult", tx)
+    identity.linked_address = addr
+    await lf.setItem("temp_address:current", addr)
+    identity.network = network
+    identity.type = "webauthn"
+    await lf.setItem(`temp_address:${contractTxId}:${addr}`, identity)
+    set(addr, "temp_current")
+    set({ addr, type: "webauthn", network }, "temp_current_all")
+  }
+}
+
 export const connectAddress = async ({ set, val: { network } }) => {
   const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
   await provider.send("eth_requestAccounts", [])
@@ -634,19 +679,30 @@ export const deployDB = async ({
         canEvolve,
       },
     }
+    initial_state.extra.relayers = {}
     if (includes("Lens", auths)) {
-      initial_state.extra.relayers = {
-        "auth:lens": {
-          relayers: [
-            "0xF810D4a6F0118E6a6a86A9FBa0dd9EA669e1CC2E".toLowerCase(),
-          ],
-          schema: {
-            type: "object",
-            required: ["linkTo"],
-            properties: {
-              linkTo: {
-                type: "string",
-              },
+      initial_state.extra.relayers["auth:lens"] = {
+        relayers: ["0xF810D4a6F0118E6a6a86A9FBa0dd9EA669e1CC2E".toLowerCase()],
+        schema: {
+          type: "object",
+          required: ["linkTo"],
+          properties: {
+            linkTo: {
+              type: "string",
+            },
+          },
+        },
+      }
+    }
+    if (includes("WebAuthn", auths)) {
+      initial_state.extra.relayers["auth:webauthn"] = {
+        relayers: [owner],
+        schema: {
+          type: "object",
+          required: ["linkTo"],
+          properties: {
+            linkTo: {
+              type: "string",
             },
           },
         },
