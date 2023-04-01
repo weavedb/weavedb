@@ -1,0 +1,30 @@
+{
+  "name": "LensWeave",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@chakra-ui/icons": "^2.0.17",
+    "@chakra-ui/react": "^2.5.1",
+    "@emotion/react": "^11",
+    "@emotion/styled": "^11",
+    "@next/font": "13.1.1",
+    "dayjs": "^1.11.7",
+    "framer-motion": "^6",
+    "lit-js-sdk": "^1.3.4",
+    "localforage": "^1.10.0",
+    "nanoid": "^4.0.1",
+    "next": "13.1.1",
+    "ramda": "^0.28.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-jdenticon": "^1.0.0",
+    "weavedb-client": "^0.26.5",
+    "weavedb-sdk": "^0.26.7"
+  }
+}

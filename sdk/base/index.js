@@ -362,19 +362,23 @@ class Base {
         requireResidentKey: false,
       },
     }
-    console.log(option)
     if (isNil(_identity?.pub)) {
       const cred = await startRegistration(option)
       _identity.pub = to64(cred.pkey)
       _identity.id = cred.rawId
     }
-    option.allowCredentials = [
-      {
-        id: _identity.id,
-        type: "public-key",
-      },
-    ]
-    const { response } = await startAuthentication(option)
+    let response = null
+    try {
+      ;({ response } = await startAuthentication(option))
+    } catch (e) {
+      option.allowCredentials = [
+        {
+          id: _identity.id,
+          type: "public-key",
+        },
+      ]
+      ;({ response } = await startAuthentication(option))
+    }
     const addr = _identity.pub
     let { identity, tx: param } = await this._createTempAddress(
       _identity.address.toLowerCase(),
@@ -398,8 +402,6 @@ class Base {
       contractTxId: this.contractTxId,
       nonce,
     }
-    console.log(_identity, data)
-
     const { err, signature } = await fetch("/api/webauthn", {
       method: "POST",
       headers: {
@@ -422,7 +424,7 @@ class Base {
       caller: webauthn.pkp_address,
       type: "secp256k1-2",
     }
-    console.log(relay_params)
+    identity.webauthn = _identity
     return { identity, tx: await this.write("relay", relay_params) }
   }
   async createTempAddressWithLens(expiry, linkTo, opt = {}) {

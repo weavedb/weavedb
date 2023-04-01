@@ -81,7 +81,7 @@ To get general information about your database:
 getInfo
 ```
 
-### Create
+### Add
 
 To add a doc to a collection. The doc ID will be auto-generated:
 
@@ -126,7 +126,7 @@ The defferences between `set`, `upsert`, `update` are:
 - `upsert` will merge the new data with an existing doc or will add a new doc if it does not already exist.
 
 
-### Read
+### Get
 
 Let's add some people for the following tutorial:
 
