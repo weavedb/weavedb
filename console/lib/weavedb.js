@@ -401,13 +401,13 @@ export const createTempAddressWithWebAuthn = async ({
   fn,
   val: { contractTxId, network, node },
 }) => {
-  let identity, tx, addr, err
+  let _webauthn, identity, tx, addr, err
   try {
-    identity = (await lf.getItem("webauthn")) || null
+    _webauthn = (await lf.getItem("webauthn")) || null
     ;({ tx, identity } = await new Log(
       sdk,
       "createTempAddressWithWebAuthn",
-      [identity],
+      [_webauthn],
       null,
       fn
     ).rec(true))
@@ -428,6 +428,7 @@ export const createTempAddressWithWebAuthn = async ({
     addr = linked.address
   }
   if (!isNil(tx) && isNil(tx.err)) {
+    await lf.getItem("webauthn", identity.webauthn)
     identity.tx = dissoc("getResult", tx)
     identity.linked_address = addr
     await lf.setItem("temp_address:current", addr)
