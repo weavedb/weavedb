@@ -216,12 +216,11 @@ export default inject(
                     } else {
                       let err = null
                       try {
-                        const tx = await fn(createTempAddressWithLens)({
+                        await fn(createTempAddressWithLens)({
                           contractTxId,
                           network,
                           node: tab === "Nodes",
                         })
-                        console.log(tx)
                       } catch (e) {
                         err = e.message || e.toString?.()
                       }
@@ -267,12 +266,11 @@ export default inject(
                     } else {
                       let err = null
                       try {
-                        const tx = await fn(createTempAddressWithWebAuthn)({
+                        await fn(createTempAddressWithWebAuthn)({
                           contractTxId,
                           network,
                           node: tab === "Nodes",
                         })
-                        console.log(tx)
                       } catch (e) {
                         err = e.message || e.toString?.()
                       }
@@ -288,87 +286,6 @@ export default inject(
                           position: "bottom-right",
                         })
                       }
-                      return
-                      const to64 = v =>
-                        btoa(String.fromCharCode(...new Uint8Array(v)))
-                      const from8 = v => Buffer.from(v).toString("base64")
-                      let identity = await lf.getItem("webauthn")
-                      identity ??= EthCrypto.createIdentity()
-                      let opt = {
-                        challenge: identity.address,
-                        rp: {
-                          name: "WeaveDB",
-                          id: window.location.hostname,
-                        },
-                        user: {
-                          id: identity.address,
-                          name: identity.address,
-                          displayName: identity.address,
-                        },
-                        pubKeyCredParams: [
-                          {
-                            alg: -7,
-                            type: "public-key",
-                          },
-                        ],
-                        timeout: 60000,
-                        attestation: "none",
-                        authenticatorSelection: {
-                          residentKey: "preferred",
-                          userVerification: "preferred",
-                          requireResidentKey: false,
-                        },
-                      }
-                      if (isNil(identity.pub)) {
-                        const cred = await startRegistration(opt)
-                        identity.pub = to64(cred.pkey)
-                        identity.id = cred.rawId
-                      }
-                      await lf.setItem("webauthn", identity)
-                      opt.allowCredentials = [
-                        {
-                          id: identity.id,
-                          type: "public-key",
-                        },
-                      ]
-                      const { response } = await startAuthentication(opt)
-                      const sig = new Uint8Array(
-                        base64URLStringToBuffer(response.signature)
-                      )
-                      const authenticatorData = new Uint8Array(
-                        base64URLStringToBuffer(response.authenticatorData)
-                      )
-                      const clientDataHash = new Uint8Array(
-                        await crypto.subtle.digest(
-                          "SHA-256",
-                          base64URLStringToBuffer(response.clientDataJSON)
-                        )
-                      )
-                      let signedData = new Uint8Array(
-                        authenticatorData.length + clientDataHash.length
-                      )
-                      signedData.set(authenticatorData)
-                      signedData.set(clientDataHash, authenticatorData.length)
-                      const rStart = sig[4] === 0 ? 5 : 4
-                      const rEnd = rStart + 32
-                      const sStart = sig[rEnd + 2] === 0 ? rEnd + 3 : rEnd + 2
-                      const r = sig.slice(rStart, rEnd)
-                      const s = sig.slice(sStart)
-                      const data = {
-                        data: to64(signedData.buffer),
-                        sig: from8(sig),
-                        r: from8(r),
-                        s: from8(s),
-                        ...identity,
-                      }
-                      const signed = await fetch("/api/webauthn", {
-                        method: "POST",
-                        headers: {
-                          "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify(data),
-                      }).then(v => v.json())
-                      console.log(signed)
                     }
                     set(false, "signing_in")
                     set(false, "signing_in_modal")

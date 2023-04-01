@@ -401,21 +401,19 @@ export const createTempAddressWithWebAuthn = async ({
   fn,
   val: { contractTxId, network, node },
 }) => {
-  alert("coming soon")
-  return
   let identity, tx, addr, err
   try {
+    identity = (await lf.getItem("webauthn")) || null
     ;({ tx, identity } = await new Log(
       sdk,
       "createTempAddressWithWebAuthn",
-      [],
+      [identity],
       null,
       fn
-    ).rec())
+    ).rec(true))
   } catch (e) {
     throw e
   }
-  throw new Error("something went wrong")
   const linked = await new Log(
     sdk,
     "getAddressLink",
@@ -430,14 +428,6 @@ export const createTempAddressWithWebAuthn = async ({
     addr = linked.address
   }
   if (!isNil(tx) && isNil(tx.err)) {
-    const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
-    await provider.send("eth_requestAccounts", [])
-    const signer = provider.getSigner()
-    const contract = new ethers.Contract(lens.contract, lens.abi, signer)
-    const handle = await sdk.repeatQuery(contract.getHandle, [
-      addr.split(":")[1],
-    ])
-    addr += `:${handle}`
     identity.tx = dissoc("getResult", tx)
     identity.linked_address = addr
     await lf.setItem("temp_address:current", addr)
@@ -447,6 +437,7 @@ export const createTempAddressWithWebAuthn = async ({
     set(addr, "temp_current")
     set({ addr, type: "webauthn", network }, "temp_current_all")
   }
+  return
 }
 
 export const connectAddress = async ({ set, val: { network } }) => {
@@ -696,7 +687,7 @@ export const deployDB = async ({
     }
     if (includes("WebAuthn", auths)) {
       initial_state.extra.relayers["auth:webauthn"] = {
-        relayers: [owner],
+        relayers: ["0xdadd5Ad754190eCa1150ef1c802F6867F8cFcA65".toLowerCase()],
         schema: {
           type: "object",
           required: ["linkTo"],

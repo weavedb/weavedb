@@ -1,5 +1,13 @@
+const elliptic = require("elliptic")
 const EthCrypto = require("eth-crypto")
 const { providers, Contract, utils } = require("ethers")
+
+const {
+  startAuthentication,
+  startRegistration,
+  base64URLStringToBuffer,
+} = require("./webauthn")
+
 //const buildEddsa = require("circomlibjs").buildEddsa
 const {
   pick,
@@ -56,6 +64,13 @@ const lens = {
       type: "function",
     },
   ],
+}
+
+const webauthn = {
+  pkp_address: "0xdadd5Ad754190eCa1150ef1c802F6867F8cFcA65".toLowerCase(),
+  pkp_publicKey:
+    "0x0453d638b15b62cd62973bc2748339e9223460091fb8f16ce57cfa46f8acaaf0b46f9266b99932232d23e3c9fd0bc5ff45eff63016cba685db105ff2dfb85271b7",
+  ipfsId: "QmTziR8846wWM69FLsYpUD8LzQERAw4b6eAWUCDryZUTsy",
 }
 
 class Base {
@@ -315,6 +330,101 @@ class Base {
       return this._repeatQuery(func, query)
     }
   }
+  async createTempAddressWithWebAuthn(_identity, expiry, linkTo, opt = {}) {
+    if (typeof window === "undefined") {
+      throw new Error("WebAuthn is only compaitble with browser")
+    }
+    const to64 = v => btoa(String.fromCharCode(...new Uint8Array(v)))
+    const from8 = v => Buffer.from(v).toString("base64")
+    _identity ??= EthCrypto.createIdentity()
+    let option = {
+      challenge: _identity.address.slice(2),
+      rp: {
+        name: "WeaveDB",
+        id: window.location.hostname,
+      },
+      user: {
+        id: _identity.address,
+        name: _identity.address,
+        displayName: _identity.address,
+      },
+      pubKeyCredParams: [
+        {
+          alg: -7,
+          type: "public-key",
+        },
+      ],
+      timeout: 60000,
+      attestation: "none",
+      authenticatorSelection: {
+        residentKey: "preferred",
+        userVerification: "preferred",
+        requireResidentKey: false,
+      },
+    }
+    console.log(option)
+    if (isNil(_identity?.pub)) {
+      const cred = await startRegistration(option)
+      _identity.pub = to64(cred.pkey)
+      _identity.id = cred.rawId
+    }
+    option.allowCredentials = [
+      {
+        id: _identity.id,
+        type: "public-key",
+      },
+    ]
+    const { response } = await startAuthentication(option)
+    const addr = _identity.pub
+    let { identity, tx: param } = await this._createTempAddress(
+      _identity.address.toLowerCase(),
+      null,
+      `webauthn:${addr}`,
+      {
+        privateKey: _identity.privateKey,
+        relay: true,
+        jobID: "auth:webauthn",
+      },
+      "webauthn",
+      _identity
+    )
+    const nonce = 1
+    const data = {
+      clientDataJSON: response.clientDataJSON,
+      authenticatorData: response.authenticatorData,
+      signature: response.signature,
+      pub: _identity.pub,
+      param,
+      contractTxId: this.contractTxId,
+      nonce,
+    }
+    console.log(_identity, data)
+
+    const { err, signature } = await fetch("/api/webauthn", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        data,
+        param,
+        lit_action: {
+          ipfsId: webauthn.ipfsId,
+          publicKey: webauthn.pkp_publicKey,
+        },
+      }),
+    }).then(v => v.json())
+    let relay_params = {
+      function: "relay",
+      query: ["auth:webauthn", param, { linkTo: param.query.linkTo }],
+      signature,
+      nonce,
+      caller: webauthn.pkp_address,
+      type: "secp256k1-2",
+    }
+    console.log(relay_params)
+    return { identity, tx: await this.write("relay", relay_params) }
+  }
   async createTempAddressWithLens(expiry, linkTo, opt = {}) {
     try {
       if (typeof window === "undefined") {
@@ -495,8 +605,8 @@ class Base {
     )
   }
 
-  async _createTempAddress(addr, expiry, linkTo, opt, type = "evm") {
-    let identity = EthCrypto.createIdentity()
+  async _createTempAddress(addr, expiry, linkTo, opt, type = "evm", identity) {
+    identity ??= EthCrypto.createIdentity()
     const nonce = await this.getNonce(addr)
     let query = isNil(expiry) ? { address: addr } : { address: addr, expiry }
     if (!isNil(linkTo)) query.linkTo = linkTo
