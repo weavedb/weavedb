@@ -1,6 +1,6 @@
 {
   "name": "weavedb-base",
-  "version": "0.26.7",
+  "version": "0.26.9",
   "description": "A decentralized NoSQL database powered by Arweave.",
   "homepage": "https://weavedb.dev",
   "repository": {
@@ -15,6 +15,7 @@
   "dependencies": {
     "@metamask/eth-sig-util": "^4.0.1",
     "@metamask/legacy-web3": "^2.0.0",
+    "@simplewebauthn/server": "^7.2.0",
     "eth-crypto": "^2.3.0",
     "ethereumjs-util": "^7.1.5",
     "ethers": "5.7.2",

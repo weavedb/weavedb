@@ -7,6 +7,12 @@ const {
   startRegistration,
   base64URLStringToBuffer,
 } = require("./webauthn")
+const {
+  generateRegistrationOptions,
+  verifyRegistrationResponse,
+  generateAuthenticationOptions,
+  verifyAuthenticationResponse,
+} = require("@simplewebauthn/server")
 
 //const buildEddsa = require("circomlibjs").buildEddsa
 const {
@@ -71,6 +77,16 @@ const webauthn = {
   pkp_publicKey:
     "0x0453d638b15b62cd62973bc2748339e9223460091fb8f16ce57cfa46f8acaaf0b46f9266b99932232d23e3c9fd0bc5ff45eff63016cba685db105ff2dfb85271b7",
   ipfsId: "QmTziR8846wWM69FLsYpUD8LzQERAw4b6eAWUCDryZUTsy",
+}
+
+function to8(base64) {
+  var binary_string = atob(base64)
+  var len = binary_string.length
+  var bytes = new Uint8Array(len)
+  for (var i = 0; i < len; i++) {
+    bytes[i] = binary_string.charCodeAt(i)
+  }
+  return bytes
 }
 
 class Base {
@@ -337,48 +353,51 @@ class Base {
     const to64 = v => btoa(String.fromCharCode(...new Uint8Array(v)))
     const from8 = v => Buffer.from(v).toString("base64")
     _identity ??= EthCrypto.createIdentity()
-    let option = {
-      challenge: _identity.address.slice(2),
-      rp: {
-        name: "WeaveDB",
-        id: window.location.hostname,
-      },
-      user: {
-        id: _identity.address,
-        name: _identity.address,
-        displayName: _identity.address,
-      },
-      pubKeyCredParams: [
+    if (isNil(_identity?.pub)) {
+      let options = generateRegistrationOptions({
+        rpName: "WeaveDB",
+        rpID: location.hostname,
+        userID: _identity.address,
+        userName: _identity.address,
+        attestationType: "none",
+      })
+      options.challenge = _identity.address.slice(2)
+      options.pubKeyCredParams = [
         {
           alg: -7,
           type: "public-key",
         },
-      ],
-      timeout: 60000,
-      attestation: "none",
-      authenticatorSelection: {
+      ]
+      options.authenticatorSelection = {
         residentKey: "preferred",
         userVerification: "preferred",
         requireResidentKey: false,
-      },
-    }
-    if (isNil(_identity?.pub)) {
-      const cred = await startRegistration(option)
+      }
+      const cred = await startRegistration(options)
       _identity.pub = to64(cred.pkey)
       _identity.id = cred.rawId
+      const verification = await verifyRegistrationResponse({
+        response: cred,
+        expectedChallenge: options.challenge,
+        expectedOrigin: `${location.protocol}//${location.host}`,
+        expectedRPID: location.hostname,
+      })
+      _identity.credentialID = Buffer.from(
+        verification.registrationInfo.credentialID
+      ).toString("base64")
     }
     let response = null
-    try {
-      ;({ response } = await startAuthentication(option))
-    } catch (e) {
-      option.allowCredentials = [
+    const options2 = generateAuthenticationOptions({
+      allowCredentials: [
         {
-          id: _identity.id,
+          id: to8(_identity.credentialID),
           type: "public-key",
         },
-      ]
-      ;({ response } = await startAuthentication(option))
-    }
+      ],
+      userVerification: "preferred",
+    })
+    options2.challenge = _identity.address.slice(2)
+    ;({ response } = await startAuthentication(options2))
     const addr = _identity.pub
     let { identity, tx: param } = await this._createTempAddress(
       _identity.address.toLowerCase(),
