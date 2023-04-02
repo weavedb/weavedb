@@ -8,6 +8,9 @@
     "start": "next start",
     "lint": "next lint"
   },
+  "engines": {
+    "node": "18"
+  },
   "dependencies": {
     "@chakra-ui/icons": "^2.0.17",
     "@chakra-ui/react": "^2.5.1",
@@ -24,7 +27,6 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-jdenticon": "^1.0.0",
-    "weavedb-client": "^0.26.5",
-    "weavedb-sdk": "^0.26.7"
+    "weavedb-client": "^0.26.7"
   }
 }

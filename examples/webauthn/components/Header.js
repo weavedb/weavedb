@@ -1,8 +1,10 @@
+import { useEffect, useState } from "react"
 import { Image, Box, Flex } from "@chakra-ui/react"
 import lf from "localforage"
 import { last, assoc, isNil } from "ramda"
 import Link from "next/link"
 import Jdenticon from "react-jdenticon"
+
 export default function Header({
   sdk,
   userMap,
@@ -13,6 +15,12 @@ export default function Header({
   logging,
   user,
 }) {
+  const [_identity, setIdentity] = useState(null)
+  useEffect(() => {
+    ;(async () => {
+      setIdentity((await lf.getItem("webauthn")) || null)
+    })()
+  }, [])
   return (
     <>
       <Flex w="100%" justify="center" align="center" bg="white" color="#8B5CF6">
@@ -47,11 +55,9 @@ export default function Header({
               onClick={async () => {
                 try {
                   setLogging(true)
-                  const _identity = (await lf.getItem("webauthn")) || null
                   const { identity, tx } =
                     await sdk.createTempAddressWithWebAuthn(_identity)
                   if (tx.success) {
-                    await lf.setItem("webauthn", identity.webauthn)
                     const uid = identity.id
                     let _user = {
                       id: identity.linkedAccount,
@@ -68,6 +74,12 @@ export default function Header({
                       console.log(tx)
                       setUserMap(assoc(uid, wuser, userMap))
                     }
+                    setIdentity(identity.webauthn)
+                    setTimeout(
+                      async () =>
+                        await lf.setItem("webauthn", identity.webauthn),
+                      0
+                    )
                   } else {
                     alert("Something went wrong. Please try again.")
                   }
