@@ -1,6 +1,5 @@
 const { isNil, is, intersection } = require("ramda")
-const { parse } = require("../../lib/utils")
-const { err, clone } = require("../../lib/utils")
+const { wrapResult, parse, err, clone } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { validate: validator } = require("../../lib/jsonschema")
 
@@ -32,14 +31,7 @@ const removeRelayerJob = async (
   const [jobID] = query
   if (isNil(state.relayers[jobID])) err("relayer job doesn't exist")
   delete state.relayers[jobID]
-  return {
-    state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { removeRelayerJob }

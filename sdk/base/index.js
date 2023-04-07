@@ -1,3 +1,4 @@
+const pako = require("pako")
 const elliptic = require("elliptic")
 const EthCrypto = require("eth-crypto")
 const { providers, Contract, utils } = require("ethers")
@@ -178,6 +179,12 @@ class Base {
     )
   }
 
+  async bundle(queries, opt) {
+    const input = JSON.stringify(queries)
+    const output = pako.deflate(input)
+    const base64 = btoa(String.fromCharCode.apply(null, output))
+    return this._write2("bundle", base64, opt)
+  }
   async addOwner(address, opt) {
     return this._write2("addOwner", { address }, opt)
   }

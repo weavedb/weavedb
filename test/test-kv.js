@@ -51,7 +51,7 @@ describe("WeaveDB", function () {
       dfinityTxId,
       ethereumTxId,
       contractTxId,
-    } = await initBeforeEach(false, false, "ar", true, false))
+    } = await initBeforeEach(false, false, "evm", true, false))
   })
 
   afterEach(async () => {
@@ -81,9 +81,9 @@ describe("WeaveDB", function () {
   })
 
   it("should get nonce", async () => {
-    expect(await db.getNonce(walletAddress)).to.equal(1)
+    expect(await db.getNonce(wallet.getAddressString())).to.equal(1)
     await db.set({ id: 1 }, "col", "doc")
-    expect(await db.getNonce(walletAddress)).to.equal(2)
+    expect(await db.getNonce(wallet.getAddressString())).to.equal(2)
   })
 
   it("should add & get", async () => {
@@ -444,7 +444,7 @@ describe("WeaveDB", function () {
     ])
   })
 
-  it.skip("should link temporarily generated address", async () => {
+  it("should link temporarily generated address", async () => {
     const addr = wallet.getAddressString()
     const { identity } = await db.createTempAddress(addr)
     expect(await db.getAddressLink(identity.address.toLowerCase())).to.eql({
@@ -514,7 +514,7 @@ describe("WeaveDB", function () {
     expect((await db.getCrons()).crons).to.eql({})
   })
 
-  it.skip("should link temporarily generated address with internet identity", async () => {
+  it("should link temporarily generated address with internet identity", async () => {
     const ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(_ii))
     const addr = ii.toJSON()[0]
     const { identity } = await db.createTempAddressWithII(ii)
@@ -537,7 +537,7 @@ describe("WeaveDB", function () {
     )
   })
 
-  it.skip("should add & get with internet identity", async () => {
+  it("should add & get with internet identity", async () => {
     const ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(_ii))
     const data = { name: "Bob", age: 20 }
     const tx = (await db.add(data, "ppl", { ii })).originalTxId
@@ -546,7 +546,7 @@ describe("WeaveDB", function () {
     )
   })
 
-  it.skip("should add & get with Arweave wallet", async () => {
+  it("should add & get with Arweave wallet", async () => {
     const arweave_wallet = await db.arweave.wallets.generate()
     const data = { name: "Bob", age: 20 }
     const tx = (await db.add(data, "ppl", { ar: arweave_wallet })).originalTxId
@@ -555,7 +555,7 @@ describe("WeaveDB", function () {
     return
   })
 
-  it.skip("should link temporarily generated address with Arweave wallet", async () => {
+  it("should link temporarily generated address with Arweave wallet", async () => {
     const arweave_wallet = await db.arweave.wallets.generate()
     let addr = await db.arweave.wallets.jwkToAddress(arweave_wallet)
     const { identity } = await db.createTempAddressWithAR(arweave_wallet)
@@ -614,11 +614,12 @@ describe("WeaveDB", function () {
     expect(await db.getLinkedContract("contractA")).to.eql(null)
     return
   })
-
   it("should evolve", async () => {
     const data = { name: "Bob", age: 20 }
+    const data2 = { name: "Alice", age: 30 }
     const evolve = "contract-1"
     const evolve2 = "contract-2"
+    const evolve3 = "contract-3"
     const version = require("../contracts/weavedb-kv/lib/version")
     const history1 = {
       signer: walletAddress,
@@ -628,6 +629,11 @@ describe("WeaveDB", function () {
     const history2 = {
       signer: walletAddress,
       srcTxId: evolve2,
+      oldVersion: version,
+    }
+    const history3 = {
+      signer: walletAddress,
+      srcTxId: evolve3,
       oldVersion: version,
     }
 
@@ -690,6 +696,18 @@ describe("WeaveDB", function () {
     await db.set(data, "ppl", "Bob")
     expect(await db.get("ppl", "Bob")).to.eql(data)
 
+    await db.evolve(evolve3, { ar: arweave_wallet })
+    await db.evolve(evolve2, { ar: arweave_wallet })
+    expect(
+      compose(map(pick(["signer", "srcTxId", "oldVersion"])))(
+        (await db.getEvolve()).history
+      )
+    ).to.eql([history1, history2, history3, history2])
+    await db.set(data2, "ppl", "Alice")
+    expect(await db.get("ppl", "Alice")).to.eql(null)
+    await db.migrate(version, { ar: arweave_wallet })
+    await db.set(data2, "ppl", "Alice")
+    expect(await db.get("ppl", "Alice")).to.eql(data2)
     return
   })
 
@@ -706,7 +724,7 @@ describe("WeaveDB", function () {
     return
   })
 
-  it.skip("should relay queries", async () => {
+  it("should relay queries", async () => {
     const identity = EthCrypto.createIdentity()
     const job = {
       relayers: [identity.address],
@@ -758,7 +776,7 @@ describe("WeaveDB", function () {
     return
   })
 
-  it.skip("should relay queries with multisig", async () => {
+  it("should relay queries with multisig", async () => {
     const identity = EthCrypto.createIdentity()
     const identity2 = EthCrypto.createIdentity()
     const identity3 = EthCrypto.createIdentity()
@@ -823,7 +841,7 @@ describe("WeaveDB", function () {
     return
   })
 
-  it.skip("should match signers", async () => {
+  it("should match signers", async () => {
     const original_account = EthWallet.generate()
     const { identity: temp_account } = await db.createTempAddress(
       original_account
@@ -877,7 +895,7 @@ describe("WeaveDB", function () {
     )
     expect(await db.getInfo()).to.eql({
       auth: {
-        algorithms: ["rsa256"],
+        algorithms: ["secp256k1", "secp256k1-2", "ed25519", "rsa256"],
         name: "weavedb",
         version: "1",
       },

@@ -1,6 +1,5 @@
 const { isNil, mergeLeft, init } = require("ramda")
-const { parse, mergeData } = require("../../lib/utils")
-const { err } = require("../../lib/utils")
+const { wrapResult, err, parse, mergeData } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { removeIndex: _removeIndex, getIndex } = require("../../lib/index")
 
@@ -30,14 +29,7 @@ const removeIndex = async (
     SmartWeave
   )
   await _removeIndex(new_data, path, SmartWeave)
-  return {
-    state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { removeIndex }

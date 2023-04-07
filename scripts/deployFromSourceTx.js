@@ -50,6 +50,11 @@ const deploy = async () => {
     ...stateFromFile,
     ...{
       owner: walletAddress,
+      evaluationManifest: {
+        evaluationOptions: {
+          useKVStorage: true,
+        },
+      },
     },
   }
   // initialState.contracts.intmax = contractTxId_Intmax

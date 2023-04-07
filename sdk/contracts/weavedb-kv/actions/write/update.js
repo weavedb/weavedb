@@ -1,5 +1,11 @@
 const { isNil, init, last } = require("ramda")
-const { err, clone, parse, validateSchema } = require("../../lib/utils")
+const {
+  wrapResult,
+  err,
+  clone,
+  parse,
+  validateSchema,
+} = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { updateData } = require("../../lib/index")
 
@@ -32,14 +38,7 @@ const update = async (
 
   _data.__data = next_data
   await SmartWeave.kv.put(`data.${path.join("/")}`, _data)
-  return {
-    state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { update }

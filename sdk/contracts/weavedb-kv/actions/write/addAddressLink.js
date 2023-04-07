@@ -1,5 +1,5 @@
 const { is, isNil } = require("ramda")
-const { err } = require("../../lib/utils")
+const { err, wrapResult } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 
 const addAddressLink = async (
@@ -7,7 +7,8 @@ const addAddressLink = async (
   action,
   signer,
   contractErr = true,
-  SmartWeave
+  SmartWeave,
+  _linkTo
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -19,7 +20,9 @@ const addAddressLink = async (
     ))
   }
 
-  const { address, signature, expiry } = action.input.query
+  const { address, signature, expiry, linkTo } = action.input.query
+  if ((!isNil(linkTo) || !isNil(_linkTo)) && linkTo !== _linkTo)
+    err("linkTo doesn't match")
   if (!isNil(expiry) && !is(Number, expiry)) err("expiry must be a number")
   const { nonce } = action.input
   let _expiry = expiry || 0
@@ -34,10 +37,11 @@ const addAddressLink = async (
     version: state.auth.version,
     verifyingContract: SmartWeave.contract.id,
   }
-  const query =
+  let query =
     typeof expiry === "undefined"
       ? { address: signer }
       : { address: signer, expiry }
+  if (!isNil(linkTo)) query.linkTo = linkTo
   const message = {
     nonce,
     query: JSON.stringify({
@@ -75,17 +79,10 @@ const addAddressLink = async (
     }
   }
   state.auth.links[address.toLowerCase()] = {
-    address: signer,
+    address: linkTo || signer,
     expiry: expiry === 0 ? 0 : SmartWeave.block.timestamp + expiry,
   }
-  return {
-    state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { addAddressLink }
