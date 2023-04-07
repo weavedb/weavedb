@@ -1,6 +1,5 @@
 const { isNil, mergeLeft } = require("ramda")
-const { clone, parse, mergeData } = require("../../lib/utils")
-const { err } = require("../../lib/utils")
+const { wrapResult, err, clone, parse, mergeData } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { validate: validator } = require("../../lib/jsonschema")
 
@@ -36,14 +35,7 @@ const setSchema = async (
     err("schema error")
   }
   await SmartWeave.kv.put(`data.${path.join("/")}`, _data)
-  return {
-    state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { setSchema }

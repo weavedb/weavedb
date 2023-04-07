@@ -249,12 +249,11 @@ export const setupWeaveDB = async ({
     } catch (e) {}
   }
   if (!isRPC && !isNil(contractTxId)) {
-    _sdk.initialize({
+    await _sdk.init({
       contractTxId: contractTxId,
       wallet: arweave_wallet,
     })
   }
-  window.Buffer = Buffer
   if (!temp) sdk = _sdk
   return _sdk
 }
@@ -617,6 +616,11 @@ async function deployFromSrc({ src, warp, init, extra, algorithms }) {
     wallet: new ArweaveSigner(wallet),
     initState: JSON.stringify(initialState),
     srcTxId: src,
+    /*evaluationManifest: {
+      evaluationOptions: {
+        useKVStorage: true,
+      },
+    },*/
   })
   return contractTxId
 }

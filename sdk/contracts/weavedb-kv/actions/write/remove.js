@@ -1,6 +1,5 @@
 const { isNil, last, init } = require("ramda")
-const { parse } = require("../../lib/utils")
-const { err } = require("../../lib/utils")
+const { wrapResult, parse, err } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { removeData, getIndex } = require("../../lib/index")
 
@@ -37,14 +36,7 @@ const remove = async (
   await removeData(last(path), db, init(path), SmartWeave)
   _data.__data = null
   await SmartWeave.kv.put(`data.${path.join("/")}`, _data)
-  return {
-    state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { remove }

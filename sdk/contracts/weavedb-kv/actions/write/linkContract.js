@@ -1,6 +1,6 @@
 const { isNil, is } = require("ramda")
 const { validate } = require("../../lib/validate")
-const { err, parse } = require("../../lib/utils")
+const { wrapResult, err, parse } = require("../../lib/utils")
 
 const linkContract = async (
   state,
@@ -34,14 +34,7 @@ const linkContract = async (
   }
   if (isNil(state.contracts)) state.contracts = {}
   state.contracts[key] = address
-  return {
-    state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { linkContract }
