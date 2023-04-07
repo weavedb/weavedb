@@ -41,6 +41,7 @@ const { addAddressLink } = require("./actions/write/addAddressLink")
 const { evolve } = require("./actions/write/evolve")
 const { add } = require("./actions/write/add")
 const { batch } = require("./actions/write/batch")
+const { bundle } = require("./actions/write/bundle")
 const { relay } = require("./actions/write/relay")
 const { migrate } = require("./actions/write/migrate")
 
@@ -59,6 +60,7 @@ const writes = [
   "upsert",
   "remove",
   "batch",
+  "bundle",
   "addCron",
   "removeCron",
   "setAlgorithms",
@@ -75,7 +77,11 @@ const writes = [
 
 async function handle(state, action, _SmartWeave) {
   if (typeof SmartWeave !== "undefined") _SmartWeave = SmartWeave
-  if (isEvolving(state) && includes(action.input.function)(writes)) {
+  if (
+    isEvolving(state) &&
+    includes(action.input.function)(writes) &&
+    action.input.function !== "evolve"
+  ) {
     err("contract needs migration")
   }
   try {
@@ -159,7 +165,10 @@ async function handle(state, action, _SmartWeave) {
       return await addHash(
         await batch(state, action, undefined, undefined, _SmartWeave)
       )
-
+    case "bundle":
+      return await addHash(
+        await bundle(state, action, undefined, undefined, _SmartWeave)
+      )
     case "relay":
       return await addHash(
         await relay(state, action, undefined, undefined, _SmartWeave)

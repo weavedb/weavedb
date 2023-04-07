@@ -42,6 +42,11 @@ async function deployContract(secure) {
     ...stateFromFile,
     ...{
       owner: walletAddress,
+      evaluationManifest: {
+        evaluationOptions: {
+          useKVStorage: true,
+        },
+      },
     },
   }
   //initialState.contracts.intmax = contractTxIdIntmax
