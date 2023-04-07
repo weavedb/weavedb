@@ -1,5 +1,5 @@
 const { isNil } = require("ramda")
-const { err, clone, isOwner } = require("../../lib/utils")
+const { wrapResult, err, clone, isOwner } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { executeCron } = require("../../lib/cron")
 const c = require("../../lib/cron")
@@ -51,17 +51,7 @@ const addCron = async (
       err("cron failed to execute")
     }
   }
-  return {
-    state,
-    result: {
-      original_signer,
-      result: {
-        original_signer,
-        transaction: SmartWeave.transaction,
-        block: SmartWeave.block,
-      },
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { addCron }

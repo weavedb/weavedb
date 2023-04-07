@@ -1,6 +1,5 @@
 const { o, flatten, isNil, mergeLeft, includes, init } = require("ramda")
-const { parse } = require("../../lib/utils")
-const { err } = require("../../lib/utils")
+const { wrapResult, parse, err } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { addIndex: _addIndex, getIndex } = require("../../lib/index")
 
@@ -37,14 +36,7 @@ const addIndex = async (
     return (await SmartWeave.kv.get(doc_key)) || { __data: null, subs: {} }
   }
   await _addIndex(new_data, path, db, SmartWeave)
-  return {
-    state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { addIndex }

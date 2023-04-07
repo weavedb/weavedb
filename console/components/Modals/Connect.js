@@ -245,7 +245,7 @@ export default inject(
                   <Image height="120px" src="/static/images/lens.png" />
                 </Flex>
               )}
-              {version < 25 || $.owner_signing_in_modal ? null : (
+              {true || version < 25 || $.owner_signing_in_modal ? null : (
                 <Flex
                   justify="center"
                   align="center"

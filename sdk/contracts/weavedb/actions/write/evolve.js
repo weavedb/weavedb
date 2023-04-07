@@ -34,7 +34,7 @@ const evolve = async (
   state.evolveHistory.push({
     signer,
     block: SmartWeave.block.height,
-    data: SmartWeave.block.timestamp,
+    date: SmartWeave.block.timestamp,
     srcTxId: action.input.value,
     oldVersion: state.version,
   })

@@ -2,6 +2,7 @@ let fpjson = require("fpjson-lang")
 fpjson = fpjson.default || fpjson
 const jsonLogic = require("json-logic-js")
 const {
+  mergeLeft,
   of,
   concat,
   without,
@@ -41,11 +42,6 @@ const getCol = async (path, _signer, SmartWeave, current_path = []) => {
     if (!isValidName(id)) err(`doc id is not valid: ${id}`)
     current_path.push(col)
     current_path.push(id)
-    /*
-    data.__docs[id] ||= { __data: null, subs: {} }
-    if (!isNil(_signer) && isNil(data[col].__docs[id].setter)) {
-      data.__docs[id].setter = _signer
-    }*/
     return await getCol(
       slice(2, path.length, path),
       _signer,
@@ -492,7 +488,28 @@ const isOwner = (signer, state) => {
   return owner
 }
 
+const wrapResult = (state, original_signer, SmartWeave, extra) => ({
+  state,
+  result: mergeLeft(extra, {
+    original_signer,
+    transaction: {
+      id: SmartWeave?.transaction?.id || null,
+      owner: SmartWeave?.transaction?.owner || null,
+      tags: SmartWeave?.transaction?.tags || null,
+      quantity: SmartWeave?.transaction?.quantity || null,
+      target: SmartWeave?.transaction?.target || null,
+      reward: SmartWeave?.transaction?.reward || null,
+    },
+    block: {
+      height: SmartWeave?.block?.height || null,
+      timestamp: SmartWeave?.block?.timestamp || null,
+      indep_hash: SmartWeave?.block?.indep_hash || null,
+    },
+  }),
+})
+
 module.exports = {
+  wrapResult,
   isOwner,
   clone,
   err,
