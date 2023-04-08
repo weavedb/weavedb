@@ -1,5 +1,5 @@
 import { Box, Flex } from "@chakra-ui/react"
-export default ({ title, children, close, type = "center" }) => (
+export default ({ title, children, width, close, type = "center" }) => (
   <Flex
     w="100%"
     h="100%"
@@ -12,7 +12,7 @@ export default ({ title, children, close, type = "center" }) => (
     <Flex
       direction="column"
       bg="white"
-      w={type === "right" ? "50%" : "500px"}
+      w={type === "right" ? width ?? "50%" : "500px"}
       minW="500px"
       h={type === "right" ? "100%" : "auto"}
       p={3}
