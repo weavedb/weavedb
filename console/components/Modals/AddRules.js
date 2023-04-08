@@ -27,10 +27,7 @@ export default inject(
     $,
   }) => {
     return (
-      <Modal title="Access Control Rules" close={setAddRules}>
-        <Flex mb={1} fontSize="10px">
-          Rules for ({doc_path.join(" > ")})
-        </Flex>
+      <Modal type="right" title="Access Control Rules" close={setAddRules}>
         <Editor
           value={newRules}
           onValueChange={code => setNewRules(code)}
@@ -38,6 +35,7 @@ export default inject(
           padding={10}
           placeholder="Access Contral Rules"
           style={{
+            flex: 1,
             border: "1px solid #E2E8F0",
             borderRadius: "5px",
             fontFamily: '"Fira code", "Fira Mono", monospace',

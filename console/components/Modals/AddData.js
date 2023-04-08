@@ -45,7 +45,7 @@ export default inject(
     )
     const [newFieldBool, setNewFieldBool] = useState(true)
     return (
-      <Modal title="Data" close={setAddData}>
+      <Modal title="Data" close={setAddData} type="right">
         <Flex mb={3}>
           <Select
             value={newFieldType}
@@ -89,6 +89,7 @@ export default inject(
             padding={10}
             placeholder="Access Contral Rules"
             style={{
+              flex: 1,
               border: "1px solid #E2E8F0",
               borderRadius: "5px",
               fontFamily: '"Fira code", "Fira Mono", monospace',
@@ -103,6 +104,7 @@ export default inject(
             padding={10}
             placeholder="Field Value"
             style={{
+              flex: 1,
               border: "1px solid #E2E8F0",
               borderRadius: "5px",
               fontFamily: '"Fira code", "Fira Mono", monospace',

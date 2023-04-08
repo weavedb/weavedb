@@ -23,7 +23,7 @@ export default inject(
     const [newSigners, setNewSigners] = useState([])
 
     return (
-      <Modal title="Relayer Job" close={setAddRelayer}>
+      <Modal title="Relayer Job" close={setAddRelayer} type="right">
         <Flex>
           <Input
             value={newJobName}
@@ -186,6 +186,7 @@ export default inject(
           padding={10}
           placeholder="Schema for Extra Data"
           style={{
+            flex: 1,
             border: "1px solid #E2E8F0",
             borderRadius: "5px",
             fontFamily: '"Fira code", "Fira Mono", monospace',
