@@ -28,7 +28,7 @@ export default inject(
       `{"type":"object","required":[],"properties":{}}`
     )
     return (
-      <Modal title="Data Schema" close={setAddCollectionSchema}>
+      <Modal type="right" title="Data Schema" close={setAddCollectionSchema}>
         <Input
           value={newCollection}
           placeholder="Collection ID"
@@ -45,6 +45,7 @@ export default inject(
           padding={10}
           placeholder="Schema"
           style={{
+            flex: 1,
             border: "1px solid #E2E8F0",
             borderRadius: "5px",
             fontFamily: '"Fira code", "Fira Mono", monospace',
