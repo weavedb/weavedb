@@ -302,9 +302,12 @@ class SDK extends Base {
   async init(params = {}) {
     let { wallet } = params
     wallet ??= await this.arweave.wallets.generate()
-    const evaluationOptions = (
-      await this.warp.definitionLoader.load(this.contractTxId)
-    ).manifest.evaluationOptions
+    let evaluationOptions = {}
+    try {
+      evaluationOptions = (
+        await this.warp.definitionLoader.load(this.contractTxId)
+      ).manifest.evaluationOptions
+    } catch (e) {}
     this.initialize({ wallet, evaluationOptions, ...params })
   }
   initialize({
