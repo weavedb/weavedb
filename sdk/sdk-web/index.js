@@ -294,14 +294,13 @@ class SDK extends Base {
     await this.arweave.api.get("mine")
   }
 
-  async initializeWithoutWallet(params = {}) {
-    const wallet = await this.arweave.wallets.generate()
-    if (this.network === "localhost") await this.addFunds(wallet)
-    this.initialize({ wallet, ...params })
+  async initializeWithoutWallet(params) {
+    await init(params)
   }
   async init(params = {}) {
     let { wallet } = params
     wallet ??= await this.arweave.wallets.generate()
+    if (this.network === "localhost") await this.addFunds(wallet)
     let evaluationOptions = {}
     try {
       evaluationOptions = (
@@ -552,6 +551,17 @@ class SDK extends Base {
       },
     }
   }
+  async viewState(params, attempt = 0) {
+    try {
+      return await this.db.viewState(params)
+    } catch (e) {
+      if (attempt < 5) {
+        return this.viewState(params, ++attempt)
+      } else {
+        throw e
+      }
+    }
+  }
   async read(params, nocache = this.nocache_default) {
     if (!nocache && !isNil(this.state)) {
       try {
@@ -566,7 +576,7 @@ class SDK extends Base {
         throw e
       }
     }
-    const res = await this.db.viewState(params)
+    const res = await this.viewState(params)
     if (res.type === "ok") {
       this.state = res.state
       states[this.contractTxId] = this.state
