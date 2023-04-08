@@ -21,7 +21,7 @@ export default inject(
     const [newCron, setNewCron] = useState("[]")
     const [newTimes, setNewTimes] = useState("")
     return (
-      <Modal title="Cron Job" close={setAddCron}>
+      <Modal title="Cron Job" close={setAddCron} type="right">
         <Flex>
           <Input
             value={newCronName}
@@ -109,6 +109,7 @@ export default inject(
           padding={10}
           placeholder="Cron Jobs"
           style={{
+            flex: 1,
             border: "1px solid #E2E8F0",
             borderRadius: "5px",
             fontFamily: '"Fira code", "Fira Mono", monospace',

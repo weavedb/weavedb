@@ -26,7 +26,7 @@ export default inject(
     const [newCollection, setNewCollection] = useState("")
     const [newRules, setNewRules] = useState(`{"allow write": true}`)
     return (
-      <Modal title="Access Control Rules" close={setAddCollection}>
+      <Modal type="right" title="Access Control Rules" close={setAddCollection}>
         <Input
           value={newCollection}
           placeholder="Collection ID"
@@ -43,6 +43,7 @@ export default inject(
           padding={10}
           placeholder="Access Contral Rules"
           style={{
+            flex: 1,
             border: "1px solid #E2E8F0",
             borderRadius: "5px",
             fontFamily: '"Fira code", "Fira Mono", monospace',
