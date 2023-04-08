@@ -1,19 +1,22 @@
 import { Box, Flex } from "@chakra-ui/react"
-export default ({ title, children, close }) => (
+export default ({ title, children, close, type = "center" }) => (
   <Flex
     w="100%"
     h="100%"
     position="fixed"
     sx={{ top: 0, left: 0, zIndex: 100 }}
     bg="rgba(0,0,0,0.5)"
-    justify="center"
+    justify={type === "right" ? "flex-end" : "center"}
     align="center"
   >
-    <Box
+    <Flex
+      direction="column"
       bg="white"
-      width="500px"
+      w={type === "right" ? "50%" : "500px"}
+      minW="500px"
+      h={type === "right" ? "100%" : "auto"}
       p={3}
-      sx={{ borderRadius: "5px", cursor: "default" }}
+      sx={{ borderRadius: type === "right" ? 0 : "5px" }}
       onClick={e => e.stopPropagation()}
     >
       <Flex fontSize="15px" mb={2} pr={2}>
@@ -29,6 +32,6 @@ export default ({ title, children, close }) => (
         </Box>
       </Flex>
       {children}
-    </Box>
+    </Flex>
   </Flex>
 )

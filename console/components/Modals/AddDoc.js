@@ -38,7 +38,7 @@ export default inject(
     const [newDoc, setNewDoc] = useState("")
     const [newData, setNewData] = useState(`{}`)
     return (
-      <Modal title="Document" close={setAddDoc}>
+      <Modal title="Document" close={setAddDoc} type="right">
         <Flex
           justify="flex-end"
           fontSize="10px"
@@ -71,6 +71,7 @@ export default inject(
           padding={10}
           placeholder="entar doc data"
           style={{
+            flex: 1,
             border: "1px solid #E2E8F0",
             borderRadius: "5px",
             fontFamily: '"Fira code", "Fira Mono", monospace',

@@ -27,7 +27,7 @@ export default inject(
     $,
   }) => {
     return (
-      <Modal title="Data Schema" close={setAddSchema}>
+      <Modal title="Data Schema" close={setAddSchema} type="right">
         <Flex mb={1} fontSize="10px">
           Schema for ({doc_path.join(" > ")})
         </Flex>
@@ -38,6 +38,7 @@ export default inject(
           padding={10}
           placeholder="enter schema"
           style={{
+            flex: 1,
             border: "1px solid #E2E8F0",
             borderRadius: "5px",
             fontFamily: '"Fira code", "Fira Mono", monospace',
