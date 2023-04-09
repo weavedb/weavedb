@@ -24,7 +24,9 @@ export default inject(
     $,
   }) => {
     const [newCollection, setNewCollection] = useState("")
-    const [newRules, setNewRules] = useState(`{"allow write": true}`)
+    const [newRules, setNewRules] = useState(
+      JSON.stringify({ "allow write": true }, undefined, 2)
+    )
     return (
       <Modal type="right" title="Access Control Rules" close={setAddCollection}>
         <Input

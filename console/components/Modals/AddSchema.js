@@ -1,6 +1,6 @@
 import { useState } from "react"
-import { Box, Flex, Textarea } from "@chakra-ui/react"
-import { isNil, compose, join, map, append } from "ramda"
+import { Input, Box, Flex, Textarea } from "@chakra-ui/react"
+import { isNil, compose, join, map, append, last } from "ramda"
 import { inject } from "roidjs"
 import { t, parseJSON, checkJSON, read, queryDB } from "../../lib/weavedb"
 import Editor from "react-simple-code-editor"
@@ -34,7 +34,19 @@ export default inject(
         <Flex h="100%">
           <Flex flex={1} direction="column" px={2} h="100%">
             <Flex mb={1} fontSize="10px">
-              Schema for ({doc_path.join(" > ")})
+              Collection
+            </Flex>
+            <Input
+              value={last(doc_path)}
+              placeholder="Collection ID"
+              disabled={true}
+              sx={{
+                borderRadius: "3px",
+              }}
+              mb={3}
+            />
+            <Flex mb={1} fontSize="10px">
+              Schema for {doc_path.join(" > ")}
             </Flex>
             <Editor
               value={newSchema}
