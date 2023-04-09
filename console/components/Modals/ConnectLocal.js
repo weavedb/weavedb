@@ -15,9 +15,9 @@ export default inject(
             Port
           </Flex>
           <Input
+            p={2}
             flex={1}
             value={newPort}
-            sx={{ borderRadius: 0 }}
             onChange={e => {
               if (!Number.isNaN(e.target.value * 1)) {
                 setNewPort(e.target.value * 1)
