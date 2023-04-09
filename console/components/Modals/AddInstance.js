@@ -219,10 +219,10 @@ export default inject(
               ContractTxId
             </Flex>
             <Input
+              p={2}
               flex={1}
               value={newContractTxId}
               onChange={e => setNewContractTxId(trim(e.target.value))}
-              sx={{ borderRadius: 0 }}
             />
           </>
         )}

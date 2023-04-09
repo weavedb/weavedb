@@ -2,19 +2,21 @@ import { Box, Flex } from "@chakra-ui/react"
 import { isNil, map, includes, addIndex as _addIndex } from "ramda"
 import { tabmap, tabs } from "../lib/const"
 
-export default ({ currentDB, setTab, tab }) => {
+export default ({ currentDB, setTab, tab, showSidebar }) => {
   return (
-    <Flex
+    <Box
+      display={[showSidebar ? "flex" : "none", null, null, null, "flex"]}
       h="100%"
       w="250px"
       bg="#eee"
       sx={{
+        zIndex: 2,
         position: "fixed",
         top: 0,
         left: 0,
+        flexDirection: "column",
       }}
       pt="56px"
-      direction="column"
     >
       {_addIndex(map)((v, i) => {
         return (
@@ -76,6 +78,6 @@ export default ({ currentDB, setTab, tab }) => {
         </Box>
         .
       </Box>
-    </Flex>
+    </Box>
   )
 }

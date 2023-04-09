@@ -234,7 +234,7 @@ export default inject(
               <Box flex={1} />
               <Box
                 onClick={() => {
-                  setSigner(EthCrypto.createIdentity().address)
+                  setSigner(EthCrypto.createIdentity().address.toLowerCase())
                 }}
                 sx={{
                   textDecoration: "underline",
@@ -293,7 +293,9 @@ export default inject(
                   <Box flex={1} />
                   <Box
                     onClick={() => {
-                      setOldSigner(EthCrypto.createIdentity().address)
+                      setOldSigner(
+                        EthCrypto.createIdentity().address.toLowerCase()
+                      )
                     }}
                     sx={{
                       textDecoration: "underline",
@@ -473,7 +475,17 @@ export default inject(
                 let allowed = false
                 try {
                   const rules = parseJSON(newRules)
-                  const op = method
+                  let op = method
+                  if (includes(op)(["set", "add"])) op = "create"
+                  if (op === "create" && exists) op = "update"
+                  if (op === "upsert") {
+                    if (exists) {
+                      op = "update"
+                    } else {
+                      op = "create"
+                    }
+                  }
+                  console.log(op)
                   const setElm = (k, val) => {
                     let elm = rule_data
                     let elm_path = k.split(".")
@@ -509,7 +521,7 @@ export default inject(
                       }
                     }
                   }
-
+                  console.log(rule_data)
                   for (let k in rules || {}) {
                     const spk = k.split(" ")
                     if (spk[0] === "let") continue
