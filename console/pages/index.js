@@ -106,6 +106,7 @@ export default inject(
     const [newSchema, setNewSchema] = useState("")
     const [newIndex, setNewIndex] = useState("")
     const [newRules, setNewRules] = useState("")
+    const [editRules, setEditRules] = useState(null)
     const [presetRPC, setPresetRPC] = useState("https://grpc.weavedb-node.xyz")
     const [dbs, setDBs] = useState([])
     const [node, setNode] = useState(null)
@@ -450,6 +451,10 @@ export default inject(
       },
       Collections: {
         tab,
+        setEditRules,
+        editRules,
+        setAddRules,
+        setNewRules,
         setAddCollection,
         setAddCollectionSchema,
         setDocPath,
@@ -461,9 +466,18 @@ export default inject(
         base_path,
         collections,
         col,
+        isOwner,
       },
       Schemas: { col, schema, setAddSchema, setNewSchema, isOwner },
-      Rules: { rules, setAddRules, col, setNewRules, isOwner },
+      Rules: {
+        rules,
+        setAddRules,
+        col,
+        setNewRules,
+        isOwner,
+        setEditRules,
+        editRules,
+      },
       Crons: {
         isOwner,
         cron,
@@ -561,6 +575,8 @@ export default inject(
         doc,
       },
       Modals: {
+        setEditRules,
+        editRules,
         deployMode,
         setDeployMode,
         newIndex,
