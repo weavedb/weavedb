@@ -169,27 +169,7 @@ export default ({
         WeaveDB
       </Box>
     </Flex>
-    <Flex flex={1} justify="center" fontSize="12px">
-      {isNil(port) ? (
-        <Flex onClick={() => setConnect(true)} sx={{ cursor: "pointer" }}>
-          Connect with Localhost
-        </Flex>
-      ) : (
-        <Flex
-          sx={{ cursor: "pointer" }}
-          onClick={() => {
-            if (confirm("Would you like to disconnect?")) {
-              setPort(null)
-            }
-          }}
-        >
-          Connected with local port{" "}
-          <Box ml={2} color="#6441AF">
-            {port}
-          </Box>
-        </Flex>
-      )}
-    </Flex>
+    <Flex flex={1} justify="center" fontSize="12px"></Flex>
     <Flex
       w="250px"
       justify="flex-end"
