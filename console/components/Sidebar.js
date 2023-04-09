@@ -2,7 +2,15 @@ import { Box, Flex } from "@chakra-ui/react"
 import { isNil, map, includes, addIndex as _addIndex } from "ramda"
 import { tabmap, tabs } from "../lib/const"
 
-export default ({ currentDB, setTab, tab, showSidebar }) => {
+export default ({
+  currentDB,
+  setTab,
+  tab,
+  showSidebar,
+  port,
+  setConnect,
+  setPort,
+}) => {
   return (
     <Box
       display={[showSidebar ? "flex" : "none", null, null, null, "flex"]}
@@ -53,6 +61,35 @@ export default ({ currentDB, setTab, tab, showSidebar }) => {
         bg="#6441AF"
         color="white"
         m={4}
+        sx={{ textDecoration: "underline", borderRadius: "5px" }}
+      >
+        {isNil(port) ? (
+          <Flex onClick={() => setConnect(true)} sx={{ cursor: "pointer" }}>
+            Connect with Localhost
+          </Flex>
+        ) : (
+          <Flex
+            sx={{ cursor: "pointer" }}
+            onClick={() => {
+              if (confirm("Would you like to disconnect?")) {
+                setPort(null)
+              }
+            }}
+          >
+            Connected with local port{" "}
+            <Box ml={2} color="#6441AF">
+              {port}
+            </Box>
+          </Flex>
+        )}
+      </Flex>
+      <Flex
+        fontSize="12px"
+        p={4}
+        bg="#6441AF"
+        color="white"
+        mx={4}
+        mb={4}
         sx={{ borderRadius: "5px" }}
       >
         WeaveDB is still in alpha. Please use it with discretion.

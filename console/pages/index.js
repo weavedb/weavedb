@@ -440,7 +440,15 @@ export default inject(
         doc_path,
         db,
       },
-      Sidebar: { currentDB, setTab, tab, showSidebar },
+      Sidebar: {
+        currentDB,
+        setTab,
+        tab,
+        showSidebar,
+        port,
+        setConnect,
+        setPort,
+      },
       Header: {
         showSidebar,
         setShowSidebar,
