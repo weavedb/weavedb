@@ -14,12 +14,17 @@ export default inject(
     setDocPath,
     setDocdata,
     setDocuments,
+    setAddRules,
     setSubCollections,
     db,
     setLoadMore,
     base_path,
     collections,
+    isOwner,
     col,
+    setNewRules,
+    editRules,
+    setEditRules,
     $,
   }) => {
     return includes(tab)(["DB", "Crons", "Relayers", "Nodes"]) ? null : (
@@ -33,9 +38,15 @@ export default inject(
                 if (isNil($.temp_current)) {
                   alert("authenticate wallet")
                 } else if (tab === "Schemas") {
+                  if (!isOwner) return alert("connect the owner wallet to DB")
                   setAddCollectionSchema(true)
                 } else {
-                  setAddCollection(true)
+                  if (!isOwner) return alert("connect the owner wallet to DB")
+                  setEditRules(null)
+                  setNewRules(
+                    JSON.stringify({ "allow write": true }, undefined, 2)
+                  )
+                  setAddRules(true)
                 }
               }}
               sx={{
