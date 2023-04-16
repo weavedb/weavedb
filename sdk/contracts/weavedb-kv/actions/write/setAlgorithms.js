@@ -7,7 +7,8 @@ const setAlgorithms = async (
   action,
   signer,
   contractErr = true,
-  SmartWeave
+  SmartWeave,
+  kvs
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -15,7 +16,9 @@ const setAlgorithms = async (
       state,
       action,
       "setAlgorithms",
-      SmartWeave
+      SmartWeave,
+      true,
+      kvs
     ))
   }
 
@@ -26,7 +29,8 @@ const setAlgorithms = async (
     signer,
     null,
     contractErr,
-    SmartWeave
+    SmartWeave,
+    kvs
   )
   if (
     !is(Array)(new_data) ||

@@ -96,6 +96,7 @@ class Base {
       "get",
       "cget",
       "getIndexes",
+      "getTriggers",
       "getCrons",
       "getSchema",
       "getRules",
@@ -738,7 +739,6 @@ class Base {
       primaryType: "Query",
       message,
     }
-
     const signature = isNil(pkey)
       ? await this.web3.currentProvider.request({
           method: "eth_signTypedData_v4",
@@ -989,6 +989,7 @@ const readQueries = [
   "get",
   "cget",
   "getIndexes",
+  "getTriggers",
   "listCollections",
   "getCrons",
   "getAlgorithms",
@@ -1020,6 +1021,8 @@ const writes = [
   "add",
   "addIndex",
   "addCron",
+  "addTrigger",
+  "removeTrigger",
   "removeCron",
   "removeIndex",
   "update",

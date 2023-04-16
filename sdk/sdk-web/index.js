@@ -256,22 +256,23 @@ class SDK extends Base {
       })
     }
   }
+
   async readState(attempt = 1) {
     return new Promise(async res => {
       setTimeout(async () => {
         let _state = null
         try {
           _state = await this.db.readState()
-        } catch (e) {
-          console.log("error", e)
-        }
+        } catch (e) {}
         if (!isNil(_state) && this.sortKey !== _state.sortKey) {
           this.state = _state.cachedValue.state
           this.sortKey = _state.sortKey
           states[this.contractTxId] = this.state
           res(_state)
           try {
-            if (compareVersions(await this.getVersion(), "0.27.0") >= 0) {
+            if (
+              compareVersions(this.state?.version || "0.26.0", "0.27.0") >= 0
+            ) {
               this.handle = handle_kv
             } else {
               this.handle = handle

@@ -22,7 +22,14 @@ const { remove } = require("./remove")
 const { addAddressLink } = require("./addAddressLink")
 const { batch } = require("./batch")
 
-const relay = async (state, action, signer, contractErr = true, SmartWeave) => {
+const relay = async (
+  state,
+  action,
+  signer,
+  contractErr = true,
+  SmartWeave,
+  kvs
+) => {
   let original_signer = null
   if (isNil(signer)) {
     ;({ signer, original_signer } = await validate(
@@ -30,7 +37,8 @@ const relay = async (state, action, signer, contractErr = true, SmartWeave) => {
       action,
       "relay",
       SmartWeave,
-      false
+      false,
+      kvs
     ))
   }
 
@@ -95,20 +103,20 @@ const relay = async (state, action, signer, contractErr = true, SmartWeave) => {
       err("relayer data validation error")
     }
   }
-
+  const params = [state, action2, null, null, SmartWeave, kvs]
   switch (action2.input.function) {
     case "add":
-      return await add(state, action2, null, undefined, null, SmartWeave)
+      return await add(state, action2, null, undefined, null, SmartWeave, kvs)
     case "set":
-      return await set(state, action2, null, null, SmartWeave)
+      return await set(...params)
     case "update":
-      return await update(state, action2, null, null, SmartWeave)
+      return await update(...params)
     case "upsert":
-      return await upsert(state, action2, null, null, SmartWeave)
+      return await upsert(...params)
     case "delete":
-      return await remove(state, action2, null, null, SmartWeave)
+      return await remove(...params)
     case "batch":
-      return await batch(state, action2, null, null, SmartWeave)
+      return await batch(...params)
     case "addAddressLink":
       return await addAddressLink(
         state,
@@ -116,7 +124,8 @@ const relay = async (state, action, signer, contractErr = true, SmartWeave) => {
         null,
         null,
         SmartWeave,
-        action2.extra.linkTo
+        action2.extra.linkTo,
+        kvs
       )
     default:
       err(

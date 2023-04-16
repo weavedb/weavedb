@@ -7,7 +7,8 @@ const linkContract = async (
   action,
   signer,
   contractErr = true,
-  SmartWeave
+  SmartWeave,
+  kvs
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -15,7 +16,9 @@ const linkContract = async (
       state,
       action,
       "linkContract",
-      SmartWeave
+      SmartWeave,
+      true,
+      kvs
     ))
   }
 
@@ -26,7 +29,8 @@ const linkContract = async (
     signer,
     null,
     contractErr,
-    SmartWeave
+    SmartWeave,
+    kvs
   )
   const [key, address] = action.input.query
   if (isNil(key) || isNil(address)) {

@@ -1,5 +1,5 @@
 const { o, flatten, isNil, mergeLeft, includes, init } = require("ramda")
-const { wrapResult, parse, err } = require("../../lib/utils")
+const { kv, wrapResult, parse, err } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { addIndex: _addIndex, getIndex } = require("../../lib/index")
 
@@ -8,7 +8,8 @@ const addIndex = async (
   action,
   signer,
   contractErr = true,
-  SmartWeave
+  SmartWeave,
+  kvs
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -16,7 +17,9 @@ const addIndex = async (
       state,
       action,
       "addIndex",
-      SmartWeave
+      SmartWeave,
+      true,
+      kvs
     ))
   }
   let { col, _data, data, query, new_data, path } = await parse(
@@ -26,16 +29,19 @@ const addIndex = async (
     signer,
     null,
     contractErr,
-    SmartWeave
+    SmartWeave,
+    kvs
   )
   if (o(includes("__id__"), flatten)(new_data)) {
     err("index cannot contain __id__")
   }
   const db = async id => {
     const doc_key = `data.${path.join("/")}/${id}`
-    return (await SmartWeave.kv.get(doc_key)) || { __data: null, subs: {} }
+    return (
+      (await kv(kvs, SmartWeave).get(doc_key)) || { __data: null, subs: {} }
+    )
   }
-  await _addIndex(new_data, path, db, SmartWeave)
+  await _addIndex(new_data, path, db, SmartWeave, kvs)
   return wrapResult(state, original_signer, SmartWeave)
 }
 
