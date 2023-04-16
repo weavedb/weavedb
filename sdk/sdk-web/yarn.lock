@@ -4078,10 +4078,10 @@ vm2@3.9.11:
     acorn "^8.7.0"
     acorn-walk "^8.2.0"
 
-vm2@3.9.13:
-  version "3.9.13"
-  resolved "https://registry.yarnpkg.com/vm2/-/vm2-3.9.13.tgz#774a1a3d73b9b90b1aa45bcc5f25e349f2eef649"
-  integrity sha512-0rvxpB8P8Shm4wX2EKOiMp7H2zq+HUE/UwodY0pCZXs9IffIKZq6vUti5OgkVCTakKo9e/fgO4X1fkwfjWxE3Q==
+vm2@3.9.15:
+  version "3.9.15"
+  resolved "https://registry.yarnpkg.com/vm2/-/vm2-3.9.15.tgz#c544e6a9bc31e4e40d2e5f532342cf799ea56a6e"
+  integrity sha512-XqNqknHGw2avJo13gbIwLNZUumvrSHc9mLqoadFZTpo3KaNEJoe1I0lqTFhRXmXD7WkLyG01aaraXdXT0pa4ag==
   dependencies:
     acorn "^8.7.0"
     acorn-walk "^8.2.0"
@@ -4107,10 +4107,10 @@ vm2@3.9.13:
     unzipit "^1.4.0"
     vm2 "3.9.11"
 
-warp-contracts@^1.3.5-beta.0:
-  version "1.3.5-beta.0"
-  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.3.5-beta.0.tgz#c196ef38f2e22a2a8ec2d14750d34cd3d7924472"
-  integrity sha512-lieMTU0/LPiCowiV+9hd0o3484zBpEPlSBWYXwV2PflhX6nsmd7HSmW9Q+m+by/5ylUfNtVGmRXFppDVeEeTqQ==
+warp-contracts@^1.4.0:
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.4.0.tgz#fcdf49fe527ab6d93b3b39c336ac1f1a278315af"
+  integrity sha512-A8H8rMvunzkud2Y5kTJPFAgizxUqJAfPBQjwE9R5gOpibJzsqkbk5lvm/LOBgCqCWKxPtuoQb+oPx/mQ83/L3A==
   dependencies:
     "@idena/vrf-js" "^1.0.1"
     archiver "^5.3.0"
@@ -4125,7 +4125,7 @@ warp-contracts@^1.3.5-beta.0:
     safe-stable-stringify "2.4.1"
     stream-buffers "^3.0.2"
     unzipit "^1.4.0"
-    vm2 "3.9.13"
+    vm2 "3.9.15"
     warp-isomorphic "1.0.4"
     warp-wasm-metering "1.0.1"
 
@@ -4176,10 +4176,10 @@ weavedb-base@^0.26.10:
     pako "^2.1.0"
     ramda "^0.28.0"
 
-weavedb-contracts@^0.27.0:
-  version "0.27.0"
-  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.27.0.tgz#653c640fddd77db2bc1933f4a0ba3988d756aa3e"
-  integrity sha512-S2kLbBfBoMg6mvTBRWyTc6kWpzQN1+PkBtjlvl9PI8m6XljGA8ncWXni6b6XMHjOlgaVLJiSPph5f7+n/wn+Cw==
+weavedb-contracts@^0.27.1:
+  version "0.27.1"
+  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.27.1.tgz#a9638614388651cd4ff771f17ede07e6c86afed5"
+  integrity sha512-HEEpmwngMYbT8dCd5AQN5PTtDL7mr1AJVP85iV7hrj6pg1z7XPQJ81KP7TkCMM8BmDztDyZ+d7nboMDr4xrgQQ==
   dependencies:
     "@noble/curves" "^0.9.0"
     "@peculiar/webcrypto" "^1.4.3"

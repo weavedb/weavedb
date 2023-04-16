@@ -8,7 +8,8 @@ const removeRelayerJob = async (
   action,
   signer,
   contractErr = true,
-  SmartWeave
+  SmartWeave,
+  kvs
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -16,7 +17,9 @@ const removeRelayerJob = async (
       state,
       action,
       "removeRelayerJob",
-      SmartWeave
+      SmartWeave,
+      true,
+      kvs
     ))
   }
   let { _data, data, query, new_data, path } = await parse(
@@ -26,7 +29,8 @@ const removeRelayerJob = async (
     signer,
     null,
     contractErr,
-    SmartWeave
+    SmartWeave,
+    kvs
   )
   const [jobID] = query
   if (isNil(state.relayers[jobID])) err("relayer job doesn't exist")

@@ -1,7 +1,7 @@
 const { includes, isNil, clone } = require("ramda")
 const { wrapResult, err, parse, mergeData } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
-const { set } = require("./set")
+const { set, what } = require("./set")
 const { add } = require("./add")
 const { update } = require("./update")
 const { upsert } = require("./upsert")
@@ -20,18 +20,29 @@ const { removeCron } = require("./removeCron")
 const { removeIndex } = require("./removeIndex")
 const { removeOwner } = require("./removeOwner")
 const { removeRelayerJob } = require("./removeRelayerJob")
+const { addTrigger } = require("./addTrigger")
+const { removeTrigger } = require("./removeTrigger")
 
-const batch = async (state, action, signer, contractErr = true, SmartWeave) => {
+const batch = async (
+  state,
+  action,
+  signer,
+  contractErr = true,
+  SmartWeave,
+  kvs,
+  executeCron
+) => {
   let original_signer = null
   if (isNil(signer)) {
     ;({ signer, original_signer } = await validate(
       state,
       action,
       "batch",
-      SmartWeave
+      SmartWeave,
+      true,
+      kvs
     ))
   }
-
   let _state = state
   let i = 0
   for (let v of action.input.query) {
@@ -49,98 +60,86 @@ const batch = async (state, action, signer, contractErr = true, SmartWeave) => {
       : { input: { function: op, query }, caller: action.caller }
 
     let res = null
+    const params = [
+      _state,
+      _action,
+      signer,
+      contractErr,
+      SmartWeave,
+      kvs,
+      executeCron,
+    ]
     switch (op) {
       case "add":
-        res = await add(_state, _action, signer, i, contractErr, SmartWeave)
+        res = await add(
+          _state,
+          _action,
+          signer,
+          i,
+          contractErr,
+          SmartWeave,
+          kvs,
+          executeCron
+        )
         break
       case "set":
-        res = await set(_state, _action, signer, contractErr, SmartWeave)
+        res = await set(...params)
         break
       case "update":
-        res = await update(_state, _action, signer, contractErr, SmartWeave)
+        res = await update(...params)
         break
       case "upsert":
-        res = await upsert(_state, _action, signer, contractErr, SmartWeave)
+        res = await upsert(...params)
         break
       case "delete":
-        res = await remove(_state, _action, signer, contractErr, SmartWeave)
+        res = await remove(...params)
         break
       case "setRules":
-        res = await setRules(_state, _action, signer, contractErr, SmartWeave)
+        res = await setRules(...params)
         break
       case "setSchema":
-        res = await setSchema(_state, _action, signer, contractErr, SmartWeave)
+        res = await setSchema(...params)
         break
 
       case "setCanEvolve":
-        res = await setCanEvolve(
-          _state,
-          _action,
-          signer,
-          contractErr,
-          SmartWeave
-        )
+        res = await setCanEvolve(...params)
         break
       case "setSecure":
-        res = await setSecure(_state, _action, signer, contractErr, SmartWeave)
+        res = await setSecure(...params)
         break
       case "setAlgorithms":
-        res = await setAlgorithms(
-          _state,
-          _action,
-          signer,
-          contractErr,
-          SmartWeave
-        )
+        res = await setAlgorithms(...params)
         break
       case "addIndex":
-        res = await addIndex(_state, _action, signer, contractErr, SmartWeave)
+        res = await addIndex(...params)
         break
       case "addOwner":
-        res = await addOwner(_state, _action, signer, contractErr, SmartWeave)
+        res = await addOwner(...params)
         break
       case "addRelayerJob":
-        res = await addRelayerJob(
-          _state,
-          _action,
-          signer,
-          contractErr,
-          SmartWeave
-        )
+        res = await addRelayerJob(...params)
         break
       case "addCron":
         const { addCron } = require("./addCron")
-        res = await addCron(_state, _action, signer, contractErr, SmartWeave)
+        res = await addCron(...params)
         break
       case "removeCron":
-        res = await removeCron(_state, _action, signer, contractErr, SmartWeave)
+        res = await removeCron(...params)
         break
       case "removeIndex":
-        res = await removeIndex(
-          _state,
-          _action,
-          signer,
-          contractErr,
-          SmartWeave
-        )
+        res = await removeIndex(...params)
         break
       case "removeOwner":
-        res = await removeOwner(
-          _state,
-          _action,
-          signer,
-          contractErr,
-          SmartWeave
-        )
+        res = await removeOwner(...params)
         break
       case "removeRelayerJob":
-        res = await removeRelayerJob(
-          _state,
-          _action,
-          signer,
-          contractErr,
-          SmartWeave
-        )
+        res = await removeRelayerJob(...params)
+        break
+      case "addTrigger":
+        res = await addTrigger(...params)
+        break
+      case "removeTrigger":
+        res = await removeTrigger(...params)
         break
 
       default:

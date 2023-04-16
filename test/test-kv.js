@@ -37,7 +37,6 @@ describe("WeaveDB", function () {
 
   before(async () => {
     db = await init("web", 2, false)
-    //db = await init("node", 2, true)
   })
 
   after(async () => await stop())
@@ -1047,6 +1046,11 @@ describe("WeaveDB", function () {
       do: false,
       jobs: [["add", [{ age: db.inc(1) }, "ppl"]]],
     }
+    const trigger = {
+      key: "trg2",
+      on: "update",
+      func: [["upsert", [{ name: "Alice", age: db.inc(1) }, "ppl", "Alice"]]],
+    }
 
     await db.batch(
       [
@@ -1058,7 +1062,8 @@ describe("WeaveDB", function () {
         ["setAlgorithms", algorithms],
         ["addIndex", index, "ppl"],
         ["addOwner", addr2],
-        //["addRelayerJob", jobID, job],
+        ["addRelayerJob", jobID, job],
+        ["addTrigger", trigger, "ppl"],
       ],
       {
         ar: arweave_wallet,
@@ -1072,24 +1077,26 @@ describe("WeaveDB", function () {
     expect(await db.getAlgorithms()).to.eql(algorithms)
     expect(await db.getIndexes("ppl")).to.eql([index])
     expect(await db.getOwner()).to.eql([addr, addr2])
-    //expect(await db.getRelayerJob(jobID)).to.eql(job)
+    expect(await db.getRelayerJob(jobID)).to.eql(job)
     expect((await db.getCrons()).crons).to.eql({ "inc age": cron })
+    expect(await db.getTriggers("ppl")).to.eql([trigger])
     await db.batch(
       [
         ["removeCron", "inc age"],
         ["removeOwner", addr2],
         ["removeIndex", index, "ppl"],
-        //["removeRelayerJob", jobID],
+        ["removeRelayerJob", jobID],
+        ["removeTrigger", "trg2", "ppl"],
       ],
       {
         ar: arweave_wallet,
       }
     )
-    return
     expect((await db.getCrons()).crons).to.eql({})
     expect(await db.getOwner()).to.eql([addr])
     expect(await db.getIndexes("ppl")).to.eql([])
-    //expect(await db.getRelayerJob(jobID)).to.eql(null)
+    expect(await db.getRelayerJob(jobID)).to.eql(null)
+    expect(await db.getTriggers("ppl")).to.eql([])
   })
 
   it("should only allow owners", async () => {
@@ -1109,5 +1116,50 @@ describe("WeaveDB", function () {
     expect(await db.get("ppl", "Bob")).to.eql(null)
     await db.set(data, "ppl", "Bob", { ar: arweave_wallet })
     expect(await db.get("ppl", "Bob")).to.eql(data)
+  })
+
+  it("should add triggers", async () => {
+    const data1 = {
+      key: "trg",
+      on: "create",
+      func: [
+        ["let", "batches", []],
+        [
+          "do",
+          [
+            "when",
+            ["propEq", "id", "Bob"],
+            [
+              "pipe",
+              ["var", "batches"],
+              ["append", ["[]", "update", { age: db.inc(2) }, "ppl", "Bob"]],
+              ["let", "batches"],
+            ],
+            { var: "data" },
+          ],
+        ],
+        ["batch", { var: "batches" }],
+      ],
+    }
+    const data2 = {
+      key: "trg2",
+      on: "update",
+      func: [["upsert", [{ name: "Alice", age: db.inc(1) }, "ppl", "Alice"]]],
+    }
+    const data3 = {
+      key: "trg3",
+      on: "delete",
+      func: [["update", [{ age: db.inc(1) }, "ppl", "Bob"]]],
+    }
+    await db.addTrigger(data1, "ppl", { ar: arweave_wallet })
+    await db.addTrigger(data2, "ppl", { ar: arweave_wallet })
+    await db.addTrigger(mergeLeft({ index: 0 }, data3), "ppl", {
+      ar: arweave_wallet,
+    })
+    expect(await db.getTriggers("ppl")).to.eql([data3, data1, data2])
+    await db.set({ name: "Bob", age: 20 }, "ppl", "Bob")
+    expect((await db.get("ppl", "Bob")).age).to.eql(22)
+    await db.removeTrigger("trg2", "ppl", { ar: arweave_wallet })
+    expect(await db.getTriggers("ppl")).to.eql([data3, data1])
   })
 })

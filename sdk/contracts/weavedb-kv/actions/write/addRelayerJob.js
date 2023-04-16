@@ -8,7 +8,8 @@ const addRelayerJob = async (
   action,
   signer,
   contractErr = true,
-  SmartWeave
+  SmartWeave,
+  kvs
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -16,7 +17,9 @@ const addRelayerJob = async (
       state,
       action,
       "addRelayerJob",
-      SmartWeave
+      SmartWeave,
+      true,
+      kvs
     ))
   }
 
@@ -27,7 +30,8 @@ const addRelayerJob = async (
     signer,
     null,
     contractErr,
-    SmartWeave
+    SmartWeave,
+    kvs
   )
   const [jobID, job] = query
   if (!isNil(job.relayers) && !is(Array, job.relayers)) {

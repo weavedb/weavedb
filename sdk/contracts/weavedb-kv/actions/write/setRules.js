@@ -1,5 +1,5 @@
 const { isNil, mergeLeft, includes, difference, is } = require("ramda")
-const { wrapResult, err, parse, mergeData } = require("../../lib/utils")
+const { kv, wrapResult, err, parse, mergeData } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const jsonLogic = require("json-logic-js")
 
@@ -8,7 +8,8 @@ const setRules = async (
   action,
   signer,
   contractErr = true,
-  SmartWeave
+  SmartWeave,
+  kvs
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -16,7 +17,9 @@ const setRules = async (
       state,
       action,
       "setRules",
-      SmartWeave
+      SmartWeave,
+      true,
+      kvs
     ))
   }
   let { _data, data, query, new_data, path } = await parse(
@@ -26,7 +29,8 @@ const setRules = async (
     signer,
     null,
     contractErr,
-    SmartWeave
+    SmartWeave,
+    kvs
   )
   for (let k in new_data) {
     const keys = k.split(" ")
@@ -47,7 +51,7 @@ const setRules = async (
     }
   }
   _data.rules = new_data
-  await SmartWeave.kv.put(`data.${path.join("/")}`, _data)
+  await kv(kvs, SmartWeave).put(`data.${path.join("/")}`, _data)
 
   return wrapResult(state, original_signer, SmartWeave)
 }

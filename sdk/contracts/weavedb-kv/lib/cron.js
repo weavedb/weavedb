@@ -1,6 +1,16 @@
-const fpjson = require("fpjson-lang")
-
-const { path, is, map, isNil, includes, sortBy, prop, head } = require("ramda")
+let fpjson = require("fpjson-lang")
+fpjson = fpjson.default ?? fpjson
+const {
+  mergeLeft,
+  path,
+  is,
+  map,
+  isNil,
+  includes,
+  sortBy,
+  prop,
+  head,
+} = require("ramda")
 const { clone } = require("../lib/utils")
 const { get } = require("../actions/read/get")
 const { upsert } = require("../actions/write/upsert")
@@ -10,13 +20,20 @@ const { remove } = require("../actions/write/remove")
 const { set } = require("../actions/write/set")
 const { batch } = require("../actions/write/batch")
 
-const executeCron = async (cron, state, SmartWeave) => {
-  let vars = {
+const executeCron = async (
+  cron,
+  state,
+  SmartWeave,
+  kvs,
+  depth = 1,
+  _vars = {}
+) => {
+  let vars = mergeLeft(_vars, {
     block: {
       height: SmartWeave.block.height,
       timestamp: SmartWeave.block.timestamp,
     },
-  }
+  })
   let ops = { upsert, update, add, delete: remove, set, batch }
   const parse = query => {
     if (is(Array, query)) {
@@ -67,11 +84,14 @@ const executeCron = async (cron, state, SmartWeave) => {
       if (op === "add") params.push(0)
       params.push(false)
       params.push(SmartWeave)
+      params.push(kvs)
+      params.push(executeCron)
+      params.push(depth + 1)
       await ops[op](...params)
     }
   }
 }
-const cron = async (state, SmartWeave) => {
+const cron = async (state, SmartWeave, _kvs) => {
   const now = SmartWeave.block.timestamp
   if (isNil(state.crons)) {
     state.crons = { lastExecuted: now, crons: {} }
@@ -95,7 +115,9 @@ const cron = async (state, SmartWeave) => {
   let _state = clone(state)
   for (let cron of crons) {
     try {
-      await executeCron(cron, _state, SmartWeave)
+      let kvs = {}
+      await executeCron(cron, _state, SmartWeave, kvs)
+      for (const k in kvs) _kvs[k] = kvs[k]
     } catch (e) {
       console.log(e)
     }

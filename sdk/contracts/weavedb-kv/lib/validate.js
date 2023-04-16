@@ -1,6 +1,14 @@
 const { is, includes, isNil } = require("ramda")
-const { err, read } = require("./utils")
-const validate = async (state, action, func, SmartWeave, use_nonce = true) => {
+const { kv, err, read } = require("./utils")
+
+const validate = async (
+  state,
+  action,
+  func,
+  SmartWeave,
+  use_nonce = true,
+  kvs
+) => {
   const {
     query,
     nonce,
@@ -128,13 +136,13 @@ const validate = async (state, action, func, SmartWeave, use_nonce = true) => {
   if (_signer !== _caller) err(`signer[${_signer}] is not caller[${_caller}]`)
   if (use_nonce !== false) {
     let next_nonce =
-      ((await SmartWeave.kv.get(`nonce.${original_signer}`)) || 0) + 1
+      ((await kv(kvs, SmartWeave).get(`nonce.${original_signer}`)) || 0) + 1
     if (next_nonce !== nonce) {
       err(
         `The wrong nonce[${nonce}] for ${original_signer}: expected ${next_nonce}`
       )
     }
-    await SmartWeave.kv.put(`nonce.${original_signer}`, next_nonce)
+    await kv(kvs, SmartWeave).put(`nonce.${original_signer}`, next_nonce)
   }
   return { signer: _signer, original_signer }
 }

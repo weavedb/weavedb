@@ -7,7 +7,8 @@ const removeAddressLink = async (
   action,
   signer,
   contractErr = true,
-  SmartWeave
+  SmartWeave,
+  kvs
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -15,7 +16,9 @@ const removeAddressLink = async (
       state,
       action,
       "removeAddressLink",
-      SmartWeave
+      SmartWeave,
+      true,
+      kvs
     ))
   }
   const { address } = action.input.query
