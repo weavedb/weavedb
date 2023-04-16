@@ -8,7 +8,8 @@ const addAddressLink = async (
   signer,
   contractErr = true,
   SmartWeave,
-  _linkTo
+  _linkTo,
+  kvs
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -16,7 +17,9 @@ const addAddressLink = async (
       state,
       action,
       "addAddressLink",
-      SmartWeave
+      SmartWeave,
+      true,
+      kvs
     ))
   }
 

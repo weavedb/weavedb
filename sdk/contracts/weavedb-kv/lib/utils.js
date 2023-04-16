@@ -2,6 +2,7 @@ let fpjson = require("fpjson-lang")
 fpjson = fpjson.default || fpjson
 const jsonLogic = require("json-logic-js")
 const {
+  init,
   mergeLeft,
   of,
   concat,
@@ -27,14 +28,14 @@ const err = (msg = `The wrong query`, contractErr = false) => {
   }
 }
 
-const getCol = async (path, _signer, SmartWeave, current_path = []) => {
+const getCol = async (path, _signer, SmartWeave, current_path = [], kvs) => {
   const [col, id] = path
   if (!isValidName(col)) err(`collection id is not valid: ${col}`)
   let key = `data.${append(col)(current_path).join("/")}`
-  let _data = await SmartWeave.kv.get(key)
+  let _data = await kv(kvs, SmartWeave).get(key)
   if (isNil(_data)) {
     _data = { __docs: {} }
-    await SmartWeave.kv.put(key, _data)
+    await kv(kvs, SmartWeave).put(key, _data)
   }
   if (isNil(id)) {
     return _data
@@ -46,7 +47,8 @@ const getCol = async (path, _signer, SmartWeave, current_path = []) => {
       slice(2, path.length, path),
       _signer,
       SmartWeave,
-      current_path
+      current_path,
+      kvs
     )
   }
 }
@@ -204,10 +206,13 @@ const getDoc = async (
   extra,
   state,
   SmartWeave,
-  current_path = []
+  current_path = [],
+  kvs
 ) => {
   if (isNil(data)) {
-    const _data = await SmartWeave.kv.get(`data.${current_path.join("/")}`)
+    const _data = await kv(kvs, SmartWeave).get(
+      `data.${current_path.join("/")}`
+    )
     if (isNil(_data)) {
       data = {}
     } else {
@@ -219,15 +224,18 @@ const getDoc = async (
   if (!isValidName(id)) err(`doc id is not valid: ${id}`)
   if (isNil(data[_col])) {
     data[_col] = { __docs: {} }
-    await SmartWeave.kv.put(`data.${current_path.join("/")}`, data)
+    await kv(kvs, SmartWeave).put(`data.${current_path.join("/")}`, data)
   }
   current_path.push(_col)
   current_path.push(id)
   const col_key = `data.${current_path.slice(0, -1).join("/")}`
   const doc_key = `data.${current_path.join("/")}`
-  const col = (await SmartWeave.kv.get(col_key)) || { __docs: {} }
+  const col = (await kv(kvs, SmartWeave).get(col_key)) || { __docs: {} }
   const { rules, schema } = col
-  const doc = (await SmartWeave.kv.get(doc_key)) || { __data: null, subs: {} }
+  const doc = (await kv(kvs, SmartWeave).get(doc_key)) || {
+    __data: null,
+    subs: {},
+  }
   if (!isNil(_signer) && isNil(doc.setter)) doc.setter = _signer
   let next_data = null
   if (path.length === 2) {
@@ -278,7 +286,8 @@ const getDoc = async (
         extra,
         state,
         SmartWeave,
-        current_path
+        current_path,
+        kvs
       )
     : {
         doc,
@@ -340,7 +349,8 @@ const parse = async (
   signer,
   salt,
   contractErr = true,
-  SmartWeave
+  SmartWeave,
+  kvs
 ) => {
   const { data } = state
   const { query } = action.input
@@ -365,9 +375,14 @@ const parse = async (
     if (func === "add") {
       const id = await genId(action, salt, SmartWeave)
       let tx_ids =
-        (await SmartWeave.kv.get(`tx_ids.${SmartWeave.transaction.id}`)) || []
+        (await kv(kvs, SmartWeave).get(
+          `tx_ids.${SmartWeave.transaction.id}`
+        )) || []
       tx_ids.push(id)
-      await SmartWeave.kv.put(`tx_ids.${SmartWeave.transaction.id}`, tx_ids)
+      await kv(kvs, SmartWeave).put(
+        `tx_ids.${SmartWeave.transaction.id}`,
+        tx_ids
+      )
       path.push(id)
     }
   }
@@ -391,6 +406,8 @@ const parse = async (
         "removeRelayerJob",
         "getRelayerJob",
         "addIndex",
+        "addTrigger",
+        "removeTrigger",
         "removeIndex",
         "setSchema",
         "getSchema",
@@ -410,6 +427,8 @@ const parse = async (
   if (
     includes(func)([
       "addIndex",
+      "addTrigger",
+      "removeTrigger",
       "removeIndex",
       "setSchema",
       "getSchema",
@@ -417,7 +436,7 @@ const parse = async (
       "getRules",
     ])
   ) {
-    _data = await getCol(path, signer, SmartWeave)
+    _data = await getCol(path, signer, SmartWeave, undefined, kvs)
     col = _data
   } else if (
     !includes(func)([
@@ -441,7 +460,9 @@ const parse = async (
       jobID,
       extra,
       state,
-      SmartWeave
+      SmartWeave,
+      undefined,
+      kvs
     )
     _data = doc.doc
     ;({ next_data, schema, rules, col } = doc)
@@ -453,6 +474,8 @@ const parse = async (
       "addRelayerJob",
       "removeRelayerJob",
       "addIndex",
+      "addTrigger",
+      "removeTrigger",
       "removeIndex",
       "setSchema",
       "setAlgorithms",
@@ -508,7 +531,50 @@ const wrapResult = (state, original_signer, SmartWeave, extra) => ({
   }),
 })
 
+const kv = (kvs, SW) => ({
+  get: async key =>
+    typeof kvs[key] !== "undefined" ? kvs[key] : await SW.kv.get(key),
+  put: async (key, val) => {
+    kvs[key] = val
+  },
+})
+
+const trigger = async (
+  on,
+  state,
+  path,
+  SmartWeave,
+  kvs,
+  executeCron,
+  depth,
+  vars
+) => {
+  const trigger_key = `trigger.${init(path).join("/")}`
+  state.triggers ??= {}
+  const triggers = (state.triggers[trigger_key] ??= [])
+  for (const t of triggers) {
+    if (!includes(t.on)(on)) continue
+    try {
+      let _state = clone(state)
+      let _kvs = clone(kvs)
+      await executeCron(
+        { crons: { jobs: t.func } },
+        _state,
+        SmartWeave,
+        _kvs,
+        depth,
+        vars
+      )
+      state = _state
+      for (const k in _kvs) kvs[k] = _kvs[k]
+    } catch (e) {
+      console.log(e)
+    }
+  }
+}
+
 module.exports = {
+  trigger,
   wrapResult,
   isOwner,
   clone,
@@ -520,4 +586,5 @@ module.exports = {
   read,
   validateSchema,
   mergeData,
+  kv,
 }

@@ -1,5 +1,5 @@
 const { parse } = require("../../lib/utils")
-const getRules = async (state, action, SmartWeave) => {
+const getRules = async (state, action, SmartWeave, kvs) => {
   let { _data, data, query, new_data, path } = await parse(
     state,
     action,
@@ -7,7 +7,8 @@ const getRules = async (state, action, SmartWeave) => {
     undefined,
     undefined,
     undefined,
-    SmartWeave
+    SmartWeave,
+    kvs
   )
 
   return { result: _data.rules || null }

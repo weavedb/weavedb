@@ -8,7 +8,8 @@ const removeIndex = async (
   action,
   signer,
   contractErr = true,
-  SmartWeave
+  SmartWeave,
+  kvs
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -16,7 +17,9 @@ const removeIndex = async (
       state,
       action,
       "removeIndex",
-      SmartWeave
+      SmartWeave,
+      true,
+      kvs
     ))
   }
   let { col, _data, data, query, new_data, path } = await parse(
@@ -26,9 +29,10 @@ const removeIndex = async (
     signer,
     null,
     contractErr,
-    SmartWeave
+    SmartWeave,
+    kvs
   )
-  await _removeIndex(new_data, path, SmartWeave)
+  await _removeIndex(new_data, path, SmartWeave, kvs)
   return wrapResult(state, original_signer, SmartWeave)
 }
 

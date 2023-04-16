@@ -16,6 +16,7 @@ const { listRelayerJobs } = require("./actions/read/listRelayerJobs")
 const { getEvolve } = require("./actions/read/getEvolve")
 const { listCollections } = require("./actions/read/listCollections")
 const { getInfo } = require("./actions/read/getInfo")
+const { getTriggers } = require("./actions/read/getTriggers")
 
 const { set } = require("./actions/write/set")
 const { upsert } = require("./actions/write/upsert")
@@ -44,8 +45,10 @@ const { batch } = require("./actions/write/batch")
 const { bundle } = require("./actions/write/bundle")
 const { relay } = require("./actions/write/relay")
 const { migrate } = require("./actions/write/migrate")
+const { addTrigger } = require("./actions/write/addTrigger")
+const { removeTrigger } = require("./actions/write/removeTrigger")
 
-const { cron } = require("./lib/cron")
+const { cron, executeCron } = require("./lib/cron")
 const { err, isEvolving } = require("./lib/utils")
 const { includes, isNil } = require("ramda")
 
@@ -76,6 +79,7 @@ const writes = [
 ]
 
 async function handle(state, action, _SmartWeave) {
+  let kvs = {}
   if (typeof SmartWeave !== "undefined") _SmartWeave = SmartWeave
   if (
     isEvolving(state) &&
@@ -85,7 +89,9 @@ async function handle(state, action, _SmartWeave) {
     err("contract needs migration")
   }
   try {
-    ;({ state } = await cron(state, _SmartWeave))
+    let _kvs = {}
+    ;({ state } = await cron(state, _SmartWeave, _kvs))
+    kvs = _kvs
   } catch (e) {
     console.log(e)
   }
@@ -102,167 +108,168 @@ async function handle(state, action, _SmartWeave) {
     }
     return { state, result }
   }
+
+  const readParams = [state, action, _SmartWeave, kvs]
+  const writeParams = [state, action, undefined, undefined, _SmartWeave, kvs]
+  let res = null
   switch (action.input.function) {
     case "get":
-      return await get(state, action, false, _SmartWeave)
+      return await get(state, action, false, _SmartWeave, kvs)
     case "cget":
-      return await get(state, action, true, _SmartWeave)
+      return await get(state, action, true, _SmartWeave, kvs)
     case "getAddressLink":
-      return await getAddressLink(state, action, _SmartWeave)
+      return await getAddressLink(...readParams)
     case "listCollections":
-      return await listCollections(state, action, _SmartWeave)
+      return await listCollections(...readParams)
     case "getInfo":
-      return await getInfo(state, action, _SmartWeave)
+      return await getInfo(...readParams)
     case "getCrons":
-      return await getCrons(state, action, _SmartWeave)
+      return await getCrons(...readParams)
     case "getAlgorithms":
-      return await getAlgorithms(state, action, _SmartWeave)
+      return await getAlgorithms(...readParams)
     case "getLinkedContract":
-      return await getLinkedContract(state, action, _SmartWeave)
+      return await getLinkedContract(...readParams)
     case "listRelayerJobs":
-      return await listRelayerJobs(state, action, _SmartWeave)
+      return await listRelayerJobs(...readParams)
     case "getRelayerJob":
-      return await getRelayerJob(state, action, _SmartWeave)
+      return await getRelayerJob(...readParams)
     case "getIndexes":
-      return await getIndexes(state, action, _SmartWeave)
+      return await getIndexes(...readParams)
+    case "getTriggers":
+      return await getTriggers(...readParams)
     case "getSchema":
-      return await getSchema(state, action, _SmartWeave)
+      return await getSchema(...readParams)
     case "getRules":
-      return await getRules(state, action, _SmartWeave)
+      return await getRules(...readParams)
     case "ids":
-      return await ids(state, action, _SmartWeave)
+      return await ids(...readParams)
     case "nonce":
-      return await nonce(state, action, _SmartWeave)
+      return await nonce(...readParams)
     case "hash":
-      return await hash(state, action, _SmartWeave)
+      return await hash(...readParams)
     case "version":
-      return await version(state, action, _SmartWeave)
+      return await version(...readParams)
     case "getOwner":
-      return await getOwner(state, action, _SmartWeave)
+      return await getOwner(...readParams)
     case "getEvolve":
-      return await getEvolve(state, action, _SmartWeave)
+      return await getEvolve(...readParams)
     case "add":
-      return await addHash(
-        await add(state, action, undefined, undefined, undefined, _SmartWeave)
-      )
-    case "set":
-      return await addHash(
-        await set(state, action, undefined, undefined, _SmartWeave)
-      )
-    case "upsert":
-      return await addHash(
-        await upsert(state, action, undefined, undefined, _SmartWeave)
-      )
-    case "update":
-      return await addHash(
-        await update(state, action, undefined, undefined, _SmartWeave)
-      )
-    case "delete":
-      return await addHash(
-        await remove(state, action, undefined, undefined, _SmartWeave)
-      )
-    case "batch":
-      return await addHash(
-        await batch(state, action, undefined, undefined, _SmartWeave)
-      )
-    case "bundle":
-      return await addHash(
-        await bundle(state, action, undefined, undefined, _SmartWeave)
-      )
-    case "relay":
-      return await addHash(
-        await relay(state, action, undefined, undefined, _SmartWeave)
-      )
-
-    case "addOwner":
-      return await addHash(
-        await addOwner(state, action, undefined, undefined, _SmartWeave)
-      )
-    case "removeOwner":
-      return await addHash(
-        await removeOwner(state, action, undefined, undefined, _SmartWeave)
-      )
-    case "setAlgorithms":
-      return await addHash(
-        await setAlgorithms(state, action, undefined, undefined, _SmartWeave)
-      )
-    case "setCanEvolve":
-      return await addHash(
-        await setCanEvolve(state, action, undefined, undefined, _SmartWeave)
-      )
-    case "setSecure":
-      return await addHash(
-        await setSecure(state, action, undefined, undefined, _SmartWeave)
-      )
-    case "setSchema":
-      return await addHash(
-        await setSchema(state, action, undefined, undefined, _SmartWeave)
-      )
-    case "addIndex":
-      return await addHash(
-        await addIndex(state, action, undefined, undefined, _SmartWeave)
-      )
-    case "removeIndex":
-      return await addHash(
-        await removeIndex(state, action, undefined, undefined, _SmartWeave)
-      )
-
-    case "setRules":
-      return await addHash(
-        await setRules(state, action, undefined, undefined, _SmartWeave)
-      )
-    case "removeCron":
-      return await addHash(
-        await removeCron(state, action, undefined, undefined, _SmartWeave)
-      )
-    case "addRelayerJob":
-      return await addHash(
-        await addRelayerJob(state, action, undefined, undefined, _SmartWeave)
-      )
-    case "removeRelayerJob":
-      return await addHash(
-        await removeRelayerJob(state, action, undefined, undefined, _SmartWeave)
-      )
-    case "linkContract":
-      return await addHash(
-        await linkContract(state, action, undefined, undefined, _SmartWeave)
-      )
-    case "unlinkContract":
-      return await addHash(
-        await unlinkContract(state, action, undefined, undefined, _SmartWeave)
-      )
-    case "removeAddressLink":
-      return await addHash(
-        await removeAddressLink(
+      res = await addHash(
+        await add(
           state,
           action,
           undefined,
           undefined,
-          _SmartWeave
+          undefined,
+          _SmartWeave,
+          kvs,
+          executeCron
         )
       )
-
+      break
+    case "set":
+      res = await addHash(await set(...writeParams, executeCron))
+      break
+    case "upsert":
+      res = await addHash(await upsert(...writeParams, executeCron))
+      break
+    case "update":
+      res = await addHash(await update(...writeParams, executeCron))
+      break
+    case "delete":
+      res = await addHash(await remove(...writeParams, executeCron))
+      break
+    case "batch":
+      res = await addHash(await batch(...writeParams, executeCron))
+      break
+    case "bundle":
+      res = await addHash(await bundle(...writeParams))
+      break
+    case "relay":
+      res = await addHash(await relay(...writeParams))
+      break
+    case "addOwner":
+      res = await addHash(await addOwner(...writeParams))
+      break
+    case "removeOwner":
+      res = await addHash(await removeOwner(...writeParams))
+      break
+    case "setAlgorithms":
+      res = await addHash(await setAlgorithms(...writeParams))
+      break
+    case "setCanEvolve":
+      res = await addHash(await setCanEvolve(...writeParams))
+      break
+    case "setSecure":
+      res = await addHash(await setSecure(...writeParams))
+      break
+    case "setSchema":
+      res = await addHash(await setSchema(...writeParams))
+      break
+    case "addIndex":
+      res = await addHash(await addIndex(...writeParams))
+      break
+    case "removeIndex":
+      res = await addHash(await removeIndex(...writeParams))
+      break
+    case "setRules":
+      res = await addHash(await setRules(...writeParams))
+      break
+    case "removeCron":
+      res = await addHash(await removeCron(...writeParams))
+      break
+    case "addRelayerJob":
+      res = await addHash(await addRelayerJob(...writeParams))
+      break
+    case "removeRelayerJob":
+      res = await addHash(await removeRelayerJob(...writeParams))
+      break
+    case "linkContract":
+      res = await addHash(await linkContract(...writeParams))
+      break
+    case "unlinkContract":
+      res = await addHash(await unlinkContract(...writeParams))
+      break
+    case "removeAddressLink":
+      res = await addHash(await removeAddressLink(...writeParams))
+      break
     case "addCron":
-      return await addHash(
-        await addCron(state, action, undefined, undefined, _SmartWeave)
-      )
-    case "addAddressLink":
-      return await addHash(
-        await addAddressLink(state, action, undefined, undefined, _SmartWeave)
-      )
-    case "evolve":
-      return await addHash(
-        await evolve(state, action, undefined, undefined, _SmartWeave)
-      )
-    case "migrate":
-      return await addHash(
-        await migrate(state, action, undefined, undefined, _SmartWeave)
-      )
+      res = await addHash(await addCron(...writeParams))
+      break
+    case "addTrigger":
+      res = await addHash(await addTrigger(...writeParams))
+      break
+    case "removeTrigger":
+      res = await addHash(await removeTrigger(...writeParams))
+      break
 
+    case "addAddressLink":
+      res = await addHash(
+        await addAddressLink(
+          state,
+          action,
+          undefined,
+          undefined,
+          _SmartWeave,
+          undefined,
+          kvs
+        )
+      )
+      break
+    case "evolve":
+      res = await addHash(await evolve(...writeParams))
+      break
+    case "migrate":
+      res = await addHash(await migrate(...writeParams))
+      break
     default:
       err(
         `No function supplied or function not recognised: "${action.input.function}"`
       )
+  }
+  if (!isNil(res)) {
+    for (let k in kvs) await _SmartWeave.kv.put(k, kvs[k])
+    return res
   }
   return { state }
 }

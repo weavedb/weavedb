@@ -9,7 +9,8 @@ const addCron = async (
   action,
   signer,
   contractErr = true,
-  SmartWeave
+  SmartWeave,
+  kvs
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -17,7 +18,9 @@ const addCron = async (
       state,
       action,
       "addCron",
-      SmartWeave
+      SmartWeave,
+      true,
+      kvs
     ))
   }
   const owner = isOwner(signer, state)
@@ -45,7 +48,12 @@ const addCron = async (
   state.crons.crons[key] = _cron
   if (_cron.do) {
     try {
-      await executeCron({ start: _cron.start, crons: _cron }, state, SmartWeave)
+      await executeCron(
+        { start: _cron.start, crons: _cron },
+        state,
+        SmartWeave,
+        kvs
+      )
     } catch (e) {
       console.log(e)
       err("cron failed to execute")

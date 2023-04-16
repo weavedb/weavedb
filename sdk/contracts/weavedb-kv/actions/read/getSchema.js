@@ -1,7 +1,7 @@
 const { isNil, mergeLeft } = require("ramda")
 const { parse } = require("../../lib/utils")
 
-const getSchema = async (state, action, SmartWeave) => {
+const getSchema = async (state, action, SmartWeave, kvs) => {
   let { _data, data, query, new_data, path } = await parse(
     state,
     action,
@@ -9,7 +9,8 @@ const getSchema = async (state, action, SmartWeave) => {
     undefined,
     undefined,
     undefined,
-    SmartWeave
+    SmartWeave,
+    kvs
   )
   return { result: _data.schema || null }
 }
