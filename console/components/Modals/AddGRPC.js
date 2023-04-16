@@ -56,6 +56,7 @@ export default inject(
             ContractTxId
           </Flex>
           <Input
+            p={2}
             flex={1}
             value={cdb.contractTxId}
             disabled={true}

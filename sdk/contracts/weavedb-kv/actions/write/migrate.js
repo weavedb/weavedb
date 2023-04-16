@@ -8,7 +8,8 @@ const migrate = async (
   action,
   signer,
   contractErr = true,
-  SmartWeave
+  SmartWeave,
+  kvs
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -16,7 +17,9 @@ const migrate = async (
       state,
       action,
       "migrate",
-      SmartWeave
+      SmartWeave,
+      true,
+      kvs
     ))
   }
   const owner = isOwner(signer, state)

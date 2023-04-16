@@ -1,5 +1,12 @@
-const { isNil, init, last } = require("ramda")
-const { wrapResult, parse, clone, validateSchema } = require("../../lib/utils")
+const { equals, isNil, init, last } = require("ramda")
+const {
+  kv,
+  wrapResult,
+  parse,
+  clone,
+  validateSchema,
+  trigger,
+} = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { updateData, addData } = require("../../lib/index")
 
@@ -8,7 +15,10 @@ const upsert = async (
   action,
   signer,
   contractErr = true,
-  SmartWeave
+  SmartWeave,
+  kvs,
+  executeCron,
+  depth
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -16,25 +26,63 @@ const upsert = async (
       state,
       action,
       "upsert",
-      SmartWeave
+      SmartWeave,
+      true,
+      kvs
     ))
   }
   let { data, query, _signer, new_data, path, schema, _data, col, next_data } =
-    await parse(state, action, "upsert", signer, 0, contractErr, SmartWeave)
+    await parse(
+      state,
+      action,
+      "upsert",
+      signer,
+      0,
+      contractErr,
+      SmartWeave,
+      kvs
+    )
   let prev = clone(_data.__data)
   validateSchema(schema, next_data, contractErr)
   const db = async id => {
     const doc_key = `data.${path.slice(0, -1).join("/")}/${id}`
-    return (await SmartWeave.kv.get(doc_key)) || { __data: null, subs: {} }
+    return (
+      (await kv(kvs, SmartWeave).get(doc_key)) || { __data: null, subs: {} }
+    )
   }
   if (isNil(prev)) {
-    await addData(last(path), next_data, db, init(path), SmartWeave)
+    await addData(last(path), next_data, db, init(path), SmartWeave, kvs)
   } else {
-    await updateData(last(path), next_data, prev, db, init(path), SmartWeave)
+    await updateData(
+      last(path),
+      next_data,
+      prev,
+      db,
+      init(path),
+      SmartWeave,
+      kvs
+    )
   }
+  const updated = !equals(_data.__data, next_data)
+  let before = clone(_data.__data)
+  let after = clone(next_data)
   _data.__data = next_data
-  await SmartWeave.kv.put(`data.${path.join("/")}`, _data)
+  await kv(kvs, SmartWeave).put(`data.${path.join("/")}`, _data)
 
+  if (updated && depth < 10) {
+    await trigger(
+      [isNil(before) ? "craete" : "update"],
+      state,
+      path,
+      SmartWeave,
+      kvs,
+      executeCron,
+      depth,
+      {
+        data: { before, after, id: last(path), setter: _data.setter },
+      }
+    )
+  }
   return wrapResult(state, original_signer, SmartWeave)
 }
 module.exports = { upsert }

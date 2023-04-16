@@ -7,7 +7,8 @@ const unlinkContract = async (
   action,
   signer,
   contractErr = true,
-  SmartWeave
+  SmartWeave,
+  kvs
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -15,7 +16,9 @@ const unlinkContract = async (
       state,
       action,
       "unlinkContract",
-      SmartWeave
+      SmartWeave,
+      true,
+      kvs
     ))
   }
   let { _data, data, query, new_data, path } = await parse(
@@ -25,7 +28,8 @@ const unlinkContract = async (
     signer,
     null,
     contractErr,
-    SmartWeave
+    SmartWeave,
+    kvs
   )
   const [key] = action.input.query
   if (isNil(key)) {

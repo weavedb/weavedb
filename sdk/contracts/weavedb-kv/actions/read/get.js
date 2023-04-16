@@ -33,7 +33,7 @@ const {
   map,
 } = require("ramda")
 
-const { getDoc, err } = require("../../lib/utils")
+const { kv, getDoc, err } = require("../../lib/utils")
 const { getKey } = require("../../lib/index")
 
 const parseQuery = query => {
@@ -144,14 +144,14 @@ const parseQuery = query => {
   }
 }
 
-const getColIndex = async (path, _sort, SmartWeave) => {
+const getColIndex = async (path, _sort, SmartWeave, kvs) => {
   if (isNil(_sort)) _sort = [["__id__"]]
   let _reverse = false
   if (!isNil(_sort) && _sort.length === 1 && _sort[0][1] === "desc") {
     _sort[0][1] = "asc"
     _reverse = true
   }
-  const indexes = await SmartWeave.kv.get(getKey(path, _sort))
+  const indexes = await kv(kvs, SmartWeave).get(getKey(path, _sort))
   return _reverse ? reverse(indexes) : indexes
 }
 
@@ -240,7 +240,7 @@ const bsearch = async function (
   }
 }
 
-const get = async (state, action, cursor = false, SmartWeave) => {
+const get = async (state, action, cursor = false, SmartWeave, kvs) => {
   const {
     path,
     _limit,
@@ -265,7 +265,9 @@ const get = async (state, action, cursor = false, SmartWeave) => {
       null,
       null,
       null,
-      SmartWeave
+      SmartWeave,
+      undefined,
+      kvs
     )
     return {
       result: isNil(_data.__data)
@@ -279,7 +281,7 @@ const get = async (state, action, cursor = false, SmartWeave) => {
         : _data.__data || null,
     }
   } else {
-    let index = await getColIndex(path, _sort, SmartWeave)
+    let index = await getColIndex(path, _sort, SmartWeave, kvs)
     if (isNil(index)) err("index doesn't exist")
     const { doc: _data } =
       path.length === 1
@@ -295,22 +297,19 @@ const get = async (state, action, cursor = false, SmartWeave) => {
             null,
             null,
             null,
-            SmartWeave
+            SmartWeave,
+            undefined,
+            kvs
           )
-    /*const docs =
-      (path.length === 1 ? _data : _data.subs)[last(path)]?.__docs || {}*/
     const test = async v => {
       return v
     }
     const prAll = ps => Promise.all(ps)
-    /*
-    const prs = await Promise.all(map(async v => await test(v))([1, 2, 3]))
-    console.log(prs)
-    console.log(await Promise.all(prs))
-    */
     const docs = async id => {
       const doc_key = `data.${path.join("/")}/${id}`
-      return (await SmartWeave.kv.get(doc_key)) || { __data: null, subs: {} }
+      return (
+        (await kv(kvs, SmartWeave).get(doc_key)) || { __data: null, subs: {} }
+      )
     }
 
     let _docs = []

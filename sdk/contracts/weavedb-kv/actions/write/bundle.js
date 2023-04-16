@@ -27,7 +27,8 @@ const bundle = async (
   action,
   signer,
   contractErr = true,
-  SmartWeave
+  SmartWeave,
+  kvs
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -35,7 +36,9 @@ const bundle = async (
       state,
       action,
       "bundle",
-      SmartWeave
+      SmartWeave,
+      true,
+      kvs
     ))
   }
   const compressed = new Uint8Array(
@@ -53,6 +56,7 @@ const bundle = async (
   for (const q of queries) {
     let valid = true
     let error = null
+    let params = [clone(state), { input: q }, undefined, false, SmartWeave, kvs]
     try {
       const op = q.function
       let res = null
@@ -68,159 +72,57 @@ const bundle = async (
           )
           break
         case "set":
-          res = await set(
-            clone(state),
-            { input: q },
-            undefined,
-            false,
-            SmartWeave
-          )
+          res = await set(...params)
           break
         case "update":
-          res = await update(
-            clone(state),
-            { input: q },
-            undefined,
-            false,
-            SmartWeave
-          )
+          res = await update(...params)
           break
         case "upsert":
-          res = await upsert(
-            clone(state),
-            { input: q },
-            undefined,
-            false,
-            SmartWeave
-          )
+          res = await upsert(...params)
           break
         case "delete":
-          res = await remove(
-            clone(state),
-            { input: q },
-            undefined,
-            false,
-            SmartWeave
-          )
+          res = await remove(...params)
           break
         case "setRules":
-          res = await setRules(
-            clone(state),
-            { input: q },
-            undefined,
-            false,
-            SmartWeave
-          )
+          res = await setRules(...params)
           break
         case "setSchema":
-          res = await setSchema(
-            clone(state),
-            { input: q },
-            undefined,
-            false,
-            SmartWeave
-          )
+          res = await setSchema(...params)
           break
 
         case "setCanEvolve":
-          res = await setCanEvolve(
-            clone(state),
-            { input: q },
-            undefined,
-            false,
-            SmartWeave
-          )
+          res = await setCanEvolve(...params)
           break
         case "setSecure":
-          res = await setSecure(
-            clone(state),
-            { input: q },
-            undefined,
-            false,
-            SmartWeave
-          )
+          res = await setSecure(...params)
           break
         case "setAlgorithms":
-          res = await setAlgorithms(
-            clone(state),
-            { input: q },
-            undefined,
-            false,
-            SmartWeave
-          )
+          res = await setAlgorithms(...params)
           break
         case "addIndex":
-          res = await addIndex(
-            clone(state),
-            { input: q },
-            undefined,
-            false,
-            SmartWeave
-          )
+          res = await addIndex(...params)
           break
         case "addOwner":
-          res = await addOwner(
-            clone(state),
-            { input: q },
-            undefined,
-            false,
-            SmartWeave
-          )
+          res = await addOwner(...params)
           break
         case "addRelayerJob":
-          res = await addRelayerJob(
-            clone(state),
-            { input: q },
-            undefined,
-            false,
-            SmartWeave
-          )
+          res = await addRelayerJob(...params)
           break
         case "addCron":
           const { addCron } = require("./addCron")
-          res = await addCron(
-            clone(state),
-            { input: q },
-            undefined,
-            false,
-            SmartWeave
-          )
+          res = await addCron(...params)
           break
         case "removeCron":
-          res = await removeCron(
-            clone(state),
-            { input: q },
-            undefined,
-            false,
-            SmartWeave
-          )
+          res = await removeCron(...params)
           break
         case "removeIndex":
-          res = await removeIndex(
-            clone(state),
-            { input: q },
-            undefined,
-            false,
-            SmartWeave
-          )
+          res = await removeIndex(...params)
           break
         case "removeOwner":
-          res = await removeOwner(
-            clone(state),
-            { input: q },
-            undefined,
-            false,
-            SmartWeave
-          )
+          res = await removeOwner(...params)
           break
         case "removeRelayerJob":
-          res = await removeRelayerJob(
-            clone(state),
-            { input: q },
-            undefined,
-            false,
-            SmartWeave
-          )
+          res = await removeRelayerJob(...params)
           break
         default:
           throw new Error(

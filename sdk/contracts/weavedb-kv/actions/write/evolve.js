@@ -7,7 +7,8 @@ const evolve = async (
   action,
   signer,
   contractErr = true,
-  SmartWeave
+  SmartWeave,
+  kvs
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -15,7 +16,9 @@ const evolve = async (
       state,
       action,
       "evolve",
-      SmartWeave
+      SmartWeave,
+      true,
+      kvs
     ))
   }
   const owner = isOwner(signer, state)

@@ -1,5 +1,12 @@
 const { isNil, last, init } = require("ramda")
-const { wrapResult, parse, err } = require("../../lib/utils")
+const {
+  clone,
+  kv,
+  wrapResult,
+  parse,
+  err,
+  trigger,
+} = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { removeData, getIndex } = require("../../lib/index")
 
@@ -8,7 +15,10 @@ const remove = async (
   action,
   signer,
   contractErr = true,
-  SmartWeave
+  SmartWeave,
+  kvs,
+  executeCron,
+  depth
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -16,7 +26,9 @@ const remove = async (
       state,
       action,
       "delete",
-      SmartWeave
+      SmartWeave,
+      true,
+      kvs
     ))
   }
   const { data, query, new_data, path, _data, col } = await parse(
@@ -26,16 +38,36 @@ const remove = async (
     signer,
     0,
     contractErr,
-    SmartWeave
+    SmartWeave,
+    kvs
   )
   if (isNil(_data.__data)) err(`Data doesn't exist`)
   const db = async id => {
     const doc_key = `data.${path.slice(0, -1).join("/")}/${id}`
-    return (await SmartWeave.kv.get(doc_key)) || { __data: null, subs: {} }
+    return (
+      (await kv(kvs, SmartWeave).get(doc_key)) || { __data: null, subs: {} }
+    )
   }
-  await removeData(last(path), db, init(path), SmartWeave)
+  await removeData(last(path), db, init(path), SmartWeave, kvs)
+  let before = clone(_data.__data)
+  let after = null
   _data.__data = null
-  await SmartWeave.kv.put(`data.${path.join("/")}`, _data)
+  await kv(kvs, SmartWeave).put(`data.${path.join("/")}`, _data)
+  if (depth < 10) {
+    await trigger(
+      ["delete"],
+      state,
+      path,
+      SmartWeave,
+      kvs,
+      executeCron,
+      depth,
+      {
+        data: { before, after, id: last(path), setter: _data.setter },
+      }
+    )
+  }
+
   return wrapResult(state, original_signer, SmartWeave)
 }
 

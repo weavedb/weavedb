@@ -7,7 +7,8 @@ const removeOwner = async (
   action,
   signer,
   contractErr = true,
-  SmartWeave
+  SmartWeave,
+  kvs
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -15,7 +16,9 @@ const removeOwner = async (
       state,
       action,
       "removeOwner",
-      SmartWeave
+      SmartWeave,
+      true,
+      kvs
     ))
   }
   const owner = isOwner(signer, state)

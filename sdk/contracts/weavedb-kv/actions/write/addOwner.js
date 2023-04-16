@@ -7,7 +7,8 @@ const addOwner = async (
   action,
   signer,
   contractErr = true,
-  SmartWeave
+  SmartWeave,
+  kvs
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -15,7 +16,9 @@ const addOwner = async (
       state,
       action,
       "addOwner",
-      SmartWeave
+      SmartWeave,
+      true,
+      kvs
     ))
   }
 
