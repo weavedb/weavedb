@@ -1,4 +1,4 @@
-const { err, isOwner } = require("../../lib/utils")
+const { wrapResult, err, isOwner } = require("../../lib/utils")
 const { includes, is, of, append, isNil } = require("ramda")
 const { validate } = require("../../lib/validate")
 
@@ -7,7 +7,8 @@ const addOwner = async (
   action,
   signer,
   contractErr = true,
-  SmartWeave
+  SmartWeave,
+  kvs
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -15,7 +16,9 @@ const addOwner = async (
       state,
       action,
       "addOwner",
-      SmartWeave
+      SmartWeave,
+      true,
+      kvs
     ))
   }
 
@@ -31,13 +34,6 @@ const addOwner = async (
     err("The owner already exists.")
   }
   state.owner = append(action.input.query.address, owner)
-  return {
-    state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 module.exports = { addOwner }

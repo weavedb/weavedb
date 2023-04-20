@@ -1,4 +1,4 @@
-const { err, isOwner } = require("../../lib/utils")
+const { wrapResult, err, isOwner } = require("../../lib/utils")
 const { isNil, is } = require("ramda")
 const { validate } = require("../../lib/validate")
 
@@ -7,7 +7,8 @@ const setSecure = async (
   action,
   signer,
   contractErr = true,
-  SmartWeave
+  SmartWeave,
+  kvs
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -15,7 +16,9 @@ const setSecure = async (
       state,
       action,
       "setSecure",
-      SmartWeave
+      SmartWeave,
+      true,
+      kvs
     ))
   }
   const owner = isOwner(signer, state)
@@ -24,14 +27,7 @@ const setSecure = async (
     err("Value must be a boolean.")
   }
   state.secure = action.input.query.value
-  return {
-    state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { setSecure }

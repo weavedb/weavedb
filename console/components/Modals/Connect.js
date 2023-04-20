@@ -20,6 +20,8 @@ import {
   base64URLStringToBuffer,
 } from "../../lib/webauthn"
 const { verifyRegistrationResponse } = require("@simplewebauthn/server")
+import Modal from "../Modal"
+
 export default inject(
   [
     "loading",
@@ -45,48 +47,31 @@ export default inject(
           zIndex: 100,
           top: 0,
           left: 0,
-          cursor: "pointer",
-        }}
-        onClick={() => {
-          set(false, "signing_in_modal")
-          set(false, "owner_signing_in_modal")
         }}
       >
-        <Flex
-          wrap="wrap"
+        <Box
           p={4}
-          justify="center"
           bg="white"
           sx={{ borderRadius: "10px", cursor: "default" }}
           onClick={e => e.stopPropagation()}
         >
-          {$.signing_in ? (
-            <Flex
-              justify="center"
-              align="center"
-              direction="column"
-              boxSize="150px"
-              p={4}
-              m={4}
-              color="#333"
-              bg="white"
-              sx={{
-                borderRadius: "10px",
-                cursor: "pointer",
-                ":hover": { opacity: 0.75 },
-              }}
-              onClick={async () => set(false, "signing_in")}
-            >
+          <Flex fontSize="15px" px={5}>
+            <Box fontWeight="bold">Connect Wallet</Box>
+            <Box flex={1}></Box>
+            <Box>
               <Box
-                fontSize="50px"
-                mb={3}
-                as="i"
-                className="fas fa-spin fa-circle-notch"
+                color="#ccc"
+                sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
+                className="fas fa-times"
+                onClick={() => {
+                  set(false, "signing_in_modal")
+                  set(false, "owner_signing_in_modal")
+                }}
               />
-              <Box textAlign="center">cancel sign-in</Box>
-            </Flex>
-          ) : (
-            <>
+            </Box>
+          </Flex>
+          <Flex wrap="wrap" justify="center">
+            {$.signing_in ? (
               <Flex
                 justify="center"
                 align="center"
@@ -94,90 +79,45 @@ export default inject(
                 boxSize="150px"
                 p={4}
                 m={4}
-                bg="#333"
-                color="white"
+                color="#333"
+                bg="white"
                 sx={{
                   borderRadius: "10px",
                   cursor: "pointer",
                   ":hover": { opacity: 0.75 },
                 }}
-                onClick={async () => {
-                  set(true, "signing_in")
-                  if ($.owner_signing_in_modal) {
-                    await fn(connectAddress)({ network: newNetwork })
-                  } else {
-                    await fn(createTempAddress)({
-                      contractTxId,
-                      network,
-                      node: tab === "Nodes",
-                    })
-                  }
-                  set(false, "signing_in")
-                  set(false, "signing_in_modal")
-                  set(false, "owner_signing_in_modal")
-                }}
+                onClick={async () => set(false, "signing_in")}
               >
-                <Image height="100px" src="/static/images/metamask.png" />
-                <Box textAlign="center">MetaMask</Box>
+                <Box
+                  fontSize="50px"
+                  mb={3}
+                  as="i"
+                  className="fas fa-spin fa-circle-notch"
+                />
+                <Box textAlign="center">cancel sign-in</Box>
               </Flex>
-              <Flex
-                p={4}
-                m={4}
-                boxSize="150px"
-                bg="#333"
-                color="white"
-                justify="center"
-                align="center"
-                direction="column"
-                sx={{
-                  borderRadius: "10px",
-                  cursor: "pointer",
-                  ":hover": { opacity: 0.75 },
-                }}
-                onClick={async () => {
-                  set(true, "signing_in")
-                  if ($.owner_signing_in_modal) {
-                    await fn(connectAddressWithII)({
-                      network: newNetwork,
-                    })
-                  } else {
-                    await fn(createTempAddressWithII)({
-                      contractTxId,
-                      network,
-                      node: tab === "Nodes",
-                    })
-                  }
-                  set(false, "signing_in")
-                  set(false, "signing_in_modal")
-                  set(false, "owner_signing_in_modal")
-                }}
-              >
-                <Image height="100px" src="/static/images/dfinity.png" />
-                <Box textAlign="center">Internet Identity</Box>
-              </Flex>
-              <Flex
-                p={4}
-                m={4}
-                boxSize="150px"
-                bg="#333"
-                color="white"
-                justify="center"
-                align="center"
-                direction="column"
-                sx={{
-                  borderRadius: "10px",
-                  cursor: "pointer",
-                  ":hover": { opacity: 0.75 },
-                }}
-                onClick={async () => {
-                  set(true, "signing_in")
-                  try {
+            ) : (
+              <>
+                <Flex
+                  justify="center"
+                  align="center"
+                  direction="column"
+                  boxSize="150px"
+                  p={4}
+                  m={4}
+                  bg="#333"
+                  color="white"
+                  sx={{
+                    borderRadius: "10px",
+                    cursor: "pointer",
+                    ":hover": { opacity: 0.75 },
+                  }}
+                  onClick={async () => {
+                    set(true, "signing_in")
                     if ($.owner_signing_in_modal) {
-                      await fn(connectAddressWithAR)({
-                        network: newNetwork,
-                      })
+                      await fn(connectAddress)({ network: newNetwork })
                     } else {
-                      await fn(createTempAddressWithAR)({
+                      await fn(createTempAddress)({
                         contractTxId,
                         network,
                         node: tab === "Nodes",
@@ -186,25 +126,20 @@ export default inject(
                     set(false, "signing_in")
                     set(false, "signing_in_modal")
                     set(false, "owner_signing_in_modal")
-                  } catch (e) {
-                    console.log(e)
-                    alert("Something went wrong")
-                  }
-                }}
-              >
-                <Image height="100px" src="/static/images/arconnect.png" />
-                <Box textAlign="center">ArConnect</Box>
-              </Flex>
-              {version < 25 || $.owner_signing_in_modal ? null : (
+                  }}
+                >
+                  <Image height="100px" src="/static/images/metamask.png" />
+                  <Box textAlign="center">MetaMask</Box>
+                </Flex>
                 <Flex
+                  p={4}
+                  m={4}
+                  boxSize="150px"
+                  bg="#333"
+                  color="white"
                   justify="center"
                   align="center"
                   direction="column"
-                  boxSize="150px"
-                  p={4}
-                  m={4}
-                  bg="#00501E"
-                  color="white"
                   sx={{
                     borderRadius: "10px",
                     cursor: "pointer",
@@ -213,48 +148,33 @@ export default inject(
                   onClick={async () => {
                     set(true, "signing_in")
                     if ($.owner_signing_in_modal) {
+                      await fn(connectAddressWithII)({
+                        network: newNetwork,
+                      })
                     } else {
-                      let err = null
-                      try {
-                        await fn(createTempAddressWithLens)({
-                          contractTxId,
-                          network,
-                          node: tab === "Nodes",
-                        })
-                      } catch (e) {
-                        err = e.message || e.toString?.()
-                      }
-                      if (!isNil(err)) {
-                        toast({
-                          description:
-                            typeof err === "string"
-                              ? err.replace(/^Error: /, "")
-                              : "Something went wrong...",
-                          status: "error",
-                          duration: 3000,
-                          isClosable: true,
-                          position: "bottom-right",
-                        })
-                      }
+                      await fn(createTempAddressWithII)({
+                        contractTxId,
+                        network,
+                        node: tab === "Nodes",
+                      })
                     }
                     set(false, "signing_in")
                     set(false, "signing_in_modal")
                     set(false, "owner_signing_in_modal")
                   }}
                 >
-                  <Image height="120px" src="/static/images/lens.png" />
+                  <Image height="100px" src="/static/images/dfinity.png" />
+                  <Box textAlign="center">Internet Identity</Box>
                 </Flex>
-              )}
-              {version < 25 || $.owner_signing_in_modal ? null : (
                 <Flex
+                  p={4}
+                  m={4}
+                  boxSize="150px"
+                  bg="#333"
+                  color="white"
                   justify="center"
                   align="center"
                   direction="column"
-                  boxSize="150px"
-                  p={4}
-                  m={4}
-                  bg="#3423A6"
-                  color="white"
                   sx={{
                     borderRadius: "10px",
                     cursor: "pointer",
@@ -262,47 +182,139 @@ export default inject(
                   }}
                   onClick={async () => {
                     set(true, "signing_in")
-                    if ($.owner_signing_in_modal) {
-                    } else {
-                      let err = null
-                      try {
-                        await fn(createTempAddressWithWebAuthn)({
+                    try {
+                      if ($.owner_signing_in_modal) {
+                        await fn(connectAddressWithAR)({
+                          network: newNetwork,
+                        })
+                      } else {
+                        await fn(createTempAddressWithAR)({
                           contractTxId,
                           network,
                           node: tab === "Nodes",
                         })
-                      } catch (e) {
-                        err = e.message || e.toString?.()
                       }
-                      if (!isNil(err)) {
-                        toast({
-                          description:
-                            typeof err === "string"
-                              ? err.replace(/^Error: /, "")
-                              : "Something went wrong...",
-                          status: "error",
-                          duration: 3000,
-                          isClosable: true,
-                          position: "bottom-right",
-                        })
-                      }
+                      set(false, "signing_in")
+                      set(false, "signing_in_modal")
+                      set(false, "owner_signing_in_modal")
+                    } catch (e) {
+                      console.log(e)
+                      alert("Something went wrong")
                     }
-                    set(false, "signing_in")
-                    set(false, "signing_in_modal")
-                    set(false, "owner_signing_in_modal")
                   }}
                 >
-                  <Image
-                    mb="10px"
-                    w="120px"
-                    src="/static/images/webauthn.png"
-                  />
-                  <Box textAlign="center">WebAuthn</Box>
+                  <Image height="100px" src="/static/images/arconnect.png" />
+                  <Box textAlign="center">ArConnect</Box>
                 </Flex>
-              )}
-            </>
-          )}
-        </Flex>
+                {version < 25 || $.owner_signing_in_modal ? null : (
+                  <Flex
+                    justify="center"
+                    align="center"
+                    direction="column"
+                    boxSize="150px"
+                    p={4}
+                    m={4}
+                    bg="#00501E"
+                    color="white"
+                    sx={{
+                      borderRadius: "10px",
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                    onClick={async () => {
+                      set(true, "signing_in")
+                      if ($.owner_signing_in_modal) {
+                      } else {
+                        let err = null
+                        try {
+                          await fn(createTempAddressWithLens)({
+                            contractTxId,
+                            network,
+                            node: tab === "Nodes",
+                          })
+                        } catch (e) {
+                          err = e.message || e.toString?.()
+                        }
+                        if (!isNil(err)) {
+                          toast({
+                            description:
+                              typeof err === "string"
+                                ? err.replace(/^Error: /, "")
+                                : "Something went wrong...",
+                            status: "error",
+                            duration: 3000,
+                            isClosable: true,
+                            position: "bottom-right",
+                          })
+                        }
+                      }
+                      set(false, "signing_in")
+                      set(false, "signing_in_modal")
+                      set(false, "owner_signing_in_modal")
+                    }}
+                  >
+                    <Image height="120px" src="/static/images/lens.png" />
+                  </Flex>
+                )}
+                {true || version < 25 || $.owner_signing_in_modal ? null : (
+                  <Flex
+                    justify="center"
+                    align="center"
+                    direction="column"
+                    boxSize="150px"
+                    p={4}
+                    m={4}
+                    bg="#3423A6"
+                    color="white"
+                    sx={{
+                      borderRadius: "10px",
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                    onClick={async () => {
+                      set(true, "signing_in")
+                      if ($.owner_signing_in_modal) {
+                      } else {
+                        let err = null
+                        try {
+                          await fn(createTempAddressWithWebAuthn)({
+                            contractTxId,
+                            network,
+                            node: tab === "Nodes",
+                          })
+                        } catch (e) {
+                          err = e.message || e.toString?.()
+                        }
+                        if (!isNil(err)) {
+                          toast({
+                            description:
+                              typeof err === "string"
+                                ? err.replace(/^Error: /, "")
+                                : "Something went wrong...",
+                            status: "error",
+                            duration: 3000,
+                            isClosable: true,
+                            position: "bottom-right",
+                          })
+                        }
+                      }
+                      set(false, "signing_in")
+                      set(false, "signing_in_modal")
+                      set(false, "owner_signing_in_modal")
+                    }}
+                  >
+                    <Image
+                      mb="10px"
+                      w="120px"
+                      src="/static/images/webauthn.png"
+                    />
+                    <Box textAlign="center">WebAuthn</Box>
+                  </Flex>
+                )}
+              </>
+            )}
+          </Flex>
+        </Box>
       </Flex>
     )
   }

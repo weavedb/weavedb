@@ -28,11 +28,6 @@ describe("WeaveDB", function () {
     dfinityTxId,
     ethereumTxId
   const Arweave = require("arweave")
-  const _ii = [
-    "302a300506032b6570032100ccd1d1f725fc35a681d8ef5d563a3c347829bf3f0fe822b4a4b004ee0224fc0d",
-    "010925abb4cf8ccb7accbcfcbf0a6adf1bbdca12644694bb47afc7182a4ade66ccd1d1f725fc35a681d8ef5d563a3c347829bf3f0fe822b4a4b004ee0224fc0d",
-  ]
-
   this.timeout(0)
 
   before(async () => {

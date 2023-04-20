@@ -1,3 +1,4 @@
+const pako = require("pako")
 const elliptic = require("elliptic")
 const EthCrypto = require("eth-crypto")
 const { providers, Contract, utils } = require("ethers")
@@ -95,6 +96,7 @@ class Base {
       "get",
       "cget",
       "getIndexes",
+      "getTriggers",
       "getCrons",
       "getSchema",
       "getRules",
@@ -178,6 +180,12 @@ class Base {
     )
   }
 
+  async bundle(queries, opt) {
+    const input = JSON.stringify(queries)
+    const output = pako.deflate(input)
+    const base64 = btoa(String.fromCharCode.apply(null, output))
+    return this._write2("bundle", base64, opt)
+  }
   async addOwner(address, opt) {
     return this._write2("addOwner", { address }, opt)
   }
@@ -731,7 +739,6 @@ class Base {
       primaryType: "Query",
       message,
     }
-
     const signature = isNil(pkey)
       ? await this.web3.currentProvider.request({
           method: "eth_signTypedData_v4",
@@ -982,6 +989,7 @@ const readQueries = [
   "get",
   "cget",
   "getIndexes",
+  "getTriggers",
   "listCollections",
   "getCrons",
   "getAlgorithms",
@@ -1013,6 +1021,8 @@ const writes = [
   "add",
   "addIndex",
   "addCron",
+  "addTrigger",
+  "removeTrigger",
   "removeCron",
   "removeIndex",
   "update",

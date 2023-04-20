@@ -30,6 +30,7 @@ const {
   difference,
   equals,
 } = require("ramda")
+const { kv } = require("./utils")
 
 const comp = (val, x) => {
   let res = 0
@@ -114,23 +115,23 @@ const bsearch2 = async function (
   }
 }
 
-const addSingleIndex = async (_id, k, data, db, path, SmartWeave) => {
+const addSingleIndex = async (_id, k, data, db, path, SmartWeave, kvs) => {
   const _k = k || "__id__"
   const key = getKey(path, [[_k]])
-  let ind = (await SmartWeave.kv.get(key)) || []
+  let ind = (await kv(kvs, SmartWeave).get(key)) || []
   const _ind = await bsearch(ind, isNil(k) ? _id : data[k], k, db)
   if (isNil(_ind)) ind.push(_id)
   else ind.splice(_ind, 0, _id)
-  await SmartWeave.kv.put(key, ind)
+  await kv(kvs, SmartWeave).put(key, ind)
 }
 
-const removeSingleIndex = async (_id, k, path, SmartWeave) => {
+const removeSingleIndex = async (_id, k, path, SmartWeave, kvs) => {
   const _k = k || "__id__"
   const key = getKey(path, [[_k]])
-  let ind = (await SmartWeave.kv.get(key)) || []
+  let ind = (await kv(kvs, SmartWeave).get(key)) || []
   const _ind = indexOf(_id, ind)
   if (!isNil(_ind)) ind.splice(_ind, 1)
-  await SmartWeave.kv.put(key, ind)
+  await kv(kvs, SmartWeave).put(key, ind)
 }
 
 const addInd = async (_id, index, db, sort, data) => {
@@ -145,17 +146,26 @@ const removeInd = (_id, index) => {
   if (!isNil(_ind)) index.splice(_ind, 1)
 }
 
-const _addData = async (_keys, _id, _sort = [], db, data, path, SmartWeave) => {
+const _addData = async (
+  _keys,
+  _id,
+  _sort = [],
+  db,
+  data,
+  path,
+  SmartWeave,
+  kvs
+) => {
   for (let k of _keys) {
     if (k === "__id__/asc") continue
     const key = `index.${path.join("/")}//${k}`
-    let ind = await SmartWeave.kv.get(key)
+    let ind = await kv(kvs, SmartWeave).get(key)
     if (!isNil(ind) && k.split("/").length >= 4) {
       const sort = splitEvery(2, k.split("/"))
       const fields = map(prop(0), sort)
       if (difference(fields, keys(data)).length === 0) {
         await addInd(_id, ind, db, sort, data)
-        await SmartWeave.kv.put(key, ind)
+        await kv(kvs, SmartWeave).put(key, ind)
       }
     }
   }
@@ -167,24 +177,19 @@ const getKey = (path, sort = []) =>
     map(v => `${v[0]}/${v[1] || "asc"}`)
   )(sort)}`
 
-const getIndex = async (path, SmartWeave) => {
-  const key = getKey(path)
-  return (await SmartWeave.kv.get(key)) || []
+const getIndex = async (path, SmartWeave, kvs) => {
+  return (await kv(kvs, SmartWeave).get(getKey(path))) || []
 }
 
-const getInventory = async (path, SmartWeave) => {
-  return (await SmartWeave.kv.get(getKey(path))) || []
-}
-
-const addData = async (_id, data, db, path, SmartWeave) => {
+const addData = async (_id, data, db, path, SmartWeave, kvs) => {
   const _add = async k => {
     const key = getKey(path, [[k || "__id__"]])
-    let _ind = await SmartWeave.kv.get(key)
+    let _ind = await kv(kvs, SmartWeave).get(key)
     if (isNil(_ind)) {
-      await SmartWeave.kv.put(key, [_id])
-      await addToInventory([[k || "__id__"]], path, SmartWeave)
+      await kv(kvs, SmartWeave).put(key, [_id])
+      await addToInventory([[k || "__id__"]], path, SmartWeave, kvs)
     } else {
-      await addSingleIndex(_id, k, data, db, path, SmartWeave)
+      await addSingleIndex(_id, k, data, db, path, SmartWeave, kvs)
     }
   }
   await _add(null)
@@ -192,8 +197,8 @@ const addData = async (_id, data, db, path, SmartWeave) => {
     if (k === "__id__") continue
     await _add(k)
   }
-  let keys = await getInventory(path, SmartWeave)
-  await _addData(keys, _id, [], db, data, path, SmartWeave)
+  let keys = await getIndex(path, SmartWeave, kvs)
+  await _addData(keys, _id, [], db, data, path, SmartWeave, kvs)
 }
 
 const _updateData = async (
@@ -205,12 +210,13 @@ const _updateData = async (
   new_data,
   old_data,
   path,
-  SmartWeave
+  SmartWeave,
+  kvs
 ) => {
   for (let k of _keys) {
     if (k === "__id__/asc") continue
     const key = `index.${path.join("/")}//${k}`
-    let ind = await SmartWeave.kv.get(key)
+    let ind = await kv(kvs, SmartWeave).get(key)
     if (!isNil(ind) && k.split("/").length >= 4) {
       const sort = splitEvery(2, k.split("/"))
       const fields = map(prop(0), sort)
@@ -230,7 +236,7 @@ const _updateData = async (
   }
 }
 
-const updateData = async (_id, data, old_data, db, path, SmartWeave) => {
+const updateData = async (_id, data, old_data, db, path, SmartWeave, kvs) => {
   if (isNil(old_data)) return
   const _keys = compose(uniq, concat(keys(old_data)), keys)(data)
   let c = []
@@ -240,17 +246,17 @@ const updateData = async (_id, data, old_data, db, path, SmartWeave) => {
     if (v === "__id__") continue
     if (isNil(data[v])) {
       d.push(v)
-      await removeSingleIndex(_id, v, path, SmartWeave)
+      await removeSingleIndex(_id, v, path, SmartWeave, kvs)
     } else if (isNil(old_data[v])) {
       c.push(v)
-      await addSingleIndex(_id, v, data, db, path, SmartWeave)
+      await addSingleIndex(_id, v, data, db, path, SmartWeave, kvs)
     } else if (!equals(data[v], old_data[v])) {
       u.push(v)
-      await removeSingleIndex(_id, v, path, SmartWeave)
-      await addSingleIndex(_id, v, data, db, path, SmartWeave)
+      await removeSingleIndex(_id, v, path, SmartWeave, kvs)
+      await addSingleIndex(_id, v, data, db, path, SmartWeave, kvs)
     }
   }
-  let __keys = await getInventory(path, SmartWeave)
+  let __keys = await getIndex(path, SmartWeave, kvs)
   await _updateData(
     __keys,
     _id,
@@ -260,54 +266,64 @@ const updateData = async (_id, data, old_data, db, path, SmartWeave) => {
     data,
     old_data,
     path,
-    SmartWeave
+    SmartWeave,
+    kvs
   )
 }
 
-const _removeData = async (_keys, _id, _sort = [], db, path, SmartWeave) => {
+const _removeData = async (
+  _keys,
+  _id,
+  _sort = [],
+  db,
+  path,
+  SmartWeave,
+  kvs
+) => {
   for (let k of _keys) {
     if (k === "__id__/asc") continue
     const key = `index.${path.join("/")}//${k}`
-    let ind = await SmartWeave.kv.get(key)
+    let ind = await kv(kvs, SmartWeave).get(key)
     if (!isNil(ind) && k.split("/").length >= 4) {
       const sort = splitEvery(2, k.split("/"))
       const fields = map(prop(0), sort)
       if (difference(fields, keys((await db(_id)).__data)).length === 0) {
         removeInd(_id, ind)
-        await SmartWeave.kv.put(key, ind)
+        await kv(kvs, SmartWeave).put(key, ind)
       }
     }
   }
 }
 
-const removeData = async (_id, db, path, SmartWeave) => {
+const removeData = async (_id, db, path, SmartWeave, kvs) => {
   let data = await db(_id)
   if (isNil(data)) return
-  await removeSingleIndex(_id, null, path, SmartWeave)
-  for (let k in data.__data) await removeSingleIndex(_id, k, path, SmartWeave)
-  let keys = await getInventory(path, SmartWeave)
-  await _removeData(keys, _id, [], db, path, SmartWeave)
+  await removeSingleIndex(_id, null, path, SmartWeave, kvs)
+  for (let k in data.__data)
+    await removeSingleIndex(_id, k, path, SmartWeave, kvs)
+  let keys = await getIndex(path, SmartWeave, kvs)
+  await _removeData(keys, _id, [], db, path, SmartWeave, kvs)
 }
 
-const _getIndex = async (sort, path, SmartWeave) => {
+const _getIndex = async (sort, path, SmartWeave, kvs) => {
   if (sort.length <= 1) return { index: null, ex: false }
-  let index = await SmartWeave.kv.get(getKey(path, sort))
+  let index = await kv(kvs, SmartWeave).get(getKey(path, sort))
   return isNil(index) || index === false ? null : index
 }
 
 const format = v => map(v => [v[0], v[1] || "asc"].join("/"))(v).join("/")
-const addToInventory = async (sort, path, SmartWeave) => {
-  let ex_indexes = (await SmartWeave.kv.get(getKey(path))) || []
+const addToInventory = async (sort, path, SmartWeave, kvs) => {
+  let ex_indexes = (await kv(kvs, SmartWeave).get(getKey(path))) || []
   ex_indexes.push(format(sort))
-  await SmartWeave.kv.put(getKey(path), ex_indexes)
+  await kv(kvs, SmartWeave).put(getKey(path), ex_indexes)
 }
 
-const addIndex = async (sort, path, db, SmartWeave) => {
-  if (isNil(await _getIndex(sort, path, SmartWeave))) {
-    await addToInventory(sort, path, SmartWeave)
-    let docs = await SmartWeave.kv.get(getKey(path, [["__id__"]]))
+const addIndex = async (sort, path, db, SmartWeave, kvs) => {
+  if (isNil(await _getIndex(sort, path, SmartWeave, kvs))) {
+    await addToInventory(sort, path, SmartWeave, kvs)
+    let docs = await kv(kvs, SmartWeave).get(getKey(path, [["__id__"]]))
     if (!isNil(docs) && docs === false) docs = null
-    await SmartWeave.kv.put(
+    await kv(kvs, SmartWeave).put(
       getKey(path, sort),
       await _sort(sort, [], docs, db, SmartWeave)
     )
@@ -329,12 +345,15 @@ const _sort = async (sort, ind, docs, db) => {
   return ind
 }
 
-const removeIndex = async (sort, path, SmartWeave) => {
-  let keys = await getInventory(path, SmartWeave)
+const removeIndex = async (sort, path, SmartWeave, kvs) => {
+  let keys = await getIndex(path, SmartWeave, kvs)
   let key = getKey(path, sort)
   if (!isNil(key) && key !== false) {
-    await SmartWeave.kv.put(getKey(path), without([key.split("//")[1]], keys))
-    await SmartWeave.kv.put(key, false)
+    await kv(kvs, SmartWeave).put(
+      getKey(path),
+      without([key.split("//")[1]], keys)
+    )
+    await kv(kvs, SmartWeave).put(key, false)
   }
 }
 
@@ -343,11 +362,7 @@ module.exports = {
   addData,
   removeIndex,
   addIndex,
-  _getIndex,
   removeData,
   updateData,
-  addInd,
   getKey,
-  addSingleIndex,
-  removeSingleIndex,
 }

@@ -33,6 +33,8 @@ export default inject(
     "temp_current_all",
   ],
   ({
+    setEditRules,
+    editRules,
     deployMode,
     setDeployMode,
     newIndex,
@@ -232,6 +234,10 @@ export default inject(
       ) : addRules !== false ? (
         <AddRules
           {...{
+            setCollections,
+            setEditRules,
+            editRules,
+            state,
             newRules,
             setNewRules,
             db,

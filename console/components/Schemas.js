@@ -15,7 +15,9 @@ export default inject(
               if (!isOwner) return alert("connect the owner wallet to DB")
               setNewSchema(
                 JSON.stringify(
-                  schema || { type: "object", required: [], properties: {} }
+                  schema || { type: "object", required: [], properties: {} },
+                  undefined,
+                  2
                 )
               )
               setAddSchema(true)

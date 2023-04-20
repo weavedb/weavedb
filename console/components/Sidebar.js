@@ -2,19 +2,29 @@ import { Box, Flex } from "@chakra-ui/react"
 import { isNil, map, includes, addIndex as _addIndex } from "ramda"
 import { tabmap, tabs } from "../lib/const"
 
-export default ({ currentDB, setTab, tab }) => {
+export default ({
+  currentDB,
+  setTab,
+  tab,
+  showSidebar,
+  port,
+  setConnect,
+  setPort,
+}) => {
   return (
-    <Flex
+    <Box
+      display={[showSidebar ? "flex" : "none", null, null, null, "flex"]}
       h="100%"
       w="250px"
       bg="#eee"
       sx={{
+        zIndex: 2,
         position: "fixed",
         top: 0,
         left: 0,
+        flexDirection: "column",
       }}
       pt="56px"
-      direction="column"
     >
       {_addIndex(map)((v, i) => {
         return (
@@ -51,6 +61,35 @@ export default ({ currentDB, setTab, tab }) => {
         bg="#6441AF"
         color="white"
         m={4}
+        sx={{ textDecoration: "underline", borderRadius: "5px" }}
+      >
+        {isNil(port) ? (
+          <Flex onClick={() => setConnect(true)} sx={{ cursor: "pointer" }}>
+            Connect with Localhost
+          </Flex>
+        ) : (
+          <Flex
+            sx={{ cursor: "pointer" }}
+            onClick={() => {
+              if (confirm("Would you like to disconnect?")) {
+                setPort(null)
+              }
+            }}
+          >
+            Connected with local port{" "}
+            <Box ml={2} color="#6441AF">
+              {port}
+            </Box>
+          </Flex>
+        )}
+      </Flex>
+      <Flex
+        fontSize="12px"
+        p={4}
+        bg="#6441AF"
+        color="white"
+        mx={4}
+        mb={4}
         sx={{ borderRadius: "5px" }}
       >
         WeaveDB is still in alpha. Please use it with discretion.
@@ -76,6 +115,6 @@ export default ({ currentDB, setTab, tab }) => {
         </Box>
         .
       </Box>
-    </Flex>
+    </Box>
   )
 }

@@ -1,6 +1,5 @@
 const { isNil, is, intersection } = require("ramda")
-const { parse } = require("../../lib/utils")
-const { err } = require("../../lib/utils")
+const { wrapResult, err, parse } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 
 const setAlgorithms = async (
@@ -8,7 +7,8 @@ const setAlgorithms = async (
   action,
   signer,
   contractErr = true,
-  SmartWeave
+  SmartWeave,
+  kvs
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -16,7 +16,9 @@ const setAlgorithms = async (
       state,
       action,
       "setAlgorithms",
-      SmartWeave
+      SmartWeave,
+      true,
+      kvs
     ))
   }
 
@@ -27,7 +29,8 @@ const setAlgorithms = async (
     signer,
     null,
     contractErr,
-    SmartWeave
+    SmartWeave,
+    kvs
   )
   if (
     !is(Array)(new_data) ||
@@ -37,14 +40,7 @@ const setAlgorithms = async (
     err(`The wrong algorithms`)
   }
   state.auth.algorithms = new_data
-  return {
-    state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { setAlgorithms }

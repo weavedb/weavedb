@@ -1,5 +1,5 @@
 const { isNil, is, of, includes, mergeLeft } = require("ramda")
-const { err, isOwner } = require("../../lib/utils")
+const { wrapResult, err, isOwner } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 
 const evolve = async (
@@ -7,7 +7,8 @@ const evolve = async (
   action,
   signer,
   contractErr = true,
-  SmartWeave
+  SmartWeave,
+  kvs
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -15,7 +16,9 @@ const evolve = async (
       state,
       action,
       "evolve",
-      SmartWeave
+      SmartWeave,
+      true,
+      kvs
     ))
   }
   const owner = isOwner(signer, state)
@@ -34,19 +37,11 @@ const evolve = async (
   state.evolveHistory.push({
     signer,
     block: SmartWeave.block.height,
-    data: SmartWeave.block.timestamp,
+    date: SmartWeave.block.timestamp,
     srcTxId: action.input.value,
     oldVersion: state.version,
   })
-
-  return {
-    state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { evolve }
