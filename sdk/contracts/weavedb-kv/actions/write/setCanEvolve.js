@@ -1,4 +1,4 @@
-const { err, isOwner } = require("../../lib/utils")
+const { wrapResult, err, isOwner } = require("../../lib/utils")
 const { isNil, is } = require("ramda")
 const { validate } = require("../../lib/validate")
 
@@ -7,7 +7,8 @@ const setCanEvolve = async (
   action,
   signer,
   contractErr = true,
-  SmartWeave
+  SmartWeave,
+  kvs
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -15,7 +16,9 @@ const setCanEvolve = async (
       state,
       action,
       "setCanEvolve",
-      SmartWeave
+      SmartWeave,
+      true,
+      kvs
     ))
   }
 
@@ -24,14 +27,7 @@ const setCanEvolve = async (
     err("Value must be a boolean.")
   }
   state.canEvolve = action.input.query.value
-  return {
-    state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { setCanEvolve }

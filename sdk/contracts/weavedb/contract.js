@@ -77,8 +77,6 @@ const writes = [
 
 async function handle(state, action, _SmartWeave) {
   if (typeof SmartWeave !== "undefined") _SmartWeave = SmartWeave
-  const _crypto = SmartWeave.arweave.crypto || SmartWeave.arweave.wallets.crypto
-  console.log(_crypto)
   if (isEvolving(state) && includes(action.input.function)(writes)) {
     err("contract needs migration")
   }
@@ -107,39 +105,39 @@ async function handle(state, action, _SmartWeave) {
     case "cget":
       return await get(state, action, true, _SmartWeave)
     case "getAddressLink":
-      return await getAddressLink(state, action)
+      return await getAddressLink(state, action, _SmartWeave)
     case "listCollections":
-      return await listCollections(state, action)
+      return await listCollections(state, action, _SmartWeave)
     case "getInfo":
-      return await getInfo(state, action)
+      return await getInfo(state, action, _SmartWeave)
     case "getCrons":
-      return await getCrons(state, action)
+      return await getCrons(state, action, _SmartWeave)
     case "getAlgorithms":
-      return await getAlgorithms(state, action)
+      return await getAlgorithms(state, action, _SmartWeave)
     case "getLinkedContract":
-      return await getLinkedContract(state, action)
+      return await getLinkedContract(state, action, _SmartWeave)
     case "listRelayerJobs":
-      return await listRelayerJobs(state, action)
+      return await listRelayerJobs(state, action, _SmartWeave)
     case "getRelayerJob":
-      return await getRelayerJob(state, action)
+      return await getRelayerJob(state, action, _SmartWeave)
     case "getIndexes":
-      return await getIndexes(state, action)
+      return await getIndexes(state, action, _SmartWeave)
     case "getSchema":
-      return await getSchema(state, action)
+      return await getSchema(state, action, _SmartWeave)
     case "getRules":
-      return await getRules(state, action)
+      return await getRules(state, action, _SmartWeave)
     case "ids":
-      return await ids(state, action)
+      return await ids(state, action, _SmartWeave)
     case "nonce":
-      return await nonce(state, action)
+      return await nonce(state, action, _SmartWeave)
     case "hash":
-      return await hash(state, action)
+      return await hash(state, action, _SmartWeave)
     case "version":
-      return await version(state, action)
+      return await version(state, action, _SmartWeave)
     case "getOwner":
-      return await getOwner(state, action)
+      return await getOwner(state, action, _SmartWeave)
     case "getEvolve":
-      return await getEvolve(state, action)
+      return await getEvolve(state, action, _SmartWeave)
     case "add":
       return await addHash(
         await add(state, action, undefined, undefined, undefined, _SmartWeave)

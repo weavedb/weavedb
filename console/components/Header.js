@@ -123,6 +123,8 @@ export default ({
   node,
   contractTxId,
   setAddInstance,
+  showSidebar,
+  setShowSidebar,
 }) => (
   <Flex
     bg="white"
@@ -134,39 +136,40 @@ export default ({
       left: 0,
       borderBottom: "1px solid #ddd",
       boxShadow: "0px 2px 10px 0px rgba(0,0,0,0.75)",
+      zIndex: 3,
     }}
     align="center"
   >
-    <Flex px={5} justify="flex-start" align="center" fontSize="16px" w="500px">
-      <Image
-        boxSize="30px"
-        src="/static/images/logo.png"
-        sx={{ borderRadius: "50%" }}
-        mr={3}
+    <Flex
+      px={5}
+      justify="flex-start"
+      align="center"
+      fontSize="16px"
+      w={["250px", null, null, null, "500px"]}
+      onClick={() => setShowSidebar(!showSidebar)}
+    >
+      <Box
+        display={["block", null, null, null, "none"]}
+        sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
+        as="i"
+        className={showSidebar ? "fas fa-angle-left" : "fas fa-bars"}
+        fontSize="25px"
+        color="#6441AF"
       />
-      WeaveDB
+      <Box
+        sx={{ alignItems: "center" }}
+        display={["none", null, null, null, "flex"]}
+      >
+        <Image
+          boxSize="30px"
+          src="/static/images/logo.png"
+          sx={{ borderRadius: "50%" }}
+          mr={3}
+        />
+        WeaveDB
+      </Box>
     </Flex>
-    <Flex flex={1} justify="center" fontSize="12px">
-      {isNil(port) ? (
-        <Flex onClick={() => setConnect(true)} sx={{ cursor: "pointer" }}>
-          Connect with Localhost
-        </Flex>
-      ) : (
-        <Flex
-          sx={{ cursor: "pointer" }}
-          onClick={() => {
-            if (confirm("Would you like to disconnect?")) {
-              setPort(null)
-            }
-          }}
-        >
-          Connected with local port{" "}
-          <Box ml={2} color="#6441AF">
-            {port}
-          </Box>
-        </Flex>
-      )}
-    </Flex>
+    <Flex flex={1} justify="center" fontSize="12px"></Flex>
     <Flex
       w="250px"
       justify="flex-end"

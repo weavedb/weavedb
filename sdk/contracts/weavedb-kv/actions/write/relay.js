@@ -11,7 +11,7 @@ const {
   head,
   nth,
 } = require("ramda")
-const { err, read, validateSchema } = require("../../lib/utils")
+const { wrapResult, err, read, validateSchema } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 
 const { add } = require("./add")
@@ -19,16 +19,26 @@ const { set } = require("./set")
 const { update } = require("./update")
 const { upsert } = require("./upsert")
 const { remove } = require("./remove")
+const { addAddressLink } = require("./addAddressLink")
 const { batch } = require("./batch")
 
-const relay = async (state, action, signer, contractErr = true, SmartWeave) => {
+const relay = async (
+  state,
+  action,
+  signer,
+  contractErr = true,
+  SmartWeave,
+  kvs
+) => {
   let original_signer = null
   if (isNil(signer)) {
     ;({ signer, original_signer } = await validate(
       state,
       action,
       "relay",
-      SmartWeave
+      SmartWeave,
+      false,
+      kvs
     ))
   }
 
@@ -93,34 +103,37 @@ const relay = async (state, action, signer, contractErr = true, SmartWeave) => {
       err("relayer data validation error")
     }
   }
-
+  const params = [state, action2, null, null, SmartWeave, kvs]
   switch (action2.input.function) {
     case "add":
-      return await add(state, action2, null, undefined, null, SmartWeave)
+      return await add(state, action2, null, undefined, null, SmartWeave, kvs)
     case "set":
-      return await set(state, action2, null, null, SmartWeave)
+      return await set(...params)
     case "update":
-      return await update(state, action2, null, null, SmartWeave)
+      return await update(...params)
     case "upsert":
-      return await upsert(state, action2, null, null, SmartWeave)
+      return await upsert(...params)
     case "delete":
-      return await remove(state, action2, null, null, SmartWeave)
+      return await remove(...params)
     case "batch":
-      return await batch(state, action2, null, null, SmartWeave)
+      return await batch(...params)
+    case "addAddressLink":
+      return await addAddressLink(
+        state,
+        action2,
+        null,
+        null,
+        SmartWeave,
+        action2.extra.linkTo,
+        kvs
+      )
     default:
       err(
         `No function supplied or function not recognised: "${action2.input.function}"`
       )
   }
 
-  return {
-    state,
-    result: {
-      original_signer,
-      transaction: SmartWeave.transaction,
-      block: SmartWeave.block,
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { relay }

@@ -7,7 +7,7 @@ const {
 const { expect } = require("chai")
 const { readFileSync } = require("fs")
 const { resolve } = require("path")
-const Base = require("../base")
+const Base = require("../sdk/base")
 const { all, complement, clone, isNil, keys } = require("ramda")
 const Arweave = require("arweave")
 const { handle } = require("./exm/reads")

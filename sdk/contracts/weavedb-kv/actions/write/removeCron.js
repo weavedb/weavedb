@@ -1,6 +1,6 @@
 const { isNil, mergeLeft, init } = require("ramda")
 const { parse, mergeData } = require("../../lib/utils")
-const { err, isOwner } = require("../../lib/utils")
+const { wrapResult, err, isOwner } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { addIndex: _addIndex, getIndex } = require("../../lib/index")
 
@@ -9,7 +9,8 @@ const removeCron = async (
   action,
   signer,
   contractErr = true,
-  SmartWeave
+  SmartWeave,
+  kvs
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -17,7 +18,9 @@ const removeCron = async (
       state,
       action,
       "removeCron",
-      SmartWeave
+      SmartWeave,
+      true,
+      kvs
     ))
   }
   const owner = isOwner(signer, state)
@@ -27,17 +30,7 @@ const removeCron = async (
   const [key] = action.input.query
   if (isNil(state.crons.crons[key])) err("cron doesn't exist")
   delete state.crons.crons[key]
-  return {
-    state,
-    result: {
-      original_signer,
-      result: {
-        original_signer,
-        transaction: SmartWeave.transaction,
-        block: SmartWeave.block,
-      },
-    },
-  }
+  return wrapResult(state, original_signer, SmartWeave)
 }
 
 module.exports = { removeCron }

@@ -437,8 +437,34 @@ describe("WeaveDB", function () {
       [["height", "asc"]],
     ])
   })
+  it("should link temporarily generated address", async () => {
+    const addr = wallet.getAddressString()
+    const { identity } = await db.createTempAddress(addr)
+    expect(await db.getAddressLink(identity.address.toLowerCase())).to.eql({
+      address: addr,
+      expiry: 0,
+    })
+    delete db.wallet
+    await db.set({ name: "Beth", age: 10 }, "ppl", "Beth", {
+      wallet: addr,
+      privateKey: identity.privateKey,
+    })
+    expect((await db.cget("ppl", "Beth")).setter).to.eql(addr)
+    await db.removeAddressLink(
+      {
+        address: identity.address,
+      },
+      { wallet }
+    )
+    await db.set({ name: "Bob", age: 20 }, "ppl", "Bob", {
+      privateKey: identity.privateKey,
+    })
+    expect((await db.cget("ppl", "Bob")).setter).to.eql(
+      identity.address.toLowerCase()
+    )
+  })
 
-  it.only("should link temporarily generated address with Lens Protocol", async () => {
+  it("should link temporarily generated address with Lens Protocol", async () => {
     const { identity, tx: param } = await db._createTempAddress(
       wallet.getAddressString(),
       null,

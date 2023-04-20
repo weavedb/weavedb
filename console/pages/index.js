@@ -50,6 +50,7 @@ let db
 export default inject(
   ["temp_current_all", "temp_current", "loading_contract", "tx_logs"],
   ({ set, init, router, conf, fn, $ }) => {
+    const [showSidebar, setShowSidebar] = useState(true)
     const [deployMode, setDeployMode] = useState("Connect")
     const [loadMore, setLoadMore] = useState(null)
     const [whitelist, setWhitelist] = useState([])
@@ -106,6 +107,7 @@ export default inject(
     const [newSchema, setNewSchema] = useState("")
     const [newIndex, setNewIndex] = useState("")
     const [newRules, setNewRules] = useState("")
+    const [editRules, setEditRules] = useState(null)
     const [presetRPC, setPresetRPC] = useState("https://grpc.weavedb-node.xyz")
     const [dbs, setDBs] = useState([])
     const [node, setNode] = useState(null)
@@ -438,8 +440,18 @@ export default inject(
         doc_path,
         db,
       },
-      Sidebar: { currentDB, setTab, tab },
+      Sidebar: {
+        currentDB,
+        setTab,
+        tab,
+        showSidebar,
+        port,
+        setConnect,
+        setPort,
+      },
       Header: {
+        showSidebar,
+        setShowSidebar,
         port,
         setPort,
         setConnect,
@@ -450,6 +462,10 @@ export default inject(
       },
       Collections: {
         tab,
+        setEditRules,
+        editRules,
+        setAddRules,
+        setNewRules,
         setAddCollection,
         setAddCollectionSchema,
         setDocPath,
@@ -461,9 +477,18 @@ export default inject(
         base_path,
         collections,
         col,
+        isOwner,
       },
       Schemas: { col, schema, setAddSchema, setNewSchema, isOwner },
-      Rules: { rules, setAddRules, col, setNewRules, isOwner },
+      Rules: {
+        rules,
+        setAddRules,
+        col,
+        setNewRules,
+        isOwner,
+        setEditRules,
+        editRules,
+      },
       Crons: {
         isOwner,
         cron,
@@ -561,6 +586,8 @@ export default inject(
         doc,
       },
       Modals: {
+        setEditRules,
+        editRules,
         deployMode,
         setDeployMode,
         newIndex,
@@ -695,6 +722,17 @@ export default inject(
       <ChakraProvider>
         <GlobalStyle />
         <Sidebar {...props.Sidebar} />
+        <Box
+          display={[showSidebar ? "flex" : "none", null, null, null, "none"]}
+          w="calc(100% - 250px)"
+          h="100%"
+          position="fixed"
+          onClick={() => setShowSidebar(false)}
+          sx={{ top: 0, left: "250px", zIndex: 100, cursor: "pointer" }}
+          bg="rgba(0,0,0,0.5)"
+          align="center"
+          zIndex="-1"
+        />
         <Header {...props.Header} />
         <Flex
           h="100%"
@@ -704,7 +742,7 @@ export default inject(
               "radial-gradient(circle, #ffffff, #eeeeee, #dddddd, #cccccc, #bbbbbb)",
           }}
         >
-          <Flex w="250px"></Flex>
+          <Flex display={["none", null, null, null, "flex"]} w="250px"></Flex>
           <Flex h="100%" flex={1} direction="column" pt="60px">
             <Flex flex={1}>
               <Box flex={1}>

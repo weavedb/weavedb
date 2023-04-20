@@ -1,6 +1,7 @@
 const { compareVersions } = require("compare-versions")
 
 const {
+  mergeLeft,
   reject,
   invertObj,
   uniq,
@@ -255,6 +256,7 @@ class SDK extends Base {
       })
     }
   }
+
   async readState(attempt = 1) {
     return new Promise(async res => {
       setTimeout(async () => {
@@ -267,6 +269,15 @@ class SDK extends Base {
           this.sortKey = _state.sortKey
           states[this.contractTxId] = this.state
           res(_state)
+          try {
+            if (
+              compareVersions(this.state?.version || "0.26.0", "0.27.0") >= 0
+            ) {
+              this.handle = handle_kv
+            } else {
+              this.handle = handle
+            }
+          } catch (e) {}
         } else {
           if (attempt > 5) {
             res(_state)
@@ -284,12 +295,21 @@ class SDK extends Base {
     await this.arweave.api.get("mine")
   }
 
-  async initializeWithoutWallet(params = {}) {
-    const wallet = await this.arweave.wallets.generate()
-    if (this.network === "localhost") await this.addFunds(wallet)
-    this.initialize({ wallet, ...params })
+  async initializeWithoutWallet(params) {
+    await init(params)
   }
-
+  async init(params = {}) {
+    let { wallet } = params
+    wallet ??= await this.arweave.wallets.generate()
+    if (this.network === "localhost") await this.addFunds(wallet)
+    let evaluationOptions = {}
+    try {
+      evaluationOptions = (
+        await this.warp.definitionLoader.load(this.contractTxId)
+      ).manifest.evaluationOptions
+    } catch (e) {}
+    this.initialize({ wallet, evaluationOptions, ...params })
+  }
   initialize({
     contractTxId,
     wallet,
@@ -298,6 +318,7 @@ class SDK extends Base {
     subscribe,
     onUpdate,
     cache_prefix,
+    evaluationOptions = {},
   }) {
     if (!isNil(contractTxId)) this.contractTxId = contractTxId
     if (!isNil(subscribe)) this.subscribe = subscribe
@@ -380,16 +401,18 @@ class SDK extends Base {
     this.db = this.warp
       .contract(this.contractTxId)
       .connect(wallet)
-      .setEvaluationOptions({
-        remoteStateSyncEnabled: this.network !== "localhost",
-        allowBigInt: true,
-        useVM2: !isNil(this.useVM2)
-          ? this.useVM2
-          : typeof window !== "undefined"
-          ? false
-          : !this.old,
-        useKVStorage: this.type !== 1,
-      })
+      .setEvaluationOptions(
+        mergeLeft(evaluationOptions, {
+          remoteStateSyncEnabled: this.network !== "localhost",
+          allowBigInt: true,
+          useVM2: !isNil(this.useVM2)
+            ? this.useVM2
+            : typeof window !== "undefined"
+            ? false
+            : !this.old,
+          useKVStorage: this.type !== 1,
+        })
+      )
     dbs[this.contractTxId] = this
     this.domain = { name, version, verifyingContract: this.contractTxId }
     const self = this
@@ -529,6 +552,17 @@ class SDK extends Base {
       },
     }
   }
+  async viewState(params, attempt = 0) {
+    try {
+      return await this.db.viewState(params)
+    } catch (e) {
+      if (attempt < 5) {
+        return this.viewState(params, ++attempt)
+      } else {
+        throw e
+      }
+    }
+  }
   async read(params, nocache = this.nocache_default) {
     if (!nocache && !isNil(this.state)) {
       try {
@@ -543,7 +577,7 @@ class SDK extends Base {
         throw e
       }
     }
-    const res = await this.db.viewState(params)
+    const res = await this.viewState(params)
     if (res.type === "ok") {
       this.state = res.state
       states[this.contractTxId] = this.state

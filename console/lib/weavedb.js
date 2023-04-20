@@ -249,12 +249,11 @@ export const setupWeaveDB = async ({
     } catch (e) {}
   }
   if (!isRPC && !isNil(contractTxId)) {
-    _sdk.initialize({
+    await _sdk.init({
       contractTxId: contractTxId,
       wallet: arweave_wallet,
     })
   }
-  window.Buffer = Buffer
   if (!temp) sdk = _sdk
   return _sdk
 }
@@ -617,6 +616,11 @@ async function deployFromSrc({ src, warp, init, extra, algorithms }) {
     wallet: new ArweaveSigner(wallet),
     initState: JSON.stringify(initialState),
     srcTxId: src,
+    /*evaluationManifest: {
+      evaluationOptions: {
+        useKVStorage: true,
+      },
+    },*/
   })
   return contractTxId
 }
@@ -1071,6 +1075,17 @@ export const checkJSON = val => {
   }
   return isNil(json)
 }
+
+export const parseJSON = val => {
+  let json = null
+  try {
+    eval(`json = ${val}`)
+  } catch (e) {
+    console.log(e)
+  }
+  return json
+}
+
 export const queryDB = async ({
   val: { query, method, contractTxId, dryRead },
   fn,
@@ -1143,4 +1158,14 @@ export const setNonce = async ({ val: { nonce, signer }, fn, get }) => {
     nonces[sdk.contractTxId][addr] = nonce
     await lf.setItem("nonces", nonces)
   }
+}
+
+export const t = (toast, description, status = "error") => {
+  toast({
+    description,
+    status,
+    duration: 3000,
+    isClosable: true,
+    position: "bottom-right",
+  })
 }
