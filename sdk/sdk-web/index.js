@@ -296,7 +296,7 @@ class SDK extends Base {
   }
 
   async initializeWithoutWallet(params) {
-    await init(params)
+    await this.init(params)
   }
   async init(params = {}) {
     let { wallet } = params
