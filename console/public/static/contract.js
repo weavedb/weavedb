@@ -21,18 +21,6 @@
     mod
   ));
 
-  // sdk/contracts/weavedb/actions/read/ids.js
-  var require_ids = __commonJS({
-    "sdk/contracts/weavedb/actions/read/ids.js"(exports, module) {
-      var ids = async (state, action) => {
-        const { ids: ids2 } = state;
-        const { tx } = action.input;
-        return { result: ids2[tx] || null };
-      };
-      module.exports = { ids };
-    }
-  });
-
   // sdk/contracts/node_modules/ramda/src/F.js
   var require_F = __commonJS({
     "sdk/contracts/node_modules/ramda/src/F.js"(exports, module) {
@@ -7042,9 +7030,9 @@
     }
   });
 
-  // sdk/contracts/weavedb/lib/pure.js
+  // sdk/contracts/weavedb-kv/lib/pure.js
   var require_pure = __commonJS({
-    "sdk/contracts/weavedb/lib/pure.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/lib/pure.js"(exports, module) {
       var isValidName = (str) => /^[^\/]+$/.test(str) && !/^__.*__+$/.test(str) && !/^\.{1,2}$/.test(str) && Buffer.byteLength(str, "utf8") <= 1500;
       module.exports = { isValidName };
     }
@@ -7896,9 +7884,9 @@
     }
   });
 
-  // sdk/contracts/weavedb/lib/jsonschema/helpers.js
+  // sdk/contracts/weavedb-kv/lib/jsonschema/helpers.js
   var require_helpers = __commonJS({
-    "sdk/contracts/weavedb/lib/jsonschema/helpers.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/lib/jsonschema/helpers.js"(exports, module) {
       "use strict";
       var uri = require_url();
       var ValidationError = exports.ValidationError = function ValidationError2(message, instance, schema, path, name, argument) {
@@ -8219,9 +8207,9 @@
     }
   });
 
-  // sdk/contracts/weavedb/lib/jsonschema/attribute.js
+  // sdk/contracts/weavedb-kv/lib/jsonschema/attribute.js
   var require_attribute = __commonJS({
-    "sdk/contracts/weavedb/lib/jsonschema/attribute.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/lib/jsonschema/attribute.js"(exports, module) {
       "use strict";
       var helpers = require_helpers();
       var ValidatorResult = helpers.ValidatorResult;
@@ -8930,9 +8918,9 @@
     }
   });
 
-  // sdk/contracts/weavedb/lib/jsonschema/scan.js
+  // sdk/contracts/weavedb-kv/lib/jsonschema/scan.js
   var require_scan2 = __commonJS({
-    "sdk/contracts/weavedb/lib/jsonschema/scan.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/lib/jsonschema/scan.js"(exports, module) {
       "use strict";
       var urilib = require_url();
       var helpers = require_helpers();
@@ -9010,9 +8998,9 @@
     }
   });
 
-  // sdk/contracts/weavedb/lib/jsonschema/validator.js
+  // sdk/contracts/weavedb-kv/lib/jsonschema/validator.js
   var require_validator = __commonJS({
-    "sdk/contracts/weavedb/lib/jsonschema/validator.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/lib/jsonschema/validator.js"(exports, module) {
       "use strict";
       var urilib = require_url();
       var attribute = require_attribute();
@@ -9260,9 +9248,9 @@
     }
   });
 
-  // sdk/contracts/weavedb/lib/jsonschema/index.js
+  // sdk/contracts/weavedb-kv/lib/jsonschema/index.js
   var require_jsonschema = __commonJS({
-    "sdk/contracts/weavedb/lib/jsonschema/index.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/lib/jsonschema/index.js"(exports, module) {
       "use strict";
       var Validator = module.exports.Validator = require_validator();
       module.exports.ValidatorResult = require_helpers().ValidatorResult;
@@ -9278,13 +9266,14 @@
     }
   });
 
-  // sdk/contracts/weavedb/lib/utils.js
+  // sdk/contracts/weavedb-kv/lib/utils.js
   var require_utils = __commonJS({
-    "sdk/contracts/weavedb/lib/utils.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/lib/utils.js"(exports, module) {
       var fpjson = require_cjs();
       fpjson = fpjson.default || fpjson;
       var jsonLogic = require_logic();
       var {
+        init,
         mergeLeft,
         of,
         concat,
@@ -9295,7 +9284,8 @@
         slice,
         includes,
         last,
-        intersection
+        intersection,
+        append
       } = require_src();
       var { isValidName } = require_pure();
       var clone = (state) => JSON.parse(JSON.stringify(state));
@@ -9308,24 +9298,29 @@
           throw msg;
         }
       };
-      var getCol = (data, path, _signer) => {
+      var getCol = async (path, _signer, SmartWeave2, current_path = [], kvs) => {
         const [col, id] = path;
         if (!isValidName(col))
           err(`collection id is not valid: ${col}`);
-        data[col] ||= { __docs: {} };
+        let key = `data.${append(col)(current_path).join("/")}`;
+        let _data = await kv(kvs, SmartWeave2).get(key);
+        if (isNil(_data)) {
+          _data = { __docs: {} };
+          await kv(kvs, SmartWeave2).put(key, _data);
+        }
         if (isNil(id)) {
-          return data[col];
+          return _data;
         } else {
           if (!isValidName(id))
             err(`doc id is not valid: ${id}`);
-          data[col].__docs[id] ||= { __data: null, subs: {} };
-          if (!isNil(_signer) && isNil(data[col].__docs[id].setter)) {
-            data[col].__docs[id].setter = _signer;
-          }
-          return getCol(
-            data[col].__docs[id].subs,
+          current_path.push(col);
+          current_path.push(id);
+          return await getCol(
             slice(2, path.length, path),
-            _signer
+            _signer,
+            SmartWeave2,
+            current_path,
+            kvs
           );
         }
       };
@@ -9364,39 +9359,21 @@
         }
         return _data;
       };
-      var getDoc = (data, path, _signer, func, new_data, secure = false, relayer, jobID, extra, state, SmartWeave2) => {
-        const [_col, id] = path;
-        if (!isValidName(_col))
-          err(`collection id is not valid: ${_col}`);
-        if (!isValidName(id))
-          err(`doc id is not valid: ${id}`);
-        data[_col] ||= { __docs: {} };
-        const col = data[_col];
-        const { rules, schema } = col;
-        col.__docs[id] ||= { __data: null, subs: {} };
-        const doc = col.__docs[id];
-        if (!isNil(_signer) && isNil(doc.setter))
-          doc.setter = _signer;
-        let next_data = null;
-        if (path.length === 2) {
-          if (includes(func)(["set", "add"])) {
-            next_data = mergeData(
-              clone(doc),
-              new_data,
-              true,
-              _signer,
-              SmartWeave2
-            ).__data;
-          } else if (includes(func)(["update", "upsert"])) {
-            next_data = mergeData(
-              clone(doc),
-              new_data,
-              false,
-              _signer,
-              SmartWeave2
-            ).__data;
-          }
-        }
+      var validateData = ({
+        func,
+        secure,
+        rules,
+        doc,
+        SmartWeave: SmartWeave2,
+        state,
+        _signer,
+        relayer,
+        jobID,
+        extra,
+        new_data,
+        next_data,
+        path
+      }) => {
         if (includes(func)(["set", "add", "update", "upsert", "delete"]) && (secure || !isNil(rules))) {
           let op = func;
           if (includes(op)(["set", "add"]))
@@ -9494,7 +9471,75 @@
           if (!allowed)
             err("operation not allowed");
         }
-        return path.length >= 4 ? getDoc(
+      };
+      var getDoc = async (data, path, _signer, func, new_data, secure = false, relayer, jobID, extra, state, SmartWeave2, current_path = [], kvs) => {
+        if (isNil(data)) {
+          const _data = await kv(kvs, SmartWeave2).get(
+            `data.${current_path.join("/")}`
+          );
+          if (isNil(_data)) {
+            data = {};
+          } else {
+            data = _data;
+          }
+        }
+        const [_col, id] = path;
+        if (!isValidName(_col))
+          err(`collection id is not valid: ${_col}`);
+        if (!isValidName(id))
+          err(`doc id is not valid: ${id}`);
+        if (isNil(data[_col])) {
+          data[_col] = { __docs: {} };
+          await kv(kvs, SmartWeave2).put(`data.${current_path.join("/")}`, data);
+        }
+        current_path.push(_col);
+        current_path.push(id);
+        const col_key = `data.${current_path.slice(0, -1).join("/")}`;
+        const doc_key = `data.${current_path.join("/")}`;
+        const col = await kv(kvs, SmartWeave2).get(col_key) || { __docs: {} };
+        const { rules, schema } = col;
+        const doc = await kv(kvs, SmartWeave2).get(doc_key) || {
+          __data: null,
+          subs: {}
+        };
+        if (!isNil(_signer) && isNil(doc.setter))
+          doc.setter = _signer;
+        let next_data = null;
+        if (path.length === 2) {
+          if (includes(func)(["set", "add"])) {
+            next_data = mergeData(
+              clone(doc),
+              new_data,
+              true,
+              _signer,
+              SmartWeave2
+            ).__data;
+          } else if (includes(func)(["update", "upsert"])) {
+            next_data = mergeData(
+              clone(doc),
+              new_data,
+              false,
+              _signer,
+              SmartWeave2
+            ).__data;
+          }
+        }
+        validateData({
+          func,
+          secure,
+          rules,
+          doc,
+          SmartWeave: SmartWeave2,
+          state,
+          _signer,
+          relayer,
+          jobID,
+          extra,
+          new_data,
+          next_data,
+          path
+        });
+        return path.length >= 4 ? await getDoc(
           doc.subs,
           slice(2, path.length, path),
           _signer,
@@ -9505,7 +9550,9 @@
           jobID,
           extra,
           state,
-          SmartWeave2
+          SmartWeave2,
+          current_path,
+          kvs
         ) : {
           doc,
           schema,
@@ -9540,7 +9587,7 @@
         }
         return autoId;
       };
-      var parse = async (state, action, func, signer, salt, contractErr = true, SmartWeave2) => {
+      var parse = async (state, action, func, signer, salt, contractErr = true, SmartWeave2, kvs) => {
         const { data } = state;
         const { query } = action.input;
         const { relayer, jobID, extra } = action;
@@ -9562,10 +9609,14 @@
           [new_data, ...path] = query;
           if (func === "add") {
             const id = await genId(action, salt, SmartWeave2);
-            if (isNil(state.ids[SmartWeave2.transaction.id])) {
-              state.ids[SmartWeave2.transaction.id] = [];
-            }
-            state.ids[SmartWeave2.transaction.id].push(id);
+            let tx_ids = await kv(kvs, SmartWeave2).get(
+              `tx_ids.${SmartWeave2.transaction.id}`
+            ) || [];
+            tx_ids.push(id);
+            await kv(kvs, SmartWeave2).put(
+              `tx_ids.${SmartWeave2.transaction.id}`,
+              tx_ids
+            );
             path.push(id);
           }
         }
@@ -9583,6 +9634,8 @@
           "removeRelayerJob",
           "getRelayerJob",
           "addIndex",
+          "addTrigger",
+          "removeTrigger",
           "removeIndex",
           "setSchema",
           "getSchema",
@@ -9600,13 +9653,15 @@
         let next_data;
         if (includes(func)([
           "addIndex",
+          "addTrigger",
+          "removeTrigger",
           "removeIndex",
           "setSchema",
           "getSchema",
           "setRules",
           "getRules"
         ])) {
-          _data = getCol(data, path, signer, func);
+          _data = await getCol(path, signer, SmartWeave2, void 0, kvs);
           col = _data;
         } else if (!includes(func)([
           "setAlgorithms",
@@ -9616,8 +9671,8 @@
           "linkContract",
           "unlinkContract"
         ]) && path.length !== 0) {
-          const doc = getDoc(
-            data,
+          const doc = await getDoc(
+            null,
             path,
             signer,
             func,
@@ -9627,7 +9682,9 @@
             jobID,
             extra,
             state,
-            SmartWeave2
+            SmartWeave2,
+            void 0,
+            kvs
           );
           _data = doc.doc;
           ({ next_data, schema, rules, col } = doc);
@@ -9639,6 +9696,8 @@
           "addRelayerJob",
           "removeRelayerJob",
           "addIndex",
+          "addTrigger",
+          "removeTrigger",
           "removeIndex",
           "setSchema",
           "setAlgorithms",
@@ -9670,7 +9729,7 @@
         }
         return owner;
       };
-      var wrapResult = (state, original_signer, SmartWeave2, extra = {}) => ({
+      var wrapResult = (state, original_signer, SmartWeave2, extra) => ({
         state,
         result: mergeLeft(extra, {
           original_signer,
@@ -9689,7 +9748,40 @@
           }
         })
       });
+      var kv = (kvs, SW) => ({
+        get: async (key) => typeof kvs[key] !== "undefined" ? kvs[key] : await SW.kv.get(key),
+        put: async (key, val) => {
+          kvs[key] = val;
+        }
+      });
+      var trigger = async (on, state, path, SmartWeave2, kvs, executeCron, depth, vars) => {
+        const trigger_key = `trigger.${init(path).join("/")}`;
+        state.triggers ??= {};
+        const triggers = state.triggers[trigger_key] ??= [];
+        for (const t of triggers) {
+          if (!includes(t.on)(on))
+            continue;
+          try {
+            let _state = clone(state);
+            let _kvs = clone(kvs);
+            await executeCron(
+              { crons: { jobs: t.func } },
+              _state,
+              SmartWeave2,
+              _kvs,
+              depth,
+              vars
+            );
+            state = _state;
+            for (const k in _kvs)
+              kvs[k] = _kvs[k];
+          } catch (e) {
+            console.log(e);
+          }
+        }
+      };
       module.exports = {
+        trigger,
         wrapResult,
         isOwner,
         clone,
@@ -9700,32 +9792,48 @@
         parse,
         read,
         validateSchema,
-        mergeData
+        mergeData,
+        kv
       };
     }
   });
 
-  // sdk/contracts/weavedb/actions/read/nonce.js
+  // sdk/contracts/weavedb-kv/actions/read/ids.js
+  var require_ids = __commonJS({
+    "sdk/contracts/weavedb-kv/actions/read/ids.js"(exports, module) {
+      var { kv } = require_utils();
+      var ids = async (state, action, SmartWeave2, kvs) => {
+        const { ids: ids2 } = state;
+        const { tx } = action.input;
+        return {
+          result: await kv(kvs, SmartWeave2).get(`tx_ids.${tx}`) || null
+        };
+      };
+      module.exports = { ids };
+    }
+  });
+
+  // sdk/contracts/weavedb-kv/actions/read/nonce.js
   var require_nonce = __commonJS({
-    "sdk/contracts/weavedb/actions/read/nonce.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/read/nonce.js"(exports, module) {
       var { isNil } = require_src();
-      var { err } = require_utils();
-      var nonce = async (state, action) => {
+      var { kv, err } = require_utils();
+      var nonce = async (state, action, SmartWeave2, kvs) => {
         const { nonces } = state;
         let { address } = action.input;
         if (isNil(address))
           err(`No Address`);
         if (/^0x/.test(address))
           address = address.toLowerCase();
-        return { result: nonces[address] || 0 };
+        return { result: await kv(kvs, SmartWeave2).get(`nonce.${address}`) || 0 };
       };
       module.exports = { nonce };
     }
   });
 
-  // sdk/contracts/weavedb/actions/read/version.js
+  // sdk/contracts/weavedb-kv/actions/read/version.js
   var require_version = __commonJS({
-    "sdk/contracts/weavedb/actions/read/version.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/read/version.js"(exports, module) {
       var { isNil } = require_src();
       var { err } = require_utils();
       var version = async (state, action) => {
@@ -9737,9 +9845,9 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/read/hash.js
+  // sdk/contracts/weavedb-kv/actions/read/hash.js
   var require_hash = __commonJS({
-    "sdk/contracts/weavedb/actions/read/hash.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/read/hash.js"(exports, module) {
       var hash = async (state, action) => {
         return { result: state.hash || null };
       };
@@ -9747,10 +9855,16 @@
     }
   });
 
-  // sdk/contracts/weavedb/lib/index.js
+  // sdk/contracts/weavedb-kv/lib/index.js
   var require_lib = __commonJS({
-    "sdk/contracts/weavedb/lib/index.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/lib/index.js"(exports, module) {
       var {
+        includes,
+        without,
+        split,
+        splitEvery,
+        init,
+        join,
         intersection,
         uniq,
         concat,
@@ -9776,6 +9890,7 @@
         difference,
         equals
       } = require_src();
+      var { kv } = require_utils();
       var comp = (val, x) => {
         let res = 0;
         for (let i of range(0, val.length)) {
@@ -9795,166 +9910,159 @@
         }
         return res;
       };
-      var bsearch = function(arr, x, k, db, start = 0, end = arr.length - 1) {
+      var bsearch = async function(arr, x, k, db, start = 0, end = arr.length - 1) {
         if (start > end)
           return null;
         const mid = Math.floor((start + end) / 2);
-        const val = isNil(k) ? arr[mid] : db[arr[mid]].__data[k];
+        const val = isNil(k) ? arr[mid] : (await db(arr[mid])).__data[k];
         if (val === x)
           return mid;
         if (val > x && mid === 0)
           return 0;
-        if (mid !== 0 && val > x && (isNil(k) ? arr[mid - 1] : db[arr[mid - 1]].__data[k]) <= x) {
+        if (mid !== 0 && val > x && (isNil(k) ? arr[mid - 1] : (await db(arr[mid - 1])).__data[k]) <= x) {
           return mid;
         }
         if (val > x) {
-          return bsearch(arr, x, k, db, start, mid - 1);
+          return await bsearch(arr, x, k, db, start, mid - 1);
         } else {
-          return bsearch(arr, x, k, db, mid + 1, end);
+          return await bsearch(arr, x, k, db, mid + 1, end);
         }
       };
-      var addSingleIndex = (_id, k, data, ind, db) => {
-        if (!isNil(k) && isNil(ind[k])) {
-          ind[k] = { asc: { _: [], subs: {} } };
-        }
-        const _k = k || "__id__";
-        const _data = isNil(k) ? _id : data[k];
-        let indexes = ind[_k].asc._;
-        const _ind = bsearch(indexes, _data, k, db);
-        if (isNil(_ind))
-          indexes.push(_id);
-        else
-          ind[_k].asc._.splice(_ind, 0, _id);
-      };
-      var removeSingleIndex = (_id, k, ind) => {
-        const _k = k || "__id__";
-        let indexes = ind[_k].asc._;
-        const _ind = indexOf(_id, indexes);
-        if (!isNil(_ind))
-          ind[_k].asc._.splice(_ind, 1);
-      };
-      var bsearch2 = function(arr, x, sort, db, start = 0, end = arr.length - 1) {
+      var bsearch2 = async function(arr, x, sort, db, start = 0, end = arr.length - 1) {
         if (start > end)
           return null;
         let mid = Math.floor((start + end) / 2);
-        const val = map((v) => ({
-          desc: v[1] === "desc",
-          val: db[arr[mid]].__data[v[0]]
-        }))(sort);
+        const val = await Promise.all(
+          map(async (v) => ({
+            desc: v[1] === "desc",
+            val: isNil(v[0]) ? arr[mid] : (await db(arr[mid])).__data[v[0]]
+          }))(sort)
+        );
         const res = comp(val, x);
         if (res === 0)
           return mid;
         if (res === -1 && mid === 0)
           return 0;
         if (mid > 0) {
-          const val2 = map((v) => ({
-            desc: v[1] === "desc",
-            val: db[arr[mid - 1]].__data[v[0]]
-          }))(sort);
+          const val2 = await Promise.all(
+            map(async (v) => ({
+              desc: v[1] === "desc",
+              val: isNil(v[0]) ? arr[mid - 1] : (await db(arr[mid - 1])).__data[v[0]]
+            }))(sort)
+          );
           const res2 = comp(val2, x);
           if (res === -1 && res2 >= 0)
             return mid;
         }
         if (res === -1) {
-          return bsearch2(arr, x, sort, db, start, mid - 1);
+          return await bsearch2(arr, x, sort, db, start, mid - 1);
         } else {
-          return bsearch2(arr, x, sort, db, mid + 1, end);
+          return await bsearch2(arr, x, sort, db, mid + 1, end);
         }
       };
-      var addInd = (_id, index, db, sort, data) => {
-        const x = map((v) => data[v[0]])(sort);
-        const _ind = bsearch2(index._, x, sort, db);
+      var addSingleIndex = async (_id, k, data, db, path, SmartWeave2, kvs) => {
+        const _k = k || "__id__";
+        const key = getKey(path, [[_k]]);
+        let ind = await kv(kvs, SmartWeave2).get(key) || [];
+        const _ind = await bsearch(ind, isNil(k) ? _id : data[k], k, db);
         if (isNil(_ind))
-          index._.push(_id);
+          ind.push(_id);
         else
-          index._.splice(_ind, 0, _id);
+          ind.splice(_ind, 0, _id);
+        await kv(kvs, SmartWeave2).put(key, ind);
+      };
+      var removeSingleIndex = async (_id, k, path, SmartWeave2, kvs) => {
+        const _k = k || "__id__";
+        const key = getKey(path, [[_k]]);
+        let ind = await kv(kvs, SmartWeave2).get(key) || [];
+        const _ind = indexOf(_id, ind);
+        if (!isNil(_ind))
+          ind.splice(_ind, 1);
+        await kv(kvs, SmartWeave2).put(key, ind);
+      };
+      var addInd = async (_id, index, db, sort, data) => {
+        const x = map((v) => data[v[0]])(sort);
+        const _ind = await bsearch2(index, x, sort, db);
+        if (isNil(_ind))
+          index.push(_id);
+        else
+          index.splice(_ind, 0, _id);
       };
       var removeInd = (_id, index) => {
-        const _ind = indexOf(_id, index._);
+        const _ind = indexOf(_id, index);
         if (!isNil(_ind))
-          index._.splice(_ind, 1);
+          index.splice(_ind, 1);
       };
-      var _addData = (ind, _id, path = [], db, data, top = false) => {
-        for (let k in ind) {
-          if (k === "__id__")
+      var _addData = async (_keys, _id, _sort2 = [], db, data, path, SmartWeave2, kvs) => {
+        for (let k of _keys) {
+          if (k === "__id__/asc")
             continue;
-          for (let k2 in ind[k]) {
-            if (!isNil(ind[k][k2]._) && !top) {
-              let sort = append([k, k2])(path);
-              const fields = map(prop(0), sort);
-              if (difference(fields, keys(data)).length === 0) {
-                addInd(_id, ind[k][k2], db, sort, data);
-              }
+          const key = `index.${path.join("/")}//${k}`;
+          let ind = await kv(kvs, SmartWeave2).get(key);
+          if (!isNil(ind) && k.split("/").length >= 4) {
+            const sort = splitEvery(2, k.split("/"));
+            const fields = map(prop(0), sort);
+            if (difference(fields, keys(data)).length === 0) {
+              await addInd(_id, ind, db, sort, data);
+              await kv(kvs, SmartWeave2).put(key, ind);
             }
-            _addData(
-              ind[k][k2].subs,
-              _id,
-              compose(append([k, k2]), clone)(path),
-              db,
-              data
-            );
           }
         }
       };
-      var getIndex = (state, path) => {
-        if (isNil(state.indexes[path.join(".")]))
-          state.indexes[path.join(".")] = {};
-        return state.indexes[path.join(".")];
+      var getKey = (path, sort = []) => `index.${path.join("/")}//${compose(
+        join("/"),
+        map((v) => `${v[0]}/${v[1] || "asc"}`)
+      )(sort)}`;
+      var getIndex = async (path, SmartWeave2, kvs) => {
+        return await kv(kvs, SmartWeave2).get(getKey(path)) || [];
       };
-      var addData = (_id, data, ind, db) => {
-        if (isNil(ind["__id__"])) {
-          ind["__id__"] = { asc: { _: [_id], subs: {} } };
-        } else {
-          addSingleIndex(_id, null, data, ind, db);
-        }
+      var addData = async (_id, data, db, path, SmartWeave2, kvs) => {
+        const _add = async (k) => {
+          const key = getKey(path, [[k || "__id__"]]);
+          let _ind = await kv(kvs, SmartWeave2).get(key);
+          if (isNil(_ind)) {
+            await kv(kvs, SmartWeave2).put(key, [_id]);
+            await addToInventory([[k || "__id__"]], path, SmartWeave2, kvs);
+          } else {
+            await addSingleIndex(_id, k, data, db, path, SmartWeave2, kvs);
+          }
+        };
+        await _add(null);
         for (let k in data) {
           if (k === "__id__")
             continue;
-          if (isNil(ind[k])) {
-            ind[k] = { asc: { _: [_id], subs: {} } };
-          } else {
-            addSingleIndex(_id, k, data, ind, db);
-          }
+          await _add(k);
         }
-        _addData(ind, _id, [], db, data, true);
+        let keys2 = await getIndex(path, SmartWeave2, kvs);
+        await _addData(keys2, _id, [], db, data, path, SmartWeave2, kvs);
       };
-      var _updateData = (ind, _id, path = [], db, top = false, update, new_data, old_data) => {
-        for (let k in ind) {
-          if (k === "__id__")
+      var _updateData = async (_keys, _id, _sort2 = [], db, update, new_data, old_data, path, SmartWeave2, kvs) => {
+        for (let k of _keys) {
+          if (k === "__id__/asc")
             continue;
-          for (let k2 in ind[k]) {
-            if (!isNil(ind[k][k2]._) && !top) {
-              let sort = append([k, k2])(path);
-              const fields = map(prop(0), sort);
-              let ex_old = false;
-              let ex_new = false;
-              if (difference(fields, keys(old_data)).length === 0)
-                ex_old = true;
-              if (difference(fields, keys(new_data)).length === 0)
-                ex_new = true;
-              if (ex_old && !ex_new) {
-                removeInd(_id, ind[k][k2]);
-              } else if (!ex_old && ex_new) {
-                addInd(_id, ind[k][k2], sort, new_data);
-              } else if (intersection(update.u, fields).length !== 0) {
-                removeInd(_id, ind[k][k2]);
-                addInd(_id, ind[k][k2], sort, new_data);
-              }
+          const key = `index.${path.join("/")}//${k}`;
+          let ind = await kv(kvs, SmartWeave2).get(key);
+          if (!isNil(ind) && k.split("/").length >= 4) {
+            const sort = splitEvery(2, k.split("/"));
+            const fields = map(prop(0), sort);
+            let ex_old = false;
+            let ex_new = false;
+            if (difference(fields, keys(old_data)).length === 0)
+              ex_old = true;
+            if (difference(fields, keys(new_data)).length === 0)
+              ex_new = true;
+            if (ex_old && !ex_new) {
+              removeInd(_id, ind);
+            } else if (!ex_old && ex_new) {
+              await addInd(_id, ind, db, sort, new_data);
+            } else if (intersection(update.u, fields).length !== 0) {
+              removeInd(_id, ind);
+              await addInd(_id, ind, db, sort, new_data);
             }
-            _updateData(
-              ind[k][k2].subs,
-              _id,
-              compose(append([k, k2]), clone)(path),
-              db,
-              false,
-              update,
-              new_data,
-              old_data
-            );
           }
         }
       };
-      var updateData = (_id, data, old_data, ind, db) => {
+      var updateData = async (_id, data, old_data, db, path, SmartWeave2, kvs) => {
         if (isNil(old_data))
           return;
         const _keys = compose(uniq, concat(keys(old_data)), keys)(data);
@@ -9966,45 +10074,88 @@
             continue;
           if (isNil(data[v])) {
             d.push(v);
-            removeSingleIndex(_id, v, ind);
+            await removeSingleIndex(_id, v, path, SmartWeave2, kvs);
           } else if (isNil(old_data[v])) {
             c.push(v);
-            addSingleIndex(_id, v, data, ind, db);
+            await addSingleIndex(_id, v, data, db, path, SmartWeave2, kvs);
           } else if (!equals(data[v], old_data[v])) {
             u.push(v);
-            removeSingleIndex(_id, v, ind);
-            addSingleIndex(_id, v, data, ind, db);
+            await removeSingleIndex(_id, v, path, SmartWeave2, kvs);
+            await addSingleIndex(_id, v, data, db, path, SmartWeave2, kvs);
           }
         }
-        _updateData(ind, _id, [], true, { c, d, u }, data, old_data);
+        let __keys = await getIndex(path, SmartWeave2, kvs);
+        await _updateData(
+          __keys,
+          _id,
+          [],
+          db,
+          { c, d, u },
+          data,
+          old_data,
+          path,
+          SmartWeave2,
+          kvs
+        );
       };
-      var _removeData = (ind, _id, path = [], db, top = false) => {
-        for (let k in ind) {
-          if (k === "__id__")
+      var _removeData = async (_keys, _id, _sort2 = [], db, path, SmartWeave2, kvs) => {
+        for (let k of _keys) {
+          if (k === "__id__/asc")
             continue;
-          for (let k2 in ind[k]) {
-            if (!isNil(ind[k][k2]._) && !top) {
-              let sort = append([k, k2])(path);
-              const fields = map(prop(0), sort);
-              if (difference(fields, keys(db[_id].__data)).length === 0) {
-                removeInd(_id, ind[k][k2]);
-              }
+          const key = `index.${path.join("/")}//${k}`;
+          let ind = await kv(kvs, SmartWeave2).get(key);
+          if (!isNil(ind) && k.split("/").length >= 4) {
+            const sort = splitEvery(2, k.split("/"));
+            const fields = map(prop(0), sort);
+            if (difference(fields, keys((await db(_id)).__data)).length === 0) {
+              removeInd(_id, ind);
+              await kv(kvs, SmartWeave2).put(key, ind);
             }
-            _removeData(
-              ind[k][k2].subs,
-              _id,
-              compose(append([k, k2]), clone)(path),
-              db
-            );
           }
         }
       };
-      var _sort = (sort, ind, db) => {
+      var removeData = async (_id, db, path, SmartWeave2, kvs) => {
+        let data = await db(_id);
+        if (isNil(data))
+          return;
+        await removeSingleIndex(_id, null, path, SmartWeave2, kvs);
+        for (let k in data.__data)
+          await removeSingleIndex(_id, k, path, SmartWeave2, kvs);
+        let keys2 = await getIndex(path, SmartWeave2, kvs);
+        await _removeData(keys2, _id, [], db, path, SmartWeave2, kvs);
+      };
+      var _getIndex = async (sort, path, SmartWeave2, kvs) => {
+        if (sort.length <= 1)
+          return { index: null, ex: false };
+        let index = await kv(kvs, SmartWeave2).get(getKey(path, sort));
+        return isNil(index) || index === false ? null : index;
+      };
+      var format = (v) => map((v2) => [v2[0], v2[1] || "asc"].join("/"))(v).join("/");
+      var addToInventory = async (sort, path, SmartWeave2, kvs) => {
+        let ex_indexes = await kv(kvs, SmartWeave2).get(getKey(path)) || [];
+        ex_indexes.push(format(sort));
+        await kv(kvs, SmartWeave2).put(getKey(path), ex_indexes);
+      };
+      var addIndex = async (sort, path, db, SmartWeave2, kvs) => {
+        if (isNil(await _getIndex(sort, path, SmartWeave2, kvs))) {
+          await addToInventory(sort, path, SmartWeave2, kvs);
+          let docs = await kv(kvs, SmartWeave2).get(getKey(path, [["__id__"]]));
+          if (!isNil(docs) && docs === false)
+            docs = null;
+          await kv(kvs, SmartWeave2).put(
+            getKey(path, sort),
+            await _sort(sort, [], docs, db, SmartWeave2)
+          );
+        }
+      };
+      var _sort = async (sort, ind, docs, db) => {
         const fields = map(prop(0), sort);
-        for (let id in db) {
-          if (difference(fields, keys(db[id].__data)).length === 0) {
-            const x = map((v) => db[id].__data[v[0]])(sort);
-            const _ind = bsearch2(ind, x, sort, db);
+        for (let id of docs || []) {
+          if (difference(fields, keys((await db(id)).__data)).length === 0) {
+            const x = await Promise.all(
+              map(async (v) => (await db(id)).__data[v[0]])(sort)
+            );
+            const _ind = await bsearch2(ind, x, sort, db);
             if (isNil(_ind))
               ind.push(id);
             else
@@ -10013,68 +10164,34 @@
         }
         return ind;
       };
-      var removeData = (_id, ind, db) => {
-        if (isNil(db[_id]))
-          return;
-        if (!isNil(ind["__id__"])) {
-          removeSingleIndex(_id, null, ind);
+      var removeIndex = async (sort, path, SmartWeave2, kvs) => {
+        let keys2 = await getIndex(path, SmartWeave2, kvs);
+        let key = getKey(path, sort);
+        if (!isNil(key) && key !== false) {
+          await kv(kvs, SmartWeave2).put(
+            getKey(path),
+            without([key.split("//")[1]], keys2)
+          );
+          await kv(kvs, SmartWeave2).put(key, false);
         }
-        let data = db[_id];
-        for (let k in db[_id].__data) {
-          if (!isNil(ind[k]))
-            removeSingleIndex(_id, k, ind);
-        }
-        _removeData(ind, _id, [], db, true);
-        delete db[_id];
-      };
-      var _getIndex = (sort, ind) => {
-        if (sort.length <= 1)
-          return { index: null, ex: false };
-        let _ind = ind;
-        let i = 0;
-        let ex = true;
-        for (let v of sort) {
-          let subs = i === 0 ? _ind : _ind.subs;
-          if (!hasPath([v[0]])(subs)) {
-            subs[v[0]] = {};
-          }
-          if (!hasPath([v[0], v[1] || "asc", "_"])(subs)) {
-            if (i === sort.length - 1)
-              ex = false;
-            subs[v[0]][v[1] || "asc"] = { subs: {} };
-          }
-          _ind = subs[v[0]][v[1] || "asc"];
-          i++;
-        }
-        return { index: _ind, ex };
-      };
-      var addIndex = (sort, ind, db) => {
-        let { index: _ind, ex } = _getIndex(sort, ind);
-        if (isNil(_ind._))
-          _ind._ = [];
-        if (!ex)
-          _ind._ = _sort(sort, _ind._, db);
-      };
-      var removeIndex = (sort, ind, db) => {
-        let { index: _ind, ex } = _getIndex(sort, ind);
-        delete _ind._;
       };
       module.exports = {
         getIndex,
         addData,
         removeIndex,
         addIndex,
-        _getIndex,
         removeData,
-        updateData
+        updateData,
+        getKey
       };
     }
   });
 
-  // sdk/contracts/weavedb/actions/read/get.js
+  // sdk/contracts/weavedb-kv/actions/read/get.js
   var require_get = __commonJS({
-    "sdk/contracts/weavedb/actions/read/get.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/read/get.js"(exports, module) {
       var {
+        then,
         hasPath,
         uniq,
         pluck,
@@ -10107,8 +10224,8 @@
         filter,
         map
       } = require_src();
-      var { getDoc, getCol, err } = require_utils();
-      var { getIndex } = require_lib();
+      var { kv, getDoc, err } = require_utils();
+      var { getKey } = require_lib();
       var parseQuery = (query) => {
         const [path, opt] = splitWhen(complement(is)(String), query);
         let _limit = null;
@@ -10219,29 +10336,16 @@
           _endBefore
         };
       };
-      var getColIndex = (state, data, path, _sort) => {
-        let index = [];
-        let ind = getIndex(state, path);
-        if (!isNil(_sort)) {
-          let i = 0;
-          let _ind = ind;
-          for (let v of _sort) {
-            let subs = i === 0 ? _ind : _ind.subs;
-            if (isNil(subs[v[0]])) {
-              if (i === 0)
-                break;
-              err();
-            }
-            _ind = subs[v[0]][_sort.length === 1 ? "asc" : v[1] || "asc"];
-            i++;
-          }
-          index = _ind._ || [];
-          if (_sort.length === 1 && _sort[0][1] === "desc")
-            index = reverse(index);
-        } else {
-          index = !isNil(ind.__id__) ? ind.__id__.asc._ : keys(getCol(data, path).__docs);
+      var getColIndex = async (path, _sort, SmartWeave2, kvs) => {
+        if (isNil(_sort))
+          _sort = [["__id__"]];
+        let _reverse = false;
+        if (!isNil(_sort) && _sort.length === 1 && _sort[0][1] === "desc") {
+          _sort[0][1] = "asc";
+          _reverse = true;
         }
-        return index;
+        const indexes = await kv(kvs, SmartWeave2).get(getKey(path, _sort));
+        return _reverse ? reverse(indexes) : indexes;
       };
       var comp = (val, x) => {
         let res = 0;
@@ -10262,30 +10366,36 @@
         }
         return res;
       };
-      var bsearch = function(arr, x, sort, db, start = 0, end = arr.length - 1) {
+      var bsearch = async function(arr, x, sort, db, start = 0, end = arr.length - 1) {
         if (start > end)
           return null;
         let mid = Math.floor((start + end) / 2);
-        const val = addIndex(map)((v, i) => ({
-          desc: sort[i][1] === "desc",
-          val: db[arr[mid]].__data[sort[i][0]]
-        }))(tail(x));
+        const val = await Promise.all(
+          addIndex(map)(async (v, i) => ({
+            desc: sort[i][1] === "desc",
+            val: (await db(arr[mid])).__data[sort[i][0]]
+          }))(tail(x))
+        );
         let res = comp(val, tail(x));
         let res2 = 1;
         if (includes(x[0])(["startAt", "startAfter"])) {
           if (mid > 0) {
-            const val2 = addIndex(map)((v, i) => ({
-              desc: sort[i][1] === "desc",
-              val: db[arr[mid - 1]].__data[sort[i][0]]
-            }))(tail(x));
+            const val2 = await Promise.all(
+              addIndex(map)(async (v, i) => ({
+                desc: sort[i][1] === "desc",
+                val: (await db(arr[mid - 1])).__data[sort[i][0]]
+              }))(tail(x))
+            );
             res2 = comp(val2, tail(x));
           }
         } else {
           if (mid < arr.length - 1) {
-            const val2 = addIndex(map)((v, i) => ({
-              desc: sort[i][1] === "desc",
-              val: db[arr[mid + 1]].__data[sort[i][0]]
-            }))(tail(x));
+            const val2 = await Promise.all(
+              addIndex(map)(async (v, i) => ({
+                desc: sort[i][1] === "desc",
+                val: (await db(arr[mid + 1])).__data[sort[i][0]]
+              }))(tail(x))
+            );
             res2 = comp(val2, tail(x));
           }
         }
@@ -10317,12 +10427,12 @@
             break;
         }
         if (down) {
-          return bsearch(arr, x, sort, db, start, mid - 1);
+          return await bsearch(arr, x, sort, db, start, mid - 1);
         } else {
-          return bsearch(arr, x, sort, db, mid + 1, end);
+          return await bsearch(arr, x, sort, db, mid + 1, end);
         }
       };
-      var get = async (state, action, cursor = false, SmartWeave2) => {
+      var get = async (state, action, cursor = false, SmartWeave2, kvs) => {
         const {
           path,
           _limit,
@@ -10337,8 +10447,8 @@
         if (path.length % 2 === 0) {
           if (any(complement(isNil))([_limit, _sort, _filter]))
             err();
-          const { doc: _data } = getDoc(
-            data,
+          const { doc: _data } = await getDoc(
+            null,
             path,
             null,
             null,
@@ -10348,7 +10458,9 @@
             null,
             null,
             null,
-            SmartWeave2
+            SmartWeave2,
+            void 0,
+            kvs
           );
           return {
             result: isNil(_data.__data) ? null : cursor ? {
@@ -10358,11 +10470,11 @@
             } : _data.__data || null
           };
         } else {
-          let index = getColIndex(state, data, path, _sort);
+          let index = await getColIndex(path, _sort, SmartWeave2, kvs);
           if (isNil(index))
             err("index doesn't exist");
-          const { doc: _data } = path.length === 1 ? { doc: data } : getDoc(
-            data,
+          const { doc: _data } = path.length === 1 ? { doc: data } : await getDoc(
+            null,
             slice(0, -1, path),
             null,
             null,
@@ -10372,9 +10484,18 @@
             null,
             null,
             null,
-            SmartWeave2
+            SmartWeave2,
+            void 0,
+            kvs
           );
-          const docs = (path.length === 1 ? _data : _data.subs)[last(path)]?.__docs || {};
+          const test = async (v) => {
+            return v;
+          };
+          const prAll = (ps) => Promise.all(ps);
+          const docs = async (id) => {
+            const doc_key = `data.${path.join("/")}/${id}`;
+            return await kv(kvs, SmartWeave2).get(doc_key) || { __data: null, subs: {} };
+          };
           let _docs = [];
           let start = null;
           let end = null;
@@ -10382,13 +10503,15 @@
           let _end = _endAt || _endBefore;
           if (!isNil(_start)) {
             if (is(Object)(_start[1]) && hasPath([1, "id"])(_start)) {
-              start = bsearch(
+              start = await bsearch(
                 index,
                 [
                   "startAt",
-                  map(
-                    (v) => v[0] === "__id__" ? _start[1].id : docs[_start[1].id].__data[v[0]]
-                  )(_sort || [["__id__"]])
+                  await Promise.all(
+                    map(
+                      async (v) => v[0] === "__id__" ? _start[1].id : (await docs(_start[1].id)).__data[v[0]]
+                    )(_sort || [["__id__"]])
+                  )
                 ],
                 _sort || [["__id__"]],
                 docs
@@ -10405,7 +10528,7 @@
                 index.splice(0, start);
               }
             } else {
-              start = bsearch(index, _start, _sort || [["__id__"]], docs);
+              start = await bsearch(index, _start, _sort || [["__id__"]], docs);
               index.splice(0, start);
             }
           }
@@ -10423,13 +10546,15 @@
                 err();
             }
             if (is(Object)(_end[1]) && hasPath([1, "id"])(_end)) {
-              end = bsearch(
+              end = await bsearch(
                 index,
                 [
                   "startAt",
-                  map(
-                    (v) => v[0] === "__id__" ? _end[1].id : docs[_end[1].id].__data[v[0]]
-                  )(_sort || [["__id__"]])
+                  await Promise.all(
+                    map(
+                      async (v) => v[0] === "__id__" ? _end[1].id : (await docs(_end[1].id)).__data[v[0]]
+                    )(_sort || [["__id__"]])
+                  )
                 ],
                 _sort || [["__id__"]],
                 docs
@@ -10446,7 +10571,7 @@
                 index.splice(end + 1, index.length - end);
               }
             } else {
-              end = bsearch(index, _end, _sort || [["__id__"]], docs);
+              end = await bsearch(index, _end, _sort || [["__id__"]], docs);
               index.splice(end + 1, index.length - end);
             }
           }
@@ -10466,7 +10591,7 @@
               err();
             }
             for (let _v of index) {
-              const v = docs[_v].__data;
+              const v = (await docs(_v)).__data;
               let ok = true;
               for (let v2 of values(_filter)) {
                 if (isNil(v[v2[0]]) && v[v2[0]] !== null) {
@@ -10515,17 +10640,18 @@
               }
             }
           }
+          const _res = await Promise.all(
+            map(async (v) => {
+              const doc = await docs(v);
+              return cursor ? {
+                id: v,
+                setter: doc.setter,
+                data: doc.__data
+              } : doc.__data;
+            })(res)
+          );
           return {
-            result: compose(
-              when(o(complement(isNil), always(_limit)), take(_limit)),
-              map(
-                (v) => cursor ? {
-                  id: v,
-                  setter: docs[v].setter,
-                  data: docs[v].__data
-                } : docs[v].__data
-              )
-            )(res)
+            result: when(o(complement(isNil), always(_limit)), take(_limit))(_res)
           };
         }
       };
@@ -10533,16 +10659,21 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/read/getSchema.js
+  // sdk/contracts/weavedb-kv/actions/read/getSchema.js
   var require_getSchema = __commonJS({
-    "sdk/contracts/weavedb/actions/read/getSchema.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/read/getSchema.js"(exports, module) {
       var { isNil, mergeLeft } = require_src();
       var { parse } = require_utils();
-      var getSchema = async (state, action) => {
+      var getSchema = async (state, action, SmartWeave2, kvs) => {
         let { _data, data, query, new_data, path } = await parse(
           state,
           action,
-          "getSchema"
+          "getSchema",
+          void 0,
+          void 0,
+          void 0,
+          SmartWeave2,
+          kvs
         );
         return { result: _data.schema || null };
       };
@@ -10550,15 +10681,20 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/read/getRules.js
+  // sdk/contracts/weavedb-kv/actions/read/getRules.js
   var require_getRules = __commonJS({
-    "sdk/contracts/weavedb/actions/read/getRules.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/read/getRules.js"(exports, module) {
       var { parse } = require_utils();
-      var getRules = async (state, action) => {
+      var getRules = async (state, action, SmartWeave2, kvs) => {
         let { _data, data, query, new_data, path } = await parse(
           state,
           action,
-          "getRules"
+          "getRules",
+          void 0,
+          void 0,
+          void 0,
+          SmartWeave2,
+          kvs
         );
         return { result: _data.rules || null };
       };
@@ -10566,45 +10702,28 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/read/getIndexes.js
+  // sdk/contracts/weavedb-kv/actions/read/getIndexes.js
   var require_getIndexes = __commonJS({
-    "sdk/contracts/weavedb/actions/read/getIndexes.js"(exports, module) {
-      var { isNil } = require_src();
+    "sdk/contracts/weavedb-kv/actions/read/getIndexes.js"(exports, module) {
+      var { map, split, isNil, splitEvery } = require_src();
       var { err } = require_utils();
       var { getIndex } = require_lib();
-      var scanIndexes = (ind) => {
-        let indexes = [];
-        for (let k in ind) {
-          for (let k2 in ind[k]) {
-            const _ind = [[k, k2]];
-            if (!isNil(ind[k][k2]._))
-              indexes.push(_ind);
-            if (!isNil(ind[k][k2].subs)) {
-              const sub_indexes = scanIndexes(ind[k][k2].subs);
-              for (let v of sub_indexes) {
-                indexes.push([..._ind, ...v]);
-              }
-            }
-          }
-        }
-        return indexes;
-      };
-      var getIndexes = async (state, action) => {
+      var getIndexes = async (state, action, SmartWeave2, kvs) => {
         const path = action.input.query;
         if (path.length % 2 === 0)
           err();
-        const index = getIndex(state, path);
+        const index = await getIndex(path, SmartWeave2, kvs);
         return {
-          result: scanIndexes(index)
+          result: map((v) => splitEvery(2, split("/")(v)))(index || [])
         };
       };
       module.exports = { getIndexes };
     }
   });
 
-  // sdk/contracts/weavedb/actions/read/getCrons.js
+  // sdk/contracts/weavedb-kv/actions/read/getCrons.js
   var require_getCrons = __commonJS({
-    "sdk/contracts/weavedb/actions/read/getCrons.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/read/getCrons.js"(exports, module) {
       var { isNil } = require_src();
       var getCrons = async (state, action) => {
         if (isNil(state.crons)) {
@@ -10618,9 +10737,9 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/read/getAlgorithms.js
+  // sdk/contracts/weavedb-kv/actions/read/getAlgorithms.js
   var require_getAlgorithms = __commonJS({
-    "sdk/contracts/weavedb/actions/read/getAlgorithms.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/read/getAlgorithms.js"(exports, module) {
       var { isNil } = require_src();
       var getAlgorithms = async (state, action) => {
         if (isNil(state.auth.algorithms)) {
@@ -10636,9 +10755,9 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/read/getLinkedContract.js
+  // sdk/contracts/weavedb-kv/actions/read/getLinkedContract.js
   var require_getLinkedContract = __commonJS({
-    "sdk/contracts/weavedb/actions/read/getLinkedContract.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/read/getLinkedContract.js"(exports, module) {
       var { isNil } = require_src();
       var getLinkedContract = async (state, action) => {
         const contracts = state.contracts || {};
@@ -10652,9 +10771,9 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/read/getOwner.js
+  // sdk/contracts/weavedb-kv/actions/read/getOwner.js
   var require_getOwner = __commonJS({
-    "sdk/contracts/weavedb/actions/read/getOwner.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/read/getOwner.js"(exports, module) {
       var { is, of } = require_src();
       var getOwner = async (state, action) => {
         let owner = state.owner || [];
@@ -10666,9 +10785,9 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/read/getAddressLink.js
+  // sdk/contracts/weavedb-kv/actions/read/getAddressLink.js
   var require_getAddressLink = __commonJS({
-    "sdk/contracts/weavedb/actions/read/getAddressLink.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/read/getAddressLink.js"(exports, module) {
       var { is, isNil } = require_src();
       var getAddressLink = async (state, action) => {
         const { address } = action.input.query;
@@ -10685,9 +10804,9 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/read/getRelayerJob.js
+  // sdk/contracts/weavedb-kv/actions/read/getRelayerJob.js
   var require_getRelayerJob = __commonJS({
-    "sdk/contracts/weavedb/actions/read/getRelayerJob.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/read/getRelayerJob.js"(exports, module) {
       var getRelayerJob = async (state, action) => {
         const jobs = state.relayers || {};
         return { result: jobs[action.input.query[0]] || null };
@@ -10696,9 +10815,9 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/read/listRelayerJobs.js
+  // sdk/contracts/weavedb-kv/actions/read/listRelayerJobs.js
   var require_listRelayerJobs = __commonJS({
-    "sdk/contracts/weavedb/actions/read/listRelayerJobs.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/read/listRelayerJobs.js"(exports, module) {
       var { keys } = require_src();
       var listRelayerJobs = async (state, action) => {
         return {
@@ -10709,9 +10828,9 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/read/getEvolve.js
+  // sdk/contracts/weavedb-kv/actions/read/getEvolve.js
   var require_getEvolve = __commonJS({
-    "sdk/contracts/weavedb/actions/read/getEvolve.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/read/getEvolve.js"(exports, module) {
       var { pickAll } = require_src();
       var { isEvolving } = require_utils();
       var getEvolve = async (state, action) => {
@@ -10724,19 +10843,26 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/read/listCollections.js
+  // sdk/contracts/weavedb-kv/actions/read/listCollections.js
   var require_listCollections = __commonJS({
-    "sdk/contracts/weavedb/actions/read/listCollections.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/read/listCollections.js"(exports, module) {
       var { keys, isNil, mergeLeft } = require_src();
-      var { parse } = require_utils();
-      var listCollections = async (state, action) => {
+      var { kv, parse } = require_utils();
+      var listCollections = async (state, action, SmartWeave2, kvs) => {
         let { _data, data, query, new_data, path } = await parse(
           state,
           action,
-          "listCollections"
+          "listCollections",
+          void 0,
+          void 0,
+          void 0,
+          SmartWeave2,
+          kvs
         );
         return {
-          result: keys(path.length === 0 ? data : _data.subs)
+          result: keys(
+            await kv(kvs, SmartWeave2).get(`data.${path.join("/")}`) || {}
+          )
         };
       };
       module.exports = {
@@ -10745,9 +10871,9 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/read/getInfo.js
+  // sdk/contracts/weavedb-kv/actions/read/getInfo.js
   var require_getInfo = __commonJS({
-    "sdk/contracts/weavedb/actions/read/getInfo.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/read/getInfo.js"(exports, module) {
       var { pick } = require_src();
       var { isEvolving } = require_utils();
       var getInfo = async (state, action) => {
@@ -10773,12 +10899,29 @@
     }
   });
 
-  // sdk/contracts/weavedb/lib/validate.js
+  // sdk/contracts/weavedb-kv/actions/read/getTriggers.js
+  var require_getTriggers = __commonJS({
+    "sdk/contracts/weavedb-kv/actions/read/getTriggers.js"(exports, module) {
+      var { err } = require_utils();
+      var getTriggers = async (state, action, SmartWeave2) => {
+        const path = action.input.query;
+        if (path.length % 2 === 0)
+          err();
+        const trigger_key = `trigger.${path.join("/")}`;
+        return {
+          result: state.triggers[trigger_key] ?? []
+        };
+      };
+      module.exports = { getTriggers };
+    }
+  });
+
+  // sdk/contracts/weavedb-kv/lib/validate.js
   var require_validate = __commonJS({
-    "sdk/contracts/weavedb/lib/validate.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/lib/validate.js"(exports, module) {
       var { is, includes, isNil } = require_src();
-      var { err, read } = require_utils();
-      var validate = async (state, action, func, SmartWeave2, use_nonce = true) => {
+      var { kv, err, read } = require_utils();
+      var validate = async (state, action, func, SmartWeave2, use_nonce = true, kvs) => {
         const {
           query,
           nonce,
@@ -10894,30 +11037,37 @@
         }
         if (_signer !== _caller)
           err(`signer[${_signer}] is not caller[${_caller}]`);
-        let next_nonce = (state.nonces[original_signer] || 0) + 1;
-        if (next_nonce !== nonce) {
-          err(
-            `The wrong nonce[${nonce}] for ${original_signer}: expected ${next_nonce}`
-          );
+        if (use_nonce !== false) {
+          let next_nonce = (await kv(kvs, SmartWeave2).get(`nonce.${original_signer}`) || 0) + 1;
+          if (next_nonce !== nonce) {
+            err(
+              `The wrong nonce[${nonce}] for ${original_signer}: expected ${next_nonce}`
+            );
+          }
+          await kv(kvs, SmartWeave2).put(`nonce.${original_signer}`, next_nonce);
         }
-        if (isNil(state.nonces[original_signer]))
-          state.nonces[original_signer] = 0;
-        if (use_nonce !== false)
-          state.nonces[original_signer] += 1;
         return { signer: _signer, original_signer };
       };
       module.exports = { validate };
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/set.js
+  // sdk/contracts/weavedb-kv/actions/write/set.js
   var require_set2 = __commonJS({
-    "sdk/contracts/weavedb/actions/write/set.js"(exports, module) {
-      var { init, last, isNil, clone } = require_src();
-      var { err, wrapResult, parse, validateSchema } = require_utils();
+    "sdk/contracts/weavedb-kv/actions/write/set.js"(exports, module) {
+      var { includes, init, last, isNil } = require_src();
+      var {
+        kv,
+        wrapResult,
+        err,
+        clone,
+        parse,
+        validateSchema,
+        trigger
+      } = require_utils();
       var { validate } = require_validate();
       var { updateData, addData, getIndex } = require_lib();
-      var set = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var set = async (state, action, signer, contractErr = true, SmartWeave2, kvs, executeCron, depth = 1) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -10925,33 +11075,61 @@
             state,
             action,
             "set",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
-        let { _data, data, query, new_data, path, schema, col, next_data } = await parse(state, action, "set", signer, 0, contractErr, SmartWeave2);
+        let { _data, data, query, new_data, path, schema, col, next_data } = await parse(state, action, "set", signer, 0, contractErr, SmartWeave2, kvs);
         let prev = clone(_data.__data);
         validateSchema(schema, next_data, contractErr);
-        let ind = getIndex(state, init(path));
+        const db = async (id) => {
+          const doc_key = `data.${path.slice(0, -1).join("/")}/${id}`;
+          return await kv(kvs, SmartWeave2).get(doc_key) || { __data: null, subs: {} };
+        };
         if (isNil(prev)) {
-          addData(last(path), next_data, ind, col.__docs);
+          await addData(last(path), next_data, db, init(path), SmartWeave2, kvs);
         } else {
-          updateData(last(path), next_data, prev, ind, col.__docs);
+          await updateData(
+            last(path),
+            next_data,
+            prev,
+            db,
+            init(path),
+            SmartWeave2,
+            kvs
+          );
         }
+        let before = clone(_data.__data);
+        let after = clone(next_data);
         _data.__data = next_data;
+        await kv(kvs, SmartWeave2).put(`data.${path.join("/")}`, _data);
+        if (depth < 10) {
+          await trigger("create", state, path, SmartWeave2, kvs, executeCron, depth, {
+            data: { before, after, id: last(path), setter: _data.setter }
+          });
+        }
         return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { set };
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/upsert.js
+  // sdk/contracts/weavedb-kv/actions/write/upsert.js
   var require_upsert = __commonJS({
-    "sdk/contracts/weavedb/actions/write/upsert.js"(exports, module) {
-      var { isNil, init, last } = require_src();
-      var { wrapResult, parse, clone, validateSchema } = require_utils();
+    "sdk/contracts/weavedb-kv/actions/write/upsert.js"(exports, module) {
+      var { equals, isNil, init, last } = require_src();
+      var {
+        kv,
+        wrapResult,
+        parse,
+        clone,
+        validateSchema,
+        trigger
+      } = require_utils();
       var { validate } = require_validate();
-      var { updateData, addData, getIndex } = require_lib();
-      var upsert = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var { updateData, addData } = require_lib();
+      var upsert = async (state, action, signer, contractErr = true, SmartWeave2, kvs, executeCron, depth) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -10959,39 +11137,81 @@
             state,
             action,
             "upsert",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
-        let { data, query, _signer, new_data, path, schema, _data, col, next_data } = await parse(state, action, "upsert", signer, 0, contractErr, SmartWeave2);
+        let { data, query, _signer, new_data, path, schema, _data, col, next_data } = await parse(
+          state,
+          action,
+          "upsert",
+          signer,
+          0,
+          contractErr,
+          SmartWeave2,
+          kvs
+        );
         let prev = clone(_data.__data);
         validateSchema(schema, next_data, contractErr);
-        let ind = getIndex(state, init(path));
+        const db = async (id) => {
+          const doc_key = `data.${path.slice(0, -1).join("/")}/${id}`;
+          return await kv(kvs, SmartWeave2).get(doc_key) || { __data: null, subs: {} };
+        };
         if (isNil(prev)) {
-          addData(last(path), next_data, ind, col.__docs);
+          await addData(last(path), next_data, db, init(path), SmartWeave2, kvs);
         } else {
-          updateData(last(path), next_data, prev, ind, col.__docs);
+          await updateData(
+            last(path),
+            next_data,
+            prev,
+            db,
+            init(path),
+            SmartWeave2,
+            kvs
+          );
         }
+        const updated = !equals(_data.__data, next_data);
+        let before = clone(_data.__data);
+        let after = clone(next_data);
         _data.__data = next_data;
+        await kv(kvs, SmartWeave2).put(`data.${path.join("/")}`, _data);
+        if (updated && depth < 10) {
+          await trigger(
+            [isNil(before) ? "craete" : "update"],
+            state,
+            path,
+            SmartWeave2,
+            kvs,
+            executeCron,
+            depth,
+            {
+              data: { before, after, id: last(path), setter: _data.setter }
+            }
+          );
+        }
         return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { upsert };
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/update.js
+  // sdk/contracts/weavedb-kv/actions/write/update.js
   var require_update2 = __commonJS({
-    "sdk/contracts/weavedb/actions/write/update.js"(exports, module) {
-      var { isNil, init, last } = require_src();
+    "sdk/contracts/weavedb-kv/actions/write/update.js"(exports, module) {
+      var { equals, includes, isNil, init, last } = require_src();
       var {
+        kv,
         wrapResult,
         err,
         clone,
         parse,
-        validateSchema
+        validateSchema,
+        trigger
       } = require_utils();
       var { validate } = require_validate();
-      var { updateData, getIndex } = require_lib();
-      var update = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var { updateData } = require_lib();
+      var update = async (state, action, signer, contractErr = true, SmartWeave2, kvs, executeCron, depth = 1) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -10999,31 +11219,70 @@
             state,
             action,
             "update",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
-        let { data, query, new_data, path, _data, schema, col, next_data } = await parse(state, action, "update", signer, 0, contractErr, SmartWeave2);
+        let { data, query, new_data, path, _data, schema, col, next_data } = await parse(
+          state,
+          action,
+          "update",
+          signer,
+          0,
+          contractErr,
+          SmartWeave2,
+          kvs
+        );
         if (isNil(_data.__data))
           err(`Data doesn't exist`);
         let prev = clone(_data.__data);
         validateSchema(schema, next_data, contractErr);
-        let ind = getIndex(state, init(path));
-        updateData(last(path), next_data, prev, ind, col.__docs);
+        const db = async (id) => {
+          const doc_key = `data.${path.slice(0, -1).join("/")}/${id}`;
+          return await kv(kvs, SmartWeave2).get(doc_key) || { __data: null, subs: {} };
+        };
+        await updateData(last(path), next_data, prev, db, init(path), SmartWeave2, kvs);
+        const updated = !equals(_data.__data, next_data);
+        let before = clone(_data.__data);
+        let after = clone(next_data);
         _data.__data = next_data;
+        await kv(kvs, SmartWeave2).put(`data.${path.join("/")}`, _data);
+        if (updated && depth < 10) {
+          await trigger(
+            ["update"],
+            state,
+            path,
+            SmartWeave2,
+            kvs,
+            executeCron,
+            depth,
+            {
+              data: { before, after, id: last(path), setter: _data.setter }
+            }
+          );
+        }
         return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { update };
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/remove.js
+  // sdk/contracts/weavedb-kv/actions/write/remove.js
   var require_remove2 = __commonJS({
-    "sdk/contracts/weavedb/actions/write/remove.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/write/remove.js"(exports, module) {
       var { isNil, last, init } = require_src();
-      var { wrapResult, err, parse } = require_utils();
+      var {
+        clone,
+        kv,
+        wrapResult,
+        parse,
+        err,
+        trigger
+      } = require_utils();
       var { validate } = require_validate();
       var { removeData, getIndex } = require_lib();
-      var remove = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var remove = async (state, action, signer, contractErr = true, SmartWeave2, kvs, executeCron, depth) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -11031,7 +11290,9 @@
             state,
             action,
             "delete",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
         const { data, query, new_data, path, _data, col } = await parse(
@@ -11041,26 +11302,47 @@
           signer,
           0,
           contractErr,
-          SmartWeave2
+          SmartWeave2,
+          kvs
         );
         if (isNil(_data.__data))
           err(`Data doesn't exist`);
-        let ind = getIndex(state, init(path));
-        removeData(last(path), ind, col.__docs);
+        const db = async (id) => {
+          const doc_key = `data.${path.slice(0, -1).join("/")}/${id}`;
+          return await kv(kvs, SmartWeave2).get(doc_key) || { __data: null, subs: {} };
+        };
+        await removeData(last(path), db, init(path), SmartWeave2, kvs);
+        let before = clone(_data.__data);
+        let after = null;
         _data.__data = null;
+        await kv(kvs, SmartWeave2).put(`data.${path.join("/")}`, _data);
+        if (depth < 10) {
+          await trigger(
+            ["delete"],
+            state,
+            path,
+            SmartWeave2,
+            kvs,
+            executeCron,
+            depth,
+            {
+              data: { before, after, id: last(path), setter: _data.setter }
+            }
+          );
+        }
         return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { remove };
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/addOwner.js
+  // sdk/contracts/weavedb-kv/actions/write/addOwner.js
   var require_addOwner = __commonJS({
-    "sdk/contracts/weavedb/actions/write/addOwner.js"(exports, module) {
-      var { err, wrapResult, isOwner } = require_utils();
+    "sdk/contracts/weavedb-kv/actions/write/addOwner.js"(exports, module) {
+      var { wrapResult, err, isOwner } = require_utils();
       var { includes, is, of, append, isNil } = require_src();
       var { validate } = require_validate();
-      var addOwner = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var addOwner = async (state, action, signer, contractErr = true, SmartWeave2, kvs) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -11068,7 +11350,9 @@
             state,
             action,
             "addOwner",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
         const owner = isOwner(signer, state);
@@ -11088,13 +11372,13 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/removeOwner.js
+  // sdk/contracts/weavedb-kv/actions/write/removeOwner.js
   var require_removeOwner = __commonJS({
-    "sdk/contracts/weavedb/actions/write/removeOwner.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/write/removeOwner.js"(exports, module) {
       var { wrapResult, err, isOwner } = require_utils();
       var { isNil, without, includes, is, of } = require_src();
       var { validate } = require_validate();
-      var removeOwner = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var removeOwner = async (state, action, signer, contractErr = true, SmartWeave2, kvs) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -11102,7 +11386,9 @@
             state,
             action,
             "removeOwner",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
         const owner = isOwner(signer, state);
@@ -11119,13 +11405,13 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/setAlgorithms.js
+  // sdk/contracts/weavedb-kv/actions/write/setAlgorithms.js
   var require_setAlgorithms = __commonJS({
-    "sdk/contracts/weavedb/actions/write/setAlgorithms.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/write/setAlgorithms.js"(exports, module) {
       var { isNil, is, intersection } = require_src();
-      var { parse, err, wrapResult } = require_utils();
+      var { wrapResult, err, parse } = require_utils();
       var { validate } = require_validate();
-      var setAlgorithms = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var setAlgorithms = async (state, action, signer, contractErr = true, SmartWeave2, kvs) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -11133,7 +11419,9 @@
             state,
             action,
             "setAlgorithms",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
         let { _data, data, query, new_data, path } = await parse(
@@ -11143,7 +11431,8 @@
           signer,
           null,
           contractErr,
-          SmartWeave2
+          SmartWeave2,
+          kvs
         );
         if (!is(Array)(new_data) || intersection(new_data)(["secp256k1", "ed25519", "rsa256", "secp256k1-2"]).length !== new_data.length) {
           err(`The wrong algorithms`);
@@ -11155,13 +11444,13 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/setCanEvolve.js
+  // sdk/contracts/weavedb-kv/actions/write/setCanEvolve.js
   var require_setCanEvolve = __commonJS({
-    "sdk/contracts/weavedb/actions/write/setCanEvolve.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/write/setCanEvolve.js"(exports, module) {
       var { wrapResult, err, isOwner } = require_utils();
       var { isNil, is } = require_src();
       var { validate } = require_validate();
-      var setCanEvolve = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var setCanEvolve = async (state, action, signer, contractErr = true, SmartWeave2, kvs) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -11169,7 +11458,9 @@
             state,
             action,
             "setCanEvolve",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
         const owner = isOwner(signer, state);
@@ -11183,13 +11474,13 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/setSecure.js
+  // sdk/contracts/weavedb-kv/actions/write/setSecure.js
   var require_setSecure = __commonJS({
-    "sdk/contracts/weavedb/actions/write/setSecure.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/write/setSecure.js"(exports, module) {
       var { wrapResult, err, isOwner } = require_utils();
       var { isNil, is } = require_src();
       var { validate } = require_validate();
-      var setSecure = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var setSecure = async (state, action, signer, contractErr = true, SmartWeave2, kvs) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -11197,7 +11488,9 @@
             state,
             action,
             "setSecure",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
         const owner = isOwner(signer, state);
@@ -11211,14 +11504,21 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/setSchema.js
+  // sdk/contracts/weavedb-kv/actions/write/setSchema.js
   var require_setSchema = __commonJS({
-    "sdk/contracts/weavedb/actions/write/setSchema.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/write/setSchema.js"(exports, module) {
       var { isNil, mergeLeft } = require_src();
-      var { err, wrapResult, clone, parse, mergeData } = require_utils();
+      var {
+        kv,
+        wrapResult,
+        err,
+        clone,
+        parse,
+        mergeData
+      } = require_utils();
       var { validate } = require_validate();
       var { validate: validator } = require_jsonschema();
-      var setSchema = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var setSchema = async (state, action, signer, contractErr = true, SmartWeave2, kvs) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -11226,7 +11526,9 @@
             state,
             action,
             "setSchema",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
         let { _data, data, query, new_data, path } = await parse(
@@ -11236,7 +11538,8 @@
           signer,
           null,
           contractErr,
-          SmartWeave2
+          SmartWeave2,
+          kvs
         );
         _data.schema = new_data;
         try {
@@ -11244,21 +11547,21 @@
         } catch (e) {
           err("schema error");
         }
+        await kv(kvs, SmartWeave2).put(`data.${path.join("/")}`, _data);
         return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { setSchema };
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/addIndex.js
+  // sdk/contracts/weavedb-kv/actions/write/addIndex.js
   var require_addIndex2 = __commonJS({
-    "sdk/contracts/weavedb/actions/write/addIndex.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/write/addIndex.js"(exports, module) {
       var { o, flatten, isNil, mergeLeft, includes, init } = require_src();
-      var { parse } = require_utils();
-      var { wrapResult, err } = require_utils();
+      var { kv, wrapResult, parse, err } = require_utils();
       var { validate } = require_validate();
       var { addIndex: _addIndex, getIndex } = require_lib();
-      var addIndex = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var addIndex = async (state, action, signer, contractErr = true, SmartWeave2, kvs) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -11266,7 +11569,9 @@
             state,
             action,
             "addIndex",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
         let { col, _data, data, query, new_data, path } = await parse(
@@ -11276,27 +11581,31 @@
           signer,
           null,
           contractErr,
-          SmartWeave2
+          SmartWeave2,
+          kvs
         );
-        let ind = getIndex(state, path);
         if (o(includes("__id__"), flatten)(new_data)) {
           err("index cannot contain __id__");
         }
-        _addIndex(new_data, ind, col.__docs);
+        const db = async (id) => {
+          const doc_key = `data.${path.join("/")}/${id}`;
+          return await kv(kvs, SmartWeave2).get(doc_key) || { __data: null, subs: {} };
+        };
+        await _addIndex(new_data, path, db, SmartWeave2, kvs);
         return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { addIndex };
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/removeIndex.js
+  // sdk/contracts/weavedb-kv/actions/write/removeIndex.js
   var require_removeIndex = __commonJS({
-    "sdk/contracts/weavedb/actions/write/removeIndex.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/write/removeIndex.js"(exports, module) {
       var { isNil, mergeLeft, init } = require_src();
-      var { err, wrapResult, parse, mergeData } = require_utils();
+      var { wrapResult, err, parse, mergeData } = require_utils();
       var { validate } = require_validate();
       var { removeIndex: _removeIndex, getIndex } = require_lib();
-      var removeIndex = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var removeIndex = async (state, action, signer, contractErr = true, SmartWeave2, kvs) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -11304,7 +11613,9 @@
             state,
             action,
             "removeIndex",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
         let { col, _data, data, query, new_data, path } = await parse(
@@ -11314,24 +11625,24 @@
           signer,
           null,
           contractErr,
-          SmartWeave2
+          SmartWeave2,
+          kvs
         );
-        let ind = getIndex(state, path);
-        _removeIndex(new_data, ind, col.__docs);
+        await _removeIndex(new_data, path, SmartWeave2, kvs);
         return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { removeIndex };
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/setRules.js
+  // sdk/contracts/weavedb-kv/actions/write/setRules.js
   var require_setRules = __commonJS({
-    "sdk/contracts/weavedb/actions/write/setRules.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/write/setRules.js"(exports, module) {
       var { isNil, mergeLeft, includes, difference, is } = require_src();
-      var { wrapResult, err, parse, mergeData } = require_utils();
+      var { kv, wrapResult, err, parse, mergeData } = require_utils();
       var { validate } = require_validate();
       var jsonLogic = require_logic();
-      var setRules = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var setRules = async (state, action, signer, contractErr = true, SmartWeave2, kvs) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -11339,7 +11650,9 @@
             state,
             action,
             "setRules",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
         let { _data, data, query, new_data, path } = await parse(
@@ -11349,7 +11662,8 @@
           signer,
           null,
           contractErr,
-          SmartWeave2
+          SmartWeave2,
+          kvs
         );
         for (let k in new_data) {
           const keys = k.split(" ");
@@ -11369,26 +11683,22 @@
           }
         }
         _data.rules = new_data;
+        await kv(kvs, SmartWeave2).put(`data.${path.join("/")}`, _data);
         return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { setRules };
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/removeCron.js
+  // sdk/contracts/weavedb-kv/actions/write/removeCron.js
   var require_removeCron = __commonJS({
-    "sdk/contracts/weavedb/actions/write/removeCron.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/write/removeCron.js"(exports, module) {
       var { isNil, mergeLeft, init } = require_src();
-      var {
-        wrapResult,
-        err,
-        isOwner,
-        parse,
-        mergeData
-      } = require_utils();
+      var { parse, mergeData } = require_utils();
+      var { wrapResult, err, isOwner } = require_utils();
       var { validate } = require_validate();
       var { addIndex: _addIndex, getIndex } = require_lib();
-      var removeCron = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var removeCron = async (state, action, signer, contractErr = true, SmartWeave2, kvs) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -11396,7 +11706,9 @@
             state,
             action,
             "removeCron",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
         const owner = isOwner(signer, state);
@@ -11413,14 +11725,14 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/addRelayerJob.js
+  // sdk/contracts/weavedb-kv/actions/write/addRelayerJob.js
   var require_addRelayerJob = __commonJS({
-    "sdk/contracts/weavedb/actions/write/addRelayerJob.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/write/addRelayerJob.js"(exports, module) {
       var { isNil, is, intersection } = require_src();
-      var { parse, wrapResult, err, clone } = require_utils();
+      var { wrapResult, parse, err, clone } = require_utils();
       var { validate } = require_validate();
       var { validate: validator } = require_jsonschema();
-      var addRelayerJob = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var addRelayerJob = async (state, action, signer, contractErr = true, SmartWeave2, kvs) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -11428,7 +11740,9 @@
             state,
             action,
             "addRelayerJob",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
         let { _data, data, query, new_data, path } = await parse(
@@ -11438,7 +11752,8 @@
           signer,
           null,
           contractErr,
-          SmartWeave2
+          SmartWeave2,
+          kvs
         );
         const [jobID, job] = query;
         if (!isNil(job.relayers) && !is(Array, job.relayers)) {
@@ -11463,14 +11778,14 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/removeRelayerJob.js
+  // sdk/contracts/weavedb-kv/actions/write/removeRelayerJob.js
   var require_removeRelayerJob = __commonJS({
-    "sdk/contracts/weavedb/actions/write/removeRelayerJob.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/write/removeRelayerJob.js"(exports, module) {
       var { isNil, is, intersection } = require_src();
-      var { parse, wrapResult, err, clone } = require_utils();
+      var { wrapResult, parse, err, clone } = require_utils();
       var { validate } = require_validate();
       var { validate: validator } = require_jsonschema();
-      var removeRelayerJob = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var removeRelayerJob = async (state, action, signer, contractErr = true, SmartWeave2, kvs) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -11478,7 +11793,9 @@
             state,
             action,
             "removeRelayerJob",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
         let { _data, data, query, new_data, path } = await parse(
@@ -11488,7 +11805,8 @@
           signer,
           null,
           contractErr,
-          SmartWeave2
+          SmartWeave2,
+          kvs
         );
         const [jobID] = query;
         if (isNil(state.relayers[jobID]))
@@ -11500,13 +11818,13 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/linkContract.js
+  // sdk/contracts/weavedb-kv/actions/write/linkContract.js
   var require_linkContract = __commonJS({
-    "sdk/contracts/weavedb/actions/write/linkContract.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/write/linkContract.js"(exports, module) {
       var { isNil, is } = require_src();
       var { validate } = require_validate();
       var { wrapResult, err, parse } = require_utils();
-      var linkContract = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var linkContract = async (state, action, signer, contractErr = true, SmartWeave2, kvs) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -11514,7 +11832,9 @@
             state,
             action,
             "linkContract",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
         let { _data, data, query, new_data, path } = await parse(
@@ -11524,7 +11844,8 @@
           signer,
           null,
           contractErr,
-          SmartWeave2
+          SmartWeave2,
+          kvs
         );
         const [key, address] = action.input.query;
         if (isNil(key) || isNil(address)) {
@@ -11539,13 +11860,13 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/unlinkContract.js
+  // sdk/contracts/weavedb-kv/actions/write/unlinkContract.js
   var require_unlinkContract = __commonJS({
-    "sdk/contracts/weavedb/actions/write/unlinkContract.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/write/unlinkContract.js"(exports, module) {
       var { isNil, is } = require_src();
       var { validate } = require_validate();
       var { wrapResult, err, parse } = require_utils();
-      var unlinkContract = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var unlinkContract = async (state, action, signer, contractErr = true, SmartWeave2, kvs) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -11553,7 +11874,9 @@
             state,
             action,
             "unlinkContract",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
         let { _data, data, query, new_data, path } = await parse(
@@ -11563,7 +11886,8 @@
           signer,
           null,
           contractErr,
-          SmartWeave2
+          SmartWeave2,
+          kvs
         );
         const [key] = action.input.query;
         if (isNil(key)) {
@@ -11578,13 +11902,13 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/removeAddressLink.js
+  // sdk/contracts/weavedb-kv/actions/write/removeAddressLink.js
   var require_removeAddressLink = __commonJS({
-    "sdk/contracts/weavedb/actions/write/removeAddressLink.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/write/removeAddressLink.js"(exports, module) {
       var { is, isNil } = require_src();
       var { validate } = require_validate();
-      var { err, wrapResult } = require_utils();
-      var removeAddressLink = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var { wrapResult, err } = require_utils();
+      var removeAddressLink = async (state, action, signer, contractErr = true, SmartWeave2, kvs) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -11592,7 +11916,9 @@
             state,
             action,
             "removeAddressLink",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
         const { address } = action.input.query;
@@ -11610,21 +11936,21 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/add.js
+  // sdk/contracts/weavedb-kv/actions/write/add.js
   var require_add2 = __commonJS({
-    "sdk/contracts/weavedb/actions/write/add.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/write/add.js"(exports, module) {
       var { isNil, over, lensPath, append, init, last } = require_src();
+      var { clone, kv } = require_utils();
       var {
         err,
         parse,
         mergeData,
-        getCol,
         validateSchema,
         wrapResult
       } = require_utils();
       var { validate } = require_validate();
-      var { addData, getIndex } = require_lib();
-      var add = async (state, action, signer, salt = 0, contractErr = true, SmartWeave2) => {
+      var { addData } = require_lib();
+      var add = async (state, action, signer, salt = 0, contractErr = true, SmartWeave2, kvs) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -11632,29 +11958,142 @@
             state,
             action,
             "add",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
-        let { _data, data, query, new_data, path, schema, col, next_data } = await parse(state, action, "add", signer, salt, contractErr, SmartWeave2);
+        let { _data, data, query, new_data, path, schema, col, next_data } = await parse(
+          state,
+          action,
+          "add",
+          signer,
+          salt,
+          contractErr,
+          SmartWeave2,
+          kvs
+        );
         if (!isNil(_data.__data))
           err("doc already exists");
         validateSchema(schema, next_data, contractErr);
-        let ind = getIndex(state, init(path));
-        addData(last(path), next_data, ind, col.__docs);
+        const db = async (id) => {
+          const doc_key = `data.${path.slice(0, -1).join("/")}/${id}`;
+          return await kv(kvs, SmartWeave2).get(doc_key) || { __data: null, subs: {} };
+        };
+        await addData(last(path), next_data, db, init(path), SmartWeave2, kvs);
+        let before = clone(_data.__data);
+        let after = clone(next_data);
         _data.__data = next_data;
+        await kv(kvs, SmartWeave2).put(`data.${path.join("/")}`, _data);
         return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { add };
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/batch.js
+  // sdk/contracts/weavedb-kv/actions/write/addTrigger.js
+  var require_addTrigger = __commonJS({
+    "sdk/contracts/weavedb-kv/actions/write/addTrigger.js"(exports, module) {
+      var { insert, findIndex, propEq, isNil } = require_src();
+      var { wrapResult, parse, err } = require_utils();
+      var { validate } = require_validate();
+      var addTrigger = async (state, action, signer, contractErr = true, SmartWeave2, kvs) => {
+        let original_signer = null;
+        if (isNil(signer)) {
+          ;
+          ({ signer, original_signer } = await validate(
+            state,
+            action,
+            "addTrigger",
+            SmartWeave2,
+            true,
+            kvs
+          ));
+        }
+        let { col, _data, data, query, new_data, path } = await parse(
+          state,
+          action,
+          "addTrigger",
+          signer,
+          null,
+          contractErr,
+          SmartWeave2,
+          kvs
+        );
+        const trigger_key = `trigger.${path.join("/")}`;
+        state.triggers ??= {};
+        state.triggers[trigger_key] ??= [];
+        let { index, key, on, func } = action.input.query[0];
+        const _index = findIndex(propEq("key", key), state.triggers[trigger_key]);
+        if (_index !== -1) {
+          state.triggers[trigger_key][_index] = { key, on, func };
+        } else if (isNil(index)) {
+          state.triggers[trigger_key].push({ key, on, func });
+        } else {
+          state.triggers[trigger_key] = insert(
+            index,
+            { key, on, func },
+            state.triggers[trigger_key]
+          );
+        }
+        return wrapResult(state, original_signer, SmartWeave2);
+      };
+      module.exports = { addTrigger };
+    }
+  });
+
+  // sdk/contracts/weavedb-kv/actions/write/removeTrigger.js
+  var require_removeTrigger = __commonJS({
+    "sdk/contracts/weavedb-kv/actions/write/removeTrigger.js"(exports, module) {
+      var { insert, findIndex, propEq, isNil } = require_src();
+      var { wrapResult, parse, err } = require_utils();
+      var { validate } = require_validate();
+      var removeTrigger = async (state, action, signer, contractErr = true, SmartWeave2, kvs) => {
+        let original_signer = null;
+        if (isNil(signer)) {
+          ;
+          ({ signer, original_signer } = await validate(
+            state,
+            action,
+            "removeTrigger",
+            SmartWeave2,
+            true,
+            kvs
+          ));
+        }
+        let { col, _data, data, query, new_data, path } = await parse(
+          state,
+          action,
+          "removeTrigger",
+          signer,
+          null,
+          contractErr,
+          SmartWeave2,
+          kvs
+        );
+        const trigger_key = `trigger.${path.join("/")}`;
+        state.triggers ??= {};
+        state.triggers[trigger_key] ??= [];
+        let key = action.input.query[0];
+        const _index = findIndex(propEq("key", key), state.triggers[trigger_key]);
+        if (_index !== -1) {
+          state.triggers[trigger_key].splice(_index, 1);
+        } else {
+          err("trigger doesn't exist");
+        }
+        return wrapResult(state, original_signer, SmartWeave2);
+      };
+      module.exports = { removeTrigger };
+    }
+  });
+
+  // sdk/contracts/weavedb-kv/actions/write/batch.js
   var require_batch = __commonJS({
-    "sdk/contracts/weavedb/actions/write/batch.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/write/batch.js"(exports, module) {
       var { includes, isNil, clone } = require_src();
       var { wrapResult, err, parse, mergeData } = require_utils();
       var { validate } = require_validate();
-      var { set } = require_set2();
+      var { set, what } = require_set2();
       var { add } = require_add2();
       var { update } = require_update2();
       var { upsert } = require_upsert();
@@ -11671,7 +12110,9 @@
       var { removeIndex } = require_removeIndex();
       var { removeOwner } = require_removeOwner();
       var { removeRelayerJob } = require_removeRelayerJob();
-      var batch = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var { addTrigger } = require_addTrigger();
+      var { removeTrigger } = require_removeTrigger();
+      var batch = async (state, action, signer, contractErr = true, SmartWeave2, kvs, executeCron) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -11679,7 +12120,9 @@
             state,
             action,
             "batch",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
         let _state = state;
@@ -11694,97 +12137,85 @@
             caller: action.caller
           } : { input: { function: op, query }, caller: action.caller };
           let res = null;
+          const params = [
+            _state,
+            _action,
+            signer,
+            contractErr,
+            SmartWeave2,
+            kvs,
+            executeCron
+          ];
           switch (op) {
             case "add":
-              res = await add(_state, _action, signer, i, contractErr, SmartWeave2);
+              res = await add(
+                _state,
+                _action,
+                signer,
+                i,
+                contractErr,
+                SmartWeave2,
+                kvs,
+                executeCron
+              );
               break;
             case "set":
-              res = await set(_state, _action, signer, contractErr, SmartWeave2);
+              res = await set(...params);
               break;
             case "update":
-              res = await update(_state, _action, signer, contractErr, SmartWeave2);
+              res = await update(...params);
               break;
             case "upsert":
-              res = await upsert(_state, _action, signer, contractErr, SmartWeave2);
+              res = await upsert(...params);
               break;
             case "delete":
-              res = await remove(_state, _action, signer, contractErr, SmartWeave2);
+              res = await remove(...params);
               break;
             case "setRules":
-              res = await setRules(_state, _action, signer, contractErr, SmartWeave2);
+              res = await setRules(...params);
               break;
             case "setSchema":
-              res = await setSchema(_state, _action, signer, contractErr, SmartWeave2);
+              res = await setSchema(...params);
               break;
             case "setCanEvolve":
-              res = await setCanEvolve(
-                _state,
-                _action,
-                signer,
-                contractErr,
-                SmartWeave2
-              );
+              res = await setCanEvolve(...params);
               break;
             case "setSecure":
-              res = await setSecure(_state, _action, signer, contractErr, SmartWeave2);
+              res = await setSecure(...params);
               break;
             case "setAlgorithms":
-              res = await setAlgorithms(
-                _state,
-                _action,
-                signer,
-                contractErr,
-                SmartWeave2
-              );
+              res = await setAlgorithms(...params);
               break;
             case "addIndex":
-              res = await addIndex(_state, _action, signer, contractErr, SmartWeave2);
+              res = await addIndex(...params);
               break;
             case "addOwner":
-              res = await addOwner(_state, _action, signer, contractErr, SmartWeave2);
+              res = await addOwner(...params);
               break;
             case "addRelayerJob":
-              res = await addRelayerJob(
-                _state,
-                _action,
-                signer,
-                contractErr,
-                SmartWeave2
-              );
+              res = await addRelayerJob(...params);
               break;
             case "addCron":
               const { addCron } = require_addCron();
-              res = await addCron(_state, _action, signer, contractErr, SmartWeave2);
+              res = await addCron(...params);
               break;
             case "removeCron":
-              res = await removeCron(_state, _action, signer, contractErr, SmartWeave2);
+              res = await removeCron(...params);
               break;
             case "removeIndex":
-              res = await removeIndex(
-                _state,
-                _action,
-                signer,
-                contractErr,
-                SmartWeave2
-              );
+              res = await removeIndex(...params);
               break;
             case "removeOwner":
-              res = await removeOwner(
-                _state,
-                _action,
-                signer,
-                contractErr,
-                SmartWeave2
-              );
+              res = await removeOwner(...params);
               break;
             case "removeRelayerJob":
-              res = await removeRelayerJob(
-                _state,
-                _action,
-                signer,
-                contractErr,
-                SmartWeave2
-              );
+              res = await removeRelayerJob(...params);
+              break;
+            case "addTrigger":
+              res = await addTrigger(...params);
+              break;
+            case "removeTrigger":
+              res = await removeTrigger(...params);
               break;
             default:
               const msg = `No function supplied or function not recognised: "${op}"`;
@@ -11803,11 +12234,22 @@
     }
   });
 
-  // sdk/contracts/weavedb/lib/cron.js
+  // sdk/contracts/weavedb-kv/lib/cron.js
   var require_cron = __commonJS({
-    "sdk/contracts/weavedb/lib/cron.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/lib/cron.js"(exports, module) {
       var fpjson = require_cjs();
-      var { path, is, map, isNil, includes, sortBy, prop, head } = require_src();
+      fpjson = fpjson.default ?? fpjson;
+      var {
+        mergeLeft,
+        path,
+        is,
+        map,
+        isNil,
+        includes,
+        sortBy,
+        prop,
+        head
+      } = require_src();
       var { clone } = require_utils();
       var { get } = require_get();
       var { upsert } = require_upsert();
@@ -11816,13 +12258,13 @@
       var { remove } = require_remove2();
       var { set } = require_set2();
       var { batch } = require_batch();
-      var executeCron = async (cron2, state, SmartWeave2) => {
-        let vars = {
+      var executeCron = async (cron2, state, SmartWeave2, kvs, depth = 1, _vars = {}) => {
+        let vars = mergeLeft(_vars, {
           block: {
             height: SmartWeave2.block.height,
             timestamp: SmartWeave2.block.timestamp
           }
-        };
+        });
         let ops = { upsert, update, add, delete: remove, set, batch };
         const parse = (query) => {
           if (is(Array, query)) {
@@ -11869,11 +12311,14 @@
               params.push(0);
             params.push(false);
             params.push(SmartWeave2);
+            params.push(kvs);
+            params.push(executeCron);
+            params.push(depth + 1);
             await ops[op](...params);
           }
         }
       };
-      var cron = async (state, SmartWeave2) => {
+      var cron = async (state, SmartWeave2, _kvs) => {
         const now = SmartWeave2.block.timestamp;
         if (isNil(state.crons)) {
           state.crons = { lastExecuted: now, crons: {} };
@@ -11898,7 +12343,10 @@
         let _state = clone(state);
         for (let cron2 of crons) {
           try {
-            await executeCron(cron2, _state, SmartWeave2);
+            let kvs = {};
+            await executeCron(cron2, _state, SmartWeave2, kvs);
+            for (const k in kvs)
+              _kvs[k] = kvs[k];
           } catch (e) {
             console.log(e);
           }
@@ -11910,15 +12358,15 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/addCron.js
+  // sdk/contracts/weavedb-kv/actions/write/addCron.js
   var require_addCron = __commonJS({
-    "sdk/contracts/weavedb/actions/write/addCron.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/write/addCron.js"(exports, module) {
       var { isNil } = require_src();
       var { wrapResult, err, clone, isOwner } = require_utils();
       var { validate } = require_validate();
       var { executeCron } = require_cron();
       var c = require_cron();
-      var addCron = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var addCron = async (state, action, signer, contractErr = true, SmartWeave2, kvs) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -11926,7 +12374,9 @@
             state,
             action,
             "addCron",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
         const owner = isOwner(signer, state);
@@ -11953,7 +12403,12 @@
         state.crons.crons[key] = _cron;
         if (_cron.do) {
           try {
-            await executeCron({ start: _cron.start, crons: _cron }, state, SmartWeave2);
+            await executeCron(
+              { start: _cron.start, crons: _cron },
+              state,
+              SmartWeave2,
+              kvs
+            );
           } catch (e) {
             console.log(e);
             err("cron failed to execute");
@@ -11965,13 +12420,13 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/addAddressLink.js
+  // sdk/contracts/weavedb-kv/actions/write/addAddressLink.js
   var require_addAddressLink = __commonJS({
-    "sdk/contracts/weavedb/actions/write/addAddressLink.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/write/addAddressLink.js"(exports, module) {
       var { is, isNil } = require_src();
       var { err, wrapResult } = require_utils();
       var { validate } = require_validate();
-      var addAddressLink = async (state, action, signer, contractErr = true, SmartWeave2, _linkTo) => {
+      var addAddressLink = async (state, action, signer, contractErr = true, SmartWeave2, _linkTo, kvs) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -11979,7 +12434,9 @@
             state,
             action,
             "addAddressLink",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
         const { address, signature, expiry, linkTo } = action.input.query;
@@ -12046,13 +12503,13 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/evolve.js
+  // sdk/contracts/weavedb-kv/actions/write/evolve.js
   var require_evolve2 = __commonJS({
-    "sdk/contracts/weavedb/actions/write/evolve.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/write/evolve.js"(exports, module) {
       var { isNil, is, of, includes, mergeLeft } = require_src();
       var { wrapResult, err, isOwner } = require_utils();
       var { validate } = require_validate();
-      var evolve = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var evolve = async (state, action, signer, contractErr = true, SmartWeave2, kvs) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -12060,7 +12517,9 @@
             state,
             action,
             "evolve",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
         const owner = isOwner(signer, state);
@@ -12076,7 +12535,7 @@
         state.evolveHistory.push({
           signer,
           block: SmartWeave2.block.height,
-          data: SmartWeave2.block.timestamp,
+          date: SmartWeave2.block.timestamp,
           srcTxId: action.input.value,
           oldVersion: state.version
         });
@@ -16246,9 +16705,9 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/relay.js
+  // sdk/contracts/weavedb-kv/actions/write/relay.js
   var require_relay = __commonJS({
-    "sdk/contracts/weavedb/actions/write/relay.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/write/relay.js"(exports, module) {
       var {
         intersection,
         is,
@@ -16271,7 +16730,7 @@
       var { remove } = require_remove2();
       var { addAddressLink } = require_addAddressLink();
       var { batch } = require_batch();
-      var relay = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var relay = async (state, action, signer, contractErr = true, SmartWeave2, kvs) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -16280,10 +16739,13 @@
             action,
             "relay",
             SmartWeave2,
-            false
+            false,
+            kvs
           ));
         }
-        let [jobID, input, query] = action.input.query;
+        let jobID = head(action.input.query);
+        let input = nth(1, action.input.query);
+        let query = nth(2, action.input.query);
         if (input.jobID !== jobID)
           err("the wrong jobID");
         let action2 = { input, relayer: signer, extra: query, jobID };
@@ -16339,19 +16801,20 @@
             err("relayer data validation error");
           }
         }
+        const params = [state, action2, null, null, SmartWeave2, kvs];
         switch (action2.input.function) {
           case "add":
-            return await add(state, action2, null, void 0, null, SmartWeave2);
+            return await add(state, action2, null, void 0, null, SmartWeave2, kvs);
           case "set":
-            return await set(state, action2, null, null, SmartWeave2);
+            return await set(...params);
           case "update":
-            return await update(state, action2, null, null, SmartWeave2);
+            return await update(...params);
           case "upsert":
-            return await upsert(state, action2, null, null, SmartWeave2);
+            return await upsert(...params);
           case "delete":
-            return await remove(state, action2, null, null, SmartWeave2);
+            return await remove(...params);
           case "batch":
-            return await batch(state, action2, null, null, SmartWeave2);
+            return await batch(...params);
           case "addAddressLink":
             return await addAddressLink(
               state,
@@ -16359,7 +16822,8 @@
               null,
               null,
               SmartWeave2,
-              action2.extra.linkTo
+              action2.extra.linkTo,
+              kvs
             );
           default:
             err(
@@ -16372,9 +16836,9 @@
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/bundle.js
+  // sdk/contracts/weavedb-kv/actions/write/bundle.js
   var require_bundle = __commonJS({
-    "sdk/contracts/weavedb/actions/write/bundle.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/write/bundle.js"(exports, module) {
       var pako = require_pako();
       var { validate } = require_validate();
       var { clone, wrapResult, err } = require_utils();
@@ -16397,7 +16861,7 @@
       var { removeIndex } = require_removeIndex();
       var { removeOwner } = require_removeOwner();
       var { removeRelayerJob } = require_removeRelayerJob();
-      var bundle = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var bundle = async (state, action, signer, contractErr = true, SmartWeave2, kvs) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -16405,7 +16869,9 @@
             state,
             action,
             "bundle",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
         const compressed = new Uint8Array(
@@ -16420,6 +16886,7 @@
         for (const q of queries) {
           let valid = true;
           let error = null;
+          let params = [clone(state), { input: q }, void 0, false, SmartWeave2, kvs];
           try {
             const op = q.function;
             let res = null;
@@ -16435,158 +16902,56 @@
                 );
                 break;
               case "set":
-                res = await set(
-                  clone(state),
-                  { input: q },
-                  void 0,
-                  false,
-                  SmartWeave2
-                );
+                res = await set(...params);
                 break;
               case "update":
-                res = await update(
-                  clone(state),
-                  { input: q },
-                  void 0,
-                  false,
-                  SmartWeave2
-                );
+                res = await update(...params);
                 break;
               case "upsert":
-                res = await upsert(
-                  clone(state),
-                  { input: q },
-                  void 0,
-                  false,
-                  SmartWeave2
-                );
+                res = await upsert(...params);
                 break;
               case "delete":
-                res = await remove(
-                  clone(state),
-                  { input: q },
-                  void 0,
-                  false,
-                  SmartWeave2
-                );
+                res = await remove(...params);
                 break;
               case "setRules":
-                res = await setRules(
-                  clone(state),
-                  { input: q },
-                  void 0,
-                  false,
-                  SmartWeave2
-                );
+                res = await setRules(...params);
                 break;
               case "setSchema":
-                res = await setSchema(
-                  clone(state),
-                  { input: q },
-                  void 0,
-                  false,
-                  SmartWeave2
-                );
+                res = await setSchema(...params);
                 break;
               case "setCanEvolve":
-                res = await setCanEvolve(
-                  clone(state),
-                  { input: q },
-                  void 0,
-                  false,
-                  SmartWeave2
-                );
+                res = await setCanEvolve(...params);
                 break;
               case "setSecure":
-                res = await setSecure(
-                  clone(state),
-                  { input: q },
-                  void 0,
-                  false,
-                  SmartWeave2
-                );
+                res = await setSecure(...params);
                 break;
               case "setAlgorithms":
-                res = await setAlgorithms(
-                  clone(state),
-                  { input: q },
-                  void 0,
-                  false,
-                  SmartWeave2
-                );
+                res = await setAlgorithms(...params);
                 break;
               case "addIndex":
-                res = await addIndex(
-                  clone(state),
-                  { input: q },
-                  void 0,
-                  false,
-                  SmartWeave2
-                );
+                res = await addIndex(...params);
                 break;
               case "addOwner":
-                res = await addOwner(
-                  clone(state),
-                  { input: q },
-                  void 0,
-                  false,
-                  SmartWeave2
-                );
+                res = await addOwner(...params);
                 break;
               case "addRelayerJob":
-                res = await addRelayerJob(
-                  clone(state),
-                  { input: q },
-                  void 0,
-                  false,
-                  SmartWeave2
-                );
+                res = await addRelayerJob(...params);
                 break;
               case "addCron":
                 const { addCron } = require_addCron();
-                res = await addCron(
-                  clone(state),
-                  { input: q },
-                  void 0,
-                  false,
-                  SmartWeave2
-                );
+                res = await addCron(...params);
                 break;
               case "removeCron":
-                res = await removeCron(
-                  clone(state),
-                  { input: q },
-                  void 0,
-                  false,
-                  SmartWeave2
-                );
+                res = await removeCron(...params);
                 break;
               case "removeIndex":
-                res = await removeIndex(
-                  clone(state),
-                  { input: q },
-                  void 0,
-                  false,
-                  SmartWeave2
-                );
+                res = await removeIndex(...params);
                 break;
               case "removeOwner":
-                res = await removeOwner(
-                  clone(state),
-                  { input: q },
-                  void 0,
-                  false,
-                  SmartWeave2
-                );
+                res = await removeOwner(...params);
                 break;
               case "removeRelayerJob":
-                res = await removeRelayerJob(
-                  clone(state),
-                  { input: q },
-                  void 0,
-                  false,
-                  SmartWeave2
-                );
+                res = await removeRelayerJob(...params);
                 break;
               default:
                 throw new Error(
@@ -16609,21 +16974,21 @@
     }
   });
 
-  // sdk/contracts/weavedb/lib/version.js
+  // sdk/contracts/weavedb-kv/lib/version.js
   var require_version2 = __commonJS({
-    "sdk/contracts/weavedb/lib/version.js"(exports, module) {
-      module.exports = "0.26.0";
+    "sdk/contracts/weavedb-kv/lib/version.js"(exports, module) {
+      module.exports = "0.27.0";
     }
   });
 
-  // sdk/contracts/weavedb/actions/write/migrate.js
+  // sdk/contracts/weavedb-kv/actions/write/migrate.js
   var require_migrate = __commonJS({
-    "sdk/contracts/weavedb/actions/write/migrate.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/actions/write/migrate.js"(exports, module) {
       var { isNil, is, of, includes, mergeLeft, last } = require_src();
       var { wrapResult, isEvolving, err, isOwner } = require_utils();
       var { validate } = require_validate();
       var version = require_version2();
-      var migrate = async (state, action, signer, contractErr = true, SmartWeave2) => {
+      var migrate = async (state, action, signer, contractErr = true, SmartWeave2, kvs) => {
         let original_signer = null;
         if (isNil(signer)) {
           ;
@@ -16631,7 +16996,9 @@
             state,
             action,
             "migrate",
-            SmartWeave2
+            SmartWeave2,
+            true,
+            kvs
           ));
         }
         const owner = isOwner(signer, state);
@@ -16640,17 +17007,22 @@
         }
         if (!isEvolving(state))
           err(`contract is not ready to migrate`);
+        const old_version = state.version.split(".");
+        const new_version = version.split(".");
+        if (+old_version[0] === 0 && +new_version[0] === 0 && +old_version[1] < 27 && +new_version[1] >= 27) {
+          err(`v${old_version} cannot be upgraded to v${new_version}`);
+        }
         state.version = version;
-        state.evolveHistory[state.evolveHistory.length - 1].newVersion = version;
+        last(state.evolveHistory).newVersion = version;
         return wrapResult(state, original_signer, SmartWeave2);
       };
       module.exports = { migrate };
     }
   });
 
-  // sdk/contracts/weavedb/contract.js
+  // sdk/contracts/weavedb-kv/contract.js
   var require_contract = __commonJS({
-    "sdk/contracts/weavedb/contract.js"(exports, module) {
+    "sdk/contracts/weavedb-kv/contract.js"(exports, module) {
       var { ids } = require_ids();
       var { nonce } = require_nonce();
       var { version } = require_version();
@@ -16669,6 +17041,7 @@
       var { getEvolve } = require_getEvolve();
       var { listCollections } = require_listCollections();
       var { getInfo } = require_getInfo();
+      var { getTriggers } = require_getTriggers();
       var { set } = require_set2();
       var { upsert } = require_upsert();
       var { update } = require_update2();
@@ -16696,7 +17069,9 @@
       var { bundle } = require_bundle();
       var { relay } = require_relay();
       var { migrate } = require_migrate();
-      var { cron } = require_cron();
+      var { addTrigger } = require_addTrigger();
+      var { removeTrigger } = require_removeTrigger();
+      var { cron, executeCron } = require_cron();
       var { err, isEvolving } = require_utils();
       var { includes, isNil } = require_src();
       var writes = [
@@ -16725,14 +17100,16 @@
         "removeAddressLink"
       ];
       async function handle2(state, action, _SmartWeave) {
+        let kvs = {};
         if (typeof SmartWeave !== "undefined")
           _SmartWeave = SmartWeave;
-        if (isEvolving(state) && includes(action.input.function)(writes)) {
+        if (isEvolving(state) && includes(action.input.function)(writes) && action.input.function !== "evolve") {
           err("contract needs migration");
         }
         try {
-          ;
-          ({ state } = await cron(state, _SmartWeave));
+          let _kvs = {};
+          ({ state } = await cron(state, _SmartWeave, _kvs));
+          kvs = _kvs;
         } catch (e) {
           console.log(e);
         }
@@ -16749,163 +17126,167 @@
           }
           return { state: state2, result };
         };
+        const readParams = [state, action, _SmartWeave, kvs];
+        const writeParams = [state, action, void 0, void 0, _SmartWeave, kvs];
+        let res = null;
         switch (action.input.function) {
           case "get":
-            return await get(state, action, false, _SmartWeave);
+            return await get(state, action, false, _SmartWeave, kvs);
           case "cget":
-            return await get(state, action, true, _SmartWeave);
+            return await get(state, action, true, _SmartWeave, kvs);
           case "getAddressLink":
-            return await getAddressLink(state, action);
+            return await getAddressLink(...readParams);
           case "listCollections":
-            return await listCollections(state, action);
+            return await listCollections(...readParams);
           case "getInfo":
-            return await getInfo(state, action);
+            return await getInfo(...readParams);
           case "getCrons":
-            return await getCrons(state, action);
+            return await getCrons(...readParams);
           case "getAlgorithms":
-            return await getAlgorithms(state, action);
+            return await getAlgorithms(...readParams);
           case "getLinkedContract":
-            return await getLinkedContract(state, action);
+            return await getLinkedContract(...readParams);
           case "listRelayerJobs":
-            return await listRelayerJobs(state, action);
+            return await listRelayerJobs(...readParams);
           case "getRelayerJob":
-            return await getRelayerJob(state, action);
+            return await getRelayerJob(...readParams);
           case "getIndexes":
-            return await getIndexes(state, action);
+            return await getIndexes(...readParams);
+          case "getTriggers":
+            return await getTriggers(...readParams);
           case "getSchema":
-            return await getSchema(state, action);
+            return await getSchema(...readParams);
           case "getRules":
-            return await getRules(state, action);
+            return await getRules(...readParams);
           case "ids":
-            return await ids(state, action);
+            return await ids(...readParams);
           case "nonce":
-            return await nonce(state, action);
+            return await nonce(...readParams);
           case "hash":
-            return await hash(state, action);
+            return await hash(...readParams);
           case "version":
-            return await version(state, action);
+            return await version(...readParams);
           case "getOwner":
-            return await getOwner(state, action);
+            return await getOwner(...readParams);
           case "getEvolve":
-            return await getEvolve(state, action);
+            return await getEvolve(...readParams);
           case "add":
-            return await addHash(
-              await add(state, action, void 0, void 0, void 0, _SmartWeave)
-            );
-          case "set":
-            return await addHash(
-              await set(state, action, void 0, void 0, _SmartWeave)
-            );
-          case "upsert":
-            return await addHash(
-              await upsert(state, action, void 0, void 0, _SmartWeave)
-            );
-          case "update":
-            return await addHash(
-              await update(state, action, void 0, void 0, _SmartWeave)
-            );
-          case "delete":
-            return await addHash(
-              await remove(state, action, void 0, void 0, _SmartWeave)
-            );
-          case "batch":
-            return await addHash(
-              await batch(state, action, void 0, void 0, _SmartWeave)
-            );
-          case "bundle":
-            return await addHash(
-              await bundle(state, action, void 0, void 0, _SmartWeave)
-            );
-          case "relay":
-            return await addHash(
-              await relay(state, action, void 0, void 0, _SmartWeave)
-            );
-          case "addOwner":
-            return await addHash(
-              await addOwner(state, action, void 0, void 0, _SmartWeave)
-            );
-          case "removeOwner":
-            return await addHash(
-              await removeOwner(state, action, void 0, void 0, _SmartWeave)
-            );
-          case "setAlgorithms":
-            return await addHash(
-              await setAlgorithms(state, action, void 0, void 0, _SmartWeave)
-            );
-          case "setCanEvolve":
-            return await addHash(
-              await setCanEvolve(state, action, void 0, void 0, _SmartWeave)
-            );
-          case "setSecure":
-            return await addHash(
-              await setSecure(state, action, void 0, void 0, _SmartWeave)
-            );
-          case "setSchema":
-            return await addHash(
-              await setSchema(state, action, void 0, void 0, _SmartWeave)
-            );
-          case "addIndex":
-            return await addHash(
-              await addIndex(state, action, void 0, void 0, _SmartWeave)
-            );
-          case "removeIndex":
-            return await addHash(
-              await removeIndex(state, action, void 0, void 0, _SmartWeave)
-            );
-          case "setRules":
-            return await addHash(
-              await setRules(state, action, void 0, void 0, _SmartWeave)
-            );
-          case "removeCron":
-            return await addHash(
-              await removeCron(state, action, void 0, void 0, _SmartWeave)
-            );
-          case "addRelayerJob":
-            return await addHash(
-              await addRelayerJob(state, action, void 0, void 0, _SmartWeave)
-            );
-          case "removeRelayerJob":
-            return await addHash(
-              await removeRelayerJob(state, action, void 0, void 0, _SmartWeave)
-            );
-          case "linkContract":
-            return await addHash(
-              await linkContract(state, action, void 0, void 0, _SmartWeave)
-            );
-          case "unlinkContract":
-            return await addHash(
-              await unlinkContract(state, action, void 0, void 0, _SmartWeave)
-            );
-          case "removeAddressLink":
-            return await addHash(
-              await removeAddressLink(
+            res = await addHash(
+              await add(
                 state,
                 action,
                 void 0,
                 void 0,
-                _SmartWeave
+                void 0,
+                _SmartWeave,
+                kvs,
+                executeCron
               )
             );
+            break;
+          case "set":
+            res = await addHash(await set(...writeParams, executeCron));
+            break;
+          case "upsert":
+            res = await addHash(await upsert(...writeParams, executeCron));
+            break;
+          case "update":
+            res = await addHash(await update(...writeParams, executeCron));
+            break;
+          case "delete":
+            res = await addHash(await remove(...writeParams, executeCron));
+            break;
+          case "batch":
+            res = await addHash(await batch(...writeParams, executeCron));
+            break;
+          case "bundle":
+            res = await addHash(await bundle(...writeParams));
+            break;
+          case "relay":
+            res = await addHash(await relay(...writeParams));
+            break;
+          case "addOwner":
+            res = await addHash(await addOwner(...writeParams));
+            break;
+          case "removeOwner":
+            res = await addHash(await removeOwner(...writeParams));
+            break;
+          case "setAlgorithms":
+            res = await addHash(await setAlgorithms(...writeParams));
+            break;
+          case "setCanEvolve":
+            res = await addHash(await setCanEvolve(...writeParams));
+            break;
+          case "setSecure":
+            res = await addHash(await setSecure(...writeParams));
+            break;
+          case "setSchema":
+            res = await addHash(await setSchema(...writeParams));
+            break;
+          case "addIndex":
+            res = await addHash(await addIndex(...writeParams));
+            break;
+          case "removeIndex":
+            res = await addHash(await removeIndex(...writeParams));
+            break;
+          case "setRules":
+            res = await addHash(await setRules(...writeParams));
+            break;
+          case "removeCron":
+            res = await addHash(await removeCron(...writeParams));
+            break;
+          case "addRelayerJob":
+            res = await addHash(await addRelayerJob(...writeParams));
+            break;
+          case "removeRelayerJob":
+            res = await addHash(await removeRelayerJob(...writeParams));
+            break;
+          case "linkContract":
+            res = await addHash(await linkContract(...writeParams));
+            break;
+          case "unlinkContract":
+            res = await addHash(await unlinkContract(...writeParams));
+            break;
+          case "removeAddressLink":
+            res = await addHash(await removeAddressLink(...writeParams));
+            break;
           case "addCron":
-            return await addHash(
-              await addCron(state, action, void 0, void 0, _SmartWeave)
-            );
+            res = await addHash(await addCron(...writeParams));
+            break;
+          case "addTrigger":
+            res = await addHash(await addTrigger(...writeParams));
+            break;
+          case "removeTrigger":
+            res = await addHash(await removeTrigger(...writeParams));
+            break;
           case "addAddressLink":
-            return await addHash(
-              await addAddressLink(state, action, void 0, void 0, _SmartWeave)
+            res = await addHash(
+              await addAddressLink(
+                state,
+                action,
+                void 0,
+                void 0,
+                _SmartWeave,
+                void 0,
+                kvs
+              )
             );
+            break;
           case "evolve":
-            return await addHash(
-              await evolve(state, action, void 0, void 0, _SmartWeave)
-            );
+            res = await addHash(await evolve(...writeParams));
+            break;
           case "migrate":
-            return await addHash(
-              await migrate(state, action, void 0, void 0, _SmartWeave)
-            );
+            res = await addHash(await migrate(...writeParams));
+            break;
           default:
             err(
               `No function supplied or function not recognised: "${action.input.function}"`
             );
+        }
+        if (!isNil(res)) {
+          for (let k in kvs)
+            await _SmartWeave.kv.put(k, kvs[k]);
+          return res;
         }
         return { state };
       }
@@ -16913,7 +17294,7 @@
     }
   });
 
-  // contracts/warp/contract.js
+  // contracts/weavedb-kv/contract.js
   var import_contract = __toESM(require_contract());
   async function handle(state, action) {
     return await (0, import_contract.handle)(state, action);
