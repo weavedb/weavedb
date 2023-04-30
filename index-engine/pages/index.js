@@ -130,33 +130,57 @@ const isErr = (store, order = 4) => {
   }
   return [err, where]
 }
+const alpha = "abcdefghijklmnopqrstuvwxyz".toUpperCase()
+const gen = type => {
+  if (type === "string") {
+    return map(() => alpha[Math.floor(Math.random() * alpha.length)])(
+      range(0, 3)
+    ).join("")
+  } else {
+    return Math.floor(Math.random() * 100)
+  }
+}
 
 const initial_order = 4
 let _his = []
 for (const i of range(0, initial_order * 5)) {
-  _his.push(Math.floor(Math.random() * 100))
+  _his.push(gen("number"))
 }
 let _his2 = []
+for (const i of range(0, initial_order * 5)) {
+  _his2.push(gen("string"))
+}
+
+console.log(_his2)
 let count = 0
 export default function Home() {
   const [auto, setAuto] = useState(false)
   const [store, setStore] = useState("{}")
   const [order, setOrder] = useState(initial_order)
   const [currentOrder, setCurrentOrder] = useState(initial_order)
+  const [currentType, setCurrentType] = useState("number")
   const [data_type, setDataType] = useState("number")
   const [number, setNumber] = useState("")
   const [his, setHis] = useState([])
   const [display, setDisplay] = useState("Box")
   const [initValues, setInitValues] = useState(clone(_his).join(","))
+  const [initValuesStr, setInitValuesStr] = useState(clone(_his2).join(","))
   const reset = async () => {
     if (order < 3) return alert("order must be >= 3")
     setCurrentOrder(order)
+    setCurrentType(data_type)
     count = 0
     tree = new BPT(order, data_type, setStore)
-    const arr = map(v => v * 1)(initValues.split(","))
+    const arr =
+      data_type === "number"
+        ? map(v => v * 1)(initValues.split(","))
+        : initValuesStr.split(",")
     ;(async () => {
       for (const n of arr) {
-        n < 0 ? await del(`id:${n * -1}`) : await insert(n)
+        ;(currentType === "number" && n < 0) ||
+        (currentType !== "number" && /^-/.test(n))
+          ? await del(`id:${n * -1}`)
+          : await insert(n)
       }
     })()
     setStore("{}")
@@ -179,7 +203,6 @@ export default function Home() {
     await tree.delete(key)
     delete ids[key]
   }
-
   const go = async () => {
     if (stop) return
     setTimeout(async () => {
@@ -191,7 +214,7 @@ export default function Home() {
         ) {
           await del()
         } else {
-          await insert(Math.floor(Math.random() * 100))
+          await insert(gen(currentType))
         }
         const [err] = isErr(tree.kv.store, order)
         !err ? go() : setAuto(true)
@@ -248,7 +271,7 @@ export default function Home() {
                 height="28px"
                 sx={{ borderRadius: "3px" }}
               >
-                {map(v => <option value={v}>{v}</option>)(["number"])}
+                {map(v => <option value={v}>{v}</option>)(["number", "string"])}
               </Select>
             </Flex>
           </Box>
@@ -279,18 +302,33 @@ export default function Home() {
           Initial Values (comma separeted)
         </Flex>
         <Flex mx={2} mb={2}>
-          <Input
-            onChange={e => setInitValues(e.target.value)}
-            placeholder="Order"
-            value={initValues}
-            height="auto"
-            flex={1}
-            bg="white"
-            fontSize="12px"
-            py={1}
-            px={3}
-            sx={{ borderRadius: "3px 0 0 3px" }}
-          />
+          {data_type === "string" ? (
+            <Input
+              onChange={e => setInitValuesStr(e.target.value)}
+              placeholder="Order"
+              value={initValuesStr}
+              height="auto"
+              flex={1}
+              bg="white"
+              fontSize="12px"
+              py={1}
+              px={3}
+              sx={{ borderRadius: "3px 0 0 3px" }}
+            />
+          ) : (
+            <Input
+              onChange={e => setInitValues(e.target.value)}
+              placeholder="Order"
+              value={initValues}
+              height="auto"
+              flex={1}
+              bg="white"
+              fontSize="12px"
+              py={1}
+              px={3}
+              sx={{ borderRadius: "3px 0 0 3px" }}
+            />
+          )}
         </Flex>
         <Flex
           align="center"
@@ -364,7 +402,7 @@ export default function Home() {
           color="white"
           onClick={async () => {
             if (err) return
-            const num = Math.ceil(Math.random() * 100)
+            const num = gen(currentType)
             await insert(num)
           }}
           sx={{
@@ -557,6 +595,7 @@ export default function Home() {
                     minW="16px"
                     minH="16px"
                     m={1}
+                    p={1}
                     as="span"
                     color="white"
                     bg={v.op === "del" ? "salmon" : "#6441AF"}
