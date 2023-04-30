@@ -42,7 +42,7 @@
     "url": "^0.11.0",
     "url-polyfill": "^1.1.12",
     "url-shim": "^1.0.1",
-    "warp-contracts": "^1.4.0",
+    "warp-contracts": "^1.4.1",
     "warp-contracts-lmdb": "^1.1.6",
     "warp-contracts-plugin-deploy": "^1.0.3",
     "warp-contracts-plugin-subscription": "^1.0.5",
@@ -57,7 +57,7 @@
     "node": ">=16.5"
   },
   "scripts": {
-    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet ct19J7KjFwRuyi5oaEoPnc7SZAHWpaZ3_Z7-rZXc_T8 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w",
+    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet n3vuY99TFxGn0ojoA8PfXUXgNbjwLO5LR0O9EOqSmj8 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w",
     "deploy-exm": "yarn build && node scripts/deployEXM.js mainnet",
     "test": "yarn build && mocha",
     "build": "yarn clean && node build.js && npm run cp && node scripts/mod.js",

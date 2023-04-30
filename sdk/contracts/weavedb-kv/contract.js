@@ -50,7 +50,7 @@ const { removeTrigger } = require("./actions/write/removeTrigger")
 
 const { cron, executeCron } = require("./lib/cron")
 const { err, isEvolving } = require("./lib/utils")
-const { includes, isNil } = require("ramda")
+const { includes, isNil, keys, filter, compose, match } = require("ramda")
 
 const writes = [
   "relay",
@@ -269,6 +269,13 @@ async function handle(state, action, _SmartWeave) {
   }
   if (!isNil(res)) {
     for (let k in kvs) await _SmartWeave.kv.put(k, kvs[k])
+    console.log(
+      compose(
+        filter(v => v.match(/^index\..+/) !== null),
+        keys
+      )(kvs)
+    )
+    console.log(kvs)
     return res
   }
   return { state }

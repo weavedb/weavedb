@@ -4078,14 +4078,6 @@ vm2@3.9.11:
     acorn "^8.7.0"
     acorn-walk "^8.2.0"
 
-vm2@3.9.15:
-  version "3.9.15"
-  resolved "https://registry.yarnpkg.com/vm2/-/vm2-3.9.15.tgz#c544e6a9bc31e4e40d2e5f532342cf799ea56a6e"
-  integrity sha512-XqNqknHGw2avJo13gbIwLNZUumvrSHc9mLqoadFZTpo3KaNEJoe1I0lqTFhRXmXD7WkLyG01aaraXdXT0pa4ag==
-  dependencies:
-    acorn "^8.7.0"
-    acorn-walk "^8.2.0"
-
 "warp-contracts-old@npm:warp-contracts@1.2.26":
   version "1.2.26"
   resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.2.26.tgz#9aaefeaa6139c5bf5d203d182d96c4337086ad52"
@@ -4107,10 +4099,10 @@ vm2@3.9.15:
     unzipit "^1.4.0"
     vm2 "3.9.11"
 
-warp-contracts@^1.4.0:
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.4.0.tgz#fcdf49fe527ab6d93b3b39c336ac1f1a278315af"
-  integrity sha512-A8H8rMvunzkud2Y5kTJPFAgizxUqJAfPBQjwE9R5gOpibJzsqkbk5lvm/LOBgCqCWKxPtuoQb+oPx/mQ83/L3A==
+warp-contracts@^1.4.1:
+  version "1.4.1"
+  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.4.1.tgz#ba4c0101eda170fe54c3bbfdd836252817786f72"
+  integrity sha512-NQE83O6waKKIH74oBoBITK5KQrA60WurnCFx4LCZ5tUSX683lodCHPeNbyuioFUBebfEULQRfUkcbmnCiKxoaA==
   dependencies:
     "@idena/vrf-js" "^1.0.1"
     archiver "^5.3.0"
@@ -4125,7 +4117,6 @@ warp-contracts@^1.4.0:
     safe-stable-stringify "2.4.1"
     stream-buffers "^3.0.2"
     unzipit "^1.4.0"
-    vm2 "3.9.15"
     warp-isomorphic "1.0.4"
     warp-wasm-metering "1.0.1"
 
@@ -4162,10 +4153,10 @@ warp-wasm-metering@1.0.1:
     leb128 "^0.0.4"
     warp-wasm-json-toolkit "1.0.2"
 
-weavedb-base@^0.26.10:
-  version "0.26.10"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.26.10.tgz#299ce971fbd6e371a8355efe85aeb3f1b57e8e4a"
-  integrity sha512-mcBIcyEaUp/3UI8au6nJpfuFW/lerJCEk2eCCNA2kgVmdBqDIANGsfdqtFElNcow58LafxHnyzjQ0aVrBK96RQ==
+weavedb-base@^0.27.0:
+  version "0.27.0"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.27.0.tgz#5b71a8199615a2a0374454930d7c0862810ca518"
+  integrity sha512-s60c3fiZ5KwmRWFWfYstB1pbBCiD//pTduUHwGTmki6wbD6fmXyVaaLV0cuszioIt1LhPvtzhDA0DLr3PgbaGQ==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"
