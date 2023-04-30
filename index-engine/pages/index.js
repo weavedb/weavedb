@@ -130,9 +130,12 @@ const isErr = (store, order = 4) => {
   }
   return [err, where]
 }
+
 const alpha = "abcdefghijklmnopqrstuvwxyz".toUpperCase()
 const gen = type => {
-  if (type === "string") {
+  if (type === "boolean") {
+    return Math.random() > 0.5 ? true : false
+  } else if (type === "string") {
     return map(() => alpha[Math.floor(Math.random() * alpha.length)])(
       range(0, 3)
     ).join("")
@@ -151,6 +154,11 @@ for (const i of range(0, initial_order * 5)) {
   _his2.push(gen("string"))
 }
 
+let _his3 = []
+for (const i of range(0, initial_order * 5)) {
+  _his3.push(gen("boolean"))
+}
+
 console.log(_his2)
 let count = 0
 export default function Home() {
@@ -165,6 +173,7 @@ export default function Home() {
   const [display, setDisplay] = useState("Box")
   const [initValues, setInitValues] = useState(clone(_his).join(","))
   const [initValuesStr, setInitValuesStr] = useState(clone(_his2).join(","))
+  const [initValuesBool, setInitValuesBool] = useState(clone(_his3).join(","))
   const reset = async () => {
     if (order < 3) return alert("order must be >= 3")
     setCurrentOrder(order)
@@ -174,13 +183,21 @@ export default function Home() {
     const arr =
       data_type === "number"
         ? map(v => v * 1)(initValues.split(","))
-        : initValuesStr.split(",")
+        : data_type === "string"
+        ? initValuesStr.split(",")
+        : initValuesBool.split(",")
     ;(async () => {
       for (const n of arr) {
         ;(currentType === "number" && n < 0) ||
         (currentType !== "number" && /^-/.test(n))
           ? await del(`id:${n * -1}`)
-          : await insert(n)
+          : await insert(
+              data_type === "boolean"
+                ? typeof n === "string"
+                  ? n === "true"
+                  : n
+                : n
+            )
       }
     })()
     setStore("{}")
@@ -271,7 +288,11 @@ export default function Home() {
                 height="28px"
                 sx={{ borderRadius: "3px" }}
               >
-                {map(v => <option value={v}>{v}</option>)(["number", "string"])}
+                {map(v => <option value={v}>{v}</option>)([
+                  "number",
+                  "string",
+                  "boolean",
+                ])}
               </Select>
             </Flex>
           </Box>
@@ -302,7 +323,20 @@ export default function Home() {
           Initial Values (comma separeted)
         </Flex>
         <Flex mx={2} mb={2}>
-          {data_type === "string" ? (
+          {data_type === "boolean" ? (
+            <Input
+              onChange={e => setInitValuesBool(e.target.value)}
+              placeholder="Order"
+              value={initValuesBool}
+              height="auto"
+              flex={1}
+              bg="white"
+              fontSize="12px"
+              py={1}
+              px={3}
+              sx={{ borderRadius: "3px 0 0 3px" }}
+            />
+          ) : data_type === "string" ? (
             <Input
               onChange={e => setInitValuesStr(e.target.value)}
               placeholder="Order"
@@ -519,6 +553,10 @@ export default function Home() {
                                 "string",
                               ])
                                 ? v3.val ?? v3.child
+                                : typeof (v3.val ?? v3.child) === "boolean"
+                                ? v3.val
+                                  ? "true"
+                                  : "false"
                                 : "-"}
                             </Flex>
                           )
@@ -601,7 +639,11 @@ export default function Home() {
                     bg={v.op === "del" ? "salmon" : "#6441AF"}
                     sx={{ borderRadius: "3px", wordBreak: "break-allx" }}
                   >
-                    {v.val}
+                    {typeof v.val === "boolean"
+                      ? v.val
+                        ? "true"
+                        : "false"
+                      : typeof v.val}
                   </Flex>
                 ))(his)}
           </Flex>
