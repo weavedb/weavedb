@@ -5082,14 +5082,6 @@ vm2@3.9.11:
     acorn "^8.7.0"
     acorn-walk "^8.2.0"
 
-vm2@3.9.15:
-  version "3.9.15"
-  resolved "https://registry.yarnpkg.com/vm2/-/vm2-3.9.15.tgz#c544e6a9bc31e4e40d2e5f532342cf799ea56a6e"
-  integrity sha512-XqNqknHGw2avJo13gbIwLNZUumvrSHc9mLqoadFZTpo3KaNEJoe1I0lqTFhRXmXD7WkLyG01aaraXdXT0pa4ag==
-  dependencies:
-    acorn "^8.7.0"
-    acorn-walk "^8.2.0"
-
 warp-contracts-lmdb@^1.1.9:
   version "1.1.9"
   resolved "https://registry.yarnpkg.com/warp-contracts-lmdb/-/warp-contracts-lmdb-1.1.9.tgz#56654174bf9debc3d38e79c5a0ecd25a5b51462e"
@@ -5128,10 +5120,10 @@ warp-contracts-pubsub@^1.0.5:
     isomorphic-ws "^5.0.0"
     ws "^8.11.0"
 
-warp-contracts@^1.4.0:
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.4.0.tgz#fcdf49fe527ab6d93b3b39c336ac1f1a278315af"
-  integrity sha512-A8H8rMvunzkud2Y5kTJPFAgizxUqJAfPBQjwE9R5gOpibJzsqkbk5lvm/LOBgCqCWKxPtuoQb+oPx/mQ83/L3A==
+warp-contracts@^1.4.1:
+  version "1.4.1"
+  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.4.1.tgz#ba4c0101eda170fe54c3bbfdd836252817786f72"
+  integrity sha512-NQE83O6waKKIH74oBoBITK5KQrA60WurnCFx4LCZ5tUSX683lodCHPeNbyuioFUBebfEULQRfUkcbmnCiKxoaA==
   dependencies:
     "@idena/vrf-js" "^1.0.1"
     archiver "^5.3.0"
@@ -5146,7 +5138,6 @@ warp-contracts@^1.4.0:
     safe-stable-stringify "2.4.1"
     stream-buffers "^3.0.2"
     unzipit "^1.4.0"
-    vm2 "3.9.15"
     warp-isomorphic "1.0.4"
     warp-wasm-metering "1.0.1"
 
@@ -5188,10 +5179,10 @@ weak-lru-cache@^1.2.2:
   resolved "https://registry.yarnpkg.com/weak-lru-cache/-/weak-lru-cache-1.2.2.tgz#fdbb6741f36bae9540d12f480ce8254060dccd19"
   integrity sha512-DEAoo25RfSYMuTGc9vPJzZcZullwIqRDSI9LOy+fkCJPi6hykCnfKaXTuPBDuXAUcqHXyOgFtHNp/kB2FjYHbw==
 
-weavedb-base@^0.26.10:
-  version "0.26.10"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.26.10.tgz#299ce971fbd6e371a8355efe85aeb3f1b57e8e4a"
-  integrity sha512-mcBIcyEaUp/3UI8au6nJpfuFW/lerJCEk2eCCNA2kgVmdBqDIANGsfdqtFElNcow58LafxHnyzjQ0aVrBK96RQ==
+weavedb-base@^0.27.0:
+  version "0.27.0"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.27.0.tgz#5b71a8199615a2a0374454930d7c0862810ca518"
+  integrity sha512-s60c3fiZ5KwmRWFWfYstB1pbBCiD//pTduUHwGTmki6wbD6fmXyVaaLV0cuszioIt1LhPvtzhDA0DLr3PgbaGQ==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"
@@ -5214,10 +5205,10 @@ weavedb-contracts@^0.27.1:
     md5 "^2.3.0"
     ramda "^0.28.0"
 
-weavedb-sdk@^0.27.4:
-  version "0.27.4"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.27.4.tgz#1352c44c5df21a25f3d2fa895b6619067759dae9"
-  integrity sha512-OcYzoc42WsMGpktp8WA2Bv/au1hy9941kxrNZ+ZUS3wqb89jVB+EfJLpl2RYgop1PgSR+hL4MBaquI4rZVzaCw==
+weavedb-sdk@^0.27.5:
+  version "0.27.5"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.27.5.tgz#659fe0dffbb59b2642dd290e76ca56460b6468df"
+  integrity sha512-lFUxvDwXPVQE6lZ6nWWE84DoLyu63S92oxQ6cdVa38diKAauHAvQdRa0ISCvUhdW08ULld9qELdlV5WHBaWaOA==
   dependencies:
     "@lit-protocol/sdk-browser" "^1.3.3"
     "@metamask/legacy-web3" "^2.0.0"
@@ -5227,9 +5218,9 @@ weavedb-sdk@^0.27.4:
     compare-versions "^6.0.0-rc.1"
     md5 "^2.3.0"
     ramda "^0.28.0"
-    warp-contracts "^1.4.0"
+    warp-contracts "^1.4.1"
     warp-contracts-old "npm:warp-contracts@1.2.26"
-    weavedb-base "^0.26.10"
+    weavedb-base "^0.27.0"
     weavedb-contracts "^0.27.1"
 
 web-streams-polyfill@^3.0.3:
