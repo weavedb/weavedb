@@ -181,10 +181,11 @@ class BPT {
             isMerged = true
           }
         }
+        // this might never happen
         if (!isMerged) {
           console.log("this is rare....")
         }
-      } else {
+      } else if (node.vals.length === 0) {
         let root = null
         for (const c of node.children) {
           let child = await this.get(c)
@@ -298,9 +299,12 @@ class BPT {
             isMerged = true
           }
         }
+
+        // this might never happen
         if (!isMerged) {
           console.log("now this is a huge problem and rare")
         }
+
         await this.putNode(parent)
       } else if (node.vals.length === 0) {
         // removing root, root can have any number of vals
