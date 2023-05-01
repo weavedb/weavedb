@@ -36,6 +36,7 @@ let init = false
 const build = store => {
   let _s = JSON.parse(store)
   let arrs = []
+  let nodemap = {}
   const add = (node, depth = 0) => {
     arrs[depth] ??= []
     node.arr = []
@@ -47,10 +48,11 @@ const build = store => {
     }
     if (!isNil(node.children?.[i])) node.arr.push({ child: node.children[i] })
     arrs[depth].push(node)
+    nodemap[node.id] = node
     for (const v of node.children || []) add(_s[v], depth + 1)
   }
   if (!isNil(_s["root"])) add(_s[_s["root"]])
-  return arrs
+  return { arrs, nodemap }
 }
 
 let ids = {}
@@ -58,10 +60,57 @@ let stop = false
 const isErr = (store, order = 4) => {
   let err = false
   let where = null
-  let arrs = build(typeof store === "object" ? JSON.stringify(store) : store)
+  let { nodemap, arrs } = build(
+    typeof store === "object" ? JSON.stringify(store) : store
+  )
+  let i = 0
   for (const v of arrs) {
     let num = null
+    let i2 = 0
     for (const v2 of v) {
+      // check connections
+      // top
+      if (i !== 0) {
+        if (isNil(v2.parent) || !includes(v2.id, nodemap[v2.parent].children)) {
+          err = true
+          where = { arr: pluck("val", v2.arr), id: v2.id, type: "link-top" }
+          break
+        }
+      } else {
+        if (!isNil(v2.parent)) {
+          err = true
+          where = { arr: pluck("val", v2.arr), id: v2.id, type: "link-top" }
+          break
+        }
+      }
+      // left
+      if (i2 > 0) {
+        if (isNil(v2.prev) || nodemap[v2.prev].next !== v2.id) {
+          err = true
+          where = { arr: pluck("val", v2.arr), id: v2.id, type: "link-left" }
+          break
+        }
+      } else {
+        if (!isNil(v2.prev)) {
+          err = true
+          where = { arr: pluck("val", v2.arr), id: v2.id, type: "link-left" }
+          break
+        }
+      }
+      // right
+      if (i2 < v.length - 1) {
+        if (isNil(v2.next) || nodemap[v2.next].prev !== v2.id) {
+          err = true
+          where = { arr: pluck("val", v2.arr), id: v2.id, type: "right-left" }
+          break
+        }
+      } else {
+        if (!isNil(v2.next)) {
+          err = true
+          where = { arr: pluck("val", v2.arr), id: v2.id, type: "right-left" }
+          break
+        }
+      }
       for (const v3 of v2.arr) {
         if (isNil(v3.child)) {
           if (num === null || num <= v3.val) {
@@ -73,8 +122,10 @@ const isErr = (store, order = 4) => {
           }
         }
       }
+      i2++
       if (err) break
     }
+    i++
   }
   const min_vals = Math.ceil(order / 2) - 1
   if (!err) {
@@ -144,7 +195,7 @@ const gen = type => {
   }
 }
 
-const initial_order = 4
+const initial_order = 5
 let _his = []
 for (const i of range(0, initial_order * 5)) {
   _his.push(gen("number"))
@@ -159,7 +210,6 @@ for (const i of range(0, initial_order * 5)) {
   _his3.push(gen("boolean"))
 }
 
-console.log(_his2)
 let count = 0
 export default function Home() {
   const [auto, setAuto] = useState(false)
@@ -247,7 +297,7 @@ export default function Home() {
       reset()
     }
   }, [])
-  let arrs = build(store)
+  let { nodemap, arrs } = build(store)
   const addNumber = async () => {
     if (number !== "") {
       await insert(number)
@@ -643,7 +693,7 @@ export default function Home() {
                       ? v.val
                         ? "true"
                         : "false"
-                      : typeof v.val}
+                      : v.val}
                   </Flex>
                 ))(his)}
           </Flex>
