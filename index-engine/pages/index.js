@@ -70,6 +70,8 @@ export default function Home() {
   const [str, setStr] = useState("")
   const [obj, setObj] = useState("")
   const [his, setHis] = useState([])
+  const [fields, setFields] = useState("age:asc,name:desc")
+  const [currentFields, setCurrentFields] = useState("age:asc,name:desc")
   const [display, setDisplay] = useState("Box")
   const [initValues, setInitValues] = useState(clone(_his).join(","))
   const [initValuesStr, setInitValuesStr] = useState(clone(_his2).join(","))
@@ -87,7 +89,10 @@ export default function Home() {
     isDel = false
     last_id = null
     prev_count = 0
-    tree = new BPT(order, data_type, setStore)
+    const sort_fields =
+      data_type === "object" ? map(split(":"))(fields.split(",")) : null
+    setCurrentFields(sort_fields)
+    tree = new BPT(order, sort_fields ?? data_type, setStore)
     const arr =
       data_type === "number"
         ? map(v => v * 1)(initValues.split(","))
@@ -349,6 +354,27 @@ export default function Home() {
             />
           )}
         </Flex>
+        {data_type === "object" ? (
+          <>
+            <Flex mx={2} color="#666" mb={1} fontSize="10px">
+              <Box>Sort Fields (e.g. age=asc,name=desc)</Box>
+            </Flex>
+            <Flex mx={2} mb={2}>
+              <Input
+                onChange={e => setFields(e.target.value)}
+                placeholder="Order"
+                value={fields}
+                height="auto"
+                flex={1}
+                bg="white"
+                fontSize="12px"
+                py={1}
+                px={3}
+                sx={{ borderRadius: "3px 0 0 3px" }}
+              />
+            </Flex>
+          </>
+        ) : null}
         <Flex
           align="center"
           p={1}
@@ -525,7 +551,7 @@ export default function Home() {
       >
         <Box flex={1} p={4}>
           <Box>
-            {map(v => (
+            {addIndex(map)((v, i) => (
               <Flex justify="center" fontSize="10px">
                 {map(v2 => {
                   return (
@@ -575,12 +601,14 @@ export default function Home() {
                                 borderY: "1px solid #333",
                                 borderRight: "1px solid #333",
                                 borderLeft: i3 === 0 ? "1px solid #333" : "",
-                                cursor: "pointer",
+                                cursor:
+                                  i === arrs.length - 1 ? "pointer" : "default",
                                 ":hover": { opacity: 0.75 },
                               }}
                               title={v3.key ?? null}
                               onClick={async () => {
                                 if (err) return
+                                if (i !== arrs.length - 1) return
                                 if (!isNil(v3.key)) await del(v3.key)
                               }}
                             >
