@@ -10,6 +10,7 @@ import { nanoid } from "nanoid"
 import { useEffect, useState } from "react"
 import {
   split,
+  join,
   tail,
   values,
   compose,
@@ -584,7 +585,12 @@ export default function Home() {
                               ? "true"
                               : "false"
                             : typeof v3val === "object"
-                            ? `${v3val.name}:${v3val.age}:${v3val.married}`
+                            ? i === arrs.length - 1
+                              ? `${v3val.name}:${v3val.age}:${v3val.married}`
+                              : compose(
+                                  join(":"),
+                                  map(v4 => v3val[v4[0]])
+                                )(currentFields)
                             : "-"
                           return (
                             <Flex
