@@ -1,7 +1,17 @@
-import { Select, Input, Flex, Box, ChakraProvider } from "@chakra-ui/react"
+import {
+  Select,
+  Textarea,
+  Input,
+  Flex,
+  Box,
+  ChakraProvider,
+} from "@chakra-ui/react"
 import { nanoid } from "nanoid"
 import { useEffect, useState } from "react"
 import {
+  split,
+  tail,
+  values,
   compose,
   flatten,
   pluck,
@@ -38,6 +48,11 @@ let _his3 = []
 for (const i of range(0, initial_order * 5)) {
   _his3.push(gen("boolean"))
 }
+let _his4 = []
+for (const i of range(0, initial_order * 5)) {
+  _his4.push(gen("object"))
+}
+
 let len = 0
 let prev_count = 0
 let isDel = false
@@ -51,11 +66,19 @@ export default function Home() {
   const [currentType, setCurrentType] = useState("number")
   const [data_type, setDataType] = useState("number")
   const [number, setNumber] = useState("")
+  const [bool, setBool] = useState("true")
+  const [str, setStr] = useState("")
+  const [obj, setObj] = useState("")
   const [his, setHis] = useState([])
   const [display, setDisplay] = useState("Box")
   const [initValues, setInitValues] = useState(clone(_his).join(","))
   const [initValuesStr, setInitValuesStr] = useState(clone(_his2).join(","))
   const [initValuesBool, setInitValuesBool] = useState(clone(_his3).join(","))
+  const [initValuesObject, setInitValuesObject] = useState(
+    "name,age,married\n" +
+      map(v => `${v.name},${v.age},${v.married}`)(clone(_his4)).join("\n")
+  )
+
   const reset = async () => {
     if (order < 3) return alert("order must be >= 3")
     setCurrentOrder(order)
@@ -68,6 +91,13 @@ export default function Home() {
     const arr =
       data_type === "number"
         ? map(v => v * 1)(initValues.split(","))
+        : data_type === "object"
+        ? compose(
+            map(v => ({ name: v[0], age: v[1] * 1, married: v[2] === "true" })),
+            map(split(",")),
+            tail,
+            split("\n")
+          )(initValuesObject)
         : data_type === "string"
         ? initValuesStr.split(",")
         : initValuesBool.split(",")
@@ -90,6 +120,7 @@ export default function Home() {
     _his2 = []
     ids = {}
   }
+
   const insert = async val => {
     const id = `id:${(++count).toString()}`
     ids[id] = true
@@ -108,6 +139,7 @@ export default function Home() {
     )
     len = _len
   }
+
   const del = async key => {
     const _keys = keys(ids)
     key = isNil(key) ? _keys[Math.floor(Math.random() * _keys.length)] : key
@@ -127,6 +159,7 @@ export default function Home() {
     )
     len = _len
   }
+
   const go = async () => {
     if (stop) return
     setTimeout(async () => {
@@ -160,16 +193,39 @@ export default function Home() {
       reset()
     }
   }, [])
+
   let { nodemap, arrs } = build(store)
   const addNumber = async () => {
     if (number !== "") {
-      await insert(number)
+      await insert(number * 1)
       setNumber("")
       setTimeout(() => {
         document.getElementById("number").focus()
       }, 100)
     }
   }
+  const addBool = async () => await insert(bool)
+  const addString = async () => {
+    if (str !== "") {
+      console.log(str)
+      await insert(str)
+      setStr("")
+      setTimeout(() => {
+        document.getElementById("number").focus()
+      }, 100)
+    }
+  }
+  const addObject = async () => {
+    const sp = obj.split(",")
+    if (sp.length >= 3) {
+      await insert({ age: sp[1] * 1, name: sp[0], married: sp[2] === "true" })
+      setObj("")
+      setTimeout(() => {
+        document.getElementById("number").focus()
+      }, 100)
+    }
+  }
+
   const [err, where] = isErr(store, currentOrder, last_id, isDel, prev_count)
   return (
     <ChakraProvider>
@@ -195,7 +251,6 @@ export default function Home() {
               <Select
                 onChange={e => setDataType(e.target.value)}
                 value={data_type}
-                height="auto"
                 bg="white"
                 fontSize="12px"
                 height="28px"
@@ -205,6 +260,7 @@ export default function Home() {
                   "number",
                   "string",
                   "boolean",
+                  "object",
                 ])}
               </Select>
             </Flex>
@@ -233,7 +289,10 @@ export default function Home() {
           </Box>
         </Flex>
         <Flex mx={2} color="#666" mb={1} fontSize="10px">
-          Initial Values (comma separeted)
+          <Box>
+            Initial Values (
+            {currentType === "object" ? "csv" : "comma separeted"})
+          </Box>
         </Flex>
         <Flex mx={2} mb={2}>
           {data_type === "boolean" ? (
@@ -254,6 +313,19 @@ export default function Home() {
               onChange={e => setInitValuesStr(e.target.value)}
               placeholder="Order"
               value={initValuesStr}
+              height="auto"
+              flex={1}
+              bg="white"
+              fontSize="12px"
+              py={1}
+              px={3}
+              sx={{ borderRadius: "3px 0 0 3px" }}
+            />
+          ) : data_type === "object" ? (
+            <Textarea
+              onChange={e => setInitValuesObject(e.target.value)}
+              placeholder="Order"
+              value={initValuesObject}
               height="auto"
               flex={1}
               bg="white"
@@ -300,27 +372,62 @@ export default function Home() {
           Add Value
         </Flex>
         <Flex mx={2} mb={2}>
-          <Input
-            onChange={e => {
-              const num = e.target.value * 1
-              if (!isNaN(num)) setNumber(num)
-            }}
-            placeholder={data_type}
-            value={number}
-            height="auto"
-            flex={1}
-            bg="white"
-            fontSize="12px"
-            id="number"
-            py={1}
-            px={3}
-            sx={{ borderRadius: "3px 0 0 3px" }}
-            onKeyDown={async e => {
-              if (e.code === "Enter") {
-                addNumber()
+          {currentType !== "boolean" ? (
+            <Input
+              onChange={e => {
+                if (currentType === "number") {
+                  const num = e.target.value * 1
+                  if (!isNaN(num)) setNumber(num)
+                } else if (currentType === "string") {
+                  setStr(e.target.value)
+                } else {
+                  setObj(e.target.value)
+                }
+              }}
+              placeholder={
+                data_type === "object" ? "name,age,married" : data_type
               }
-            }}
-          />
+              value={
+                currentType === "number"
+                  ? number
+                  : currentType === "string"
+                  ? str
+                  : obj
+              }
+              height="auto"
+              flex={1}
+              bg="white"
+              fontSize="12px"
+              id="number"
+              py={1}
+              px={3}
+              sx={{ borderRadius: "3px 0 0 3px" }}
+              onKeyDown={async e => {
+                if (e.code === "Enter") {
+                  currentType === "number"
+                    ? addNumber()
+                    : currentType === "string"
+                    ? addString()
+                    : addObject()
+                }
+              }}
+            />
+          ) : (
+            <Select
+              onChange={e => {
+                setBool(e.target.value)
+              }}
+              value={bool}
+              height="28px"
+              flex={1}
+              bg="white"
+              fontSize="12px"
+              sx={{ borderRadius: "3px 0 0 3px" }}
+            >
+              <option value={"true"}>True</option>
+              <option value={"false"}>False</option>
+            </Select>
+          )}
           <Flex
             width="80px"
             align="center"
@@ -330,7 +437,13 @@ export default function Home() {
             color="white"
             onClick={async () => {
               if (err) return
-              addNumber()
+              currentType === "number"
+                ? addNumber()
+                : currentType === "string"
+                ? addString()
+                : currentType === "boolean"
+                ? addBool()
+                : addObject()
             }}
             sx={{
               borderRadius: "0 3px 3px 0",
@@ -437,6 +550,16 @@ export default function Home() {
                           {v2.prev ?? "-"}
                         </Box>
                         {addIndex(map)((v3, i3) => {
+                          let v3val = v3.val ?? v3.child
+                          let val = includes(typeof v3val, ["number", "string"])
+                            ? v3val
+                            : typeof v3val === "boolean"
+                            ? v3val
+                              ? "true"
+                              : "false"
+                            : typeof v3val === "object"
+                            ? `${v3val.name}:${v3val.age}:${v3val.married}`
+                            : "-"
                           return (
                             <Flex
                               px={1}
@@ -461,16 +584,7 @@ export default function Home() {
                                 if (!isNil(v3.key)) await del(v3.key)
                               }}
                             >
-                              {includes(typeof (v3.val ?? v3.child), [
-                                "number",
-                                "string",
-                              ])
-                                ? v3.val ?? v3.child
-                                : typeof (v3.val ?? v3.child) === "boolean"
-                                ? v3.val
-                                  ? "true"
-                                  : "false"
-                                : "-"}
+                              {val}
                             </Flex>
                           )
                         })(v2.arr)}
@@ -536,7 +650,14 @@ export default function Home() {
           >
             {display === "JSON"
               ? `[ ${map(
-                  v => `${v.op === "del" ? `-${v.id.split(":")[1]}` : v.val}`
+                  v =>
+                    `${
+                      v.op === "del"
+                        ? `-${v.id.split(":")[1]}`
+                        : currentType === "object"
+                        ? `${v.val.name},${v.val.age},${v.val.married}`
+                        : v.val
+                    }`
                 )(his).join(", ")} ]`
               : map(v => (
                   <Flex
@@ -556,6 +677,8 @@ export default function Home() {
                       ? v.val
                         ? "true"
                         : "false"
+                      : typeof v.val === "object"
+                      ? v.val.age
                       : v.val}
                   </Flex>
                 ))(his)}

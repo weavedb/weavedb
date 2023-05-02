@@ -12,15 +12,22 @@ const {
   range,
 } = require("ramda")
 const alpha = "abcdefghijklmnopqrstuvwxyz".toUpperCase()
+const getChars = (n = 3) =>
+  map(() => alpha[Math.floor(Math.random() * alpha.length)])(range(0, n)).join(
+    ""
+  )
+const getNum = (n = 100) => Math.floor(Math.random() * n)
+const getBool = () => (Math.random() > 0.5 ? true : false)
+
 const gen = type => {
   if (type === "boolean") {
-    return Math.random() > 0.5 ? true : false
+    return getBool()
   } else if (type === "string") {
-    return map(() => alpha[Math.floor(Math.random() * alpha.length)])(
-      range(0, 3)
-    ).join("")
+    return getChars(3)
+  } else if (type === "object") {
+    return { name: getChars(), age: getNum(), married: getBool() }
   } else {
-    return Math.floor(Math.random() * 100)
+    return getNum()
   }
 }
 
@@ -45,6 +52,7 @@ const build = store => {
   if (!isNil(_s["root"])) add(_s[_s["root"]])
   return { arrs, nodemap }
 }
+
 const isErr = (store, order = 4, id, isDel, prev_count) => {
   let err = false
   let where = null
