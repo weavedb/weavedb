@@ -1,3 +1,4 @@
+const { isNil } = require("ramda")
 class KV {
   constructor(setStore) {
     this.store = {}
@@ -8,11 +9,15 @@ class KV {
   }
   async put(key, val) {
     this.store[key] = val
-    this.setStore(JSON.stringify(this.store))
+    if (!isNil(this.setStore)) {
+      this.setStore(JSON.stringify(this.store))
+    }
   }
   async del(key) {
     delete this.store[key]
-    this.setStore(JSON.stringify(this.store))
+    if (!isNil(this.setStore)) {
+      this.setStore(JSON.stringify(this.store))
+    }
   }
 }
 

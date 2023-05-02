@@ -2,198 +2,27 @@ import { Select, Input, Flex, Box, ChakraProvider } from "@chakra-ui/react"
 import { nanoid } from "nanoid"
 import { useEffect, useState } from "react"
 import {
-  length,
-  sum,
   compose,
-  reject,
+  flatten,
+  pluck,
+  last,
   clone,
   append,
-  pluck,
   includes,
   addIndex,
   range,
-  splitAt,
-  tail,
-  indexOf,
-  last,
-  splitWhen,
-  lt,
-  objOf,
-  flatten,
-  zip,
-  median,
-  prop,
   isNil,
   map,
   keys,
 } from "ramda"
 
-const KV = require("../lib/KV")
 const BPT = require("../lib/BPT")
-
+const { gen, isErr, build } = require("../lib/utils")
 let tree = null
 let init = false
-const build = store => {
-  let _s = JSON.parse(store)
-  let arrs = []
-  let nodemap = {}
-  const add = (node, depth = 0) => {
-    arrs[depth] ??= []
-    node.arr = []
-    let i = 0
-    for (const v of node.vals) {
-      if (!isNil(node.children?.[i])) node.arr.push({ child: node.children[i] })
-      node.arr.push({ key: v, val: node.leaf ? _s[`data/${v}`] : v })
-      i++
-    }
-    if (!isNil(node.children?.[i])) node.arr.push({ child: node.children[i] })
-    arrs[depth].push(node)
-    nodemap[node.id] = node
-    for (const v of node.children || []) add(_s[v], depth + 1)
-  }
-  if (!isNil(_s["root"])) add(_s[_s["root"]])
-  return { arrs, nodemap }
-}
 
 let ids = {}
 let stop = false
-const isErr = (store, order = 4) => {
-  let err = false
-  let where = null
-  let { nodemap, arrs } = build(
-    typeof store === "object" ? JSON.stringify(store) : store
-  )
-  let i = 0
-  for (const v of arrs) {
-    let num = null
-    let i2 = 0
-    for (const v2 of v) {
-      // check connections
-      // top
-      if (i !== 0) {
-        if (isNil(v2.parent) || !includes(v2.id, nodemap[v2.parent].children)) {
-          err = true
-          where = { arr: pluck("val", v2.arr), id: v2.id, type: "link-top" }
-          break
-        }
-      } else {
-        if (!isNil(v2.parent)) {
-          err = true
-          where = { arr: pluck("val", v2.arr), id: v2.id, type: "link-top" }
-          break
-        }
-      }
-      // left
-      if (i2 > 0) {
-        if (isNil(v2.prev) || nodemap[v2.prev].next !== v2.id) {
-          err = true
-          where = { arr: pluck("val", v2.arr), id: v2.id, type: "link-left" }
-          break
-        }
-      } else {
-        if (!isNil(v2.prev)) {
-          err = true
-          where = { arr: pluck("val", v2.arr), id: v2.id, type: "link-left" }
-          break
-        }
-      }
-      // right
-      if (i2 < v.length - 1) {
-        if (isNil(v2.next) || nodemap[v2.next].prev !== v2.id) {
-          err = true
-          where = { arr: pluck("val", v2.arr), id: v2.id, type: "right-left" }
-          break
-        }
-      } else {
-        if (!isNil(v2.next)) {
-          err = true
-          where = { arr: pluck("val", v2.arr), id: v2.id, type: "right-left" }
-          break
-        }
-      }
-      for (const v3 of v2.arr) {
-        if (isNil(v3.child)) {
-          if (num === null || num <= v3.val) {
-            num = v3.val
-          } else {
-            err = true
-            where = { arr: pluck("val", v2.arr), id: v2.id, type: "sort" }
-            break
-          }
-        }
-      }
-      i2++
-      if (err) break
-    }
-    i++
-  }
-  const min_vals = Math.ceil(order / 2) - 1
-  if (!err) {
-    let mins = {}
-    if (arrs.length > 1) {
-      for (let i = arrs.length - 1; i >= 0; i--) {
-        if (i !== arrs.length - 1) {
-          if (
-            compose(sum, map(length), pluck("children"))(arrs[i]) !==
-            arrs[i + 1].length
-          ) {
-            err = true
-            where = {
-              arr: [],
-              id: `arr:${i}`,
-              type: `diff children`,
-            }
-            break
-          }
-        }
-        for (let node of arrs[i]) {
-          if (i !== 0 && node.vals.length < min_vals) {
-            err = true
-            where = {
-              arr: node.vals,
-              id: node.id,
-              type: `min keys`,
-            }
-            break
-          }
-          mins[node.id] = compose(reject(isNil), pluck("val"))(node.arr)[0]
-          if (!node.leaf) {
-            mins[node.id] = mins[node.children[0]]
-            let i2 = 0
-            for (let v of node.vals) {
-              if (v > mins[node.children[i2 + 1]]) {
-                err = true
-                where = {
-                  arr: node.vals,
-                  id: node.id,
-                  type: `min index (${i2})`,
-                }
-                break
-              }
-              i2++
-            }
-            if (err) break
-          }
-        }
-        if (err) break
-      }
-    }
-  }
-  return [err, where]
-}
-
-const alpha = "abcdefghijklmnopqrstuvwxyz".toUpperCase()
-const gen = type => {
-  if (type === "boolean") {
-    return Math.random() > 0.5 ? true : false
-  } else if (type === "string") {
-    return map(() => alpha[Math.floor(Math.random() * alpha.length)])(
-      range(0, 3)
-    ).join("")
-  } else {
-    return Math.floor(Math.random() * 100)
-  }
-}
 
 const initial_order = 5
 let _his = []
@@ -209,7 +38,10 @@ let _his3 = []
 for (const i of range(0, initial_order * 5)) {
   _his3.push(gen("boolean"))
 }
-
+let len = 0
+let prev_count = 0
+let isDel = false
+let last_id = null
 let count = 0
 export default function Home() {
   const [auto, setAuto] = useState(false)
@@ -229,6 +61,9 @@ export default function Home() {
     setCurrentOrder(order)
     setCurrentType(data_type)
     count = 0
+    isDel = false
+    last_id = null
+    prev_count = 0
     tree = new BPT(order, data_type, setStore)
     const arr =
       data_type === "number"
@@ -258,17 +93,39 @@ export default function Home() {
   const insert = async val => {
     const id = `id:${(++count).toString()}`
     ids[id] = true
+    prev_count = len
+    isDel = false
+    last_id = id
     await tree.insert(id, val)
     _his2 = append({ val, op: "insert", id }, _his2)
     setHis(_his2)
+    const [err, where, arrs, _len, _vals] = isErr(
+      tree.kv.store,
+      order,
+      last_id,
+      isDel,
+      prev_count
+    )
+    len = _len
   }
   const del = async key => {
     const _keys = keys(ids)
     key = isNil(key) ? _keys[Math.floor(Math.random() * _keys.length)] : key
+    last_id = key
+    prev_count = len
     _his2 = append({ val: await tree.data(key), op: "del", id: key }, _his2)
     setHis(_his2)
+    isDel = true
     await tree.delete(key)
     delete ids[key]
+    const [err, where, arrs, _len, _vals] = isErr(
+      tree.kv.store,
+      order,
+      last_id,
+      isDel,
+      prev_count
+    )
+    len = _len
   }
   const go = async () => {
     if (stop) return
@@ -283,7 +140,13 @@ export default function Home() {
         } else {
           await insert(gen(currentType))
         }
-        const [err] = isErr(tree.kv.store, order)
+        const [err, where, arrs, len, vals] = isErr(
+          tree.kv.store,
+          order,
+          last_id,
+          isDel,
+          prev_count
+        )
         !err ? go() : setAuto(true)
       } catch (e) {
         console.log(e)
@@ -307,7 +170,7 @@ export default function Home() {
       }, 100)
     }
   }
-  const [err, where] = isErr(store, currentOrder)
+  const [err, where] = isErr(store, currentOrder, last_id, isDel, prev_count)
   return (
     <ChakraProvider>
       <style global jsx>{`
@@ -534,7 +397,7 @@ export default function Home() {
               <Box mx={2} as="span" sx={{ textDecoration: "underline" }}>
                 {where.type}
               </Box>
-              [ {where.arr.join(", ")} ]
+              [ {typeof where === "string" ? where : where.arr.join(", ")} ]
             </Box>
           ) : (
             "Fine!"
