@@ -22,10 +22,10 @@ const {
 const KV = require("./KV")
 
 class BPT {
-  constructor(order = 4, data_type = "number", setStore) {
+  constructor(order = 4, sort_fields = "number", setStore) {
     this.kv = new KV(setStore)
     this.order = order
-    this.data_type = data_type
+    this.sort_fields = sort_fields
     this.max_vals = this.order - 1
     this.min_vals = Math.ceil(this.order / 2) - 1
   }
@@ -40,10 +40,15 @@ class BPT {
   isOver = (node, plus = 0) => node.vals.length + plus > this.max_vals
   isUnder = (node, plus = 0) => node.vals.length + plus < this.min_vals
   comp(a, b) {
-    if (typeof a === "object") {
-      return a.age === b.age ? 0 : a.age < b.age ? 1 : -1
-    } else {
+    if (typeof this.sort_fields === "string") {
       return a === b ? 0 : a < b ? 1 : -1
+    } else {
+      for (const v of this.sort_fields) {
+        if (a[v[0]] !== b[v[0]]) {
+          return (a[v[0]] < b[v[0]] ? 1 : -1) * (v[1] === "desc" ? -1 : 1)
+        }
+      }
+      return 0
     }
   }
   async id() {
