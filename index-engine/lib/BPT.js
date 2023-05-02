@@ -39,7 +39,13 @@ class BPT {
   setRoot = async id => (await this.put("root", id)) ?? null
   isOver = (node, plus = 0) => node.vals.length + plus > this.max_vals
   isUnder = (node, plus = 0) => node.vals.length + plus < this.min_vals
-
+  comp(a, b) {
+    if (typeof a === "object") {
+      return a.age === b.age ? 0 : a.age < b.age ? 1 : -1
+    } else {
+      return a === b ? 0 : a < b ? 1 : -1
+    }
+  }
   async id() {
     const count = ((await this.get("count")) ?? -1) + 1
     await this.put("count", count)
@@ -65,7 +71,7 @@ class BPT {
     if (node.leaf) return node
     let i = 0
     for (const v of node.vals) {
-      if (val < v) {
+      if (this.comp(val, v) === 1) {
         return await this.search(val, node.children[i])
       }
       i++
@@ -92,7 +98,7 @@ class BPT {
         if (midval === val) {
           start = mid
           break
-        } else if (midval < val) {
+        } else if (this.comp(midval, val) === 1) {
           left = mid + 1
         } else {
           right = mid - 1
@@ -116,7 +122,7 @@ class BPT {
       const v = node.vals[i]
       if (v === key) return [i, node]
       const _val = await this.data(v)
-      if (val < _val) {
+      if (this.comp(val, _val) === 1) {
         if (isPrev) break
         return [null, null]
       }
@@ -351,7 +357,7 @@ class BPT {
     let index = 0
     let exists = false
     for (let v of node.vals) {
-      if ((await this.data(v)) >= val) {
+      if (this.comp(val, await this.data(v)) >= 0) {
         node.vals.splice(index, 0, key)
         exists = true
         break
