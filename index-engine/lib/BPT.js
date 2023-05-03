@@ -22,8 +22,8 @@ const {
 const KV = require("./KV")
 
 class BPT {
-  constructor(order = 4, sort_fields = "number", setStore) {
-    this.kv = new KV(setStore)
+  constructor(order = 4, sort_fields = "number", kv) {
+    this.kv = kv
     this.order = order
     this.sort_fields = sort_fields
     this.max_vals = this.order - 1
@@ -51,6 +51,7 @@ class BPT {
       return 0
     }
   }
+
   async id() {
     const count = ((await this.get("count")) ?? -1) + 1
     await this.put("count", count)

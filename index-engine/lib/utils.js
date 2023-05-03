@@ -19,13 +19,22 @@ const getChars = (n = 3) =>
 const getNum = (n = 100) => Math.floor(Math.random() * n)
 const getBool = () => (Math.random() > 0.5 ? true : false)
 
-const gen = type => {
+const gen = (type, schema = []) => {
   if (type === "boolean") {
     return getBool()
   } else if (type === "string") {
     return getChars(3)
   } else if (type === "object") {
-    return { name: getChars(), age: getNum(), married: getBool() }
+    let obj = {}
+    for (let v2 of schema) {
+      obj[v2.key] =
+        v2.type === "string"
+          ? getChars()
+          : v2.type === "number"
+          ? getNum()
+          : getBool()
+    }
+    return obj
   } else {
     return getNum()
   }
