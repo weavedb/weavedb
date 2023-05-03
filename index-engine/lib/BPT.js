@@ -45,7 +45,15 @@ class BPT {
     } else {
       for (const v of this.sort_fields) {
         if (a[v[0]] !== b[v[0]]) {
-          return (a[v[0]] < b[v[0]] ? 1 : -1) * (v[1] === "desc" ? -1 : 1)
+          return (
+            (isNil(a[v[0]])
+              ? 1
+              : isNil(b[v[0]])
+              ? -1
+              : a[v[0]] < b[v[0]]
+              ? 1
+              : -1) * (v[1] === "desc" ? -1 : 1)
+          )
         }
       }
       return 0
@@ -77,16 +85,38 @@ class BPT {
     if (node.leaf) return node
     let i = 0
     for (const v of node.vals) {
-      if (this.comp(val, v) === 1) {
+      if (isNil(val) || this.comp(val, v) === 1) {
         return await this.search(val, node.children[i])
       }
       i++
     }
     return await this.search(val, node.children[i])
   }
-
+  async getOne(key) {
+    return { key, val: (await this.searchByKey(key))[0] }
+  }
+  async getVals(node, vals, opt) {
+    for (const v of node.vals) {
+      vals.push({ key: v, val: await this.data(v) })
+      if (!isNil(opt.limit) && vals.length === opt.limit) return
+    }
+    if (!isNil(node.next)) {
+      const next = await this.get(node.next)
+      await this.getVals(next, vals, opt)
+    }
+  }
+  async getMulti(opt) {
+    const first_node = !isNil(opt.start)
+      ? await this.search(opt.start)
+      : await this.search()
+    if (isNil(first_node)) return []
+    let vals = []
+    await this.getVals(first_node, vals, opt)
+    return vals
+  }
   async searchByKey(key) {
     const val = await this.data(key)
+    if (isNil(val)) return [null, null, null]
     let node = await this.search(val)
     if (isNil(node)) return [val, null, null]
     return [val, ...(await this.searchNode(node, key, val, true))]
