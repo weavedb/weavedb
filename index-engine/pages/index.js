@@ -9,6 +9,8 @@ import {
 import { nanoid } from "nanoid"
 import { useEffect, useState } from "react"
 import {
+  reject,
+  propEq,
   split,
   join,
   tail,
@@ -49,9 +51,14 @@ let _his3 = []
 for (const i of range(0, initial_order * 5)) {
   _his3.push(gen("boolean"))
 }
+const default_schema = [
+  { key: "name", type: "string" },
+  { key: "age", type: "number" },
+  { key: "married", type: "boolean" },
+]
 let _his4 = []
 for (const i of range(0, initial_order * 5)) {
-  _his4.push(gen("object"))
+  _his4.push(gen("object", default_schema))
 }
 
 let len = 0
@@ -59,12 +66,15 @@ let prev_count = 0
 let isDel = false
 let last_id = null
 let count = 0
+const KV = require("lib/KV")
 export default function Home() {
   const [auto, setAuto] = useState(false)
   const [store, setStore] = useState("{}")
   const [order, setOrder] = useState(initial_order)
+  const [schema, setSchema] = useState(default_schema)
   const [currentOrder, setCurrentOrder] = useState(initial_order)
   const [currentType, setCurrentType] = useState("number")
+  const [currentSchema, setCurrentSchema] = useState(schema)
   const [data_type, setDataType] = useState("number")
   const [number, setNumber] = useState("")
   const [bool, setBool] = useState("true")
@@ -72,20 +82,22 @@ export default function Home() {
   const [obj, setObj] = useState("")
   const [his, setHis] = useState([])
   const [fields, setFields] = useState("age:asc,name:desc")
+  const [field, setField] = useState("")
+  const [field_type, setFieldType] = useState("number")
   const [currentFields, setCurrentFields] = useState("age:asc,name:desc")
   const [display, setDisplay] = useState("Box")
   const [initValues, setInitValues] = useState(clone(_his).join(","))
   const [initValuesStr, setInitValuesStr] = useState(clone(_his2).join(","))
   const [initValuesBool, setInitValuesBool] = useState(clone(_his3).join(","))
   const [initValuesObject, setInitValuesObject] = useState(
-    "name,age,married\n" +
-      map(v => `${v.name},${v.age},${v.married}`)(clone(_his4)).join("\n")
+    map(v => `${v.name},${v.age},${v.married}`)(clone(_his4)).join("\n")
   )
 
   const reset = async () => {
     if (order < 3) return alert("order must be >= 3")
     setCurrentOrder(order)
     setCurrentType(data_type)
+    setCurrentSchema(schema)
     count = 0
     isDel = false
     last_id = null
@@ -93,15 +105,27 @@ export default function Home() {
     const sort_fields =
       data_type === "object" ? map(split(":"))(fields.split(",")) : null
     setCurrentFields(sort_fields)
-    tree = new BPT(order, sort_fields ?? data_type, setStore)
+    tree = new BPT(order, sort_fields ?? data_type, new KV(setStore))
     const arr =
       data_type === "number"
         ? map(v => v * 1)(initValues.split(","))
         : data_type === "object"
         ? compose(
-            map(v => ({ name: v[0], age: v[1] * 1, married: v[2] === "true" })),
+            map(v => {
+              let obj = {}
+              let i = 0
+              for (let v2 of schema) {
+                obj[v2.key] =
+                  v2.type === "string"
+                    ? v[i]
+                    : v2.type === "number"
+                    ? v[i] * 1
+                    : v[i] === "true"
+                i++
+              }
+              return obj
+            }),
             map(split(",")),
-            tail,
             split("\n")
           )(initValuesObject)
         : data_type === "string"
@@ -213,7 +237,6 @@ export default function Home() {
   const addBool = async () => await insert(bool)
   const addString = async () => {
     if (str !== "") {
-      console.log(str)
       await insert(str)
       setStr("")
       setTimeout(() => {
@@ -223,8 +246,15 @@ export default function Home() {
   }
   const addObject = async () => {
     const sp = obj.split(",")
-    if (sp.length >= 3) {
-      await insert({ age: sp[1] * 1, name: sp[0], married: sp[2] === "true" })
+    let _obj = {}
+    for (let v2 of schema) {
+      _obj[v2.key] =
+        v2.type === "string"
+          ? gen("string")
+          : v2.type === "number"
+          ? gen("number")
+          : gen("boolean")
+      await insert(_obj)
       setObj("")
       setTimeout(() => {
         document.getElementById("number").focus()
@@ -294,6 +324,89 @@ export default function Home() {
             </Flex>
           </Box>
         </Flex>
+        {data_type !== "object" ? null : (
+          <Box fontSize="10px">
+            <Flex mx={2} mt={2} color="#666" mb={1} fontSize="10px">
+              Schema
+            </Flex>
+            <Flex mx={2}>
+              <Input
+                onChange={e => setField(e.target.value)}
+                placeholder="name"
+                value={field}
+                height="auto"
+                flex={1}
+                bg="white"
+                fontSize="12px"
+                py={1}
+                px={3}
+                sx={{ borderRadius: "3px 0 0 3px" }}
+              />
+              <Select
+                onChange={e => {
+                  setFieldType(e.target.value)
+                }}
+                value={field_type}
+                height="28px"
+                width="100px"
+                bg="white"
+                fontSize="12px"
+                sx={{ borderRadius: "0" }}
+              >
+                {map(v => <option value={v}>{v}</option>)([
+                  "number",
+                  "string",
+                  "boolean",
+                ])}
+              </Select>
+              <Flex
+                width="30px"
+                align="center"
+                p={1}
+                justify="center"
+                bg="#666"
+                color="white"
+                onClick={async () => {
+                  if (!/^\s*$/.test(field)) {
+                    setField("")
+                    setSchema(
+                      compose(
+                        append({ key: field, type: field_type }),
+                        reject(propEq(field, "key"))
+                      )(schema)
+                    )
+                  }
+                }}
+                sx={{
+                  borderRadius: "0 3px 3px 0",
+                  cursor: "pointer",
+                  ":hover": { opacity: 0.75 },
+                }}
+              >
+                +
+              </Flex>
+            </Flex>
+            <Box mx={3} my={2}>
+              {map(v => {
+                return (
+                  <Flex align="center" my={1}>
+                    <Flex flex={1}>{v.key}</Flex>
+                    <Flex flex={1}>{v.type}</Flex>
+                    <Flex
+                      onClick={() => {
+                        setSchema(reject(propEq(v.key, "key"))(schema))
+                      }}
+                      sx={{ textDecoration: "underline", cursor: "pointer" }}
+                      color="#6441AF"
+                    >
+                      Remove
+                    </Flex>
+                  </Flex>
+                )
+              })(schema)}
+            </Box>
+          </Box>
+        )}
         <Flex mx={2} color="#666" mb={1} fontSize="10px">
           <Box>
             Initial Values (
@@ -412,7 +525,9 @@ export default function Home() {
                 }
               }}
               placeholder={
-                data_type === "object" ? "name,age,married" : data_type
+                data_type === "object"
+                  ? pluck("type")(schema).join(",")
+                  : data_type
               }
               value={
                 currentType === "number"
@@ -489,7 +604,7 @@ export default function Home() {
           color="white"
           onClick={async () => {
             if (err) return
-            const num = gen(currentType)
+            const num = gen(currentType, currentSchema)
             await insert(num)
           }}
           sx={{
@@ -585,12 +700,10 @@ export default function Home() {
                               ? "true"
                               : "false"
                             : typeof v3val === "object"
-                            ? i === arrs.length - 1
-                              ? `${v3val.name}:${v3val.age}:${v3val.married}`
-                              : compose(
-                                  join(":"),
-                                  map(v4 => v3val[v4[0]])
-                                )(currentFields)
+                            ? compose(
+                                join(":"),
+                                map(v4 => v3val[v4[0]])
+                              )(currentFields)
                             : "-"
                           return (
                             <Flex
@@ -689,7 +802,10 @@ export default function Home() {
                       v.op === "del"
                         ? `-${v.id.split(":")[1]}`
                         : currentType === "object"
-                        ? `${v.val.name},${v.val.age},${v.val.married}`
+                        ? compose(
+                            join(":"),
+                            map(v4 => v.val[v4[0]])
+                          )(currentFields)
                         : v.val
                     }`
                 )(his).join(", ")} ]`

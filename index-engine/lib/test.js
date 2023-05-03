@@ -1,5 +1,6 @@
 const BPT = require("./BPT")
 const { gen, isErr } = require("./utils")
+const KV = require("./KV")
 const {
   includes,
   flatten,
@@ -18,7 +19,7 @@ const go = async () => {
     for (let i of range(3, 101)) {
       console.log(`testing...order:${i}`)
       let count = 0
-      const bpt = new BPT(i)
+      const bpt = new BPT(i, "number", new KV())
       let his = []
       let ids = {}
       const start = Date.now()
