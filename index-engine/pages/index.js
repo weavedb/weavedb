@@ -68,6 +68,9 @@ let last_id = null
 let count = 0
 const KV = require("lib/KV")
 export default function Home() {
+  const [getKey, setGetKey] = useState("")
+  const [queryType, setQueryType] = useState("single")
+  const [result, setResult] = useState(undefined)
   const [auto, setAuto] = useState(false)
   const [store, setStore] = useState("{}")
   const [order, setOrder] = useState(initial_order)
@@ -80,7 +83,9 @@ export default function Home() {
   const [bool, setBool] = useState("true")
   const [str, setStr] = useState("")
   const [obj, setObj] = useState("")
+  const [options, setOptions] = useState("{}")
   const [his, setHis] = useState([])
+  const [limit, setLimit] = useState(5)
   const [fields, setFields] = useState("age:asc,name:desc")
   const [field, setField] = useState("")
   const [field_type, setFieldType] = useState("number")
@@ -201,7 +206,7 @@ export default function Home() {
         ) {
           await del()
         } else {
-          await insert(gen(currentType))
+          await insert(gen(currentType, currentSchema))
         }
         const [err, where, arrs, len, vals] = isErr(
           tree.kv.store,
@@ -272,7 +277,15 @@ export default function Home() {
           height: 100%;
         }
       `}</style>
-      <Box minH="100%" w="250px" px={3} py={2} bg="#eee" fontSize="12px">
+      <Box
+        height="100%"
+        w="250px"
+        px={3}
+        py={2}
+        bg="#eee"
+        fontSize="12px"
+        sx={{ overflowY: "auto" }}
+      >
         <Flex align="center" direction="column">
           <Box>WeaveDB</Box>
           <Box>B+ Tree Index Engine</Box>
@@ -658,6 +671,119 @@ export default function Home() {
             "Fine!"
           )}
         </Box>
+        <Box as="hr" my={3} />
+        <Flex mx={2} mt={2} color="#666" mb={1} fontSize="10px">
+          <Box mr={3}>Query</Box>
+          <Flex>
+            {map(v => (
+              <Box
+                mx={1}
+                onClick={() => setQueryType(v)}
+                color={queryType === v ? "#6441AF" : "#333"}
+                sx={{
+                  textDecoration: queryType === v ? "underline" : "none",
+                  cursor: "pointer",
+                }}
+              >
+                {v}
+              </Box>
+            ))(["single", "multi"])}
+          </Flex>
+        </Flex>
+        {queryType === "multi" ? (
+          <>
+            <Flex>
+              <Box flex={1}>
+                <Flex mx={2} mt={2} color="#666" mb={1} fontSize="10px">
+                  Options (JSON) - limit, where, sort
+                </Flex>
+                <Flex mx={2} mb={2}>
+                  <Input
+                    onChange={e => {
+                      setOptions(e.target.value)
+                    }}
+                    placeholder="Options"
+                    value={options}
+                    height="auto"
+                    flex={1}
+                    bg="white"
+                    fontSize="12px"
+                    py={1}
+                    px={3}
+                    sx={{ borderRadius: "3px 0 0 3px" }}
+                  />
+                </Flex>
+              </Box>
+            </Flex>
+            <Flex
+              mx={2}
+              align="center"
+              p={1}
+              justify="center"
+              bg="#666"
+              color="white"
+              onClick={async () => {
+                let opt = null
+                try {
+                  eval(`opt = ${options}`)
+                } catch (e) {
+                  alert("options couldn't parse")
+                  return
+                }
+                setResult(await tree.getMulti(opt))
+              }}
+              mt={2}
+              sx={{
+                borderRadius: "3px",
+                cursor: "pointer",
+                ":hover": { opacity: 0.75 },
+              }}
+            >
+              Get
+            </Flex>
+          </>
+        ) : (
+          <Flex mx={2} mb={2}>
+            <Input
+              onChange={e => setGetKey(e.target.value)}
+              placeholder="doc id"
+              value={getKey}
+              height="auto"
+              flex={1}
+              bg="white"
+              fontSize="12px"
+              id="number"
+              py={1}
+              px={3}
+              sx={{ borderRadius: "3px 0 0 3px" }}
+            />
+            <Flex
+              width="80px"
+              align="center"
+              p={1}
+              justify="center"
+              bg="#666"
+              color="white"
+              onClick={async () => {
+                if (!/^\s*$/.test(getKey)) {
+                  setResult(await tree.getOne(getKey))
+                }
+              }}
+              sx={{
+                borderRadius: "0 3px 3px 0",
+                cursor: "pointer",
+                ":hover": { opacity: 0.75 },
+              }}
+            >
+              Get
+            </Flex>
+          </Flex>
+        )}
+        {isNil(result) ? null : (
+          <Box m={3} color={result.val === null ? "salmon" : "#6441AF"}>
+            {JSON.stringify(result)}
+          </Box>
+        )}
       </Box>
       <Flex
         minH="100%"
