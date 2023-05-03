@@ -269,13 +269,6 @@ async function handle(state, action, _SmartWeave) {
   }
   if (!isNil(res)) {
     for (let k in kvs) await _SmartWeave.kv.put(k, kvs[k])
-    console.log(
-      compose(
-        filter(v => v.match(/^index\..+/) !== null),
-        keys
-      )(kvs)
-    )
-    console.log(kvs)
     return res
   }
   return { state }

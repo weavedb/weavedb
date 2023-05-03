@@ -382,7 +382,7 @@ describe("WeaveDB", function () {
     expect(await db.get("ppl", "Bob")).to.eql({ name: "Bob", age: 25 })
   })
 
-  it.only("should add index", async () => {
+  it("should add index", async () => {
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Alice", age: 25 }
     const data3 = { name: "Beth", age: 5 }
