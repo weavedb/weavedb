@@ -1,4 +1,5 @@
 const {
+  equals,
   init,
   concat,
   without,
@@ -34,7 +35,12 @@ class BPT {
   del = async key => await this.kv.del(key)
   putData = async (key, val) => await this.put(`data/${key}`, val)
   putNode = async node => await this.put(node.id, node)
-  data = async key => (await this.get(`data/${key}`)) ?? null
+  data = async (key, cache = {}) => {
+    if (typeof cache[key] !== "undefined") return cache[key]
+    let _data = (await this.get(`data/${key}`)) ?? null
+    cache[key] = _data
+    return _data
+  }
   root = async () => (await this.get("root")) ?? null
   setRoot = async id => (await this.put("root", id)) ?? null
   isOver = (node, plus = 0) => node.vals.length + plus > this.max_vals
@@ -47,9 +53,9 @@ class BPT {
         if (a[v[0]] !== b[v[0]]) {
           return (
             (isNil(a[v[0]])
-              ? 1
+              ? 1 * (v[1] === "desc" ? -1 : 1)
               : isNil(b[v[0]])
-              ? -1
+              ? -1 * (v[1] === "desc" ? -1 : 1)
               : a[v[0]] < b[v[0]]
               ? 1
               : -1) * (v[1] === "desc" ? -1 : 1)
@@ -95,25 +101,180 @@ class BPT {
   async getOne(key) {
     return { key, val: (await this.searchByKey(key))[0] }
   }
-  async getVals(node, vals, opt) {
-    for (const v of node.vals) {
-      vals.push({ key: v, val: await this.data(v) })
+  async getVals(node, vals, index = 0, opt, cache = {}) {
+    // should have starting, index, direction, optional conditions
+    for (let i = index; i < node.vals.length; i++) {
+      const v = node.vals[i]
+      vals.push({ key: v, val: await this.data(v, cache) })
       if (!isNil(opt.limit) && vals.length === opt.limit) return
     }
     if (!isNil(node.next)) {
       const next = await this.get(node.next)
-      await this.getVals(next, vals, opt)
+      await this.getVals(next, vals, 0, opt, cache)
     }
   }
+  async findIndex(_index, node, val, cache) {
+    let index = _index
+    let isPrev = false
+    if (_index === 0) {
+      isPrev = !isNil(node.prev)
+    } else {
+      _index ??= node.vals.length
+      for (let i = _index - 1; i >= 0; i--) {
+        const _val = await this.data(node.vals[i], cache)
+        if (this.comp(_val, val) !== 0) break
+        index = i
+        if (i === 0) isPrev = !isNil(node.prev)
+      }
+    }
+    if (isPrev) {
+      let prev = await this.get(node.prev)
+      const [new_index, new_node] = await this.findIndex(null, prev, val, cache)
+      return !isNil(new_index) ? [new_index, new_node] : [_index, node]
+    } else {
+      return [index, node]
+    }
+  }
+  async findLastIndex(_index, node, val, cache) {
+    let index = null
+    let isNext = false
+    if (_index >= node.vals.length - 1) {
+      isNext = !isNil(node.next)
+    } else {
+      for (let i = _index + 1; i < node.vals.length; i++) {
+        const _val = await this.data(node.vals[i], cache)
+        if (this.comp(_val, val) !== 0) {
+          index = i
+          break
+        }
+        if (i === node.vals.length - 1) isNext = !isNil(node.next)
+      }
+    }
+    if (isNext) {
+      let next = await this.get(node.next)
+      const [new_index, new_node] = await this.findLastIndex(
+        -1,
+        next,
+        val,
+        cache
+      )
+      return !isNil(new_index) ? [new_index, new_node] : [_index, node]
+    } else {
+      return [index, node]
+    }
+  }
+
+  async findLastGtIndex(_index, node, val, cache) {
+    let index = null
+    let isNext = false
+    if (_index >= node.vals.length - 1) {
+      isNext = !isNil(node.next)
+    } else {
+      for (let i = _index + 1; i < node.vals.length; i++) {
+        const _val = await this.data(node.vals[i], cache)
+        if (this.comp(_val, val) === -1) {
+          index = i
+          break
+        }
+        if (i === node.vals.length - 1) isNext = !isNil(node.next)
+      }
+    }
+    if (isNext) {
+      let next = await this.get(node.next)
+      const [new_index, new_node] = await this.findLastGtIndex(
+        -1,
+        next,
+        val,
+        cache
+      )
+      return !isNil(new_index) ? [new_index, new_node] : [_index, node]
+    } else {
+      return [index, node]
+    }
+  }
+
   async getMulti(opt) {
-    const first_node = !isNil(opt.start)
-      ? await this.search(opt.start)
+    let start = opt.startAt ?? opt.startAfter
+    const first_node = !isNil(start)
+      ? await this.search(start)
       : await this.search()
     if (isNil(first_node)) return []
     let vals = []
-    await this.getVals(first_node, vals, opt)
+    let cache = {}
+    // startAt -> find the first val, startAfter find the last one before the val
+    let index = 0
+    let _node = first_node
+    let _index = index
+    if (!isNil(start)) {
+      let [index, smaller, greater] = await this.binarySearch(
+        first_node,
+        start,
+        cache
+      )
+      if (!isNil(opt.startAt)) {
+        _index = index
+        if (!isNil(greater)) {
+          _index = greater
+        } else if (!isNil(index)) {
+          // get the index of the first item with val
+          const [new_index, new_node] = await this.findIndex(
+            _index,
+            first_node,
+            start,
+            cache
+          )
+          if (!isNil(new_index)) {
+            _index = new_index
+            _node = new_node
+          }
+        } else if (!isNil(smaller) && !isNil(first_node.next)) {
+          const next = await this.get(first_node.next)
+          const [new_index, new_node] = await this.findLastGtIndex(
+            -1,
+            next,
+            start,
+            cache
+          )
+          if (!isNil(new_index)) {
+            _index = new_index
+            _node = new_node
+          }
+        }
+      } else if (!isNil(opt.startAfter)) {
+        _index = null
+        if (!isNil(greater)) {
+          _index = greater
+        } else if (!isNil(index)) {
+          // get the index of the last item with val
+          const [new_index, new_node] = await this.findLastIndex(
+            _index,
+            first_node,
+            start,
+            cache
+          )
+          if (!isNil(new_index)) {
+            _index = new_index
+            _node = new_node
+          }
+        } else if (!isNil(smaller) && !isNil(first_node.next)) {
+          const next = await this.get(first_node.next)
+          const [new_index, new_node] = await this.findLastGtIndex(
+            -1,
+            next,
+            start,
+            cache
+          )
+          if (!isNil(new_index)) {
+            _index = new_index
+            _node = new_node
+          }
+        }
+      }
+    }
+    if (!isNil(_index)) await this.getVals(_node, vals, _index, opt, cache)
     return vals
   }
+
   async searchByKey(key) {
     const val = await this.data(key)
     if (isNil(val)) return [null, null, null]
@@ -122,24 +283,33 @@ class BPT {
     return [val, ...(await this.searchNode(node, key, val, true))]
   }
 
-  async searchNode(node, key, val, first = false) {
-    let start = 0
-    if (first) {
-      start = null
-      let left = 0
-      let right = node.vals.length - 1
-      while (left <= right) {
-        let mid = Math.floor((left + right) / 2)
-        let midval = await this.data(node.vals[mid])
-        if (midval === val) {
-          start = mid
-          break
-        } else if (this.comp(midval, val) === 1) {
-          left = mid + 1
-        } else {
-          right = mid - 1
-        }
+  async binarySearch(node, val, cache = {}) {
+    let left = 0
+    let right = node.vals.length - 1
+    while (left <= right) {
+      let mid = Math.floor((left + right) / 2)
+      let midval = await this.data(node.vals[mid], cache)
+      if (this.comp(midval, val) === 0) {
+        return [mid, null, null]
+      } else if (this.comp(midval, val) === 1) {
+        left = mid + 1
+      } else {
+        right = mid - 1
       }
+    }
+    return [
+      null,
+      right >= 0 ? right : null,
+      left < node.vals.length ? left : null,
+    ]
+  }
+
+  async searchNode(node, key, val, first = false, cache = {}) {
+    let start = 0
+    let greater = null
+    let smaller = null
+    if (first) {
+      ;[start, smaller, greater] = await this.binarySearch(node, val, cache)
     }
     let isPrev = start === 0
     // get nodes containing the val
@@ -149,15 +319,15 @@ class BPT {
       for (let i = start - 1; i >= 0; i--) {
         const v = node.vals[i]
         if (v === key) return [i, node]
-        const _val = await this.data(v)
-        if (val > _val) break
+        const _val = await this.data(v, cache)
+        if (this.comp(_val, val) === 1) break
         if (i === 0) isPrev = true
       }
     }
     for (let i = 0; i < node.vals.length; i++) {
       const v = node.vals[i]
       if (v === key) return [i, node]
-      const _val = await this.data(v)
+      const _val = await this.data(v, cache)
       if (this.comp(val, _val) === 1) {
         if (isPrev) break
         return [null, null]
@@ -287,7 +457,8 @@ class BPT {
           return
         }
       }
-      if (val === changed && parent_index > 0) {
+      // should we use comp?
+      if (equals(val, changed) && parent_index > 0) {
         parent.vals[parent_index - 1] = val
         await this.putNode(parent)
       } else if (val !== changed && parent_index > 0) {

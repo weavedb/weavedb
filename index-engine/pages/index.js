@@ -252,19 +252,21 @@ export default function Home() {
   const addObject = async () => {
     const sp = obj.split(",")
     let _obj = {}
+    let i = 0
     for (let v2 of schema) {
       _obj[v2.key] =
         v2.type === "string"
-          ? gen("string")
+          ? sp[i]
           : v2.type === "number"
-          ? gen("number")
-          : gen("boolean")
-      await insert(_obj)
-      setObj("")
-      setTimeout(() => {
-        document.getElementById("number").focus()
-      }, 100)
+          ? sp[i] * 1
+          : sp[i] === "true"
+      i++
     }
+    await insert(_obj)
+    setObj("")
+    setTimeout(() => {
+      document.getElementById("number").focus()
+    }, 100)
   }
 
   const [err, where] = isErr(store, currentOrder, last_id, isDel, prev_count)
@@ -954,7 +956,10 @@ export default function Home() {
                         ? "true"
                         : "false"
                       : typeof v.val === "object"
-                      ? v.val.age
+                      ? compose(
+                          join(":"),
+                          map(v4 => v.val[v4[0]])
+                        )(currentFields)
                       : v.val}
                   </Flex>
                 ))(his)}
