@@ -45,7 +45,7 @@ class BPT {
   setRoot = async id => (await this.put("root", id)) ?? null
   isOver = (node, plus = 0) => node.vals.length + plus > this.max_vals
   isUnder = (node, plus = 0) => node.vals.length + plus < this.min_vals
-  comp(a, b) {
+  comp(a, b, null_last = false) {
     if (typeof this.sort_fields === "string") {
       return a === b ? 0 : a < b ? 1 : -1
     } else {
@@ -53,9 +53,9 @@ class BPT {
         if (a[v[0]] !== b[v[0]]) {
           return (
             (isNil(a[v[0]])
-              ? 1 * (v[1] === "desc" ? -1 : 1)
+              ? (v[1] === "desc" ? -1 : 1) * (null_last ? -1 : 1)
               : isNil(b[v[0]])
-              ? -1 * (v[1] === "desc" ? -1 : 1)
+              ? (v[1] === "desc" ? -1 : 1) * (null_last ? 1 : -1)
               : a[v[0]] < b[v[0]]
               ? 1
               : -1) * (v[1] === "desc" ? -1 : 1)
@@ -101,11 +101,17 @@ class BPT {
   async getOne(key) {
     return { key, val: (await this.searchByKey(key))[0] }
   }
-  async getVals(node, vals, index = 0, opt, cache = {}) {
+  async getVals(node, vals, index = 0, opt, cache = {}, inRange = null) {
     // should have starting, index, direction, optional conditions
     for (let i = index; i < node.vals.length; i++) {
       const v = node.vals[i]
-      vals.push({ key: v, val: await this.data(v, cache) })
+      const val = await this.data(v, cache)
+      if (!isNil(opt.endAt)) {
+        if (this.comp(val, opt.endAt, true) < 0) return
+      } else if (!isNil(opt.endBefore)) {
+        if (this.comp(val, opt.endBefore) <= 0) return
+      }
+      vals.push({ key: v, val })
       if (!isNil(opt.limit) && vals.length === opt.limit) return
     }
     if (!isNil(node.next)) {
