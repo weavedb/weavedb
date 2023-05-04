@@ -28,7 +28,7 @@ WeaveDB offers several advantages over traditional web2 solutions:
 
 - **Fast query performance**: The query performance is often faster than web2 solutions.
 - **Cheap permanent storage**: Data is stored on [Arweave](https://arweave.org).
-- **Prepaid gas fees**: With [Bundlr](https://bundlr.network/), developer can cover gas fees upfront.
+- **Prepaid gas fees**: With [Bundlr](https://bundlr.network/), developers can cover gas fees upfront.
 - **Cross-chain crypto authentication**: WeaveDB supports authentication using any EVM-based, DFINITY, and ArConnect wallets.
 - **Decentralized APIs**: APIs similar to [Firestore](https://firebase.google.com/docs/firestore) but completely decentralized.
 - **Cross-chain data bridges**: Allowing developers to easily import their data from different blockchain networks and even web2 APIs.
