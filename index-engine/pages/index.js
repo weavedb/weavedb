@@ -97,7 +97,7 @@ export default function Home() {
   const [initValuesObject, setInitValuesObject] = useState(
     map(v => `${v.name},${v.age},${v.married}`)(clone(_his4)).join("\n")
   )
-
+  const [exErr, setExErr] = useState([false, null])
   const reset = async () => {
     if (order < 3) return alert("order must be >= 3")
     setCurrentOrder(order)
@@ -136,18 +136,23 @@ export default function Home() {
         : data_type === "string"
         ? initValuesStr.split(",")
         : initValuesBool.split(",")
+    let _err
     ;(async () => {
       for (const n of arr) {
         ;(currentType === "number" && n < 0) ||
         (currentType !== "number" && /^-/.test(n))
-          ? await del(`id:${n * -1}`)
-          : await insert(
+          ? (_err = await del(`id:${n * -1}`))
+          : (_err = await insert(
               data_type === "boolean"
                 ? typeof n === "string"
                   ? n === "true"
                   : n
                 : n
-            )
+            ))
+        if (_err[0]) {
+          console.log(_err)
+          break
+        }
       }
     })()
     setStore("{}")
@@ -159,40 +164,34 @@ export default function Home() {
   const insert = async val => {
     const id = `id:${(++count).toString()}`
     ids[id] = true
-    prev_count = len
     isDel = false
     last_id = id
     await tree.insert(id, val)
     _his2 = append({ val, op: "insert", id }, _his2)
     setHis(_his2)
-    const [err, where, arrs, _len, _vals] = isErr(
-      tree.kv.store,
-      order,
-      last_id,
-      isDel,
-      prev_count
-    )
+    const _err = isErr(tree.kv.store, order, last_id, isDel, prev_count)
+    setExErr(_err)
+    const [err, where, arrs, _len, _vals] = _err
+    prev_count = _len
     len = _len
+    return _err
   }
 
   const del = async key => {
     const _keys = keys(ids)
     key = isNil(key) ? _keys[Math.floor(Math.random() * _keys.length)] : key
     last_id = key
-    prev_count = len
     _his2 = append({ val: await tree.data(key), op: "del", id: key }, _his2)
     setHis(_his2)
     isDel = true
     await tree.delete(key)
     delete ids[key]
-    const [err, where, arrs, _len, _vals] = isErr(
-      tree.kv.store,
-      order,
-      last_id,
-      isDel,
-      prev_count
-    )
+    const _err = isErr(tree.kv.store, order, last_id, isDel, prev_count)
+    setExErr(_err)
+    const [err, where, arrs, _len, _vals] = _err
+    prev_count = _len
     len = _len
+    return _err
   }
 
   const go = async () => {
@@ -200,21 +199,16 @@ export default function Home() {
     setTimeout(async () => {
       try {
         const _keys = keys(ids)
+        let _err
         if (
           _keys.length > 0 &&
           Math.random() < (_keys.length > order * 10 ? 0.8 : 0.2)
         ) {
-          await del()
+          _err = await del()
         } else {
-          await insert(gen(currentType, currentSchema))
+          _err = await insert(gen(currentType, currentSchema))
         }
-        const [err, where, arrs, len, vals] = isErr(
-          tree.kv.store,
-          order,
-          last_id,
-          isDel,
-          prev_count
-        )
+        const [err, where, arrs, len, vals] = _err
         !err ? go() : setAuto(true)
       } catch (e) {
         console.log(e)
@@ -268,8 +262,7 @@ export default function Home() {
       document.getElementById("number").focus()
     }, 100)
   }
-
-  const [err, where] = isErr(store, currentOrder, last_id, isDel, prev_count)
+  const [err, where] = exErr
   return (
     <ChakraProvider>
       <style global jsx>{`
@@ -732,7 +725,7 @@ export default function Home() {
                   alert("options couldn't parse")
                   return
                 }
-                setResult(await tree.getMulti(opt))
+                setResult(await tree.range(opt))
               }}
               mt={2}
               sx={{
@@ -768,7 +761,7 @@ export default function Home() {
               color="white"
               onClick={async () => {
                 if (!/^\s*$/.test(getKey)) {
-                  setResult(await tree.getOne(getKey))
+                  setResult(await tree.read(getKey))
                 }
               }}
               sx={{
@@ -831,7 +824,7 @@ export default function Home() {
                             ? compose(
                                 join(":"),
                                 map(v4 => v3val[v4[0]])
-                              )(currentFields)
+                              )(currentFields || [])
                             : "-"
                           return (
                             <Flex
