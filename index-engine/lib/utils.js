@@ -45,6 +45,7 @@ const build = store => {
   let arrs = []
   let nodemap = {}
   const add = (node, depth = 0) => {
+    if (isNil(node)) return
     arrs[depth] ??= []
     node.arr = []
     let i = 0
