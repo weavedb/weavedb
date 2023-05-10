@@ -13,10 +13,12 @@
     "@emotion/react": "^11.10.6",
     "@emotion/styled": "^11.10.6",
     "framer-motion": "^10.12.4",
+    "localforage": "^1.10.0",
     "nanoid": "^4.0.2",
     "next": "13.3.1",
     "ramda": "^0.29.0",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "shortid": "^2.2.16"
   }
 }
