@@ -110,7 +110,10 @@ export default function Home() {
     const sort_fields =
       data_type === "object" ? map(split(":"))(fields.split(",")) : null
     setCurrentFields(sort_fields)
-    tree = new BPT(order, sort_fields ?? data_type, new KV(setStore))
+    const kv = new KV(setStore)
+    tree = new BPT(order, sort_fields ?? data_type, kv, function (stats) {
+      if (!isNil(setStore)) setStore(JSON.stringify(this.kv.store))
+    })
     const arr =
       data_type === "number"
         ? map(v => v * 1)(initValues.split(","))
