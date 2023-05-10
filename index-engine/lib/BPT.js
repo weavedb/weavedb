@@ -20,8 +20,6 @@ const {
   map,
 } = require("ramda")
 
-const KV = require("./KV")
-
 class BPT {
   constructor(order = 4, sort_fields = "number", kv) {
     this.kv = kv
@@ -34,6 +32,7 @@ class BPT {
   put = async (key, val) => await this.kv.put(key, val)
   del = async key => await this.kv.del(key)
   putData = async (key, val) => await this.put(`data/${key}`, val)
+  delData = async key => await this.del(`data/${key}`)
   putNode = async node => await this.put(node.id, node)
   data = async (key, cache = {}) => {
     if (typeof cache[key] !== "undefined") return cache[key]
@@ -98,7 +97,7 @@ class BPT {
     }
     return await this.search(val, node.children[i])
   }
-  async getOne(key) {
+  async read(key) {
     return { key, val: (await this.searchByKey(key))[0] }
   }
   async getVals(node, vals, index = 0, opt, cache = {}, inRange = null) {
@@ -199,7 +198,7 @@ class BPT {
     }
   }
 
-  async getMulti(opt) {
+  async range(opt) {
     let start = opt.startAt ?? opt.startAfter
     const first_node = !isNil(start)
       ? await this.search(start)
@@ -349,7 +348,7 @@ class BPT {
   async rmIndex(val_index, child_index, node) {
     node.vals.splice(val_index, 1)
     node.children.splice(child_index, 1)
-    if (this.isUnder(node)) {
+    if (!isNil(node.parent) && this.isUnder(node)) {
       if (!isNil(node.parent)) {
         let parent = await this.get(node.parent)
         let index = indexOf(node.id, parent.children)
@@ -405,8 +404,8 @@ class BPT {
               next.prev = node.prev || null
               await this.putNode(next)
             }
-            await this.rmIndex(index - 1, index, parent)
             await this.putNode(prev)
+            await this.rmIndex(index - 1, index, parent)
             isMerged = true
           }
         }
@@ -425,10 +424,9 @@ class BPT {
             if (!isNil(node.prev)) {
               let prev = await this.get(node.prev)
               prev.next = node.next || null
-              await this.putNode(prev)
             }
-            await this.rmIndex(index, index, parent)
             await this.putNode(next)
+            await this.rmIndex(index, index, parent)
             isMerged = true
           }
         }
@@ -445,6 +443,8 @@ class BPT {
           this.del(node.id)
         }
       }
+    } else {
+      await this.putNode(node)
     }
   }
 
@@ -562,7 +562,8 @@ class BPT {
     let [val, index, node] = await this.searchByKey(key)
     if (isNil(node)) return
     node.vals = without([key], node.vals)
-    await this.putData(key, node)
+    await this.putNode(node)
+    await this.delData(key)
     await this.balance(val, index, node)
   }
 
@@ -586,7 +587,6 @@ class BPT {
 
     // get node
     let node = await this.search(val)
-
     if (isNil(node)) {
       // init if no root
       await this.init(key)
@@ -595,8 +595,8 @@ class BPT {
       await this._insert(key, val, node)
 
       // if full split
-      if (this.isOver(node)) await this.split(node)
       await this.putNode(node)
+      if (this.isOver(node)) await this.split(node)
     }
   }
 
@@ -664,6 +664,7 @@ class BPT {
     node.parent = parent.id
     await this.putNode(new_node)
     await this.putNode(parent)
+    await this.putNode(node)
     if (isNewParent) await this.setRoot(parent.id)
     if (this.isOver(parent)) await this.split(parent)
   }
