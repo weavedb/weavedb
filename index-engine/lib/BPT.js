@@ -21,8 +21,9 @@ const {
 } = require("ramda")
 
 class BPT {
-  constructor(order = 4, sort_fields = "number", kv) {
+  constructor(order = 4, sort_fields = "number", kv, onCommit) {
     this.kv = kv
+    this.onCommit = onCommit
     this.order = order
     this.sort_fields = sort_fields
     this.max_vals = this.order - 1
@@ -89,16 +90,16 @@ class BPT {
     }
   }
 
-  async id() {
-    const count = ((await this.get("count")) ?? -1) + 1
-    await this.put("count", count)
+  async id(stats) {
+    const count = ((await this.get("count", stats)) ?? -1) + 1
+    await this.put("count", count, stats)
     return count.toString()
   }
 
   async init(key, stats) {
     let new_node = {
       leaf: true,
-      id: await this.id(),
+      id: await this.id(stats),
       vals: [key],
       parent: null,
       next: null,
@@ -668,6 +669,7 @@ class BPT {
         await this.put(k, stats[k])
       }
     }
+    if (!isNil(this.onCommit)) this.onCommit(stats)
   }
 
   async splitChildren(node, new_node, stats) {
