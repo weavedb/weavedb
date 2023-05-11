@@ -9,6 +9,8 @@ import {
 import { nanoid } from "nanoid"
 import { useEffect, useState } from "react"
 import {
+  prepend,
+  without,
   reject,
   propEq,
   split,
@@ -73,6 +75,8 @@ export default function Home() {
   const [result, setResult] = useState(undefined)
   const [auto, setAuto] = useState(false)
   const [store, setStore] = useState("{}")
+  const [cols, setCols] = useState([])
+  const [col, setCol] = useState(null)
   const [order, setOrder] = useState(initial_order)
   const [schema, setSchema] = useState(default_schema)
   const [currentOrder, setCurrentOrder] = useState(initial_order)
@@ -288,6 +292,56 @@ export default function Home() {
           <Box>WeaveDB</Box>
           <Box>B+ Tree Index Engine</Box>
         </Flex>
+        <Box as="hr" my={3} />
+        <Box flex={1}>
+          <Flex mx={2} mt={2} color="#666" mb={1} fontSize="10px">
+            Collections
+          </Flex>
+          <Flex mx={2} mb={2}>
+            <Flex
+              flex={1}
+              align="center"
+              p={1}
+              justify="center"
+              bg="#666"
+              color="white"
+              onClick={async () => {
+                setCols(append(nanoid(), cols))
+              }}
+              sx={{
+                borderRadius: "3px",
+                cursor: "pointer",
+                ":hover": { opacity: 0.75 },
+              }}
+            >
+              Add Collection
+            </Flex>
+          </Flex>
+        </Box>
+        <Box px={3}>
+          {map(v => (
+            <Flex color={col === v ? "#6441AF" : "#666"}>
+              <Box
+                flex={1}
+                onClick={() => setCol(v)}
+                sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
+              >
+                {v ?? "not selected"}
+              </Box>
+              {v === null ? null : (
+                <Box
+                  onClick={() => {
+                    setCols(without([v], cols))
+                    if (v === col) setCol(null)
+                  }}
+                  sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
+                >
+                  x
+                </Box>
+              )}
+            </Flex>
+          ))(prepend(null, cols))}
+        </Box>
         <Box as="hr" my={3} />
         <Flex>
           <Box flex={1}>
