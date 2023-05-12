@@ -8,7 +8,6 @@ class KV {
   }
   async get(key) {
     return (await lf.getItem(`${this.prefix}/${key}`)) ?? null
-    return this.store[key] ?? null
   }
   async put(key, val) {
     await lf.setItem(`${this.prefix}/${key}`, val)
