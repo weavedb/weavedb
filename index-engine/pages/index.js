@@ -1,3 +1,4 @@
+import lf from "localforage"
 import {
   Select,
   Textarea,
@@ -188,7 +189,10 @@ export default function Home() {
     const _keys = keys(ids)
     key = isNil(key) ? _keys[Math.floor(Math.random() * _keys.length)] : key
     last_id = key
-    _his2 = append({ val: await tree.data(key), op: "del", id: key }, _his2)
+    _his2 = append(
+      { val: (await tree.data(key)).val, op: "del", id: key },
+      _his2
+    )
     setHis(_his2)
     isDel = true
     await tree.delete(key)
@@ -228,6 +232,9 @@ export default function Home() {
       init = true
       reset()
     }
+    ;(async () => {
+      setCols((await lf.getItem("cols")) || [])
+    })()
   }, [])
 
   let { nodemap, arrs } = build(store)
@@ -306,7 +313,9 @@ export default function Home() {
               bg="#666"
               color="white"
               onClick={async () => {
-                setCols(append(nanoid(), cols))
+                const _cols = append(nanoid(), cols)
+                setCols(_cols)
+                await lf.setItem("cols", _cols)
               }}
               sx={{
                 borderRadius: "3px",
@@ -330,8 +339,10 @@ export default function Home() {
               </Box>
               {v === null ? null : (
                 <Box
-                  onClick={() => {
-                    setCols(without([v], cols))
+                  onClick={async () => {
+                    const _cols = without([v], cols)
+                    setCols(_cols)
+                    await lf.setItem("cols", _cols)
                     if (v === col) setCol(null)
                   }}
                   sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
@@ -880,7 +891,13 @@ export default function Home() {
                             : typeof v3val === "object"
                             ? compose(
                                 join(":"),
-                                map(v4 => v3val[v4[0]])
+                                map(v4 => {
+                                  return v4[0] === "__id__"
+                                    ? typeof v3.key === "object"
+                                      ? v3.key.__id__
+                                      : v3.key
+                                    : v3val[v4[0]]
+                                })
                               )(currentFields || [])
                             : "-"
                           return (
@@ -902,7 +919,11 @@ export default function Home() {
                                   i === arrs.length - 1 ? "pointer" : "default",
                                 ":hover": { opacity: 0.75 },
                               }}
-                              title={v3.key ?? null}
+                              title={
+                                typeof v3.key === "object"
+                                  ? v3.key.__id__
+                                  : v3.key ?? null
+                              }
                               onClick={async () => {
                                 if (err) return
                                 if (i !== arrs.length - 1) return
@@ -982,8 +1003,8 @@ export default function Home() {
                         : currentType === "object"
                         ? compose(
                             join(":"),
-                            map(v4 => v.val[v4[0]])
-                          )(currentFields)
+                            map(v4 => JSON.stringify(v.val))
+                          )(currentFields || [])
                         : v.val
                     }`
                 )(his).join(", ")} ]`
@@ -999,7 +1020,7 @@ export default function Home() {
                     as="span"
                     color="white"
                     bg={v.op === "del" ? "salmon" : "#6441AF"}
-                    sx={{ borderRadius: "3px", wordBreak: "break-allx" }}
+                    sx={{ borderRadius: "3px", wordBreak: "break-all" }}
                   >
                     {typeof v.val === "boolean"
                       ? v.val
@@ -1008,8 +1029,10 @@ export default function Home() {
                       : typeof v.val === "object"
                       ? compose(
                           join(":"),
-                          map(v4 => v.val[v4[0]])
-                        )(currentFields)
+                          map(v4 =>
+                            v4[0] === "__id__" ? v.id : v4[0] ?? v.val[v4[0]]
+                          )
+                        )(currentFields || [])
                       : v.val}
                   </Flex>
                 ))(his)}

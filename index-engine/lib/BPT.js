@@ -1,4 +1,8 @@
 const {
+  assoc,
+  compose,
+  pickAll,
+  pluck,
   equals,
   init,
   concat,
@@ -60,27 +64,36 @@ class BPT {
   }
   putNode = async (node, stats) => await this.put(node.id, node, stats)
   data = async (key, cache = {}, stats) => {
-    if (typeof cache[key] !== "undefined") return cache[key]
+    if (typeof cache[key] !== "undefined") return { key, val: cache[key] }
     let _data = (await this.get(`data/${key}`, stats)) ?? null
     cache[key] = _data
-    return _data
+    return { key, val: _data }
   }
   root = async stats => (await this.get("root", stats)) ?? null
   setRoot = async (id, stats) => (await this.put("root", id, stats)) ?? null
   isOver = (node, plus = 0) => node.vals.length + plus > this.max_vals
   isUnder = (node, plus = 0) => node.vals.length + plus < this.min_vals
+  wrap = (val, key) => {
+    let obj = { val }
+    if (!isNil(val.__id__)) obj.key = val.__id__
+    if (!isNil(key)) obj.key = key
+    return obj
+  }
+
   comp(a, b, null_last = false) {
     if (typeof this.sort_fields === "string") {
-      return a === b ? 0 : a < b ? 1 : -1
+      return a.val === b.val ? 0 : a.val < b.val ? 1 : -1
     } else {
       for (const v of this.sort_fields) {
-        if (a[v[0]] !== b[v[0]]) {
+        const va = v[0] === "__id__" ? a.key : a.val[v[0]]
+        const vb = v[0] === "__id__" ? b.key : b.val[v[0]]
+        if (va !== vb) {
           return (
-            (isNil(a[v[0]])
+            (isNil(va)
               ? (v[1] === "desc" ? -1 : 1) * (null_last ? -1 : 1)
-              : isNil(b[v[0]])
+              : isNil(vb)
               ? (v[1] === "desc" ? -1 : 1) * (null_last ? 1 : -1)
-              : a[v[0]] < b[v[0]]
+              : va < vb
               ? 1
               : -1) * (v[1] === "desc" ? -1 : 1)
           )
@@ -109,25 +122,26 @@ class BPT {
     await this.setRoot(new_node.id, stats)
   }
 
-  async search(val, key) {
-    let node = await this.get(key ?? (await this.root()) ?? "0")
+  async search(val, key, stats) {
+    let node = await this.get(key ?? (await this.root(stats)) ?? "0", stats)
     if (isNil(node)) return null
     if (node.leaf) return node
     let i = 0
     for (const v of node.vals) {
-      if (isNil(val) || this.comp(val, v) === 1) {
-        return await this.search(val, node.children[i])
+      if (isNil(val) || this.comp(val, node.leaf ? v : this.wrap(v)) === 1) {
+        return await this.search(val, node.children[i], stats)
       }
       i++
     }
-    return await this.search(val, node.children[i])
+    return await this.search(val, node.children[i], stats)
   }
+
   async read(key) {
     let stats = {}
     return { key, val: (await this.searchByKey(key, stats))[0] }
   }
+
   async getVals(node, vals, index = 0, opt, cache = {}, inRange = null, stats) {
-    // should have starting, index, direction, optional conditions
     for (let i = index; i < node.vals.length; i++) {
       const v = node.vals[i]
       const val = await this.data(v, cache, stats)
@@ -140,10 +154,11 @@ class BPT {
       if (!isNil(opt.limit) && vals.length === opt.limit) return
     }
     if (!isNil(node.next)) {
-      const next = await this.get(node.next)
+      const next = await this.get(node.next, stats)
       await this.getVals(next, vals, 0, opt, cache, null, stats)
     }
   }
+
   async findIndex(_index, node, val, cache, stats) {
     let index = _index
     let isPrev = false
@@ -172,6 +187,7 @@ class BPT {
       return [index, node]
     }
   }
+
   async findLastIndex(_index, node, val, cache, stats) {
     let index = null
     let isNext = false
@@ -241,7 +257,6 @@ class BPT {
     if (isNil(first_node)) return []
     let vals = []
     let cache = {}
-    // startAt -> find the first val, startAfter find the last one before the val
     let index = 0
     let _node = first_node
     let _index = index
@@ -257,7 +272,6 @@ class BPT {
         if (!isNil(greater)) {
           _index = greater
         } else if (!isNil(index)) {
-          // get the index of the first item with val
           const [new_index, new_node] = await this.findIndex(
             _index,
             first_node,
@@ -288,7 +302,6 @@ class BPT {
         if (!isNil(greater)) {
           _index = greater
         } else if (!isNil(index)) {
-          // get the index of the last item with val
           const [new_index, new_node] = await this.findLastIndex(
             _index,
             first_node,
@@ -323,7 +336,7 @@ class BPT {
 
   async searchByKey(key, stats) {
     const val = await this.data(key, undefined, stats)
-    if (isNil(val)) return [null, null, null]
+    if (isNil(val.val)) return [null, null, null]
     let node = await this.search(val, undefined, stats)
     if (isNil(node)) return [val, null, null]
     return [val, ...(await this.searchNode(node, key, val, true, stats))]
@@ -363,10 +376,8 @@ class BPT {
       )
     }
     let isPrev = start === 0
-    // get nodes containing the val
     if (start === null) return [null, null]
     if (start > 0) {
-      //search backword first
       for (let i = start - 1; i >= 0; i--) {
         const v = node.vals[i]
         if (v === key) return [i, node]
@@ -384,7 +395,6 @@ class BPT {
         return [null, null]
       }
     }
-    // search ends up the right most node, so there is no next
     return isPrev && !isNil(node.prev)
       ? await this.searchNode(
           await this.get(node.prev, stats),
@@ -397,7 +407,6 @@ class BPT {
       : [null, null]
   }
 
-  // can be merged with recursive balance?
   async rmIndex(val_index, child_index, node, stats) {
     node.vals.splice(val_index, 1)
     node.children.splice(child_index, 1)
@@ -443,7 +452,6 @@ class BPT {
         if (!isMerged && isPrev) {
           if (!this.isOver(prev, node.vals.length + 1)) {
             prev.children = concat(prev.children, node.children)
-            // update parent of children
             for (const c of node.children) {
               let child = await this.get(c, stats)
               child.parent = prev.id
@@ -465,7 +473,6 @@ class BPT {
         if (!isMerged && isNext) {
           if (!this.isOver(next, node.vals.length + 1)) {
             next.children = concat(node.children, next.children)
-            // update parent of children
             for (const c of node.children) {
               let child = await this.get(c, stats)
               child.parent = next.id
@@ -508,15 +515,14 @@ class BPT {
       let parent_index = indexOf(node.id, parent.children)
       if (node.leaf) {
         if (node.vals.length > 0) {
-          val = await this.data(node.vals[0], undefined, stats)
+          val = this.pick(await this.data(node.vals[0], undefined, stats))
         } else if (!isNil(node.next)) {
           let next = await this.get(node.next, stats)
-          val = await this.data(next.vals[0], undefined, stats)
+          val = this.pick(await this.data(next.vals[0], undefined, stats))
         } else {
           return
         }
       }
-      // should we use comp?
       if (equals(val, changed) && parent_index > 0) {
         parent.vals[parent_index - 1] = val
         await this.putNode(parent, stats)
@@ -529,7 +535,6 @@ class BPT {
     }
   }
 
-  // borrow from left, borrow from right, merge with left, merge with right
   async balance(val, child_index, node, stats) {
     let merge_node = node
     let merge_child_index = child_index
@@ -543,35 +548,30 @@ class BPT {
         let prev = null
         let next = null
         if (isPrev) {
-          // check left
           prev ??= await this.get(parent.children[index - 1], stats)
-          // check if brrowable
           if (!this.isUnder(prev, -1)) {
             isMerged = true
             node.vals.unshift(prev.vals.pop())
-            parent.vals[index - 1] = await this.data(
-              node.vals[0],
-              undefined,
-              stats
+            parent.vals[index - 1] = this.pick(
+              await this.data(node.vals[0], undefined, stats)
             )
             await this.putNode(prev, stats)
             await this.putNode(node, stats)
           }
         }
         if (!isMerged && isNext) {
-          // check right
           next ??= await this.get(parent.children[index + 1], stats)
-          // check if brrowable
           if (!this.isUnder(next, -1)) {
             isMerged = true
             node.vals.push(next.vals.shift())
-            parent.vals[index] = await this.data(next.vals[0], undefined, stats)
+            parent.vals[index] = this.pick(
+              await this.data(next.vals[0], undefined, stats)
+            )
             await this.putNode(next, stats)
             await this.putNode(node, stats)
           }
         }
         if (!isMerged && isPrev) {
-          // check if mergeable
           if (!this.isOver(prev, node.vals.length)) {
             prev.vals = concat(prev.vals, node.vals)
             prev.next = node.next ?? null
@@ -587,7 +587,6 @@ class BPT {
           }
         }
         if (!isMerged && isNext) {
-          // check if mergeable
           if (!this.isOver(next, node.vals.length)) {
             next.vals = concat(node.vals, next.vals)
             next.prev = node.prev ?? null
@@ -606,7 +605,6 @@ class BPT {
         }
         await this.putNode(parent, stats)
       } else if (node.vals.length === 0) {
-        // removing root, root can have any number of vals
         await this.setRoot(null, stats)
         await this.del(node.id, stats)
       }
@@ -616,7 +614,6 @@ class BPT {
 
   async delete(key) {
     let stats = {}
-    // get node containing the val, maybe searchBy key is needed, search needs to be binary search
     let [val, index, node] = await this.searchByKey(key, stats)
     if (isNil(node)) return
     node.vals = without([key], node.vals)
@@ -642,19 +639,13 @@ class BPT {
 
   async insert(key, val) {
     let stats = {}
-    // add data to kvs
     await this.putData(key, val, stats)
-
-    // get node
-    let node = await this.search(val, undefined, stats)
+    let _val = { key, val }
+    let node = await this.search(_val, undefined, stats)
     if (isNil(node)) {
-      // init if no root
       await this.init(key, stats)
     } else {
-      // insert
-      await this._insert(key, val, node, stats)
-
-      // if full split
+      await this._insert(key, _val, node, stats)
       await this.putNode(node, stats)
       if (this.isOver(node)) await this.split(node, stats)
     }
@@ -663,7 +654,7 @@ class BPT {
 
   async commit(stats) {
     for (let k in stats) {
-      if (stats[k].__del__) {
+      if (stats[k]?.__del__) {
         await this.del(k)
       } else {
         await this.put(k, stats[k])
@@ -677,8 +668,6 @@ class BPT {
       const childrens = splitAt(node.vals.length + 1, node.children)
       node.children = childrens[0]
       new_node.children = childrens[1]
-
-      // update parents of new_node children
       for (const v of childrens[1]) {
         let child = await this.get(v, stats)
         child.parent = new_node.id
@@ -688,18 +677,15 @@ class BPT {
   }
 
   async _split(node, stats) {
-    // last problem
     let nodes = splitAt(Math.ceil(node.vals.length / 2))(node.vals)
     node.vals = node.leaf ? nodes[0] : init(nodes[0])
     let new_node = {
       leaf: node.leaf,
-      id: await this.id(),
+      id: await this.id(stats),
       vals: nodes[1],
       prev: node.id,
       next: node.next ?? null,
     }
-
-    // set next pointer
     if (!isNil(node.next)) {
       let next = await this.get(node.next, stats)
       next.prev = new_node.id
@@ -717,7 +703,7 @@ class BPT {
       ? await this.get(node.parent, stats)
       : {
           leaf: false,
-          id: await this.id(),
+          id: await this.id(stats),
           vals: [top],
           children: [node.id, new_node.id],
         }
@@ -728,10 +714,26 @@ class BPT {
     }
     return [isNewParent, parent]
   }
+  pick(obj) {
+    if (typeof this.sort_fields === "string") {
+      return obj.val
+    } else {
+      let _obj = {}
+      for (let v of pluck(0)(this.sort_fields)) {
+        _obj[v] = v === "__id__" ? obj.key : obj.val[v] ?? null
+      }
+      return _obj
+    }
+  }
 
   async split(node, stats) {
     let [top, new_node] = await this._split(node, stats)
-    let [isNewParent, parent] = await this.getParent(node, new_node, top, stats)
+    let [isNewParent, parent] = await this.getParent(
+      node,
+      new_node,
+      node.leaf ? this.pick(top) : top,
+      stats
+    )
     new_node.parent = parent.id
     node.parent = parent.id
     await this.putNode(new_node, stats)
