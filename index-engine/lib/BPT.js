@@ -484,6 +484,7 @@ class BPT {
             if (!isNil(node.prev)) {
               let prev = await this.get(node.prev, stats)
               prev.next = node.next || null
+              await this.putNode(prev, stats)
             }
             await this.putNode(next, stats)
             await this.rmIndex(index, index, parent, stats)
