@@ -10,6 +10,7 @@ import {
 import { nanoid } from "nanoid"
 import { useEffect, useState } from "react"
 import {
+  assoc,
   prepend,
   without,
   reject,
@@ -77,6 +78,7 @@ export default function Home() {
   const [auto, setAuto] = useState(false)
   const [store, setStore] = useState("{}")
   const [cols, setCols] = useState([])
+  const [indexes, setIndexes] = useState({})
   const [col, setCol] = useState(null)
   const [order, setOrder] = useState(initial_order)
   const [schema, setSchema] = useState(default_schema)
@@ -85,6 +87,7 @@ export default function Home() {
   const [currentSchema, setCurrentSchema] = useState(schema)
   const [data_type, setDataType] = useState("number")
   const [number, setNumber] = useState("")
+  const [data, setData] = useState("{}")
   const [bool, setBool] = useState("true")
   const [str, setStr] = useState("")
   const [obj, setObj] = useState("")
@@ -115,7 +118,7 @@ export default function Home() {
     const sort_fields =
       data_type === "object" ? map(split(":"))(fields.split(",")) : null
     setCurrentFields(sort_fields)
-    const kv = new KV(setStore)
+    const kv = new KV()
     tree = new BPT(order, sort_fields ?? data_type, kv, function (stats) {
       if (!isNil(setStore)) setStore(JSON.stringify(this.kv.store))
     })
@@ -177,7 +180,7 @@ export default function Home() {
     await tree.insert(id, val)
     _his2 = append({ val, op: "insert", id }, _his2)
     setHis(_his2)
-    const _err = isErr(tree.kv.store, order, last_id, isDel, prev_count)
+    const _err = isErr(tree.kv.store, currentOrder, last_id, isDel, prev_count)
     setExErr(_err)
     const [err, where, arrs, _len, _vals] = _err
     prev_count = _len
@@ -197,7 +200,7 @@ export default function Home() {
     isDel = true
     await tree.delete(key)
     delete ids[key]
-    const _err = isErr(tree.kv.store, order, last_id, isDel, prev_count)
+    const _err = isErr(tree.kv.store, currentOrder, last_id, isDel, prev_count)
     setExErr(_err)
     const [err, where, arrs, _len, _vals] = _err
     prev_count = _len
@@ -211,7 +214,9 @@ export default function Home() {
       try {
         const _keys = keys(ids)
         let _err
-        if (
+        if (!isNil(col)) {
+          _err = await addData()
+        } else if (
           _keys.length > 0 &&
           Math.random() < (_keys.length > order * 10 ? 0.8 : 0.2)
         ) {
@@ -236,8 +241,94 @@ export default function Home() {
       setCols((await lf.getItem("cols")) || [])
     })()
   }, [])
-
+  useEffect(() => {
+    ;(async () => {
+      if (!isNil(col)) {
+        setExErr([false, null])
+        const count = (await lf.getItem(`count-${col}`)) ?? 0
+        const _indexes = (await lf.getItem(`indexes-${col}`)) || {}
+        setCurrentFields([["__id__", "asc"]])
+        setCurrentType("object")
+        setHis([])
+        _his2 = []
+        ids = {}
+        setCurrentOrder(3)
+        setHis(_his2)
+        const kv = new KV(col)
+        tree = new BPT(3, [["__id__", "asc"]], kv, function (stats) {
+          if (!isNil(setStore)) setStore(JSON.stringify(this.kv.store))
+        })
+        prev_count = 0
+        if (isNil(_indexes["__id__:asc"])) {
+          for (let i = 1; i <= count; i++) {
+            const _log = await lf.getItem(`log-${col}-${i}`)
+            await tree.insert(_log.key, _log.val)
+          }
+          const new_indexes = assoc("__id__:asc", { order: 100 }, _indexes)
+          setIndexes(new_indexes)
+          await lf.setItem(
+            `indexes-${col}`,
+            assoc("__id__:asc", { order: 3 }, _indexes)
+          )
+        } else {
+          setIndexes(_indexes)
+          let i = 0
+          while (true) {
+            let node = await tree.kv.get(i)
+            if (i === 0) {
+              await tree.root(i)
+              await tree.get("count")
+            }
+            if (isNil(node)) break
+            if (node.leaf) {
+              for (let v of node.vals) {
+                await tree.data(v)
+                prev_count += 1
+              }
+            } else {
+              for (let v of node.children) {
+                await tree.get(v)
+              }
+            }
+            i++
+          }
+          console.log(tree)
+        }
+        setStore(JSON.stringify(tree.kv.store))
+      }
+    })()
+  }, [col])
   let { nodemap, arrs } = build(store)
+  const addData = async () => {
+    let _data = null
+    isDel = false
+    try {
+      eval(`_data = ${data}`)
+    } catch (e) {
+      alert("data couldn't parse")
+      return
+    }
+    if (typeof _data !== "object") {
+      alert("data must be an object")
+      return
+    }
+    const count = (await lf.getItem(`count-${col}`)) ?? 0
+    const id = nanoid()
+    last_id = id
+    const log = { id: count + 1, op: "create", val: _data, key: id }
+    await lf.setItem(`log-${col}-${count + 1}`, log)
+    await lf.setItem(`count-${col}`, count + 1)
+    await tree.insert(id, _data)
+    const _err = isErr(tree.kv.store, currentOrder, last_id, isDel, prev_count)
+    setExErr(_err)
+    const [err, where, arrs, _len, _vals] = _err
+    prev_count = _len
+    len = _len
+    setData("{}")
+    _his2 = append({ val: _data, op: "insert", id }, _his2)
+    setHis(_his2)
+    return _err
+  }
   const addNumber = async () => {
     if (number !== "") {
       await insert(number * 1)
@@ -353,245 +444,254 @@ export default function Home() {
             </Flex>
           ))(prepend(null, cols))}
         </Box>
-        <Box as="hr" my={3} />
-        <Flex>
-          <Box flex={1}>
-            <Flex mx={2} mt={2} color="#666" mb={1} fontSize="10px">
-              Data Type
-            </Flex>
-            <Flex mx={2} mb={2}>
-              <Select
-                onChange={e => setDataType(e.target.value)}
-                value={data_type}
-                bg="white"
-                fontSize="12px"
-                height="28px"
-                sx={{ borderRadius: "3px" }}
-              >
-                {map(v => <option value={v}>{v}</option>)([
-                  "number",
-                  "string",
-                  "boolean",
-                  "object",
-                ])}
-              </Select>
-            </Flex>
-          </Box>
-          <Box flex={1}>
-            <Flex mx={2} mt={2} color="#666" mb={1} fontSize="10px">
-              Order
-            </Flex>
-            <Flex mx={2} mb={2}>
-              <Input
-                onChange={e => {
-                  const ord = e.target.value * 1
-                  if (!isNaN(ord)) setOrder(ord)
-                }}
-                placeholder="Order"
-                value={order}
-                height="auto"
-                flex={1}
-                bg="white"
-                fontSize="12px"
-                py={1}
-                px={3}
-                sx={{ borderRadius: "3px 0 0 3px" }}
-              />
-            </Flex>
-          </Box>
-        </Flex>
-        {data_type !== "object" ? null : (
-          <Box fontSize="10px">
-            <Flex mx={2} mt={2} color="#666" mb={1} fontSize="10px">
-              Schema
-            </Flex>
-            <Flex mx={2}>
-              <Input
-                onChange={e => setField(e.target.value)}
-                placeholder="name"
-                value={field}
-                height="auto"
-                flex={1}
-                bg="white"
-                fontSize="12px"
-                py={1}
-                px={3}
-                sx={{ borderRadius: "3px 0 0 3px" }}
-              />
-              <Select
-                onChange={e => {
-                  setFieldType(e.target.value)
-                }}
-                value={field_type}
-                height="28px"
-                width="100px"
-                bg="white"
-                fontSize="12px"
-                sx={{ borderRadius: "0" }}
-              >
-                {map(v => <option value={v}>{v}</option>)([
-                  "number",
-                  "string",
-                  "boolean",
-                ])}
-              </Select>
-              <Flex
-                width="30px"
-                align="center"
-                p={1}
-                justify="center"
-                bg="#666"
-                color="white"
-                onClick={async () => {
-                  if (!/^\s*$/.test(field)) {
-                    setField("")
-                    setSchema(
-                      compose(
-                        append({ key: field, type: field_type }),
-                        reject(propEq(field, "key"))
-                      )(schema)
-                    )
-                  }
-                }}
-                sx={{
-                  borderRadius: "0 3px 3px 0",
-                  cursor: "pointer",
-                  ":hover": { opacity: 0.75 },
-                }}
-              >
-                +
-              </Flex>
-            </Flex>
-            <Box mx={3} my={2}>
-              {map(v => {
-                return (
-                  <Flex align="center" my={1}>
-                    <Flex flex={1}>{v.key}</Flex>
-                    <Flex flex={1}>{v.type}</Flex>
-                    <Flex
-                      onClick={() => {
-                        setSchema(reject(propEq(v.key, "key"))(schema))
-                      }}
-                      sx={{ textDecoration: "underline", cursor: "pointer" }}
-                      color="#6441AF"
-                    >
-                      Remove
-                    </Flex>
-                  </Flex>
-                )
-              })(schema)}
-            </Box>
-          </Box>
-        )}
-        <Flex mx={2} color="#666" mb={1} fontSize="10px">
-          <Box>
-            Initial Values (
-            {currentType === "object" ? "csv" : "comma separeted"})
-          </Box>
-        </Flex>
-        <Flex mx={2} mb={2}>
-          {data_type === "boolean" ? (
-            <Input
-              onChange={e => setInitValuesBool(e.target.value)}
-              placeholder="Order"
-              value={initValuesBool}
-              height="auto"
-              flex={1}
-              bg="white"
-              fontSize="12px"
-              py={1}
-              px={3}
-              sx={{ borderRadius: "3px 0 0 3px" }}
-            />
-          ) : data_type === "string" ? (
-            <Input
-              onChange={e => setInitValuesStr(e.target.value)}
-              placeholder="Order"
-              value={initValuesStr}
-              height="auto"
-              flex={1}
-              bg="white"
-              fontSize="12px"
-              py={1}
-              px={3}
-              sx={{ borderRadius: "3px 0 0 3px" }}
-            />
-          ) : data_type === "object" ? (
-            <Textarea
-              onChange={e => setInitValuesObject(e.target.value)}
-              placeholder="Order"
-              value={initValuesObject}
-              height="auto"
-              flex={1}
-              bg="white"
-              fontSize="12px"
-              py={1}
-              px={3}
-              sx={{ borderRadius: "3px 0 0 3px" }}
-            />
-          ) : (
-            <Input
-              onChange={e => setInitValues(e.target.value)}
-              placeholder="Order"
-              value={initValues}
-              height="auto"
-              flex={1}
-              bg="white"
-              fontSize="12px"
-              py={1}
-              px={3}
-              sx={{ borderRadius: "3px 0 0 3px" }}
-            />
-          )}
-        </Flex>
-        {data_type === "object" ? (
+        {!isNil(col) ? null : (
           <>
+            <Box as="hr" my={3} />
+            <Flex>
+              <Box flex={1}>
+                <Flex mx={2} mt={2} color="#666" mb={1} fontSize="10px">
+                  Data Type
+                </Flex>
+                <Flex mx={2} mb={2}>
+                  <Select
+                    onChange={e => setDataType(e.target.value)}
+                    value={data_type}
+                    bg="white"
+                    fontSize="12px"
+                    height="28px"
+                    sx={{ borderRadius: "3px" }}
+                  >
+                    {map(v => <option value={v}>{v}</option>)([
+                      "number",
+                      "string",
+                      "boolean",
+                      "object",
+                    ])}
+                  </Select>
+                </Flex>
+              </Box>
+              <Box flex={1}>
+                <Flex mx={2} mt={2} color="#666" mb={1} fontSize="10px">
+                  Order
+                </Flex>
+                <Flex mx={2} mb={2}>
+                  <Input
+                    onChange={e => {
+                      const ord = e.target.value * 1
+                      if (!isNaN(ord)) setOrder(ord)
+                    }}
+                    placeholder="Order"
+                    value={order}
+                    height="auto"
+                    flex={1}
+                    bg="white"
+                    fontSize="12px"
+                    py={1}
+                    px={3}
+                    sx={{ borderRadius: "3px 0 0 3px" }}
+                  />
+                </Flex>
+              </Box>
+            </Flex>
+            {data_type !== "object" ? null : (
+              <Box fontSize="10px">
+                <Flex mx={2} mt={2} color="#666" mb={1} fontSize="10px">
+                  Schema
+                </Flex>
+                <Flex mx={2}>
+                  <Input
+                    onChange={e => setField(e.target.value)}
+                    placeholder="name"
+                    value={field}
+                    height="auto"
+                    flex={1}
+                    bg="white"
+                    fontSize="12px"
+                    py={1}
+                    px={3}
+                    sx={{ borderRadius: "3px 0 0 3px" }}
+                  />
+                  <Select
+                    onChange={e => {
+                      setFieldType(e.target.value)
+                    }}
+                    value={field_type}
+                    height="28px"
+                    width="100px"
+                    bg="white"
+                    fontSize="12px"
+                    sx={{ borderRadius: "0" }}
+                  >
+                    {map(v => <option value={v}>{v}</option>)([
+                      "number",
+                      "string",
+                      "boolean",
+                    ])}
+                  </Select>
+                  <Flex
+                    width="30px"
+                    align="center"
+                    p={1}
+                    justify="center"
+                    bg="#666"
+                    color="white"
+                    onClick={async () => {
+                      if (!/^\s*$/.test(field)) {
+                        setField("")
+                        setSchema(
+                          compose(
+                            append({ key: field, type: field_type }),
+                            reject(propEq(field, "key"))
+                          )(schema)
+                        )
+                      }
+                    }}
+                    sx={{
+                      borderRadius: "0 3px 3px 0",
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                  >
+                    +
+                  </Flex>
+                </Flex>
+                <Box mx={3} my={2}>
+                  {map(v => {
+                    return (
+                      <Flex align="center" my={1}>
+                        <Flex flex={1}>{v.key}</Flex>
+                        <Flex flex={1}>{v.type}</Flex>
+                        <Flex
+                          onClick={() => {
+                            setSchema(reject(propEq(v.key, "key"))(schema))
+                          }}
+                          sx={{
+                            textDecoration: "underline",
+                            cursor: "pointer",
+                          }}
+                          color="#6441AF"
+                        >
+                          Remove
+                        </Flex>
+                      </Flex>
+                    )
+                  })(schema)}
+                </Box>
+              </Box>
+            )}
             <Flex mx={2} color="#666" mb={1} fontSize="10px">
-              <Box>Sort Fields (e.g. age=asc,name=desc)</Box>
+              <Box>
+                Initial Values (
+                {currentType === "object" ? "csv" : "comma separeted"})
+              </Box>
             </Flex>
             <Flex mx={2} mb={2}>
-              <Input
-                onChange={e => setFields(e.target.value)}
-                placeholder="Order"
-                value={fields}
-                height="auto"
-                flex={1}
-                bg="white"
-                fontSize="12px"
-                py={1}
-                px={3}
-                sx={{ borderRadius: "3px 0 0 3px" }}
-              />
+              {data_type === "boolean" ? (
+                <Input
+                  onChange={e => setInitValuesBool(e.target.value)}
+                  placeholder="Order"
+                  value={initValuesBool}
+                  height="auto"
+                  flex={1}
+                  bg="white"
+                  fontSize="12px"
+                  py={1}
+                  px={3}
+                  sx={{ borderRadius: "3px 0 0 3px" }}
+                />
+              ) : data_type === "string" ? (
+                <Input
+                  onChange={e => setInitValuesStr(e.target.value)}
+                  placeholder="Order"
+                  value={initValuesStr}
+                  height="auto"
+                  flex={1}
+                  bg="white"
+                  fontSize="12px"
+                  py={1}
+                  px={3}
+                  sx={{ borderRadius: "3px 0 0 3px" }}
+                />
+              ) : data_type === "object" ? (
+                <Textarea
+                  onChange={e => setInitValuesObject(e.target.value)}
+                  placeholder="Order"
+                  value={initValuesObject}
+                  height="auto"
+                  flex={1}
+                  bg="white"
+                  fontSize="12px"
+                  py={1}
+                  px={3}
+                  sx={{ borderRadius: "3px 0 0 3px" }}
+                />
+              ) : (
+                <Input
+                  onChange={e => setInitValues(e.target.value)}
+                  placeholder="Order"
+                  value={initValues}
+                  height="auto"
+                  flex={1}
+                  bg="white"
+                  fontSize="12px"
+                  py={1}
+                  px={3}
+                  sx={{ borderRadius: "3px 0 0 3px" }}
+                />
+              )}
+            </Flex>
+            {data_type === "object" ? (
+              <>
+                <Flex mx={2} color="#666" mb={1} fontSize="10px">
+                  <Box>Sort Fields (e.g. age=asc,name=desc)</Box>
+                </Flex>
+                <Flex mx={2} mb={2}>
+                  <Input
+                    onChange={e => setFields(e.target.value)}
+                    placeholder="Order"
+                    value={fields}
+                    height="auto"
+                    flex={1}
+                    bg="white"
+                    fontSize="12px"
+                    py={1}
+                    px={3}
+                    sx={{ borderRadius: "3px 0 0 3px" }}
+                  />
+                </Flex>
+              </>
+            ) : null}
+            <Flex
+              align="center"
+              p={1}
+              mx={2}
+              justify="center"
+              bg="#666"
+              color="white"
+              onClick={async () => {
+                reset()
+              }}
+              sx={{
+                borderRadius: "3px",
+                cursor: "pointer",
+                ":hover": { opacity: 0.75 },
+              }}
+            >
+              Reset
             </Flex>
           </>
-        ) : null}
-        <Flex
-          align="center"
-          p={1}
-          mx={2}
-          justify="center"
-          bg="#666"
-          color="white"
-          onClick={async () => {
-            reset()
-          }}
-          sx={{
-            borderRadius: "3px",
-            cursor: "pointer",
-            ":hover": { opacity: 0.75 },
-          }}
-        >
-          Reset
-        </Flex>
+        )}
         <Box as="hr" my={3} />
         <Flex mx={2} mt={2} color="#666" mb={1} fontSize="10px">
           Add Value
         </Flex>
         <Flex mx={2} mb={2}>
-          {currentType !== "boolean" ? (
+          {!isNil(col) || currentType !== "boolean" ? (
             <Input
               onChange={e => {
-                if (currentType === "number") {
+                if (!isNil(col)) {
+                  setData(e.target.value)
+                } else if (currentType === "number") {
                   const num = e.target.value * 1
                   if (!isNaN(num)) setNumber(num)
                 } else if (currentType === "string") {
@@ -601,12 +701,16 @@ export default function Home() {
                 }
               }}
               placeholder={
-                data_type === "object"
+                !isNil(col)
+                  ? "data"
+                  : currentType === "object"
                   ? pluck("type")(schema).join(",")
-                  : data_type
+                  : currentType
               }
               value={
-                currentType === "number"
+                !isNil(col)
+                  ? data
+                  : currentType === "number"
                   ? number
                   : currentType === "string"
                   ? str
@@ -622,7 +726,9 @@ export default function Home() {
               sx={{ borderRadius: "3px 0 0 3px" }}
               onKeyDown={async e => {
                 if (e.code === "Enter") {
-                  currentType === "number"
+                  !isNil(col)
+                    ? addData()
+                    : currentType === "number"
                     ? addNumber()
                     : currentType === "string"
                     ? addString()
@@ -655,7 +761,9 @@ export default function Home() {
             color="white"
             onClick={async () => {
               if (err) return
-              currentType === "number"
+              !isNil(col)
+                ? addData()
+                : currentType === "number"
                 ? addNumber()
                 : currentType === "string"
                 ? addString()
@@ -680,8 +788,12 @@ export default function Home() {
           color="white"
           onClick={async () => {
             if (err) return
-            const num = gen(currentType, currentSchema)
-            await insert(num)
+            if (!isNil(col)) {
+              await addData()
+            } else {
+              const num = gen(currentType, currentSchema)
+              await insert(num)
+            }
           }}
           sx={{
             borderRadius: "3px",
@@ -918,6 +1030,7 @@ export default function Home() {
                                 cursor:
                                   i === arrs.length - 1 ? "pointer" : "default",
                                 ":hover": { opacity: 0.75 },
+                                whiteSpace: "nowrap",
                               }}
                               title={
                                 typeof v3.key === "object"
