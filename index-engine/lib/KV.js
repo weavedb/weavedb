@@ -2,12 +2,14 @@ const { isNil } = require("ramda")
 const lf = require("localforage")
 const shortid = require("shortid")
 class KV {
-  constructor() {
-    this.prefix = shortid.generate()
+  constructor(prefix) {
+    this.prefix = prefix ?? shortid.generate()
     this.store = {}
   }
   async get(key) {
-    return (await lf.getItem(`${this.prefix}/${key}`)) ?? null
+    const data = (await lf.getItem(`${this.prefix}/${key}`)) ?? null
+    if (!isNil(data)) this.store[key] = data
+    return data
   }
   async put(key, val) {
     await lf.setItem(`${this.prefix}/${key}`, val)
