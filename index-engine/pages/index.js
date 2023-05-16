@@ -10,6 +10,7 @@ import {
 import { nanoid } from "nanoid"
 import { useEffect, useState } from "react"
 import {
+  difference,
   assoc,
   prepend,
   without,
@@ -36,6 +37,7 @@ import {
 const BPT = require("../lib/BPT")
 const { gen, isErr, build } = require("../lib/utils")
 let tree = null
+let idtree = null
 let init = false
 
 let ids = {}
@@ -79,6 +81,7 @@ export default function Home() {
   const [store, setStore] = useState("{}")
   const [cols, setCols] = useState([])
   const [indexes, setIndexes] = useState({})
+  const [index, setIndex] = useState(null)
   const [col, setCol] = useState(null)
   const [order, setOrder] = useState(initial_order)
   const [schema, setSchema] = useState(default_schema)
@@ -246,7 +249,9 @@ export default function Home() {
       if (!isNil(col)) {
         setExErr([false, null])
         const count = (await lf.getItem(`count-${col}`)) ?? 0
-        const _indexes = (await lf.getItem(`indexes-${col}`)) || {}
+        const index_key = `indexes-${col}`
+        let _indexes = (await lf.getItem(index_key)) || {}
+        setIndex("__id__:asc")
         setCurrentFields([["__id__", "asc"]])
         setCurrentType("object")
         setHis([])
@@ -254,50 +259,83 @@ export default function Home() {
         ids = {}
         setCurrentOrder(3)
         setHis(_his2)
-        const kv = new KV(col)
+        const kv = new KV(`index.${col}//__id__/asc`)
+        console.log(`index.${col}//__id__/asc`)
         tree = new BPT(3, [["__id__", "asc"]], kv, function (stats) {
-          if (!isNil(setStore)) setStore(JSON.stringify(this.kv.store))
+          if (!isNil(setStore) && index === "__id__:asc") {
+            console.log("now setting", index)
+            setStore(JSON.stringify(this.kv.store))
+          }
         })
+        idtree = tree
+        console.log("idtree = tree")
         prev_count = 0
         if (isNil(_indexes["__id__:asc"])) {
           for (let i = 1; i <= count; i++) {
             const _log = await lf.getItem(`log-${col}-${i}`)
             await tree.insert(_log.key, _log.val)
           }
-          const new_indexes = assoc("__id__:asc", { order: 100 }, _indexes)
-          setIndexes(new_indexes)
-          await lf.setItem(
-            `indexes-${col}`,
-            assoc("__id__:asc", { order: 3 }, _indexes)
-          )
+          const key = "__id__:asc"
+          _indexes = assoc(key, { order: 3, key }, _indexes)
+          setIndexes(_indexes)
         } else {
           setIndexes(_indexes)
-          let i = 0
-          while (true) {
-            let node = await tree.kv.get(i)
-            if (i === 0) {
-              await tree.root(i)
-              await tree.get("count")
-            }
-            if (isNil(node)) break
+          let root = await tree.root()
+          await tree.get("count")
+          const getNode = async root => {
+            let node = await tree.get(root)
             if (node.leaf) {
               for (let v of node.vals) {
                 await tree.data(v)
                 prev_count += 1
               }
             } else {
-              for (let v of node.children) {
-                await tree.get(v)
-              }
+              for (let v of node.children) await getNode(v)
             }
-            i++
           }
-          console.log(tree)
+          if (!isNil(root)) {
+            await getNode(root)
+          }
         }
+        await lf.setItem(index_key, _indexes)
         setStore(JSON.stringify(tree.kv.store))
       }
     })()
   }, [col])
+
+  useEffect(() => {
+    ;(async () => {
+      if (!isNil(index)) {
+        const sort_fields = map(v => v.split(":"))(index.split("/"))
+        if (index === "__id__:asc") {
+          tree = idtree
+        } else {
+          const kv = new KV(
+            `index.${col}//${compose(join("/"), flatten)(sort_fields)}`
+          )
+          tree = new BPT(3, sort_fields, kv, function (stats) {
+            if (!isNil(setStore)) setStore(JSON.stringify(this.kv.store))
+          })
+          let root = await tree.root()
+          await tree.get("count")
+          const getNode = async root => {
+            let node = await tree.get(root)
+            if (node.leaf) {
+              for (let v of node.vals) {
+                await tree.data(v)
+              }
+            } else {
+              for (let v of node.children) await getNode(v)
+            }
+          }
+          if (!isNil(root)) await getNode(root)
+        }
+        setStore(JSON.stringify(tree.kv.store))
+        setCurrentFields(sort_fields)
+      }
+    })()
+  }, [index])
+
   let { nodemap, arrs } = build(store)
   const addData = async () => {
     let _data = null
@@ -318,8 +356,14 @@ export default function Home() {
     const log = { id: count + 1, op: "create", val: _data, key: id }
     await lf.setItem(`log-${col}-${count + 1}`, log)
     await lf.setItem(`count-${col}`, count + 1)
-    await tree.insert(id, _data)
-    const _err = isErr(tree.kv.store, currentOrder, last_id, isDel, prev_count)
+    await idtree.insert(id, _data)
+    const _err = isErr(
+      idtree.kv.store,
+      currentOrder,
+      last_id,
+      isDel,
+      prev_count
+    )
     setExErr(_err)
     const [err, where, arrs, _len, _vals] = _err
     prev_count = _len
@@ -327,6 +371,41 @@ export default function Home() {
     setData("{}")
     _his2 = append({ val: _data, op: "insert", id }, _his2)
     setHis(_his2)
+    if (typeof _data === "object") {
+      let _indexes = clone(indexes)
+      for (const k in _data) {
+        const key = `${k}:asc`
+        if (isNil(indexes[key])) _indexes[key] = { order: 3, key }
+        if (key === index) {
+          await tree.insert(id, _data)
+        } else {
+          const kv = new KV(`index.${col}//${k}/asc`)
+          const _tree = new BPT(3, [[k, "asc"]], kv, function (stats) {})
+          await _tree.insert(id, _data)
+        }
+      }
+      await lf.setItem(`indexes-${col}`, _indexes)
+      setIndexes(_indexes)
+      for (const k in indexes) {
+        const fields = keys(_data)
+        const i_fields = compose(
+          without(["__id__"]),
+          map(v => v.split(":")[0])
+        )(k.split("/"))
+        const diff = difference(i_fields, fields)
+        if (i_fields.length > 1 && diff.length === 0) {
+          const kv = new KV(`index.${col}//${k}/asc`)
+          const sort_fields = map(v => v.split(":"))(k.split("/"))
+          if (k === index) {
+            await tree.insert(id, _data)
+          } else {
+            const tree = new BPT(3, sort_fields, kv, function (stats) {})
+            await tree.insert(id, _data)
+          }
+        }
+      }
+    }
+    setStore(JSON.stringify(tree.kv.store))
     return _err
   }
   const addNumber = async () => {
@@ -368,6 +447,10 @@ export default function Home() {
     }, 100)
   }
   const [err, where] = exErr
+  const _indexes = []
+  for (let k in indexes) {
+    _indexes.push(indexes[k])
+  }
   return (
     <ChakraProvider>
       <style global jsx>{`
@@ -444,6 +527,39 @@ export default function Home() {
             </Flex>
           ))(prepend(null, cols))}
         </Box>
+        {isNil(col) ? null : (
+          <>
+            <Box as="hr" my={3} />
+            <Box flex={1}>
+              <Flex mx={2} mt={2} color="#666" mb={1} fontSize="10px">
+                Indexes
+              </Flex>
+              <Box px={3}>
+                {map(v => (
+                  <Flex color={index === v.key ? "#6441AF" : "#666"}>
+                    <Box
+                      flex={1}
+                      onClick={() => setIndex(v.key)}
+                      sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
+                    >
+                      {v.key}
+                    </Box>
+                    {v === null ? null : (
+                      <Box
+                        onClick={async () => {
+                          console.log(v)
+                        }}
+                        sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
+                      >
+                        x
+                      </Box>
+                    )}
+                  </Flex>
+                ))(_indexes)}
+              </Box>
+            </Box>
+          </>
+        )}
         {!isNil(col) ? null : (
           <>
             <Box as="hr" my={3} />

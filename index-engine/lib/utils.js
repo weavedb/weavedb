@@ -202,6 +202,7 @@ const isErr = (store, order = 4, id, isDel, prev_count) => {
       ? []
       : compose(flatten, pluck("vals"), last)(arrs)
   if ((isDel && prev_count - 1 !== len) || (!isDel && prev_count + 1 !== len)) {
+    console.log(prev_count, len)
     err = true
     where = { type: "not updated", id, arr: [prev_count, len] }
   }
