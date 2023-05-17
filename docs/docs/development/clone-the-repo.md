@@ -10,9 +10,3 @@ git clone https://github.com/weavedb/weavedb.git
 cd weavedb
 yarn
 ```
-
-Test.
-
-```bash
-yarn test
-```
