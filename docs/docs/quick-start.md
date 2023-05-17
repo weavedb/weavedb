@@ -859,4 +859,4 @@ WeaveDB is extremely powerful if you get familiar with advanced usages.
 - Contract management / [Upgradability](/docs/sdk/evolve)
 - Verifiable [relayers](/docs/sdk/relayers) to process external data
 - Cross-chain data bridge with [Lit Protocol](/docs/sdk/relayers#verifiable-oracles-with-lit-protocol)
-- Using [gRPC node](/docs/development/node) for performance boost
+- Using [gRPC node](/docs/advanced/node) for performance boost
