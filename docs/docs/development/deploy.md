@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 4
 ---
 # Deploy Contracts
 
@@ -42,3 +42,16 @@ yarn deploy
 ```
 
 Testnet deployment has been deprecated as it's not so stable. You can test on the mainnet for free, or we are going to develop a local test environment soon.
+
+## Buffer Dependency
+In the client app, you will need to install `buffer` package and expose it to `window.Buffer` to resolve the Buffer dependency for crypto authentications. This will be removed in future releases.
+
+```bash
+yarn add buffer
+```
+
+Do the following somehow according to the web framework of your choice.
+```js
+import { Buffer } from "buffer"
+window.Buffer = Buffer
+```
