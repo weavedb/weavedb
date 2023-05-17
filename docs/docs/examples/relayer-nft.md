@@ -264,8 +264,8 @@ Open a new terminal and move to the root directry to continue depelopment.
 
 We use these minimum dependencies.
 
-- [WeaveDB Client](/docs/sdk/client) - to connect with the gRPC node from browsers
-- [WeaveDB Node Client](/docs/sdk/client) - to connect with the gRPC node from the serverless api
+- [WeaveDB Client](/docs/advanced/client) - to connect with the gRPC node from browsers
+- [WeaveDB Node Client](/docs/advanced/client) - to connect with the gRPC node from the serverless api
 - [Ramda.js](https://ramdajs.com/) - functional programming utilities
 - [Chakra UI](https://chakra-ui.com/) - UI library
 - [Ethers.js](https://docs.ethers.org/v5/) - to connect with Metamask
