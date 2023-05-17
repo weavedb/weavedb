@@ -7,7 +7,7 @@ How to build the simplest todo dapp with WeaveDB and [Next.js](https://nextjs.or
 
 ## Deploy WeaveDB Contracts
 
-Go to the [cloud Web Console](https://console.weavedb.dev) or you can also use your [local Web Console](/docs/development/web-console).
+Go to the [cloud Web Console](https://console.weavedb.dev) or you can also use your [local Web Console](/docs/runlocally/web-console).
 
 Click `DB` then `+` to open up the contract deploy dialog.
 
