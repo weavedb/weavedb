@@ -190,8 +190,60 @@ export default function Home() {
     len = _len
     return _err
   }
-
+  const delData = async key => {
+    const _keys = keys(ids)
+    key = isNil(key) ? _keys[Math.floor(Math.random() * _keys.length)] : key
+    last_id = key
+    const __data = await tree.data(key)
+    const _data = __data.val
+    const id = key
+    _his2 = append({ val: _data, op: "del", id: key }, _his2)
+    setHis(_his2)
+    isDel = true
+    await idtree.delete(key)
+    delete ids[key]
+    const _err = isErr(
+      idtree.kv.store,
+      currentOrder,
+      last_id,
+      isDel,
+      prev_count
+    )
+    setExErr(_err)
+    const [err, where, arrs, _len, _vals] = _err
+    prev_count = _len
+    len = _len
+    if (typeof _data === "object") {
+      for (const k in indexes) {
+        const fields = keys(_data)
+        const i_fields = compose(
+          without(["__id__"]),
+          map(v => v.split(":")[0])
+        )(k.split("/"))
+        const diff = difference(i_fields, fields)
+        if (i_fields.length > 0 && diff.length === 0) {
+          const sort_fields = map(v => v.split(":"))(k.split("/"))
+          const skey = `index.${col}//${compose(
+            join("/"),
+            flatten
+          )(sort_fields)}`
+          const kv = new KV(skey)
+          if (k === index) {
+            await tree.delete(id)
+          } else {
+            const tree = new BPT(3, sort_fields, kv, function (stats) {})
+            await tree.delete(id)
+          }
+        }
+      }
+    }
+    setStore(JSON.stringify(tree.kv.store))
+    return _err
+  }
   const del = async key => {
+    if (!isNil(col)) {
+      return await delData(key)
+    }
     const _keys = keys(ids)
     key = isNil(key) ? _keys[Math.floor(Math.random() * _keys.length)] : key
     last_id = key
@@ -260,15 +312,12 @@ export default function Home() {
         setCurrentOrder(3)
         setHis(_his2)
         const kv = new KV(`index.${col}//__id__/asc`)
-        console.log(`index.${col}//__id__/asc`)
         tree = new BPT(3, [["__id__", "asc"]], kv, function (stats) {
           if (!isNil(setStore) && index === "__id__:asc") {
-            console.log("now setting", index)
             setStore(JSON.stringify(this.kv.store))
           }
         })
         idtree = tree
-        console.log("idtree = tree")
         prev_count = 0
         if (isNil(_indexes["__id__:asc"])) {
           for (let i = 1; i <= count; i++) {
@@ -295,6 +344,40 @@ export default function Home() {
           }
           if (!isNil(root)) {
             await getNode(root)
+          }
+        }
+        if (typeof _data === "object") {
+          let _indexes = clone(indexes)
+          for (const k in _data) {
+            const key = `${k}:asc`
+            if (isNil(indexes[key])) _indexes[key] = { order: 3, key }
+            if (key === index) {
+              await tree.insert(id, _data)
+            } else {
+              const kv = new KV(`index.${col}//${k}/asc`)
+              const _tree = new BPT(3, [[k, "asc"]], kv, function (stats) {})
+              await _tree.insert(id, _data)
+            }
+          }
+          await lf.setItem(`indexes-${col}`, _indexes)
+          setIndexes(_indexes)
+          for (const k in indexes) {
+            const fields = keys(_data)
+            const i_fields = compose(
+              without(["__id__"]),
+              map(v => v.split(":")[0])
+            )(k.split("/"))
+            const diff = difference(i_fields, fields)
+            if (i_fields.length > 1 && diff.length === 0) {
+              const kv = new KV(`index.${col}//${k}/asc`)
+              const sort_fields = map(v => v.split(":"))(k.split("/"))
+              if (k === index) {
+                await tree.insert(id, _data)
+              } else {
+                const tree = new BPT(3, sort_fields, kv, function (stats) {})
+                await tree.insert(id, _data)
+              }
+            }
           }
         }
         await lf.setItem(index_key, _indexes)
@@ -394,8 +477,12 @@ export default function Home() {
         )(k.split("/"))
         const diff = difference(i_fields, fields)
         if (i_fields.length > 1 && diff.length === 0) {
-          const kv = new KV(`index.${col}//${k}/asc`)
           const sort_fields = map(v => v.split(":"))(k.split("/"))
+          const skey = `index.${col}//${compose(
+            join("/"),
+            flatten
+          )(sort_fields)}`
+          const kv = new KV(skey)
           if (k === index) {
             await tree.insert(id, _data)
           } else {
