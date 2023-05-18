@@ -5205,10 +5205,10 @@ weavedb-contracts@^0.27.1:
     md5 "^2.3.0"
     ramda "^0.28.0"
 
-weavedb-sdk@^0.27.5:
-  version "0.27.5"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.27.5.tgz#659fe0dffbb59b2642dd290e76ca56460b6468df"
-  integrity sha512-lFUxvDwXPVQE6lZ6nWWE84DoLyu63S92oxQ6cdVa38diKAauHAvQdRa0ISCvUhdW08ULld9qELdlV5WHBaWaOA==
+weavedb-sdk@^0.27.7:
+  version "0.27.7"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.27.7.tgz#f873dc4d22fcabd27e16a1bc62a572f37eeba402"
+  integrity sha512-EWLFV8/2h/5Su4oR0EkK9xeohdGi6mZWykpqpGBM3ckNEj/k8AxBeuawkc7xmKBFNekgLcRxAsi/U7nVdvNpBQ==
   dependencies:
     "@lit-protocol/sdk-browser" "^1.3.3"
     "@metamask/legacy-web3" "^2.0.0"
