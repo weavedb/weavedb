@@ -10,6 +10,7 @@ import {
 import { nanoid } from "nanoid"
 import { useEffect, useState } from "react"
 import {
+  intersection,
   difference,
   assoc,
   prepend,
@@ -94,9 +95,11 @@ export default function Home() {
   const [bool, setBool] = useState("true")
   const [str, setStr] = useState("")
   const [obj, setObj] = useState("")
+  const [update_type, setUpdateType] = useState("create")
   const [options, setOptions] = useState("{}")
   const [his, setHis] = useState([])
   const [limit, setLimit] = useState(5)
+  const [updateId, setUpdateId] = useState("")
   const [fields, setFields] = useState("age:asc,name:desc")
   const [field, setField] = useState("")
   const [field_type, setFieldType] = useState("number")
@@ -227,10 +230,10 @@ export default function Home() {
             join("/"),
             flatten
           )(sort_fields)}`
-          const kv = new KV(skey)
           if (k === index) {
             await tree.delete(id)
           } else {
+            const kv = new KV(skey)
             const tree = new BPT(3, sort_fields, kv, function (stats) {})
             await tree.delete(id)
           }
@@ -403,6 +406,7 @@ export default function Home() {
           await tree.get("count")
           const getNode = async root => {
             let node = await tree.get(root)
+            if (isNil(node)) return null
             if (node.leaf) {
               for (let v of node.vals) {
                 await tree.data(v)
@@ -420,6 +424,104 @@ export default function Home() {
   }, [index])
 
   let { nodemap, arrs } = build(store)
+  const updateData = async (id, _data) => {
+    let old_data = await idtree.data(id)
+    if (!isNil(old_data?.val)) {
+      let data = clone(old_data.val)
+      let dels = []
+      let changes = []
+      let news = []
+      if (typeof _data === "object") {
+        let _indexes = clone(indexes)
+        for (let k in _data) {
+          if (_data[k].__op === "del") {
+            dels.push(k)
+            delete data[k]
+          } else {
+            if (isNil(data[k])) {
+              news.push(k)
+            } else if (data[k] !== _data[k]) {
+              changes.push(k)
+            }
+            data[k] = _data[k]
+          }
+        }
+        await idtree.putData(updateId, data)
+        let newkeys = {}
+        for (const k of news) {
+          const key = `${k}:asc`
+          newkeys[key] = true
+          if (isNil(indexes[key])) {
+            _indexes[key] = { order: 3, key }
+          }
+          if (index !== key) {
+            const kv = new KV(`index.${col}//${k}/asc`)
+            const _tree = new BPT(3, [[k, "asc"]], kv, function (stats) {})
+            await _tree.insert(id, _data)
+          } else {
+            await tree.insert(id, _data)
+          }
+        }
+        setIndexes(_indexes)
+        const fields = keys(data)
+        const old_fields = keys(old_data.val)
+        for (const k in _indexes) {
+          if (isNil(newkeys[k])) {
+            const i_fields = compose(
+              without(["__id__"]),
+              map(v => v.split(":")[0])
+            )(k.split("/"))
+            const diff = difference(i_fields, fields)
+            const old_diff = difference(i_fields, old_fields)
+            if (
+              i_fields.length > 0 &&
+              (diff.length === 0 || old_diff.length === 0)
+            ) {
+              let isAdd = false
+              let isDel = false
+              if (intersection(i_fields, news).length > 0) isAdd = true
+              if (intersection(i_fields, changes).length > 0) {
+                isDel = true
+                isAdd = true
+              }
+              if (intersection(i_fields, dels).length > 0) {
+                isDel = true
+                isAdd = false
+              }
+              if (isDel) {
+                const sort_fields = map(v => v.split(":"))(k.split("/"))
+                const skey = `index.${col}//${compose(
+                  join("/"),
+                  flatten
+                )(sort_fields)}`
+                if (k === index) {
+                  await tree.delete(id)
+                } else {
+                  const kv = new KV(skey)
+                  const tree = new BPT(3, sort_fields, kv, function (stats) {})
+                  await tree.delete(id)
+                }
+              }
+              if (isAdd) {
+                const sort_fields = map(v => v.split(":"))(k.split("/"))
+                const skey = `index.${col}//${compose(
+                  join("/"),
+                  flatten
+                )(sort_fields)}`
+                if (k === index) {
+                  await tree.insert(id, _data)
+                } else {
+                  const kv = new KV(skey)
+                  const tree = new BPT(3, sort_fields, kv, function (stats) {})
+                  await tree.insert(id, _data)
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
   const addData = async () => {
     let _data = null
     isDel = false
@@ -431,6 +533,10 @@ export default function Home() {
     }
     if (typeof _data !== "object") {
       alert("data must be an object")
+      return
+    }
+    if (update_type === "update") {
+      await updateData(updateId, _data)
       return
     }
     const count = (await lf.getItem(`count-${col}`)) ?? 0
@@ -469,8 +575,8 @@ export default function Home() {
       }
       await lf.setItem(`indexes-${col}`, _indexes)
       setIndexes(_indexes)
+      const fields = keys(_data)
       for (const k in indexes) {
-        const fields = keys(_data)
         const i_fields = compose(
           without(["__id__"]),
           map(v => v.split(":")[0])
@@ -482,10 +588,10 @@ export default function Home() {
             join("/"),
             flatten
           )(sort_fields)}`
-          const kv = new KV(skey)
           if (k === index) {
             await tree.insert(id, _data)
           } else {
+            const kv = new KV(skey)
             const tree = new BPT(3, sort_fields, kv, function (stats) {})
             await tree.insert(id, _data)
           }
@@ -886,8 +992,32 @@ export default function Home() {
         )}
         <Box as="hr" my={3} />
         <Flex mx={2} mt={2} color="#666" mb={1} fontSize="10px">
-          Add Value
+          {map(v => (
+            <Box
+              mr={2}
+              sx={{ cursor: "pointer" }}
+              color={v.key === update_type ? "#6441AF" : "#333"}
+              onClick={() => setUpdateType(v.key)}
+            >
+              {v.key}
+            </Box>
+          ))([{ key: "create" }, { key: "update" }])}
         </Flex>
+        {update_type !== "update" ? null : (
+          <Flex mx={2} mb={2}>
+            <Input
+              height="auto"
+              py={1}
+              px={3}
+              bg="white"
+              fontSize="12px"
+              placeholder="docid"
+              sx={{ borderRadius: "3px 0 0 3px" }}
+              value={updateId}
+              onChange={e => setUpdateId(e.target.value)}
+            />
+          </Flex>
+        )}
         <Flex mx={2} mb={2}>
           {!isNil(col) || currentType !== "boolean" ? (
             <Input
@@ -980,7 +1110,7 @@ export default function Home() {
               ":hover": { opacity: 0.75 },
             }}
           >
-            Add
+            {update_type === "update" ? "Update" : "Add"}
           </Flex>
         </Flex>
         <Flex
@@ -1346,7 +1476,7 @@ export default function Home() {
                       ? compose(
                           join(":"),
                           map(v4 =>
-                            v4[0] === "__id__" ? v.id : v4[0] ?? v.val[v4[0]]
+                            v4[0] === "__id__" ? v.id : v.val[v4[0]] ?? "-"
                           )
                         )(currentFields || [])
                       : v.val}
