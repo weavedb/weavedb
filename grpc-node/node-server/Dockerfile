@@ -1,10 +1,10 @@
 FROM amd64/node:18.13.0-alpine
-
-COPY ./ /weavedb
-
 WORKDIR /weavedb
 
-RUN npm install
+COPY package.json yarn.lock /weavedb/
+RUN yarn
+
+COPY . /weavedb
 
 EXPOSE 9090
 
