@@ -282,7 +282,13 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
     }
   } else {
     let index = await getColIndex(path, _sort, SmartWeave, kvs)
-    if (isNil(index)) err("index doesn't exist")
+    if (isNil(index)) {
+      if (isNil(_sort) || _sort.length === 1) {
+        index = []
+      } else {
+        err("index doesn't exist")
+      }
+    }
     const { doc: _data } =
       path.length === 1
         ? { doc: data }

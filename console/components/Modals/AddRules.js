@@ -166,6 +166,7 @@ export default inject(
                         contractTxId,
                       })
                     )
+                    console.log("are we here???", res)
                     if (!res.success) {
                       alert("Something went wrong")
                     } else {
