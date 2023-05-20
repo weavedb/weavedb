@@ -80,6 +80,7 @@ export default inject(
                     m: "cget",
                     q: [...base_path, v, per_page],
                   })
+                  console.log("this is it...", _docs)
                   setDocuments(_docs)
                   setLoadMore(_docs.length === per_page ? last(_docs) : null)
                 }}
