@@ -50,16 +50,28 @@ class Snapshot {
     const secretAccessKey =
       this.conf.s3.secretAccessKey || process.env.AWS_SECRET_ACCESS_KEY
     const region = this.conf.s3.region || process.env.AWS_REGION
+    const useDualstackEndpoint = !isNil(this.conf.s3.useDualstackEndpoint)&&this.conf.s3.useDualstackEndpoint==false? false : true
+    const endpoint = !isNil(this.conf.s3.endpoint) ? this.conf.s3.endpoint : null
+
+
 
     if (none(isNil)([accessKeyId, secretAccessKey, region])) {
-      const { S3 } = require("aws-sdk")
-      this.s3Ins = new S3({
+      const { S3, Endpoint } = require("aws-sdk")
+      // const { S3 } = require("aws-sdk")
+      let s3param = {
         apiVersion: "2006-03-01",
-        useDualstackEndpoint: true,
+        useDualstackEndpoint: useDualstackEndpoint,
         accessKeyId,
         secretAccessKey,
         region,
-      })
+      }
+      
+      if(!isNil(endpoint)&&endpoint!=null) {
+        // s3param['endpoint'] = endpoint
+        s3param['endpoint'] = new Endpoint(endpoint)
+      }
+      this.s3Ins = new S3(s3param)
+
     } else {
       forEach(console.log)([
         "lacking s3 settings",
