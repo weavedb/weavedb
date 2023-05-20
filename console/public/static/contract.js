@@ -9303,6 +9303,11 @@
         if (!isValidName(col))
           err(`collection id is not valid: ${col}`);
         let key = `data.${append(col)(current_path).join("/")}`;
+        let data = await kv(kvs, SmartWeave2).get(`data.${current_path.join("/")}`) ?? {};
+        if (isNil(data[col])) {
+          data[col] = true;
+          await kv(kvs, SmartWeave2).put(`data.${current_path.join("/")}`, data);
+        }
         let _data = await kv(kvs, SmartWeave2).get(key);
         if (isNil(_data)) {
           _data = { __docs: {} };
@@ -9473,23 +9478,14 @@
         }
       };
       var getDoc = async (data, path, _signer, func, new_data, secure = false, relayer, jobID, extra, state, SmartWeave2, current_path = [], kvs) => {
-        if (isNil(data)) {
-          const _data = await kv(kvs, SmartWeave2).get(
-            `data.${current_path.join("/")}`
-          );
-          if (isNil(_data)) {
-            data = {};
-          } else {
-            data = _data;
-          }
-        }
+        data ??= await kv(kvs, SmartWeave2).get(`data.${current_path.join("/")}`) ?? {};
         const [_col, id] = path;
         if (!isValidName(_col))
           err(`collection id is not valid: ${_col}`);
         if (!isValidName(id))
           err(`doc id is not valid: ${id}`);
         if (isNil(data[_col])) {
-          data[_col] = { __docs: {} };
+          data[_col] = true;
           await kv(kvs, SmartWeave2).put(`data.${current_path.join("/")}`, data);
         }
         current_path.push(_col);
@@ -10471,8 +10467,13 @@
           };
         } else {
           let index = await getColIndex(path, _sort, SmartWeave2, kvs);
-          if (isNil(index))
-            err("index doesn't exist");
+          if (isNil(index)) {
+            if (isNil(_sort) || _sort.length === 1) {
+              index = [];
+            } else {
+              err("index doesn't exist");
+            }
+          }
           const { doc: _data } = path.length === 1 ? { doc: data } : await getDoc(
             null,
             slice(0, -1, path),
@@ -10865,9 +10866,7 @@
           )
         };
       };
-      module.exports = {
-        listCollections
-      };
+      module.exports = { listCollections };
     }
   });
 
@@ -17073,7 +17072,7 @@
       var { removeTrigger } = require_removeTrigger();
       var { cron, executeCron } = require_cron();
       var { err, isEvolving } = require_utils();
-      var { includes, isNil } = require_src();
+      var { includes, isNil, keys, filter, compose, match } = require_src();
       var writes = [
         "relay",
         "set",
