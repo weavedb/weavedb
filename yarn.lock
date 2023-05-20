@@ -10982,14 +10982,6 @@ vm2@3.9.13:
     acorn "^8.7.0"
     acorn-walk "^8.2.0"
 
-vm2@3.9.15:
-  version "3.9.15"
-  resolved "https://registry.yarnpkg.com/vm2/-/vm2-3.9.15.tgz#c544e6a9bc31e4e40d2e5f532342cf799ea56a6e"
-  integrity sha512-XqNqknHGw2avJo13gbIwLNZUumvrSHc9mLqoadFZTpo3KaNEJoe1I0lqTFhRXmXD7WkLyG01aaraXdXT0pa4ag==
-  dependencies:
-    acorn "^8.7.0"
-    acorn-walk "^8.2.0"
-
 walker@^1.0.8:
   version "1.0.8"
   resolved "https://registry.yarnpkg.com/walker/-/walker-1.0.8.tgz#bd498db477afe573dc04185f011d3ab8a8d7653f"
@@ -11096,10 +11088,10 @@ warp-contracts@^1.2.57:
     warp-isomorphic "1.0.4"
     warp-wasm-metering "1.0.1"
 
-warp-contracts@^1.4.0:
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.4.0.tgz#fcdf49fe527ab6d93b3b39c336ac1f1a278315af"
-  integrity sha512-A8H8rMvunzkud2Y5kTJPFAgizxUqJAfPBQjwE9R5gOpibJzsqkbk5lvm/LOBgCqCWKxPtuoQb+oPx/mQ83/L3A==
+warp-contracts@^1.4.1:
+  version "1.4.1"
+  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.4.1.tgz#ba4c0101eda170fe54c3bbfdd836252817786f72"
+  integrity sha512-NQE83O6waKKIH74oBoBITK5KQrA60WurnCFx4LCZ5tUSX683lodCHPeNbyuioFUBebfEULQRfUkcbmnCiKxoaA==
   dependencies:
     "@idena/vrf-js" "^1.0.1"
     archiver "^5.3.0"
@@ -11114,7 +11106,6 @@ warp-contracts@^1.4.0:
     safe-stable-stringify "2.4.1"
     stream-buffers "^3.0.2"
     unzipit "^1.4.0"
-    vm2 "3.9.15"
     warp-isomorphic "1.0.4"
     warp-wasm-metering "1.0.1"
 

@@ -41,7 +41,7 @@ const deploy = async () => {
   walletAddress = await arweave.wallets.jwkToAddress(_wallet)
   const stateFromFile = JSON.parse(
     fs.readFileSync(
-      path.join(__dirname, "../dist/warp/initial-state.json"),
+      path.join(__dirname, "../dist/weavedb-kv/initial-state.json"),
       "utf8"
     )
   )

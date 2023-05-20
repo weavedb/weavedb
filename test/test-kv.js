@@ -158,6 +158,7 @@ describe("WeaveDB", function () {
   })
 
   it("should get a collection", async () => {
+    expect(await db.get("ppl")).to.eql([])
     const Bob = {
       name: "Bob",
       age: 20,
@@ -343,9 +344,8 @@ describe("WeaveDB", function () {
     await db.setSchema(schema, "ppl", {
       ar: arweave_wallet,
     })
-    return
     expect(await db.getSchema("ppl")).to.eql(schema)
-
+    expect(await db.listCollections()).to.eql(["ppl"])
     await db.set(data, "ppl", "Bob")
     expect(await db.get("ppl", "Bob")).to.eql(null)
     await db.setSchema(schema2, "ppl", {
@@ -371,7 +371,7 @@ describe("WeaveDB", function () {
       ar: arweave_wallet,
     })
     expect(await db.getRules("ppl")).to.eql(rules)
-
+    expect(await db.listCollections()).to.eql(["ppl"])
     await db.set(data, "ppl", "Bob")
     expect(await db.get("ppl", "Bob")).to.eql(data)
     await db.delete("ppl", "Bob")

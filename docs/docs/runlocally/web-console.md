@@ -15,7 +15,7 @@ yarn dev
 
 You can sign in with MetaMask, view data, and test DB queries.
 
-[REPL needs to be running](/docs/development/repl) before starting the web console.
+[REPL needs to be running](/docs/runlocally/repl) before starting the web console.
 
 
 ## Internet Identity
