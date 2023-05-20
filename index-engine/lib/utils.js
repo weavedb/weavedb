@@ -59,7 +59,7 @@ const build = store => {
     nodemap[node.id] = node
     for (const v of node.children || []) add(_s[v], depth + 1)
   }
-  if (!isNil(_s["root"])) add(_s[_s["root"]])
+  if (!isNil(_s?.["root"])) add(_s[_s["root"]])
   return { arrs, nodemap }
 }
 
