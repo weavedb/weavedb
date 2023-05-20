@@ -462,6 +462,7 @@ export default function Home() {
             await tree.insert(id, _data)
           }
         }
+        await lf.setItem(`indexes-${col}`, _indexes)
         setIndexes(_indexes)
         const fields = keys(data)
         const old_fields = keys(old_data.val)
@@ -1456,6 +1457,7 @@ export default function Home() {
                 )(his).join(", ")} ]`
               : map(v => (
                   <Flex
+                    onClick={() => setUpdateId(v.id)}
                     title={v.id}
                     justify="center"
                     align="center"
@@ -1466,7 +1468,12 @@ export default function Home() {
                     as="span"
                     color="white"
                     bg={v.op === "del" ? "salmon" : "#6441AF"}
-                    sx={{ borderRadius: "3px", wordBreak: "break-all" }}
+                    sx={{
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                      borderRadius: "3px",
+                      wordBreak: "break-all",
+                    }}
                   >
                     {typeof v.val === "boolean"
                       ? v.val
