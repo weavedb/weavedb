@@ -616,11 +616,11 @@ async function deployFromSrc({ src, warp, init, extra, algorithms }) {
     wallet: new ArweaveSigner(wallet),
     initState: JSON.stringify(initialState),
     srcTxId: src,
-    /*evaluationManifest: {
+    evaluationManifest: {
       evaluationOptions: {
         useKVStorage: true,
       },
-    },*/
+    },
   })
   return contractTxId
 }

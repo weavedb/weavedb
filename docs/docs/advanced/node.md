@@ -1,13 +1,13 @@
 ---
-sidebar_position: 5
+sidebar_position: 1
 ---
 # gRPC Node
 
 SmartWeave moves computations off chain onto the client-side for unlimited scalability. But this is not all good news. Even with the lazy execution model, end users need to cache the transactions and compute the current contract states as they need. This makes queries very slow at times.
 
-A gRPC node comes between the WeaveDB contract and browsers and does all the work for thousands of browser clients, so the end-users don't have to do any calculations, let alone holding a shitload of unnecessary cache. Instead it gives back cached data within 1 second for read queries, and processes smart contract transactions within 3 seconds for write queries, which achieves the same UX as most web2 apps.
+A gRPC node comes between the WeaveDB contract and browsers and does all the work for thousands of browser clients, so the end-users don't have to do any calculations, let alone holding a huge load of unnecessary cache. Instead it gives back cached data within 1 second for read queries, and processes smart contract transactions within 3 seconds for write queries, which achieves the same UX as most web2 apps.
 
-Browser clients can use the [Light Client](/docs/sdk/client), instead of the full featured SDK wrapping the Warp SDK.
+Browser clients can use the [Light Client](/docs/advanced/client), instead of the full featured SDK wrapping the Warp SDK.
 
 ## Set up a Node
 
@@ -183,7 +183,7 @@ module.exports = {
 yarn run-node
 ```
 
-Now you can interact with the node using the [Light Client](/docs/sdk/client).
+Now you can interact with the node using the [Light Client](/docs/advanced/client).
 
 ## Deploy on Local Machine
 
@@ -201,7 +201,7 @@ yarn
 
 You can copy the newly generated wallet from the previous step to `wallet`.
 
-For the `contractTxId`, you can run [a local instance](/docs/development/repl) and copy the displayed `contractTxId`.
+For the `contractTxId`, you can run [a local instance](/docs/runlocally/repl) and copy the displayed `contractTxId`.
 
 Use `host.docker.internal` as `host` to internally connect from the docker container.
 
@@ -385,7 +385,7 @@ sudo nginx -t && sudo nginx -s reload
 
 ##### 5. Set the instance URL to the Light Client
 
-- To health-check, you can follow the last step in [Deploy on Local Machine](/docs/development/node#6-set-the-instance-ip-address-to-the-light-client)
+- To health-check, you can follow the last step in [Deploy on Local Machine](/docs/advanced/node#6-set-the-instance-ip-address-to-the-light-client)
 
 ```javascript
 import client from "weavedb-client"

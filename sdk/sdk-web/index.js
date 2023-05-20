@@ -296,7 +296,7 @@ class SDK extends Base {
   }
 
   async initializeWithoutWallet(params) {
-    await init(params)
+    await this.init(params)
   }
   async init(params = {}) {
     let { wallet } = params
@@ -403,7 +403,9 @@ class SDK extends Base {
       .connect(wallet)
       .setEvaluationOptions(
         mergeLeft(evaluationOptions, {
-          remoteStateSyncEnabled: this.network !== "localhost",
+          remoteStateSyncEnabled: this.isNode
+            ? false
+            : this.network !== "localhost",
           allowBigInt: true,
           useVM2: !isNil(this.useVM2)
             ? this.useVM2

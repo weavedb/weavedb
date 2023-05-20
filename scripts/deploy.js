@@ -25,7 +25,6 @@ async function deployContract(secure) {
     ),
     "utf8"
   )
-
   const stateFromFile = JSON.parse(
     fs.readFileSync(
       path.join(

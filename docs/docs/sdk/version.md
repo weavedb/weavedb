@@ -1,5 +1,5 @@
 ---
-sidebar_position: 12
+sidebar_position: 11
 ---
 # Version
 
@@ -107,7 +107,7 @@ await db.getVersion()
 
 #### Added Features
 
-- [setSecure()](/docs/development/repl#deploy-db-in-secure-mode)
+- [setSecure()](/docs/runlocally/repl#deploy-db-in-secure-mode)
 - [migrate()](/docs/sdk/evolve#upgrade--evolve-db-contract)
 - [getEvolve()](/docs/sdk/evolve#get-evolve-stats)
 
