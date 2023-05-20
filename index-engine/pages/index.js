@@ -200,8 +200,12 @@ export default function Home() {
     const __data = await tree.data(key)
     const _data = __data.val
     const id = key
+    const count = (await lf.getItem(`count-${col}`)) ?? 0
     _his2 = append({ val: _data, op: "del", id: key }, _his2)
     setHis(_his2)
+    const log = { id: count + 1, op: "delete", key: id }
+    await lf.setItem(`log-${col}-${count + 1}`, log)
+    await lf.setItem(`count-${col}`, count + 1)
     isDel = true
     await idtree.delete(key)
     delete ids[key]
@@ -303,17 +307,15 @@ export default function Home() {
     ;(async () => {
       if (!isNil(col)) {
         setExErr([false, null])
+        _his2 = []
         const count = (await lf.getItem(`count-${col}`)) ?? 0
         const index_key = `indexes-${col}`
         let _indexes = (await lf.getItem(index_key)) || {}
         setIndex("__id__:asc")
         setCurrentFields([["__id__", "asc"]])
         setCurrentType("object")
-        setHis([])
-        _his2 = []
         ids = {}
         setCurrentOrder(3)
-        setHis(_his2)
         const kv = new KV(`index.${col}//__id__/asc`)
         tree = new BPT(3, [["__id__", "asc"]], kv, function (stats) {
           if (!isNil(setStore) && index === "__id__:asc") {
@@ -322,10 +324,34 @@ export default function Home() {
         })
         idtree = tree
         prev_count = 0
+        for (let i = 1; i <= count; i++) {
+          const _log = await lf.getItem(`log-${col}-${i}`)
+          if (_log.op === "update") continue
+          _his2.push({
+            val: _log.val,
+            op: _log.op === "create" ? "insert" : "del",
+            id: _log.key,
+          })
+        }
         if (isNil(_indexes["__id__:asc"])) {
           for (let i = 1; i <= count; i++) {
             const _log = await lf.getItem(`log-${col}-${i}`)
-            await tree.insert(_log.key, _log.val)
+            if (_log.op === "craete") {
+              await tree.insert(_log.key, _log.val)
+            } else if (_log.op === "update") {
+              let _data = await tree.data(_log.id)
+              for (let k in _log.val) {
+                if (_log.val[k].__op === "del") {
+                  delete data[k]
+                } else {
+                  data[k] = _log.val[k]
+                }
+              }
+              await tree.delete(_log.key)
+              await tree.insert(_log.key, _log.data)
+            } else {
+              await tree.delete(_log.key)
+            }
           }
           const key = "__id__:asc"
           _indexes = assoc(key, { order: 3, key }, _indexes)
@@ -385,6 +411,7 @@ export default function Home() {
         }
         await lf.setItem(index_key, _indexes)
         setStore(JSON.stringify(tree.kv.store))
+        setHis(_his2)
       }
     })()
   }, [col])
@@ -417,7 +444,7 @@ export default function Home() {
           }
           if (!isNil(root)) await getNode(root)
         }
-        setStore(JSON.stringify(tree.kv.store))
+        setStore(JSON.stringify(tree?.kv?.store))
         setCurrentFields(sort_fields)
       }
     })()
@@ -431,6 +458,11 @@ export default function Home() {
       let dels = []
       let changes = []
       let news = []
+      const count = (await lf.getItem(`count-${col}`)) ?? 0
+      const log = { id: count + 1, op: "update", val: _data, key: id }
+      await lf.setItem(`log-${col}-${count + 1}`, log)
+      await lf.setItem(`count-${col}`, count + 1)
+
       if (typeof _data === "object") {
         let _indexes = clone(indexes)
         for (let k in _data) {
@@ -1486,7 +1518,7 @@ export default function Home() {
                             v4[0] === "__id__" ? v.id : v.val[v4[0]] ?? "-"
                           )
                         )(currentFields || [])
-                      : v.val}
+                      : v.val ?? v.id}
                   </Flex>
                 ))(his)}
           </Flex>
