@@ -10,7 +10,6 @@ const getRules = async (state, action, SmartWeave, kvs) => {
     SmartWeave,
     kvs
   )
-
   return { result: _data.rules || null }
 }
 
