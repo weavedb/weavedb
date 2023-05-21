@@ -224,7 +224,7 @@ export default function Home() {
       for (const k in indexes) {
         const fields = keys(_data)
         const i_fields = compose(
-          without(["__id__"]),
+          without(["__name__"]),
           map(v => v.split(":")[0])
         )(k.split("/"))
         const diff = difference(i_fields, fields)
@@ -311,14 +311,14 @@ export default function Home() {
         const count = (await lf.getItem(`count-${col}`)) ?? 0
         const index_key = `indexes-${col}`
         let _indexes = (await lf.getItem(index_key)) || {}
-        setIndex("__id__:asc")
-        setCurrentFields([["__id__", "asc"]])
+        setIndex("__name__:asc")
+        setCurrentFields([["__name__", "asc"]])
         setCurrentType("object")
         ids = {}
         setCurrentOrder(3)
-        const kv = new KV(`index.${col}//__id__/asc`)
-        tree = new BPT(3, [["__id__", "asc"]], kv, function (stats) {
-          if (!isNil(setStore) && index === "__id__:asc") {
+        const kv = new KV(`index.${col}//__name__/asc`)
+        tree = new BPT(3, [["__name__", "asc"]], kv, function (stats) {
+          if (!isNil(setStore) && index === "__name__:asc") {
             setStore(JSON.stringify(this.kv.store))
           }
         })
@@ -333,7 +333,7 @@ export default function Home() {
             id: _log.key,
           })
         }
-        if (isNil(_indexes["__id__:asc"])) {
+        if (isNil(_indexes["__name__:asc"])) {
           for (let i = 1; i <= count; i++) {
             const _log = await lf.getItem(`log-${col}-${i}`)
             if (_log.op === "craete") {
@@ -353,7 +353,7 @@ export default function Home() {
               await tree.delete(_log.key)
             }
           }
-          const key = "__id__:asc"
+          const key = "__name__:asc"
           _indexes = assoc(key, { order: 3, key }, _indexes)
           setIndexes(_indexes)
         } else {
@@ -393,7 +393,7 @@ export default function Home() {
           for (const k in indexes) {
             const fields = keys(_data)
             const i_fields = compose(
-              without(["__id__"]),
+              without(["__name__"]),
               map(v => v.split(":")[0])
             )(k.split("/"))
             const diff = difference(i_fields, fields)
@@ -420,7 +420,7 @@ export default function Home() {
     ;(async () => {
       if (!isNil(index)) {
         const sort_fields = map(v => v.split(":"))(index.split("/"))
-        if (index === "__id__:asc") {
+        if (index === "__name__:asc") {
           tree = idtree
         } else {
           const kv = new KV(
@@ -501,7 +501,7 @@ export default function Home() {
         for (const k in _indexes) {
           if (isNil(newkeys[k])) {
             const i_fields = compose(
-              without(["__id__"]),
+              without(["__name__"]),
               map(v => v.split(":")[0])
             )(k.split("/"))
             const diff = difference(i_fields, fields)
@@ -625,7 +625,7 @@ export default function Home() {
       const fields = keys(_data)
       for (const k in indexes) {
         const i_fields = compose(
-          without(["__id__"]),
+          without(["__name__"]),
           map(v => v.split(":")[0])
         )(k.split("/"))
         const diff = difference(i_fields, fields)
@@ -1386,9 +1386,9 @@ export default function Home() {
                             ? compose(
                                 join(":"),
                                 map(v4 => {
-                                  return v4[0] === "__id__"
+                                  return v4[0] === "__name__"
                                     ? typeof v3.key === "object"
-                                      ? v3.key.__id__
+                                      ? v3.key.__name__
                                       : v3.key
                                     : v3val[v4[0]]
                                 })
@@ -1416,7 +1416,7 @@ export default function Home() {
                               }}
                               title={
                                 typeof v3.key === "object"
-                                  ? v3.key.__id__
+                                  ? v3.key.__name__
                                   : v3.key ?? null
                               }
                               onClick={async () => {
@@ -1531,7 +1531,7 @@ export default function Home() {
                       ? compose(
                           join(":"),
                           map(v4 =>
-                            v4[0] === "__id__" ? v.id : v.val[v4[0]] ?? "-"
+                            v4[0] === "__name__" ? v.id : v.val[v4[0]] ?? "-"
                           )
                         )(currentFields || [])
                       : v.val ?? v.id}
