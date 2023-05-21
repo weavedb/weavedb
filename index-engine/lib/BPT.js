@@ -138,7 +138,8 @@ class BPT {
 
   async read(key) {
     let stats = {}
-    return { key, val: (await this.searchByKey(key, stats))[0] }
+    const doc = (await this.searchByKey(key, stats))[0]
+    return { key, val: doc?.val ?? null }
   }
 
   async getVals(node, vals, index = 0, opt, cache = {}, inRange = null, stats) {
@@ -146,11 +147,11 @@ class BPT {
       const v = node.vals[i]
       const val = await this.data(v, cache, stats)
       if (!isNil(opt.endAt)) {
-        if (this.comp(val, opt.endAt, true) < 0) return
+        if (this.comp(val, this.wrap(opt.endAt), true) < 0) return
       } else if (!isNil(opt.endBefore)) {
-        if (this.comp(val, opt.endBefore) <= 0) return
+        if (this.comp(val, this.wrap(opt.endBefore)) <= 0) return
       }
-      vals.push({ key: v, val })
+      vals.push(val)
       if (!isNil(opt.limit) && vals.length === opt.limit) return
     }
     if (!isNil(node.next)) {
@@ -251,6 +252,7 @@ class BPT {
   async range(opt) {
     let stats = {}
     let start = opt.startAt ?? opt.startAfter
+    if (!isNil(start)) start = this.wrap(start)
     const first_node = !isNil(start)
       ? await this.search(start, undefined, stats)
       : await this.search(undefined, undefined, stats)
