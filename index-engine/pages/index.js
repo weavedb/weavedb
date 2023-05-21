@@ -555,7 +555,21 @@ export default function Home() {
       }
     }
   }
-  const addData = async () => {
+  const addRandomData = async () => {
+    let obj = {}
+    for (let v of currentSchema) {
+      if (Math.random() < 0.5) continue
+      if (v.type === "string") {
+        obj[v.key] = gen("string")
+      } else if (v.type === "number") {
+        obj[v.key] = gen("number")
+      } else {
+        obj[v.key] = gen("boolean")
+      }
+    }
+    await addData(JSON.stringify(obj))
+  }
+  const addData = async data => {
     let _data = null
     isDel = false
     try {
@@ -1093,7 +1107,7 @@ export default function Home() {
               onKeyDown={async e => {
                 if (e.code === "Enter") {
                   !isNil(col)
-                    ? addData()
+                    ? addData(data)
                     : currentType === "number"
                     ? addNumber()
                     : currentType === "string"
@@ -1128,7 +1142,7 @@ export default function Home() {
             onClick={async () => {
               if (err) return
               !isNil(col)
-                ? addData()
+                ? addData(data)
                 : currentType === "number"
                 ? addNumber()
                 : currentType === "string"
@@ -1146,29 +1160,31 @@ export default function Home() {
             {update_type === "update" ? "Update" : "Add"}
           </Flex>
         </Flex>
-        <Flex
-          m={2}
-          p={1}
-          justify="center"
-          bg="#666"
-          color="white"
-          onClick={async () => {
-            if (err) return
-            if (!isNil(col)) {
-              await addData()
-            } else {
-              const num = gen(currentType, currentSchema)
-              await insert(num)
-            }
-          }}
-          sx={{
-            borderRadius: "3px",
-            cursor: "pointer",
-            ":hover": { opacity: 0.75 },
-          }}
-        >
-          Add Random Value
-        </Flex>
+        {!isNil(col) && update_type === "update" ? null : (
+          <Flex
+            m={2}
+            p={1}
+            justify="center"
+            bg="#666"
+            color="white"
+            onClick={async () => {
+              if (err) return
+              if (!isNil(col)) {
+                await addRandomData()
+              } else {
+                const num = gen(currentType, currentSchema)
+                await insert(num)
+              }
+            }}
+            sx={{
+              borderRadius: "3px",
+              cursor: "pointer",
+              ":hover": { opacity: 0.75 },
+            }}
+          >
+            Add Random Value
+          </Flex>
+        )}
         <Box as="hr" my={3} />
         <Flex mx={2} mt={2} color="#666" mb={1} fontSize="10px">
           Auto Test
