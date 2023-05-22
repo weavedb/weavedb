@@ -238,7 +238,7 @@ export default function Home() {
             await tree.delete(id)
           } else {
             const kv = new KV(skey)
-            const tree = new BPT(3, sort_fields, kv, function (stats) {})
+            const tree = new BPT(5, sort_fields, kv, function (stats) {})
             await tree.delete(id)
           }
         }
@@ -315,9 +315,9 @@ export default function Home() {
         setCurrentFields([["__name__", "asc"]])
         setCurrentType("object")
         ids = {}
-        setCurrentOrder(3)
+        setCurrentOrder(5)
         const kv = new KV(`index.${col}//__name__/asc`)
-        tree = new BPT(3, [["__name__", "asc"]], kv, function (stats) {
+        tree = new BPT(5, [["__name__", "asc"]], kv, function (stats) {
           if (!isNil(setStore) && index === "__name__:asc") {
             setStore(JSON.stringify(this.kv.store))
           }
@@ -354,7 +354,7 @@ export default function Home() {
             }
           }
           const key = "__name__:asc"
-          _indexes = assoc(key, { order: 3, key }, _indexes)
+          _indexes = assoc(key, { order: 5, key }, _indexes)
           setIndexes(_indexes)
         } else {
           setIndexes(_indexes)
@@ -379,12 +379,12 @@ export default function Home() {
           let _indexes = clone(indexes)
           for (const k in _data) {
             const key = `${k}:asc`
-            if (isNil(indexes[key])) _indexes[key] = { order: 3, key }
+            if (isNil(indexes[key])) _indexes[key] = { order: 5, key }
             if (key === index) {
               await tree.insert(id, _data)
             } else {
               const kv = new KV(`index.${col}//${k}/asc`)
-              const _tree = new BPT(3, [[k, "asc"]], kv, function (stats) {})
+              const _tree = new BPT(5, [[k, "asc"]], kv, function (stats) {})
               await _tree.insert(id, _data)
             }
           }
@@ -403,7 +403,7 @@ export default function Home() {
               if (k === index) {
                 await tree.insert(id, _data)
               } else {
-                const tree = new BPT(3, sort_fields, kv, function (stats) {})
+                const tree = new BPT(5, sort_fields, kv, function (stats) {})
                 await tree.insert(id, _data)
               }
             }
@@ -426,7 +426,7 @@ export default function Home() {
           const kv = new KV(
             `index.${col}//${compose(join("/"), flatten)(sort_fields)}`
           )
-          tree = new BPT(3, sort_fields, kv, function (stats) {
+          tree = new BPT(5, sort_fields, kv, function (stats) {
             if (!isNil(setStore)) setStore(JSON.stringify(this.kv.store))
           })
           let root = await tree.root()
@@ -484,11 +484,11 @@ export default function Home() {
           const key = `${k}:asc`
           newkeys[key] = true
           if (isNil(indexes[key])) {
-            _indexes[key] = { order: 3, key }
+            _indexes[key] = { order: 5, key }
           }
           if (index !== key) {
             const kv = new KV(`index.${col}//${k}/asc`)
-            const _tree = new BPT(3, [[k, "asc"]], kv, function (stats) {})
+            const _tree = new BPT(5, [[k, "asc"]], kv, function (stats) {})
             await _tree.insert(id, _data)
           } else {
             await tree.insert(id, _data)
@@ -531,7 +531,7 @@ export default function Home() {
                   await tree.delete(id)
                 } else {
                   const kv = new KV(skey)
-                  const tree = new BPT(3, sort_fields, kv, function (stats) {})
+                  const tree = new BPT(5, sort_fields, kv, function (stats) {})
                   await tree.delete(id)
                 }
               }
@@ -545,7 +545,7 @@ export default function Home() {
                   await tree.insert(id, _data)
                 } else {
                   const kv = new KV(skey)
-                  const tree = new BPT(3, sort_fields, kv, function (stats) {})
+                  const tree = new BPT(5, sort_fields, kv, function (stats) {})
                   await tree.insert(id, _data)
                 }
               }
@@ -611,12 +611,12 @@ export default function Home() {
       let _indexes = clone(indexes)
       for (const k in _data) {
         const key = `${k}:asc`
-        if (isNil(indexes[key])) _indexes[key] = { order: 3, key }
+        if (isNil(indexes[key])) _indexes[key] = { order: 5, key }
         if (key === index) {
           await tree.insert(id, _data)
         } else {
           const kv = new KV(`index.${col}//${k}/asc`)
-          const _tree = new BPT(3, [[k, "asc"]], kv, function (stats) {})
+          const _tree = new BPT(5, [[k, "asc"]], kv, function (stats) {})
           await _tree.insert(id, _data)
         }
       }
@@ -639,7 +639,7 @@ export default function Home() {
             await tree.insert(id, _data)
           } else {
             const kv = new KV(skey)
-            const tree = new BPT(3, sort_fields, kv, function (stats) {})
+            const tree = new BPT(5, sort_fields, kv, function (stats) {})
             await tree.insert(id, _data)
           }
         }
