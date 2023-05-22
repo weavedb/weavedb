@@ -770,7 +770,7 @@ class BPT {
     if (!exists) node.vals.push(key)
   }
 
-  async insert(key, val) {
+  async insert(key, val, skipPut = false) {
     let stats = {}
     await this.putData(key, val, stats)
     let _val = { key, val }
@@ -782,15 +782,15 @@ class BPT {
       await this.putNode(node, stats)
       if (this.isOver(node)) await this.split(node, stats)
     }
-    await this.commit(stats)
+    await this.commit(stats, skipPut)
   }
 
-  async commit(stats) {
+  async commit(stats, skipPut = false) {
     for (let k in stats) {
       if (stats[k]?.__del__) {
         await this.del(k)
       } else {
-        await this.put(k, stats[k])
+        if (!skipPut || k.match(/^data\//) === null) await this.put(k, stats[k])
       }
     }
     if (!isNil(this.onCommit)) this.onCommit(stats)
