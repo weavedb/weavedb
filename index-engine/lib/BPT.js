@@ -122,24 +122,79 @@ class BPT {
     await this.setRoot(new_node.id, stats)
   }
 
-  async search(val, key, stats) {
+  async search(val, key, stats, after = false) {
     let node = await this.get(key ?? (await this.root(stats)) ?? "0", stats)
     if (isNil(node)) return null
     if (node.leaf) return node
     let i = 0
     for (const v of node.vals) {
-      if (isNil(val) || this.comp(val, node.leaf ? v : this.wrap(v)) === 1) {
-        return await this.search(val, node.children[i], stats)
+      if (
+        isNil(val) ||
+        this.comp(val, node.leaf ? v : this.wrap(v), after) === 1
+      ) {
+        return await this.search(val, node.children[i], stats, after)
       }
       i++
     }
-    return await this.search(val, node.children[i], stats)
+    return await this.search(val, node.children[i], stats, after)
+  }
+
+  async rsearch(val, key, stats, after = false) {
+    let node = await this.get(key ?? (await this.root(stats)) ?? "0", stats)
+    if (isNil(node)) return null
+    if (node.leaf) return node
+    let i = node.vals.length - 1
+    while (i >= 0) {
+      let v = node.vals[i]
+      if (
+        isNil(val) ||
+        this.comp(val, node.leaf ? v : this.wrap(v), !after) <= 0
+      ) {
+        return await this.rsearch(val, node.children[i + 1], stats, after)
+      }
+      i--
+    }
+    return await this.rsearch(val, node.children[0], stats, after)
   }
 
   async read(key) {
     let stats = {}
     const doc = (await this.searchByKey(key, stats))[0]
     return { key, val: doc?.val ?? null }
+  }
+
+  async getValsReverse(
+    node,
+    vals,
+    index = 0,
+    opt,
+    cache = {},
+    inRange = null,
+    stats
+  ) {
+    for (let i = index; i >= 0; i--) {
+      const v = node.vals[i]
+      const val = await this.data(v, cache, stats)
+      if (!isNil(opt.endAt)) {
+        if (this.comp(val, this.wrap(opt.endAt)) > 0) return
+      } else if (!isNil(opt.endBefore)) {
+        if (this.comp(val, this.wrap(opt.endBefore), true) >= 0) return
+      }
+      vals.push(val)
+      if (!isNil(opt.limit) && vals.length === opt.limit) return
+    }
+    if (!isNil(node.prev)) {
+      const prev = await this.get(node.prev, stats)
+      await this.getValsReverse(
+        prev,
+        vals,
+        prev.vals.length - 1,
+        opt,
+        cache,
+        null,
+        stats
+      )
+    }
   }
 
   async getVals(node, vals, index = 0, opt, cache = {}, inRange = null, stats) {
@@ -249,26 +304,92 @@ class BPT {
     }
   }
 
+  async findFirstLtIndex(_index, node, val, cache, stats) {
+    let index = null
+    let isPrev = false
+    if (_index <= 0) {
+      isPrev = !isNil(node.prev)
+    } else {
+      for (let i = _index - 1; i >= 0; i--) {
+        const _val = await this.data(node.vals[i], cache, stats)
+        if (this.comp(_val, val, true) === 1) {
+          index = i
+          break
+        }
+        if (i === 0) isPrev = !isNil(node.prev)
+      }
+    }
+    if (isPrev) {
+      let prev = await this.get(node.prev, stats)
+      const [new_index, new_node] = await this.findFirstLtIndex(
+        prev.vals.length,
+        prev,
+        val,
+        cache,
+        stats
+      )
+      return !isNil(new_index) ? [new_index, new_node] : [_index, node]
+    } else {
+      return [index, node]
+    }
+  }
+
   async range(opt = {}) {
-    opt.limit ??= 1
+    opt.limit ??= 1000
     let stats = {}
     let start = opt.startAt ?? opt.startAfter
     if (!isNil(start)) start = this.wrap(start)
-    const first_node = !isNil(start)
-      ? await this.search(start, undefined, stats)
-      : await this.search(undefined, undefined, stats)
+    const after = isNil(opt.startAt) && !isNil(opt.startAfter)
+    const first_node = await this[opt.reverse === true ? "rsearch" : "search"](
+      start ?? undefined,
+      undefined,
+      stats,
+      after
+    )
     if (isNil(first_node)) return []
     let vals = []
     let cache = {}
-    let index = 0
     let _node = first_node
+    let index = opt.reverse === true ? _node.vals.length - 1 : 0
     let _index = index
-    if (!isNil(start)) {
+    if (opt.reverse === true) {
+      if (!isNil(start)) {
+        let [index, smaller, greater] = await this.binarySearch(
+          first_node,
+          start,
+          cache,
+          stats,
+          !after
+        )
+        if (!isNil(opt.startAt)) {
+          _index = index
+          if (!isNil(smaller)) _index = smaller
+        } else if (!isNil(opt.startAfter)) {
+          _index = null
+          if (!isNil(smaller)) {
+            _index = smaller
+          } else if (!isNil(index)) {
+            const [new_index, new_node] = await this.findFirstLtIndex(
+              index,
+              first_node,
+              start,
+              cache,
+              stats
+            )
+            if (!isNil(new_index)) {
+              _index = new_index
+              _node = new_node
+            }
+          }
+        }
+      }
+    } else if (!isNil(start)) {
       let [index, smaller, greater] = await this.binarySearch(
         first_node,
         start,
         cache,
-        stats
+        stats,
+        after
       )
       if (!isNil(opt.startAt)) {
         _index = index
@@ -333,7 +454,15 @@ class BPT {
       }
     }
     if (!isNil(_index))
-      await this.getVals(_node, vals, _index, opt, cache, null, stats)
+      await this[`getVals${opt.reverse === true ? "Reverse" : ""}`](
+        _node,
+        vals,
+        _index,
+        opt,
+        cache,
+        null,
+        stats
+      )
     return vals
   }
 
@@ -345,15 +474,15 @@ class BPT {
     return [val, ...(await this.searchNode(node, key, val, true, stats))]
   }
 
-  async binarySearch(node, val, cache = {}, stats) {
+  async binarySearch(node, val, cache = {}, stats, reverse) {
     let left = 0
     let right = node.vals.length - 1
     while (left <= right) {
       let mid = Math.floor((left + right) / 2)
       let midval = await this.data(node.vals[mid], cache, stats)
-      if (this.comp(midval, val) === 0) {
+      if (this.comp(midval, val, reverse) === 0) {
         return [mid, null, null]
-      } else if (this.comp(midval, val) === 1) {
+      } else if (this.comp(midval, val, reverse) === 1) {
         left = mid + 1
       } else {
         right = mid - 1
