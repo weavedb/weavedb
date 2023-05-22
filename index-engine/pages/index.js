@@ -83,6 +83,7 @@ export default function Home() {
   const [cols, setCols] = useState([])
   const [indexes, setIndexes] = useState({})
   const [index, setIndex] = useState(null)
+  const [newIndex, setNewIndex] = useState("")
   const [col, setCol] = useState(null)
   const [order, setOrder] = useState(initial_order)
   const [schema, setSchema] = useState(default_schema)
@@ -375,6 +376,7 @@ export default function Home() {
             await getNode(root)
           }
         }
+        /*
         if (typeof _data === "object") {
           let _indexes = clone(indexes)
           for (const k in _data) {
@@ -408,7 +410,7 @@ export default function Home() {
               }
             }
           }
-        }
+          }*/
         await lf.setItem(index_key, _indexes)
         setStore(JSON.stringify(tree.kv.store))
         setHis(_his2)
@@ -797,6 +799,84 @@ export default function Home() {
                   </Flex>
                 ))(_indexes)}
               </Box>
+              <Flex mt={2} px={2}>
+                <Input
+                  onChange={e => setNewIndex(e.target.value)}
+                  placeholder="Index"
+                  value={newIndex}
+                  height="auto"
+                  flex={1}
+                  bg="white"
+                  fontSize="12px"
+                  py={1}
+                  px={3}
+                  sx={{ borderRadius: "3px 0 0 3px" }}
+                />
+                <Flex
+                  width="80px"
+                  align="center"
+                  p={1}
+                  justify="center"
+                  bg="#666"
+                  color="white"
+                  onClick={async () => {
+                    const sort_fields = map(v => {
+                      const ind = v.split(":")
+                      const ord =
+                        ind.length < 2 || ind[1] !== "desc" ? "asc" : "desc"
+                      return [ind[0], ord]
+                    })(newIndex.split("/"))
+
+                    if (sort_fields.length <= 1) {
+                      alert("You can only add multi-field indexes")
+                    } else {
+                      const skey = `index.${col}//${compose(
+                        join("/"),
+                        flatten
+                      )(sort_fields)}`
+                      const count = (await lf.getItem(`count-${col}`)) ?? 0
+                      const index_key = `indexes-${col}`
+                      let __indexes = (await lf.getItem(index_key)) || {}
+                      if (!isNil(__indexes[newIndex])) return alert("exists")
+                      __indexes[newIndex] = { order: 5, key: newIndex }
+                      const kv = new KV(skey)
+                      const tree = new BPT(5, sort_fields, kv, function (
+                        stats
+                      ) {})
+                      const i_fields = compose(
+                        without(["__name__"]),
+                        map(v => v.split(":")[0])
+                      )(newIndex.split("/"))
+                      let docs = {}
+                      for (let i = 1; i <= count; i++) {
+                        const _log = await lf.getItem(`log-${col}-${i}`)
+                        if (_log.op === "create") {
+                          docs[_log.key] = true
+                        } else if (_log.op === "del") {
+                          delete docs[_log.key]
+                        }
+                      }
+                      for (let k in docs) {
+                        let _data = await idtree.data(k)
+                        const fields = keys(_data.val)
+                        const diff = difference(i_fields, fields)
+                        if (i_fields.length > 0 && diff.length === 0) {
+                          await tree.insert(k, _data.val)
+                        }
+                      }
+                      setIndexes(__indexes)
+                      await lf.setItem(index_key, __indexes)
+                    }
+                  }}
+                  sx={{
+                    borderRadius: "0 3px 3px 0",
+                    cursor: "pointer",
+                    ":hover": { opacity: 0.75 },
+                  }}
+                >
+                  Add
+                </Flex>
+              </Flex>
             </Box>
           </>
         )}
