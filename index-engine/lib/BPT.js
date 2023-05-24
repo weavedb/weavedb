@@ -1,4 +1,5 @@
 const {
+  is,
   assoc,
   compose,
   pickAll,
@@ -25,47 +26,49 @@ const {
 } = require("ramda")
 
 class BPT {
-  constructor(order = 4, sort_fields = "number", kv, onCommit) {
+  constructor(order = 5, sort_fields = "number", kv, prefix, onCommit) {
     this.kv = kv
     this.onCommit = onCommit
     this.order = order
     this.sort_fields = sort_fields
     this.max_vals = this.order - 1
     this.min_vals = Math.ceil(this.order / 2) - 1
+    this.prefix = prefix
   }
-  get = async (key, stats) => stats?.[key] ?? (await this.kv.get(key))
-  put = async (key, val, stats) => {
+  get = async (key, stats, _prefix) =>
+    stats?.[key] ?? (await this.kv.get(key, _prefix ?? `${this.prefix}/`))
+  put = async (key, val, stats, _prefix, nosave) => {
     if (!isNil(stats)) {
       stats[key] = val
     } else {
-      await this.kv.put(key, val)
+      await this.kv.put(key, val, _prefix ?? `${this.prefix}/`, nosave)
     }
   }
-  del = async (key, stats) => {
+  del = async (key, stats, _prefix, nosave) => {
     if (!isNil(stats)) {
       stats[key] = { __del__: true }
     } else {
-      await this.kv.del(key)
+      await this.kv.del(key, _prefix ?? `${this.prefix}/`, nosave)
     }
   }
   putData = async (key, val, stats) => {
     if (!isNil(stats)) {
       stats[`data/${key}`] = val
     } else {
-      await this.put(`data/${key}`, val, stats)
+      await this.put(`data/${key}`, val, stats, "")
     }
   }
   delData = async (key, stats) => {
     if (!isNil(stats)) {
       stats[`data/${key}`] = { __del__: true }
     } else {
-      await this.del(`data/${key}`, stats)
+      await this.del(`data/${key}`, stats, "")
     }
   }
   putNode = async (node, stats) => await this.put(node.id, node, stats)
   data = async (key, cache = {}, stats) => {
     if (typeof cache[key] !== "undefined") return { key, val: cache[key] }
-    let _data = (await this.get(`data/${key}`, stats)) ?? null
+    let _data = (await this.get(`data/${key}`, stats, "")) ?? null
     cache[key] = _data
     return { key, val: _data }
   }
@@ -79,7 +82,17 @@ class BPT {
     if (!isNil(key)) obj.key = key
     return obj
   }
-
+  compArr(va, vb) {
+    const _va = is(Array(va)) ? va : [va]
+    const _vb = is(Array(vb)) ? vb : [vb]
+    let i = 0
+    while (true) {
+      if (!equals(_va[i], _vb[i])) return _va[i] < _vb[i] ? 1 : -1
+      if (typeof _va[i] === "undefined" || typeof _vb[i] === "undefined") break
+      i++
+    }
+    return 0
+  }
   comp(a, b, null_last = false) {
     if (typeof this.sort_fields === "string") {
       return a.val === b.val ? 0 : a.val < b.val ? 1 : -1
@@ -87,13 +100,14 @@ class BPT {
       for (const v of this.sort_fields) {
         const va = v[0] === "__name__" ? a.key : a.val[v[0]]
         const vb = v[0] === "__name__" ? b.key : b.val[v[0]]
-        if (va !== vb) {
+        const bareComp = this.compArr(va, vb)
+        if (bareComp !== 0) {
           return (
             (isNil(va)
               ? (v[1] === "desc" ? -1 : 1) * (null_last ? -1 : 1)
               : isNil(vb)
               ? (v[1] === "desc" ? -1 : 1) * (null_last ? 1 : -1)
-              : va < vb
+              : bareComp === 1
               ? 1
               : -1) * (v[1] === "desc" ? -1 : 1)
           )
@@ -745,7 +759,7 @@ class BPT {
     await this.updateIndexes(merge_child_index, merge_node, null, val, stats)
   }
 
-  async delete(key) {
+  async delete(key, skipPut = false) {
     let stats = {}
     let [val, index, node] = await this.searchByKey(key, stats)
     if (isNil(node)) return
@@ -753,7 +767,7 @@ class BPT {
     await this.putNode(node, stats)
     await this.delData(key, stats)
     await this.balance(val, index, node, stats)
-    await this.commit(stats)
+    await this.commit(stats, skipPut)
   }
 
   async _insert(key, val, node, stats) {
@@ -787,10 +801,19 @@ class BPT {
 
   async commit(stats, skipPut = false) {
     for (let k in stats) {
+      const prefix = k.match(/^data\//) === null ? `${this.prefix}/` : ""
       if (stats[k]?.__del__) {
-        await this.del(k)
+        if (!skipPut || k.match(/^data\//) === null) {
+          await this.del(k, undefined, prefix)
+        } else if (skipPut) {
+          await this.del(k, undefined, prefix, true)
+        }
       } else {
-        if (!skipPut || k.match(/^data\//) === null) await this.put(k, stats[k])
+        if (!skipPut || k.match(/^data\//) === null) {
+          await this.put(k, stats[k], undefined, prefix)
+        } else if (skipPut) {
+          await this.put(k, stats[k], undefined, prefix, true)
+        }
       }
     }
     if (!isNil(this.onCommit)) this.onCommit(stats)
