@@ -6,17 +6,17 @@ class KV {
     this.prefix = prefix ?? shortid.generate()
     this.store = {}
   }
-  async get(key) {
-    const data = (await lf.getItem(`${this.prefix}/${key}`)) ?? null
+  async get(key, _prefix = "") {
+    const data = (await lf.getItem(`${this.prefix}/${_prefix}${key}`)) ?? null
     if (!isNil(data)) this.store[key] = data
     return data
   }
-  async put(key, val) {
-    await lf.setItem(`${this.prefix}/${key}`, val)
+  async put(key, val, _prefix = "", nosave = false) {
+    if (!nosave) await lf.setItem(`${this.prefix}/${_prefix}${key}`, val)
     this.store[key] = val
   }
-  async del(key) {
-    await lf.removeItem(`${this.prefix}/${key}`)
+  async del(key, _prefix = "", nosave = false) {
+    if (!nosave) await lf.removeItem(`${this.prefix}/${_prefix}${key}`)
     delete this.store[key]
   }
 }
