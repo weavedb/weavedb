@@ -10,6 +10,9 @@ import {
 import { nanoid } from "nanoid"
 import { useEffect, useState } from "react"
 import {
+  concat,
+  uniq,
+  is,
   intersection,
   difference,
   assoc,
@@ -34,7 +37,7 @@ import {
   map,
   keys,
 } from "ramda"
-
+import md5 from "md5"
 const BPT = require("../lib/BPT")
 const { gen, isErr, build } = require("../lib/utils")
 let tree = null
@@ -126,7 +129,7 @@ export default function Home() {
       data_type === "object" ? map(split(":"))(fields.split(",")) : null
     setCurrentFields(sort_fields)
     const kv = new KV()
-    tree = new BPT(order, sort_fields ?? data_type, kv, function (stats) {
+    tree = new BPT(order, sort_fields ?? data_type, kv, "", function (stats) {
       if (!isNil(setStore)) setStore(JSON.stringify(this.kv.store))
     })
     const arr =
@@ -208,6 +211,54 @@ export default function Home() {
     await lf.setItem(`log-${col}-${count + 1}`, log)
     await lf.setItem(`count-${col}`, count + 1)
     isDel = true
+    if (typeof _data === "object") {
+      for (const k in indexes) {
+        const fields = keys(_data)
+        const sp = map(v => v.split(":"))(k.split("/"))
+        if (sp[0][1] === "array") continue
+        const i_fields = compose(
+          without(["__name__"]),
+          map(v => v.split(":")[0])
+        )(k.split("/"))
+        const diff = difference(i_fields, fields)
+        if (i_fields.length > 0 && diff.length === 0) {
+          const sort_fields = map(v => v.split(":"))(k.split("/"))
+          const skey = `index.${col}/`
+          const prefix = `${compose(join("/"), flatten)(sort_fields)}`
+          if (k === index) {
+            await tree.delete(id, true)
+          } else {
+            const kv = new KV(skey)
+            const tree = new BPT(5, sort_fields, kv, prefix, function (
+              stats
+            ) {})
+            await tree.delete(id, true)
+          }
+        }
+      }
+      // needs to check multi
+      for (let k in _data) {
+        if (is(Array, _data[k])) {
+          for (let v of _data[k]) {
+            const skey = `index.${col}/`
+            const prefix = `${k}/array:${md5(JSON.stringify(v))}`
+            if (prefix === index) {
+              await tree.delete(id, true)
+            } else {
+              const kv = new KV(skey)
+              const tree = new BPT(
+                5,
+                [["__name__", "asc"]],
+                kv,
+                prefix,
+                function (stats) {}
+              )
+              await tree.delete(id, true)
+            }
+          }
+        }
+      }
+    }
     await idtree.delete(key)
     delete ids[key]
     const _err = isErr(
@@ -221,30 +272,6 @@ export default function Home() {
     const [err, where, arrs, _len, _vals] = _err
     prev_count = _len
     len = _len
-    if (typeof _data === "object") {
-      for (const k in indexes) {
-        const fields = keys(_data)
-        const i_fields = compose(
-          without(["__name__"]),
-          map(v => v.split(":")[0])
-        )(k.split("/"))
-        const diff = difference(i_fields, fields)
-        if (i_fields.length > 0 && diff.length === 0) {
-          const sort_fields = map(v => v.split(":"))(k.split("/"))
-          const skey = `index.${col}//${compose(
-            join("/"),
-            flatten
-          )(sort_fields)}`
-          if (k === index) {
-            await tree.delete(id)
-          } else {
-            const kv = new KV(skey)
-            const tree = new BPT(5, sort_fields, kv, function (stats) {})
-            await tree.delete(id)
-          }
-        }
-      }
-    }
     setStore(JSON.stringify(tree.kv.store))
     return _err
   }
@@ -317,8 +344,10 @@ export default function Home() {
         setCurrentType("object")
         ids = {}
         setCurrentOrder(5)
-        const kv = new KV(`index.${col}//__name__/asc`)
-        tree = new BPT(5, [["__name__", "asc"]], kv, function (stats) {
+        const kv = new KV(`index.${col}/`)
+        tree = new BPT(5, [["__name__", "asc"]], kv, "__name__/asc", function (
+          stats
+        ) {
           if (!isNil(setStore) && index === "__name__:asc") {
             setStore(JSON.stringify(this.kv.store))
           }
@@ -338,7 +367,7 @@ export default function Home() {
           for (let i = 1; i <= count; i++) {
             const _log = await lf.getItem(`log-${col}-${i}`)
             if (_log.op === "craete") {
-              await tree.insert(_log.key, _log.val)
+              await tree.insert(_log.key, _log.val, true)
             } else if (_log.op === "update") {
               let _data = await tree.data(_log.id)
               for (let k in _log.val) {
@@ -348,10 +377,10 @@ export default function Home() {
                   data[k] = _log.val[k]
                 }
               }
-              await tree.delete(_log.key)
-              await tree.insert(_log.key, _log.data)
+              await tree.delete(_log.key, true)
+              await tree.insert(_log.key, _log.data, true)
             } else {
-              await tree.delete(_log.key)
+              await tree.delete(_log.key, true)
             }
           }
           const key = "__name__:asc"
@@ -383,11 +412,11 @@ export default function Home() {
             const key = `${k}:asc`
             if (isNil(indexes[key])) _indexes[key] = { order: 5, key }
             if (key === index) {
-              await tree.insert(id, _data)
+            await tree.insert(id, _data,true)
             } else {
-              const kv = new KV(`index.${col}//${k}/asc`)
-              const _tree = new BPT(5, [[k, "asc"]], kv, function (stats) {})
-              await _tree.insert(id, _data)
+              const kv = new KV(`index.${col}/`)
+              const _tree = new BPT(5, [[k, "asc"]], kv, `${k}/asc`,function (stats) {})
+              await _tree.insert(id, _data,true)
             }
           }
           await lf.setItem(`indexes-${col}`, _indexes)
@@ -400,13 +429,13 @@ export default function Home() {
             )(k.split("/"))
             const diff = difference(i_fields, fields)
             if (i_fields.length > 1 && diff.length === 0) {
-              const kv = new KV(`index.${col}//${k}/asc`)
+              const kv = new KV(`index.${col}/`)
               const sort_fields = map(v => v.split(":"))(k.split("/"))
               if (k === index) {
-                await tree.insert(id, _data)
+              await tree.insert(id, _data,true)
               } else {
-                const tree = new BPT(5, sort_fields, kv, function (stats) {})
-                await tree.insert(id, _data)
+              const tree = new BPT(5, sort_fields, kv, `${k}/asc`,function (stats) {})
+              await tree.insert(id, _data,true)
               }
             }
           }
@@ -425,10 +454,20 @@ export default function Home() {
         if (index === "__name__:asc") {
           tree = idtree
         } else {
-          const kv = new KV(
-            `index.${col}//${compose(join("/"), flatten)(sort_fields)}`
-          )
-          tree = new BPT(5, sort_fields, kv, function (stats) {
+          let key = `index.${col}/`
+          let prefix = ""
+          let _sort_fields = sort_fields
+          if (sort_fields[0][1] === "array") {
+            const ar = sort_fields[0]
+            prefix += `${ar[0]}/array:${ar[2]}`
+            _sort_fields = [["__name__", "asc"]]
+            prefix += compose(join("/"), flatten)(tail(sort_fields))
+            _sort_fields = concat(_sort_fields, tail(sort_fields))
+          } else {
+            prefix += compose(join("/"), flatten)(sort_fields)
+          }
+          const kv = new KV(key)
+          tree = new BPT(5, _sort_fields, kv, prefix, function (stats) {
             if (!isNil(setStore)) setStore(JSON.stringify(this.kv.store))
           })
           let root = await tree.root()
@@ -467,7 +506,49 @@ export default function Home() {
 
       if (typeof _data === "object") {
         let _indexes = clone(indexes)
+        // need to check updated array
         for (let k in _data) {
+          // new data is array
+          if (
+            _data[k].__op === "arrayUnion" ||
+            _data[k].__op === "arrayRemove" ||
+            is(Array, _data[k])
+          ) {
+            let new_vals = []
+            if (_data[k].__op === "arrayUnion") {
+              new_vals = map(v => md5(JSON.stringify(v)))(
+                concat(data[k], _data[k].__op)
+              )
+            } else if (_data[k].__op === "arrayUnion") {
+              new_vals = map(v => md5(JSON.stringify(v)))(
+                without(_data[k].__op, data[k])
+              )
+            } else {
+              new_vals = map(v => md5(JSON.stringify(v)))(_data[k])
+            }
+            new_vals = uniq(new_vals)
+            if (is(Array, data[k])) {
+              const old_vals = compose(
+                uniq,
+                map(v => md5(JSON.stringify(v)))
+              )(data[k])
+              // both data are arrays => remove old fields and add new fields
+              const _add = difference(new_vals, old_vals)
+              const _remove = difference(old_vals, new_vals)
+              for (let v of _add) news.push(`${k}:array:${v}`)
+              for (let v of _remove) dels.push(`${k}:array:${v}`)
+            } else {
+              // old data isn't array => only add new fields
+              for (let v of new_vals) news.push(`${k}:array:${v}`)
+            }
+          } else if (is(Array, data[k])) {
+            // old data is array but new data isn't
+            const old_vals = compose(
+              uniq,
+              map(v => md5(JSON.stringify(v)))
+            )(data[k])
+            for (let v of old_vals) dels.push(`${k}:array:${v}`)
+          }
           if (_data[k].__op === "del") {
             dels.push(k)
             delete data[k]
@@ -477,23 +558,48 @@ export default function Home() {
             } else if (data[k] !== _data[k]) {
               changes.push(k)
             }
+            // __op needs to be worked separately => handle this later
             data[k] = _data[k]
           }
         }
-        await idtree.putData(updateId, data)
         let newkeys = {}
-        for (const k of news) {
-          const key = `${k}:asc`
+        for (const k of dels) {
+          const sp = k.split(":")
+          const key = sp[1] === "array" ? k : `${k}:asc`
+          const prefix =
+            sp[1] === "array" ? `${sp[0]}/${sp[1]}:${sp[2]}` : `${k}/asc`
           newkeys[key] = true
-          if (isNil(indexes[key])) {
-            _indexes[key] = { order: 5, key }
-          }
           if (index !== key) {
-            const kv = new KV(`index.${col}//${k}/asc`)
-            const _tree = new BPT(5, [[k, "asc"]], kv, function (stats) {})
-            await _tree.insert(id, _data)
+            const kv = new KV(`index.${col}/`)
+            const sort_fields =
+              sp[1] === "array" ? [["__name__", "asc"]] : [[k, "asc"]]
+            const _tree = new BPT(5, sort_fields, kv, prefix, function (
+              stats
+            ) {})
+            await _tree.delete(id, true)
           } else {
-            await tree.insert(id, _data)
+            await tree.delete(id, true)
+          }
+        }
+        await idtree.putData(id, data)
+        // dels handled?? no
+        for (const k of news) {
+          const sp = k.split(":")
+          const key = sp[1] === "array" ? k : `${k}:asc`
+          const prefix =
+            sp[1] === "array" ? `${sp[0]}/${sp[1]}:${sp[2]}` : `${k}/asc`
+          newkeys[key] = true
+          if (isNil(indexes[key])) _indexes[key] = { order: 5, key }
+          if (index !== key) {
+            const kv = new KV(`index.${col}/`)
+            const sort_fields =
+              sp[1] === "array" ? [["__name__", "asc"]] : [[k, "asc"]]
+            const _tree = new BPT(5, sort_fields, kv, prefix, function (
+              stats
+            ) {})
+            await _tree.insert(id, _data, true)
+          } else {
+            await tree.insert(id, _data, true)
           }
         }
         await lf.setItem(`indexes-${col}`, _indexes)
@@ -502,6 +608,7 @@ export default function Home() {
         const old_fields = keys(old_data.val)
         for (const k in _indexes) {
           if (isNil(newkeys[k])) {
+            // not updated yet
             const i_fields = compose(
               without(["__name__"]),
               map(v => v.split(":")[0])
@@ -525,30 +632,30 @@ export default function Home() {
               }
               if (isDel) {
                 const sort_fields = map(v => v.split(":"))(k.split("/"))
-                const skey = `index.${col}//${compose(
-                  join("/"),
-                  flatten
-                )(sort_fields)}`
+                const skey = `index.${col}/`
+                const prefix = `${compose(join("/"), flatten)(sort_fields)}`
                 if (k === index) {
-                  await tree.delete(id)
+                  await tree.delete(id, true)
                 } else {
                   const kv = new KV(skey)
-                  const tree = new BPT(5, sort_fields, kv, function (stats) {})
-                  await tree.delete(id)
+                  const tree = new BPT(5, sort_fields, kv, prefix, function (
+                    stats
+                  ) {})
+                  await tree.delete(id, true)
                 }
               }
               if (isAdd) {
                 const sort_fields = map(v => v.split(":"))(k.split("/"))
-                const skey = `index.${col}//${compose(
-                  join("/"),
-                  flatten
-                )(sort_fields)}`
+                const skey = `index.${col}/`
+                const prefix = `${compose(join("/"), flatten)(sort_fields)}`
                 if (k === index) {
-                  await tree.insert(id, _data)
+                  await tree.insert(id, _data, true)
                 } else {
                   const kv = new KV(skey)
-                  const tree = new BPT(5, sort_fields, kv, function (stats) {})
-                  await tree.insert(id, _data)
+                  const tree = new BPT(5, sort_fields, kv, prefix, function (
+                    stats
+                  ) {})
+                  await tree.insert(id, _data, true)
                 }
               }
             }
@@ -615,11 +722,32 @@ export default function Home() {
         const key = `${k}:asc`
         if (isNil(indexes[key])) _indexes[key] = { order: 5, key }
         if (key === index) {
-          await tree.insert(id, _data)
+          await tree.insert(id, _data, true)
         } else {
-          const kv = new KV(`index.${col}//${k}/asc`)
-          const _tree = new BPT(5, [[k, "asc"]], kv, function (stats) {})
-          await _tree.insert(id, _data)
+          const kv = new KV(`index.${col}/`)
+          const _tree = new BPT(5, [[k, "asc"]], kv, `${k}/asc`, function (
+            stats
+          ) {})
+          await _tree.insert(id, _data, true)
+        }
+        if (is(Array, _data[k])) {
+          for (let v of uniq(_data[k])) {
+            const key = `${k}:array:${md5(JSON.stringify(v))}`
+            if (isNil(indexes[key])) _indexes[key] = { order: 5, key }
+            if (key === index) {
+              await tree.insert(id, _data, true)
+            } else {
+              const kv = new KV(`index.${col}/`)
+              const _tree = new BPT(
+                5,
+                [["__name__", "asc"]],
+                kv,
+                `${k}/array:${md5(JSON.stringify(v))}`,
+                function (stats) {}
+              )
+              await _tree.insert(id, _data, true)
+            }
+          }
         }
       }
       await lf.setItem(`indexes-${col}`, _indexes)
@@ -633,16 +761,16 @@ export default function Home() {
         const diff = difference(i_fields, fields)
         if (i_fields.length > 1 && diff.length === 0) {
           const sort_fields = map(v => v.split(":"))(k.split("/"))
-          const skey = `index.${col}//${compose(
-            join("/"),
-            flatten
-          )(sort_fields)}`
+          const skey = `index.${col}/`
+          const prefix = `${compose(join("/"), flatten)(sort_fields)}`
           if (k === index) {
-            await tree.insert(id, _data)
+            await tree.insert(id, _data, true)
           } else {
             const kv = new KV(skey)
-            const tree = new BPT(5, sort_fields, kv, function (stats) {})
-            await tree.insert(id, _data)
+            const tree = new BPT(5, sort_fields, kv, prefix, function (
+              stats
+            ) {})
+            await tree.insert(id, _data, true)
           }
         }
       }
@@ -830,7 +958,8 @@ export default function Home() {
                     if (sort_fields.length <= 1) {
                       alert("You can only add multi-field indexes")
                     } else {
-                      const skey = `index.${col}//${compose(
+                      const skey = `index.${col}/`
+                      const prefix = `${compose(
                         join("/"),
                         flatten
                       )(sort_fields)}`
@@ -840,9 +969,13 @@ export default function Home() {
                       if (!isNil(__indexes[newIndex])) return alert("exists")
                       __indexes[newIndex] = { order: 5, key: newIndex }
                       const kv = new KV(skey)
-                      const tree = new BPT(5, sort_fields, kv, function (
-                        stats
-                      ) {})
+                      const tree = new BPT(
+                        5,
+                        sort_fields,
+                        kv,
+                        prefix,
+                        function (stats) {}
+                      )
                       const i_fields = compose(
                         without(["__name__"]),
                         map(v => v.split(":")[0])
@@ -861,7 +994,7 @@ export default function Home() {
                         const fields = keys(_data.val)
                         const diff = difference(i_fields, fields)
                         if (i_fields.length > 0 && diff.length === 0) {
-                          await tree.insert(k, _data.val)
+                          await tree.insert(k, _data.val, true)
                         }
                       }
                       setIndexes(__indexes)
@@ -1473,7 +1606,7 @@ export default function Home() {
                                     : v3val[v4[0]]
                                 })
                               )(currentFields || [])
-                            : "-"
+                            : v3.key
                           return (
                             <Flex
                               px={1}
