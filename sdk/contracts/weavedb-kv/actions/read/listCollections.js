@@ -19,6 +19,4 @@ const listCollections = async (state, action, SmartWeave, kvs) => {
   }
 }
 
-module.exports = {
-  listCollections,
-}
+module.exports = { listCollections }

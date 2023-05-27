@@ -109,7 +109,10 @@ module.exports = {
     accessKeyId: "[aws_access_key_id]",
     secretAccessKey: "[aws_access_secret_key]",
     region: "[aws_s3_region]",
-  },
+    useDualstackEndpoint: true, // true by default. If you would like to use s3 compatible services, you might need to make it false.
+    endpoint: null,  // null by default. If you would like to use s3 compatible services, you need to setup this option. e.g. "https://endpoint.4everland.co"
+
+},
 }
 ```
 

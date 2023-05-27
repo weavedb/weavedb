@@ -59,7 +59,7 @@ const build = store => {
     nodemap[node.id] = node
     for (const v of node.children || []) add(_s[v], depth + 1)
   }
-  if (!isNil(_s["root"])) add(_s[_s["root"]])
+  if (!isNil(_s?.["root"])) add(_s[_s["root"]])
   return { arrs, nodemap }
 }
 
@@ -202,7 +202,6 @@ const isErr = (store, order = 4, id, isDel, prev_count) => {
       ? []
       : compose(flatten, pluck("vals"), last)(arrs)
   if ((isDel && prev_count - 1 !== len) || (!isDel && prev_count + 1 !== len)) {
-    console.log(prev_count, len)
     err = true
     where = { type: "not updated", id, arr: [prev_count, len] }
   }
