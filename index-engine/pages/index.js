@@ -211,48 +211,60 @@ export default function Home() {
     await lf.setItem(`log-${col}-${count + 1}`, log)
     await lf.setItem(`count-${col}`, count + 1)
     isDel = true
+    const skey = `index.${col}/`
     if (typeof _data === "object") {
       for (const k in indexes) {
         const fields = keys(_data)
         const sp = map(v => v.split(":"))(k.split("/"))
-        if (sp[0][1] === "array") continue
         const i_fields = compose(
           without(["__name__"]),
           map(v => v.split(":")[0])
         )(k.split("/"))
         const diff = difference(i_fields, fields)
         if (i_fields.length > 0 && diff.length === 0) {
-          const sort_fields = map(v => v.split(":"))(k.split("/"))
-          const skey = `index.${col}/`
-          const prefix = `${compose(join("/"), flatten)(sort_fields)}`
-          if (k === index) {
-            await tree.delete(id, true)
+          if (sp[0][1] === "array") {
+            if (is(Array, _data[sp[0][0]])) {
+              for (let v of _data[sp[0][0]]) {
+                const _md5 = md5(JSON.stringify(v))
+                const sort_fields = map(v => v.split(":"))(k.split("/"))
+                let akey = `${sort_fields[0][0]}:array:${_md5}`
+                if (sort_fields.length > 1) {
+                  akey += `/${map(v => v.join(":"))(tail(sort_fields)).join(
+                    "/"
+                  )}`
+                }
+                if (isNil(indexes[k].items[_md5])) continue
+                if (akey === index) {
+                  await tree.delete(id, true)
+                } else {
+                  const ar = sort_fields[0]
+                  let prefix = `${ar[0]}/array:${_md5}`
+                  const _sort_fields =
+                    sort_fields.length === 1
+                      ? [["__name__", "asc"]]
+                      : tail(sort_fields)
+                  if (sort_fields.length > 1) {
+                    prefix +=
+                      "/" + compose(join("/"), flatten)(tail(sort_fields))
+                  }
+                  const kv = new KV(skey)
+                  const tree = new BPT(5, _sort_fields, kv, prefix, function (
+                    stats
+                  ) {})
+                  await tree.delete(id, true)
+                }
+              }
+            }
           } else {
-            const kv = new KV(skey)
-            const tree = new BPT(5, sort_fields, kv, prefix, function (
-              stats
-            ) {})
-            await tree.delete(id, true)
-          }
-        }
-      }
-      // needs to check multi
-      for (let k in _data) {
-        if (is(Array, _data[k])) {
-          for (let v of _data[k]) {
-            const skey = `index.${col}/`
-            const prefix = `${k}/array:${md5(JSON.stringify(v))}`
-            if (prefix === index) {
+            const sort_fields = map(v => v.split(":"))(k.split("/"))
+            const prefix = `${compose(join("/"), flatten)(sort_fields)}`
+            if (k === index) {
               await tree.delete(id, true)
             } else {
               const kv = new KV(skey)
-              const tree = new BPT(
-                5,
-                [["__name__", "asc"]],
-                kv,
-                prefix,
-                function (stats) {}
-              )
+              const tree = new BPT(5, sort_fields, kv, prefix, function (
+                stats
+              ) {})
               await tree.delete(id, true)
             }
           }
@@ -460,8 +472,13 @@ export default function Home() {
           if (sort_fields[0][1] === "array") {
             const ar = sort_fields[0]
             prefix += `${ar[0]}/array:${ar[2]}`
-            _sort_fields = [["__name__", "asc"]]
-            prefix += compose(join("/"), flatten)(tail(sort_fields))
+            _sort_fields =
+              sort_fields.length === 1
+                ? [["__name__", "asc"]]
+                : tail(sort_fields)
+            if (sort_fields.length > 1) {
+              prefix += "/" + compose(join("/"), flatten)(tail(sort_fields))
+            }
             _sort_fields = concat(_sort_fields, tail(sort_fields))
           } else {
             prefix += compose(join("/"), flatten)(sort_fields)
@@ -582,24 +599,46 @@ export default function Home() {
           }
         }
         await idtree.putData(id, data)
-        // dels handled?? no
         for (const k of news) {
           const sp = k.split(":")
           const key = sp[1] === "array" ? k : `${k}:asc`
-          const prefix =
+          let prefix =
             sp[1] === "array" ? `${sp[0]}/${sp[1]}:${sp[2]}` : `${k}/asc`
           newkeys[key] = true
-          if (isNil(indexes[key])) _indexes[key] = { order: 5, key }
-          if (index !== key) {
-            const kv = new KV(`index.${col}/`)
-            const sort_fields =
-              sp[1] === "array" ? [["__name__", "asc"]] : [[k, "asc"]]
-            const _tree = new BPT(5, sort_fields, kv, prefix, function (
-              stats
-            ) {})
-            await _tree.insert(id, _data, true)
+          const kv = new KV(`index.${col}/`)
+          if (sp[1] === "array") {
+            const akey = `${sp[0]}:${sp[1]}`
+            if (isNil(_indexes[akey])) _indexes[akey] = { key: akey, items: {} }
+            if (isNil(_indexes[akey].items[sp[2]])) {
+              _indexes[akey].items[sp[2]] = { key, order: 5 }
+            }
+            if (index !== k) {
+              const sort_fields = map(v => v.split(":"))(k.split("/"))
+              let _sort_fields =
+                sort_fields.length === 1
+                  ? [["__name__", "asc"]]
+                  : tail(sort_fields)
+              if (sort_fields.length > 1) {
+                prefix += "/" + compose(join("/"), flatten)(tail(sort_fields))
+              }
+              const _tree = new BPT(5, sort_fields, kv, prefix, function (
+                stats
+              ) {})
+              await _tree.insert(id, _data, true)
+            } else {
+              await tree.insert(id, _data, true)
+            }
           } else {
-            await tree.insert(id, _data, true)
+            if (isNil(_indexes[key])) _indexes[key] = { order: 5, key }
+            if (index !== key) {
+              const sort_fields = [[k, "asc"]]
+              const _tree = new BPT(5, sort_fields, kv, prefix, function (
+                stats
+              ) {})
+              await _tree.insert(id, _data, true)
+            } else {
+              await tree.insert(id, _data, true)
+            }
           }
         }
         await lf.setItem(`indexes-${col}`, _indexes)
@@ -609,53 +648,139 @@ export default function Home() {
         for (const k in _indexes) {
           if (isNil(newkeys[k])) {
             // not updated yet
+            const sort_fields = map(v => v.split(":"))(k.split("/"))
             const i_fields = compose(
               without(["__name__"]),
               map(v => v.split(":")[0])
             )(k.split("/"))
-            const diff = difference(i_fields, fields)
-            const old_diff = difference(i_fields, old_fields)
-            if (
-              i_fields.length > 0 &&
-              (diff.length === 0 || old_diff.length === 0)
-            ) {
-              let isAdd = false
-              let isDel = false
-              if (intersection(i_fields, news).length > 0) isAdd = true
-              if (intersection(i_fields, changes).length > 0) {
-                isDel = true
-                isAdd = true
-              }
-              if (intersection(i_fields, dels).length > 0) {
-                isDel = true
-                isAdd = false
-              }
-              if (isDel) {
-                const sort_fields = map(v => v.split(":"))(k.split("/"))
-                const skey = `index.${col}/`
-                const prefix = `${compose(join("/"), flatten)(sort_fields)}`
-                if (k === index) {
-                  await tree.delete(id, true)
-                } else {
-                  const kv = new KV(skey)
-                  const tree = new BPT(5, sort_fields, kv, prefix, function (
-                    stats
-                  ) {})
-                  await tree.delete(id, true)
+            const kv = new KV(`index.${col}/`)
+            if (i_fields.length > 1) {
+              // if array we need a separate check
+              if (sort_fields[0][1] === "array") {
+                const arr_name = sort_fields[0][0]
+                const new_arr_vals = is(Array, data[arr_name])
+                  ? compose(
+                      uniq,
+                      map(v => md5(JSON.stringify(v)))
+                    )(data[arr_name])
+                  : []
+                const old_arr_vals = is(Array, old_data.val[arr_name])
+                  ? compose(
+                      uniq,
+                      map(v => md5(JSON.stringify(v)))
+                    )(old_data.val[arr_name])
+                  : []
+                const val_added = difference(new_arr_vals, old_arr_vals)
+                const val_removed = difference(old_arr_vals, new_arr_vals)
+                const val_unchanged = intersection(old_arr_vals, new_arr_vals)
+                const _fields = without([arr_name])(fields)
+                const _old_fields = without([arr_name])(old_fields)
+                const _i_fields = without([arr_name])(i_fields)
+                const diff = difference(_i_fields, _fields)
+                const old_diff = difference(_i_fields, _old_fields)
+                if (diff.length === 0 || old_diff.length === 0) {
+                  let isAdd = false
+                  let isDel = false
+                  if (intersection(_i_fields, news).length > 0) isAdd = true
+                  if (intersection(_i_fields, changes).length > 0) {
+                    isDel = true
+                    isAdd = true
+                  }
+                  if (intersection(_i_fields, dels).length > 0) {
+                    isDel = true
+                    isAdd = false
+                  }
+                  const isChange =
+                    isAdd && isDel
+                      ? "change"
+                      : isAdd
+                      ? "add"
+                      : isDel
+                      ? "del"
+                      : "same"
+                  let _add = []
+                  let _del = []
+                  let _change = []
+                  for (let v of val_added) _add.push(v)
+                  for (let v of val_removed) _del.push(v)
+                  for (let v of val_unchanged) {
+                    if (isChange === "add") {
+                      _add.push(v)
+                    } else if (isChange === "del") {
+                      _del.push(v)
+                    } else if (isChange === "change") {
+                      _change.push(v)
+                    }
+                  }
+                  const sort_tail = map(join(":"))(tail(sort_fields)).join("/")
+                  const getKey = v => `${arr_name}:array:${v}/${sort_tail}`
+                  const getPrefix = v =>
+                    `${arr_name}/array:${v}/${compose(
+                      join("/"),
+                      flatten
+                    )(tail(sort_fields))}`
+                  const ins = async tree => await tree.insert(id, _data, true)
+                  const del = async tree => await tree.delete(id, true)
+                  const getTree = v =>
+                    new BPT(
+                      5,
+                      tail(sort_fields),
+                      kv,
+                      getPrefix(v),
+                      function () {}
+                    )
+                  for (let v of _add) {
+                    const akey = getKey(v)
+                    await ins(akey === index ? tree : getTree(v))
+                    if (isNil(_indexes[k].items[v])) {
+                      _indexes[k].items[v] = { key: akey, order: 5 }
+                    }
+                  }
+                  for (let v of _del)
+                    await del(getKey(v) === index ? tree : getTree(v))
+                  for (let v of _change) {
+                    const _tree = getKey(v) === index ? tree : getTree(v)
+                    await del(_tree)
+                    await ins(_tree)
+                  }
                 }
               }
-              if (isAdd) {
-                const sort_fields = map(v => v.split(":"))(k.split("/"))
-                const skey = `index.${col}/`
-                const prefix = `${compose(join("/"), flatten)(sort_fields)}`
-                if (k === index) {
-                  await tree.insert(id, _data, true)
-                } else {
-                  const kv = new KV(skey)
-                  const tree = new BPT(5, sort_fields, kv, prefix, function (
-                    stats
-                  ) {})
-                  await tree.insert(id, _data, true)
+              const diff = difference(i_fields, fields)
+              const old_diff = difference(i_fields, old_fields)
+              if (diff.length === 0 || old_diff.length === 0) {
+                let isAdd = false
+                let isDel = false
+                if (intersection(i_fields, news).length > 0) isAdd = true
+                if (intersection(i_fields, changes).length > 0) {
+                  isDel = true
+                  isAdd = true
+                }
+                if (intersection(i_fields, dels).length > 0) {
+                  isDel = true
+                  isAdd = false
+                }
+                if (isDel) {
+                  const prefix = `${compose(join("/"), flatten)(sort_fields)}`
+                  if (k === index) {
+                    await tree.delete(id, true)
+                  } else {
+                    const tree = new BPT(5, sort_fields, kv, prefix, function (
+                      stats
+                    ) {})
+                    await tree.delete(id, true)
+                  }
+                }
+                if (isAdd) {
+                  const sort_fields = map(v => v.split(":"))(k.split("/"))
+                  const prefix = `${compose(join("/"), flatten)(sort_fields)}`
+                  if (k === index) {
+                    await tree.insert(id, _data, true)
+                  } else {
+                    const tree = new BPT(5, sort_fields, kv, prefix, function (
+                      stats
+                    ) {})
+                    await tree.insert(id, _data, true)
+                  }
                 }
               }
             }
@@ -664,6 +789,7 @@ export default function Home() {
       }
     }
   }
+
   const addRandomData = async () => {
     let obj = {}
     for (let v of currentSchema) {
@@ -678,6 +804,7 @@ export default function Home() {
     }
     await addData(JSON.stringify(obj))
   }
+
   const addData = async data => {
     let _data = null
     isDel = false
@@ -732,8 +859,14 @@ export default function Home() {
         }
         if (is(Array, _data[k])) {
           for (let v of uniq(_data[k])) {
-            const key = `${k}:array:${md5(JSON.stringify(v))}`
-            if (isNil(indexes[key])) _indexes[key] = { order: 5, key }
+            const _prefix = `${k}:array`
+            const _md5 = md5(JSON.stringify(v))
+            const key = `${_prefix}:${_md5}`
+            if (isNil(_indexes[_prefix]))
+              _indexes[_prefix] = { key: _prefix, items: {} }
+            if (isNil(_indexes[_prefix].items[_md5])) {
+              _indexes[_prefix].items[_md5] = { order: 5, key }
+            }
             if (key === index) {
               await tree.insert(id, _data, true)
             } else {
@@ -750,8 +883,6 @@ export default function Home() {
           }
         }
       }
-      await lf.setItem(`indexes-${col}`, _indexes)
-      setIndexes(_indexes)
       const fields = keys(_data)
       for (const k in indexes) {
         const i_fields = compose(
@@ -762,18 +893,46 @@ export default function Home() {
         if (i_fields.length > 1 && diff.length === 0) {
           const sort_fields = map(v => v.split(":"))(k.split("/"))
           const skey = `index.${col}/`
-          const prefix = `${compose(join("/"), flatten)(sort_fields)}`
-          if (k === index) {
-            await tree.insert(id, _data, true)
+          if (sort_fields[0][1] === "array") {
+            if (!is(Array, _data[sort_fields[0][0]])) continue
+            for (let v of _data[sort_fields[0][0]]) {
+              const prefix = `${compose(join("/"), flatten)(tail(sort_fields))}`
+              const _md5 = md5(JSON.stringify(v))
+              const _prefix = `${sort_fields[0][0]}/array:${_md5}`
+              const key = `${_prefix}/${prefix}`
+              const akey = `${sort_fields[0][0]}:array:${_md5}/${map(v =>
+                v.join(":")
+              )(tail(sort_fields)).join("/")}`
+              let _tree = null
+              if (akey === index) {
+                _tree = tree
+              } else {
+                const kv = new KV(`index.${col}/`)
+                _tree = new BPT(5, tail(sort_fields), kv, key, function (
+                  stats
+                ) {})
+                if (isNil(_indexes[k].items[_md5])) {
+                  _indexes[k].items[_md5] = { order: 5, key: akey }
+                }
+              }
+              await _tree.insert(id, _data, true)
+            }
           } else {
-            const kv = new KV(skey)
-            const tree = new BPT(5, sort_fields, kv, prefix, function (
-              stats
-            ) {})
-            await tree.insert(id, _data, true)
+            const prefix = `${compose(join("/"), flatten)(sort_fields)}`
+            if (k === index) {
+              await tree.insert(id, _data, true)
+            } else {
+              const kv = new KV(skey)
+              const tree = new BPT(5, sort_fields, kv, prefix, function (
+                stats
+              ) {})
+              await tree.insert(id, _data, true)
+            }
           }
         }
       }
+      await lf.setItem(`indexes-${col}`, _indexes)
+      setIndexes(_indexes)
     }
     setStore(JSON.stringify(tree.kv.store))
     return _err
@@ -818,9 +977,8 @@ export default function Home() {
   }
   const [err, where] = exErr
   const _indexes = []
-  for (let k in indexes) {
-    _indexes.push(indexes[k])
-  }
+  for (let k in indexes) _indexes.push(indexes[k])
+
   return (
     <ChakraProvider>
       <style global jsx>{`
@@ -905,27 +1063,81 @@ export default function Home() {
                 Indexes
               </Flex>
               <Box px={3}>
-                {map(v => (
-                  <Flex color={index === v.key ? "#6441AF" : "#666"}>
-                    <Box
-                      flex={1}
-                      onClick={() => setIndex(v.key)}
-                      sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
-                    >
-                      {v.key}
-                    </Box>
-                    {v === null ? null : (
+                {map(v => {
+                  return !isNil(v.items) ? (
+                    <>
+                      <Flex color={index === v.key ? "#6441AF" : "#666"}>
+                        <Box
+                          flex={1}
+                          color="#999"
+                          sx={{
+                            cursor: "pointer",
+                            ":hover": { opacity: 0.75 },
+                          }}
+                        >
+                          {v.key}
+                        </Box>
+                      </Flex>
+                      {compose(
+                        map(v2 => {
+                          return (
+                            <Flex color={index === v2.key ? "#6441AF" : "#666"}>
+                              <Box
+                                px={2}
+                                flex={1}
+                                onClick={() => setIndex(v2.key)}
+                                sx={{
+                                  cursor: "pointer",
+                                  ":hover": { opacity: 0.75 },
+                                  overflowX: "hidden",
+                                }}
+                              >
+                                {v2.key.slice(0, 23)}...
+                              </Box>
+                              {v2 === null ? null : (
+                                <Box
+                                  onClick={async () => {
+                                    console.log(v2)
+                                  }}
+                                  sx={{
+                                    cursor: "pointer",
+                                    ":hover": { opacity: 0.75 },
+                                  }}
+                                >
+                                  x
+                                </Box>
+                              )}
+                            </Flex>
+                          )
+                        }),
+                        values
+                      )(v.items)}
+                    </>
+                  ) : (
+                    <Flex color={index === v.key ? "#6441AF" : "#666"}>
                       <Box
-                        onClick={async () => {
-                          console.log(v)
-                        }}
+                        flex={1}
+                        onClick={() => setIndex(v.key)}
                         sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
                       >
-                        x
+                        {v.key}
                       </Box>
-                    )}
-                  </Flex>
-                ))(_indexes)}
+                      {v === null ? null : (
+                        <Box
+                          onClick={async () => {
+                            console.log(v)
+                          }}
+                          sx={{
+                            cursor: "pointer",
+                            ":hover": { opacity: 0.75 },
+                          }}
+                        >
+                          x
+                        </Box>
+                      )}
+                    </Flex>
+                  )
+                })(_indexes)}
               </Box>
               <Flex mt={2} px={2}>
                 <Input
@@ -950,24 +1162,98 @@ export default function Home() {
                   onClick={async () => {
                     const sort_fields = map(v => {
                       const ind = v.split(":")
-                      const ord =
-                        ind.length < 2 || ind[1] !== "desc" ? "asc" : "desc"
+                      const ord = ind.length < 2 ? "desc" : ind[1]
                       return [ind[0], ord]
                     })(newIndex.split("/"))
-
+                    let i = 0
+                    for (let v of sort_fields) {
+                      if (v[1] === "array") {
+                        if (i !== 0) {
+                          alert("array index should come first")
+                          return
+                        }
+                      } else if (!includes(v[1], ["asc", "desc"])) {
+                        alert("sort order should be either asc or desc")
+                        return
+                      }
+                      i++
+                    }
                     if (sort_fields.length <= 1) {
                       alert("You can only add multi-field indexes")
+                      return
+                    }
+                    const index_key = `indexes-${col}`
+                    let __indexes = (await lf.getItem(index_key)) || {}
+                    if (!isNil(__indexes[newIndex])) return alert("exists")
+                    const count = (await lf.getItem(`count-${col}`)) ?? 0
+                    let docs = {}
+                    for (let i = 1; i <= count; i++) {
+                      // need to handle updates...
+                      const _log = await lf.getItem(`log-${col}-${i}`)
+                      if (_log.op === "create") {
+                        docs[_log.key] = true
+                      } else if (_log.op === "del") {
+                        delete docs[_log.key]
+                      }
+                    }
+                    const i_fields = compose(
+                      without(["__name__"]),
+                      map(v => v.split(":")[0])
+                    )(newIndex.split("/"))
+                    const skey = `index.${col}/`
+                    if (sort_fields[0][1] === "array") {
+                      let array_indexes = {}
+                      let kvs = {}
+                      for (let k in docs) {
+                        let _data = await idtree.data(k)
+                        const fields = keys(_data.val)
+                        const diff = difference(i_fields, fields)
+                        if (
+                          i_fields.length > 0 &&
+                          diff.length === 0 &&
+                          is(Array, _data.val[i_fields[0]])
+                        ) {
+                          for (const v of _data.val[i_fields[0]]) {
+                            const prefix = `${compose(
+                              join("/"),
+                              flatten
+                            )(tail(sort_fields))}`
+                            const _md5 = md5(JSON.stringify(v))
+                            const _prefix = `${sort_fields[0][0]}/array:${_md5}`
+                            const key = `${_prefix}/${prefix}`
+                            let _tree = null
+                            const akey = `${
+                              sort_fields[0][0]
+                            }:array:${_md5}/${map(v => v.join(":"))(
+                              tail(sort_fields)
+                            ).join("/")}`
+                            if (isNil(kvs[_md5])) {
+                              array_indexes[_md5] = { order: 5, key: akey }
+                              const kv = new KV(`index.${col}/`)
+                              _tree = new BPT(
+                                5,
+                                tail(sort_fields),
+                                kv,
+                                key,
+                                function (stats) {}
+                              )
+                            } else {
+                              _tree = kvs[_md5]
+                            }
+                            await _tree.insert(k, _data.val, true)
+                          }
+                        }
+                      }
+                      __indexes[newIndex] = {
+                        key: newIndex,
+                        items: array_indexes,
+                      }
                     } else {
-                      const skey = `index.${col}/`
+                      __indexes[newIndex] = { order: 5, key: newIndex }
                       const prefix = `${compose(
                         join("/"),
                         flatten
                       )(sort_fields)}`
-                      const count = (await lf.getItem(`count-${col}`)) ?? 0
-                      const index_key = `indexes-${col}`
-                      let __indexes = (await lf.getItem(index_key)) || {}
-                      if (!isNil(__indexes[newIndex])) return alert("exists")
-                      __indexes[newIndex] = { order: 5, key: newIndex }
                       const kv = new KV(skey)
                       const tree = new BPT(
                         5,
@@ -976,19 +1262,6 @@ export default function Home() {
                         prefix,
                         function (stats) {}
                       )
-                      const i_fields = compose(
-                        without(["__name__"]),
-                        map(v => v.split(":")[0])
-                      )(newIndex.split("/"))
-                      let docs = {}
-                      for (let i = 1; i <= count; i++) {
-                        const _log = await lf.getItem(`log-${col}-${i}`)
-                        if (_log.op === "create") {
-                          docs[_log.key] = true
-                        } else if (_log.op === "del") {
-                          delete docs[_log.key]
-                        }
-                      }
                       for (let k in docs) {
                         let _data = await idtree.data(k)
                         const fields = keys(_data.val)
@@ -997,9 +1270,9 @@ export default function Home() {
                           await tree.insert(k, _data.val, true)
                         }
                       }
-                      setIndexes(__indexes)
-                      await lf.setItem(index_key, __indexes)
                     }
+                    setIndexes(__indexes)
+                    await lf.setItem(index_key, __indexes)
                   }}
                   sx={{
                     borderRadius: "0 3px 3px 0",
