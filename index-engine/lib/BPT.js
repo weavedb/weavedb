@@ -83,8 +83,8 @@ class BPT {
     return obj
   }
   compArr(va, vb) {
-    const _va = is(Array(va)) ? va : [va]
-    const _vb = is(Array(vb)) ? vb : [vb]
+    const _va = is(Array, va) ? va : [va]
+    const _vb = is(Array, vb) ? vb : [vb]
     let i = 0
     while (true) {
       if (!equals(_va[i], _vb[i])) return _va[i] < _vb[i] ? 1 : -1
