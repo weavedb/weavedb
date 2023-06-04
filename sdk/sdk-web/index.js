@@ -168,10 +168,12 @@ class SDK extends Base {
     LmdbCache,
     createClient,
     WarpSubscriptionPlugin,
+    remoteStateSyncSource,
     useVM2,
     type = 1,
   }) {
     super()
+    this.remoteStateSyncSource = remoteStateSyncSource
     this.queue = []
     this.ongoing = false
     this.results = {}
@@ -406,6 +408,8 @@ class SDK extends Base {
           remoteStateSyncEnabled: this.isNode
             ? false
             : this.network !== "localhost",
+          remoteStateSyncSource:
+            this.remoteStateSyncSource ?? "https://dre-2.warp.cc",
           allowBigInt: true,
           useVM2: !isNil(this.useVM2)
             ? this.useVM2
