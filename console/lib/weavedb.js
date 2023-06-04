@@ -22,7 +22,13 @@ import {
   isEmpty,
 } from "ramda"
 import { Buffer } from "buffer"
-import { weavedbSrcTxId, dfinitySrcTxId, ethereumSrcTxId, lens } from "./const"
+import {
+  latest,
+  weavedbSrcTxId,
+  dfinitySrcTxId,
+  ethereumSrcTxId,
+  lens,
+} from "./const"
 let arweave_wallet, sdk, nodesdk
 const a = addr =>
   /^0x.+$/.test(trim(addr)) ? trim(addr).toLowerCase() : trim(addr)
@@ -596,7 +602,7 @@ async function deploy({ src, warp, init, extra, arweave }) {
   return contractTxId
 }
 
-async function deployFromSrc({ src, warp, init, extra, algorithms }) {
+async function deployFromSrc({ src, warp, init, extra, algorithms, version }) {
   const stateFromFile = JSON.parse(
     await fetch(`/static/${init}.json`).then(v => v.text())
   )
@@ -617,16 +623,19 @@ async function deployFromSrc({ src, warp, init, extra, algorithms }) {
     initState: JSON.stringify(initialState),
     srcTxId: src,
     evaluationManifest: {
-      evaluationOptions: {
-        useKVStorage: true,
-      },
+      evaluationOptions:
+        version === "0.26.0"
+          ? {}
+          : {
+              useKVStorage: true,
+            },
     },
   })
   return contractTxId
 }
 
 export const deployDB = async ({
-  val: { owner, network, port, secure, canEvolve, auths },
+  val: { owner, network, port, secure, canEvolve, auths, version },
 }) => {
   let algorithms = []
   for (let v of auths) {
@@ -659,8 +668,8 @@ export const deployDB = async ({
   if (network === "Mainnet") {
     const warp = WarpFactory.forMainnet().use(new DeployPlugin())
     let initial_state = {
-      src: weavedbSrcTxId,
-      init: "initial-state",
+      src: weavedbSrcTxId[version],
+      init: `initial-state-${version}`,
       warp,
       algorithms: uniq(algorithms),
       extra: {
@@ -704,7 +713,7 @@ export const deployDB = async ({
         },
       }
     }
-    const contractTxId = await deployFromSrc(initial_state)
+    const contractTxId = await deployFromSrc(initial_state, version)
     return { contractTxId, network, port }
   } else {
     const warp = WarpFactory.forLocal(port).use(new DeployPlugin())
@@ -855,7 +864,14 @@ export const _evolve = async ({ val: { contractTxId }, fn }) => {
     })
     if (!isNil(err)) return alert(err)
     return ret(
-      await new Log(sdk, "evolve", weavedbSrcTxId, opt, fn, signer).rec()
+      await new Log(
+        sdk,
+        "evolve",
+        weavedbSrcTxId[latest],
+        opt,
+        fn,
+        signer
+      ).rec()
     )
   } catch (e) {
     console.log(e)
