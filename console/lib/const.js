@@ -112,8 +112,11 @@ export const preset_rpcs = [
   "http://localhost:8080",
 ]
 
-export const latest = "0.27.0"
-export const weavedbSrcTxId = "jsZqVEOGdMFAvVlof_WXi6DO5vWxhteiG91xVPiIwqQ"
+export const latest = "0.26.0"
+export const weavedbSrcTxId = {
+  "0.27.0": "jsZqVEOGdMFAvVlof_WXi6DO5vWxhteiG91xVPiIwqQ",
+  "0.26.0": "zdP_QTSZ2zO9Nxa1sPAKhyR4geua1_a621_fZm2XPKU",
+}
 //export const intmaxSrcTxId = "OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94"
 export const dfinitySrcTxId = "3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8"
 export const ethereumSrcTxId = "Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w"

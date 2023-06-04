@@ -4099,10 +4099,10 @@ vm2@3.9.11:
     unzipit "^1.4.0"
     vm2 "3.9.11"
 
-warp-contracts@^1.4.8:
-  version "1.4.8"
-  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.4.8.tgz#33a049b321f1769011ee1aa5214015f0e8458420"
-  integrity sha512-FzSVIp4rp7BboC3F7ir1KRhtpMDlCjHqJLIRTOnu6z3d2F1jaapmi+BHcuJ1soMww4tRFuoVz3qzY800o4k/Sw==
+warp-contracts@^1.4.10:
+  version "1.4.10"
+  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.4.10.tgz#8da6ec2e108b3251518e04ae9f472efd0cb18066"
+  integrity sha512-HUsgGDfMBjHKH+Qn0Td3jmxlJTpBWWxDZG98ho+SYm6HjqFfrNWOfPws9wtBHvpVPq/8JR7BPJsYfIHKaGv0Hw==
   dependencies:
     archiver "^5.3.0"
     arweave "1.13.7"

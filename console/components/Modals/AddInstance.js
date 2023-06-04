@@ -52,6 +52,7 @@ export default inject(
     setDeployMode,
   }) => {
     const [secure, setSecure] = useState(true)
+    const [version, setVersion] = useState("0.26.0")
     const [canEvolve, setCanEvolve] = useState(true)
     const [auths, setAuths] = useState(wallet_chains)
     const [newAuths, setNewAuths] = useState(wallet_chains)
@@ -86,6 +87,25 @@ export default inject(
             )
           })(["Connect", "Deploy"])}
         </Flex>
+        {deployMode === "Deploy" && newNetwork === "Mainnet" ? (
+          <>
+            <Flex fontSize="10px" m={1}>
+              Version
+            </Flex>
+            <Select
+              w="100%"
+              value={version}
+              onChange={e => setVersion(e.target.value)}
+              sx={{ borderRadius: "5px 0 0 5px" }}
+              mb={3}
+            >
+              {map(v => <option value={v}>{v}</option>)([
+                "0.26.0",
+                "0.27.0-alpha",
+              ])}
+            </Select>
+          </>
+        ) : null}
         <Flex fontSize="10px" m={1}>
           Network
         </Flex>
@@ -142,9 +162,11 @@ export default inject(
             ) : (
               <Input
                 flex={1}
+                py={2}
+                px={4}
                 disabled={true}
                 value={$.temp_current_all.addr || ""}
-                sx={{ borderRadius: 0 }}
+                sx={{ borderRadius: "3px" }}
               />
             )}
             <Flex mt={3}>
@@ -246,6 +268,7 @@ export default inject(
                 set("deploy", "loading")
                 try {
                   const res = await fn(deployDB)({
+                    version: version.split("-")[0],
                     port: port,
                     owner: $.temp_current_all.addr,
                     network: newNetwork,

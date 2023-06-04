@@ -409,7 +409,7 @@ class SDK extends Base {
             ? false
             : this.network !== "localhost",
           remoteStateSyncSource:
-            this.remoteStateSyncSource ?? "https://dre-2.warp.cc",
+            this.remoteStateSyncSource ?? "https://dre-2.warp.cc/contract",
           allowBigInt: true,
           useVM2: !isNil(this.useVM2)
             ? this.useVM2
