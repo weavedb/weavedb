@@ -14,7 +14,7 @@ Here's an illustration to help visualize this hierarchy:
 
 ![](https://i.imgur.com/aiLhOha.png)
 
-As an example, let's say we define a collection called people, which could contain three documents, as shown below:
+As an example, let's say we define a collection called `people`, which could contain three documents, as shown below:
 
 ```bash
 - people
@@ -308,19 +308,13 @@ Within the rules, you can access [various information](https://docs.weavedb.dev/
 
 And with JsonLogic, you can use `var` to access variables, such as `{var: "resource.newData.user"}` to access the `user` field of the newly updated data.
 
-For example, the following rules ensure that the uploader's wallet address(`request.auth.signer`) is set to `user` field of the updated data(`resource.newData.user`) on `create`, and the uploader's wallet address(`request.auth.signer`) equals to the existing `user` field(`resource.data.user`) on `update`.
-
-`resource.newData` is the data after the query is applied, and `resource.data` is the existing data before the query is applied.
-
-This ensures only the original data updaters can update their own data:
+`resource.setter` is the data creator. The following ensures only the original data creators can update their own data:
 
 ```javascript
 {
-  "allow create": {
-    "==": [{ var: "request.auth.signer" }, { var: "resource.newData.user" }]
-  },
+  "allow create": true,
   "allow update": {
-    "==": [{ var: "request.auth.signer" }, { var: "resource.data.user" }]
+    "==": [{ var: "request.auth.signer" }, { var: "resource.setter" }]
   }
 }
 ```
@@ -577,7 +571,9 @@ The signer will be the original address(`identity.linkedAccount`) and not the di
 
 And for Lens Profile, the format is `lens:[tokenID]`. So if your tokenID is `123`, you will get `lens:123` as the signer.
 
-Once again, to restrict the data update to only the original owner.
+The following rules ensure that the uploader's wallet address(`request.auth.signer`) is set to `user` field of the updated data(`resource.newData.user`) on `create`, and the uploader's wallet address(`request.auth.signer`) equals to the existing `user` field(`resource.data.user`) on `update`.
+
+`resource.newData` is the data after the query is applied, and `resource.data` is the existing data before the query is applied.
 
 ```javascript
 {
@@ -611,7 +607,12 @@ Set the following access control rules to `users` collection using [the Web Cons
   "let create": {
     "resource.newData.user" : { var: "request.auth.signer" }
   },
-  "allow create": true
+  "allow create": { // signer must be set to `user` field
+    "==": [{ var: "request.auth.signer" }, { var: "resource.newData.user" }]
+  },
+  "allow update": { // signer must be the same as `user`
+    "==": [{ var: "request.auth.signer" }, { var: "resource.data.user" }]
+  }
 }
 ```
 
