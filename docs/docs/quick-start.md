@@ -269,9 +269,13 @@ This means:
 - `name` must be `string`
 - `age` must be `number`
 
-To add the schema, click `Schema` in the side menu, select `people` from collection list, then click `+` in the top right corner of the Schema box. You can copy & paste the schema object above to the popped-up textarea and hit `Add`.
+To add the schema, click `Schema` in the side menu, select `people` from collection list, then click `+` in the top right corner of the Schema box.
 
-![](https://i.imgur.com/DC4ROIm.png)
+![](/img/quick-start-3.png)
+
+You can copy & paste the schema object above to the popped-up textarea and hit `Add`.
+
+![](/img/quick-start-4.png)
 
 Now you cannot add a document to `people` violating the schema, such as:
 
@@ -321,9 +325,13 @@ And with JsonLogic, you can use `var` to access variables, such as `{var: "resou
 
 To combine multiple operations, chain them with `,` like `allow create,update`.
 
-To add the rules, click `Access Control Rules` in the side menu, select `people` from the Collection list, then click `+` in the top right corner of the Rules box. You can copy & paste the rules object above to the popped-up textarea and hit `Add`.
+To add the rules, click `Access Control Rules` in the side menu, select `people` from the Collection list, then click the edit icon in the top right corner of the Rules box.
 
-![](https://i.imgur.com/KkVlQTH.png)
+![](/img/quick-start-1.png)
+
+ You can copy & paste the rules object above to the popped-up textarea and hit `Add`.
+ 
+![](/img/quick-start-2.png)
 
 Now if you try to update an existing data with another wallet, the transaction will fail.
 
