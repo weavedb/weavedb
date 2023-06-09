@@ -188,10 +188,10 @@ const _updateData = (
         if (ex_old && !ex_new) {
           removeInd(_id, ind[k][k2])
         } else if (!ex_old && ex_new) {
-          addInd(_id, ind[k][k2], sort, new_data)
+          addInd(_id, ind[k][k2], db, sort, new_data)
         } else if (intersection(update.u, fields).length !== 0) {
           removeInd(_id, ind[k][k2])
-          addInd(_id, ind[k][k2], sort, new_data)
+          addInd(_id, ind[k][k2], db, sort, new_data)
         }
       }
       _updateData(
@@ -228,7 +228,7 @@ const updateData = (_id, data, old_data, ind, db) => {
       addSingleIndex(_id, v, data, ind, db)
     }
   }
-  _updateData(ind, _id, [], true, { c, d, u }, data, old_data)
+  _updateData(ind, _id, [], db, true, { c, d, u }, data, old_data)
 }
 
 const _removeData = (ind, _id, path = [], db, top = false) => {

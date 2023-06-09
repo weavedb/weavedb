@@ -367,12 +367,9 @@ const people = await db.get("people")
 To add a doc with the browser connected Metamask:
 
 ```javascript
-const bob = {
-  name: "Bob",
-  age: 20
-}
+const bob = { name: "Bob", age: 20 }
 
-const await db.add(bob, "people")
+await db.add(bob, "people")
 ```
 
 :::info
@@ -384,7 +381,7 @@ To authenticate a user by generating a disposal address:
 ```javascript
 const { identity } = await db.createTempAddress()
 
-const await db.add(bob, "people", identity)
+await db.add(bob, "people", identity)
 ```
 :::info
 By generating a disposal address, dapp users won't be asked for a signature with a wallet popup every time they are to send a transaction. The disposal key stored in browser storage will auto-sign transactions.
@@ -436,11 +433,11 @@ export default function Home() {
     <div
       onClick={async () => {
         // WeaveDB will immediately return the result using virtual state
-        const tx = await db.set({ name: "Bob", age: 20 }, "people", "Bob", {
+        const tx = await db.set({ name: "Beth", age: 50 }, "people", "Beth", {
           ...user,
           onDryWrite: {
             read: [ // you can execute instant read queries right after dryWrite
-              ["get", "people", "Bob"],
+              ["get", "people", "Beth"],
               ["get", "people"],
             ],
           },
@@ -454,7 +451,7 @@ export default function Home() {
         // set the transaction id to txid
         setTxId(result.originalTxId)
       }}
-    >Add Bob</div>
+    >Add Beth</div>
   ) : ( // show a link to the transaction record
     <a href={`https://sonar.warp.cc/#/app/interaction/${txid}`} target="_blank">{txid}</a>
   )
