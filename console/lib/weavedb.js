@@ -602,7 +602,7 @@ async function deploy({ src, warp, init, extra, arweave }) {
   return contractTxId
 }
 
-async function deployFromSrc({ src, warp, init, extra, algorithms, version }) {
+async function deployFromSrc({ src, warp, init, extra, algorithms }, version) {
   const stateFromFile = JSON.parse(
     await fetch(`/static/${init}.json`).then(v => v.text())
   )
