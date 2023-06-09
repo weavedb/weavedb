@@ -624,7 +624,7 @@ async function deployFromSrc({ src, warp, init, extra, algorithms, version }) {
     srcTxId: src,
     evaluationManifest: {
       evaluationOptions:
-        version === "0.26.0"
+        version.split(".")[1] === "26"
           ? {}
           : {
               useKVStorage: true,

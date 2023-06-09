@@ -594,7 +594,7 @@ class SDK extends Base {
   }
 
   async write(func, param, dryWrite, bundle, relay = false, onDryWrite) {
-    const cache = !isNil(onDryWrite?.cache)
+    let cache = !isNil(onDryWrite?.cache)
       ? onDryWrite.cache
       : !this.nocache_default
     return new Promise(async (_res, rej) => {

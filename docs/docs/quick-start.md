@@ -14,7 +14,7 @@ Here's an illustration to help visualize this hierarchy:
 
 ![](https://i.imgur.com/aiLhOha.png)
 
-As an example, let's say we define a collection called people, which could contain three documents, as shown below:
+As an example, let's say we define a collection called `people`, which could contain three documents, as shown below:
 
 ```bash
 - people
@@ -269,9 +269,13 @@ This means:
 - `name` must be `string`
 - `age` must be `number`
 
-To add the schema, click `Schema` in the side menu, select `people` from collection list, then click `+` in the top right corner of the Schema box. You can copy & paste the schema object above to the popped-up textarea and hit `Add`.
+To add the schema, click `Schema` in the side menu, select `people` from collection list, then click `+` in the top right corner of the Schema box.
 
-![](https://i.imgur.com/DC4ROIm.png)
+![](/img/quick-start-3.png)
+
+You can copy & paste the schema object above to the popped-up textarea and hit `Add`.
+
+![](/img/quick-start-4.png)
 
 Now you cannot add a document to `people` violating the schema, such as:
 
@@ -308,28 +312,26 @@ Within the rules, you can access [various information](https://docs.weavedb.dev/
 
 And with JsonLogic, you can use `var` to access variables, such as `{var: "resource.newData.user"}` to access the `user` field of the newly updated data.
 
-For example, the following rules ensure that the uploader's wallet address(`request.auth.signer`) is set to `user` field of the updated data(`resource.newData.user`) on `create`, and the uploader's wallet address(`request.auth.signer`) equals to the existing `user` field(`resource.data.user`) on `update`.
-
-`resource.newData` is the data after the query is applied, and `resource.data` is the existing data before the query is applied.
-
-This ensures only the original data updaters can update their own data:
+`resource.setter` is the data creator. The following ensures only the original data creators can update their own data:
 
 ```javascript
 {
-  "allow create": {
-    "==": [{ var: "request.auth.signer" }, { var: "resource.newData.user" }]
-  },
+  "allow create": true,
   "allow update": {
-    "==": [{ var: "request.auth.signer" }, { var: "resource.data.user" }]
+    "==": [{ var: "request.auth.signer" }, { var: "resource.setter" }]
   }
 }
 ```
 
 To combine multiple operations, chain them with `,` like `allow create,update`.
 
-To add the rules, click `Access Control Rules` in the side menu, select `people` from the Collection list, then click `+` in the top right corner of the Rules box. You can copy & paste the rules object above to the popped-up textarea and hit `Add`.
+To add the rules, click `Access Control Rules` in the side menu, select `people` from the Collection list, then click the edit icon in the top right corner of the Rules box.
 
-![](https://i.imgur.com/KkVlQTH.png)
+![](/img/quick-start-1.png)
+
+ You can copy & paste the rules object above to the popped-up textarea and hit `Add`.
+ 
+![](/img/quick-start-2.png)
 
 Now if you try to update an existing data with another wallet, the transaction will fail.
 
@@ -365,12 +367,9 @@ const people = await db.get("people")
 To add a doc with the browser connected Metamask:
 
 ```javascript
-const bob = {
-  name: "Bob",
-  age: 20
-}
+const bob = { name: "Bob", age: 20 }
 
-const await db.add(bob, "people")
+await db.add(bob, "people")
 ```
 
 :::info
@@ -382,7 +381,7 @@ To authenticate a user by generating a disposal address:
 ```javascript
 const { identity } = await db.createTempAddress()
 
-const await db.add(bob, "people", identity)
+await db.add(bob, "people", identity)
 ```
 :::info
 By generating a disposal address, dapp users won't be asked for a signature with a wallet popup every time they are to send a transaction. The disposal key stored in browser storage will auto-sign transactions.
@@ -434,11 +433,11 @@ export default function Home() {
     <div
       onClick={async () => {
         // WeaveDB will immediately return the result using virtual state
-        const tx = await db.set({ name: "Bob", age: 20 }, "people", "Bob", {
+        const tx = await db.set({ name: "Beth", age: 50 }, "people", "Beth", {
           ...user,
           onDryWrite: {
             read: [ // you can execute instant read queries right after dryWrite
-              ["get", "people", "Bob"],
+              ["get", "people", "Beth"],
               ["get", "people"],
             ],
           },
@@ -452,7 +451,7 @@ export default function Home() {
         // set the transaction id to txid
         setTxId(result.originalTxId)
       }}
-    >Add Bob</div>
+    >Add Beth</div>
   ) : ( // show a link to the transaction record
     <a href={`https://sonar.warp.cc/#/app/interaction/${txid}`} target="_blank">{txid}</a>
   )
@@ -577,7 +576,9 @@ The signer will be the original address(`identity.linkedAccount`) and not the di
 
 And for Lens Profile, the format is `lens:[tokenID]`. So if your tokenID is `123`, you will get `lens:123` as the signer.
 
-Once again, to restrict the data update to only the original owner.
+The following rules ensure that the uploader's wallet address(`request.auth.signer`) is set to `user` field of the updated data(`resource.newData.user`) on `create`, and the uploader's wallet address(`request.auth.signer`) equals to the existing `user` field(`resource.data.user`) on `update`.
+
+`resource.newData` is the data after the query is applied, and `resource.data` is the existing data before the query is applied.
 
 ```javascript
 {
@@ -611,7 +612,12 @@ Set the following access control rules to `users` collection using [the Web Cons
   "let create": {
     "resource.newData.user" : { var: "request.auth.signer" }
   },
-  "allow create": true
+  "allow create": { // signer must be set to `user` field
+    "==": [{ var: "request.auth.signer" }, { var: "resource.newData.user" }]
+  },
+  "allow update": { // signer must be the same as `user`
+    "==": [{ var: "request.auth.signer" }, { var: "resource.data.user" }]
+  }
 }
 ```
 
