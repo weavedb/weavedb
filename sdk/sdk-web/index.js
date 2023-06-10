@@ -245,7 +245,11 @@ class SDK extends Base {
     } else if (this.network === "testnet") {
       this.warp = this.Warp.WarpFactory.forTestnet()
     } else {
-      this.warp = this.Warp.WarpFactory.forMainnet()
+      this.warp = this.Warp.WarpFactory.forMainnet(
+        undefined,
+        undefined,
+        this.arweave
+      )
     }
     this.contractTxId = contractTxId
     if (all(complement(isNil))([contractTxId, wallet, name, version])) {
