@@ -407,56 +407,87 @@ Replace `/page/index.js` with the following. Styles for UI are intentionally omi
 import { useState, useEffect } from "react"
 import SDK from "weavedb-sdk"
 let db
+
 export default function Home() {
   const [user, setUser] = useState(null)
   const [txid, setTxId] = useState(null)
+  
   useEffect(() => {
     ;(async () => {
-      // initialize the SDK on page load
       db = await new SDK({
-        contractTxId: "your_contractTxId",
+        contractTxId: "YOUR_CONTRACT_TX_ID",
       })
       await db.initializeWithoutWallet()
+      try {
+        console.log(await db.db.readState())
+        console.log(await db.getNonce("abc"))
+      } catch (e) {}
     })()
-  },[])
+  }, [])
 
-  return user === null ? ( // show Login button if user doesn't exist
+  return (
     <div
-      onClick={async () => {
-        // generate a disposal address
-        const { identity } = await db.createTempAddress()
-        // and set the identity to user
-        setUser(identity)
+      style={{
+        display: "flex",
+        height: "100vh",
+        alignItems: "center",
+        justifyContent: "center",
       }}
-    >Login</div>
-  ) : txid === null ? (
-    <div
-      onClick={async () => {
-        // WeaveDB will immediately return the result using virtual state
-        const tx = await db.set({ name: "Beth", age: 50 }, "people", "Beth", {
-          ...user,
-          onDryWrite: {
-            read: [ // you can execute instant read queries right after dryWrite
-              ["get", "people", "Beth"],
-              ["get", "people"],
-            ],
-          },
-        })
-        // the dryWrite result will be returned instantly (10-20ms)
-        console.log(tx)
-        
-        // to get the actual tx result, use getResult. This will take 3 secs.
-        const result = await tx.getResult()
-        console.log(result)
-        // set the transaction id to txid
-        setTxId(result.originalTxId)
-      }}
-    >Add Beth</div>
-  ) : ( // show a link to the transaction record
-    <a href={`https://sonar.warp.cc/#/app/interaction/${txid}`} target="_blank">{txid}</a>
+    >
+      {user === null ? ( // show Login button if user doesn't exist
+        <button
+          onClick={async () => {
+            // generate a disposal address
+            const { identity } = await db.createTempAddress()
+            // and set the identity to user
+            setUser(identity)
+          }}
+        >
+          Login
+        </button>
+      ) : txid === null ? (
+        <button
+          onClick={async () => {
+            // WeaveDB will immediately return the result using virtual state
+            const tx = await db.set(
+              { name: "Beth", age: 50 },
+              "people",
+              "Beth",
+              {
+                ...user,
+                onDryWrite: {
+                  read: [
+                    // you can execute instant read queries right after dryWrite
+                    ["get", "people", "Beth"],
+                    ["get", "people"],
+                  ],
+                },
+              }
+            )
+            // the dryWrite result will be returned instantly (10-20ms)
+            console.log(tx)
+
+            // to get the actual tx result, use getResult. This will take 3 secs.
+            const result = await tx.getResult()
+            console.log(result)
+            // set the transaction id to txid
+            setTxId(result.originalTxId)
+          }}
+        >
+          Add Beth
+        </button>
+      ) : (
+        // show a link to the transaction record
+        <a
+          href={`https://sonar.warp.cc/#/app/interaction/${txid}`}
+          target="_blank"
+        >
+          {txid}
+        </a>
+      )}
+    </div>
   )
 }
-
 ```
 
 The WeaveDB SDK keeps a virtual state locally and immediately returns a result (dryWrite) without sending the transaction first, which takes only around 10ms. If you need to get the actual transaction result, you can use `getResult`, which takes around 3-4 seconds.
@@ -472,6 +503,8 @@ The WeaveDB dryWrite with a virtual state is faster than the WarpSDK dryWrite wh
 :::info
 The SDK needs to be initialized with an Arweave wallet to send transactions to Arweave, but for now you don't have to pay for any transactions. So you can initialize it with a randomly generated wallet with `initializeWithoutWallet`.
 :::
+
+You can view the sample code [here](https://github.com/weavedb/weavedb/tree/master/examples/quick-start/pages/index.js).
 
 ### Authentication
 
