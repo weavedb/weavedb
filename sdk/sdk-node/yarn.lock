@@ -2448,6 +2448,16 @@ arweave@1.11.6:
     bignumber.js "^9.0.2"
     util "^0.12.4"
 
+arweave@1.13.1:
+  version "1.13.1"
+  resolved "https://registry.yarnpkg.com/arweave/-/arweave-1.13.1.tgz#acc70c07cb8505ddaa84548332c82fb45aa8f7c5"
+  integrity sha512-B6+N/5Ngvm0w1XTcboRbHGhyJkLmneqz8F5FaoVtd8KHVrzJ8cGq/dBAToP+QL4QJXlRudjLMxX7Mm9tzJt2xQ==
+  dependencies:
+    arconnect "^0.4.2"
+    asn1.js "^5.4.1"
+    base64-js "^1.5.1"
+    bignumber.js "^9.0.2"
+
 arweave@1.13.7:
   version "1.13.7"
   resolved "https://registry.yarnpkg.com/arweave/-/arweave-1.13.7.tgz#cda8534c833baec372a7052c61f53b4e39a886d7"
@@ -2458,7 +2468,7 @@ arweave@1.13.7:
     base64-js "^1.5.1"
     bignumber.js "^9.0.2"
 
-arweave@^1.10.13, arweave@^1.11.4:
+arweave@^1.10.13:
   version "1.11.4"
   resolved "https://registry.yarnpkg.com/arweave/-/arweave-1.11.4.tgz#19e5850d3b9f655cacb0953b36a12ac6596b195c"
   integrity sha512-EPUms1OMet/VFmYMefgxIpj17PIlIZzIteiHAn0tetN+d/LRV6N9CCsrg/t22hL6yLGdGRHrYlDEdsWqjwSSYg==
@@ -5208,15 +5218,15 @@ weavedb-contracts@^0.27.4:
     md5 "^2.3.0"
     ramda "^0.28.0"
 
-weavedb-sdk@^0.27.15:
-  version "0.27.15"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.27.15.tgz#0c2a8af498cba7db16c1e327ef4fd59e970f102a"
-  integrity sha512-uXBvbIUsOxOyhl/6VkK/TgvadotGI6OIoOGvkTDofVnQD+Ieldz3zPVOuA8k2UjxrH4J241i7pzKApmj5QdBPA==
+weavedb-sdk@^0.27.16:
+  version "0.27.16"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.27.16.tgz#09652228c2b5475fba1343a8f9d6bd0484b47e0c"
+  integrity sha512-nt99eUXTOTQ2wwitCeEZogQkf0px5pVc0fEgDMJB/hVWPjPZ8Io8hOVlm8ZPsosvghKSILG76xcC9gQQcRhRFw==
   dependencies:
     "@lit-protocol/sdk-browser" "^1.3.3"
     "@metamask/legacy-web3" "^2.0.0"
     "@paralleldrive/cuid2" "^2.2.0"
-    arweave "^1.11.4"
+    arweave "1.13.1"
     buffer "^6.0.3"
     compare-versions "^6.0.0-rc.1"
     md5 "^2.3.0"
