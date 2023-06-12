@@ -758,7 +758,7 @@ You can try the working demo at [relayer-lens-lit.vercel.app](https://relayer-le
 
 #### 1. Deploy DB Instance
 
-The first step is [to deploy a WeaveDB contract](/docs/quick-start#deploy-contract) to the mainnet. Set `Secure` to `false` so no one can update by default. Take note of the `contractTxId`.
+The first step is [to deploy a WeaveDB contract](/docs/quick-start#deploy-contract) to the mainnet. Set `Secure` to `true` so no one can update by default. Take note of the `contractTxId`.
 
 #### 2. Set up Schemas
 

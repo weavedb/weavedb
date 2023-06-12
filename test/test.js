@@ -1267,7 +1267,7 @@ describe("WeaveDB", function () {
     })
   })
 
-  it.only("should accept inter-contract write with relay", async () => {
+  it("should accept inter-contract write with relay", async () => {
     const jobID = "test-job"
     const job = {
       relayers: [intercallTxId],

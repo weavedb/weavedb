@@ -687,7 +687,7 @@ export const deployDB = async ({
     initial_state.extra.relayers = {}
     if (includes("Lens", auths)) {
       initial_state.extra.relayers["auth:lens"] = {
-        relayers: ["0xF810D4a6F0118E6a6a86A9FBa0dd9EA669e1CC2E".toLowerCase()],
+        relayers: ["0xcdfaD4e9729f878d6334ae72Fcc6B45Ac3C70425".toLowerCase()],
         schema: {
           type: "object",
           required: ["linkTo"],
