@@ -100,6 +100,26 @@ async function deployContracts({
     return contract
   }
 
+  async function deployIntercallContract() {
+    const contractSrc = fs.readFileSync(
+      path.join(__dirname, "../dist/intercall/contract.js"),
+      "utf8"
+    )
+    const stateFromFile = {}
+    let initialState = {
+      ...stateFromFile,
+      ...{
+        owner: walletAddress,
+      },
+    }
+    const { contractTxId } = await warp.createContract.deploy({
+      wallet: arweave_wallet,
+      initState: JSON.stringify(initialState),
+      src: contractSrc,
+    })
+    await arweave.api.get("mine")
+    return contractTxId
+  }
   async function deployContract(
     secure,
     contractTxIdIntmax,
@@ -248,7 +268,12 @@ async function deployContracts({
     return contractTxId
   }
   let contract = {}
-  let intmaxTxId, dfinityTxId, ethereumTxId, poseidon1TxId, poseidon2TxId
+  let intmaxTxId,
+    dfinityTxId,
+    ethereumTxId,
+    poseidon1TxId,
+    poseidon2TxId,
+    intercallTxId
   if (isNil(contractTxId)) {
     poseidon1TxId = await deployContractPoseidon({
       C: Constants.C,
@@ -261,6 +286,7 @@ async function deployContracts({
     intmaxTxId = await deployContractIntmax(poseidon1TxId, poseidon2TxId)
     dfinityTxId = await deployContractDfinity()
     ethereumTxId = await deployContractEthereum()
+    intercallTxId = await deployIntercallContract()
     const deployer = kv ? deployContractKV : deployContract
     contract = await deployer(secure, intmaxTxId, dfinityTxId, ethereumTxId)
   } else {
@@ -273,6 +299,7 @@ async function deployContracts({
     intmaxTxId,
     dfinityTxId,
     ethereumTxId,
+    intercallTxId,
     poseidon1TxId,
     poseidon2TxId,
     arweave_wallet,
@@ -296,6 +323,7 @@ async function initBeforeEach(
     intmaxTxId,
     dfinityTxId,
     ethereumTxId,
+    intercallTxId,
     poseidon1TxId,
     poseidon2TxId,
     arweave_wallet,
@@ -333,6 +361,7 @@ async function initBeforeEach(
     intmaxTxId,
     dfinityTxId,
     ethereumTxId,
+    intercallTxId,
     contractTxId,
   }
 }

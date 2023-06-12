@@ -86,6 +86,7 @@ const getDoc = (
   jobID,
   extra,
   state,
+  action,
   SmartWeave
 ) => {
   const [_col, id] = path
@@ -139,6 +140,7 @@ const getDoc = (
         owners: is(Array, state.owner) ? state.owner : [state.owner],
       },
       request: {
+        caller: action.caller,
         method: op,
         auth: { signer: _signer, relayer, jobID, extra },
         block: {
@@ -224,6 +226,7 @@ const getDoc = (
         jobID,
         extra,
         state,
+        action,
         SmartWeave
       )
     : {
@@ -387,6 +390,7 @@ const parse = async (
       jobID,
       extra,
       state,
+      action,
       SmartWeave
     )
     _data = doc.doc

@@ -166,7 +166,6 @@ export default inject(
                         contractTxId,
                       })
                     )
-                    console.log("are we here???", res)
                     if (!res.success) {
                       alert("Something went wrong")
                     } else {
@@ -486,7 +485,6 @@ export default inject(
                       op = "create"
                     }
                   }
-                  console.log(op)
                   const setElm = (k, val) => {
                     let elm = rule_data
                     let elm_path = k.split(".")
@@ -522,7 +520,6 @@ export default inject(
                       }
                     }
                   }
-                  console.log(rule_data)
                   for (let k in rules || {}) {
                     const spk = k.split(" ")
                     if (spk[0] === "let") continue

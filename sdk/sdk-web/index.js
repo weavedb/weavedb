@@ -409,6 +409,7 @@ class SDK extends Base {
       .connect(wallet)
       .setEvaluationOptions(
         mergeLeft(evaluationOptions, {
+          internalWrites: true,
           remoteStateSyncEnabled: this.isNode
             ? false
             : this.network !== "localhost",
@@ -420,7 +421,7 @@ class SDK extends Base {
             : typeof window !== "undefined"
             ? false
             : !this.old,
-          useKVStorage: this.type !== 1,
+          useKVStorage: true,
         })
       )
     dbs[this.contractTxId] = this
