@@ -197,9 +197,9 @@ go()
 
 #### Mint-Grant-Burn PKP
 
-Now, you need to manually call the `mintGrantAndBurnNext` function at [the PKPNFT contract](https://mumbai.polygonscan.com/token/0x86062b7a01b8b2e22619dbe0c15cbe3f7ebd0e92) on Mumbai Polygon testnet.
+Now, you need to manually call the `mintGrantAndBurnNext` function at [the PKPNFT contract](https://lit-protocol.calderaexplorer.xyz/address/0x8F75a53F65e31DD0D2e40d0827becAaE2299D111) on Chronicle Lit testnet.
 
-This function mints a PKP and assigns it to an ipfsCid then burn it in a single transaction, which is [the only way to verify the PKP signatures come from only single Lit Action](https://developer.litprotocol.com/coreconcepts/litactionsandpkps/intro/#how-can-i-know-that-a-given-pkp-wasnt-used-to-sign-a-bunch-of-stuff-before-it-was-granted-approval-to-use-a-lit-action-what-is-mintgrantburn). If PKPNFT is burnt after being assigned to an ipfsCid, no one else but the code at the ipfsCid can sign with the PKP.
+This function mints a PKP and assigns it to an ipfsCid then burn it in a single transaction, which is [the only way to verify the PKP signatures come from only single Lit Action](https://developer.litprotocol.com/pkp/pkpsAndActions#using-mintgrantburn). If PKPNFT is burnt after being assigned to an ipfsCid, no one else but the code at the ipfsCid can sign with the PKP.
 
 ```js
 const bs58 = require("bs58")
@@ -241,18 +241,18 @@ function getBytesFromMultihash(multihash) {
 
 const go = async () => {
   const provider = new providers.JsonRpcProvider(
-    "https://polygon-mumbai.infura.io/v3/yourinfurakey"
+    "https://chain-rpc.litprotocol.com/http"
   )
   const wallet = new Wallet(key, provider)
   const contract = new Contract(
-    "0x86062B7a01B8b2e22619dBE0C15cbe3F7EBd0E92",
+    "0x8F75a53F65e31DD0D2e40d0827becAaE2299D111",
     abi,
     wallet
   )
   const tx = await contract.mintGrantAndBurnNext(
     2,
     getBytesFromMultihash("YourIpfsCid"),
-    { value: "100000000000000" }
+    { value: "1" }
   )
   console.log(await tx.wait())
 }
@@ -260,7 +260,7 @@ const go = async () => {
 go()
 ```
 
-Go check the latest transaction at [the PKPNFT contract](https://mumbai.polygonscan.com/token/0x86062b7a01b8b2e22619dbe0c15cbe3f7ebd0e92), and get the `tokenID` which has just been burnt.
+Go check the latest transaction at [the PKPNFT contract](https://lit-protocol.calderaexplorer.xyz/address/0x8F75a53F65e31DD0D2e40d0827becAaE2299D111), and get the `tokenID` which has just been burnt.
 
 Now go to the PKP page on the Lit Explorer [https://explorer.litprotocol.com/pkps/[tokenID]](https://explorer.litprotocol.com/pkps/tokenID), and get the `PKP Public Key` and the `ETH Address`.
 
@@ -271,7 +271,7 @@ Even though, the PKP doesn't require your `authSig` to sign, you still need to p
 
 ```js
 const LitJsSdk = require("lit-js-sdk")
-const authSig = await LitJsSdk.checkAndSignAuthMessage({ chain: "mumbai" });
+const authSig = await LitJsSdk.checkAndSignAuthMessage({ chain: "ethereum" });
 ```
 
 Relayers can be a simple serverless function. The following is a serverless function using the NestJS `pages/api` directory.
