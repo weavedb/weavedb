@@ -353,8 +353,62 @@ const rules = {
 await db.setRules(rules, "ppl") // only the contract owners can set rules
 ```
 
-## EVM Oracles
+## Internal Writes
 
-Using the relayer mechanism, you can set up an oracle to get any data from the Ethereum blockchain.
+You can let other Warp contracts write to your WeaveDB instance. In this case, the other contract works as a relayer and you can control the behavior through access control rules.
 
-Coming Soon...
+For example, let's set up a simple contract to write to a WeaveDB contract. Deploy it and get the `contractTxId`.
+
+```js
+export async function handle(state, action) {
+  await SmartWeave.contracts.write(action.input.to, {
+    function: "relay",
+    query: [action.input.params.jobID, action.input.params, { height: 180 }],
+  })
+  return { state }
+}
+```
+Then, set up a relayer job named `add-height` to allow internal writes. `relayerContractTxId` is the intermediary contract writing to your WeaveDB contract (the one above). Contracts cannot sign to pass the relayer signature validation, to circumvent this, set `internalWrites` to `true`.
+
+```js
+const jobID = "add-height"
+const job = {
+  relayers: [relayerContractTxId],
+  internalWrites: true
+}
+await db.addRelayerJob(jobID, job)
+```
+
+You can also set up access control rules to add `height` to the uploaded doc. Note this is overly simplified.
+
+```js
+const rules = {
+  "let create": {
+    "resource.newData.height": { var: "request.auth.extra.height" },
+  },
+  "allow create": true,
+}
+await db.setRules(rules, "ppl")
+```
+
+Now, you can try setting a new person through the outer contract.
+
+```js
+const { WarpFactory } = require("warp-contracts")
+const warp = WarpFactory.forMainnet()
+const contract = warp
+  .contract(relayerContractTxId)
+  .connect(any_arweave_wallet)
+  .setEvaluationOptions({ internalWrites: true, allowBigInt: true })
+  
+const data = { name: "Bob", age: 20 }
+const params = await db.sign("set", data, "ppl", "Bob", { jobID: "add-height" })
+await contract.bundleInteraction({ function: "relay", to: contractTxId, params })
+```
+
+Finally, you get Bob with `height` field added.
+
+```js
+await db.get("ppl", "Bob")
+// { name: "Bob", age: 20, height: 180 }
+```

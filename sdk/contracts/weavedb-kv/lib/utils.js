@@ -95,6 +95,7 @@ const validateData = ({
   doc,
   SmartWeave,
   state,
+  action,
   _signer,
   relayer,
   jobID,
@@ -125,6 +126,7 @@ const validateData = ({
         owners: is(Array, state.owner) ? state.owner : [state.owner],
       },
       request: {
+        caller: action.caller,
         method: op,
         auth: { signer: _signer, relayer, jobID, extra },
         block: {
@@ -211,6 +213,7 @@ const getDoc = async (
   jobID,
   extra,
   state,
+  action,
   SmartWeave,
   current_path = [],
   kvs
@@ -262,6 +265,7 @@ const getDoc = async (
     doc,
     SmartWeave,
     state,
+    action,
     _signer,
     relayer,
     jobID,
@@ -283,6 +287,7 @@ const getDoc = async (
         jobID,
         extra,
         state,
+        action,
         SmartWeave,
         current_path,
         kvs
@@ -458,6 +463,7 @@ const parse = async (
       jobID,
       extra,
       state,
+      action,
       SmartWeave,
       undefined,
       kvs

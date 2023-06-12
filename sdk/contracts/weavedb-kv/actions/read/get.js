@@ -265,6 +265,7 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
       null,
       null,
       null,
+      null,
       SmartWeave,
       undefined,
       kvs
@@ -295,6 +296,7 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
         : await getDoc(
             null,
             slice(0, -1, path),
+            null,
             null,
             null,
             null,

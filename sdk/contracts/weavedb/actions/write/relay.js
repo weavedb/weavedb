@@ -23,26 +23,33 @@ const { addAddressLink } = require("./addAddressLink")
 const { batch } = require("./batch")
 
 const relay = async (state, action, signer, contractErr = true, SmartWeave) => {
-  let original_signer = null
-  if (isNil(signer)) {
-    ;({ signer, original_signer } = await validate(
-      state,
-      action,
-      "relay",
-      SmartWeave,
-      false
-    ))
-  }
   let [jobID, input, query] = action.input.query
-  if (input.jobID !== jobID) err("the wrong jobID")
-  let action2 = { input, relayer: signer, extra: query, jobID }
+  let relayer = null
   const relayers = state.relayers || {}
   if (isNil(relayers[jobID])) err("relayer jobID doesn't exist")
-  if (!isNil(relayers[jobID].relayers)) {
-    const allowed_relayers = map(toLower)(relayers[jobID].relayers || [])
-    if (!includes(signer)(allowed_relayers)) err("relayer is not allowed")
+  let original_signer = null
+  if (relayers[jobID].internalWrites !== true) {
+    if (isNil(signer)) {
+      ;({ signer, original_signer } = await validate(
+        state,
+        action,
+        "relay",
+        SmartWeave,
+        false
+      ))
+    }
+    relayer = signer
+  } else {
+    relayer = action.caller
   }
-
+  if (input.jobID !== jobID) err("the wrong jobID")
+  let action2 = { input, relayer, extra: query, jobID }
+  if (!isNil(relayers[jobID].relayers)) {
+    const allowed_relayers = map(v => (/^0x.+$/.test(v) ? toLower(v) : v))(
+      relayers[jobID].relayers || []
+    )
+    if (!includes(relayer)(allowed_relayers)) err("relayer is not allowed")
+  }
   if (includes(relayers[jobID].multisig_type)(["number", "percent"])) {
     const allowed_signers = map(toLower)(relayers[jobID].signers || [])
     let signers = []
