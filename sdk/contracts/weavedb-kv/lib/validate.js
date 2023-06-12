@@ -133,7 +133,6 @@ const validate = async (
       }
     }
   }
-  console.log("...........................................", original_signer)
   if (_signer !== _caller) err(`signer[${_signer}] is not caller[${_caller}]`)
   if (use_nonce !== false) {
     let next_nonce =
@@ -143,7 +142,6 @@ const validate = async (
         `The wrong nonce[${nonce}] for ${original_signer}: expected ${next_nonce}`
       )
     }
-    console.log("storing nonce....", original_signer, next_nonce)
     await kv(kvs, SmartWeave).put(`nonce.${original_signer}`, next_nonce)
   }
   return { signer: _signer, original_signer }

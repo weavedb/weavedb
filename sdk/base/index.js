@@ -37,9 +37,9 @@ const EIP712Domain = [
 
 const lens = {
   contract: "0xDb46d1Dc155634FbC732f92E853b10B288AD5a1d",
-  pkp_address: "0xF810D4a6F0118E6a6a86A9FBa0dd9EA669e1CC2E".toLowerCase(),
+  pkp_address: "0xcdfaD4e9729f878d6334ae72Fcc6B45Ac3C70425".toLowerCase(),
   pkp_publicKey:
-    "0x04e1d2e8be025a1b8bb10b9c9a5ae9f11c02dbde892fee28e5060e146ae0df58182bdba7c7e801b75b80185c9e20a06944556a81355f117fcc5bd9a4851ac243e7",
+    "0x0443bab1da3778e77aff775ecbbc3a46512160f67ffc063c960501446d51e416445b16d74a61d7edb7eb1d599d73d3044ea2a48b7eae8fba6d6a0f5e40327ac8f6",
   ipfsId: "QmYq1RhS5A1LaEFZqN5rCBGnggYC9orEgHc9qEwnPfJci8",
   abi: [
     {
