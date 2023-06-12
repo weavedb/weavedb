@@ -30,28 +30,35 @@ const relay = async (
   SmartWeave,
   kvs
 ) => {
-  let original_signer = null
-  if (isNil(signer)) {
-    ;({ signer, original_signer } = await validate(
-      state,
-      action,
-      "relay",
-      SmartWeave,
-      false,
-      kvs
-    ))
-  }
-
   let jobID = head(action.input.query)
   let input = nth(1, action.input.query)
   let query = nth(2, action.input.query)
-  if (input.jobID !== jobID) err("the wrong jobID")
-  let action2 = { input, relayer: signer, extra: query, jobID }
+  let relayer = null
   const relayers = state.relayers || {}
   if (isNil(relayers[jobID])) err("relayer jobID doesn't exist")
+  let original_signer = null
+  if (relayers[jobID].internalWrites !== true) {
+    if (isNil(signer)) {
+      ;({ signer, original_signer } = await validate(
+        state,
+        action,
+        "relay",
+        SmartWeave,
+        false,
+        kvs
+      ))
+    }
+    relayer = signer
+  } else {
+    relayer = action.caller
+  }
+
+  if (input.jobID !== jobID) err("the wrong jobID")
+  let action2 = { input, relayer, extra: query, jobID }
   if (!isNil(relayers[jobID].relayers)) {
-    const allowed_relayers = map(toLower)(relayers[jobID].relayers || [])
-    if (!includes(signer)(allowed_relayers)) err("relayer is not allowed")
+    const allowed_relayers = map(v => (/^0x.+$/.test(v) ? toLower(v) : v))(
+      relayers[jobID].relayers || []
+    )
   }
 
   if (includes(relayers[jobID].multisig_type)(["number", "percent"])) {
