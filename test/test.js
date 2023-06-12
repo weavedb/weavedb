@@ -1,3 +1,10 @@
+const {
+  WarpFactory,
+  LoggerFactory,
+  defaultCacheOptions,
+} = require("warp-contracts")
+LoggerFactory.INST.logLevel("error")
+
 const { Ed25519KeyIdentity } = require("@dfinity/identity")
 const { providers, Wallet, utils } = require("ethers")
 const { expect } = require("chai")
@@ -26,7 +33,8 @@ describe("WeaveDB", function () {
     arweave_wallet,
     contractTxId,
     dfinityTxId,
-    ethereumTxId
+    ethereumTxId,
+    intercallTxId
   const Arweave = require("arweave")
   const _ii = [
     "302a300506032b6570032100ccd1d1f725fc35a681d8ef5d563a3c347829bf3f0fe822b4a4b004ee0224fc0d",
@@ -49,6 +57,7 @@ describe("WeaveDB", function () {
       wallet2,
       dfinityTxId,
       ethereumTxId,
+      intercallTxId,
       contractTxId,
     } = await initBeforeEach())
   })
@@ -1228,5 +1237,70 @@ describe("WeaveDB", function () {
     await db.bundle([params, params2])
     expect(await db.get("ppl", "Bob")).to.eql(data)
     expect(await db.get("ppl", "Alice")).to.eql(data2)
+  })
+
+  it("should accept inter-contract write", async () => {
+    const rules = {
+      "let create": {
+        "resource.newData.caller": { var: "request.caller" },
+      },
+      "allow create": true,
+    }
+    await db.setRules(rules, "ppl", {
+      ar: arweave_wallet,
+    })
+
+    const data = { name: "Bob", age: 20 }
+    const params = await db.sign("set", data, "ppl", "Bob")
+
+    const warp = WarpFactory.forLocal(1820)
+    const ic = warp
+      .contract(intercallTxId)
+      .connect(arweave_wallet)
+      .setEvaluationOptions({ internalWrites: true, allowBigInt: true })
+    await ic.writeInteraction({ function: "write", to: contractTxId, params })
+    await ic.readState()
+    expect(await db.get("ppl", "Bob")).to.eql({
+      name: "Bob",
+      age: 20,
+      caller: intercallTxId,
+    })
+  })
+
+  it.only("should accept inter-contract write with relay", async () => {
+    const jobID = "test-job"
+    const job = {
+      relayers: [intercallTxId],
+      internalWrites: true,
+    }
+
+    await db.addRelayerJob("test-job", job, {
+      ar: arweave_wallet,
+    })
+    const rules = {
+      "let create": {
+        "resource.newData.height": { var: "request.auth.extra.height" },
+      },
+      "allow create": true,
+    }
+    await db.setRules(rules, "ppl", {
+      ar: arweave_wallet,
+    })
+
+    const data = { name: "Bob", age: 20 }
+
+    const params = await db.sign("set", data, "ppl", "Bob", { jobID })
+    const warp = WarpFactory.forLocal(1820)
+    const ic = warp
+      .contract(intercallTxId)
+      .connect(arweave_wallet)
+      .setEvaluationOptions({ internalWrites: true, allowBigInt: true })
+    await ic.writeInteraction({ function: "relay", to: contractTxId, params })
+    await ic.readState()
+    expect(await db.get("ppl", "Bob")).to.eql({
+      name: "Bob",
+      age: 20,
+      height: 180,
+    })
   })
 })

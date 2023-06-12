@@ -265,6 +265,7 @@ const get = async (state, action, cursor = false, SmartWeave) => {
       null,
       null,
       null,
+      null,
       SmartWeave
     )
     return {
@@ -287,6 +288,7 @@ const get = async (state, action, cursor = false, SmartWeave) => {
         : getDoc(
             data,
             slice(0, -1, path),
+            null,
             null,
             null,
             null,
