@@ -216,8 +216,10 @@ export default inject(
                 let _schema = null
                 if (!/^\s.*$/.test(newJobSchema)) {
                   if (checkJSON(newJobSchema)) return alert("Wrong JSON format")
+                  eval(`_schema = ${newJobSchema}`)
                 }
                 set("add_relayer", "loading")
+                console.log(_schema)
                 const res = JSON.parse(
                   await fn(addRelayerJob)({
                     relayers: newRelayers,
