@@ -201,10 +201,12 @@ Now, you need to manually call the `mintGrantAndBurnNext` function at [the PKPNF
 
 This function mints a PKP and assigns it to an ipfsCid then burn it in a single transaction, which is [the only way to verify the PKP signatures come from only single Lit Action](https://developer.litprotocol.com/pkp/pkpsAndActions#using-mintgrantburn). If PKPNFT is burnt after being assigned to an ipfsCid, no one else but the code at the ipfsCid can sign with the PKP.
 
+Get some testnet LIT token from [the official Chronicle faucet](https://faucet.litprotocol.com/).
+
 ```js
 const bs58 = require("bs58")
 const LitJsSdk = require("lit-js-sdk/build/index.node.js")
-const { providers, Wallet, Contract, utils } = require("ethers")
+const { JsonRpcProvider, Wallet, Contract, utils } = require("ethers")
 const privatekey = "xyz..." // this could be any account since the NFT will be immediately burnt
 
 const abi = [
@@ -240,7 +242,7 @@ function getBytesFromMultihash(multihash) {
 }
 
 const go = async () => {
-  const provider = new providers.JsonRpcProvider(
+  const provider = new JsonRpcProvider(
     "https://chain-rpc.litprotocol.com/http"
   )
   const wallet = new Wallet(key, provider)
@@ -271,7 +273,7 @@ Even though, the PKP doesn't require your `authSig` to sign, you still need to p
 
 ```js
 const LitJsSdk = require("lit-js-sdk")
-const authSig = await LitJsSdk.checkAndSignAuthMessage({ chain: "ethereum" });
+const authSig = await LitJsSdk.checkAndSignAuthMessage({ chain: "polygon" });
 ```
 
 Relayers can be a simple serverless function. The following is a serverless function using the NestJS `pages/api` directory.
