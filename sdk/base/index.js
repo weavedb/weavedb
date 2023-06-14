@@ -668,9 +668,9 @@ class Base {
     if (!isNil(linkTo)) param.linkTo = linkTo
     const tx = await this.addAddressLink(param, { nonce, ...opt })
     if (isNil(tx.err)) {
-      identity.signer = tx.signer
+      identity.signer = tx.caller
       identity.type = type
-      identity.linkedAccount = linkTo || tx.signer
+      identity.linkedAccount = linkTo || tx.caller
       return { tx, identity }
     } else {
       return null
