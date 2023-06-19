@@ -2,6 +2,7 @@ let fpjson = require("fpjson-lang")
 fpjson = fpjson.default || fpjson
 const jsonLogic = require("json-logic-js")
 const {
+  tail,
   mergeLeft,
   of,
   concat,
@@ -46,30 +47,45 @@ const getCol = (data, path, _signer) => {
   }
 }
 
+const getField = (data, path) => {
+  if (path.length === 1) {
+    return [path[0], data]
+  } else {
+    if (isNil(data[path[0]])) data[path[0]] = {}
+    return getField(data[path[0]], tail(path))
+  }
+}
+
 const mergeData = (_data, new_data, overwrite = false, signer, SmartWeave) => {
-  if (isNil(_data.__data) || overwrite) _data.__data = {}
+  let exists = true
+  if (isNil(_data.__data) || overwrite) {
+    _data.__data = {}
+    exists = false
+  }
   for (let k in new_data) {
+    const path = exists ? k.split(".") : [k]
+    const [field, obj] = getField(_data.__data, path)
     const d = new_data[k]
     if (is(Object)(d) && d.__op === "arrayUnion") {
       if (complement(is)(Array, d.arr)) err()
-      if (complement(is)(Array, _data.__data[k])) _data.__data[k] = []
-      _data.__data[k] = concat(_data.__data[k], d.arr)
+      if (complement(is)(Array, obj[field])) obj[field] = []
+      obj[field] = concat(obj[field], d.arr)
     } else if (is(Object)(d) && d.__op === "arrayRemove") {
       if (complement(is)(Array, d.arr)) err()
-      if (complement(is)(Array, _data.__data[k])) _data.__data[k] = []
-      _data.__data[k] = without(d.arr, _data.__data[k])
+      if (complement(is)(Array, obj[field])) obj[field] = []
+      obj[field] = without(d.arr, obj[field])
     } else if (is(Object)(d) && d.__op === "inc") {
       if (isNaN(d.n)) err()
-      if (isNil(_data.__data[k])) _data.__data[k] = 0
-      _data.__data[k] += d.n
+      if (isNil(obj[field])) obj[field] = 0
+      obj[field] += d.n
     } else if (is(Object)(d) && d.__op === "del") {
-      delete _data.__data[k]
+      delete obj[field]
     } else if (is(Object)(d) && d.__op === "ts") {
-      _data.__data[k] = SmartWeave.block.timestamp
+      obj[field] = SmartWeave.block.timestamp
     } else if (is(Object)(d) && d.__op === "signer") {
-      _data.__data[k] = signer
+      obj[field] = signer
     } else {
-      _data.__data[k] = d
+      obj[field] = d
     }
   }
   return _data
