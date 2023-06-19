@@ -26,6 +26,16 @@ await db.getVersion()
 -  use [kv storage](https://academy.warp.cc/docs/sdk/advanced/kv-storage) for data and indexes
 - triggers
 
+### v0.26.3 (June 19, 2023)
+
+#### Source Transaction Id
+
+[rTp2E6oipzJODmAGbqWbo2wzagoV7tt3JRyBsyVgo6A](https://sonar.warp.cc/#/app/source/rTp2E6oipzJODmAGbqWbo2wzagoV7tt3JRyBsyVgo6A)
+
+#### Added Features
+
+-  [dot notation](/docs/sdk/queries#where)
+
 ### v0.26.2 (June 12, 2023)
 
 #### Source Transaction Id

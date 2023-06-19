@@ -174,7 +174,7 @@ Add a relayer job for the authentication method. You can use [the web console](h
 
 ```javascript
 const job = {
-   relayers: ["PKP_Address".toLowerCase()],
+   relayers: ["PKP_Address"],
    schema: {
      type: "object",
      required: ["linkTo"],

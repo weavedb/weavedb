@@ -1303,4 +1303,30 @@ describe("WeaveDB", function () {
       height: 180,
     })
   })
+  it("should update nested object with dot notation", async () => {
+    const data = { age: 30 }
+    await db.set(data, "ppl", "Bob")
+    expect(await db.get("ppl", "Bob")).to.eql(data)
+    await db.upsert({ "favorites.food": "apple" }, "ppl", "Bob")
+    const data2 = { age: 30, favorites: { food: "apple" } }
+    expect(await db.get("ppl", "Bob")).to.eql(data2)
+    await db.update(
+      {
+        "countries.UAE.Dubai": "Marina",
+        "favorites.music": "opera",
+        "favorites.food": db.del(),
+      },
+      "ppl",
+      "Bob"
+    )
+    const data3 = {
+      age: 30,
+      favorites: { music: "opera" },
+      countries: { UAE: { Dubai: "Marina" } },
+    }
+    expect(await db.get("ppl", "Bob")).to.eql(data3)
+    expect(await db.get("ppl", ["countries.UAE.Dubai", "==", "Marina"])).to.eql(
+      [data3]
+    )
+  })
 })
