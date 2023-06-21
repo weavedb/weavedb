@@ -357,7 +357,7 @@ To use in a front-end dapp:
 import SDK from "weavedb-sdk"
 
 const db = new SDK({ contractTxId })
-await db.initializeWithoutWallet()
+await db.init()
 
 const people = await db.get("people")
 ```
@@ -417,7 +417,7 @@ export default function Home() {
       db = await new SDK({
         contractTxId: "YOUR_CONTRACT_TX_ID",
       })
-      await db.initializeWithoutWallet()
+      await db.init()
       try {
         console.log(await db.db.readState())
         console.log(await db.getNonce("abc"))
@@ -501,7 +501,7 @@ The WeaveDB dryWrite with a virtual state is faster than the WarpSDK dryWrite wh
 :::
 
 :::info
-The SDK needs to be initialized with an Arweave wallet to send transactions to Arweave, but for now you don't have to pay for any transactions. So you can initialize it with a randomly generated wallet with `initializeWithoutWallet`.
+The SDK needs to be initialized with an Arweave wallet to send transactions to Arweave, but for now you don't have to pay for any transactions. So you can initialize it with a randomly generated wallet with `init`.
 :::
 
 You can view the sample code [here](https://github.com/weavedb/weavedb/tree/master/examples/quick-start/pages/index.js).
@@ -673,7 +673,7 @@ export default function Home() {
 
       // initialize SDK
       const _db = await new SDK({ contractTxId: "your_contractTxId" })
-      await _db.initializeWithoutWallet()
+      await _db.init()
 	  
 	  // fetch all users
       setUsers(await _db.get("users"))

@@ -221,7 +221,7 @@ export default function Home() {
     db = await new SDK({
       contractTxId: contractTxId,
     })
-    await db.initializeWithoutWallet()
+    await db.init()
     setInitDB(true)
   }
 ```
@@ -629,7 +629,7 @@ export default function Home() {
     db = await new SDK({
       contractTxId: contractTxId,
     })
-    await db.initializeWithoutWallet()
+    await db.init()
     setInitDB(true)
   }
 

@@ -30,18 +30,8 @@ yarn add weavedb-sdk-node
 ```js
 import WeaveDB from "weavedb-sdk" // or "weavedb-sdk-node"
 
-const db = new WeaveDB({
-  wallet: ADMIN_ARWEAVE_WALLET_JSON,
-  contractTxId: WEAVEDB_CONTRACT_TX_ID
-})
-
-// In case the wallet is not set, you can run initializeWithoutWallet() after the instantiation.
-await db.initializeWithoutWallet()
-
-// Or you can assign the wallet later. Note initialize() is not an async-function.
-db.initialize({
-  wallet: ADMIN_ARWEAVE_WALLET_JSON
-})
+const db = new WeaveDB({ contractTxId: WEAVEDB_CONTRACT_TX_ID })
+await db.init()
 ```
 
 ### Optional Parameters
@@ -60,6 +50,8 @@ WeaveDB contracts v0.7 and less are not compatible with the latest warp SDK. Set
 
 - **nocache** : `true` | `false` (default : `true` for node, `false` for web)  
 Set the default `nocache` value. If set `false`, the SDK returns dryWrite result before sending the tx to Warp. dryWrite is performed on virtual state kept by the WeaveDB SDK, or cached state kept by the Warp SDK without making any http requests, so it's just a matter of milliseconds to return the result.
+
+- **wallet** : an admin arweave wallet, note this is different from the [default signing wallet](/docs/sdk/auth#setdefaultwallet)
 
 #### weavedb-sdk-node only parameters
 
