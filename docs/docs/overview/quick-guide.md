@@ -2,7 +2,7 @@
 sidebar_position: 2
 ---
 
-# Understanding WeaveDB
+# Quick Guide
 
 This tutorial will guide you through the process of deploying your first WeaveDB database and teach you how to interact with it.
 
