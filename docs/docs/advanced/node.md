@@ -3,6 +3,12 @@ sidebar_position: 1
 ---
 # gRPC Node
 
+:::danger
+gRPC node is not up to date with the latest contract versions. Please try the [local SDK](/docs/sdk/setup) for now.  
+We are currently developing a managed node service so you won't need to set up your own node.  
+The managed node service will be decentralized in the future.
+:::
+
 SmartWeave moves computations off chain onto the client-side for unlimited scalability. But this is not all good news. Even with the lazy execution model, end users need to cache the transactions and compute the current contract states as they need. This makes queries very slow at times.
 
 A gRPC node comes between the WeaveDB contract and browsers and does all the work for thousands of browser clients, so the end-users don't have to do any calculations, let alone holding a huge load of unnecessary cache. Instead it gives back cached data within 1 second for read queries, and processes smart contract transactions within 3 seconds for write queries, which achieves the same UX as most web2 apps.

@@ -44,33 +44,35 @@ await db.getNonce("address")
 
 The metadata returned with `cget` functions as a cursor for pagination.
 
-Get a doc
+#### Get a doc
 
 ```js
 await db.get("collection_name", "doc_id")
 await db.cget("collection_name", "doc_id")
 ```
 
-Get a collection
+#### Get a collection
 
 ```js
 await db.get("collection_name")
 await db.cget("collection_name")
 ```
 
+#### Get a sub collection
+
 Arbitrary length of document nesting is possible.
 
 ```js
-await db.get("collection_name", "doc_id", "sub_collection_name_1", "sub_doc_id_1", "sub_collection_name_2", "sub_doc_id_2")
+await db.get("collection_name", "doc_id", "sub_collection_name_1", "sub_doc_id_1", "sub_collection_name_2")
 ```
 
-Limit the number of docs
+#### Limit
 
 ```js
 await db.get("collection_name", 5)
 ```
 
-Sort
+#### Sort
 
 ```js
 await db.get("collection_name", [ "age" ])
@@ -78,7 +80,7 @@ await db.get("collection_name", [ "age", "desc" ])
 await db.get("collection_name", [ "age", "desc" ], [ "name", "asc" ])
 ```
 
-Where
+#### Where
 
 ```js
 await db.get("collection_name", ["age"], [ "age", ">", 20 ])
@@ -86,11 +88,17 @@ await db.get("collection_name", ["age"], [ "age", ">", 20 ])
 
 `==` `>` `>=` `<` `<=` `!=` `in` `not-in` `array-contains` `array-contains-any` are supported.
 
+:::info
+ Dot notation can be used to specify nested object fields. (e.g. `[ "favorites.food", "==", "apple" ]`)
+ 
+ Note that dot notation only works with `where` for now.
+:::
+
 :::caution deprecated
 `=` is deprecated and replaced by `==` at `v0.23.0`. You can still use it for backward compatibility.
 :::
 
-Skip
+#### Skip
 
 ```js
 await db.get("collection_name", [ "age" ], [ "startAfter", 20 ], [ "endAt", 60 ])
@@ -99,7 +107,7 @@ await db.get("collection_name", [ "age" ], [ "name", "desc" ], [ "startAfter", 2
 
 `startAt` `startAfter` `endAt` `endAfter` are supported.
 
-Pagination
+#### Pagination
 
 ```js
 const docs_page1 = db.cget("collection_name", [ "age" ])
