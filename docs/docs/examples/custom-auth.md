@@ -281,7 +281,7 @@ export default function Home() {
   useEffect(() => {
     ;(async () => {
       db = new SDK({ contractTxId })
-      await db.initializeWithoutWallet()
+      await db.init()
     })()
   }, [])
 
