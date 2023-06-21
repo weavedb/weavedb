@@ -66,8 +66,7 @@ const config = {
         },
         items: [
           {
-            type: "doc",
-            docId: "intro",
+            to: "/docs/quick-start",
             position: "left",
             label: "Get Started",
           },
@@ -101,7 +100,7 @@ const config = {
             items: [
               {
                 label: "Get Started",
-                to: "/docs/intro",
+                to: "/docs/quick-start",
               },
               {
                 label: "Demo Dapps",
