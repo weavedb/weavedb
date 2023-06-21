@@ -189,6 +189,29 @@ Now go to the PKP page on the Lit Explorer [https://explorer.litprotocol.com/pkp
 
 Add a relayer job for the authentication method. You can use [the web console](https://console.weavedb.dev) or CLI.
 
+### Web Console
+![](/img/console-relayers.png)
+
+Fill in the `relayers` input field with the `ETH Address` that you had previously obtained from https://explorer.litprotocol.com/pkps/\[tokenID\]
+
+Set the following schema for extra data 
+
+```javascript
+{
+   relayers: ["PKP_Address"],
+   schema: {
+     type: "object",
+     required: ["linkTo"],
+     properties: {
+       linkTo: {
+         type: "string",
+       },
+     },
+   },
+ } 
+```
+
+### CLI
 ```javascript
 const job = {
    relayers: ["PKP_Address"],
@@ -202,10 +225,11 @@ const job = {
      },
    },
  } 
-await db.addRelayerJob("auth:custom", job)
 ```
 
-![](/img/console-relayers.png)
+```javascript
+await db.addRelayerJob("auth:custom", job)
+```
 
 ## 5. Authenticate Users
 
