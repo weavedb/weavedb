@@ -112,12 +112,13 @@ export const preset_rpcs = [
   "http://localhost:8080",
 ]
 
-export const latest = "0.26.2"
+export const latest = "0.26.3"
 export const weavedbSrcTxId = {
   "0.27.0": "jsZqVEOGdMFAvVlof_WXi6DO5vWxhteiG91xVPiIwqQ",
   "0.26.0": "zdP_QTSZ2zO9Nxa1sPAKhyR4geua1_a621_fZm2XPKU",
   "0.26.1": "OSYm83qQFF5gf4m3BbdZtrHMHjVAMPJcBhfZiJVYjYE",
   "0.26.2": "-TBbRLWsP8wAlj8y5bh7RHRdwGJ7kT9urFvEbn1UomQ",
+  "0.26.3": "rTp2E6oipzJODmAGbqWbo2wzagoV7tt3JRyBsyVgo6A",
 }
 //export const intmaxSrcTxId = "OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94"
 export const dfinitySrcTxId = "3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8"

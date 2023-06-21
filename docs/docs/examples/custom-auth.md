@@ -108,9 +108,9 @@ Upload the js file above to IPFS and get the `CID`. You could, for example, use 
 
 ```javascript
 const bs58 = require("bs58")
-const LitJsSdk = require("lit-js-sdk/build/index.node.js")
-const { providers, Wallet, Contract, utils } = require("ethers")
-const privatekey = "xyz..." // this could be any account since the NFT will be immediately burnt
+const { Wallet, Contract, ethers } = require("ethers")
+const privatekey = "ANY_EVM_PRIVATE_KEY" // this could be any account since the NFT will be immediately burnt
+const ipfsCid = "YOUR_IPFS_CID"
 
 const abi = [
   {
@@ -145,18 +145,20 @@ function getBytesFromMultihash(multihash) {
 }
 
 const go = async () => {
-  const provider = new providers.JsonRpcProvider(
+  const provider = new ethers.JsonRpcProvider(
     "https://chain-rpc.litprotocol.com/http"
   )
-  const wallet = new Wallet(key, provider)
+
+  const wallet = new Wallet(privatekey, provider)
   const contract = new Contract(
     "0x8F75a53F65e31DD0D2e40d0827becAaE2299D111",
     abi,
     wallet
   )
+
   const tx = await contract.mintGrantAndBurnNext(
     2,
-    getBytesFromMultihash("YourIpfsCid"),
+    getBytesFromMultihash(ipfsCid),
     { value: "1" }
   )
   console.log(await tx.wait())
@@ -164,7 +166,22 @@ const go = async () => {
 
 go()
 ```
-Go check the [the PKPNFT contract](https://lit-protocol.calderaexplorer.xyz/address/0x8F75a53F65e31DD0D2e40d0827becAaE2299D111) on the Chronicle explore and find your latest transaction, then find the tokenID just minted and burnt.
+
+### PKP script
+
+You can also run the sample script from the repo. Just replace your own values for `privatekey` and `ipfsCid` in [custom-auth-pkp.js](https://github.com/weavedb/weavedb/tree/master/examples/custom-auth/pkp-script/custom-auth-pkp.js)
+
+Run the script using the terminal commands shown below.
+
+```bash
+cd examples/custom-auth/pkp-script
+yarn
+node custom-auth-pkp.js
+```
+
+Go to the Chronicle Explorer and check the [PKP NFT contract](https://lit-protocol.calderaexplorer.xyz/address/0x8F75a53F65e31DD0D2e40d0827becAaE2299D111)
+
+Use the given hash or your wallet address to find your most recent transaction on the explorer. When you click on the equivalent transaction, the newly minted and burned tokenID will show up.
 
 Now go to the PKP page on the Lit Explorer [https://explorer.litprotocol.com/pkps/\[tokenID\]](https://explorer.litprotocol.com/pkps/tokenID), and get the `PKP Public Key` and the `ETH Address`.
 
@@ -172,6 +189,29 @@ Now go to the PKP page on the Lit Explorer [https://explorer.litprotocol.com/pkp
 
 Add a relayer job for the authentication method. You can use [the web console](https://console.weavedb.dev) or CLI.
 
+### Web Console
+![](/img/console-relayers.png)
+
+Fill in the `relayers` input field with the `ETH Address` that you had previously obtained from https://explorer.litprotocol.com/pkps/\[tokenID\]
+
+Set the following schema for extra data 
+
+```javascript
+{
+   relayers: ["PKP_Address"],
+   schema: {
+     type: "object",
+     required: ["linkTo"],
+     properties: {
+       linkTo: {
+         type: "string",
+       },
+     },
+   },
+ } 
+```
+
+### CLI
 ```javascript
 const job = {
    relayers: ["PKP_Address"],
@@ -185,10 +225,11 @@ const job = {
      },
    },
  } 
-await db.addRelayerJob("auth:custom", job)
 ```
 
-![](/img/console-relayers.png)
+```javascript
+await db.addRelayerJob("auth:custom", job)
+```
 
 ## 5. Authenticate Users
 
@@ -197,7 +238,7 @@ Let's build a simple app using NextJS.
 ```bash
 npx create-next-app custom-auth
 cd custom-auth
-yarn add @lit-protocol/sdk-browser ethers
+yarn add @lit-protocol/lit-node-client ethers weavedb-sdk
 yarn dev
 ```
 
@@ -213,13 +254,18 @@ NEXT_PUBLIC_IPFS_ID=""
 NEXT_PUBLIC_AUTH_NAME="custom"
 ```
 
+- `NEXT_PUBLIC_CONTRACT_TX_ID` - contractTxId when you deployed the WeaveDB contract.
+- `NEXT_PUBLIC_PKP_ADDRESS` - ETH Address that you had previously obtained from https://explorer.litprotocol.com/pkps/\[tokenID\]
+- `NEXT_PUBLIC_PKP_PUBLIC_KEY` - PKP Public Key that you had previously obtained from https://explorer.litprotocol.com/pkps/\[tokenID\]
+- `NEXT_PUBLIC_IPFS_ID` - IPFS content identifier obtained from Pinata.
+
 Then update `/pages/index.js` with the following code.
 
 ```javascript 
 import SDK from "weavedb-sdk"
 import { useEffect, useState } from "react"
 import { Signature, BrowserProvider } from "ethers"
-import LitJsSdk from "@lit-protocol/sdk-browser"
+import * as LitJsSdk from "@lit-protocol/lit-node-client"
 
 const contractTxId = process.env.NEXT_PUBLIC_CONTRACT_TX_ID
 const pkp_address = process.env.NEXT_PUBLIC_PKP_ADDRESS
@@ -253,7 +299,7 @@ export default function Home() {
           <input
             placeholder="Lens Profile TokenID"
             value={tokenID}
-            onChange={e => setTokenID(e.target.value)}
+            onChange={(e) => setTokenID(e.target.value)}
           />
           <button
             onClick={async () => {
@@ -278,17 +324,23 @@ export default function Home() {
                 chain: "ethereum",
               })
               const nonce = 1
-              const _res = await litNodeClient.executeJs({
-                ipfsId,
-                authSig,
-                jsParams: {
-                  nonce,
-                  params,
+              let _res
+              try {
+                _res = await litNodeClient.executeJs({
+                  ipfsId,
                   authSig,
-                  contractTxId,
-                  publicKey,
-                },
-              })
+                  jsParams: {
+                    nonce,
+                    params,
+                    authSig,
+                    contractTxId,
+                    publicKey,
+                  },
+                })
+              } catch (e) {
+                console.error("safasdfsdf", e)
+              }
+
               const _sig = _res.signatures.sig1
               if (typeof _sig === "undefined") {
                 alert("The wrong Lens Profile TokenID")
