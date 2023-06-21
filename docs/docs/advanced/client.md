@@ -3,6 +3,12 @@ sidebar_position: 2
 ---
 # Light Client
 
+:::danger
+Light Client is not up to date with the latest contract versions. Please try the [local SDK](/docs/sdk/setup) for now.  
+We are currently developing a managed node service so you won't need to set up your own node.  
+The managed node service will be decentralized in the future.
+:::
+
 With the light client, browser users don't have to hold a full cache from the Warp SDK, which makes read queries extremely fast.
 
 A remote gRPC node must exists for the DB instance and the endpoint URL must be specified as `rpc`.
