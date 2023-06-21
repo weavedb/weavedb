@@ -108,9 +108,9 @@ Upload the js file above to IPFS and get the `CID`. You could, for example, use 
 
 ```javascript
 const bs58 = require("bs58")
-const LitJsSdk = require("lit-js-sdk/build/index.node.js")
-const { providers, Wallet, Contract, utils } = require("ethers")
-const privatekey = "xyz..." // this could be any account since the NFT will be immediately burnt
+const { Wallet, Contract, ethers } = require("ethers")
+const privatekey = "ANY_EVM_PRIVATE_KEY" // this could be any account since the NFT will be immediately burnt
+const ipfsCid = "YOUR_IPFS_CID"
 
 const abi = [
   {
@@ -145,18 +145,20 @@ function getBytesFromMultihash(multihash) {
 }
 
 const go = async () => {
-  const provider = new providers.JsonRpcProvider(
+  const provider = new ethers.JsonRpcProvider(
     "https://chain-rpc.litprotocol.com/http"
   )
-  const wallet = new Wallet(key, provider)
+
+  const wallet = new Wallet(privatekey, provider)
   const contract = new Contract(
     "0x8F75a53F65e31DD0D2e40d0827becAaE2299D111",
     abi,
     wallet
   )
+
   const tx = await contract.mintGrantAndBurnNext(
     2,
-    getBytesFromMultihash("YourIpfsCid"),
+    getBytesFromMultihash(ipfsCid),
     { value: "1" }
   )
   console.log(await tx.wait())
@@ -164,7 +166,22 @@ const go = async () => {
 
 go()
 ```
-Go check the [the PKPNFT contract](https://lit-protocol.calderaexplorer.xyz/address/0x8F75a53F65e31DD0D2e40d0827becAaE2299D111) on the Chronicle explore and find your latest transaction, then find the tokenID just minted and burnt.
+
+### PKP script
+
+You can also run the sample script from the repo. Just replace your own values for `privatekey` and `ipfsCid` in [custom-auth-pkp.js](https://github.com/weavedb/weavedb/tree/master/examples/custom-auth/pkp-script/custom-auth-pkp.js)
+
+Run the script using the terminal commands shown below.
+
+```bash
+cd examples/custom-auth/pkp-script
+yarn
+node custom-auth-pkp.js
+```
+
+Go to the Chronicle Explorer and check the [PKP NFT contract](https://lit-protocol.calderaexplorer.xyz/address/0x8F75a53F65e31DD0D2e40d0827becAaE2299D111)
+
+Use the given hash or your wallet address to find your most recent transaction on the explorer. When you click on the equivalent transaction, the newly minted and burned tokenID will show up.
 
 Now go to the PKP page on the Lit Explorer [https://explorer.litprotocol.com/pkps/\[tokenID\]](https://explorer.litprotocol.com/pkps/tokenID), and get the `PKP Public Key` and the `ETH Address`.
 
