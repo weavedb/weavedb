@@ -66,7 +66,7 @@ const config = {
         },
         items: [
           {
-            to: "/docs/category/get-started",
+            to: "/docs/get-started",
             position: "left",
             label: "Get Started",
           },
@@ -100,7 +100,7 @@ const config = {
             items: [
               {
                 label: "Get Started",
-                to: "/docs/category/get-started",
+                to: "/docs/get-started",
               },
               {
                 label: "Demo Dapps",

@@ -35,7 +35,7 @@ function HomepageHeader() {
               <Box mx={[2, 4, 6]}>
                 <Link
                   className="button button--secondary button--lg"
-                  to="/docs/category/get-started"
+                  to="/docs/get-started"
                 >
                   Get Started
                 </Link>
