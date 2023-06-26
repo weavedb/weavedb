@@ -2,16 +2,16 @@
 sidebar_position: 9
 ---
 
-# Web2 Auth with NextID
+# Web2 Auth with Next.ID
 
 This demo is a variant of the [custom authentication](/docs/examples/custom-auth) flow to let WeaveDB dapps use web2 identities such as Twitter and Github.
 
-[NextID](https://next.id) is a decentralized protocol to link web2 social identities to crypto public keys. You can, for example, use the [Mask Extension](https://mask.io/) or [MetaMask](https://metamask.io/) to sign a generated payload, and tweet it to your Twitter timeline, and verify your ownership of the Twitter account to link it to the signer public key, as explained [here](https://docs.next.id/getting-started/quick-start).
+[Next.ID](https://next.id) is a decentralized protocol to link web2 social identities to crypto public keys. You can, for example, use the [Mask Extension](https://mask.io/) or [MetaMask](https://metamask.io/) to sign a generated payload, and tweet it to your Twitter timeline, and verify your ownership of the Twitter account to link it to the signer public key, as explained [here](https://docs.next.id/getting-started/quick-start).
 
 Once your web2 identity is verified, you can always proove that your crypto wallet is the owner of that identity, which could replace the centralized OAuth flow of web2 services.
 
 :::info
-We are in the process of making the NextID flow built-in with the WeaveDB SDK and the core contracts. This demo is rather to show you what is possible with the [custom authentication](/docs/examples/custom-auth) flow.
+We are in the process of making the Next.ID flow built-in with the WeaveDB SDK and the core contracts. This demo is rather to show you what is possible with the [custom authentication](/docs/examples/custom-auth) flow.
 :::
 
 ## Authentication Flow
@@ -22,8 +22,8 @@ You can try a working demo at [nextid-weavedb.vercel.app](https://nextid-weavedb
 
 #### Short Version
 
-1. NextID links a Twitter account to a crypto public key (EVM).
-2. Lit Action verifies the NextID link and PKP signs a relay query.
+1. Next.ID links a Twitter account to a crypto public key (EVM).
+2. Lit Action verifies the Next.ID link and PKP signs a relay query.
 3. WeaveDB verifies the PKP signature and links the Twitter handle with a disposal address.
 4. The user can act as the Twitter identity on the dapp.
 
@@ -31,7 +31,7 @@ You can try a working demo at [nextid-weavedb.vercel.app](https://nextid-weavedb
 #### Long Version
 
 1. The user specifies a Twitter account they own.
-2. The dapp checks, if the connected crypto wallet owns the Twitter account via the [NextID ProofService](https://docs.next.id/proof-service/ps-intro).
+2. The dapp checks, if the connected crypto wallet owns the Twitter account via the [Next.ID ProofService](https://docs.next.id/proof-service/ps-intro).
 3. If the wallet doesn't own it, the dapp asks the ProofService to generate a payload to sign, and have the wallet sign it.
 4. The user posts, the generated tweet with the signature, and get the Tweet status ID.
 5. The dapp asks the ProofService to verify the ownership.
@@ -304,7 +304,7 @@ You could let users call the Lit Action in browser, but in that case, the dapp n
 
 #### `/api/auth`
 
-Then update `/api/auth.js` with the following code. This is a serverless function to connect with the Lit Action to verify the ownership of your Twitter account via NextID, then fetch the profile data via Twitter API.
+Then update `/api/auth.js` with the following code. This is a serverless function to connect with the Lit Action to verify the ownership of your Twitter account via Next.ID, then fetch the profile data via Twitter API.
 
 ```javascript 
 const { Signature } = require("ethers")
@@ -379,7 +379,7 @@ import { SigningKey, getBytes, hashMessage, BrowserProvider } from "ethers"
 export async function getPubKey(identity) {
   const signer = await new BrowserProvider(window.ethereum).getSigner()
   const addr = await signer.getAddress()
-  const message = `NextID\nPlatform: twitter\nIdentity: ${identity}\nTimestamp: ${Date.now()}\nWallet Address: ${addr}`
+  const message = `Next.ID\nPlatform: twitter\nIdentity: ${identity}\nTimestamp: ${Date.now()}\nWallet Address: ${addr}`
   const pubKey = SigningKey.recoverPublicKey(
     getBytes(hashMessage(message)),
     await signer.signMessage(message)
@@ -392,7 +392,7 @@ export async function getPubKey(identity) {
 
 ##### isOwner
 
-Check if the given public key is the owner of the twitter identity via NextID.
+Check if the given public key is the owner of the twitter identity via Next.ID.
 
 ```javascript
 export async function isOwner(identity, public_key) {
@@ -417,7 +417,7 @@ export async function isOwner(identity, public_key) {
 
 ##### signPayload
 
-If `isOwner` returns `false`, we need to link the public key to the twitter identity via NextID. The first step is to sign the generated payload.
+If `isOwner` returns `false`, we need to link the public key to the twitter identity via Next.ID. The first step is to sign the generated payload.
 
 ```javascript
 export async function signPayload(identity, public_key, signer) {
