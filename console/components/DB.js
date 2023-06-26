@@ -333,7 +333,7 @@ export default inject(
                       }}
                       href={
                         network === "Mainnet"
-                          ? `https://sonar.warp.cc/?#/app/contract/${contractTxId}`
+                          ? `https://sonar.warp.cc/?#/app/contract/${contractTxId}?network=mainnet`
                           : null
                       }
                     >

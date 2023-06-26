@@ -279,7 +279,7 @@ export default inject(
                     <Box
                       as="a"
                       target="_blank"
-                      href={`https://sonar.warp.cc/?#/app/contract/${node.contract}`}
+                      href={`https://sonar.warp.cc/?#/app/contract/${node.contract}?network=mainnet`}
                       color="#6441AF"
                       sx={{ textDecoration: "underline" }}
                     >
