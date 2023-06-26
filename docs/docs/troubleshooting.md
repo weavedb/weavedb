@@ -34,3 +34,13 @@ module.exports = function override(config) {
   return config
 }
 ```
+### v0.27.x
+
+To work with v0.27.x, you need to set `type: 2` when instanciating the SDK. This will turn on the KVS feature required for v0.27.x.
+
+```js
+import SDK from "weavedb-sdk"
+
+const db = new SDK({ contractTxID, type: 2 })
+await db.init()
+```
