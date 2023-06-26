@@ -15,7 +15,7 @@ import {
   uniq,
 } from "ramda"
 import { Box, Flex, ChakraProvider } from "@chakra-ui/react"
-import { connectWithWeaveDB } from "../lib/nextid"
+import { connectWithWeaveDB } from "../../lib/nextid"
 
 import Posts from "../../components/Posts"
 import Header from "../../components/Header"
