@@ -12,13 +12,12 @@
 - [SDK for NodeJS](/sdk/sdk-node)
 - [Web Light Client](/sdk/light-client-web)
 - [Node Light Client](/sdk/light-client-node)
-- [SDK for EXM](/sdk/sdk-exm-node)
-- [Web Client for EXM](/sdk/sdk-exm-web)
 - [gRPC Node](/grpc-node)
 - [REPL](/scripts/runNode.js)
 - [Web Console](/console)
 - [Docs](/docs)
 - [Example Dapps](/examples)
+- [Index Engine](/index-engine)
 
 You can view the docs at [docs.weavedb.dev](https://docs.weavedb.dev).
 
