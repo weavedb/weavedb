@@ -130,7 +130,7 @@ export default inject(
           color="#6441AF"
           sx={{ textDecoration: "underline" }}
           target="_blank"
-          href={`https://sonar.warp.cc/?#/app/contract/${v.contractTxId}`}
+          href={`https://sonar.warp.cc/?#/app/contract/${v.contractTxId}?network=mainnet`}
           onClick={e => {
             e.stopPropagation()
           }}
@@ -178,7 +178,7 @@ export default inject(
               color="#6441AF"
               sx={{ textDecoration: "underline" }}
               target="_blank"
-              href={`https://sonar.warp.cc/#/app/interaction/${v.txid}`}
+              href={`https://sonar.warp.cc/#/app/interaction/${v.txid}?network=mainnet`}
               onClick={e => {
                 e.stopPropagation()
               }}
