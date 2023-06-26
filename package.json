@@ -58,9 +58,8 @@
   },
   "scripts": {
     "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet rTp2E6oipzJODmAGbqWbo2wzagoV7tt3JRyBsyVgo6A 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w",
-    "deploy-exm": "yarn build && node scripts/deployEXM.js mainnet",
     "test": "yarn build && mocha",
-    "build": "yarn clean && node build.js && npm run cp && node scripts/mod.js",
+    "build": "yarn clean && node build.js && npm run cp",
     "clean": "rimraf ./dist",
     "cp": "copyfiles -u 1 ./contracts/**/*.json dist",
     "repl": "yarn build && node scripts/runNode.js",
