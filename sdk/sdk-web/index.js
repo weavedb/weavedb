@@ -421,7 +421,7 @@ class SDK extends Base {
             : typeof window !== "undefined"
             ? false
             : !this.old,
-          useKVStorage: true,
+          useKVStorage: this.type !== 1,
         })
       )
     dbs[this.contractTxId] = this
