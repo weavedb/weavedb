@@ -1,11 +1,17 @@
 ---
-sidebar_position: 2
+sidebar_position: 1
 ---
 # Authentication
 
 When writing to the DB, Ethereum-based addresses are authenticated with [EIP-712](https://eips.ethereum.org/EIPS/eip-712) signatures. However, this requires dapp users to sign with Metamask for every action, and it's a very poor UX. To solve this, WeaveDB allows internal address linking, so dapp users can use disposal addresses for auto-signing.
 
-WeaveDB has integrated 4 types of cryptography (secp256k1, ed25519, rsa256, poseidon), which enables [MetaMask](https://metamask.io/), [Internet Identity](https://identity.ic0.app/), [ArConnect](https://www.arconnect.io/), [IntmaxWallet](https://www.intmaxwallet.io), and [Lens Profile](https://www.lens.xyz/).
+There are 5 wallet integrations at the moment, which includes:
+
+- [Metamask](https://metamask.io/) ([EVM](https://ethereum.org/en/developers/docs/evm/)) - `secp256k1`
+- [Internet Identity](https://identity.ic0.app/) ([Dfinity](https://dfinity.org/)) - `ed25519`
+- [ArConnect](https://www.arconnect.io/) ([Arweave](https://arweave.org/)) - `rsa256`
+- [IntmaxWallet](https://www.intmaxwallet.io/) ([Intmax zkRollup](https://intmax.io/)) - `secp256k1-2` | `poseidon`
+- [Lens Profile](https://polygonscan.com/token/0xdb46d1dc155634fbc732f92e853b10b288ad5a1d) ([Lens Protocol](https://lens.xyz)) - `secp256k1-2`
 
 ![](/img/wallets.png)
 
@@ -26,6 +32,8 @@ You can revoke the address link anytime and forget about the disposal address.
 This will create a great UX for dapps where users only sign once for address linking (this is also instant) and dapp transactions are free, instant and automatic all thanks to [Bundlr](https://bundlr.network/) used underneath.
 
 ## Temporary Address for Auto-signing
+
+By generating a disposal address, dapp users won't be asked for a signature with a wallet popup every time they are to send a transaction. The disposal key stored in browser storage will auto-sign transactions.
 
 ### MetaMask (EVM)
 
@@ -172,7 +180,7 @@ await db.add({ name: "Bob", age: 20 }, "ppl", { intmax: signer })
 ```
 ## Setting Authentication Algorithms
 
-WeaveDB defaults to use all algorithms, but you can specify authentication algoritims to enable for your instance.
+WeaveDB defaults to use all algorithms, but you can specify authentication algorithms to enable for your instance.
 
 ### Algorithms
 
@@ -182,12 +190,21 @@ WeaveDB defaults to use all algorithms, but you can specify authentication algor
 - `poseidon` : for IntmaxWallet with Zero Knowledge Proof ( temporaliry disabled )
 - `secp256k1-2` : for Lens Profile, and IntmaxWallet with EVM-based accounts
 
+You can enable/disable authentication by setting required algorithms listed above.
+
+`secp256k1` is for [EIP712](https://eips.ethereum.org/EIPS/eip-712) typed structured data signatures and `secp256k1-2` is for regular [EIP191](https://eips.ethereum.org/EIPS/eip-191) signatures used in Lit Action.
+
 ### Set Algorithms
 
-To enable Arweave, and disable the others.
+For example, to enable Arweave, and disable the others.
 
 ```javascript
 await db.setAlgorithms([ "rsa256" ])
+```
+
+For example, to enable only EVM, Arweave and Lens.
+```javascript
+await db.setAlgorithms(["secp256k1","rsa256","secp256k1-2"])
 ```
 
 ## setDefaultWallet

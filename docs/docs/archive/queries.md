@@ -1,11 +1,14 @@
 ---
-sidebar_position: 4
+sidebar_position: 8
 ---
 # Query APIs
 
 WeaveDB queries cover most of the things Firestore can do with syntactic sugar inspired by [Firestore Sweet](https://warashibe.github.io/firestore-sweet/).
 
-### getInfo
+
+WeaveDB has a similar syntax to [Firestore](https://firebase.google.com/docs/firestore/query-data/get-data) but simplified and expressed as a simple JSON array (e.g.`["get", "people", "Bob"]`). It is stored as a smart contract state and composed with other snippets. This is the key to the WeaveDB's advanced logic building using [FPJSON](https://fpjson.weavedb.dev), which is out of the scope of this tutorial.
+
+## getInfo
 
 Get configurations
 
@@ -13,7 +16,7 @@ Get configurations
 await db.getInfo()
 ```
 
-### getHash
+## getHash
 
 Get current hash of chained txs. 
 
@@ -26,7 +29,7 @@ WeaveDB contracts keep track of valid transactions by hashing chained txIds like
 await db.getHash()
 ```
 
-### getNonce
+## getNonce
 
 To get the next nonce for an address. Nonces are internally used for signature verification to write data.
 
@@ -34,7 +37,7 @@ To get the next nonce for an address. Nonces are internally used for signature v
 await db.getNonce("address")
 ```
 
-### get / cget
+## get / cget
 
 `get` only returns data, whereas `cget` returns metadata of the docs too.
 
@@ -44,21 +47,21 @@ await db.getNonce("address")
 
 The metadata returned with `cget` functions as a cursor for pagination.
 
-#### Get a doc
+### Get a doc
 
 ```js
 await db.get("collection_name", "doc_id")
 await db.cget("collection_name", "doc_id")
 ```
 
-#### Get a collection
+### Get a collection
 
 ```js
 await db.get("collection_name")
 await db.cget("collection_name")
 ```
 
-#### Get a sub collection
+### Get a sub collection
 
 Arbitrary length of document nesting is possible.
 
@@ -66,13 +69,13 @@ Arbitrary length of document nesting is possible.
 await db.get("collection_name", "doc_id", "sub_collection_name_1", "sub_doc_id_1", "sub_collection_name_2")
 ```
 
-#### Limit
+### Limit
 
 ```js
 await db.get("collection_name", 5)
 ```
 
-#### Sort
+### Sort
 
 ```js
 await db.get("collection_name", [ "age" ])
@@ -80,7 +83,7 @@ await db.get("collection_name", [ "age", "desc" ])
 await db.get("collection_name", [ "age", "desc" ], [ "name", "asc" ])
 ```
 
-#### Where
+### Where
 
 ```js
 await db.get("collection_name", ["age"], [ "age", ">", 20 ])
@@ -98,7 +101,7 @@ await db.get("collection_name", ["age"], [ "age", ">", 20 ])
 `=` is deprecated and replaced by `==` at `v0.23.0`. You can still use it for backward compatibility.
 :::
 
-#### Skip
+### Skip
 
 ```js
 await db.get("collection_name", [ "age" ], [ "startAfter", 20 ], [ "endAt", 60 ])
@@ -107,14 +110,14 @@ await db.get("collection_name", [ "age" ], [ "name", "desc" ], [ "startAfter", 2
 
 `startAt` `startAfter` `endAt` `endAfter` are supported.
 
-#### Pagination
+### Pagination
 
 ```js
 const docs_page1 = db.cget("collection_name", [ "age" ])
 const docs_page2 = db.cget("collection_name", [ "age" ], ["startAfter", docs_page1[docs_page1.length - 1]])
 ```
 
-### on / con
+## on / con
 
 You can subscribe to state changes with `on` and `con`. They are the counterparts of `get` and `cget` respectively.
 
@@ -127,7 +130,7 @@ const unsubscribe = await on.("collection_name", "doc_id", (data) => {
 })
 ```
 
-### getCache / cgetCache
+## getCache / cgetCache
 
 They are the same as `get` / `cget`, but get values from the cached state, which is faster but may not be the most up-to-date values.
 
@@ -138,7 +141,7 @@ await db.getCache("collection_name", "doc_id")
 await db.cgetCache("collection_name", "doc_id")
 ```
 
-### listCollections
+## listCollections
 
 List collection names
 
@@ -147,7 +150,7 @@ await db.listCollections() // list root collections
 await db.listCollections("collection_name", "doc_id") // list sub collections
 ```
 
-### nocache
+## nocache
 
 With `weavedb-client` and `weavedb-node-client`, if the last argument is boolean, it's recognized as `nocache` option.
 
@@ -160,7 +163,7 @@ await db.set({ field : "value"}, "collection_name", "doc_id")
 await db.get("collection_name", "doc_id", true) // without true, the data might be old
 ```
 
-### add
+## add
 
 Add a doc
 
@@ -169,7 +172,7 @@ await db.add({ "age": 20, "name": "Bob" }, "collection_name")
 ```
 The doc id will be randomly yet deterministically assigned.
 
-### getIds
+## getIds
 
 To get the last added doc id, use `getIds`.
 
@@ -178,7 +181,7 @@ const tx = await db.add({ "age": 20, "name": "Bob" }, "collection_name")
 const doc_id = (await db.getIds(tx))[0]
 ```
 
-### set
+## set
 
 Set a doc
 
@@ -186,7 +189,7 @@ Set a doc
 await db.set({ "age": 20, "name": "Bob" }, "collection_name", "doc_id")
 ```
 
-### upsert
+## upsert
 
 Upsert a doc
 
@@ -194,49 +197,54 @@ Upsert a doc
 await db.upsert({ "age": 20, "name": "Bob" }, "collection_name", "doc_id")
 ```
 
-### update
+## update
 
 Update a doc
 
 ```js
 await db.update({ "age": 25 }, "collection_name", "doc_id")
 ```
-Delete a field
+
+:::info
+The following is a list of special operations. WeaveDB has shortcuts for common operations that are only available with the [SDK](https://docs.weavedb.dev/docs/category/weavedb-sdk) and not with the web console terminal at the moment.
+:::
+
+### Delete a field
 
 ```js
 await db.update({ "age": db.del() }, "collection_name", "doc_id")
 ```
 
-Increase/Decrease a field
+### Increase/Decrease a field
 
 ```js
 await db.update({ "age": db.inc(5) }, "collection_name", "doc_id")
 await db.update({ "age": db.inc(-5) }, "collection_name", "doc_id")
 ```
 
-Array union
+### Array union
 
 ```js
 await db.update({ "chars": db.union([ "a", "b", "c", "d" ]) }, "collection_name", "doc_id")
 ```
 
-Array remove
+### Array remove
 
 ```js
 await db.update({ "chars": db.union([ "b", "c" ]) }, "collection_name", "doc_id")
 ```
 
-Set block timestamp
+### Set block timestamp
 ```js
 await db.update({ "date": db.ts() }, "collection_name", "doc_id")
 ```
 
-Set signer Ethereum address
+### Set signer Ethereum address
 ```js
 await db.update({ "address": db.signer() }, "collection_name", "doc_id")
 ```
 
-### delete
+## delete
 
 Delete a doc
 
@@ -244,7 +252,7 @@ Delete a doc
 await db.delete("collection_name", "doc_id")
 ```
 
-### batch
+## batch
 
 Atomic batch write from a single signer
 
@@ -265,7 +273,7 @@ await db.batch([
 ], { ar : admin_arweave_wallet })
 ```
 
-### sign
+## sign
 
 Sign a query without sending a transaction
 
@@ -273,7 +281,7 @@ Sign a query without sending a transaction
 await db.sign("set", {name: "Bob", age: 20}, "collection_name", "doc_id")
 ```
 
-### relay
+## relay
 
 Relay a query
 
@@ -283,7 +291,7 @@ const extra = { age: 20 }
 await db.relay("jobID", param, extra, {evm: relayer_wallet})
 ```
 
-### bundle
+## bundle
 
 Bundle multiple queries from multiple signers
 

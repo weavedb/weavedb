@@ -1,6 +1,6 @@
 {
   "label": "Example Dapps",
-  "position": 4,
+  "position": 8,
   "link": {
     "type": "generated-index",
     "description": "WeaveDB on Execution Machine."

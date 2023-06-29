@@ -1,11 +1,13 @@
 ---
-sidebar_position: 5
+sidebar_position: 1
 ---
-# Data Schemas
+# Data Schema
 
-It's essential to set a presice data schema and access controls to each collection as otherwise WeaveDB is permissionless and anyone can put arbitrary data.
+WeaveDB utilizes [JSON Schema](https://json-schema.org/) to validate incoming data.
 
-To validate write data, WeaveDB uses [jsonschema](https://github.com/tdegrunt/jsonschema) with a restriction that you cannot pass valiator functions.
+It's essential to set a presice data schema and access control rules to each collection as otherwise WeaveDB is permissionless and anyone can put arbitrary data.
+
+To validate write data, WeaveDB uses [jsonschema](https://github.com/tdegrunt/jsonschema) with a restriction that you cannot pass validator functions.
 
 Set a schema to a collection
 

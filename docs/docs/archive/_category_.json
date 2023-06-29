@@ -1,8 +1,8 @@
 {
   "label": "Archive",
-  "position": 5,
+  "position": 9,
   "link": {
     "type": "generated-index",
-    "description": "Archived"
+    "description": "Archive"
   }
 }
