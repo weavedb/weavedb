@@ -7,6 +7,12 @@ sidebar_position: 2
 
 Access control rules are as important as the schemas for decentralized database. WeaveDB rules are extremely powerful using [JsonLogic](https://jsonlogic.com/) with an original add-on that enables JSON-based [ramda](https://ramdajs.com/) functional programming.
 
+:::info
+`db` is assumed to be the state variable storing the WeaveDB SDK object.
+
+For references, see [Initialize WeaveDB](/docs/get-started#initialize-weavedb)
+:::
+
 Add rules
 
 ```js

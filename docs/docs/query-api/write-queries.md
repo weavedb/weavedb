@@ -10,6 +10,12 @@ The differences between `set`, `upsert`, `update` are:
 - `update` will fail if the doc does not exist.
 - `upsert` will merge the new data with an existing doc or will add a new doc if it does not already exist.
 
+:::info
+`db` is assumed to be the state variable storing the WeaveDB SDK object.
+
+For references, see [Initialize WeaveDB](/docs/get-started#initialize-weavedb)
+:::
+
 ## add
 
 Add a doc

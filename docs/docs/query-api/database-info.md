@@ -4,15 +4,23 @@ sidebar_position: 3
 
 # Database Info
 
+:::info
+`db` is assumed to be the state variable storing the WeaveDB SDK object.
+
+For references, see [Initialize WeaveDB](/docs/get-started#initialize-weavedb)
+:::
+
 ## getInfo
 
-Get general information about your database
+Get general information about your database.
 
 ```js
 await db.getInfo()
 ```
 
 ## getVersion
+
+Get contract version of your database.
 
 ```js
 await db.getVersion()
@@ -46,6 +54,8 @@ await db.getEvolve()
 <!-- /docs/sdk/ownership.md -->
 ## getOwner
 
+Get contract owners of your database.
+
 ```js
 await db.getOwner()
 ```
@@ -56,7 +66,7 @@ await db.getOwner()
 Get the schema of a collection
 
 ```js
-await db.getSchema(schema, "bookmarks")
+await db.getSchema("your_collection_name")
 ```
 
 <!-- ## getIndex -->
@@ -73,7 +83,7 @@ await db.getCrons()
 ## getRelayerJob
 
 ```javascript
-await db.getRelayerJob("jobID")
+await db.getRelayerJob("your_jobID")
 ```
 
 <!-- ## getLinkedContract -->

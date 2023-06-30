@@ -4,6 +4,12 @@ sidebar_position: 2
 
 # Read Queries
 
+:::info
+`db` is assumed to be the state variable storing the WeaveDB SDK object.
+
+For references, see [Initialize WeaveDB](/docs/get-started#initialize-weavedb)
+:::
+
 ## get / cget
 
 `get` only returns data, whereas `cget` returns metadata of the docs too.

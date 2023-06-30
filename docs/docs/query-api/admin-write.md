@@ -4,6 +4,12 @@ sidebar_position: 4
 
 # Admin Write
 
+:::info
+`db` is assumed to be the state variable storing the WeaveDB SDK object.
+
+For references, see [Initialize WeaveDB](/docs/get-started#initialize-weavedb)
+:::
+
 <!-- /docs/sdk/indexes.md -->
 ## addIndex
 
@@ -28,7 +34,7 @@ await db.setRules({"allow write": true}, "collection_name")
 <!-- /docs/permissions/schemas.md -->
 ## setSchema
 
-Set a schema to a collection
+Set a data schema to a collection
 
 ```js
 const schema = {

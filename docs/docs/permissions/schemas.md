@@ -9,6 +9,14 @@ It's essential to set a presice data schema and access control rules to each col
 
 To validate write data, WeaveDB uses [jsonschema](https://github.com/tdegrunt/jsonschema) with a restriction that you cannot pass validator functions.
 
+:::info
+`db` is assumed to be the state variable storing the WeaveDB SDK object.
+
+For references, see [Initialize WeaveDB](/docs/get-started#initialize-weavedb)
+:::
+
+In this example, we consider `bookmarks` as the name of our collection.
+
 Set a schema to a collection
 
 ```js
@@ -33,7 +41,7 @@ await db.setSchema(schema, "bookmarks")
 Get the schema of a collection
 
 ```js
-await db.getSchema(schema, "bookmarks")
+await db.getSchema("bookmarks")
 ```
 
 Remove a schema from a collection
