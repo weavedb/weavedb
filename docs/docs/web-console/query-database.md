@@ -63,7 +63,7 @@ delete people Bob
 upsert {name:"Bob",age:20} people Bob
 ```
 
-The defferences between `set`, `upsert`, `update` are:
+The differences between `set`, `upsert`, `update` are:
 
 - `set` will reset the whole doc if the doc already exists.
 - `update` will fail if the doc does not exist.

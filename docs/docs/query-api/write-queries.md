@@ -4,6 +4,11 @@ sidebar_position: 1
 
 # Write Queries
 
+The differences between `set`, `upsert`, `update` are:
+
+- `set` will reset the whole doc if the doc already exists.
+- `update` will fail if the doc does not exist.
+- `upsert` will merge the new data with an existing doc or will add a new doc if it does not already exist.
 
 ## add
 
@@ -38,9 +43,7 @@ Update a doc
 await db.update({ "age": 25 }, "collection_name", "doc_id")
 ```
 
-:::info
 The following is a list of special operations. WeaveDB has shortcuts for common operations that are only available with the [SDK](https://docs.weavedb.dev/docs/category/weavedb-sdk) and not with the web console terminal at the moment.
-:::
 
 ### Delete a field
 
