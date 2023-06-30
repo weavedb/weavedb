@@ -77,18 +77,8 @@ const config = {
           },
           {
             href: "https://github.com/weavedb/weavedb",
-            label: "GitHub",
             position: "right",
-          },
-          {
-            href: "https://fpjson.weavedb.dev/",
-            label: "FPJSON",
-            position: "right",
-          },
-          {
-            href: "https://weavedb.mirror.xyz/",
-            label: "Blog",
-            position: "right",
+            className: "header-github-link",
           },
         ],
       },
@@ -105,10 +95,6 @@ const config = {
               {
                 label: "Demo Dapps",
                 to: "/docs/category/example-dapps",
-              },
-              {
-                label: "Mirror Blog",
-                to: "https://weavedb.mirror.xyz",
               },
             ],
           },
@@ -140,10 +126,14 @@ const config = {
                 label: "FPJSON",
                 href: "https://fpjson.weavedb.dev",
               },
+              {
+                label: "Mirror Blog",
+                href: "https://weavedb.mirror.xyz",
+              },
             ],
           },
         ],
-        copyright: "Powered by Arweave",
+        // copyright: "Powered by Arweave",
       },
       prism: {
         theme: lightCodeTheme,
