@@ -1,10 +1,8 @@
 ---
 sidebar_position: 2
 ---
-# Create Collection
+# Create a Collection
 
-Using the [web console](https://console.weavedb.dev/), click `Data Collections` in the side menu, and then click the `+` icon in the `Collection` box to open up a dialog. After putting the name of your collection in the "Collection ID" input field, click "Add".
-
-For this example, we will set `people` as our collection name.
+Navigate to the `Data Collections` section in the side menu. Next, click on the `+` icon, which will open a dialog window. Input the desired name for your collection into the `Collection ID` field. Finally, to confirm and create the collection, click on the `Add` button.
 
 ![](https://i.imgur.com/PccxMuC.png)

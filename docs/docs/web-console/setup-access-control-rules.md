@@ -3,15 +3,15 @@ sidebar_position: 5
 ---
 # Set up Access Control Rules
 
-With decentralized DBs, it's extremely essential to control who can update what, since it's permissionless by default. WeaveDB has a powerful mechanism to precisely set up any advanced logic to your DB instance by combining [JsonLogic](https://jsonlogic.com/) and [FPJSON](https://fpjson.weavedb.dev).
+ Due to the permissionless nature of decentralized databases, it is essential to have control over who can interact with your database. WeaveDB has a powerful mechanism to precisely set up any advanced logic to your DB instance by combining [JsonLogic](https://jsonlogic.com/) and [FPJSON](https://fpjson.weavedb.dev).
 
-In this tutorial, we will only explore basic `JsonLogic` parts.
+In this tutorial, we will cover the basics of `JsonLogic`ß.
 
-You can set up rules to either the entire write operation with `write` or specific operations with`create`, `update` and `delete`.
+You can set up rules to either the entire write operation with `write` or specific operations such as `create`, `update` and `delete`.
 
 So `write` = `create` + `update` + `delete`.
 
-Within the rules, you can access [various information](https://docs.weavedb.dev/docs/sdk/rules#preset-variables) about contract, block, transaction, and data to be uploaded.
+Within the rules, you can access [various information](https://docs.weavedb.dev/docs/sdk/rules#preset-variables) about the contract, block, transaction, and data to be uploaded.
 
 ```javascript
 {
@@ -41,7 +41,7 @@ And with JsonLogic, you can use `var` to access variables, such as `{var: "resou
 }
 ```
 
-To combine multiple operations, chain them with `,` like `allow create,update`.
+To combine multiple operations, chain them with `,` like `allow,create,update`.
 
 To add the rules, click `Access Control Rules` in the side menu, select `people` from the Collection list, then click the edit icon in the top right corner of the Rules box.
 
@@ -54,5 +54,5 @@ To add the rules, click `Access Control Rules` in the side menu, select `people`
 Now if you try to update an existing data with another wallet, the transaction will fail.
 
 :::info
-With [FPJSON](https://fpjson.weavedb.dev/), you can do powerful things such as mutating the updated data and adding extra fields.
+With [FPJSON](https://fpjson.weavedb.dev/), you can do powerful tasks such as mutating the updated data and adding extra fields.
 :::

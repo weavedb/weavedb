@@ -4,13 +4,13 @@ sidebar_position: 2
 
 # Get Started
 
-## Deploy Database
+## Deploy a Database
 
-Using the [web console](https://console.weavedb.dev/), follow the instructions on [Deploy Database](/docs/web-console/deploy-contract)
+Using the [web console](https://console.weavedb.dev/), follow the instructions on [Deploying a Database](/docs/web-console/deploy-contract)
 
-## Create Collection
+## Create a Collection
 
-Using the [web console](https://console.weavedb.dev/), follow the instructions on [Create Collection](/docs/web-console/create-collection)
+Using the [web console](https://console.weavedb.dev/), follow the instructions on [Creating a Collection](/docs/web-console/create-collection)
 
 ## Install WeaveDB
 
@@ -34,27 +34,23 @@ const db = new WeaveDB({ contractTxId: YOUR_WEAVEDB_CONTRACT_TX_ID })
 await db.init()
 ```
 
-## Add Document
+## Add a document
 
 ```js
 const personData = { name: "Bob", age: 20 }
 const result = await db.add(personData, "your_collection_name")
 ```
 
-## Get Collection
+## Get a collection
 
-`get` only returns data, whereas `cget` returns metadata of the documents too.
+Use `get` to read a collection:
 
 ```js
 const result = await db.get("your_collection_name")
 ```
 
+And `cget` to return the metadata of the documents too:
+
 ```js
 const result = await db.cget("collection_name")
 ```
-
-:::note
-Replace `contractTxId` string value with the `contractTxId` when deploying your database.
-
-Replace `your_collection_name` string value with the name of your collection.
-:::
