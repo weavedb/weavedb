@@ -26,12 +26,6 @@ yarn add weavedb-sdk
 yarn add weavedb-sdk-node
 ```
 
-:::note
-Replace `contractTxId` string value with the `contractTxId` when deploying your database.
-
-Replace `your_collection_name` string value with the name of your collection.
-:::
-
 ## Initialize WeaveDB
 ```js
 import WeaveDB from "weavedb-sdk" // or "weavedb-sdk-node"
@@ -59,4 +53,8 @@ const result = await db.get("your_collection_name")
 const result = await db.cget("collection_name")
 ```
 
+:::note
+Replace `contractTxId` string value with the `contractTxId` when deploying your database.
 
+Replace `your_collection_name` string value with the name of your collection.
+:::
