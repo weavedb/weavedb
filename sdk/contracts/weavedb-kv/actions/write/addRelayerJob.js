@@ -1,7 +1,7 @@
 const { isNil, is, intersection } = require("ramda")
 const { wrapResult, parse, err, clone } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
-const { validate: validator } = require("../../lib/jsonschema")
+const { validate: validator } = require("../../../common/lib/jsonschema")
 
 const addRelayerJob = async (
   state,
