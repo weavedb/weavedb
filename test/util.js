@@ -127,12 +127,12 @@ async function deployContracts({
     contractTxIdEthereum
   ) {
     const contractSrc = fs.readFileSync(
-      path.join(__dirname, "../dist/warp/contract.js"),
+      path.join(__dirname, "../dist/weavedb/contract.js"),
       "utf8"
     )
     const stateFromFile = JSON.parse(
       fs.readFileSync(
-        path.join(__dirname, "../dist/warp/initial-state.json"),
+        path.join(__dirname, "../dist/weavedb/initial-state.json"),
         "utf8"
       )
     )

@@ -15,7 +15,7 @@ const {
   last,
   intersection,
 } = require("ramda")
-const { isValidName } = require("./pure")
+const { isValidName } = require("../../common/lib/pure")
 const clone = state => JSON.parse(JSON.stringify(state))
 const { validate: validator } = require("./jsonschema")
 const err = (msg = `The wrong query`, contractErr = false) => {
