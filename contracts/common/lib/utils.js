@@ -21,7 +21,7 @@ import fpjson from "fpjson-lang"
 import jsonLogic from "json-logic-js"
 import { validate as validator } from "./jsonschema"
 import { isValidName } from "./pure"
-import version from "../../warp/lib/version"
+import version from "../../weavedb/lib/version"
 export const clone = state => JSON.parse(JSON.stringify(state))
 
 export const err = (msg = `The wrong query`, contractErr = false) => {
