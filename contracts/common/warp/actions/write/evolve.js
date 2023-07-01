@@ -1,7 +1,7 @@
 import { isNil, is, of, includes, mergeLeft } from "ramda"
 import { err, isOwner } from "../../../lib/utils"
 import { validate } from "../../../lib/validate"
-import version from "../../../../warp/lib/version"
+import version from "../../../../weavedb/lib/version"
 
 export const evolve = async (state, action, signer) => {
   let original_signer = null

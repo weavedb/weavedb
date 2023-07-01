@@ -1335,10 +1335,10 @@ util-deprecate@^1.0.1:
   resolved "https://registry.yarnpkg.com/util-deprecate/-/util-deprecate-1.0.2.tgz#450d4dc9fa70de732762fbd2d4a28981419a0ccf"
   integrity sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==
 
-weavedb-base@^0.26.10:
-  version "0.26.10"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.26.10.tgz#299ce971fbd6e371a8355efe85aeb3f1b57e8e4a"
-  integrity sha512-mcBIcyEaUp/3UI8au6nJpfuFW/lerJCEk2eCCNA2kgVmdBqDIANGsfdqtFElNcow58LafxHnyzjQ0aVrBK96RQ==
+weavedb-base@^0.27.2:
+  version "0.27.2"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.27.2.tgz#1cabe578a95c74818f789f26b47e328218fd44b2"
+  integrity sha512-mCN0V8HNjGZKZuZ4Qkab3rHAj4UwCDY3tWw+K804M+her2tjTOifVYSlmLmq7qBVsqSuGgbcRSAmLF5UDZz5VQ==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"
@@ -1349,10 +1349,10 @@ weavedb-base@^0.26.10:
     pako "^2.1.0"
     ramda "^0.28.0"
 
-weavedb-contracts@^0.27.0:
-  version "0.27.0"
-  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.27.0.tgz#653c640fddd77db2bc1933f4a0ba3988d756aa3e"
-  integrity sha512-S2kLbBfBoMg6mvTBRWyTc6kWpzQN1+PkBtjlvl9PI8m6XljGA8ncWXni6b6XMHjOlgaVLJiSPph5f7+n/wn+Cw==
+weavedb-contracts@^0.27.7:
+  version "0.27.7"
+  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.27.7.tgz#88a6a96c048dc7571461bf1683c24b7b329054a0"
+  integrity sha512-fxkStleeIK3by3OKSeRwxHkBCuGcJIdKt8+f91dla6KdpBq7Te+d0dbqDyrHkLa49qJ6jATQE+juhKLyURE8CQ==
   dependencies:
     "@noble/curves" "^0.9.0"
     "@peculiar/webcrypto" "^1.4.3"
