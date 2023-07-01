@@ -1,7 +1,7 @@
 const { isNil, mergeLeft } = require("ramda")
 const { err, wrapResult, clone, parse, mergeData } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
-const { validate: validator } = require("../../lib/jsonschema")
+const { validate: validator } = require("../../../common/lib/jsonschema")
 
 const setSchema = async (
   state,

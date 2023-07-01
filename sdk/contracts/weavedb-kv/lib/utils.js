@@ -19,7 +19,7 @@ const {
 } = require("ramda")
 const { isValidName } = require("../../common/lib/pure")
 const clone = state => JSON.parse(JSON.stringify(state))
-const { validate: validator } = require("./jsonschema")
+const { validate: validator } = require("../../common/lib/jsonschema")
 const err = (msg = `The wrong query`, contractErr = false) => {
   if (contractErr) {
     const error = typeof ContractError === "undefined" ? Error : ContractError
