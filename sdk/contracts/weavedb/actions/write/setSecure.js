@@ -1,4 +1,4 @@
-const { wrapResult, err, isOwner } = require("../../lib/utils")
+const { err, isOwner, wrapResult } = require("../../../common/lib/utils")
 const { isNil, is } = require("ramda")
 const { validate } = require("../../lib/validate")
 
@@ -20,9 +20,8 @@ const setSecure = async (
   }
   const owner = isOwner(signer, state)
 
-  if (!is(Boolean)(action.input.query.value)) {
-    err("Value must be a boolean.")
-  }
+  if (!is(Boolean)(action.input.query.value)) err("Value must be a boolean.")
+
   state.secure = action.input.query.value
   return wrapResult(state, original_signer, SmartWeave)
 }

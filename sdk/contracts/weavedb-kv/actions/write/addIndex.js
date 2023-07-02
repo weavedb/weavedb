@@ -1,5 +1,6 @@
 const { o, flatten, isNil, mergeLeft, includes, init } = require("ramda")
-const { kv, wrapResult, parse, err } = require("../../lib/utils")
+const { kv, parse } = require("../../lib/utils")
+const { err, wrapResult } = require("../../../common/lib/utils")
 const { validate } = require("../../lib/validate")
 const { addIndex: _addIndex, getIndex } = require("../../lib/index")
 

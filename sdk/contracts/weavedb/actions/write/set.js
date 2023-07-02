@@ -1,5 +1,7 @@
-const { init, last, isNil, clone } = require("ramda")
-const { err, wrapResult, parse, validateSchema } = require("../../lib/utils")
+const { init, last, isNil } = require("ramda")
+const { parse } = require("../../lib/utils")
+const { err, validateSchema, wrapResult } = require("../../../common/lib/utils")
+const { clone } = require("../../../common/lib/pure")
 const { validate } = require("../../lib/validate")
 const { updateData, addData, getIndex } = require("../../lib/index")
 

@@ -1,11 +1,6 @@
 const { isNil, mergeLeft, init } = require("ramda")
-const {
-  wrapResult,
-  err,
-  isOwner,
-  parse,
-  mergeData,
-} = require("../../lib/utils")
+const { parse } = require("../../lib/utils")
+const { err, isOwner, wrapResult } = require("../../../common/lib/utils")
 const { validate } = require("../../lib/validate")
 const { addIndex: _addIndex, getIndex } = require("../../lib/index")
 

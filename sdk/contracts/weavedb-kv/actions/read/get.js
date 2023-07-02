@@ -34,7 +34,8 @@ const {
   map,
 } = require("ramda")
 
-const { kv, getDoc, err } = require("../../lib/utils")
+const { kv, getDoc } = require("../../lib/utils")
+const { err } = require("../../../common/lib/utils")
 const { getKey } = require("../../lib/index")
 
 const parseQuery = query => {

@@ -1,6 +1,7 @@
 const { isNil, is } = require("ramda")
 const { validate } = require("../../lib/validate")
-const { wrapResult, err, parse } = require("../../lib/utils")
+const { parse } = require("../../lib/utils")
+const { err, wrapResult } = require("../../../common/lib/utils")
 
 const linkContract = async (
   state,

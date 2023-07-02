@@ -1,8 +1,9 @@
 const { isNil, clone, mergeLeft } = require("ramda")
-const { handle } = require("weavedb-contracts/weavedb/contract")
-const { handle: handle_kv } = require("weavedb-contracts/weavedb-kv/contract")
-const version = require("weavedb-contracts/weavedb/lib/version")
-const version_kv = require("weavedb-contracts/weavedb-kv/lib/version")
+const base = "weavedb-contracts"
+const { handle } = require(`${base}/weavedb/contract`)
+const { handle: handle_kv } = require(`${base}/weavedb-kv/contract`)
+const version = require(`${base}/weavedb/lib/version`)
+const version_kv = require(`${base}/weavedb-kv/lib/version`)
 const Base = require("weavedb-base")
 const arweave = require("arweave")
 const { createId } = require("@paralleldrive/cuid2")
@@ -148,6 +149,7 @@ class OffChain extends Base {
           )
         }
       } catch (e) {
+        //console.log(e)
         error = e
       }
       const start = Date.now()

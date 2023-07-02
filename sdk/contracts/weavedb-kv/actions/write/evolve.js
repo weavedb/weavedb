@@ -1,5 +1,5 @@
 const { isNil, is, of, includes, mergeLeft } = require("ramda")
-const { wrapResult, err, isOwner } = require("../../lib/utils")
+const { err, isOwner, wrapResult } = require("../../../common/lib/utils")
 const { validate } = require("../../lib/validate")
 
 const evolve = async (
