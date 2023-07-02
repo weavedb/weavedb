@@ -76,17 +76,9 @@ const writes = [
   "removeAddressLink",
 ]
 
-async function handle(state, action, _SmartWeave) {
-  if (typeof SmartWeave !== "undefined") _SmartWeave = SmartWeave
-  if (isEvolving(state) && includes(action.input.function)(writes)) {
-    err("contract needs migration")
-  }
-  try {
-    ;({ state } = await cron(state, _SmartWeave))
-  } catch (e) {
-    console.log(e)
-  }
-  const addHash = async ({ state, result }) => {
+const addHash =
+  _SmartWeave =>
+  async ({ state, result }) => {
     if (isNil(state.hash)) {
       state.hash = _SmartWeave.transaction.id
     } else {
@@ -100,6 +92,16 @@ async function handle(state, action, _SmartWeave) {
     return { state, result }
   }
 
+async function handle(state, action, _SmartWeave) {
+  if (typeof SmartWeave !== "undefined") _SmartWeave = SmartWeave
+  if (isEvolving(state) && includes(action.input.function)(writes)) {
+    err("contract needs migration")
+  }
+  try {
+    ;({ state } = await cron(state, _SmartWeave))
+  } catch (e) {
+    console.log(e)
+  }
   switch (action.input.function) {
     case "get":
       return await get(state, action, false, _SmartWeave)
@@ -140,98 +142,98 @@ async function handle(state, action, _SmartWeave) {
     case "getEvolve":
       return await getEvolve(state, action, _SmartWeave)
     case "add":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await add(state, action, undefined, undefined, undefined, _SmartWeave)
       )
     case "set":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await set(state, action, undefined, undefined, _SmartWeave)
       )
     case "upsert":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await upsert(state, action, undefined, undefined, _SmartWeave)
       )
     case "update":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await update(state, action, undefined, undefined, _SmartWeave)
       )
     case "delete":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await remove(state, action, undefined, undefined, _SmartWeave)
       )
     case "batch":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await batch(state, action, undefined, undefined, _SmartWeave)
       )
     case "bundle":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await bundle(state, action, undefined, undefined, _SmartWeave)
       )
 
     case "relay":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await relay(state, action, undefined, undefined, _SmartWeave)
       )
 
     case "addOwner":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await addOwner(state, action, undefined, undefined, _SmartWeave)
       )
     case "removeOwner":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await removeOwner(state, action, undefined, undefined, _SmartWeave)
       )
     case "setAlgorithms":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await setAlgorithms(state, action, undefined, undefined, _SmartWeave)
       )
     case "setCanEvolve":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await setCanEvolve(state, action, undefined, undefined, _SmartWeave)
       )
     case "setSecure":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await setSecure(state, action, undefined, undefined, _SmartWeave)
       )
     case "setSchema":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await setSchema(state, action, undefined, undefined, _SmartWeave)
       )
     case "addIndex":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await addIndex(state, action, undefined, undefined, _SmartWeave)
       )
     case "removeIndex":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await removeIndex(state, action, undefined, undefined, _SmartWeave)
       )
 
     case "setRules":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await setRules(state, action, undefined, undefined, _SmartWeave)
       )
     case "removeCron":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await removeCron(state, action, undefined, undefined, _SmartWeave)
       )
     case "addRelayerJob":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await addRelayerJob(state, action, undefined, undefined, _SmartWeave)
       )
     case "removeRelayerJob":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await removeRelayerJob(state, action, undefined, undefined, _SmartWeave)
       )
     case "linkContract":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await linkContract(state, action, undefined, undefined, _SmartWeave)
       )
     case "unlinkContract":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await unlinkContract(state, action, undefined, undefined, _SmartWeave)
       )
     case "removeAddressLink":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await removeAddressLink(
           state,
           action,
@@ -242,19 +244,19 @@ async function handle(state, action, _SmartWeave) {
       )
 
     case "addCron":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await addCron(state, action, undefined, undefined, _SmartWeave)
       )
     case "addAddressLink":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await addAddressLink(state, action, undefined, undefined, _SmartWeave)
       )
     case "evolve":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await evolve(state, action, undefined, undefined, _SmartWeave)
       )
     case "migrate":
-      return await addHash(
+      return await addHash(_SmartWeave)(
         await migrate(state, action, undefined, undefined, _SmartWeave)
       )
 

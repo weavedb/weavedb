@@ -79,6 +79,22 @@ const writes = [
   "removeAddressLink",
 ]
 
+const addHash =
+  _SmartWeave =>
+  async ({ state, result }) => {
+    if (isNil(state.hash)) {
+      state.hash = _SmartWeave.transaction.id
+    } else {
+      const hashes = _SmartWeave.arweave.utils.concatBuffers([
+        _SmartWeave.arweave.utils.stringToBuffer(state.hash),
+        _SmartWeave.arweave.utils.stringToBuffer(_SmartWeave.transaction.id),
+      ])
+      const hash = await _SmartWeave.arweave.crypto.hash(hashes, "SHA-384")
+      state.hash = _SmartWeave.arweave.utils.bufferTob64(hash)
+    }
+    return { state, result }
+  }
+
 async function handle(state, action, _SmartWeave) {
   let kvs = {}
   if (typeof SmartWeave !== "undefined") _SmartWeave = SmartWeave
@@ -95,19 +111,6 @@ async function handle(state, action, _SmartWeave) {
     kvs = _kvs
   } catch (e) {
     console.log(e)
-  }
-  const addHash = async ({ state, result }) => {
-    if (isNil(state.hash)) {
-      state.hash = _SmartWeave.transaction.id
-    } else {
-      const hashes = _SmartWeave.arweave.utils.concatBuffers([
-        _SmartWeave.arweave.utils.stringToBuffer(state.hash),
-        _SmartWeave.arweave.utils.stringToBuffer(_SmartWeave.transaction.id),
-      ])
-      const hash = await _SmartWeave.arweave.crypto.hash(hashes, "SHA-384")
-      state.hash = _SmartWeave.arweave.utils.bufferTob64(hash)
-    }
-    return { state, result }
   }
 
   const readParams = [state, action, _SmartWeave, kvs]
@@ -155,7 +158,7 @@ async function handle(state, action, _SmartWeave) {
     case "getEvolve":
       return await getEvolve(...readParams)
     case "add":
-      res = await addHash(
+      res = await addHash(_SmartWeave)(
         await add(
           state,
           action,
@@ -169,83 +172,89 @@ async function handle(state, action, _SmartWeave) {
       )
       break
     case "set":
-      res = await addHash(await set(...writeParams, executeCron))
+      res = await addHash(_SmartWeave)(await set(...writeParams, executeCron))
       break
     case "upsert":
-      res = await addHash(await upsert(...writeParams, executeCron))
+      res = await addHash(_SmartWeave)(
+        await upsert(...writeParams, executeCron)
+      )
       break
     case "update":
-      res = await addHash(await update(...writeParams, executeCron))
+      res = await addHash(_SmartWeave)(
+        await update(...writeParams, executeCron)
+      )
       break
     case "delete":
-      res = await addHash(await remove(...writeParams, executeCron))
+      res = await addHash(_SmartWeave)(
+        await remove(...writeParams, executeCron)
+      )
       break
     case "batch":
-      res = await addHash(await batch(...writeParams, executeCron))
+      res = await addHash(_SmartWeave)(await batch(...writeParams, executeCron))
       break
     case "bundle":
-      res = await addHash(await bundle(...writeParams))
+      res = await addHash(_SmartWeave)(await bundle(...writeParams))
       break
     case "relay":
-      res = await addHash(await relay(...writeParams))
+      res = await addHash(_SmartWeave)(await relay(...writeParams))
       break
     case "addOwner":
-      res = await addHash(await addOwner(...writeParams))
+      res = await addHash(_SmartWeave)(await addOwner(...writeParams))
       break
     case "removeOwner":
-      res = await addHash(await removeOwner(...writeParams))
+      res = await addHash(_SmartWeave)(await removeOwner(...writeParams))
       break
     case "setAlgorithms":
-      res = await addHash(await setAlgorithms(...writeParams))
+      res = await addHash(_SmartWeave)(await setAlgorithms(...writeParams))
       break
     case "setCanEvolve":
-      res = await addHash(await setCanEvolve(...writeParams))
+      res = await addHash(_SmartWeave)(await setCanEvolve(...writeParams))
       break
     case "setSecure":
-      res = await addHash(await setSecure(...writeParams))
+      res = await addHash(_SmartWeave)(await setSecure(...writeParams))
       break
     case "setSchema":
-      res = await addHash(await setSchema(...writeParams))
+      res = await addHash(_SmartWeave)(await setSchema(...writeParams))
       break
     case "addIndex":
-      res = await addHash(await addIndex(...writeParams))
+      res = await addHash(_SmartWeave)(await addIndex(...writeParams))
       break
     case "removeIndex":
-      res = await addHash(await removeIndex(...writeParams))
+      res = await addHash(_SmartWeave)(await removeIndex(...writeParams))
       break
     case "setRules":
-      res = await addHash(await setRules(...writeParams))
+      res = await addHash(_SmartWeave)(await setRules(...writeParams))
       break
     case "removeCron":
-      res = await addHash(await removeCron(...writeParams))
+      res = await addHash(_SmartWeave)(await removeCron(...writeParams))
       break
     case "addRelayerJob":
-      res = await addHash(await addRelayerJob(...writeParams))
+      res = await addHash(_SmartWeave)(await addRelayerJob(...writeParams))
       break
     case "removeRelayerJob":
-      res = await addHash(await removeRelayerJob(...writeParams))
+      res = await addHash(_SmartWeave)(await removeRelayerJob(...writeParams))
       break
     case "linkContract":
-      res = await addHash(await linkContract(...writeParams))
+      res = await addHash(_SmartWeave)(await linkContract(...writeParams))
       break
     case "unlinkContract":
-      res = await addHash(await unlinkContract(...writeParams))
+      res = await addHash(_SmartWeave)(await unlinkContract(...writeParams))
       break
     case "removeAddressLink":
-      res = await addHash(await removeAddressLink(...writeParams))
+      res = await addHash(_SmartWeave)(await removeAddressLink(...writeParams))
       break
     case "addCron":
-      res = await addHash(await addCron(...writeParams))
+      res = await addHash(_SmartWeave)(await addCron(...writeParams))
       break
     case "addTrigger":
-      res = await addHash(await addTrigger(...writeParams))
+      res = await addHash(_SmartWeave)(await addTrigger(...writeParams))
       break
     case "removeTrigger":
-      res = await addHash(await removeTrigger(...writeParams))
+      res = await addHash(_SmartWeave)(await removeTrigger(...writeParams))
       break
 
     case "addAddressLink":
-      res = await addHash(
+      res = await addHash(_SmartWeave)(
         await addAddressLink(
           state,
           action,
@@ -258,10 +267,10 @@ async function handle(state, action, _SmartWeave) {
       )
       break
     case "evolve":
-      res = await addHash(await evolve(...writeParams))
+      res = await addHash(_SmartWeave)(await evolve(...writeParams))
       break
     case "migrate":
-      res = await addHash(await migrate(...writeParams))
+      res = await addHash(_SmartWeave)(await migrate(...writeParams))
       break
     default:
       err(
