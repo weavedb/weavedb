@@ -1,4 +1,4 @@
-const { err } = require("../weavedb/lib/utils")
+const { err } = require("../common/lib/utils")
 const verify712 = require("./actions/read/verify712")
 const verify = require("./actions/read/verify")
 const { keys } = require("ramda")

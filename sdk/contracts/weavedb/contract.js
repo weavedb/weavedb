@@ -46,7 +46,8 @@ const { relay } = require("./actions/write/relay")
 const { migrate } = require("./actions/write/migrate")
 
 const { cron } = require("./lib/cron")
-const { err, isEvolving } = require("./lib/utils")
+const { err } = require("../common/lib/utils")
+const { isEvolving } = require("../common/lib/utils")
 const { includes, isNil } = require("ramda")
 
 const writes = [

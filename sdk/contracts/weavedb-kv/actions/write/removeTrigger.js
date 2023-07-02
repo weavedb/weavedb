@@ -1,5 +1,6 @@
 const { insert, findIndex, propEq, isNil } = require("ramda")
-const { wrapResult, parse, err } = require("../../lib/utils")
+const { parse } = require("../../lib/utils")
+const { err, wrapResult } = require("../../../common/lib/utils")
 const { validate } = require("../../lib/validate")
 
 const removeTrigger = async (

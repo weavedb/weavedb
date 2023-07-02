@@ -1,5 +1,7 @@
 const { isNil, is, intersection } = require("ramda")
-const { wrapResult, parse, err, clone } = require("../../lib/utils")
+const { parse } = require("../../lib/utils")
+const { clone } = require("../../../common/lib/pure")
+const { err, wrapResult } = require("../../../common/lib/utils")
 const { validate } = require("../../lib/validate")
 const { validate: validator } = require("../../../common/lib/jsonschema")
 

@@ -11,7 +11,7 @@ const {
   prop,
   head,
 } = require("ramda")
-const { clone } = require("../lib/utils")
+const { clone } = require("../../common/lib/pure")
 const { get } = require("../actions/read/get")
 const { upsert } = require("../actions/write/upsert")
 const { update } = require("../actions/write/update")

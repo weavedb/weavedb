@@ -1,6 +1,6 @@
 const { isNil } = require("ramda")
 
-const { err } = require("../../lib/utils")
+const { err } = require("../../../common/lib/utils")
 const { getIndex } = require("../../lib/index")
 
 const scanIndexes = ind => {

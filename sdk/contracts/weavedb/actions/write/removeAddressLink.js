@@ -1,7 +1,6 @@
 const { is, isNil } = require("ramda")
 const { validate } = require("../../lib/validate")
-const { err, wrapResult } = require("../../lib/utils")
-
+const { err, wrapResult } = require("../../../common/lib/utils")
 const removeAddressLink = async (
   state,
   action,

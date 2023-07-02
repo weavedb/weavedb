@@ -13,7 +13,6 @@ const {
   slice,
   findIndex,
   append,
-  clone,
   keys,
   reverse,
   map,

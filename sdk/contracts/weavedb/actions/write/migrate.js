@@ -1,5 +1,10 @@
 const { isNil, is, of, includes, mergeLeft, last } = require("ramda")
-const { wrapResult, isEvolving, err, isOwner } = require("../../lib/utils")
+const {
+  isEvolving,
+  err,
+  isOwner,
+  wrapResult,
+} = require("../../../common/lib/utils")
 const { validate } = require("../../lib/validate")
 const version = require("../../lib/version")
 
