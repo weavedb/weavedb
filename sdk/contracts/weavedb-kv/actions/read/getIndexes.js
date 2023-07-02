@@ -1,5 +1,5 @@
 const { map, split, isNil, splitEvery } = require("ramda")
-const { err } = require("../../lib/utils")
+const { err } = require("../../../common/lib/utils")
 const { getIndex } = require("../../lib/index")
 
 const getIndexes = async (state, action, SmartWeave, kvs) => {

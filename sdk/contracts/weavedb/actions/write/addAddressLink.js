@@ -1,5 +1,5 @@
 const { is, isNil } = require("ramda")
-const { err, wrapResult } = require("../../lib/utils")
+const { err, wrapResult } = require("../../../common/lib/utils")
 const { validate } = require("../../lib/validate")
 
 const addAddressLink = async (

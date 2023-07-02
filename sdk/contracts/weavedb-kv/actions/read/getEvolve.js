@@ -1,5 +1,5 @@
 const { pickAll } = require("ramda")
-const { isEvolving } = require("../../lib/utils")
+const { isEvolving } = require("../../../common/lib/utils")
 
 const getEvolve = async (state, action) => {
   let evolve = pickAll(["canEvolve", "evolve"])(state)

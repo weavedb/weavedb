@@ -1,12 +1,6 @@
 const { isNil, over, lensPath, append, init, last } = require("ramda")
-const {
-  err,
-  parse,
-  mergeData,
-  getCol,
-  validateSchema,
-  wrapResult,
-} = require("../../lib/utils")
+const { err, validateSchema, wrapResult } = require("../../../common/lib/utils")
+const { parse, getCol } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { addData, getIndex } = require("../../lib/index")
 const add = async (

@@ -1,6 +1,7 @@
 const pako = require("pako")
 const { validate } = require("../../lib/validate")
-const { clone, wrapResult, err } = require("../../lib/utils")
+const { err, wrapResult } = require("../../../common/lib/utils")
+const { clone } = require("../../../common/lib/pure")
 const { isNil } = require("ramda")
 const { set } = require("./set")
 const { add } = require("./add")

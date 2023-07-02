@@ -1,4 +1,4 @@
-const { wrapResult, err, isOwner } = require("../../lib/utils")
+const { err, isOwner, wrapResult } = require("../../../common/lib/utils")
 const { includes, is, of, append, isNil } = require("ramda")
 const { validate } = require("../../lib/validate")
 
@@ -23,13 +23,10 @@ const addOwner = async (
   }
 
   const owner = isOwner(signer, state)
-  if (!is(String)(action.input.query.address)) {
-    err("Value must be string.")
-  }
+  if (!is(String)(action.input.query.address)) err("Value must be string.")
 
-  if (!is(String)(action.input.query.address)) {
-    err("Value must be string.")
-  }
+  if (!is(String)(action.input.query.address)) err("Value must be string.")
+
   if (includes(action.input.query.address, owner)) {
     err("The owner already exists.")
   }

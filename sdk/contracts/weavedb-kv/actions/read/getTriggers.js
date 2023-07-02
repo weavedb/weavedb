@@ -1,5 +1,4 @@
-const { err } = require("../../lib/utils")
-
+const { err } = require("../../../common/lib/utils")
 const getTriggers = async (state, action, SmartWeave) => {
   const path = action.input.query
   if (path.length % 2 === 0) err()

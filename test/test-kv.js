@@ -44,6 +44,7 @@ describe("WeaveDB", function () {
   tests(it, () => ({
     db,
     ver: "../sdk/contracts/weavedb-kv/lib/version",
+    init: "../dist/weavedb-kv/initial-state.json",
     wallet,
     Arweave,
     arweave_wallet,

@@ -1,14 +1,10 @@
 const { isNil, over, lensPath, append, init, last } = require("ramda")
-const { clone, kv } = require("../../lib/utils")
-const {
-  err,
-  parse,
-  mergeData,
-  validateSchema,
-  wrapResult,
-} = require("../../lib/utils")
+const { parse, kv } = require("../../lib/utils")
+const { clone } = require("../../../common/lib/pure")
+const { err, validateSchema, wrapResult } = require("../../../common/lib/utils")
 const { validate } = require("../../lib/validate")
 const { addData } = require("../../lib/index")
+
 const add = async (
   state,
   action,
