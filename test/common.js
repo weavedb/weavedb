@@ -17,11 +17,13 @@ const tests = {
     const version = require(ver)
     expect(await db.getVersion()).to.equal(version)
   },
+
   "should get nonce": async ({ db, wallet }) => {
     expect(await db.getNonce(wallet.getAddressString())).to.equal(1)
     await db.set({ id: 1 }, "col", "doc")
     expect(await db.getNonce(wallet.getAddressString())).to.equal(2)
   },
+
   "should get hash": async ({ db, Arweave }) => {
     expect(await db.getHash()).to.equal(null)
     const tx = await db.set({ id: 1 }, "col", "doc")
@@ -35,11 +37,13 @@ const tests = {
     const new_hash = Arweave.utils.bufferTob64(hash)
     expect(await db.getHash()).to.eql(new_hash)
   },
+
   "should add & get": async ({ db }) => {
     const data = { name: "Bob", age: 20 }
     const tx = (await db.add(data, "ppl")).originalTxId
     expect(await db.get("ppl", (await db.getIds(tx))[0])).to.eql(data)
   },
+
   "should set & get": async ({ db }) => {
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Alice", height: 160 }
@@ -58,6 +62,7 @@ const tests = {
     const cursor = (await db.cget("ppl", ["age"], 1))[0]
     expect(await db.get("ppl", ["age"], ["startAfter", cursor])).to.eql([data2])
   },
+
   "should update": async ({ db, type }) => {
     const data = { name: "Bob", age: 20 }
     await db.set(data, "ppl", "Bob")
@@ -94,11 +99,13 @@ const tests = {
       expect((await db.get("ppl", "Bob")).death).to.be.lte(timestamp)
     }
   },
+
   "should upsert": async ({ db }) => {
     const data = { name: "Bob", age: 20 }
     await db.upsert(data, "ppl", "Bob")
     expect(await db.get("ppl", "Bob")).to.eql(data)
   },
+
   "should delete": async ({ db }) => {
     const data = { name: "Bob", age: 20 }
     await db.set(data, "ppl", "Bob")
@@ -106,6 +113,7 @@ const tests = {
     await db.delete("ppl", "Bob")
     expect(await db.get("ppl", "Bob")).to.eql(null)
   },
+
   "should get a collection": async ({ db, arweave_wallet }) => {
     const Bob = {
       name: "Bob",
@@ -251,6 +259,7 @@ const tests = {
       Alice,
     ])
   },
+
   "should batch execute": async ({ db }) => {
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Alice", age: 40 }
@@ -269,6 +278,7 @@ const tests = {
     expect(await db.get("ppl", (await db.getIds(tx))[0])).to.eql(data2)
     expect(await db.get("ppl", "Beth")).to.eql(null)
   },
+
   "should set schema": async ({ db, arweave_wallet }) => {
     const data = { name: "Bob", age: 20 }
     const schema = {
@@ -303,6 +313,7 @@ const tests = {
     await db.set(data, "ppl", "Bob")
     expect(await db.get("ppl", "Bob")).to.eql(data)
   },
+
   "should set rules": async ({ db, arweave_wallet }) => {
     const data = { name: "Bob", age: 20 }
     const rules = {
@@ -327,6 +338,7 @@ const tests = {
     await db.update({ age: db.inc(5) }, "ppl", "Bob")
     expect(await db.get("ppl", "Bob")).to.eql({ name: "Bob", age: 25 })
   },
+
   "should add index": async ({ db, arweave_wallet }) => {
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Alice", age: 25 }
@@ -386,6 +398,7 @@ const tests = {
       [["height", "asc"]],
     ])
   },
+
   "should link temporarily generated address": async ({ wallet, db }) => {
     const addr = wallet.getAddressString()
     const { identity } = await db.createTempAddress(addr)
@@ -412,6 +425,7 @@ const tests = {
       identity.address.toLowerCase()
     )
   },
+
   "should link temporarily generated address with Lens Protocol": async ({
     db,
     wallet,
@@ -455,6 +469,7 @@ const tests = {
       "lens:123"
     )
   },
+
   "should set signer and account": async ({ db, arweave_wallet, wallet }) => {
     const { identity, tx: param } = await db._createTempAddress(
       wallet.getAddressString(),
@@ -494,6 +509,7 @@ const tests = {
       "lens:123"
     )
   },
+
   "should pre-process the new data with rules": async ({
     db,
     arweave_wallet,
@@ -511,6 +527,7 @@ const tests = {
     expect((await db.get("ppl", "Bob")).age).to.eql(30)
     await db.upsert({ name: "Bob" }, "ppl", "Bob")
   },
+
   "should execute crons": async ({ db, arweave_wallet, type }) => {
     await db.set({ age: 3 }, "ppl", "Bob")
     await db.addCron(
@@ -538,6 +555,7 @@ const tests = {
     })
     expect((await db.getCrons()).crons).to.eql({})
   },
+
   "should add & get with internet identity": async ({ db }) => {
     const ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(_ii))
     const data = { name: "Bob", age: 20 }
@@ -546,6 +564,7 @@ const tests = {
       ii.toJSON()[0]
     )
   },
+
   "should add & get with Arweave wallet": async ({ db }) => {
     const arweave_wallet = await db.arweave.wallets.generate()
     const data = { name: "Bob", age: 20 }
@@ -554,6 +573,7 @@ const tests = {
     expect((await db.cget("ppl", (await db.getIds(tx))[0])).setter).to.eql(addr)
     return
   },
+
   "should link temporarily generated address with internet identity": async ({
     db,
   }) => {
@@ -578,6 +598,7 @@ const tests = {
       identity.address.toLowerCase()
     )
   },
+
   "should link temporarily generated address with Arweave wallet": async ({
     db,
   }) => {
@@ -625,6 +646,7 @@ const tests = {
     expect(await db.get("ppl", "Alice")).to.be.eql(data2)
     return
     },*/
+
   "should link and unlink external contracts": async ({
     db,
     arweave_wallet,
@@ -640,6 +662,7 @@ const tests = {
     expect(await db.getLinkedContract("contractA")).to.eql(null)
     return
   },
+
   "should evolve": async ({ arweave_wallet, db, walletAddress, ver }) => {
     const data = { name: "Bob", age: 20 }
     const evolve = "contract-1"
@@ -717,6 +740,7 @@ const tests = {
     expect(await db.get("ppl", "Bob")).to.eql(data)
     return
   },
+
   "should manage owner": async ({ db, arweave_wallet }) => {
     const addr = await db.arweave.wallets.jwkToAddress(arweave_wallet)
     const arweave_wallet2 = await db.arweave.wallets.generate()
@@ -729,6 +753,7 @@ const tests = {
     expect(await db.getOwner()).to.eql([])
     return
   },
+
   "should relay queries": async ({ db, arweave_wallet, wallet }) => {
     const identity = EthCrypto.createIdentity()
     const job = {
@@ -780,6 +805,7 @@ const tests = {
     expect(await db.getRelayerJob("test-job")).to.eql(null)
     return
   },
+
   "should relay queries with Intmax Wallet / Lit Protocol PKP": async ({
     db,
     arweave_wallet,
@@ -836,6 +862,7 @@ const tests = {
     expect(await db.getRelayerJob("test-job")).to.eql(null)
     return
   },
+
   "should relay queries with multisig": async ({
     db,
     arweave_wallet,
@@ -904,6 +931,7 @@ const tests = {
     expect(await db.getRelayerJob("test-job")).to.eql(null)
     return
   },
+
   "should match signers": async ({ db, dfinityTxId, ethereumTxId, wallet }) => {
     const original_account = EthWallet.generate()
     const { identity: temp_account } = await db.createTempAddress(
@@ -952,14 +980,13 @@ const tests = {
     arweave_wallet,
     dfinityTxId,
     ethereumTxId,
+    ver,
+    init,
   }) => {
     const addr = await db.arweave.wallets.jwkToAddress(arweave_wallet)
-    const version = require("../contracts/weavedb/lib/version")
+    const version = require(ver)
     const initial_state = JSON.parse(
-      readFileSync(
-        resolve(__dirname, "../dist/weavedb/initial-state.json"),
-        "utf8"
-      )
+      readFileSync(resolve(__dirname, init), "utf8")
     )
     expect(await db.getInfo()).to.eql({
       auth: {
@@ -981,6 +1008,7 @@ const tests = {
     })
     return
   },
+
   "should update sub collections": async ({ db, arweave_wallet }) => {
     const data = { name: "Bob", age: 20 }
     const data2 = { weight: 70 }
@@ -994,6 +1022,7 @@ const tests = {
     await db.set(data2, "ppl", "Bob", "foods", "apple")
     expect(await db.get("ppl", "Bob", "foods", "apple")).to.eql(data2)
   },
+
   "should sort without indexes": async ({ db }) => {
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Alice", age: 25 }
@@ -1015,6 +1044,7 @@ const tests = {
       data2,
     ])
   },
+
   "should set secure": async ({ db, arweave_wallet }) => {
     await db.setSecure(false, { ar: arweave_wallet })
     expect((await db.getInfo()).secure).to.eql(false)
@@ -1022,6 +1052,7 @@ const tests = {
     expect((await db.getInfo()).secure).to.eql(true)
     return
   },
+
   "should reject invalid col/doc ids": async ({ db }) => {
     await db.set({}, "__ppl__", "Bob")
     await db.set({}, "ppl", "Bob/Alice")
@@ -1029,6 +1060,7 @@ const tests = {
     expect(await db.listCollections()).to.eql([])
     return
   },
+
   "should insert contract info into access rules": async ({
     db,
     arweave_wallet,
@@ -1059,6 +1091,7 @@ const tests = {
       )
     )
   },
+
   "should batch execute admin methods": async ({ db, arweave_wallet }) => {
     const schema = {
       type: "object",
@@ -1155,6 +1188,7 @@ const tests = {
     expect(await db.getIndexes("ppl")).to.eql([])
     expect(await db.getRelayerJob(jobID)).to.eql(null)
   },
+
   "should only allow owners": async ({ db, arweave_wallet }) => {
     const data = { name: "Bob", age: 20 }
     const addr = await db.arweave.wallets.jwkToAddress(arweave_wallet)
@@ -1172,6 +1206,7 @@ const tests = {
     await db.set(data, "ppl", "Bob", { ar: arweave_wallet })
     expect(await db.get("ppl", "Bob")).to.eql(data)
   },
+
   "should bundle mulitple transactions": async ({ db }) => {
     const arweave_wallet2 = await db.arweave.wallets.generate()
     const arweave_wallet3 = await db.arweave.wallets.generate()
@@ -1187,6 +1222,7 @@ const tests = {
     expect(await db.get("ppl", "Bob")).to.eql(data)
     expect(await db.get("ppl", "Alice")).to.eql(data2)
   },
+
   "should update nested object with dot notation": async ({ db }) => {
     const data = { age: 30 }
     await db.set(data, "ppl", "Bob")

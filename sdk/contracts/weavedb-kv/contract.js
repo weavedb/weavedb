@@ -49,7 +49,8 @@ const { addTrigger } = require("./actions/write/addTrigger")
 const { removeTrigger } = require("./actions/write/removeTrigger")
 
 const { cron, executeCron } = require("./lib/cron")
-const { err, isEvolving } = require("./lib/utils")
+const { isEvolving } = require("../common/lib/utils")
+const { err } = require("../common/lib/utils")
 const { includes, isNil, keys, filter, compose, match } = require("ramda")
 
 const writes = [
