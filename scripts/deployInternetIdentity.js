@@ -15,12 +15,12 @@ let warp, walletAddress, arweave, wallet
 
 async function deployContract() {
   const contractSrc = fs.readFileSync(
-    path.join(__dirname, "../dist/internet-identity/ii.js"),
+    path.join(__dirname, "../dist/dfinity/ii.js"),
     "utf8"
   )
   const stateFromFile = JSON.parse(
     fs.readFileSync(
-      path.join(__dirname, "../dist/internet-identity/initial-state-ii.json"),
+      path.join(__dirname, "../dist/dfinity/initial-state-ii.json"),
       "utf8"
     )
   )

@@ -6,7 +6,7 @@ const { expect } = require("chai")
 const Wallet = require("ethereumjs-wallet").default
 const { isNil } = require("ramda")
 const ArLocal = require("arlocal").default
-const Constants = require("../contracts/intmax/lib/circomlibjs/poseidon_constants_opt.js")
+const Constants = require("../sdk/contracts/intmax/lib/circomlibjs/poseidon_constants_opt.js")
 const { DeployPlugin } = require("warp-contracts-plugin-deploy")
 async function addFunds(arweave, wallet) {
   const walletAddress = await arweave.wallets.getAddress(wallet)
@@ -157,12 +157,12 @@ async function deployContracts({
 
   async function deployContractDfinity() {
     const contractSrc = fs.readFileSync(
-      path.join(__dirname, "../dist/internet-identity/ii.js"),
+      path.join(__dirname, "../dist/dfinity/ii.js"),
       "utf8"
     )
     const stateFromFile = JSON.parse(
       fs.readFileSync(
-        path.join(__dirname, "../dist/internet-identity/initial-state-ii.json"),
+        path.join(__dirname, "../dist/dfinity/initial-state-ii.json"),
         "utf8"
       )
     )
