@@ -5,7 +5,7 @@ const {} = require("ramda")
 const tests = require("./common")
 const EthWallet = require("ethereumjs-wallet").default
 
-describe("WeaveDB", function () {
+describe("WeaveDB Offchain", function () {
   let wallet,
     walletAddress,
     db,
@@ -33,8 +33,6 @@ describe("WeaveDB", function () {
     db.setDefaultWallet(wallet)
   })
 
-  afterEach(async () => {})
-
   tests(it, () => ({
     type: "offchain",
     db,
@@ -48,9 +46,4 @@ describe("WeaveDB", function () {
     ethereumTxId,
     contractTxId,
   }))
-
-  const sleep = (sec = 1) =>
-    new Promise(ret => {
-      setTimeout(() => ret(), sec * 1000)
-    })
 })
