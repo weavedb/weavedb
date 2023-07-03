@@ -1,7 +1,15 @@
 let fpjson = require("fpjson-lang")
 fpjson = fpjson.default || fpjson
 const jsonLogic = require("json-logic-js")
-const { is, isNil, slice, includes, last, intersection } = require("ramda")
+const {
+  init,
+  is,
+  isNil,
+  slice,
+  includes,
+  last,
+  intersection,
+} = require("ramda")
 const {
   parse: _parse,
   genId,
@@ -222,4 +230,37 @@ const parse = async (
     { getDoc, getCol, addNewDoc }
   )
 
-module.exports = { getDoc, getCol, parse }
+const trigger = async (
+  on,
+  state,
+  path,
+  SmartWeave,
+  kvs,
+  executeCron,
+  depth,
+  vars
+) => {
+  const trigger_key = `trigger.${init(path).join("/")}`
+  state.triggers ??= {}
+  const triggers = (state.triggers[trigger_key] ??= [])
+  for (const t of triggers) {
+    if (!includes(t.on)(on)) continue
+    try {
+      let _state = clone(state)
+      await executeCron(
+        { crons: { jobs: t.func } },
+        _state,
+        SmartWeave,
+        undefined,
+        depth,
+        vars
+      )
+      state = _state
+    } catch (e) {
+      console.log(e)
+    }
+  }
+  return state
+}
+
+module.exports = { getDoc, getCol, parse, trigger }
