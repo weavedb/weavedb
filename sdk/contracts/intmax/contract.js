@@ -3,7 +3,7 @@ const verifyPoseidon = require("./actions/read/verifyPoseidon")
 
 const { evolve } = require("../weavedb/actions/write/evolve")
 const { setCanEvolve } = require("../weavedb/actions/write/setCanEvolve")
-const { getEvolve } = require("../weavedb/actions/read/getEvolve")
+const { getEvolve } = require("../common/actions/read/getEvolve")
 
 async function handle(state, action) {
   switch (action.input.function) {
