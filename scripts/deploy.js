@@ -21,7 +21,7 @@ async function deployContract(secure) {
   const contractSrc = fs.readFileSync(
     path.join(
       __dirname,
-      `../dist/${contractType === 1 ? "warp" : "weavedb-kv"}/contract.js`
+      `../dist/${contractType === 1 ? "weavedb" : "weavedb-kv"}/contract.js`
     ),
     "utf8"
   )
@@ -30,7 +30,7 @@ async function deployContract(secure) {
       path.join(
         __dirname,
         `../dist/${
-          contractType === 1 ? "warp" : "weavedb-kv"
+          contractType === 1 ? "weavedb" : "weavedb-kv"
         }/initial-state.json`
       ),
       "utf8"

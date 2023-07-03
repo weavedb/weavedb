@@ -10,6 +10,6 @@
     "ramda": "^0.28.0",
     "redis": "^4.6.5",
     "weavedb-base": "^0.27.2",
-    "weavedb-contracts": "^0.27.7"
+    "weavedb-contracts": "^0.27.8"
   }
 }
