@@ -52,7 +52,7 @@ export default inject(
     setDeployMode,
   }) => {
     const [secure, setSecure] = useState(true)
-    const [version, setVersion] = useState("0.26.3")
+    const [version, setVersion] = useState("0.26.4")
     const [canEvolve, setCanEvolve] = useState(true)
     const [auths, setAuths] = useState(wallet_chains)
     const [newAuths, setNewAuths] = useState(wallet_chains)
@@ -100,6 +100,7 @@ export default inject(
               mb={3}
             >
               {map(v => <option value={v}>{v}</option>)([
+                "0.26.4",
                 "0.26.3",
                 "0.26.2",
                 "0.26.1",
