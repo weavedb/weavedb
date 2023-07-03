@@ -70,7 +70,7 @@ class OffChain extends Base {
             evolve: null,
             secure: true,
             auth: {
-              algorithms: ["rsa256"],
+              algorithms: ["secp256k1", "secp256k1-2", "ed25519", "rsa256"],
               name: "weavedb",
               version: "1",
               links: {},
@@ -150,7 +150,7 @@ class OffChain extends Base {
           )
         }
       } catch (e) {
-        //console.log(e)
+        //console.log(typeof e === "object" ? e.message : e)
         error = e
       }
       const start = Date.now()

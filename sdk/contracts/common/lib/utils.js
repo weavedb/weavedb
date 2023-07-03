@@ -118,7 +118,7 @@ const read = async (contract, param, SmartWeave) => {
 const validateSchema = (schema, data, contractErr) => {
   if (!isNil(schema)) {
     const valid = validate(data, clone(schema)).valid
-    if (!valid) err(null, contractErr)
+    if (!valid) err("invalid schema", contractErr)
   }
 }
 
