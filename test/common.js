@@ -1249,6 +1249,51 @@ const tests = {
       [data3]
     )
   },
+
+  "should add triggers": async ({ db, arweave_wallet }) => {
+    const data1 = {
+      key: "trg",
+      on: "create",
+      func: [
+        ["let", "batches", []],
+        [
+          "do",
+          [
+            "when",
+            ["propEq", "id", "Bob"],
+            [
+              "pipe",
+              ["var", "batches"],
+              ["append", ["[]", "update", { age: db.inc(2) }, "ppl", "Bob"]],
+              ["let", "batches"],
+            ],
+            { var: "data" },
+          ],
+        ],
+        ["batch", { var: "batches" }],
+      ],
+    }
+    const data2 = {
+      key: "trg2",
+      on: "update",
+      func: [["upsert", [{ name: "Alice", age: db.inc(1) }, "ppl", "Alice"]]],
+    }
+    const data3 = {
+      key: "trg3",
+      on: "delete",
+      func: [["update", [{ age: db.inc(1) }, "ppl", "Bob"]]],
+    }
+    await db.addTrigger(data1, "ppl", { ar: arweave_wallet })
+    await db.addTrigger(data2, "ppl", { ar: arweave_wallet })
+    await db.addTrigger(mergeLeft({ index: 0 }, data3), "ppl", {
+      ar: arweave_wallet,
+    })
+    expect(await db.getTriggers("ppl")).to.eql([data3, data1, data2])
+    await db.set({ name: "Bob", age: 20 }, "ppl", "Bob")
+    expect((await db.get("ppl", "Bob")).age).to.eql(22)
+    await db.removeTrigger("trg2", "ppl", { ar: arweave_wallet })
+    expect(await db.getTriggers("ppl")).to.eql([data3, data1])
+  },
 }
 
 module.exports = (it, its) => {

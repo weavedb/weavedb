@@ -54,9 +54,18 @@ const set = async (
   _data.__data = next_data
   await kv(kvs, SmartWeave).put(`data.${path.join("/")}`, _data)
   if (depth < 10) {
-    await trigger("create", state, path, SmartWeave, kvs, executeCron, depth, {
-      data: { before, after, id: last(path), setter: _data.setter },
-    })
+    state = await trigger(
+      "create",
+      state,
+      path,
+      SmartWeave,
+      kvs,
+      executeCron,
+      depth,
+      {
+        data: { before, after, id: last(path), setter: _data.setter },
+      }
+    )
   }
   return wrapResult(state, original_signer, SmartWeave)
 }
