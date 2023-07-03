@@ -377,6 +377,7 @@ const trigger = async (
       console.log(e)
     }
   }
+  return state
 }
 
 module.exports = { trigger, getDoc: _getDoc, getCol: _getCol, parse, kv }
