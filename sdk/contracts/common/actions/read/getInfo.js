@@ -1,5 +1,5 @@
 const { pick } = require("ramda")
-const { isEvolving } = require("../../../common/lib/utils")
+const { isEvolving } = require("../../lib/utils")
 
 const getInfo = async (state, action) => {
   let info = pick(
