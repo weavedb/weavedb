@@ -61,7 +61,7 @@
     "test": "yarn build && mocha",
     "build": "yarn clean && node build.js && npm run cp",
     "clean": "rimraf ./dist",
-    "cp": "copyfiles -u 1 ./contracts/**/*.json dist",
+    "cp": "copyfiles -u 2 ./sdk/contracts/**/*.json dist",
     "repl": "yarn build && node scripts/runNode.js",
     "run-node": "cd grpc-node && sudo docker-compose up --build"
   },

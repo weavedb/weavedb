@@ -5,7 +5,7 @@ const contracts = [
   "/weavedb/contract.js",
   "/intercall/contract.js",
   "/intmax/intmax.js",
-  "/internet-identity/ii.js",
+  "/dfinity/ii.js",
   "/ethereum/eth.js",
   "/poseidon/poseidonConstants.js",
 ]
