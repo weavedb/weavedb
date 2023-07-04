@@ -1250,7 +1250,7 @@ const tests = {
     )
   },
 
-  "should add triggers": async ({ db, arweave_wallet }) => {
+  "should add triggers.only": async ({ db, arweave_wallet }) => {
     const data1 = {
       key: "trg",
       on: "create",
@@ -1293,6 +1293,17 @@ const tests = {
     expect((await db.get("ppl", "Bob")).age).to.eql(22)
     await db.removeTrigger("trg2", "ppl", { ar: arweave_wallet })
     expect(await db.getTriggers("ppl")).to.eql([data3, data1])
+
+    const trigger = {
+      key: "inc-count",
+      on: "create",
+      func: [
+        ["upsert", [{ count: db.inc(1) }, "like-count", { var: "data.id" }]],
+      ],
+    }
+    await db.addTrigger(trigger, "likes", { ar: arweave_wallet })
+    await db.set({ data: Date.now() }, "likes", "abc")
+    expect((await db.get("like-count", "abc")).count).to.equal(1)
   },
 }
 
