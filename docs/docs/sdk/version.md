@@ -1,5 +1,5 @@
 ---
-sidebar_position: 11
+sidebar_position: 12
 ---
 # Version
 
@@ -24,7 +24,7 @@ await db.getVersion()
 #### Added Features
 
 -  use [kv storage](https://academy.warp.cc/docs/sdk/advanced/kv-storage) for data and indexes
-- triggers
+- [triggers](/docs/sdk/triggers)
 
 ### v0.26.4 (July 3, 2023)
 
@@ -34,7 +34,7 @@ await db.getVersion()
 
 #### Added Features
 
--  triggers
+- [triggers](/docs/sdk/triggers)
 
 ### v0.26.3 (June 19, 2023)
 
