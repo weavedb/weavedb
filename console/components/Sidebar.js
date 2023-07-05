@@ -10,6 +10,7 @@ export default ({
   port,
   setConnect,
   setPort,
+  state,
 }) => {
   return (
     <Box
@@ -27,26 +28,23 @@ export default ({
       pt="56px"
     >
       {_addIndex(map)((v, i) => {
+        const isOn =
+          (!isNil(currentDB) || includes(v)(["DB", "Nodes"])) &&
+          (v !== "Triggers" ||
+            (!isNil(state) &&
+              (state.version === "0.26.4" ||
+                state.version.split(".")[1] === "27")))
         return (
           <Flex
             onClick={() => {
-              if (includes(v, ["DB", "Nodes"]) || !isNil(currentDB)) setTab(v)
+              if (isOn) setTab(v)
             }}
             bg={v === tab ? "#6441AF" : "#eee"}
-            color={
-              v === tab
-                ? "white"
-                : !isNil(currentDB) || includes(v)(["DB", "Nodes"])
-                ? "#333"
-                : "#999"
-            }
+            color={v === tab ? "white" : isOn ? "#333" : "#999"}
             py={3}
             px={4}
             sx={{
-              cursor:
-                !isNil(currentDB) || includes(v)(["DB", "Nodes"])
-                  ? "pointer"
-                  : "not-allowed",
+              cursor: isOn ? "pointer" : "not-allowed",
               ":hover": { opacity: 0.75 },
             }}
           >
