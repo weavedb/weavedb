@@ -38,6 +38,12 @@ await db.init()
 
 #### common parameters
 
+- **remoteStateSyncEnabled** : `true` | `false` (default : `true`)  
+To use [Warp D.R.E.](https://academy.warp.cc/docs/sdk/advanced/evaluation-options#state-auto-sync), set it `true`. D.R.E. works only with `weavedb-sdk` in browser for now.
+
+- **remoteStateSyncSource** : D.R.E. URL (default : `https://dre-3.warp.cc/contract`)  
+[D.R.E.](https://academy.warp.cc/docs/dre/overview#nodes) 1, 2, 3, 4, 5, and 6 are available. Use the `https://dre-[NUM].warp.cc/contract` format.
+
 - **network** : `mainnet` | `testnet` | `localhost` (default : `mainnet`)
 
 - **port** : port for localhost  (default : `1820`)
