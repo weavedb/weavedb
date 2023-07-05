@@ -281,7 +281,7 @@ export default inject(
                     <Box flex={1}>
                       {(currentDB.rpc || "") === "" ? (
                         isNil(currentDB.dre) ? (
-                          "None (Browser SDK)"
+                          "None (Local Cache)"
                         ) : (
                           <Flex>
                             DRE (
