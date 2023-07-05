@@ -224,7 +224,7 @@ export const connectLocalhost = async ({ val: { port } }) => {
 }
 
 export const setupWeaveDB = async ({
-  val: { network, contractTxId, port, rpc, temp = false },
+  val: { network, contractTxId, port, rpc, temp = false, dre },
 }) => {
   let _sdk
   let isRPC = !isNil(rpc) && !/^\s*$/.test(rpc)
@@ -239,6 +239,7 @@ export const setupWeaveDB = async ({
     }
   } else {
     _sdk = new SDK({
+      remoteStateSyncSource: dre,
       network: network.toLowerCase(),
       port,
       contractTxId,
