@@ -17,7 +17,7 @@
     "redis": "^4.6.5",
     "warp-contracts-lmdb": "^1.1.10",
     "warp-contracts-pubsub": "^1.0.5",
-    "weavedb-sdk": "^0.27.24"
+    "weavedb-sdk": "^0.27.25"
   },
   "devDependencies": {
     "esbuild": "^0.14.50",
