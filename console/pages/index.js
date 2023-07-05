@@ -31,6 +31,7 @@ import Schemas from "../components/Schemas"
 import Rules from "../components/Rules"
 import Crons from "../components/Crons"
 import Relayers from "../components/Relayers"
+import Triggers from "../components/Triggers"
 import Modals from "../components/Modals"
 import Paths from "../components/Paths"
 import Console from "../components/Console"
@@ -50,6 +51,7 @@ let db
 export default inject(
   ["temp_current_all", "temp_current", "loading_contract", "tx_logs"],
   ({ set, init, router, conf, fn, $ }) => {
+    const [lockTrigger, setLockTrigger] = useState(true)
     const [showSidebar, setShowSidebar] = useState(true)
     const [deployMode, setDeployMode] = useState("Connect")
     const [loadMore, setLoadMore] = useState(null)
@@ -63,11 +65,13 @@ export default inject(
     const [indexes, setIndexes] = useState([])
     const [crons, setCrons] = useState({})
     const [relayers, setRelayers] = useState([])
+    const [triggers, setTriggers] = useState([])
     const [addDoc, setAddDoc] = useState(false)
     const [addData, setAddData] = useState(false)
     const [addRules, setAddRules] = useState(false)
     const [addCron, setAddCron] = useState(false)
     const [addRelayer, setAddRelayer] = useState(false)
+    const [addTrigger, setAddTrigger] = useState(false)
     const [addNode, setAddNode] = useState(false)
     const [addContract, setAddContract] = useState(false)
     const [contracts, setContracts] = useState([])
@@ -92,6 +96,7 @@ export default inject(
     const [tab, setTab] = useState("DB")
     const [cron, setCron] = useState(null)
     const [relayer, setRelayer] = useState(null)
+    const [trigger, setTrigger] = useState(null)
     const [method, setMethod] = useState("get")
     const [isWhitelisted, setIsWhitelisted] = useState(false)
     const [nodeUser, setNodeUser] = useState(false)
@@ -122,6 +127,7 @@ export default inject(
     const [editWhitelist, setEditWhitelist] = useState(false)
     const [newNetwork, setNewNetwork] = useState("Mainnet")
     const [newAuths, setNewAuths] = useState(wallet_chains)
+    const [newTriggerKey, setNewTriggerKey] = useState("")
 
     const addGRPCNode = async _node => {
       const nodemap = indexBy(prop("rpc"), nodes)
@@ -231,6 +237,20 @@ export default inject(
               await fn(read)({
                 db,
                 m: "getSchema",
+                q: [
+                  ...(doc_path.length % 2 === 0
+                    ? doc_path.slice(0, -1)
+                    : doc_path),
+                ],
+              })
+            )
+          }
+        } else if (tab === "Triggers") {
+          if (!isNil(col)) {
+            setTriggers(
+              await fn(read)({
+                db,
+                m: "getTriggers",
                 q: [
                   ...(doc_path.length % 2 === 0
                     ? doc_path.slice(0, -1)
@@ -441,6 +461,7 @@ export default inject(
         db,
       },
       Sidebar: {
+        state,
         currentDB,
         setTab,
         tab,
@@ -510,6 +531,21 @@ export default inject(
         setRelayer,
         relayer,
         relayers,
+      },
+      Triggers: {
+        setNewTriggerKey,
+        setLockTrigger,
+        col,
+        base_path,
+        doc_path,
+        isOwner,
+        contractTxId,
+        setTriggers,
+        setAddTrigger,
+        db,
+        setTrigger,
+        trigger,
+        triggers,
       },
       Nodes: {
         updateGRPCNode,
@@ -586,6 +622,10 @@ export default inject(
         doc,
       },
       Modals: {
+        newTriggerKey,
+        setNewTriggerKey,
+        lockTrigger,
+        setLockTrigger,
         setEditRules,
         editRules,
         deployMode,
@@ -678,6 +718,10 @@ export default inject(
         addRelayer,
         setAddRelayer,
         setRelayers,
+        addTrigger,
+        setAddTrigger,
+        setTriggers,
+
         setDocdata,
         setAddSchema,
         addSchema,
@@ -766,6 +810,8 @@ export default inject(
                         <Crons {...props.Crons} />
                       ) : tab === "Relayers" ? (
                         <Relayers {...props.Relayers} />
+                      ) : tab === "Triggers" ? (
+                        <Triggers {...props.Triggers} />
                       ) : tab === "Nodes" ? (
                         <Nodes {...props.Nodes} />
                       ) : tab === "Indexes" ? (

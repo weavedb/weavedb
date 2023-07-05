@@ -46,6 +46,8 @@ const is_data = [
   "add",
   "update",
   "upsert",
+  "addTrigger",
+  "removeTrigger",
 ]
 const no_paths = [
   "nonce",
@@ -414,7 +416,7 @@ class SDK extends Base {
             ? false
             : this.network !== "localhost",
           remoteStateSyncSource:
-            this.remoteStateSyncSource ?? "https://dre-2.warp.cc/contract",
+            this.remoteStateSyncSource ?? "https://dre-3.warp.cc/contract",
           allowBigInt: true,
           useVM2: !isNil(this.useVM2)
             ? this.useVM2
@@ -637,6 +639,8 @@ class SDK extends Base {
               "add",
               "batch",
               "relay",
+              "addTrigger",
+              "removeTrigger",
             ])
           ) {
             cache = false
@@ -885,6 +889,7 @@ class SDK extends Base {
       }
     } else {
       state = await this.readState()
+      console.log(state)
       const valid = state.cachedValue.validity[tx.originalTxId]
       if (valid === false) {
         return {

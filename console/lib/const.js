@@ -6,6 +6,7 @@ export const tabs = [
   "Indexes",
   "Crons",
   "Relayers",
+  "Triggers",
   "Nodes",
 ]
 export const methods = [
@@ -50,6 +51,7 @@ export const methods = [
       "getRelayerJob",
       "getLinkedContract",
       "listRelayerJobs",
+      "getTriggers",
     ],
   },
   {
@@ -70,6 +72,8 @@ export const methods = [
       "removeOwner",
       "linkContract",
       "removeContract",
+      "addTrigger",
+      "removeTrigger",
     ],
   },
 ]
@@ -81,6 +85,7 @@ export const tabmap = {
   Indexes: { name: "Indexes" },
   Crons: { name: "Crons" },
   Relayers: { name: "Relayers" },
+  Triggers: { name: "Triggers" },
   Nodes: { name: "gRPC Nodes" },
 }
 
