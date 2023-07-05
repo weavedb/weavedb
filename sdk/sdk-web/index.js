@@ -171,11 +171,13 @@ class SDK extends Base {
     createClient,
     WarpSubscriptionPlugin,
     remoteStateSyncSource,
+    remoteStateSyncEnabled = true,
     useVM2,
     type = 1,
   }) {
     super()
     this.remoteStateSyncSource = remoteStateSyncSource
+    this.remoteStateSyncEnabled = remoteStateSyncEnabled
     this.queue = []
     this.ongoing = false
     this.results = {}
@@ -412,9 +414,10 @@ class SDK extends Base {
       .setEvaluationOptions(
         mergeLeft(evaluationOptions, {
           internalWrites: true,
-          remoteStateSyncEnabled: this.isNode
-            ? false
-            : this.network !== "localhost",
+          remoteStateSyncEnabled:
+            this.isNode || this.network === "localhost"
+              ? false
+              : this.remoteStateSyncSource,
           remoteStateSyncSource:
             this.remoteStateSyncSource ?? "https://dre-3.warp.cc/contract",
           allowBigInt: true,
@@ -889,7 +892,6 @@ class SDK extends Base {
       }
     } else {
       state = await this.readState()
-      console.log(state)
       const valid = state.cachedValue.validity[tx.originalTxId]
       if (valid === false) {
         return {

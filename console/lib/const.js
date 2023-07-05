@@ -108,6 +108,7 @@ export const default_nodes = [
 export const per_page = 20
 
 export const rpc_types = [
+  { key: "none", name: "Local Cache" },
   { key: "sdk", name: "Warp DRE" },
   { key: "preset", name: "WeaveDB Node" },
   { key: "custom", name: "Custom" },

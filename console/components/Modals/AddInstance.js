@@ -330,7 +330,9 @@ export default inject(
               >
                 {map(v => <option value={v.key}>{v.name}</option>)(rpc_types)}
               </Select>
-              {newRPCType === "preset" ? (
+              {newRPCType === "none" ? (
+                <Input flex={1} value="Browser Local Cache" disabled={true} />
+              ) : newRPCType === "preset" ? (
                 <>
                   <Select
                     flex={1}
@@ -393,7 +395,7 @@ export default inject(
                     set("connect_to_db", "loading")
                     let db
                     const rpc =
-                      newRPCType === "sdk"
+                      newRPCType === "sdk" || newRPCType === "none"
                         ? null
                         : newRPCType === "preset"
                         ? presetRPC
