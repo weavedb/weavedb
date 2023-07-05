@@ -108,13 +108,22 @@ export const default_nodes = [
 export const per_page = 20
 
 export const rpc_types = [
-  { key: "sdk", name: "None" },
-  { key: "preset", name: "Preset" },
+  { key: "sdk", name: "Warp DRE" },
+  { key: "preset", name: "WeaveDB Node" },
   { key: "custom", name: "Custom" },
 ]
 export const preset_rpcs = [
   "https://grpc.weavedb-node.xyz",
   "http://localhost:8080",
+]
+
+export const preset_dres = [
+  "https://dre-1.warp.cc/contract",
+  "https://dre-2.warp.cc/contract",
+  "https://dre-3.warp.cc/contract",
+  "https://dre-4.warp.cc/contract",
+  "https://dre-5.warp.cc/contract",
+  "https://dre-6.warp.cc/contract",
 ]
 
 export const latest = "0.26.4"
