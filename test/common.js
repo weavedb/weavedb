@@ -1250,7 +1250,7 @@ const tests = {
     )
   },
 
-  "should add triggers.only": async ({ db, arweave_wallet }) => {
+  "should add triggers": async ({ db, arweave_wallet }) => {
     const data1 = {
       key: "trg",
       on: "create",
