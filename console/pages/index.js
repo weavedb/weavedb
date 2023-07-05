@@ -114,6 +114,7 @@ export default inject(
     const [newRules, setNewRules] = useState("")
     const [editRules, setEditRules] = useState(null)
     const [presetRPC, setPresetRPC] = useState("https://grpc.weavedb-node.xyz")
+    const [presetDRE, setPresetDRE] = useState("https://dre-2.warp.cc/contract")
     const [dbs, setDBs] = useState([])
     const [node, setNode] = useState(null)
     const [nodes, setNodes] = useState([])
@@ -316,7 +317,8 @@ export default inject(
       network,
       rpc,
       _db,
-      state
+      state,
+      dre
     ) => {
       setContractTxId(_contractTxId)
       if (!isNil(_contractTxId)) {
@@ -328,6 +330,7 @@ export default inject(
             contractTxId: _contractTxId,
             port,
             rpc,
+            dre,
           }))
         let info = state || (await fn(read)({ db, m: "getInfo", q: [] }))
         setState(info)
@@ -575,7 +578,10 @@ export default inject(
         editGRPC,
         setEditGRPC,
         setPresetRPC,
+        setPresetDRE,
         setNewRPCType,
+        presetDRE,
+        setPresetDRE,
         nodes,
         setNewHttp,
         setAddInstance,
@@ -645,6 +651,8 @@ export default inject(
         nodes,
         presetRPC,
         setPresetRPC,
+        presetDRE,
+        setPresetDRE,
         newRPCType,
         setNewRPCType,
         addDB,

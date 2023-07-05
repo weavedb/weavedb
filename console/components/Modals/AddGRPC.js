@@ -3,7 +3,7 @@ import { Box, Flex, Input, Select } from "@chakra-ui/react"
 import { isNil, map, compose, concat, uniq, pluck, trim, assoc } from "ramda"
 import { inject } from "roidjs"
 import { setupWeaveDB, read } from "../../lib/weavedb"
-import { preset_rpcs, rpc_types } from "../../lib/const"
+import { preset_rpcs, preset_dres, rpc_types } from "../../lib/const"
 import Modal from "../Modal"
 
 export default inject(
@@ -20,6 +20,8 @@ export default inject(
     newRPCType,
     presetRPC,
     setPresetRPC,
+    presetDRE,
+    setPresetDRE,
     setState,
     updateDB,
     setCurrentDB,
@@ -71,7 +73,7 @@ export default inject(
           <Flex>
             <Select
               mr={2}
-              w="130px"
+              w="165px"
               value={newRPCType}
               onChange={e => setNewRPCType(e.target.value)}
               sx={{ borderRadius: 0 }}
@@ -79,7 +81,16 @@ export default inject(
               {map(v => <option value={v.key}>{v.name}</option>)(rpc_types)}
             </Select>
             {newRPCType === "sdk" ? (
-              <Input flex={1} value="Browser Local Cache" disabled={true} />
+              <>
+                <Select
+                  flex={1}
+                  value={presetDRE}
+                  onChange={e => setPresetDRE(e.target.value)}
+                  sx={{ borderRadius: 0 }}
+                >
+                  {map(v => <option>{v}</option>)(preset_dres)}
+                </Select>
+              </>
             ) : newRPCType === "preset" ? (
               <>
                 <Select
@@ -136,7 +147,9 @@ export default inject(
                       : newRPCType === "preset"
                       ? presetRPC
                       : newHttp + newRPC2
+                  const dre = newRPCType !== "sdk" ? null : presetDRE
                   const db = await fn(setupWeaveDB)({
+                    dre,
                     network: newHttp === "https://" ? "Mainnet" : "Localhost",
                     contractTxId: cdb.contractTxId,
                     rpc,
@@ -144,7 +157,10 @@ export default inject(
                   let state = await fn(read)({ db, m: "getInfo", q: [true] })
                   if (!isNil(state.version)) {
                     setState(null)
-                    const newDB = assoc("rpc", rpc, cdb)
+                    const newDB = compose(
+                      assoc("dre", dre),
+                      assoc("rpc", rpc)
+                    )(cdb)
                     updateDB(newDB)
                     setCurrentDB(newDB)
                     setAddGRPC(false)
@@ -155,7 +171,8 @@ export default inject(
                       newHttp === "https://" ? "Mainnet" : "Localhost",
                       rpc,
                       db,
-                      state
+                      state,
+                      dre
                     )
                   } else {
                     alert(

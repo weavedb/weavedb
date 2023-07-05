@@ -22,6 +22,7 @@ export default inject(
     setEditGRPC,
     editGRPC,
     setPresetRPC,
+    setPresetDRE,
     setNewRPCType,
     nodes,
     setNewHttp,
@@ -95,6 +96,7 @@ export default inject(
                             contractTxId: v.contractTxId,
                             port: port || 1820,
                             rpc: v.rpc,
+                            dre: v.dre,
                           })
                           let state = await fn(read)({
                             db,
@@ -117,7 +119,8 @@ export default inject(
                               v.network,
                               v.rpc,
                               null,
-                              state
+                              state,
+                              v.dre
                             )
                           } else {
                             isErr = true
@@ -276,9 +279,26 @@ export default inject(
                       gRPC Node
                     </Box>
                     <Box flex={1}>
-                      {(currentDB.rpc || "") === ""
-                        ? "None (Browser SDK)"
-                        : currentDB.rpc}
+                      {(currentDB.rpc || "") === "" ? (
+                        isNil(currentDB.dre) ? (
+                          "None (Browser SDK)"
+                        ) : (
+                          <Flex>
+                            DRE (
+                            <Box
+                              mx={1}
+                              as="a"
+                              target="_blank"
+                              href={`${currentDB.dre}?id=${contractTxId}&events=false`}
+                            >
+                              {currentDB.dre}
+                            </Box>
+                            )
+                          </Flex>
+                        )
+                      ) : (
+                        currentDB.rpc
+                      )}
                     </Box>
                     <Box
                       color="#999"
@@ -303,6 +323,7 @@ export default inject(
                           setNewRPCType("preset")
                           setPresetRPC(currentDB.rpc)
                         }
+                        setPresetDRE(currentDB.dre || null)
                         setNewRPC2(
                           isNil(currentDB.rpc)
                             ? ""
