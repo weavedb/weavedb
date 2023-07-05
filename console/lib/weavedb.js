@@ -239,6 +239,7 @@ export const setupWeaveDB = async ({
     }
   } else {
     _sdk = new SDK({
+      remoteStateSyncEnabled: !isNil(dre),
       remoteStateSyncSource: dre,
       network: network.toLowerCase(),
       port,
