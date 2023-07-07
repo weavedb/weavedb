@@ -1,6 +1,6 @@
 {
   "name": "weavedb-offchain",
-  "version": "0.26.4",
+  "version": "0.26.5",
   "main": "index.js",
   "license": "MIT",
   "dependencies": {

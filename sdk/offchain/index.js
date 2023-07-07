@@ -85,7 +85,9 @@ class OffChain extends Base {
     this.height = 0
   }
   async initialize() {
-    if (this.cache === "redis") {
+    if (typeof this.cache === "object") {
+      this.cache.initialize(this)
+    } else if (this.cache === "redis") {
       const cache = await this.redis_client.get(
         `${this.redis_prefix}state`,
         JSON.stringify(this.state)
@@ -139,7 +141,9 @@ class OffChain extends Base {
       try {
         tx = await this.handle(clone(this.state), { input: param }, sw)
         this.state = tx.state
-        if (this.cache === "redis") {
+        if (typeof this.cache === "object") {
+          this.cache.onWrite(tx, this)
+        } else if (this.cache === "redis") {
           await this.redis_client.set(
             `${this.redis_prefix}state`,
             JSON.stringify({
