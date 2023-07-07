@@ -128,7 +128,7 @@ export default inject(
           mb={3}
         >
           {map(v => <option value={v}>{v}</option>)(
-            isNil(port) ? ["Mainnet"] : networks
+            isNil(port) ? ["Mainnet", "Offchain"] : networks
           )}
         </Select>
         {deployMode === "Deploy" ? (

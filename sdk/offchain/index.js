@@ -1,39 +1,26 @@
-const { isNil, clone, mergeLeft } = require("ramda")
+const { tail, isNil, clone, mergeLeft } = require("ramda")
 const base = "weavedb-contracts"
 const { handle } = require(`${base}/weavedb/contract`)
 const { handle: handle_kv } = require(`${base}/weavedb-kv/contract`)
 const version = require(`${base}/weavedb/lib/version`)
 const version_kv = require(`${base}/weavedb-kv/lib/version`)
 const Base = require("weavedb-base")
-const arweave = require("arweave")
+let arweave = require("arweave")
+if (!isNil(arweave.default)) arweave = arweave.default
 const { createId } = require("@paralleldrive/cuid2")
 
 class OffChain extends Base {
-  constructor({ state = {}, cache = "memory", redis, type = 1 }) {
+  constructor({ state = {}, cache = "memory", type = 1, contractTxId }) {
     super()
     this.kvs = {}
+    this.network = "offchain"
     this.cache = cache
     this.type = type
     this.handle = this.type === 1 ? handle : handle_kv
-    if (cache === "redis") {
-      try {
-        const { createClient } = require("redis")
-        const opt = { url: redis?.url || null }
-        this.redis_client = createClient(opt)
-        this.redis_prefix = isNil(redis?.prefix)
-          ? "weavedb-offchain."
-          : `${redis.prefix}.`
-        this.redis_client.connect()
-      } catch (e) {
-        console.log(e)
-        this.cache = "memory"
-      }
-    }
-
     this.validity = {}
     this.txs = []
     this.arweave = arweave.init()
-    this.contractTxId = "offchain"
+    this.contractTxId = contractTxId || "offchain"
     this.domain = {
       name: "weavedb",
       version: "1",
@@ -85,21 +72,7 @@ class OffChain extends Base {
     this.height = 0
   }
   async initialize() {
-    if (typeof this.cache === "object") {
-      this.cache.initialize(this)
-    } else if (this.cache === "redis") {
-      const cache = await this.redis_client.get(
-        `${this.redis_prefix}state`,
-        JSON.stringify(this.state)
-      )
-      if (!isNil(cache)) {
-        try {
-          const json = JSON.parse(cache)
-          this.state = json.state
-          this.height = json.height
-        } catch (e) {}
-      }
-    }
+    if (typeof this.cache === "object") await this.cache.initialize(this)
   }
   getSW() {
     return {
@@ -130,8 +103,30 @@ class OffChain extends Base {
     return (await this.handle(clone(this.state), { input }, this.getSW()))
       .result
   }
+  async dryRead(state, queries) {
+    let results = []
+    for (const v of queries || []) {
+      let res = { success: false, err: null, result: null }
+      try {
+        res.result = (
+          await this.handle(
+            clone(state),
+            {
+              input: { function: v[0], query: tail(v) },
+            },
+            this.getSW()
+          )
+        ).result
+        res.success = true
+      } catch (e) {
+        res.err = e
+      }
+      results.push(res)
+    }
+    return results
+  }
 
-  async write(func, param, dryWrite, bundle, relay = false) {
+  async write(func, param, dryWrite, bundle, relay = false, onDryWrite) {
     if (relay) {
       return param
     } else {
@@ -141,17 +136,7 @@ class OffChain extends Base {
       try {
         tx = await this.handle(clone(this.state), { input: param }, sw)
         this.state = tx.state
-        if (typeof this.cache === "object") {
-          this.cache.onWrite(tx, this)
-        } else if (this.cache === "redis") {
-          await this.redis_client.set(
-            `${this.redis_prefix}state`,
-            JSON.stringify({
-              height: tx?.result?.block?.height || 0,
-              state: this.state,
-            })
-          )
-        }
+        if (typeof this.cache === "object") await this.cache.onWrite(tx, this)
       } catch (e) {
         //console.log(typeof e === "object" ? e.message : e)
         error = e
@@ -164,7 +149,14 @@ class OffChain extends Base {
         param,
         func,
       })
+      let results = []
+      if (error === null) {
+        if (!isNil(onDryWrite?.read)) {
+          results = await this.dryRead(this.state, onDryWrite.read || [])
+        }
+      }
       return {
+        results,
         originalTxId: tx?.result?.transaction?.id || null,
         transaction: tx?.result?.transaction || null,
         block: tx?.result?.block || null,
