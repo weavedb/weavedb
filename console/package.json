@@ -20,6 +20,7 @@
     "@dfinity/principal": "^0.14.1",
     "@emotion/react": "^11",
     "@emotion/styled": "^11",
+    "@paralleldrive/cuid2": "^2.2.1",
     "@simplewebauthn/browser": "^7.2.0",
     "@simplewebauthn/server": "^7.2.0",
     "@uiw/react-textarea-code-editor": "^2.1.1",
@@ -52,6 +53,7 @@
     "warp-contracts-plugin-deploy": "^1.0.0",
     "weavedb-client": "^0.27.0",
     "weavedb-contracts": "^0.26.0",
+    "weavedb-offchain": "^0.26.12",
     "weavedb-sdk": "^0.27.26",
     "yargs-parser": "^21.1.1"
   }
