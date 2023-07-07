@@ -25,8 +25,8 @@
     "redis": "^4.6.4",
     "tweetnacl": "^1.0.3",
     "weavedb-node-client": "^0.25.0",
-    "weavedb-offchain": "^0.25.1",
-    "weavedb-sdk-node": "^0.26.0",
+    "weavedb-offchain": "^0.26.4",
+    "weavedb-sdk-node": "^0.27.25",
     "yargs": "^17.6.2"
   },
   "devDependencies": {
