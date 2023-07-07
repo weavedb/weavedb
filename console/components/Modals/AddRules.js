@@ -171,7 +171,6 @@ export default inject(
                     } else {
                       setNewRules(`{"allow write": true}`)
                       setAddRules(false)
-
                       if (isNil(editRules)) {
                         setCollections(res.results[0].result)
                       } else {
@@ -179,6 +178,7 @@ export default inject(
                       }
                     }
                   } catch (e) {
+                    console.log(e)
                     alert("Something went wrong")
                   }
                   set(null, "loading")
