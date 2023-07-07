@@ -3030,6 +3030,13 @@
   dependencies:
     "@noble/hashes" "^1.1.5"
 
+"@paralleldrive/cuid2@^2.2.1":
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/@paralleldrive/cuid2/-/cuid2-2.2.1.tgz#e7c11bad9452b36ef5ad1a834b14910eb0fe4cec"
+  integrity sha512-GJhHYlMhyT2gWemDL7BGMWfTNhspJKkikLKh9wAy3z4GTTINvTYALkUd+eGQK7aLeVkVzPuSA0VCT3H5eEWbbw==
+  dependencies:
+    "@noble/hashes" "^1.1.5"
+
 "@peculiar/asn1-android@^2.3.3":
   version "2.3.6"
   resolved "https://registry.yarnpkg.com/@peculiar/asn1-android/-/asn1-android-2.3.6.tgz#20363c23bc5b9a91f7ffd80d7c3842dccff8c20b"
@@ -11853,6 +11860,18 @@ weavedb-contracts@^0.27.9:
     ramda "^0.28.0"
     wasmbuilder "^0.0.16"
     wasmcurves "^0.2.1"
+
+weavedb-offchain@^0.26.12:
+  version "0.26.12"
+  resolved "https://registry.yarnpkg.com/weavedb-offchain/-/weavedb-offchain-0.26.12.tgz#7b0caa4aca612562370c1aa660729d3ecb406e4c"
+  integrity sha512-hZOVgOmyHis4s9yP7CXCRpLcTpGjLbqlkedkofsNQcr2SWpCfBBDoxnlXo+wY2ZoHfkZAtuTHQulIZyiOvSnzg==
+  dependencies:
+    "@metamask/legacy-web3" "^2.0.0"
+    "@paralleldrive/cuid2" "^2.2.0"
+    arweave "^1.11.4"
+    ramda "^0.28.0"
+    weavedb-base "^0.27.2"
+    weavedb-contracts "^0.27.9"
 
 weavedb-sdk@^0.27.26:
   version "0.27.26"

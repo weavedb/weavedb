@@ -435,7 +435,6 @@ export default inject(
         set(null, "temp_current_all")
       }
     }, [newNetwork, addInstance])
-
     const owners = isNil(state)
       ? []
       : is(Array, state.owner)
