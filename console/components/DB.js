@@ -280,7 +280,9 @@ export default inject(
                     </Box>
                     <Box flex={1}>
                       {(currentDB.rpc || "") === "" ? (
-                        isNil(currentDB.dre) ? (
+                        currentDB.network === "Offchain" ? (
+                          "Offchain"
+                        ) : isNil(currentDB.dre) ? (
                           "None (Local Cache)"
                         ) : (
                           <Flex>
@@ -300,45 +302,47 @@ export default inject(
                         currentDB.rpc
                       )}
                     </Box>
-                    <Box
-                      color="#999"
-                      sx={{
-                        cursor: "pointer",
-                        ":hover": {
-                          opacity: 0.75,
-                          color: "#6441AF",
-                        },
-                      }}
-                      onClick={async e => {
-                        e.stopPropagation()
-                        const rpcs = compose(
-                          uniq,
-                          concat(preset_rpcs),
-                          pluck("rpc")
-                        )(nodes)
-                        if (
-                          !isNil(currentDB.rpc) &&
-                          includes(currentDB.rpc)(rpcs)
-                        ) {
-                          setNewRPCType("preset")
-                          setPresetRPC(currentDB.rpc)
-                        }
-                        setPresetDRE(currentDB.dre || null)
-                        setNewRPC2(
-                          isNil(currentDB.rpc)
-                            ? ""
-                            : currentDB.rpc.replace(/^http[s]{0,1}:\/\//i, "")
-                        )
-                        setNewHttp(
-                          /^http:\/\//.test(currentDB.rpc || "")
-                            ? "http://"
-                            : "https://"
-                        )
-                        setAddGRPC()
-                      }}
-                    >
-                      <Box as="i" className="fas fa-edit" />
-                    </Box>
+                    {currentDB.network === "Offchain" ? null : (
+                      <Box
+                        color="#999"
+                        sx={{
+                          cursor: "pointer",
+                          ":hover": {
+                            opacity: 0.75,
+                            color: "#6441AF",
+                          },
+                        }}
+                        onClick={async e => {
+                          e.stopPropagation()
+                          const rpcs = compose(
+                            uniq,
+                            concat(preset_rpcs),
+                            pluck("rpc")
+                          )(nodes)
+                          if (
+                            !isNil(currentDB.rpc) &&
+                            includes(currentDB.rpc)(rpcs)
+                          ) {
+                            setNewRPCType("preset")
+                            setPresetRPC(currentDB.rpc)
+                          }
+                          setPresetDRE(currentDB.dre || null)
+                          setNewRPC2(
+                            isNil(currentDB.rpc)
+                              ? ""
+                              : currentDB.rpc.replace(/^http[s]{0,1}:\/\//i, "")
+                          )
+                          setNewHttp(
+                            /^http:\/\//.test(currentDB.rpc || "")
+                              ? "http://"
+                              : "https://"
+                          )
+                          setAddGRPC()
+                        }}
+                      >
+                        <Box as="i" className="fas fa-edit" />
+                      </Box>
+                    )}
                   </Flex>
                   <Flex align="center" p={2} px={3}>
                     <Box mr={2} px={3} bg="#ddd" sx={{ borderRadius: "3px" }}>
