@@ -37,45 +37,6 @@ const {
 const { parseQuery } = require("weavedb-contracts/weavedb/lib/utils")
 const md5 = require("md5")
 const { createId } = require("@paralleldrive/cuid2")
-const is_data = [
-  "set",
-  "setSchema",
-  "setRules",
-  "addIndex",
-  "removeIndex",
-  "add",
-  "update",
-  "upsert",
-  "addTrigger",
-  "removeTrigger",
-]
-const no_paths = [
-  "nonce",
-  "ids",
-  "getCrons",
-  "getAlgorithms",
-  "getLinkedContract",
-  "getOwner",
-  "getAddressLink",
-  "getRelayerJob",
-  "listRelayerJobs",
-  "getEvolve",
-  "getInfo",
-  "addCron",
-  "removeCron",
-  "setAlgorithms",
-  "addRelayerJob",
-  "removeRelayerJob",
-  "linkContract",
-  "evolve",
-  "migrate",
-  "setCanEvolve",
-  "setSecure",
-  "addOwner",
-  "removeOwner",
-  "addAddressLink",
-  "removeAddressLink",
-]
 let states = {}
 let cachedStates = {}
 let timeouts = {}
@@ -1066,83 +1027,6 @@ class SDK extends Base {
 
   async con(...query) {
     return await this.subscribe(true, ...query)
-  }
-
-  static getPath(func, query) {
-    if (includes(func, no_paths)) return []
-    let _path = clone(query)
-    if (includes(func, is_data)) _path = tail(_path)
-    return splitWhen(complement(is)(String), _path)[0]
-  }
-
-  static getCollectionPath(func, query) {
-    let _query = SDK.getPath(func, query)
-    const len = _query.length
-    return len === 0
-      ? "__root__"
-      : (len % 2 === 0 ? init(_query) : _query).join("/")
-  }
-
-  static getDocPath(func, query) {
-    let _query = SDK.getPath(func, query)
-    const len = _query.length
-    return len === 0 ? "__root__" : len % 2 === 1 ? "__col__" : _query.join("/")
-  }
-
-  static getKey(contractTxId, func, query, prefix) {
-    let colPath = SDK.getCollectionPath(func, query)
-    let docPath = SDK.getDocPath(func, query)
-    let key = [
-      contractTxId,
-      /^__.*__$/.test(colPath) ? colPath : md5(colPath),
-      /^__.*__$/.test(docPath) ? docPath : md5(docPath),
-      func === "get" ? "cget" : func,
-      md5(query),
-    ]
-    if (!isNil(prefix)) key.unshift(prefix)
-    return key.join(".")
-  }
-
-  static getKeyInfo(contractTxId, query, prefix = null) {
-    const path = SDK.getPath(query.function, query.query)
-    const len = path.length
-    return {
-      type: len === 0 ? "root" : len % 2 === 0 ? "doc" : "collection",
-      path,
-      collectionPath: SDK.getCollectionPath(query.function, query.query),
-      docPath: SDK.getDocPath(query.function, query.query),
-      contractTxId,
-      prefix,
-      func: query.function === "get" ? "cget" : query.function,
-      query: query.query,
-      key: SDK.getKey(contractTxId, query.function, query.query, prefix),
-    }
-  }
-
-  static getKeys(contractTxId, query, prefix = null) {
-    let keys = []
-    try {
-      if (query.function === "batch") {
-        keys = map(
-          v =>
-            SDK.getKeyInfo(
-              contractTxId,
-              { function: v[0], query: tail(v) },
-              prefix
-            ),
-          query.query
-        )
-      } else {
-        const q =
-          query.function === "relay"
-            ? SDK.getKeyInfo(contractTxId, query.query[1], prefix)
-            : SDK.getKeyInfo(contractTxId, query, prefix)
-        keys.push(q)
-      }
-    } catch (e) {
-      console.log(e)
-    }
-    return keys
   }
 
   async pubsubReceived(state, query, input) {

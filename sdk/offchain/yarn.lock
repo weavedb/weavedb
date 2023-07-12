@@ -1291,10 +1291,10 @@ wasmcurves@^0.2.1:
   dependencies:
     wasmbuilder "0.0.16"
 
-weavedb-base@^0.27.2:
-  version "0.27.2"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.27.2.tgz#1cabe578a95c74818f789f26b47e328218fd44b2"
-  integrity sha512-mCN0V8HNjGZKZuZ4Qkab3rHAj4UwCDY3tWw+K804M+her2tjTOifVYSlmLmq7qBVsqSuGgbcRSAmLF5UDZz5VQ==
+weavedb-base@^0.27.4:
+  version "0.27.4"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.27.4.tgz#add67a60585f6c56135d775035907632767cec23"
+  integrity sha512-bDTRJcXrfVig+E3RD23U1LDq2im8MjKRE4tLSal6cwi1aDhdaWFL8+OFLgJAb/hBAKUx62BfPD+xcAsEiC81GA==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"
@@ -1302,6 +1302,7 @@ weavedb-base@^0.27.2:
     eth-crypto "^2.3.0"
     ethereumjs-util "^7.1.5"
     ethers "5.7.2"
+    md5 "^2.3.0"
     pako "^2.1.0"
     ramda "^0.28.0"
 
