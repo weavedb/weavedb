@@ -19,6 +19,7 @@ const Client = require("weavedb-node-client")
 const { execAdmin } = require("./admin")
 const { Node } = require("./Node")
 const path = require("path")
+
 class Gateway extends Node {
   constructor({ conf, port, port_manager = 9091 }) {
     super({ conf, port })
