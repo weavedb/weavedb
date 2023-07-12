@@ -6,6 +6,7 @@
     "node": ">=18.13"
   },
   "scripts": {
+    "test": "mocha",
     "codegen": "grpc_tools_node_protoc --js_out=import_style=commonjs,binary:./static_codegen/ --grpc_out=./static_codegen/ --descriptor_set_out=./static_codegen/descriptor_set.bin --include_imports --plugin=protoc-gen-grpc=`which grpc_tools_node_protoc_plugin`  weavedb.proto",
     "dev": "node-dev --respawn server.js",
     "prettier": "prettier *.js --write"
@@ -17,15 +18,19 @@
     "@metamask/eth-sig-util": "^5.0.2",
     "archiver": "^5.3.1",
     "aws-sdk": "^2.1306.0",
+    "chai": "^4.3.7",
     "extract-zip": "^2.0.1",
     "google-protobuf": "~3.14.0",
     "grpc-server-reflection": "^0.1.5",
+    "lmdb": "^2.8.2",
     "md5": "^2.3.0",
+    "mocha": "^10.2.0",
     "ramda": "^0.28.0",
     "redis": "^4.6.4",
     "tweetnacl": "^1.0.3",
+    "weavedb-client": "^0.27.0",
     "weavedb-node-client": "^0.25.0",
-    "weavedb-offchain": "^0.26.4",
+    "weavedb-offchain": "^0.26.14",
     "weavedb-sdk-node": "^0.27.25",
     "yargs": "^17.6.2"
   },

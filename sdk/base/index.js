@@ -2,6 +2,7 @@ const pako = require("pako")
 const elliptic = require("elliptic")
 const EthCrypto = require("eth-crypto")
 const { providers, Contract, utils } = require("ethers")
+const md5 = require("md5")
 
 const {
   startAuthentication,
@@ -26,6 +27,10 @@ const {
   last,
   isNil,
   mergeLeft,
+  clone,
+  tail,
+  map,
+  splitWhen,
 } = require("ramda")
 const ethSigUtil = require("@metamask/eth-sig-util")
 const { privateToAddress } = require("ethereumjs-util")
@@ -33,6 +38,47 @@ const EIP712Domain = [
   { name: "name", type: "string" },
   { name: "version", type: "string" },
   { name: "verifyingContract", type: "string" },
+]
+
+const is_data = [
+  "set",
+  "setSchema",
+  "setRules",
+  "addIndex",
+  "removeIndex",
+  "add",
+  "update",
+  "upsert",
+  "addTrigger",
+  "removeTrigger",
+]
+
+const no_paths = [
+  "nonce",
+  "ids",
+  "getCrons",
+  "getAlgorithms",
+  "getLinkedContract",
+  "getOwner",
+  "getAddressLink",
+  "getRelayerJob",
+  "listRelayerJobs",
+  "getEvolve",
+  "getInfo",
+  "addCron",
+  "removeCron",
+  "setAlgorithms",
+  "addRelayerJob",
+  "removeRelayerJob",
+  "linkContract",
+  "evolve",
+  "migrate",
+  "setCanEvolve",
+  "setSecure",
+  "addOwner",
+  "removeOwner",
+  "addAddressLink",
+  "removeAddressLink",
 ]
 
 const lens = {
@@ -982,6 +1028,83 @@ class Base {
     let nocache = this.nocache_default || false
     ;({ nocache, query } = this.parseQuery(func, query))
     return await this.read({ function: func, query }, nocache)
+  }
+
+  static getPath(func, query) {
+    if (includes(func, no_paths)) return []
+    let _path = clone(query)
+    if (includes(func, is_data)) _path = tail(_path)
+    return splitWhen(complement(is)(String), _path)[0]
+  }
+
+  static getCollectionPath(func, query) {
+    let _query = Base.getPath(func, query)
+    const len = _query.length
+    return len === 0
+      ? "__root__"
+      : (len % 2 === 0 ? init(_query) : _query).join("/")
+  }
+
+  static getDocPath(func, query) {
+    let _query = Base.getPath(func, query)
+    const len = _query.length
+    return len === 0 ? "__root__" : len % 2 === 1 ? "__col__" : _query.join("/")
+  }
+
+  static getKey(contractTxId, func, query, prefix) {
+    let colPath = Base.getCollectionPath(func, query)
+    let docPath = Base.getDocPath(func, query)
+    let key = [
+      contractTxId,
+      /^__.*__$/.test(colPath) ? colPath : md5(colPath),
+      /^__.*__$/.test(docPath) ? docPath : md5(docPath),
+      func === "get" ? "cget" : func,
+      md5(query),
+    ]
+    if (!isNil(prefix)) key.unshift(prefix)
+    return key.join(".")
+  }
+
+  static getKeyInfo(contractTxId, query, prefix = null) {
+    const path = Base.getPath(query.function, query.query)
+    const len = path.length
+    return {
+      type: len === 0 ? "root" : len % 2 === 0 ? "doc" : "collection",
+      path,
+      collectionPath: Base.getCollectionPath(query.function, query.query),
+      docPath: Base.getDocPath(query.function, query.query),
+      contractTxId,
+      prefix,
+      func: query.function === "get" ? "cget" : query.function,
+      query: query.query,
+      key: Base.getKey(contractTxId, query.function, query.query, prefix),
+    }
+  }
+
+  static getKeys(contractTxId, query, prefix = null) {
+    let keys = []
+    try {
+      if (query.function === "batch") {
+        keys = map(
+          v =>
+            Base.getKeyInfo(
+              contractTxId,
+              { function: v[0], query: tail(v) },
+              prefix
+            ),
+          query.query
+        )
+      } else {
+        const q =
+          query.function === "relay"
+            ? Base.getKeyInfo(contractTxId, query.query[1], prefix)
+            : Base.getKeyInfo(contractTxId, query, prefix)
+        keys.push(q)
+      }
+    } catch (e) {
+      console.log(e)
+    }
+    return keys
   }
 }
 
