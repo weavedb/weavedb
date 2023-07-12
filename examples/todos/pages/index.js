@@ -1,12 +1,10 @@
-import { useRef, useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import lf from "localforage"
 import { isNil, map } from "ramda"
 import SDK from "weavedb-sdk"
-import { Buffer } from "buffer"
 import { ethers } from "ethers"
 import { Box, Flex, Input, ChakraProvider } from "@chakra-ui/react"
 
-let db
 const contractTxId = WEAVEDB_CONTRACT_TX_ID
 
 export default function App() {
@@ -15,13 +13,14 @@ export default function App() {
   const [tab, setTab] = useState("All")
   const [initDB, setInitDB] = useState(false)
   const tabs = isNil(user) ? ["All"] : ["All", "Yours"]
+  const [db, setDb] = useState(null)
 
   const setupWeaveDB = async () => {
-    window.Buffer = Buffer
-    db = new SDK({
+    const _db = new SDK({
       contractTxId,
     })
-    await db.initializeWithoutWallet()
+    await _db.init()
+    setDb(_db)
     setInitDB(true)
   }
   const getTasks = async () => {
@@ -38,7 +37,7 @@ export default function App() {
     )
   }
 
-  const addTask = async task => {
+  const addTask = async (task) => {
     await db.add(
       {
         task,
@@ -52,7 +51,7 @@ export default function App() {
     await getTasks()
   }
 
-  const completeTask = async id => {
+  const completeTask = async (id) => {
     await db.update(
       {
         done: true,
@@ -64,7 +63,7 @@ export default function App() {
     await getTasks()
   }
 
-  const deleteTask = async id => {
+  const deleteTask = async (id) => {
     await db.delete("tasks", id, user)
     await getTasks()
   }
@@ -169,8 +168,9 @@ export default function App() {
 
   const Tabs = () => (
     <Flex justify="center" style={{ display: "flex" }} mb={4}>
-      {map(v => (
+      {map((v) => (
         <Box
+          key={v}
           mx={2}
           onClick={() => setTab(v)}
           color={tab === v ? "red" : ""}
@@ -184,8 +184,13 @@ export default function App() {
   )
 
   const Tasks = () =>
-    map(v => (
-      <Flex sx={{ border: "1px solid #ddd", borderRadius: "5px" }} p={3} my={1}>
+    map((v) => (
+      <Flex
+        key={v.id}
+        sx={{ border: "1px solid #ddd", borderRadius: "5px" }}
+        p={3}
+        my={1}
+      >
         <Box
           w="30px"
           textAlign="center"
