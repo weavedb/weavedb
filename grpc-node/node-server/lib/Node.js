@@ -23,7 +23,7 @@ const {
   isNil,
 } = require("ramda")
 const grpc = require("@grpc/grpc-js")
-const {addReflection} = require('grpc-server-reflection')
+const { addReflection } = require("grpc-server-reflection")
 const protoLoader = require("@grpc/proto-loader")
 const PROTO_PATH = __dirname + "/../weavedb.proto"
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
@@ -33,6 +33,7 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   defaults: true,
   oneofs: true,
 })
+
 const weavedb = grpc.loadPackageDefinition(packageDefinition).weavedb
 const SDK = require("weavedb-sdk-node")
 
@@ -70,6 +71,9 @@ class Node {
         this.conf.admin.owner
       )
       console.log(`Admin Account: ${this.admin}`)
+
+      // cache doesn't have to be redis?
+      // this is offchain <= need redis for sync
       this.db = new DB({
         state: { owner: this.admin, secure: false },
         cache: "redis",
@@ -154,6 +158,7 @@ class Node {
     }
     return allowed
   }
+
   async setSDK(txid, old, no_snapshot) {
     let _conf = clone(this.conf)
     _conf.contractTxId = txid
@@ -176,29 +181,27 @@ class Node {
     if (__conf.cache === "redis") {
       __conf.redis ||= {}
       __conf.redis.client = this.redis
-      __conf.progress = async input => {
-        this.progresses[txid].current = input.currentInteraction
-        this.progresses[txid].all = input.allInteractions
-        if (this.last_reported < Date.now() - 1000 * 10) {
-          this.last_reported = Date.now()
-          this.calcProgress()
-        }
-        if (
-          (this.progresses[txid].last_checked || 0) <
-          Date.now() - 1000 * 10
-        ) {
-          this.progresses[txid].last_checked = Date.now()
-          await this.db.set(this.progresses[txid], "contracts", txid, {
-            ar: this.conf.admin.owner,
-          })
-        }
-      }
-      __conf.logLevel = "none"
-      __conf.subscribe = this.conf.admin?.contractTxId === txid
     }
+    __conf.progress = async input => {
+      this.progresses[txid].current = input.currentInteraction
+      this.progresses[txid].all = input.allInteractions
+      if (this.last_reported < Date.now() - 1000 * 10) {
+        this.last_reported = Date.now()
+        this.calcProgress()
+      }
+      if ((this.progresses[txid].last_checked || 0) < Date.now() - 1000 * 10) {
+        this.progresses[txid].last_checked = Date.now()
+        await this.db.set(this.progresses[txid], "contracts", txid, {
+          ar: this.conf.admin.owner,
+        })
+      }
+    }
+    __conf.logLevel = "none"
+    __conf.subscribe = this.conf.admin?.contractTxId === txid
     this.sdks[txid] = new SDK(__conf)
     if (isNil(_conf.wallet)) await this.sdks[txid].initializeWithoutWallet()
   }
+
   calcProgress() {
     const len = keys(this.progresses).length
     const ongoing = map(
@@ -222,6 +225,7 @@ class Node {
     }
     return { len, err, done, all, current }
   }
+
   async readState(txid, attempt = 1) {
     try {
       await this.sdks[txid].readState()
@@ -234,6 +238,7 @@ class Node {
       }
     }
   }
+
   async initSDK(v, no_snapshot = false) {
     console.log("initializing contract..." + v)
     let [txid, old] = v.split("@")
@@ -255,6 +260,7 @@ class Node {
     }
     await this.updateState(txid, old, no_snapshot)
   }
+
   setUpdate(txid, old) {
     clearTimeout(this.timeouts[txid])
     this.timeouts[txid] = setTimeout(async () => {
@@ -262,6 +268,7 @@ class Node {
       await this.updateState(txid, old, false, true, true)
     }, this.conf.snapshot_span || 1000 * 60 * 60 * 3)
   }
+
   async healthcheck(txid) {
     try {
       const json = await fetch(
@@ -310,10 +317,12 @@ class Node {
       }
     } catch (e) {}
   }
+
   async saveSnapShot(txid, suffix = null) {
     if (this.isLmdb) await this.snapshot.save(txid, undefined, suffix)
     if (this.isRedis) await this.snapshot.save(txid, this.redis, suffix)
   }
+
   async updateState(txid, old, no_snapshot, no_admin, update) {
     try {
       if (isNil(this.progresses[txid])) {
@@ -366,6 +375,7 @@ class Node {
     }
     this.setUpdate(txid, old)
   }
+
   async errSDK(txid, e) {
     console.log(`sdk(${txid}) error!`)
     console.log(e)
@@ -375,6 +385,7 @@ class Node {
       ar: this.conf.admin.owner,
     })
   }
+
   startServer() {
     const server = new grpc.Server()
     server.addService(weavedb.DB.service, {
@@ -384,7 +395,7 @@ class Node {
       `0.0.0.0:${this.port}`,
       grpc.ServerCredentials.createInsecure(),
       () => {
-        addReflection(server, './static_codegen/descriptor_set.bin')
+        addReflection(server, "./static_codegen/descriptor_set.bin")
         server.start()
       }
     )
