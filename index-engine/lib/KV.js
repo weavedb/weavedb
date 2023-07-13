@@ -1,6 +1,7 @@
 const { isNil } = require("ramda")
 const lf = require("localforage")
 const shortid = require("shortid")
+
 class KV {
   constructor(prefix) {
     this.prefix = prefix ?? shortid.generate()

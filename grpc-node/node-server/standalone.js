@@ -54,7 +54,6 @@ class Standalone {
 
   parseQuery(call, callback) {
     const res = (err, result = null) => {
-      console.log(result)
       callback(null, {
         result: isNil(result) ? null : JSON.stringify(result),
         err,
@@ -69,6 +68,7 @@ class Standalone {
   async query(call, callback) {
     let parsed = this.parseQuery(call, callback)
     const { res, nocache, txid, func, query, isAdmin } = parsed
+    //return res(null, null)
     this.execUser(parsed)
   }
   async execUser(parsed) {

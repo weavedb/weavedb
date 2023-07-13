@@ -2,8 +2,10 @@ const { tail, isNil, clone, mergeLeft } = require("ramda")
 const base = "weavedb-contracts"
 const { handle } = require(`${base}/weavedb/contract`)
 const { handle: handle_kv } = require(`${base}/weavedb-kv/contract`)
+const { handle: handle_bpt } = require(`${base}/weavedb-bpt/contract`)
 const version = require(`${base}/weavedb/lib/version`)
 const version_kv = require(`${base}/weavedb-kv/lib/version`)
+const version_bpt = require(`${base}/weavedb-bpt/lib/version`)
 const Base = require("weavedb-base")
 let arweave = require("arweave")
 if (!isNil(arweave.default)) arweave = arweave.default
@@ -16,7 +18,8 @@ class OffChain extends Base {
     this.network = "offchain"
     this.cache = cache
     this.type = type
-    this.handle = this.type === 1 ? handle : handle_kv
+    this.handle =
+      this.type === 1 ? handle : this.type === 2 ? handle_kv : handle_bpt
     this.validity = {}
     this.txs = []
     this.arweave = arweave.init()
@@ -50,8 +53,26 @@ class OffChain extends Base {
             },
             contracts: { ethereum: "ethereum", dfinity: "dfinity" },
           }
-        : {
+        : this.type === 2
+        ? {
             version: version_kv,
+            canEvolve: true,
+            evolve: null,
+            secure: true,
+            auth: {
+              algorithms: ["secp256k1", "secp256k1-2", "ed25519", "rsa256"],
+              name: "weavedb",
+              version: "1",
+              links: {},
+            },
+            crons: {
+              lastExecuted: 0,
+              crons: {},
+            },
+            contracts: { ethereum: "ethereum", dfinity: "dfinity" },
+          }
+        : {
+            version: version_bpt,
             canEvolve: true,
             evolve: null,
             secure: true,
@@ -71,9 +92,11 @@ class OffChain extends Base {
     this.initialState = clone(this.state)
     this.height = 0
   }
+
   async initialize() {
     if (typeof this.cache === "object") await this.cache.initialize(this)
   }
+
   getSW() {
     return {
       kv: {
@@ -99,10 +122,12 @@ class OffChain extends Base {
       },
     }
   }
+
   async read(input) {
     return (await this.handle(clone(this.state), { input }, this.getSW()))
       .result
   }
+
   async dryRead(state, queries) {
     let results = []
     for (const v of queries || []) {
