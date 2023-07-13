@@ -1,5 +1,8 @@
 const { expect } = require("chai")
+const BPT = require("../sdk/contracts/weavedb-bpt/lib/BPT")
 const {
+  range,
+  sortBy,
   isNil,
   includes,
   pluck,
@@ -11,6 +14,30 @@ const {
   last,
   flatten,
 } = require("ramda")
+
+const rand = n => Math.floor(Math.random() * n)
+const randO = obj => obj[Math.floor(Math.random() * obj.length)]
+class KV {
+  constructor() {
+    this.store = {}
+  }
+  async get(key, _prefix = "") {
+    return this.store[key]
+  }
+  async put(key, val, _prefix = "", nosave = false) {
+    this.store[key] = val
+  }
+  async del(key, _prefix = "", nosave = false) {
+    delete this.store[key]
+  }
+}
+
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[array[i], array[j]] = [array[j], array[i]]
+  }
+}
 
 const build = store => {
   let _s = typeof store === "string" ? JSON.parse(store) : store
@@ -202,4 +229,58 @@ const testRanges = async ({ tree, vals }) => {
   }
 }
 
-module.exports = { isErr, testInserts, testRanges }
+const fuzztest = async (items, type, sorter) => {
+  for (let v of range(0, 100)) {
+    const order = Math.floor(Math.random() * 100) + 3
+    const kv = new KV()
+    const tree = new BPT(order, type, kv)
+
+    const count = Math.floor(Math.random() * (items.length - 10)) + 10
+    shuffle(items)
+    sorter ??= sortBy(v => v)
+    const sorted = sorter(items.slice(0, count))
+    let vals = map(v => [`key-${v}`, items[v]])(range(0, count))
+    await testInserts({ vals, order, tree })
+    const tests = map(() => {
+      const startAfter = rand(count - 1)
+      switch (rand(4)) {
+        case 0:
+          const startAt = rand(count)
+          const limit = rand(count - startAt) + 1
+          return [
+            { limit, startAt: sorted[startAt] },
+            sorted.slice(startAt, startAt + limit),
+          ]
+        case 1:
+          const limit2 = rand(count - startAfter) + 1
+          return [
+            { limit: limit2, startAfter: sorted[startAfter] },
+            sorted.slice(startAfter + 1, startAfter + 1 + limit2),
+          ]
+        case 2:
+          const endAt = rand(count - startAfter - 1) + 1 + startAfter
+          return [
+            { startAfter: sorted[startAfter], endAt: sorted[endAt] },
+            sorted.slice(startAfter + 1, endAt + 1),
+          ]
+        case 3:
+          const endBefore = rand(count - startAfter) + 1 + startAfter
+          return [
+            { startAfter: sorted[startAfter], endBefore: sorted[endBefore] },
+            sorted.slice(startAfter + 1, endBefore),
+          ]
+      }
+    })(range(0, 100))
+    await testRanges({ tree, vals: tests })
+  }
+}
+
+module.exports = {
+  isErr,
+  fuzztest,
+  testInserts,
+  testRanges,
+  rand,
+  randO,
+  shuffle,
+}
