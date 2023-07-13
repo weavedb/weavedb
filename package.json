@@ -58,7 +58,7 @@
   },
   "scripts": {
     "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet QhbIPso1lx8wbHx4c7225L9PkNYh-Djp6N_YCjqdr_E 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w",
-    "test": "yarn build && mocha test/offchain.js ; mocha test/offchain-kv.js",
+    "test": "yarn build && mocha test/offchain.js; mocha test/offchain-kv.js; mocha test/offchain-bpt.js",
     "mocha": "yarn build && mocha",
     "build": "yarn clean && node build.js && npm run cp",
     "clean": "rimraf ./dist",
