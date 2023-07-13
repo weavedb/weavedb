@@ -197,6 +197,7 @@ export default function Home() {
     len = _len
     return _err
   }
+
   const delData = async key => {
     const _keys = keys(ids)
     key = isNil(key) ? _keys[Math.floor(Math.random() * _keys.length)] : key
@@ -287,10 +288,9 @@ export default function Home() {
     setStore(JSON.stringify(tree.kv.store))
     return _err
   }
+
   const del = async key => {
-    if (!isNil(col)) {
-      return await delData(key)
-    }
+    if (!isNil(col)) return await delData(key)
     const _keys = keys(ids)
     key = isNil(key) ? _keys[Math.floor(Math.random() * _keys.length)] : key
     last_id = key
@@ -339,10 +339,9 @@ export default function Home() {
       init = true
       reset()
     }
-    ;(async () => {
-      setCols((await lf.getItem("cols")) || [])
-    })()
+    ;(async () => setCols((await lf.getItem("cols")) || []))()
   }, [])
+
   useEffect(() => {
     ;(async () => {
       if (!isNil(col)) {
@@ -417,41 +416,6 @@ export default function Home() {
             await getNode(root)
           }
         }
-        /*
-        if (typeof _data === "object") {
-          let _indexes = clone(indexes)
-          for (const k in _data) {
-            const key = `${k}:asc`
-            if (isNil(indexes[key])) _indexes[key] = { order: 5, key }
-            if (key === index) {
-            await tree.insert(id, _data,true)
-            } else {
-              const kv = new KV(`index.${col}/`)
-              const _tree = new BPT(5, [[k, "asc"]], kv, `${k}/asc`,function (stats) {})
-              await _tree.insert(id, _data,true)
-            }
-          }
-          await lf.setItem(`indexes-${col}`, _indexes)
-          setIndexes(_indexes)
-          for (const k in indexes) {
-            const fields = keys(_data)
-            const i_fields = compose(
-              without(["__name__"]),
-              map(v => v.split(":")[0])
-            )(k.split("/"))
-            const diff = difference(i_fields, fields)
-            if (i_fields.length > 1 && diff.length === 0) {
-              const kv = new KV(`index.${col}/`)
-              const sort_fields = map(v => v.split(":"))(k.split("/"))
-              if (k === index) {
-              await tree.insert(id, _data,true)
-              } else {
-              const tree = new BPT(5, sort_fields, kv, `${k}/asc`,function (stats) {})
-              await tree.insert(id, _data,true)
-              }
-            }
-          }
-          }*/
         await lf.setItem(index_key, _indexes)
         setStore(JSON.stringify(tree.kv.store))
         setHis(_his2)
