@@ -901,6 +901,7 @@ export default function Home() {
     setStore(JSON.stringify(tree.kv.store))
     return _err
   }
+
   const addNumber = async () => {
     if (number !== "") {
       await insert(number * 1)

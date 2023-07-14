@@ -35,8 +35,10 @@ class BPT {
     this.min_vals = Math.ceil(this.order / 2) - 1
     this.prefix = prefix
   }
+
   get = async (key, stats, _prefix) =>
     stats?.[key] ?? (await this.kv.get(key, _prefix ?? `${this.prefix}/`))
+
   put = async (key, val, stats, _prefix, nosave) => {
     if (!isNil(stats)) {
       stats[key] = val
@@ -44,6 +46,7 @@ class BPT {
       await this.kv.put(key, val, _prefix ?? `${this.prefix}/`, nosave)
     }
   }
+
   del = async (key, stats, _prefix, nosave) => {
     if (!isNil(stats)) {
       stats[key] = { __del__: true }
@@ -51,6 +54,7 @@ class BPT {
       await this.kv.del(key, _prefix ?? `${this.prefix}/`, nosave)
     }
   }
+
   putData = async (key, val, stats) => {
     if (!isNil(stats)) {
       stats[`data/${key}`] = val
@@ -58,6 +62,7 @@ class BPT {
       await this.put(`data/${key}`, val, stats, "")
     }
   }
+
   delData = async (key, stats) => {
     if (!isNil(stats)) {
       stats[`data/${key}`] = { __del__: true }
@@ -65,23 +70,31 @@ class BPT {
       await this.del(`data/${key}`, stats, "")
     }
   }
+
   putNode = async (node, stats) => await this.put(node.id, node, stats)
+
   data = async (key, cache = {}, stats) => {
     if (typeof cache[key] !== "undefined") return { key, val: cache[key] }
     let _data = (await this.get(`data/${key}`, stats, "")) ?? null
     cache[key] = _data
     return { key, val: _data }
   }
+
   root = async stats => (await this.get("root", stats)) ?? null
+
   setRoot = async (id, stats) => (await this.put("root", id, stats)) ?? null
+
   isOver = (node, plus = 0) => node.vals.length + plus > this.max_vals
+
   isUnder = (node, plus = 0) => node.vals.length + plus < this.min_vals
+
   wrap = (val, key) => {
     let obj = { val }
     if (!isNil(val.__name__)) obj.key = val.__name__
     if (!isNil(key)) obj.key = key
     return obj
   }
+
   compArr(va, vb) {
     const _va = is(Array, va) ? va : [va]
     const _vb = is(Array, vb) ? vb : [vb]
@@ -93,6 +106,7 @@ class BPT {
     }
     return 0
   }
+
   comp(a, b, null_last = false) {
     if (typeof this.sort_fields === "string") {
       return a.val === b.val ? 0 : a.val < b.val ? 1 : -1
@@ -870,6 +884,7 @@ class BPT {
     }
     return [isNewParent, parent]
   }
+
   pick(obj) {
     if (typeof this.sort_fields === "string") {
       return obj.val
