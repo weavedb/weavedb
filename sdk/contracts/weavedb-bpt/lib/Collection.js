@@ -48,6 +48,156 @@ class KV {
     delete this.store[key]
   }
 }
+const getIndexes = async (path, kvs, SW) => {
+  const kv = new KV(`${path.join("/")}/`, _KV(kvs, SW))
+  const _sort_fields = [["__name__", "asc"]]
+  const prefix = `${compose(join("/"), flatten)(_sort_fields)}`
+  const order = 100
+  const idtree = new BPT(order, _sort_fields, kv, prefix)
+  return (await kv.get("indexes")) || {}
+}
+
+const addIndex = async (sort_fields, path, kvs, SW) => {
+  let i = 0
+  for (let v of sort_fields) {
+    if (v[1] === "array") {
+      if (i !== 0) return
+    } else if (!includes(v[1], ["asc", "desc"])) {
+      return
+    }
+    i++
+  }
+  if (sort_fields.length <= 1) return
+  const kv = new KV(`${path.join("/")}/`, _KV(kvs, SW))
+  const _sort_fields = [["__name__", "asc"]]
+  const prefix = `${compose(join("/"), flatten)(_sort_fields)}`
+  const order = 100
+  const idtree = new BPT(order, _sort_fields, kv, prefix)
+  let __indexes = (await kv.get("indexes")) || {}
+  const newIndex = map(join(":"))(sort_fields).join("/")
+  if (!isNil(__indexes[newIndex])) return
+  let docs = await idtree.range()
+  const i_fields = compose(
+    without(["__name__"]),
+    map(v => v.split(":")[0])
+  )(newIndex.split("/"))
+  if (sort_fields[0][1] === "array") {
+    let array_indexes = {}
+    let kvs = {}
+    for (let _data of docs) {
+      const fields = keys(_data.val)
+      const diff = difference(i_fields, fields)
+      if (
+        i_fields.length > 0 &&
+        diff.length === 0 &&
+        is(Array, _data.val[i_fields[0]])
+      ) {
+        for (const v of _data.val[i_fields[0]]) {
+          const prefix = `${compose(join("/"), flatten)(tail(sort_fields))}`
+          const _md5 = md5(JSON.stringify(v))
+          const _prefix = `${sort_fields[0][0]}/array:${_md5}`
+          const key = `${_prefix}/${prefix}`
+          let _tree = null
+          const akey = `${sort_fields[0][0]}:array:${_md5}/${map(v =>
+            v.join(":")
+          )(tail(sort_fields)).join("/")}`
+          if (isNil(kvs[_md5])) {
+            array_indexes[_md5] = { order, key: akey }
+            _tree = new BPT(order, tail(sort_fields), kv, key)
+          } else {
+            _tree = kvs[_md5]
+          }
+          await _tree.insert(_data.key, _data.val, true)
+        }
+      }
+    }
+    __indexes[newIndex] = {
+      key: newIndex,
+      items: array_indexes,
+    }
+  } else {
+    __indexes[newIndex] = { order, key: newIndex }
+    const prefix = `${compose(join("/"), flatten)(sort_fields)}`
+    const tree = new BPT(order, sort_fields, kv, prefix)
+    for (let _data of docs) {
+      const fields = keys(_data.val)
+      const diff = difference(i_fields, fields)
+      if (i_fields.length > 0 && diff.length === 0) {
+        await tree.insert(_data.key, _data.val, true)
+      }
+    }
+  }
+  await kv.put("indexes", __indexes)
+}
+
+const removeIndex = async (sort_fields, path, kvs, SW) => {
+  let i = 0
+  for (let v of sort_fields) {
+    if (v[1] === "array") {
+      if (i !== 0) return
+    } else if (!includes(v[1], ["asc", "desc"])) {
+      return
+    }
+    i++
+  }
+  if (sort_fields.length <= 1) return
+  const kv = new KV(`${path.join("/")}/`, _KV(kvs, SW))
+  const _sort_fields = [["__name__", "asc"]]
+  const prefix = `${compose(join("/"), flatten)(_sort_fields)}`
+  const order = 100
+  const idtree = new BPT(order, _sort_fields, kv, prefix)
+  let __indexes = (await kv.get("indexes")) || {}
+  const newIndex = map(join(":"))(sort_fields).join("/")
+  if (isNil(__indexes[newIndex])) return
+  let docs = await idtree.range()
+  const i_fields = compose(
+    without(["__name__"]),
+    map(v => v.split(":")[0])
+  )(newIndex.split("/"))
+  if (sort_fields[0][1] === "array") {
+    let array_indexes = {}
+    let kvs = {}
+    for (let _data of docs) {
+      const fields = keys(_data.val)
+      const diff = difference(i_fields, fields)
+      if (
+        i_fields.length > 0 &&
+        diff.length === 0 &&
+        is(Array, _data.val[i_fields[0]])
+      ) {
+        for (const v of _data.val[i_fields[0]]) {
+          const prefix = `${compose(join("/"), flatten)(tail(sort_fields))}`
+          const _md5 = md5(JSON.stringify(v))
+          const _prefix = `${sort_fields[0][0]}/array:${_md5}`
+          const key = `${_prefix}/${prefix}`
+          let _tree = null
+          const akey = `${sort_fields[0][0]}:array:${_md5}/${map(v =>
+            v.join(":")
+          )(tail(sort_fields)).join("/")}`
+          if (isNil(kvs[_md5])) {
+            array_indexes[_md5] = { order, key: akey }
+            _tree = new BPT(order, tail(sort_fields), kv, key)
+          } else {
+            _tree = kvs[_md5]
+          }
+          await _tree.delete(_data.key, true)
+        }
+      }
+    }
+  } else {
+    const prefix = `${compose(join("/"), flatten)(sort_fields)}`
+    const tree = new BPT(order, sort_fields, kv, prefix)
+    for (let _data of docs) {
+      const fields = keys(_data.val)
+      const diff = difference(i_fields, fields)
+      if (i_fields.length > 0 && diff.length === 0) {
+        await tree.delete(_data.key, true)
+      }
+    }
+  }
+  delete __indexes[newIndex]
+  await kv.put("indexes", __indexes)
+}
 
 const del = async (id, path, kvs, SW) => {
   const kv = new KV(`${path.join("/")}/`, _KV(kvs, SW))
@@ -426,4 +576,4 @@ const get = async (id, path, kvs, SW) => {
   return await tree.data(id)
 }
 
-module.exports = { put, range, get, del }
+module.exports = { put, range, get, del, addIndex, getIndexes, removeIndex }
