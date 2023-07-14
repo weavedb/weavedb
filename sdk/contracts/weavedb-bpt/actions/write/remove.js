@@ -4,6 +4,7 @@ const { clone } = require("../../../common/lib/pure")
 const { err, wrapResult } = require("../../../common/lib/utils")
 const { validate } = require("../../lib/validate")
 const { removeData, getIndex } = require("../../lib/index")
+const { del } = require("../../lib/Collection")
 
 const remove = async (
   state,
@@ -48,6 +49,7 @@ const remove = async (
   let after = null
   _data.__data = null
   await kv(kvs, SmartWeave).put(`data.${path.join("/")}`, _data)
+  await del(last(path), init(path), kvs, SmartWeave, signer)
   if (depth < 10) {
     await trigger(
       ["delete"],

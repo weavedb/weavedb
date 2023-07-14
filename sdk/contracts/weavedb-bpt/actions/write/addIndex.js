@@ -3,6 +3,7 @@ const { kv, parse } = require("../../lib/utils")
 const { err, wrapResult } = require("../../../common/lib/utils")
 const { validate } = require("../../lib/validate")
 const { addIndex: _addIndex, getIndex } = require("../../lib/index")
+const { addIndex: __addIndex } = require("../../lib/Collection")
 
 const addIndex = async (
   state,
@@ -43,6 +44,7 @@ const addIndex = async (
     )
   }
   await _addIndex(new_data, path, db, SmartWeave, kvs)
+  await __addIndex(new_data, path, kvs, SmartWeave, signer)
   return wrapResult(state, original_signer, SmartWeave)
 }
 

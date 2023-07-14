@@ -4,7 +4,7 @@ const { err, validateSchema, wrapResult } = require("../../../common/lib/utils")
 const { clone } = require("../../../common/lib/pure")
 const { validate } = require("../../lib/validate")
 const { updateData } = require("../../lib/index")
-
+const { put } = require("../../lib/Collection")
 const update = async (
   state,
   action,
@@ -52,6 +52,7 @@ const update = async (
   let after = clone(next_data)
   _data.__data = next_data
   await kv(kvs, SmartWeave).put(`data.${path.join("/")}`, _data)
+  //await put(next_data, last(path), init(path), kvs, SmartWeave, signer)
   if (updated && depth < 10) {
     await trigger(
       ["update"],
