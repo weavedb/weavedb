@@ -8,7 +8,7 @@ const {
   addIndex,
   removeIndex,
   getIndexes,
-} = require("../sdk/contracts/weavedb-bpt/lib/Collection")
+} = require("../sdk/contracts/weavedb-bpt/lib/Collection2")
 const { randO, shuffle, fuzztest } = require("./utils-bpt")
 const { pluck, prop, range, sortWith, ascend, descend } = require("ramda")
 const alpha = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -115,10 +115,7 @@ describe("B+Tree", function () {
       pluck("key", await _range([["age", "asc"]], { reverse: true }, ...opt))
     ).to.eql(["Alice", "Beth"])
     expect(
-      pluck(
-        "key",
-        await _range([["__name__", "asc"]], { reverse: true }, ...opt)
-      )
+      pluck("key", await _range([["__id__", "asc"]], { reverse: true }, ...opt))
     ).to.eql(["Beth", "Alice"])
     await del("Bob", ...opt)
     await put(
@@ -138,11 +135,13 @@ describe("B+Tree", function () {
       ["age", "desc"],
       ["name", "desc"],
     ]
+
     await addIndex(sorter, ...opt)
     expect(pluck("key")(await _range(sorter, {}, ...opt))).to.eql([
       "Beth",
       "Alice",
     ])
+
     await removeIndex(sorter, ...opt)
     expect(pluck("key")(await _range(sorter, {}, ...opt))).to.eql([])
   })

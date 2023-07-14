@@ -1,4 +1,5 @@
 const {
+  append,
   includes,
   o,
   concat,
@@ -15,6 +16,7 @@ const {
   map,
   difference,
   tail,
+  splitEvery,
 } = require("ramda")
 const BPT = require("./BPT")
 const md5 = require("md5")
@@ -50,7 +52,7 @@ class KV {
 }
 const getIndexes = async (path, kvs, SW) => {
   const kv = new KV(`${path.join("/")}/`, _KV(kvs, SW))
-  const _sort_fields = [["__name__", "asc"]]
+  const _sort_fields = [["__id__", "asc"]]
   const prefix = `${compose(join("/"), flatten)(_sort_fields)}`
   const order = 100
   const idtree = new BPT(order, _sort_fields, kv, prefix)
@@ -58,6 +60,7 @@ const getIndexes = async (path, kvs, SW) => {
 }
 
 const addIndex = async (sort_fields, path, kvs, SW) => {
+  sort_fields = map(v => (v.length > 1 ? v : append("asc", v)))(sort_fields)
   let i = 0
   for (let v of sort_fields) {
     if (v[1] === "array") {
@@ -69,18 +72,18 @@ const addIndex = async (sort_fields, path, kvs, SW) => {
   }
   if (sort_fields.length <= 1) return
   const kv = new KV(`${path.join("/")}/`, _KV(kvs, SW))
-  const _sort_fields = [["__name__", "asc"]]
+  const _sort_fields = [["__id__", "asc"]]
   const prefix = `${compose(join("/"), flatten)(_sort_fields)}`
   const order = 100
   const idtree = new BPT(order, _sort_fields, kv, prefix)
   let __indexes = (await kv.get("indexes")) || {}
-  const newIndex = map(join(":"))(sort_fields).join("/")
+  const newIndex = map(join("/"))(sort_fields).join("/")
   if (!isNil(__indexes[newIndex])) return
   let docs = await idtree.range()
   const i_fields = compose(
-    without(["__name__"]),
-    map(v => v.split(":")[0])
-  )(newIndex.split("/"))
+    without(["__id__"]),
+    map(v => v[0])
+  )(sort_fields)
   if (sort_fields[0][1] === "array") {
     let array_indexes = {}
     let kvs = {}
@@ -98,8 +101,8 @@ const addIndex = async (sort_fields, path, kvs, SW) => {
           const _prefix = `${sort_fields[0][0]}/array:${_md5}`
           const key = `${_prefix}/${prefix}`
           let _tree = null
-          const akey = `${sort_fields[0][0]}:array:${_md5}/${map(v =>
-            v.join(":")
+          const akey = `${sort_fields[0][0]}/array:${_md5}/${map(v =>
+            v.join("/")
           )(tail(sort_fields)).join("/")}`
           if (isNil(kvs[_md5])) {
             array_indexes[_md5] = { order, key: akey }
@@ -131,6 +134,7 @@ const addIndex = async (sort_fields, path, kvs, SW) => {
 }
 
 const removeIndex = async (sort_fields, path, kvs, SW) => {
+  sort_fields = map(v => (v.length > 1 ? v : append("asc", v)))(sort_fields)
   let i = 0
   for (let v of sort_fields) {
     if (v[1] === "array") {
@@ -142,18 +146,18 @@ const removeIndex = async (sort_fields, path, kvs, SW) => {
   }
   if (sort_fields.length <= 1) return
   const kv = new KV(`${path.join("/")}/`, _KV(kvs, SW))
-  const _sort_fields = [["__name__", "asc"]]
+  const _sort_fields = [["__id__", "asc"]]
   const prefix = `${compose(join("/"), flatten)(_sort_fields)}`
   const order = 100
   const idtree = new BPT(order, _sort_fields, kv, prefix)
   let __indexes = (await kv.get("indexes")) || {}
-  const newIndex = map(join(":"))(sort_fields).join("/")
+  const newIndex = map(join("/"))(sort_fields).join("/")
   if (isNil(__indexes[newIndex])) return
   let docs = await idtree.range()
   const i_fields = compose(
-    without(["__name__"]),
-    map(v => v.split(":")[0])
-  )(newIndex.split("/"))
+    without(["__id__"]),
+    map(v => v[0])
+  )(sort_fields)
   if (sort_fields[0][1] === "array") {
     let array_indexes = {}
     let kvs = {}
@@ -171,7 +175,7 @@ const removeIndex = async (sort_fields, path, kvs, SW) => {
           const _prefix = `${sort_fields[0][0]}/array:${_md5}`
           const key = `${_prefix}/${prefix}`
           let _tree = null
-          const akey = `${sort_fields[0][0]}:array:${_md5}/${map(v =>
+          const akey = `${sort_fields[0][0]}/array:${_md5}/${map(v =>
             v.join(":")
           )(tail(sort_fields)).join("/")}`
           if (isNil(kvs[_md5])) {
@@ -201,7 +205,7 @@ const removeIndex = async (sort_fields, path, kvs, SW) => {
 
 const del = async (id, path, kvs, SW) => {
   const kv = new KV(`${path.join("/")}/`, _KV(kvs, SW))
-  const sort_fields = [["__name__", "asc"]]
+  const sort_fields = [["__id__", "asc"]]
   const prefix = `${compose(join("/"), flatten)(sort_fields)}`
   const order = 100
   const idtree = new BPT(order, sort_fields, kv, prefix)
@@ -210,10 +214,11 @@ const del = async (id, path, kvs, SW) => {
   const indexes = (await kv.get("indexes")) || {}
   for (const k in indexes) {
     const fields = keys(_data)
-    const sp = map(v => v.split(":"))(k.split("/"))
+    const sp = splitEvery(2, k.split("/"))
     const i_fields = compose(
-      without(["__name__"]),
-      map(v => v.split(":")[0])
+      without(["__id__"]),
+      map(v => v[0]),
+      splitEvery(2)
     )(k.split("/"))
     const diff = difference(i_fields, fields)
     if (i_fields.length > 0 && diff.length === 0) {
@@ -221,18 +226,16 @@ const del = async (id, path, kvs, SW) => {
         if (is(Array, _data[sp[0][0]])) {
           for (let v of _data[sp[0][0]]) {
             const _md5 = md5(JSON.stringify(v))
-            const sort_fields = map(v => v.split(":"))(k.split("/"))
-            let akey = `${sort_fields[0][0]}:array:${_md5}`
+            const sort_fields = splitEvery(2, k.split("/"))
+            let akey = `${sort_fields[0][0]}/array:${_md5}`
             if (sort_fields.length > 1) {
-              akey += `/${map(v => v.join(":"))(tail(sort_fields)).join("/")}`
+              akey += `/${map(v => v.join("/"))(tail(sort_fields)).join("/")}`
             }
             if (isNil(indexes[k].items[_md5])) continue
             const ar = sort_fields[0]
             let prefix = `${ar[0]}/array:${_md5}`
             const _sort_fields =
-              sort_fields.length === 1
-                ? [["__name__", "asc"]]
-                : tail(sort_fields)
+              sort_fields.length === 1 ? [["__id__", "asc"]] : tail(sort_fields)
             if (sort_fields.length > 1) {
               prefix += "/" + compose(join("/"), flatten)(tail(sort_fields))
             }
@@ -241,7 +244,7 @@ const del = async (id, path, kvs, SW) => {
           }
         }
       } else {
-        const sort_fields = map(v => v.split(":"))(k.split("/"))
+        const sort_fields = splitEvery(2, k.split("/"))
         const prefix = `${compose(join("/"), flatten)(sort_fields)}`
         const tree = new BPT(order, sort_fields, kv, prefix)
         await tree.delete(id, true)
@@ -284,10 +287,10 @@ const _mod = (old_data, _data, SW, signer) => {
         )(data[k])
         const _add = difference(new_vals, old_vals)
         const _remove = difference(old_vals, new_vals)
-        for (let v of _add) news.push(`${k}:array:${v}`)
-        for (let v of _remove) dels.push(`${k}:array:${v}`)
+        for (let v of _add) news.push(`${k}/array:${v}`)
+        for (let v of _remove) dels.push(`${k}/array:${v}`)
       } else {
-        for (let v of new_vals) news.push(`${k}:array:${v}`)
+        for (let v of new_vals) news.push(`${k}/array:${v}`)
       }
       data[k] = val
     } else if (is(Array, data[k])) {
@@ -295,7 +298,7 @@ const _mod = (old_data, _data, SW, signer) => {
         uniq,
         map(v => md5(JSON.stringify(v)))
       )(data[k])
-      for (let v of old_vals) dels.push(`${k}:array:${v}`)
+      for (let v of old_vals) dels.push(`${k}/array:${v}`)
       data[k] = _data[k]
     } else if (_data[k].__op === "del") {
       dels.push(k)
@@ -328,29 +331,31 @@ const _update = async (_data, id, old_data, idtree, kv, SW, signer) => {
   let _indexes = clone(indexes)
   let newkeys = {}
   for (const k of dels) {
-    const sp = k.split(":")
-    const key = sp[1] === "array" ? k : `${k}:asc`
-    const prefix = sp[1] === "array" ? `${sp[0]}/${sp[1]}:${sp[2]}` : `${k}/asc`
+    const sp = k.split("/")
+    const isArray = sp[1]?.split(":")[0] === "array"
+    const key = isArray ? k : `${k}/asc`
+    const prefix = isArray ? `${sp[0]}/${sp[1]}` : `${k}/asc`
     newkeys[key] = true
-    const sort_fields = sp[1] === "array" ? [["__name__", "asc"]] : [[k, "asc"]]
+    const sort_fields = isArray ? [["__id__", "asc"]] : [[k, "asc"]]
     const _tree = new BPT(order, sort_fields, kv, prefix)
     await _tree.delete(id, true)
   }
   await idtree.putData(id, data)
   for (const k of news) {
-    const sp = k.split(":")
-    const key = sp[1] === "array" ? k : `${k}:asc`
-    let prefix = sp[1] === "array" ? `${sp[0]}/${sp[1]}:${sp[2]}` : `${k}/asc`
+    const sp = k.split("/")
+    const isArray = sp[1]?.split(":")[0] === "array"
+    const key = isArray ? k : `${k}/asc`
+    let prefix = isArray ? `${sp[0]}/${sp[1]}` : `${k}/asc`
     newkeys[key] = true
-    if (sp[1] === "array") {
-      const akey = `${sp[0]}:${sp[1]}`
+    if (isArray) {
+      const akey = `${sp[0]}/array`
       if (isNil(_indexes[akey])) _indexes[akey] = { key: akey, items: {} }
       if (isNil(_indexes[akey].items[sp[2]])) {
-        _indexes[akey].items[sp[2]] = { key, order: 5 }
+        _indexes[akey].items[sp[2]] = { key, order }
       }
-      const sort_fields = map(v => v.split(":"))(k.split("/"))
+      const sort_fields = splitEvery(2, k.split("/"))
       let _sort_fields =
-        sort_fields.length === 1 ? [["__name__", "asc"]] : tail(sort_fields)
+        sort_fields.length === 1 ? [["__id__", "asc"]] : tail(sort_fields)
       if (sort_fields.length > 1) {
         prefix += "/" + compose(join("/"), flatten)(tail(sort_fields))
       }
@@ -368,10 +373,11 @@ const _update = async (_data, id, old_data, idtree, kv, SW, signer) => {
   const old_fields = keys(old_data.val)
   for (const k in _indexes) {
     if (isNil(newkeys[k])) {
-      const sort_fields = map(v => v.split(":"))(k.split("/"))
+      const sort_fields = splitEvery(2, k.split("/"))
       const i_fields = compose(
-        without(["__name__"]),
-        map(v => v.split(":")[0])
+        without(["__id__"]),
+        map(v => v[0]),
+        splitEvery(2)
       )(k.split("/"))
       if (i_fields.length > 1) {
         if (sort_fields[0][1] === "array") {
@@ -424,8 +430,8 @@ const _update = async (_data, id, old_data, idtree, kv, SW, signer) => {
                 _change.push(v)
               }
             }
-            const sort_tail = map(join(":"))(tail(sort_fields)).join("/")
-            const getKey = v => `${arr_name}:array:${v}/${sort_tail}`
+            const sort_tail = map(join("/"))(tail(sort_fields)).join("/")
+            const getKey = v => `${arr_name}/array:${v}/${sort_tail}`
             const getPrefix = v =>
               `${arr_name}/array:${v}/${compose(
                 join("/"),
@@ -470,7 +476,7 @@ const _update = async (_data, id, old_data, idtree, kv, SW, signer) => {
             await tree.delete(id, true)
           }
           if (isAdd) {
-            const sort_fields = map(v => v.split(":"))(k.split("/"))
+            const sort_fields = splitEvery(2, k.split("/"))
             const prefix = `${compose(join("/"), flatten)(sort_fields)}`
             const tree = new BPT(order, sort_fields, kv, prefix)
             await tree.insert(id, _data, true)
@@ -483,7 +489,7 @@ const _update = async (_data, id, old_data, idtree, kv, SW, signer) => {
 
 const put = async (_data, id, path, kvs, SW, signer) => {
   const kv = new KV(`${path.join("/")}/`, _KV(kvs, SW))
-  const sort_fields = [["__name__", "asc"]]
+  const sort_fields = [["__id__", "asc"]]
   const prefix = `${compose(join("/"), flatten)(sort_fields)}`
   const order = 100
   const idtree = new BPT(order, sort_fields, kv, prefix)
@@ -494,9 +500,10 @@ const put = async (_data, id, path, kvs, SW, signer) => {
   await idtree.insert(id, data)
   const indexes = (await kv.get("indexes")) || {}
   let _indexes = clone(indexes)
-
+  if (isNil(_indexes["__id__/asc"]))
+    _indexes["__id__/asc"] = { order, key: "__id__/asc" }
   for (const k in _data) {
-    const key = `${k}:asc`
+    const key = `${k}/asc`
     if (isNil(indexes[key])) _indexes[key] = { order, key }
 
     const _tree = new BPT(order, [[k, "asc"]], kv, `${k}/asc`)
@@ -504,17 +511,17 @@ const put = async (_data, id, path, kvs, SW, signer) => {
 
     if (is(Array, _data[k])) {
       for (let v of uniq(_data[k])) {
-        const _prefix = `${k}:array`
+        const _prefix = `${k}/array`
         const _md5 = md5(JSON.stringify(v))
         const key = `${_prefix}:${_md5}`
         if (isNil(_indexes[_prefix]))
           _indexes[_prefix] = { key: _prefix, items: {} }
         if (isNil(_indexes[_prefix].items[_md5])) {
-          _indexes[_prefix].items[_md5] = { order: 5, key }
+          _indexes[_prefix].items[_md5] = { order, key }
         }
         const _tree = new BPT(
           order,
-          [["__name__", "asc"]],
+          [["__id__", "asc"]],
           kv,
           `${k}/array:${md5(JSON.stringify(v))}`,
           function (stats) {}
@@ -527,12 +534,13 @@ const put = async (_data, id, path, kvs, SW, signer) => {
   const fields = keys(_data)
   for (const k in indexes) {
     const i_fields = compose(
-      without(["__name__"]),
-      map(v => v.split(":")[0])
+      without(["__id__"]),
+      map(v => v[0]),
+      splitEvery(2)
     )(k.split("/"))
     const diff = difference(i_fields, fields)
     if (i_fields.length > 1 && diff.length === 0) {
-      const sort_fields = map(v => v.split(":"))(k.split("/"))
+      const sort_fields = splitEvery(2, k.split("/"))
       if (sort_fields[0][1] === "array") {
         if (!is(Array, _data[sort_fields[0][0]])) continue
         for (let v of _data[sort_fields[0][0]]) {
@@ -540,12 +548,12 @@ const put = async (_data, id, path, kvs, SW, signer) => {
           const _md5 = md5(JSON.stringify(v))
           const _prefix = `${sort_fields[0][0]}/array:${_md5}`
           const key = `${_prefix}/${prefix}`
-          const akey = `${sort_fields[0][0]}:array:${_md5}/${map(v =>
-            v.join(":")
+          const akey = `${sort_fields[0][0]}/array:${_md5}/${map(v =>
+            v.join("/")
           )(tail(sort_fields)).join("/")}`
           const _tree = new BPT(order, tail(sort_fields), kv, key)
           if (isNil(_indexes[k].items[_md5])) {
-            _indexes[k].items[_md5] = { order: 5, key: akey }
+            _indexes[k].items[_md5] = { order, key: akey }
           }
           await _tree.insert(id, _data, true)
         }
@@ -568,7 +576,7 @@ const range = async (sort_fields, opt = {}, path, kvs, SW) => {
 }
 
 const get = async (id, path, kvs, SW) => {
-  const sort_fields = [["__name__", "asc"]]
+  const sort_fields = [["__id__", "asc"]]
   const kv = new KV(`${path.join("/")}/`, _KV(kvs, SW))
   const prefix = `${compose(join("/"), flatten)(sort_fields)}`
   const order = 100
