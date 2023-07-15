@@ -8,7 +8,9 @@ const {
   addIndex,
   removeIndex,
   getIndexes,
-} = require("../sdk/contracts/weavedb-bpt/lib/Collection2")
+  mod,
+  mod2,
+} = require("../sdk/contracts/weavedb-bpt/lib/Collection")
 const { randO, shuffle, fuzztest } = require("./utils-bpt")
 const { pluck, prop, range, sortWith, ascend, descend } = require("ramda")
 const alpha = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -19,6 +21,33 @@ describe("B+Tree", function () {
   before(async () => {})
 
   beforeEach(async () => {})
+
+  it("should return mod stats", async () => {
+    const prev = { test: 1, test2: 2, fav2: [1, 2], fav3: 3, fav4: [3] }
+    const next = {
+      test2: 3,
+      test3: 3,
+      fav: [1, 2],
+      fav2: [2, 3],
+      fav3: [3],
+      fav4: 3,
+    }
+    const { dels, changes, news } = mod(prev, next)
+    expect(dels).to.eql([
+      "test",
+      "fav2/array:c4ca4238a0b923820dcc509a6f75849b",
+      "fav4/array:eccbc87e4b5ce2fe28308fd9f2a7baf3",
+    ])
+    expect(changes).to.eql(["test2", "fav2", "fav3", "fav4"])
+    expect(news).to.eql([
+      "fav2/array:eccbc87e4b5ce2fe28308fd9f2a7baf3",
+      "fav3/array:eccbc87e4b5ce2fe28308fd9f2a7baf3",
+      "test3",
+      "fav",
+      "fav/array:c4ca4238a0b923820dcc509a6f75849b",
+      "fav/array:c81e728d9d4c2f636f067f89cc14862c",
+    ])
+  })
 
   it("should build a tree with numbers [fuzz]", async () => {
     await fuzztest(range(0, 100), "number")
@@ -45,7 +74,7 @@ describe("B+Tree", function () {
     )
   })
 
-  it.only("should build a collection", async () => {
+  it("should build a collection", async () => {
     let kvs = {}
     let SW = {
       kv: {
@@ -120,8 +149,9 @@ describe("B+Tree", function () {
     await del("Bob", ...opt)
     await put(
       {
-        age: { __op: "inc", n: -1 },
-        favs: { __op: "arrayUnion", arr: ["apple", "grapes"] },
+        name: "Alice",
+        age: 5,
+        favs: ["orange", "apple", "grapes"],
       },
       "Alice",
       ...opt
