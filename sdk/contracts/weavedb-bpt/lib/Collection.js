@@ -17,6 +17,7 @@ const {
   difference,
   tail,
   splitEvery,
+  equals,
 } = require("ramda")
 const BPT = require("./BPT")
 const md5 = require("md5")
@@ -254,8 +255,8 @@ const del = async (id, path, kvs, SW) => {
   await idtree.delete(id)
 }
 
-const _mod = (old_data, _data, SW, signer) => {
-  let data = clone(old_data.val)
+const mod2 = (old_data, _data, SW, signer) => {
+  let data = clone(old_data)
   let dels = []
   let changes = []
   let news = []
@@ -274,7 +275,7 @@ const _mod = (old_data, _data, SW, signer) => {
         }
         new_vals = map(v => md5(JSON.stringify(v)))(val)
       } else if (_data[k].__op === "arrayRemove") {
-        val = without(val, _data[k].arr)
+        val = without(_data[k].arr, val)
         new_vals = map(v => md5(JSON.stringify(v)))(val)
       } else {
         val = _data[k]
@@ -293,6 +294,7 @@ const _mod = (old_data, _data, SW, signer) => {
         for (let v of new_vals) news.push(`${k}/array:${v}`)
       }
       data[k] = val
+      //changes.push(k)
     } else if (is(Array, data[k])) {
       const old_vals = compose(
         uniq,
@@ -324,9 +326,58 @@ const _mod = (old_data, _data, SW, signer) => {
   return { dels, changes, news, data }
 }
 
-const _update = async (_data, id, old_data, idtree, kv, SW, signer) => {
+const mod = (prev, next) => {
+  let dels = []
+  let changes = []
+  let news = []
+  prev ??= {}
+  next ??= {}
+  const _keys = compose(uniq, flatten, map(keys))([prev, next])
+  for (const k of _keys) {
+    if (!equals(prev[k], next[k])) {
+      if (isNil(prev[k])) {
+        news.push(k)
+        if (is(Array, next[k])) {
+          for (let v of next[k]) {
+            news.push(`${k}/array:${md5(JSON.stringify(v))}`)
+          }
+        }
+      } else if (isNil(next[k])) {
+        dels.push(k)
+        if (is(Array, prev[k])) {
+          for (let v of prev[k]) {
+            dels.push(`${k}/array:${md5(JSON.stringify(v))}`)
+          }
+        }
+      } else {
+        changes.push(k)
+        if (is(Array, prev[k]) && is(Array, next[k])) {
+          const _news = o(uniq, difference(next[k]))(prev[k])
+          const _dels = o(uniq, difference(prev[k]))(next[k])
+          for (let v of _news) {
+            news.push(`${k}/array:${md5(JSON.stringify(v))}`)
+          }
+          for (let v of _dels) {
+            dels.push(`${k}/array:${md5(JSON.stringify(v))}`)
+          }
+        } else if (is(Array, prev[k])) {
+          for (let v of uniq(prev[k])) {
+            dels.push(`${k}/array:${md5(JSON.stringify(v))}`)
+          }
+        } else if (is(Array, next[k])) {
+          for (let v of uniq(next[k])) {
+            news.push(`${k}/array:${md5(JSON.stringify(v))}`)
+          }
+        }
+      }
+    }
+  }
+  return { dels, changes, news }
+}
+
+const _update = async (data, id, old_data, idtree, kv, SW, signer) => {
   const order = 100
-  let { dels, changes, news, data } = _mod(old_data, _data, SW, signer)
+  let { dels, changes, news } = mod(old_data.val, data)
   const indexes = (await kv.get("indexes")) || {}
   let _indexes = clone(indexes)
   let newkeys = {}
@@ -340,7 +391,7 @@ const _update = async (_data, id, old_data, idtree, kv, SW, signer) => {
     const _tree = new BPT(order, sort_fields, kv, prefix)
     await _tree.delete(id, true)
   }
-  await idtree.putData(id, data)
+
   for (const k of news) {
     const sp = k.split("/")
     const isArray = sp[1]?.split(":")[0] === "array"
@@ -360,14 +411,15 @@ const _update = async (_data, id, old_data, idtree, kv, SW, signer) => {
         prefix += "/" + compose(join("/"), flatten)(tail(sort_fields))
       }
       const _tree = new BPT(order, sort_fields, kv, prefix)
-      await _tree.insert(id, _data, true)
+      await _tree.insert(id, data, true)
     } else {
       if (isNil(_indexes[key])) _indexes[key] = { order, key }
       const sort_fields = [[k, "asc"]]
       const _tree = new BPT(order, sort_fields, kv, prefix)
-      await _tree.insert(id, _data, true)
+      await _tree.insert(id, data, true)
     }
   }
+
   await kv.put("indexes", _indexes)
   const fields = keys(data)
   const old_fields = keys(old_data.val)
@@ -379,7 +431,7 @@ const _update = async (_data, id, old_data, idtree, kv, SW, signer) => {
         map(v => v[0]),
         splitEvery(2)
       )(k.split("/"))
-      if (i_fields.length > 1) {
+      if (i_fields.length > 0) {
         if (sort_fields[0][1] === "array") {
           const arr_name = sort_fields[0][0]
           const new_arr_vals = is(Array, data[arr_name])
@@ -437,7 +489,7 @@ const _update = async (_data, id, old_data, idtree, kv, SW, signer) => {
                 join("/"),
                 flatten
               )(tail(sort_fields))}`
-            const ins = async tree => await tree.insert(id, _data, true)
+            const ins = async tree => await tree.insert(id, data, true)
             const del = async tree => await tree.delete(id, true)
             const getTree = v =>
               new BPT(order, tail(sort_fields), kv, getPrefix(v))
@@ -479,25 +531,32 @@ const _update = async (_data, id, old_data, idtree, kv, SW, signer) => {
             const sort_fields = splitEvery(2, k.split("/"))
             const prefix = `${compose(join("/"), flatten)(sort_fields)}`
             const tree = new BPT(order, sort_fields, kv, prefix)
-            await tree.insert(id, _data, true)
+            await tree.insert(id, data, true)
           }
         }
       }
     }
   }
+  await idtree.putData(id, data, undefined, signer)
 }
 
-const put = async (_data, id, path, kvs, SW, signer) => {
+const put = async (_data, id, path, kvs, SW, signer, create = false) => {
   const kv = new KV(`${path.join("/")}/`, _KV(kvs, SW))
   const sort_fields = [["__id__", "asc"]]
   const prefix = `${compose(join("/"), flatten)(sort_fields)}`
   const order = 100
   const idtree = new BPT(order, sort_fields, kv, prefix)
   let old_data = await idtree.data(id)
-  if (!isNil(old_data?.val))
-    return await _update(_data, id, old_data, idtree, kv, SW, signer)
-  let { dels, changes, news, data } = _mod({ val: {} }, _data, SW, signer)
-  await idtree.insert(id, data)
+  if (!isNil(old_data?.val)) {
+    if (create) {
+      await del(id, path, kv, SW)
+    } else {
+      return await _update(_data, id, old_data, idtree, kv, SW, signer)
+    }
+  }
+  //let {  data } = mod({}, _data, SW, signer)
+  //mod({}, _data)
+  await idtree.insert(id, _data, false, signer)
   const indexes = (await kv.get("indexes")) || {}
   let _indexes = clone(indexes)
   if (isNil(_indexes["__id__/asc"]))
@@ -584,4 +643,14 @@ const get = async (id, path, kvs, SW) => {
   return await tree.data(id)
 }
 
-module.exports = { put, range, get, del, addIndex, getIndexes, removeIndex }
+module.exports = {
+  put,
+  range,
+  get,
+  del,
+  addIndex,
+  getIndexes,
+  removeIndex,
+  mod,
+  mod2,
+}

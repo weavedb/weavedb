@@ -1,4 +1,5 @@
 const {
+  init,
   path: __path,
   then,
   hasPath,
@@ -37,6 +38,7 @@ const {
 const { kv, getDoc } = require("../../lib/utils")
 const { err } = require("../../../common/lib/utils")
 const { getKey } = require("../../lib/index")
+const { get: _get, range: _range } = require("../../lib/Collection")
 
 const parseQuery = query => {
   const [path, opt] = splitWhen(complement(is)(String), query)
@@ -256,7 +258,7 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
   const { data } = state
   if (path.length % 2 === 0) {
     if (any(complement(isNil))([_limit, _sort, _filter])) err()
-    const { doc: _data } = await getDoc(
+    /*const { doc: _data } = await getDoc(
       null,
       path,
       null,
@@ -271,17 +273,18 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
       SmartWeave,
       undefined,
       kvs
-    )
+    )*/
+    const _data = await _get(last(path), init(path), kvs, SmartWeave)
     return {
-      result: isNil(_data.__data)
+      result: isNil(_data.val)
         ? null
         : cursor
         ? {
             id: last(path),
             setter: _data.setter,
-            data: _data.__data || null,
+            data: _data.val || null,
           }
-        : _data.__data || null,
+        : _data.val || null,
     }
   } else {
     let index = await getColIndex(path, _sort, SmartWeave, kvs)

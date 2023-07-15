@@ -71,7 +71,7 @@ const tests = {
     expect(await db.get("ppl", "Bob")).to.eql({ name: "Bob", age: 25 })
     await db.update({ age: db.inc(5) }, "ppl", "Bob")
     expect(await db.get("ppl", "Bob")).to.eql({ name: "Bob", age: 30 })
-    await db.update({ age: db.del(5) }, "ppl", "Bob")
+    await db.update({ age: db.del() }, "ppl", "Bob")
     expect(await db.get("ppl", "Bob")).to.eql({ name: "Bob" })
 
     // arrayUnion
