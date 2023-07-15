@@ -50,7 +50,7 @@ const build = store => {
     let i = 0
     for (const v of node.vals) {
       if (!isNil(node.children?.[i])) node.arr.push({ child: node.children[i] })
-      node.arr.push({ key: v, val: node.leaf ? _s[`data/${v}`] : v })
+      node.arr.push({ key: v, val: node.leaf ? _s[`data/${v}`].val : v })
       i++
     }
     if (!isNil(node.children?.[i])) node.arr.push({ child: node.children[i] })

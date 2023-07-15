@@ -55,11 +55,12 @@ class BPT {
     }
   }
 
-  putData = async (key, val, stats) => {
+  putData = async (key, val, stats, signer = null) => {
+    const obj = { setter: signer, val }
     if (!isNil(stats)) {
-      stats[`data/${key}`] = val
+      stats[`data/${key}`] = obj
     } else {
-      await this.put(`data/${key}`, val, stats, "")
+      await this.put(`data/${key}`, obj, stats, "")
     }
   }
 
@@ -74,10 +75,15 @@ class BPT {
   putNode = async (node, stats) => await this.put(node.id, node, stats)
 
   data = async (key, cache = {}, stats) => {
-    if (typeof cache[key] !== "undefined") return { key, val: cache[key] }
+    if (typeof cache[key] !== "undefined")
+      return {
+        key,
+        val: cache[key]?.val ?? null,
+        setter: cache[key]?.setter ?? null,
+      }
     let _data = (await this.get(`data/${key}`, stats, "")) ?? null
     cache[key] = _data
-    return { key, val: _data }
+    return { key, val: _data?.val ?? null, setter: _data?.setter ?? null }
   }
 
   root = async stats => (await this.get("root", stats)) ?? null
@@ -798,9 +804,9 @@ class BPT {
     if (!exists) node.vals.push(key)
   }
 
-  async insert(key, val, skipPut = false) {
+  async insert(key, val, skipPut = false, signer) {
     let stats = {}
-    await this.putData(key, val, stats)
+    await this.putData(key, val, stats, signer)
     let _val = { key, val }
     let node = await this.search(_val, undefined, stats)
     if (isNil(node)) {
