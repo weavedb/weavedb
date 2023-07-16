@@ -16,11 +16,23 @@ const { pluck, prop, range, sortWith, ascend, descend } = require("ramda")
 const alpha = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 describe("B+Tree", function () {
+  let kvs, SW, temp
   this.timeout(0)
 
   before(async () => {})
 
-  beforeEach(async () => {})
+  beforeEach(async () => {
+    kvs = {}
+    SW = {
+      kv: {
+        get: key => kvs[key],
+        put: (key, val) => {
+          kvs[key] = val
+        },
+      },
+    }
+    temp = {}
+  })
 
   it("should return mod stats", async () => {
     const prev = { test: 1, test2: 2, fav2: [1, 2], fav3: 3, fav4: [3] }
@@ -49,6 +61,21 @@ describe("B+Tree", function () {
     ])
   })
 
+  it("should pagenate", async () => {
+    const opt = [["ppl"], temp, SW, "0x"]
+    const sorter = [["age", "asc"]]
+    await put({ name: "Bob", age: 5 }, "Bob", ...opt)
+    await put({ name: "Alice", age: 6 }, "Alice", ...opt)
+    await put({ name: "Beth", age: 6 }, "Beth", ...opt)
+    await put({ name: "Mike", age: 7 }, "Mike", ...opt)
+    expect(
+      pluck(
+        "key",
+        await _range(sorter, { startAt: { age: 6, __id__: "Alico" } }, ...opt)
+      )
+    ).to.eql(["Beth", "Mike"])
+  })
+
   it("should build a tree with numbers [fuzz]", async () => {
     await fuzztest(range(0, 100), "number")
   })
@@ -75,16 +102,6 @@ describe("B+Tree", function () {
   })
 
   it("should build a collection", async () => {
-    let kvs = {}
-    let SW = {
-      kv: {
-        get: key => kvs[key],
-        put: (key, val) => {
-          kvs[key] = val
-        },
-      },
-    }
-    let temp = {}
     const opt = [["ppl"], temp, SW, "0x"]
     const Bob = { name: "Bob", age: 3, favs: ["apple"] }
     await put(Bob, "Bob", ...opt)

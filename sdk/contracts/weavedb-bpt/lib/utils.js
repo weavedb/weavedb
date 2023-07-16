@@ -20,6 +20,7 @@ const {
 } = require("../../common/lib/utils")
 const { clone, isValidName } = require("../../common/lib/pure")
 const { validate: validator } = require("../../common/lib/jsonschema")
+const { get: _get } = require("./Collection")
 
 const getCol = async (
   data,
@@ -224,8 +225,7 @@ const _getDoc = async (
   current_path = [],
   kvs
 ) => {
-  data ??=
-    (await kv(kvs, SmartWeave).get(`data.${current_path.join("/")}`)) ?? {}
+  data = (await kv(kvs, SmartWeave).get(`data.${current_path.join("/")}`)) || {}
   const [_col, id] = path
   if (!isValidName(_col)) err(`collection id is not valid: ${_col}`)
   if (!isValidName(id)) err(`doc id is not valid: ${id}`)
@@ -239,10 +239,10 @@ const _getDoc = async (
   const doc_key = `data.${current_path.join("/")}`
   const col = (await kv(kvs, SmartWeave).get(col_key)) || { __docs: {} }
   const { rules, schema } = col
-  const doc = (await kv(kvs, SmartWeave).get(doc_key)) || {
-    __data: null,
-    subs: {},
-  }
+  let doc = await _get(last(path), init(path), kvs, SmartWeave)
+  doc.__data = doc.val
+  doc.subs = {}
+  delete doc.val
   if (!isNil(_signer) && isNil(doc.setter)) doc.setter = _signer
   let next_data = null
   if (path.length === 2) {

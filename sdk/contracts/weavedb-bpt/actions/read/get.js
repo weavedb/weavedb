@@ -1,5 +1,5 @@
 const {
-  init,
+  assoc,
   path: __path,
   then,
   hasPath,
@@ -38,8 +38,7 @@ const {
 const { kv, getDoc } = require("../../lib/utils")
 const { err } = require("../../../common/lib/utils")
 const { getKey } = require("../../lib/index")
-const { get: _get, range: _range } = require("../../lib/Collection")
-
+const { range: _range } = require("../../lib/Collection")
 const parseQuery = query => {
   const [path, opt] = splitWhen(complement(is)(String), query)
   let _limit = null
@@ -258,7 +257,7 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
   const { data } = state
   if (path.length % 2 === 0) {
     if (any(complement(isNil))([_limit, _sort, _filter])) err()
-    /*const { doc: _data } = await getDoc(
+    const { doc: _data } = await getDoc(
       null,
       path,
       null,
@@ -273,18 +272,56 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
       SmartWeave,
       undefined,
       kvs
-    )*/
-    const _data = await _get(last(path), init(path), kvs, SmartWeave)
+    )
     return {
-      result: isNil(_data.val)
+      result: isNil(_data.__data)
         ? null
         : cursor
         ? {
             id: last(path),
             setter: _data.setter,
-            data: _data.val || null,
+            data: _data.__data || null,
           }
-        : _data.val || null,
+        : _data.__data || null,
+    }
+  } else if (true) {
+    let opt = {}
+    const pagenation = {
+      startAfter: _startAfter,
+      startAt: _startAt,
+      endAt: _endAt,
+      endBefore: _endBefore,
+    }
+    if (!isNil(_limit)) opt.limit = _limit
+    for (const k in pagenation) {
+      const p = pagenation[k]
+      if (!isNil(p)) {
+        if (p[1].__cursor__) {
+          opt[k] = assoc("__id__", p[1].id, p[1].data)
+        } else {
+          opt[k] = p[1]
+        }
+      }
+    }
+    console.log(_sort, opt, path)
+    const res = await _range(
+      _sort || [["__id__", "asc"]],
+      opt,
+      path,
+      kvs,
+      SmartWeave
+    )
+    return {
+      result: map(v =>
+        cursor
+          ? {
+              id: v.key,
+              setter: v.setter,
+              data: v.val,
+              __cursor__: true,
+            }
+          : v.val
+      )(res),
     }
   } else {
     let index = await getColIndex(path, _sort, SmartWeave, kvs)
@@ -314,10 +351,6 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
             undefined,
             kvs
           )
-    const test = async v => {
-      return v
-    }
-    const prAll = ps => Promise.all(ps)
     const docs = async id => {
       const doc_key = `data.${path.join("/")}/${id}`
       return (
@@ -485,6 +518,7 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
               id: v,
               setter: doc.setter,
               data: doc.__data,
+              __cursor__: true,
             }
           : doc.__data
       })(res)
