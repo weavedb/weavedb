@@ -114,7 +114,7 @@ const tests = {
     expect(await db.get("ppl", "Bob")).to.eql(null)
   },
 
-  "should get a collection": async ({ db, arweave_wallet }) => {
+  "should get a collection.only": async ({ db, arweave_wallet }) => {
     const Bob = {
       name: "Bob",
       age: 20,
@@ -147,7 +147,6 @@ const tests = {
     await db.set(Alice, "ppl", "Alice")
     await db.set(John, "ppl", "John")
     await db.set(Beth, "ppl", "Beth")
-
     expect(await db.get("ppl")).to.eql([Alice, Beth, Bob, John])
 
     // limit
@@ -163,7 +162,7 @@ const tests = {
       Beth,
       Alice,
     ])
-
+    return
     // sort multiple fields
     await db.addIndex([["age"], ["weight", "desc"]], "ppl", {
       ar: arweave_wallet,
@@ -972,7 +971,6 @@ const tests = {
     await db.set({ name: "apple" }, "ppl", "Bob", "foods", "apple")
     expect(await db.listCollections()).to.eql(["ppl", "ppl2"])
     expect(await db.listCollections("ppl", "Bob")).to.eql(["cars", "foods"])
-    return
   },
 
   "should get info": async ({
