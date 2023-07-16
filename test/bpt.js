@@ -10,7 +10,7 @@ const {
   getIndexes,
   mod,
   mod2,
-} = require("../sdk/contracts/weavedb-bpt/lib/Collection")
+} = require("../sdk/contracts/weavedb-bpt/lib/index")
 const { randO, shuffle, fuzztest } = require("./utils-bpt")
 const { pluck, prop, range, sortWith, ascend, descend } = require("ramda")
 const alpha = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"

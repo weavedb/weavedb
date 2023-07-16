@@ -20,7 +20,7 @@ const {
 } = require("../../common/lib/utils")
 const { clone, isValidName } = require("../../common/lib/pure")
 const { validate: validator } = require("../../common/lib/jsonschema")
-const { get: _get } = require("./Collection")
+const { get: _get } = require("./index")
 
 const getCol = async (
   data,
