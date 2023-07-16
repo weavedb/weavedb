@@ -234,7 +234,48 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
       }
     }
     let res = null
-    if (!isNil(_filter?.["!="])) {
+    if (!isNil(_filter?.["not-in"])) {
+      _sort ??= []
+      if (_sort.length === 0 || _sort[0][0] !== _filter["not-in"][0]) {
+        _sort.push([_filter["not-in"][0], "asc"])
+      }
+      let ranges = []
+      const limit = opt.limit || null
+      delete opt.limit
+      let i = 0
+      let prev = null
+      for (let v of _filter?.["not-in"][2]) {
+        let _opt = clone(opt)
+        if (i !== 0) {
+          _opt.startAfter = { [_filter["not-in"][0]]: prev }
+        }
+        _opt.endBefore = { [_filter["not-in"][0]]: v }
+        ranges.push({ opt: _opt, sort: _sort })
+        if (i == _filter?.["not-in"][2].length - 1) {
+          let _opt = clone(opt)
+          _opt.startAfter = { [_filter["not-in"][0]]: v }
+          ranges.push({ opt: _opt, sort: _sort })
+        }
+        prev = v
+        i++
+      }
+      res = await _ranges(ranges, limit, path, kvs, SmartWeave)
+    } else if (!isNil(_filter?.["in"])) {
+      _sort ??= []
+      if (_sort.length === 0 || _sort[0][0] !== _filter["in"][0]) {
+        _sort.push([_filter["in"][0], "asc"])
+      }
+      let ranges = []
+      const limit = opt.limit || null
+      delete opt.limit
+      for (let v of _filter?.["in"][2]) {
+        let _opt = clone(opt)
+        _opt.startAt = { [_filter["in"][0]]: v }
+        _opt.endAt = { [_filter["in"][0]]: v }
+        ranges.push({ opt: _opt, sort: _sort })
+      }
+      res = await _ranges(ranges, limit, path, kvs, SmartWeave)
+    } else if (!isNil(_filter?.["!="])) {
       const limit = opt.limit || null
       delete opt.limit
       let opt1 = clone(opt)
