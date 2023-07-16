@@ -1,28 +1,7 @@
 const {
   assoc,
-  path: __path,
-  then,
-  hasPath,
-  uniq,
-  pluck,
-  range,
-  addIndex,
-  keys,
-  groupBy,
-  flatten,
-  sortBy,
-  reverse,
-  take,
   tail,
-  intersection,
-  always,
-  o,
-  compose,
-  when,
   last,
-  prop,
-  values,
-  ifElse,
   splitWhen,
   complement,
   is,
@@ -30,14 +9,13 @@ const {
   includes,
   append,
   any,
-  slice,
-  filter,
   map,
+  clone,
 } = require("ramda")
 
 const { kv, getDoc } = require("../../lib/utils")
 const { err } = require("../../../common/lib/utils")
-const { range: _range } = require("../../lib/index")
+const { ranges: _ranges, range: _range } = require("../../lib/index")
 const md5 = require("md5")
 
 const parseQuery = query => {
@@ -86,7 +64,6 @@ const parseQuery = query => {
         if (
           includes(v[1])([
             ">",
-            "=", // deprecated at v0.23
             "==",
             "!=",
             "<",
@@ -145,102 +122,6 @@ const parseQuery = query => {
     _startAfter,
     _endAt,
     _endBefore,
-  }
-}
-
-const getColIndex = async (path, _sort, SmartWeave, kvs) => {
-  if (isNil(_sort)) _sort = [["__id__"]]
-  let _reverse = false
-  if (!isNil(_sort) && _sort.length === 1 && _sort[0][1] === "desc") {
-    _sort[0][1] = "asc"
-    _reverse = true
-  }
-  const indexes = await kv(kvs, SmartWeave).get(getKey(path, _sort))
-  return _reverse ? reverse(indexes) : indexes
-}
-
-const comp = (val, x) => {
-  let res = 0
-  for (let i of range(0, val.length)) {
-    let a = val[i].val
-    let b = x[i]
-    if (val[i].desc) {
-      a = x[i]
-      b = val[i].val
-    }
-    if (a > b) {
-      res = -1
-      break
-    } else if (a < b) {
-      res = 1
-      break
-    }
-  }
-  return res
-}
-
-const bsearch = async function (
-  arr,
-  x,
-  sort,
-  db,
-  start = 0,
-  end = arr.length - 1
-) {
-  if (start > end) return null
-  let mid = Math.floor((start + end) / 2)
-  const val = await Promise.all(
-    addIndex(map)(async (v, i) => ({
-      desc: sort[i][1] === "desc",
-      val: (await db(arr[mid])).__data[sort[i][0]],
-    }))(tail(x))
-  )
-  let res = comp(val, tail(x))
-  let res2 = 1
-  if (includes(x[0])(["startAt", "startAfter"])) {
-    if (mid > 0) {
-      const val2 = await Promise.all(
-        addIndex(map)(async (v, i) => ({
-          desc: sort[i][1] === "desc",
-          val: (await db(arr[mid - 1])).__data[sort[i][0]],
-        }))(tail(x))
-      )
-      res2 = comp(val2, tail(x))
-    }
-  } else {
-    if (mid < arr.length - 1) {
-      const val2 = await Promise.all(
-        addIndex(map)(async (v, i) => ({
-          desc: sort[i][1] === "desc",
-          val: (await db(arr[mid + 1])).__data[sort[i][0]],
-        }))(tail(x))
-      )
-      res2 = comp(val2, tail(x))
-    }
-  }
-  let down = false
-  switch (x[0]) {
-    case "startAt":
-      if (res2 === 1 && res <= 0) return mid
-      if (res <= 0) down = true
-      break
-    case "startAfter":
-      if (res2 >= 0 && res === -1) return mid
-      if (res < 0) down = true
-      break
-    case "endAt":
-      if (res2 === -1 && res >= 0) return mid
-      if (res < 0) down = true
-      break
-    case "endBefore":
-      if (res2 <= 0 && res === 1) return mid
-      if (res <= 0) down = true
-      break
-  }
-  if (down) {
-    return await bsearch(arr, x, sort, db, start, mid - 1)
-  } else {
-    return await bsearch(arr, x, sort, db, mid + 1, end)
   }
 }
 
@@ -352,13 +233,28 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
         }
       }
     }
-    const res = await _range(
-      _sort || [["__id__", "asc"]],
-      opt,
-      path,
-      kvs,
-      SmartWeave
-    )
+    let res = null
+    if (!isNil(_filter?.["!="])) {
+      const limit = opt.limit || null
+      delete opt.limit
+      let opt1 = clone(opt)
+      let opt2 = clone(opt)
+      opt1.endBefore = { [_filter?.["!="][0]]: _filter?.["!="][2] }
+      opt2.startAfter = { [_filter?.["!="][0]]: _filter?.["!="][2] }
+      let ranges = [
+        { opt: opt1, sort: _sort },
+        { opt: opt2, sort: _sort },
+      ]
+      res = await _ranges(ranges, limit, path, kvs, SmartWeave)
+    } else {
+      res = await _range(
+        _sort || [["__id__", "asc"]],
+        opt,
+        path,
+        kvs,
+        SmartWeave
+      )
+    }
     return {
       result: map(v =>
         cursor
