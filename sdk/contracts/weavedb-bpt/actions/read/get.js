@@ -39,6 +39,8 @@ const { kv, getDoc } = require("../../lib/utils")
 const { err } = require("../../../common/lib/utils")
 const { getKey } = require("../../lib/index")
 const { range: _range } = require("../../lib/Collection")
+const md5 = require("md5")
+
 const parseQuery = query => {
   const [path, opt] = splitWhen(complement(is)(String), query)
   let _limit = null
@@ -244,7 +246,7 @@ const bsearch = async function (
 }
 
 const get = async (state, action, cursor = false, SmartWeave, kvs) => {
-  const {
+  let {
     path,
     _limit,
     _filter,
@@ -286,13 +288,56 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
     }
   } else if (true) {
     let opt = {}
-    const pagenation = {
+    let pagenation = {
       startAfter: _startAfter,
       startAt: _startAt,
       endAt: _endAt,
       endBefore: _endBefore,
     }
     if (!isNil(_limit)) opt.limit = _limit
+    if (!isNil(_filter?.["=="])) {
+      _sort ??= []
+      if (_sort.length === 0 || _sort[0][0] !== _filter["=="][0]) {
+        _sort.push([_filter["=="][0], "asc"])
+      }
+      pagenation.startAt = ["startAt", _filter["=="][2]]
+      pagenation.endAt = ["endAt", _filter["=="][2]]
+    } else {
+      if (!isNil(_filter?.[">"])) {
+        _sort ??= []
+        if (_sort.length === 0 || _sort[0][0] !== _filter[">"][0]) {
+          _sort.push([_filter[">"][0], "asc"])
+        }
+        pagenation.startAfter = ["startAfter", _filter[">"][2]]
+      } else if (!isNil(_filter?.[">="])) {
+        _sort ??= []
+        if (_sort.length === 0 || _sort[0][0] !== _filter[">="][0]) {
+          _sort.push([_filter[">="][0], "asc"])
+        }
+        pagenation.startAt = ["startAt", _filter[">="][2]]
+      }
+      if (!isNil(_filter?.["<"])) {
+        _sort ??= []
+        if (_sort.length === 0 || _sort[0][0] !== _filter["<"][0]) {
+          _sort.push([_filter["<"][0], "asc"])
+        }
+        pagenation.endBefore = ["endBefore", _filter["<"][2]]
+      } else if (!isNil(_filter?.["<="])) {
+        _sort ??= []
+        if (_sort.length === 0 || _sort[0][0] !== _filter["<="][0]) {
+          _sort.push([_filter["<="][0], "asc"])
+        }
+        pagenation.endAt = ["endAt", _filter["<="][2]]
+      }
+      if (!isNil(_filter?.["array-contains"])) {
+        _sort ??= []
+        const key = `${_filter["array-contains"][0]}/array:${md5(
+          JSON.stringify(_filter["array-contains"][2])
+        )}`
+        if (_sort.length === 0 || _sort[0][0] !== key) _sort.push([key])
+      }
+    }
+
     for (const k in pagenation) {
       const p = pagenation[k]
       if (!isNil(p)) {
@@ -308,7 +353,6 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
         }
       }
     }
-
     const res = await _range(
       _sort || [["__id__", "asc"]],
       opt,
@@ -316,7 +360,6 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
       kvs,
       SmartWeave
     )
-
     return {
       result: map(v =>
         cursor
