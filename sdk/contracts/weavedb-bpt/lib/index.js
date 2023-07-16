@@ -558,6 +558,20 @@ const put = async (_data, id, path, kvs, SW, signer, create = false) => {
   return { before: old_data, after: { key: id, val: _data, setter: signer } }
 }
 
+const ranges = async (_ranges, limit, path, kvs, SW) => {
+  let res = []
+  let count = 0
+  for (let v of _ranges) {
+    if (!isNil(limit)) {
+      v.opt.limit = limit - count
+    }
+    res = concat(res, await range(v.sort, v.opt, path, kvs, SW))
+    count += res.length
+    if (!isNil(limit) && count >= limit) break
+  }
+  return res
+}
+
 const range = async (sort_fields, opt = {}, path, kvs, SW) => {
   const kv = new KV(`${path.join("/")}/`, _KV(kvs, SW))
   if (sort_fields.length === 1 && sort_fields[0][1] === "desc") {
@@ -585,4 +599,5 @@ module.exports = {
   getIndexes,
   removeIndex,
   mod,
+  ranges,
 }

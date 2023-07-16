@@ -164,6 +164,7 @@ class OffChain extends Base {
         this.state = tx.state
         if (typeof this.cache === "object") await this.cache.onWrite(tx, this)
       } catch (e) {
+        console.log(e)
         //console.log(typeof e === "object" ? e.message : e)
         error = e
       }

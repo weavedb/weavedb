@@ -34,7 +34,7 @@ describe("WeaveDB Offchain BPT", function () {
   })
 
   const local = {
-    "should get a collection": async ({ db, arweave_wallet }) => {
+    "should get a collection.only": async ({ db, arweave_wallet }) => {
       const Bob = {
         name: "Bob",
         age: 20,
@@ -156,7 +156,6 @@ describe("WeaveDB Offchain BPT", function () {
         Beth,
         Bob,
       ])
-      return
 
       // where =!
       expect(await db.get("ppl", ["age"], ["age", "!=", 30])).to.eql([
@@ -164,6 +163,7 @@ describe("WeaveDB Offchain BPT", function () {
         John,
       ])
 
+      return
       // where in
       expect(await db.get("ppl", ["age", "in", [20, 30]])).to.eql([
         Alice,
