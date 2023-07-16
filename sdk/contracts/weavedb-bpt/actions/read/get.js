@@ -37,8 +37,9 @@ const {
 
 const { kv, getDoc } = require("../../lib/utils")
 const { err } = require("../../../common/lib/utils")
-const { getKey } = require("../../lib/index")
-const { range: _range } = require("../../lib/Collection")
+const { range: _range } = require("../../lib/index")
+const md5 = require("md5")
+
 const parseQuery = query => {
   const [path, opt] = splitWhen(complement(is)(String), query)
   let _limit = null
@@ -244,7 +245,7 @@ const bsearch = async function (
 }
 
 const get = async (state, action, cursor = false, SmartWeave, kvs) => {
-  const {
+  let {
     path,
     _limit,
     _filter,
@@ -284,15 +285,58 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
           }
         : _data.__data || null,
     }
-  } else if (true) {
+  } else {
     let opt = {}
-    const pagenation = {
+    let pagenation = {
       startAfter: _startAfter,
       startAt: _startAt,
       endAt: _endAt,
       endBefore: _endBefore,
     }
     if (!isNil(_limit)) opt.limit = _limit
+    if (!isNil(_filter?.["=="])) {
+      _sort ??= []
+      if (_sort.length === 0 || _sort[0][0] !== _filter["=="][0]) {
+        _sort.push([_filter["=="][0], "asc"])
+      }
+      pagenation.startAt = ["startAt", _filter["=="][2]]
+      pagenation.endAt = ["endAt", _filter["=="][2]]
+    } else {
+      if (!isNil(_filter?.[">"])) {
+        _sort ??= []
+        if (_sort.length === 0 || _sort[0][0] !== _filter[">"][0]) {
+          _sort.push([_filter[">"][0], "asc"])
+        }
+        pagenation.startAfter = ["startAfter", _filter[">"][2]]
+      } else if (!isNil(_filter?.[">="])) {
+        _sort ??= []
+        if (_sort.length === 0 || _sort[0][0] !== _filter[">="][0]) {
+          _sort.push([_filter[">="][0], "asc"])
+        }
+        pagenation.startAt = ["startAt", _filter[">="][2]]
+      }
+      if (!isNil(_filter?.["<"])) {
+        _sort ??= []
+        if (_sort.length === 0 || _sort[0][0] !== _filter["<"][0]) {
+          _sort.push([_filter["<"][0], "asc"])
+        }
+        pagenation.endBefore = ["endBefore", _filter["<"][2]]
+      } else if (!isNil(_filter?.["<="])) {
+        _sort ??= []
+        if (_sort.length === 0 || _sort[0][0] !== _filter["<="][0]) {
+          _sort.push([_filter["<="][0], "asc"])
+        }
+        pagenation.endAt = ["endAt", _filter["<="][2]]
+      }
+      if (!isNil(_filter?.["array-contains"])) {
+        _sort ??= []
+        const key = `${_filter["array-contains"][0]}/array:${md5(
+          JSON.stringify(_filter["array-contains"][2])
+        )}`
+        if (_sort.length === 0 || _sort[0][0] !== key) _sort.push([key])
+      }
+    }
+
     for (const k in pagenation) {
       const p = pagenation[k]
       if (!isNil(p)) {
@@ -308,7 +352,6 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
         }
       }
     }
-
     const res = await _range(
       _sort || [["__id__", "asc"]],
       opt,
@@ -316,7 +359,6 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
       kvs,
       SmartWeave
     )
-
     return {
       result: map(v =>
         cursor
@@ -328,209 +370,6 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
             }
           : v.val
       )(res),
-    }
-  } else {
-    let index = await getColIndex(path, _sort, SmartWeave, kvs)
-    if (isNil(index)) {
-      if (isNil(_sort) || _sort.length === 1) {
-        index = []
-      } else {
-        err("index doesn't exist")
-      }
-    }
-    const { doc: _data } =
-      path.length === 1
-        ? { doc: data }
-        : await getDoc(
-            null,
-            slice(0, -1, path),
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            SmartWeave,
-            undefined,
-            kvs
-          )
-    const docs = async id => {
-      const doc_key = `data.${path.join("/")}/${id}`
-      return (
-        (await kv(kvs, SmartWeave).get(doc_key)) || { __data: null, subs: {} }
-      )
-    }
-
-    let _docs = []
-    let start = null
-    let end = null
-    let _start = _startAt || _startAfter
-    let _end = _endAt || _endBefore
-    if (!isNil(_start)) {
-      if (is(Object)(_start[1]) && hasPath([1, "id"])(_start)) {
-        start = await bsearch(
-          index,
-          [
-            "startAt",
-            await Promise.all(
-              map(async v =>
-                v[0] === "__id__"
-                  ? _start[1].id
-                  : (
-                      await docs(_start[1].id)
-                    ).__data[v[0]]
-              )(_sort || [["__id__"]])
-            ),
-          ],
-          _sort || [["__id__"]],
-          docs
-        )
-        for (let i = start; i < index.length; i++) {
-          if (index[i] === _start[1].id) {
-            start = i
-            break
-          }
-        }
-        if (!isNil(start)) {
-          if (_start[0] === "startAfter") start += 1
-          index.splice(0, start)
-        }
-      } else {
-        start = await bsearch(index, _start, _sort || [["__id__"]], docs)
-        index.splice(0, start)
-      }
-    }
-    if (!isNil(_end)) {
-      if (!isNil(_start)) {
-        const len = Math.min(_end.length, _start.length) - 1
-        const val = take(
-          len,
-          addIndex(map)((v, i) => ({
-            desc: _sort[i][1] === "desc",
-            val: v,
-          }))(tail(_start))
-        )
-        if (comp(val, tail(_end)) === -1) err()
-      }
-      if (is(Object)(_end[1]) && hasPath([1, "id"])(_end)) {
-        end = await bsearch(
-          index,
-          [
-            "startAt",
-            await Promise.all(
-              map(async v =>
-                v[0] === "__id__"
-                  ? _end[1].id
-                  : (
-                      await docs(_end[1].id)
-                    ).__data[v[0]]
-              )(_sort || [["__id__"]])
-            ),
-          ],
-          _sort || [["__id__"]],
-          docs
-        )
-        for (let i = end; i < index.length; i++) {
-          if (index[i] === _end[1].id) {
-            end = i
-            break
-          }
-        }
-        if (!isNil(end)) {
-          if (_end[0] === "endBefore" && end !== 0) end -= 1
-          index.splice(end + 1, index.length - end)
-        }
-      } else {
-        end = await bsearch(index, _end, _sort || [["__id__"]], docs)
-        index.splice(end + 1, index.length - end)
-      }
-    }
-    let res = index
-    if (!isNil(_filter)) {
-      res = []
-      const sort_field = compose(
-        uniq,
-        pluck(0),
-        filter(v => includes(v[1])([">", ">=", "<", "<=", "!=", "not-in"])),
-        values
-      )(_filter)
-      if (sort_field.length > 1) {
-        err()
-      }
-      if (
-        sort_field.length === 1 &&
-        (isNil(_sort) || _sort[0][0] !== sort_field[0])
-      ) {
-        err()
-      }
-      const getField = (_path, data) => __path(_path.split("."), data)
-      for (let _v of index) {
-        const v = (await docs(_v)).__data
-        let ok = true
-        for (let v2 of values(_filter)) {
-          if (isNil(v[v2[0]]) && v[v2[0]] !== null) {
-            ok = false
-          }
-          const field = getField(v2[0], v)
-          switch (v2[1]) {
-            case ">":
-              ok = field > v2[2]
-              break
-            case "<":
-              ok = field < v2[2]
-              break
-            case ">=":
-              ok = field >= v2[2]
-              break
-            case "<=":
-              ok = field <= v2[2]
-              break
-            case "=": // deprecated at v0.23
-            case "==":
-              ok = field === v2[2]
-              break
-            case "!=":
-              ok = field !== v2[2]
-              break
-            case "in":
-              ok = includes(field)(v2[2])
-              break
-            case "not-in":
-              ok = !includes(field)(v2[2])
-              break
-            case "array-contains":
-              ok = is(Array, field) && includes(v2[2])(field)
-              break
-            case "array-contains-any":
-              ok = is(Array, field) && intersection(v2[2])(field).length > 0
-              break
-          }
-          if (!ok) break
-        }
-        if (ok) {
-          res.push(_v)
-          if (!isNil(_limit) && res.length >= _limit) break
-        }
-      }
-    }
-    const _res = await Promise.all(
-      map(async v => {
-        const doc = await docs(v)
-        return cursor
-          ? {
-              id: v,
-              setter: doc.setter,
-              data: doc.__data,
-              __cursor__: true,
-            }
-          : doc.__data
-      })(res)
-    )
-    return {
-      result: when(o(complement(isNil), always(_limit)), take(_limit))(_res),
     }
   }
 }

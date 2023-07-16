@@ -127,17 +127,17 @@ describe("WeaveDB Offchain BPT", function () {
       expect(
         await db.get("ppl", ["age"], ["weight"], ["endAt", 30, 60])
       ).to.eql([Bob, Alice])
-      return
 
       // where =
       expect(await db.get("ppl", ["age", "==", 30])).to.eql([Alice, Beth])
+
       // where >
       expect(await db.get("ppl", ["age"], ["age", ">", 30])).to.eql([John])
 
       // where >=
       expect(await db.get("ppl", ["age"], ["age", ">=", 30])).to.eql([
-        Beth,
         Alice,
+        Beth,
         John,
       ])
 
@@ -147,9 +147,16 @@ describe("WeaveDB Offchain BPT", function () {
       // where <=
       expect(await db.get("ppl", ["age"], ["age", "<=", 30])).to.eql([
         Bob,
-        Beth,
         Alice,
+        Beth,
       ])
+
+      // where array-contains
+      expect(await db.get("ppl", ["letters", "array-contains", "b"])).to.eql([
+        Beth,
+        Bob,
+      ])
+      return
 
       // where =!
       expect(await db.get("ppl", ["age"], ["age", "!=", 30])).to.eql([
@@ -167,12 +174,6 @@ describe("WeaveDB Offchain BPT", function () {
       // where not-in
       expect(await db.get("ppl", ["age"], ["age", "not-in", [20, 30]])).to.eql([
         John,
-      ])
-
-      // where array-contains
-      expect(await db.get("ppl", ["letters", "array-contains", "b"])).to.eql([
-        Beth,
-        Bob,
       ])
 
       // where array-contains-any
