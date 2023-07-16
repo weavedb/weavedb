@@ -2,7 +2,7 @@ const { equals, isNil, init, last } = require("ramda")
 const { parse, trigger } = require("../../lib/utils")
 const { validateSchema, wrapResult } = require("../../../common/lib/utils")
 const { validate } = require("../../lib/validate")
-const { put } = require("../../lib/Collection")
+const { put } = require("../../lib/index")
 
 const upsert = async (
   state,

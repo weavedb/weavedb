@@ -1,9 +1,8 @@
-const { isNil, mergeLeft, init } = require("ramda")
+const { isNil } = require("ramda")
 const { parse } = require("../../lib/utils")
-const { err, wrapResult } = require("../../../common/lib/utils")
+const { wrapResult } = require("../../../common/lib/utils")
 const { validate } = require("../../lib/validate")
-const { removeIndex: _removeIndex, getIndex } = require("../../lib/index")
-const { removeIndex: __removeIndex } = require("../../lib/Collection")
+const { removeIndex: __removeIndex } = require("../../lib/index")
 
 const removeIndex = async (
   state,
@@ -24,7 +23,7 @@ const removeIndex = async (
       kvs
     ))
   }
-  let { col, _data, data, query, new_data, path } = await parse(
+  let { new_data, path } = await parse(
     state,
     action,
     "removeIndex",
@@ -34,7 +33,6 @@ const removeIndex = async (
     SmartWeave,
     kvs
   )
-  await _removeIndex(new_data, path, SmartWeave, kvs)
   await __removeIndex(new_data, path, kvs, SmartWeave, signer)
   return wrapResult(state, original_signer, SmartWeave)
 }

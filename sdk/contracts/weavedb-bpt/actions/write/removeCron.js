@@ -1,8 +1,7 @@
-const { isNil, mergeLeft, init } = require("ramda")
+const { isNil } = require("ramda")
 const { parse } = require("../../lib/utils")
 const { err, isOwner, wrapResult } = require("../../../common/lib/utils")
 const { validate } = require("../../lib/validate")
-const { addIndex: _addIndex, getIndex } = require("../../lib/index")
 
 const removeCron = async (
   state,

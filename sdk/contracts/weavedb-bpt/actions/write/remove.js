@@ -3,7 +3,7 @@ const { parse, trigger } = require("../../lib/utils")
 const { clone } = require("../../../common/lib/pure")
 const { err, wrapResult } = require("../../../common/lib/utils")
 const { validate } = require("../../lib/validate")
-const { del } = require("../../lib/Collection")
+const { del } = require("../../lib/index")
 
 const remove = async (
   state,
