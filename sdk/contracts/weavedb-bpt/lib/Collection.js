@@ -560,6 +560,10 @@ const put = async (_data, id, path, kvs, SW, signer, create = false) => {
 
 const range = async (sort_fields, opt = {}, path, kvs, SW) => {
   const kv = new KV(`${path.join("/")}/`, _KV(kvs, SW))
+  if (sort_fields.length === 1 && sort_fields[0][1] === "desc") {
+    sort_fields[0][1] = "asc"
+    opt.reverse = true
+  }
   const prefix = `${compose(join("/"), flatten)(sort_fields)}`
   const tree = new BPT(order, [...sort_fields, idsorter], kv, prefix)
   return await tree.range(opt)

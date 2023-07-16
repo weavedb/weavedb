@@ -299,11 +299,16 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
         if (p[1].__cursor__) {
           opt[k] = assoc("__id__", p[1].id, p[1].data)
         } else {
-          opt[k] = p[1]
+          opt[k] = {}
+          let i = 0
+          for (let v of tail(p)) {
+            opt[k][_sort[i][0]] = v
+            i++
+          }
         }
       }
     }
-    console.log(_sort, opt, path)
+
     const res = await _range(
       _sort || [["__id__", "asc"]],
       opt,
@@ -311,6 +316,7 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
       kvs,
       SmartWeave
     )
+
     return {
       result: map(v =>
         cursor
