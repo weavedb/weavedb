@@ -223,7 +223,8 @@ const _getDoc = async (
   action,
   SmartWeave,
   current_path = [],
-  kvs
+  kvs,
+  doc
 ) => {
   data = (await kv(kvs, SmartWeave).get(`data.${current_path.join("/")}`)) || {}
   const [_col, id] = path
@@ -239,10 +240,12 @@ const _getDoc = async (
   const doc_key = `data.${current_path.join("/")}`
   const col = (await kv(kvs, SmartWeave).get(col_key)) || { __docs: {} }
   const { rules, schema } = col
-  let doc = await _get(last(path), init(path), kvs, SmartWeave)
-  doc.__data = doc.val
-  doc.subs = {}
-  delete doc.val
+  if (isNil(doc)) {
+    doc = await _get(last(path), init(path), kvs, SmartWeave)
+    doc.__data = doc.val
+    doc.subs = {}
+    delete doc.val
+  }
   if (!isNil(_signer) && isNil(doc.setter)) doc.setter = _signer
   let next_data = null
   if (path.length === 2) {
@@ -280,7 +283,6 @@ const _getDoc = async (
     next_data,
     path,
   })
-
   return path.length >= 4
     ? await _getDoc(
         doc.subs,
@@ -296,7 +298,8 @@ const _getDoc = async (
         action,
         SmartWeave,
         current_path,
-        kvs
+        kvs,
+        doc
       )
     : {
         doc,
