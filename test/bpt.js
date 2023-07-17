@@ -21,6 +21,9 @@ const {
   ascend,
   descend,
   o,
+  compose,
+  join,
+  flatten,
 } = require("ramda")
 const alpha = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -246,6 +249,7 @@ describe("B+Tree", function () {
       await put({ age: i * 3 + 1 }, `Bob-${i * 3 + 1}`, ...opts[1])
       await put({ age: i * 3 + 2 }, `Bob-${i * 3 + 2}`, ...opts[2])
     }
+    const prefix = `${compose(join("/"), flatten)(sorter)}`
     expect(
       o(
         pluck("age"),
@@ -253,9 +257,9 @@ describe("B+Tree", function () {
       )(
         await pranges(
           [
-            { opt: {}, sort: sorter, path: ["ppl"] },
-            { opt: {}, sort: sorter, path: ["ppl2"] },
-            { opt: {}, sort: sorter, path: ["ppl3"] },
+            { opt: {}, sort: sorter, path: ["ppl"], prefix },
+            { opt: {}, sort: sorter, path: ["ppl2"], prefix },
+            { opt: {}, sort: sorter, path: ["ppl3"], prefix },
           ],
           10,
           temp,
