@@ -9,9 +9,19 @@ const {
   removeIndex,
   getIndexes,
   mod,
+  pranges,
 } = require("../sdk/contracts/weavedb-bpt/lib/index")
 const { randO, shuffle, fuzztest } = require("./utils-bpt")
-const { init, pluck, prop, range, sortWith, ascend, descend } = require("ramda")
+const {
+  init,
+  pluck,
+  prop,
+  range,
+  sortWith,
+  ascend,
+  descend,
+  o,
+} = require("ramda")
 const alpha = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 describe("B+Tree", function () {
@@ -207,7 +217,7 @@ describe("B+Tree", function () {
     ).to.eql(["Beth", "Mike"])
   })
 
-  it.only("should return a range cursor", async () => {
+  it("should return a range cursor", async () => {
     const opt = [["ppl"], temp, SW, "0x"]
     const sorter = [["age", "asc"]]
     for (let i of range(0, 200)) {
@@ -222,5 +232,36 @@ describe("B+Tree", function () {
     for (let i of range(0, 101)) {
       expect((await rcursor()).key).to.eql(`Bob-${199 - i}`)
     }
+  })
+
+  it("should execute parallel ranges", async () => {
+    const opt = [["ppl"], temp, SW, "0x"]
+    const opt2 = [["ppl2"], temp, SW, "0x"]
+    const opt3 = [["ppl3"], temp, SW, "0x"]
+    const sorter = [["age", "asc"]]
+    let opts = [opt, opt2, opt3]
+    for (let i of range(0, 10)) {
+      shuffle(opts)
+      await put({ age: i * 3 }, `Bob-${i * 3}`, ...opts[0])
+      await put({ age: i * 3 + 1 }, `Bob-${i * 3 + 1}`, ...opts[1])
+      await put({ age: i * 3 + 2 }, `Bob-${i * 3 + 2}`, ...opts[2])
+    }
+    expect(
+      o(
+        pluck("age"),
+        pluck("val")
+      )(
+        await pranges(
+          [
+            { opt: {}, sort: sorter, path: ["ppl"] },
+            { opt: {}, sort: sorter, path: ["ppl2"] },
+            { opt: {}, sort: sorter, path: ["ppl3"] },
+          ],
+          10,
+          temp,
+          SW
+        )
+      )
+    ).to.eql([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
   })
 })
