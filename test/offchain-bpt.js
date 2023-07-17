@@ -34,7 +34,7 @@ describe("WeaveDB Offchain BPT", function () {
   })
 
   const local = {
-    "should get a collection.only": async ({ db, arweave_wallet }) => {
+    "should get a collection": async ({ db, arweave_wallet }) => {
       const Bob = {
         name: "Bob",
         age: 20,

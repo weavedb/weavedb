@@ -15,7 +15,11 @@ const {
 
 const { kv, getDoc } = require("../../lib/utils")
 const { err } = require("../../../common/lib/utils")
-const { ranges: _ranges, range: _range } = require("../../lib/index")
+const {
+  ranges: _ranges,
+  pranges: _pranges,
+  range: _range,
+} = require("../../lib/index")
 const md5 = require("md5")
 
 const parseQuery = query => {
@@ -233,8 +237,23 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
         }
       }
     }
+
     let res = null
-    if (!isNil(_filter?.["not-in"])) {
+    if (!isNil(_filter?.["array-contains-any"])) {
+      _sort ??= []
+      if (_sort.length === 0) _sort.push(["__id__", "asc"])
+      let ranges = []
+      const limit = opt.limit || null
+      delete opt.limit
+      for (let v of _filter?.["array-contains-any"][2]) {
+        let _opt = clone(opt)
+        const prefix = `${_filter["array-contains-any"][0]}/array:${md5(
+          JSON.stringify(v)
+        )}`
+        ranges.push({ opt: _opt, sort: _sort, path, prefix })
+      }
+      res = await _pranges(ranges, limit, kvs, SmartWeave)
+    } else if (!isNil(_filter?.["not-in"])) {
       _sort ??= []
       if (_sort.length === 0 || _sort[0][0] !== _filter["not-in"][0]) {
         _sort.push([_filter["not-in"][0], "asc"])
