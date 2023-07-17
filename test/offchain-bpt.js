@@ -180,7 +180,7 @@ describe("WeaveDB Offchain BPT", function () {
         await db.get("ppl", ["letters", "array-contains-any", ["j", "t"]])
       ).to.eql([Beth, John])
     },
-    "should update nested object with dot notation.only": async ({ db }) => {
+    "should update nested object with dot notation": async ({ db }) => {
       const data = { age: 30 }
       await db.set(data, "ppl", "Bob")
       expect(await db.get("ppl", "Bob")).to.eql(data)
