@@ -1218,7 +1218,7 @@ const tests = {
     expect(await db.get("ppl", "Alice")).to.eql(data2)
   },
 
-  "should update nested object with dot notation.skip": async ({ db }) => {
+  "should update nested object with dot notation": async ({ db }) => {
     const data = { age: 30 }
     await db.set(data, "ppl", "Bob")
     expect(await db.get("ppl", "Bob")).to.eql(data)
