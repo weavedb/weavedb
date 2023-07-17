@@ -249,6 +249,107 @@ class BPT {
     }
   }
 
+  async getValsReverseCursor(
+    node,
+    vals,
+    index = 0,
+    opt,
+    cache = {},
+    inRange = null,
+    stats
+  ) {
+    let i = index
+    let vals_len = 0
+    return async () => {
+      let ret = null
+      const getVal = async () => {
+        while (i >= 0) {
+          const v = node.vals[i]
+          const val = await this.data(v, cache, stats)
+          if (!isNil(opt.endAt)) {
+            if (this.comp(val, this.wrap(opt.endAt)) > 0) {
+              node = null
+              return
+            }
+          } else if (!isNil(opt.endBefore)) {
+            if (this.comp(val, this.wrap(opt.endBefore), true) >= 0) {
+              node = null
+              return
+            }
+          }
+          ret = val
+          if (!isNil(opt.limit) && vals.length === opt.limit) {
+            node = null
+            break
+          }
+          i--
+          break
+        }
+        if (isNil(ret)) {
+          if (!isNil(node?.prev)) {
+            node = await this.get(node.prev, stats)
+            i = node.vals.length - 1
+          } else {
+            node = null
+          }
+        }
+      }
+      while (!isNil(node) && isNil(ret)) await getVal()
+      return ret
+    }
+  }
+
+  async getValsCursor(
+    node,
+    vals,
+    index = 0,
+    opt,
+    cache = {},
+    inRange = null,
+    stats
+  ) {
+    let i = index
+    let vals_len = 0
+    return async () => {
+      let ret = null
+      const getVal = async () => {
+        while (i < node.vals.length) {
+          const v = node.vals[i]
+          const val = await this.data(v, cache, stats)
+          if (!isNil(opt.endAt)) {
+            if (this.comp(val, this.wrap(opt.endAt), true) < 0) {
+              node = null
+              break
+            }
+          } else if (!isNil(opt.endBefore)) {
+            if (this.comp(val, this.wrap(opt.endBefore)) <= 0) {
+              node = null
+              break
+            }
+          }
+          ret = val
+          vals_len++
+          if (!isNil(opt.limit) && vals_len === opt.limit) {
+            node = null
+            break
+          }
+          i++
+          break
+        }
+        if (isNil(ret)) {
+          if (!isNil(node?.next)) {
+            node = await this.get(node.next, stats)
+            i = 0
+          } else {
+            node = null
+          }
+        }
+      }
+      while (!isNil(node) && isNil(ret)) await getVal()
+      return ret
+    }
+  }
+
   async findIndex(_index, node, val, cache, stats) {
     let index = _index
     let isPrev = false
@@ -368,7 +469,7 @@ class BPT {
     }
   }
 
-  async range(opt = {}) {
+  async range(opt = {}, cursor = false) {
     opt.limit ??= 1000
     let stats = {}
     let start = opt.startAt ?? opt.startAfter
@@ -380,7 +481,7 @@ class BPT {
       stats,
       after
     )
-    if (isNil(first_node)) return []
+    if (isNil(first_node)) return cursor ? async () => null : []
     let vals = []
     let cache = {}
     let _node = first_node
@@ -487,17 +588,23 @@ class BPT {
         }
       }
     }
-    if (!isNil(_index))
-      await this[`getVals${opt.reverse === true ? "Reverse" : ""}`](
-        _node,
-        vals,
-        _index,
-        opt,
-        cache,
-        null,
-        stats
-      )
-    return vals
+    if (!cursor) {
+      if (!isNil(_index))
+        await this[`getVals${opt.reverse === true ? "Reverse" : ""}`](
+          _node,
+          vals,
+          _index,
+          opt,
+          cache,
+          null,
+          stats
+        )
+      return vals
+    } else {
+      return await this[
+        `getVals${opt.reverse === true ? "Reverse" : ""}Cursor`
+      ](_node, vals, _index, opt, cache, null, stats)
+    }
   }
 
   async searchByKey(key, stats) {
