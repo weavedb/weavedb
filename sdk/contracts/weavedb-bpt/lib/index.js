@@ -1,4 +1,5 @@
 const {
+  last,
   append,
   includes,
   o,
@@ -558,6 +559,62 @@ const put = async (_data, id, path, kvs, SW, signer, create = false) => {
   return { before: old_data, after: { key: id, val: _data, setter: signer } }
 }
 
+const pranges = async (_ranges, limit, kvs, SW) => {
+  let curs = []
+  let res = []
+  for (let v of _ranges) {
+    if (v.sort.length === 1 && v.sort[0][1] === "desc") {
+      v.sort[0][1] = "asc"
+      v.opt.reverse = true
+    }
+    delete v.opt.limit
+    const kv = new KV(`${v.path.join("/")}/`, _KV(kvs, SW))
+    const prefix = `${compose(join("/"), flatten)(v.sort)}`
+    const tree = new BPT(order, v.sort, kv, prefix)
+    curs.push({ val: null, tree, cur: await tree.range(v.opt, true) })
+  }
+  const comp = curs[0].tree.comp.bind(curs[0].tree)
+  let sorter = curs[0].tree.sort_fields
+  if (!equals(last(sorter), ["__id__", "asc"])) sorter.push(["__id__", "asc"])
+  while (curs.length > 0) {
+    const val = await curs[0].cur()
+    curs[0].val = val
+    const cur = curs.shift()
+    if (!isNil(val)) {
+      let pushed2 = false
+      for (let i = res.length - 1; i >= 0; i--) {
+        const _comp = comp(val, res[i], false, sorter)
+        if (_comp === 0) {
+          pushed2 = true
+          break
+        } else if (_comp < 0) {
+          res.splice(i + 1, 0, val)
+          pushed2 = true
+          break
+        }
+      }
+      if (!pushed2) res.unshift(val)
+      const border = isNil(limit) ? null : res[limit - 1] || null
+      if (isNil(border) || comp(border, val) < 0) {
+        let i = 0
+        let pushed = false
+        for (const v of curs) {
+          if (!isNil(v.val)) {
+            if (comp(val, v.val, false, sorter) >= 0) {
+              curs.splice(i, 0, cur)
+              pushed = true
+              break
+            }
+          }
+          i++
+        }
+        if (!pushed) curs.push(cur)
+      }
+    }
+  }
+  return res.slice(0, limit)
+}
+
 const ranges = async (_ranges, limit, path, kvs, SW) => {
   let res = []
   let count = 0
@@ -600,4 +657,5 @@ module.exports = {
   removeIndex,
   mod,
   ranges,
+  pranges,
 }

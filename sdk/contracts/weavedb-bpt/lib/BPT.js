@@ -113,11 +113,12 @@ class BPT {
     return 0
   }
 
-  comp(a, b, null_last = false) {
-    if (typeof this.sort_fields === "string") {
+  comp(a, b, null_last = false, fields) {
+    fields ??= this.sort_fields
+    if (typeof fields === "string") {
       return a.val === b.val ? 0 : a.val < b.val ? 1 : -1
     } else {
-      for (const v of this.sort_fields) {
+      for (const v of fields) {
         const va = v[0] === "__id__" ? a.key : a.val[v[0]]
         const vb = v[0] === "__id__" ? b.key : b.val[v[0]]
         const bareComp = this.compArr(va, vb)
