@@ -180,6 +180,36 @@ describe("WeaveDB Offchain BPT", function () {
         await db.get("ppl", ["letters", "array-contains-any", ["j", "t"]])
       ).to.eql([Beth, John])
     },
+    "should update nested object with dot notation.only": async ({ db }) => {
+      const data = { age: 30 }
+      await db.set(data, "ppl", "Bob")
+      expect(await db.get("ppl", "Bob")).to.eql(data)
+      await db.upsert({ "favorites.food": "apple" }, "ppl", "Bob")
+      const data2 = { age: 30, favorites: { food: "apple" } }
+      expect(await db.get("ppl", "Bob")).to.eql(data2)
+      await db.update(
+        {
+          "countries.UAE.Dubai": "Marina",
+          "favorites.music": "opera",
+          "favorites.food": db.del(),
+        },
+        "ppl",
+        "Bob"
+      )
+      const data3 = {
+        age: 30,
+        favorites: { music: "opera" },
+        countries: { UAE: { Dubai: "Marina" } },
+      }
+      expect(await db.get("ppl", "Bob")).to.eql(data3)
+      await db.addIndex([["countries.UAE.Dubai", "asc"]], "ppl", {
+        ar: arweave_wallet,
+      })
+
+      expect(
+        await db.get("ppl", ["countries.UAE.Dubai", "==", "Marina"])
+      ).to.eql([data3])
+    },
   }
 
   tests(
