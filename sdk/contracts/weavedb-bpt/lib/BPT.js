@@ -475,6 +475,7 @@ class BPT {
 
   async range(opt = {}, cursor = false) {
     opt.limit ??= 1000
+    if (opt.limit > 1000) opt.limit = 1000
     let stats = {}
     let start = opt.startAt ?? opt.startAfter
     if (!isNil(start)) start = this.wrap(start)
