@@ -271,7 +271,7 @@ describe("B+Tree", function () {
     ).to.eql([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
   })
 
-  it.only("should add object indexes", async () => {
+  it("should add object indexes", async () => {
     const opt = [["ppl"], temp, SW, "0x"]
     await put({ name: "Bob", stats: { age: 5 } }, "Bob", ...opt)
     await put({ name: "Alice", stats: { age: 7 } }, "Alice", ...opt)
