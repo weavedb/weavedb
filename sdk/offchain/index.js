@@ -1,6 +1,5 @@
 const { tail, isNil, clone, mergeLeft } = require("ramda")
-//const base = "weavedb-contracts"
-const base = "../contracts"
+const base = "weavedb-contracts"
 const { handle } = require(`${base}/weavedb/contract`)
 const { handle: handle_kv } = require(`${base}/weavedb-kv/contract`)
 const { handle: handle_bpt } = require(`${base}/weavedb-bpt/contract`)
@@ -99,10 +98,16 @@ class OffChain extends Base {
   }
 
   getSW() {
+    let kvs = {}
     return {
       kv: {
-        get: async key => (!isNil(this.kvs[key]) ? clone(this.kvs[key]) : null),
-        put: async (key, val) => (this.kvs[key] = val),
+        get: async key =>
+          !isNil(kvs[key])
+            ? clone(kvs[key])
+            : typeof this.cache === "object"
+            ? await this.cache.get(key, this)
+            : this.kvs[key] ?? null,
+        put: async (key, val) => (kvs[key] = val),
       },
       contract: { id: this.contractTxId },
       arweave,
@@ -162,7 +167,11 @@ class OffChain extends Base {
       try {
         tx = await this.handle(clone(this.state), { input: param }, sw)
         this.state = tx.state
-        if (typeof this.cache === "object") await this.cache.onWrite(tx, this)
+        if (typeof this.cache === "object") {
+          await this.cache.onWrite(tx, this)
+        } else if (this.type === 3) {
+          for (const k in tx.result.kvs) this.kvs[k] = tx.result.kvs[k]
+        }
       } catch (e) {
         //console.log(typeof e === "object" ? e.message : e)
         error = e

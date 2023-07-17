@@ -281,6 +281,7 @@ async function handle(state, action, _SmartWeave) {
   }
   if (!isNil(res)) {
     for (let k in kvs) await _SmartWeave.kv.put(k, kvs[k])
+    res.result.kvs = kvs
     return res
   }
   return { state }
