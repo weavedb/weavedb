@@ -13,6 +13,8 @@ const {
 } = require("../sdk/contracts/weavedb-bpt/lib/index")
 const { randO, shuffle, fuzztest } = require("./utils-bpt")
 const {
+  map,
+  path,
   init,
   pluck,
   prop,
@@ -267,5 +269,49 @@ describe("B+Tree", function () {
         )
       )
     ).to.eql([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+  })
+
+  it.only("should add object indexes", async () => {
+    const opt = [["ppl"], temp, SW, "0x"]
+    await put({ name: "Bob", stats: { age: 5 } }, "Bob", ...opt)
+    await put({ name: "Alice", stats: { age: 7 } }, "Alice", ...opt)
+    await put({ name: "Beth", stats: { age: 6 } }, "Beth", ...opt)
+    await addIndex([["stats.age", "asc"]], ...opt)
+    expect(
+      map(path(["val", "stats", "age"]))(
+        await _range([["stats.age", "asc"]], { reverse: true }, ...init(opt))
+      )
+    ).to.eql([7, 6, 5])
+    await put({ name: "Mike", stats: { age: 4 } }, "Mike", ...opt)
+    expect(
+      map(path(["val", "stats", "age"]))(
+        await _range([["stats.age", "asc"]], { reverse: true }, ...init(opt))
+      )
+    ).to.eql([7, 6, 5, 4])
+    await put({ name: "Mike", stats: { age: 8 } }, "Mike", ...opt)
+    expect(
+      map(path(["val", "stats", "age"]))(
+        await _range([["stats.age", "asc"]], { reverse: true }, ...init(opt))
+      )
+    ).to.eql([8, 7, 6, 5])
+    await put({ name: "John" }, "John", ...opt)
+    expect(
+      map(path(["val", "stats", "age"]))(
+        await _range([["stats.age", "asc"]], { reverse: true }, ...init(opt))
+      )
+    ).to.eql([8, 7, 6, 5])
+    await put({ name: "John", stats: { age: 9 } }, "John", ...opt)
+    expect(
+      map(path(["val", "stats", "age"]))(
+        await _range([["stats.age", "asc"]], { reverse: true }, ...init(opt))
+      )
+    ).to.eql([9, 8, 7, 6, 5])
+    await put({ name: "Mike", stats: {} }, "Mike", ...opt)
+    expect(
+      map(path(["val", "stats", "age"]))(
+        await _range([["stats.age", "asc"]], { reverse: true }, ...init(opt))
+      )
+    ).to.eql([9, 7, 6, 5])
+    await removeIndex([["stats.age", "asc"]], ...opt)
   })
 })

@@ -1,4 +1,5 @@
 const {
+  path,
   is,
   assoc,
   compose,
@@ -119,8 +120,10 @@ class BPT {
       return a.val === b.val ? 0 : a.val < b.val ? 1 : -1
     } else {
       for (const v of fields) {
-        const va = v[0] === "__id__" ? a.key : a.val[v[0]]
-        const vb = v[0] === "__id__" ? b.key : b.val[v[0]]
+        const va =
+          v[0] === "__id__" ? a.key : path(v[0].split("."), a.val) || null
+        const vb =
+          v[0] === "__id__" ? b.key : path(v[0].split("."), b.val) || null
         const bareComp = this.compArr(va, vb)
         if (bareComp !== 0) {
           return (
