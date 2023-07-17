@@ -334,7 +334,6 @@ const _update = async (data, id, old_data, idtree, kv, SW, signer) => {
       }
       const sort_fields = splitEvery(2, k.split("/"))
 
-      // length === 1 ?
       let _sort_fields =
         sort_fields.length === 1 ? [idsorter] : [...tail(sort_fields), idsorter]
       if (sort_fields.length > 1) {
@@ -569,9 +568,9 @@ const pranges = async (_ranges, limit, kvs, SW) => {
     }
     delete v.opt.limit
     const kv = new KV(`${v.path.join("/")}/`, _KV(kvs, SW))
-    const prefix = `${compose(join("/"), flatten)(v.sort)}`
-    const tree = new BPT(order, v.sort, kv, prefix)
-    curs.push({ val: null, tree, cur: await tree.range(v.opt, true) })
+    const tree = new BPT(order, v.sort, kv, v.prefix)
+    const cur = { val: null, tree, cur: await tree.range(v.opt, true) }
+    curs.push(cur)
   }
   const comp = curs[0].tree.comp.bind(curs[0].tree)
   let sorter = curs[0].tree.sort_fields
@@ -612,7 +611,7 @@ const pranges = async (_ranges, limit, kvs, SW) => {
       }
     }
   }
-  return res.slice(0, limit)
+  return isNil(limit) ? res : res.slice(0, limit)
 }
 
 const ranges = async (_ranges, limit, path, kvs, SW) => {
