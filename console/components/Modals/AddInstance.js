@@ -95,6 +95,20 @@ export default inject(
             )
           })(["Connect", "Deploy"])}
         </Flex>
+        <Flex fontSize="10px" m={1}>
+          Network
+        </Flex>
+        <Select
+          w="100%"
+          value={newNetwork}
+          onChange={e => setNewNetwork(e.target.value)}
+          sx={{ borderRadius: "5px 0 0 5px" }}
+          mb={3}
+        >
+          {map(v => <option value={v}>{v}</option>)(
+            isNil(port) ? ["Mainnet", "Offchain"] : networks
+          )}
+        </Select>
         {deployMode === "Deploy" && newNetwork === "Mainnet" ? (
           <>
             <Flex fontSize="10px" m={1}>
@@ -117,20 +131,6 @@ export default inject(
             </Select>
           </>
         ) : null}
-        <Flex fontSize="10px" m={1}>
-          Network
-        </Flex>
-        <Select
-          w="100%"
-          value={newNetwork}
-          onChange={e => setNewNetwork(e.target.value)}
-          sx={{ borderRadius: "5px 0 0 5px" }}
-          mb={3}
-        >
-          {map(v => <option value={v}>{v}</option>)(
-            isNil(port) ? ["Mainnet", "Offchain"] : networks
-          )}
-        </Select>
         {deployMode === "Deploy" ? (
           <>
             <Flex fontSize="10px" m={1}>
