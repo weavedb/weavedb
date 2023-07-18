@@ -232,19 +232,26 @@ export const setupWeaveDB = async ({
   let _sdk
   let isRPC = !isNil(rpc) && !/^\s*$/.test(rpc)
   if (network === "Offchain") {
+    const [, ver] = contractTxId
     _sdk = new Offchain({
+      type: ver === "0.28.0" ? 3 : 1,
       contractTxId,
       cache: {
         initialize: async db => {
           const state = await lf.getItem(`offchain-${contractTxId}`)
           if (!isNil(state)) db.state = state
         },
-        onWrite: async (tx, db) => {
-          await lf.setItem(`offchain-${contractTxId}`, db.state)
+        onWrite: async (tx, obj) => {
+          let prs = [lf.setItem(`offchain-${contractTxId}`, obj.state)]
+          for (const k in tx.result.kvs)
+            prs.push(lf.setItem(k, tx.result.kvs[k]))
+          await Promise.all(prs)
         },
+        get: async (key, obj) => await lf.getItem(key),
       },
     })
     await _sdk.initialize()
+    console.log(_sdk)
   } else if (isRPC) {
     try {
       _sdk = new Client({
@@ -686,9 +693,9 @@ export const deployDB = async ({
     owner = owner.toLowerCase()
   }
   if (network === "Offchain") {
-    const contractTxId = createId()
+    const contractTxId = `${createId()}-0.28.0`
     const state = {
-      version,
+      version: "0.28.0",
       canEvolve,
       evolve: null,
       secure,

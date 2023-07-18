@@ -11824,6 +11824,21 @@ weavedb-base@^0.27.2:
     pako "^2.1.0"
     ramda "^0.28.0"
 
+weavedb-base@^0.27.4:
+  version "0.27.4"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.27.4.tgz#add67a60585f6c56135d775035907632767cec23"
+  integrity sha512-bDTRJcXrfVig+E3RD23U1LDq2im8MjKRE4tLSal6cwi1aDhdaWFL8+OFLgJAb/hBAKUx62BfPD+xcAsEiC81GA==
+  dependencies:
+    "@metamask/eth-sig-util" "^4.0.1"
+    "@metamask/legacy-web3" "^2.0.0"
+    "@simplewebauthn/server" "^7.2.0"
+    eth-crypto "^2.3.0"
+    ethereumjs-util "^7.1.5"
+    ethers "5.7.2"
+    md5 "^2.3.0"
+    pako "^2.1.0"
+    ramda "^0.28.0"
+
 weavedb-client@^0.27.0:
   version "0.27.0"
   resolved "https://registry.yarnpkg.com/weavedb-client/-/weavedb-client-0.27.0.tgz#8bd545ef96bd7de24b716ae92ffd841960228fbe"
@@ -11861,17 +11876,31 @@ weavedb-contracts@^0.27.9:
     wasmbuilder "^0.0.16"
     wasmcurves "^0.2.1"
 
-weavedb-offchain@^0.26.12:
-  version "0.26.12"
-  resolved "https://registry.yarnpkg.com/weavedb-offchain/-/weavedb-offchain-0.26.12.tgz#7b0caa4aca612562370c1aa660729d3ecb406e4c"
-  integrity sha512-hZOVgOmyHis4s9yP7CXCRpLcTpGjLbqlkedkofsNQcr2SWpCfBBDoxnlXo+wY2ZoHfkZAtuTHQulIZyiOvSnzg==
+weavedb-contracts@^0.28.0:
+  version "0.28.0"
+  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.28.0.tgz#966f4609777c678784a3fcaab3024976f4dfde79"
+  integrity sha512-uaMDamn29oTrak9OUmN42VbNTVMS4FjElokoGcO/mnVUHoOTsAS9QaIUgdpPxEltYVcaB7sSEmeC2fYh2o3O8A==
+  dependencies:
+    "@noble/curves" "^0.9.0"
+    "@peculiar/webcrypto" "^1.4.3"
+    fpjson-lang "^0.1.3"
+    json-logic-js "^2.0.2"
+    md5 "^2.3.0"
+    ramda "^0.28.0"
+    wasmbuilder "^0.0.16"
+    wasmcurves "^0.2.1"
+
+weavedb-offchain@^0.28.0:
+  version "0.28.0"
+  resolved "https://registry.yarnpkg.com/weavedb-offchain/-/weavedb-offchain-0.28.0.tgz#80788eca7764f02d869610bfb48fe8aaa22d878f"
+  integrity sha512-sBACZXpH2c0y8nxbBF3U8xkYo6TTUNK1kVuC8hZChAboU3OecGfnYE/d/EmM8a4lXHFlvHUNA1LedblFJ2TxkQ==
   dependencies:
     "@metamask/legacy-web3" "^2.0.0"
     "@paralleldrive/cuid2" "^2.2.0"
     arweave "^1.11.4"
     ramda "^0.28.0"
-    weavedb-base "^0.27.2"
-    weavedb-contracts "^0.27.9"
+    weavedb-base "^0.27.4"
+    weavedb-contracts "^0.28.0"
 
 weavedb-sdk@^0.27.26:
   version "0.27.26"
