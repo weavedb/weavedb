@@ -30,9 +30,7 @@ const order = 100
 const _KV = (kvs, SW) => ({
   get: async key =>
     typeof kvs[key] !== "undefined" ? kvs[key] : await SW.kv.get(key),
-  put: async (key, val) => {
-    kvs[key] = val
-  },
+  put: async (key, val) => (kvs[key] = val),
 })
 
 class KV {
@@ -595,6 +593,7 @@ const pranges = async (_ranges, limit, kvs, SW) => {
   for (let v of _ranges) {
     if (v.sort.length === 1 && v.sort[0][1] === "desc") {
       v.sort[0][1] = "asc"
+      v.opt ??= {}
       v.opt.reverse = true
     }
     delete v.opt.limit
@@ -650,6 +649,7 @@ const ranges = async (_ranges, limit, path, kvs, SW) => {
   let count = 0
   for (let v of _ranges) {
     if (!isNil(limit)) {
+      v.opt ??= {}
       v.opt.limit = limit - count
     }
     res = concat(res, await range(v.sort, v.opt, path, kvs, SW))
@@ -659,13 +659,26 @@ const ranges = async (_ranges, limit, path, kvs, SW) => {
   return res
 }
 
-const range = async (sort_fields, opt = {}, path, kvs, SW, cursor = false) => {
+const range = async (
+  sort_fields,
+  opt = {},
+  path,
+  kvs,
+  SW,
+  cursor = false,
+  _prefix = ""
+) => {
   const kv = new KV(`${path.join("/")}/`, _KV(kvs, SW))
   if (sort_fields.length === 1 && sort_fields[0][1] === "desc") {
     sort_fields[0][1] = "asc"
     opt.reverse = true
   }
-  const prefix = `${compose(join("/"), flatten)(sort_fields)}`
+  const prefix = `${_prefix}${
+    _prefix === "" || sort_fields.length === 0 ? "" : "/"
+  }${compose(
+    join("/"),
+    flatten
+  )(sort_fields.length === 0 && _prefix === "" ? [idsorter] : sort_fields)}`
   const tree = new BPT(order, [...sort_fields, idsorter], kv, prefix)
   return await tree.range(opt, cursor)
 }
