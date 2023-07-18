@@ -4,6 +4,7 @@ const Arweave = require("arweave")
 const {} = require("ramda")
 const tests = require("./common")
 const EthWallet = require("ethereumjs-wallet").default
+const { parseQuery } = require("../sdk/contracts/weavedb-bpt/lib/utils")
 
 describe("WeaveDB Offchain BPT", function () {
   let wallet,
@@ -67,6 +68,7 @@ describe("WeaveDB Offchain BPT", function () {
       await db.set(Alice, "ppl", "Alice")
       await db.set(John, "ppl", "John")
       await db.set(Beth, "ppl", "Beth")
+
       expect(await db.get("ppl")).to.eql([Alice, Beth, Bob, John])
 
       // limit
@@ -74,6 +76,7 @@ describe("WeaveDB Offchain BPT", function () {
 
       // sort
       expect(await db.get("ppl", ["height"])).to.eql([Alice, Beth, Bob, John])
+
       // sort desc
       expect(await db.get("ppl", ["height", "desc"])).to.eql([
         John,
@@ -209,6 +212,13 @@ describe("WeaveDB Offchain BPT", function () {
       expect(
         await db.get("ppl", ["countries.UAE.Dubai", "==", "Marina"])
       ).to.eql([data3])
+    },
+    "should parse queries": async ({ db }) => {
+      expect(parseQuery(["ppl", ["age", "==", 4]]).queries[0].opt).to.eql({
+        limit: 1000,
+        startAt: { age: 4 },
+        endAt: { age: 4 },
+      })
     },
   }
 

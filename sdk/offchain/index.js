@@ -1,5 +1,6 @@
 const { tail, isNil, clone, mergeLeft } = require("ramda")
-const base = "weavedb-contracts"
+//const base = "weavedb-contracts"
+const base = "../contracts"
 const { handle } = require(`${base}/weavedb/contract`)
 const { handle: handle_kv } = require(`${base}/weavedb-kv/contract`)
 const { handle: handle_bpt } = require(`${base}/weavedb-bpt/contract`)
