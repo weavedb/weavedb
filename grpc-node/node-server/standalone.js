@@ -15,8 +15,10 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 const { port = 9090, config = "./weavedb.config.js" } = require("yargs")(
   process.argv.slice(2)
 ).argv
-
 const weavedb = grpc.loadPackageDefinition(packageDefinition).weavedb
+const { open } = require("lmdb")
+const path = require("path")
+
 class Standalone {
   constructor({ port = 9090, conf }) {
     this.conf = conf
@@ -47,6 +49,24 @@ class Standalone {
     )
     console.log(`Admin Account: ${this.admin}`)
     this.db = new DB({
+      type: 3,
+      cache: {
+        initialize: async obj =>
+          (obj.lmdb = open({
+            path: path.resolve(
+              __dirname,
+              "cache",
+              this.conf.dbname ?? "weavedb"
+            ),
+          })),
+        onWrite: async (tx, obj) => {
+          let prs = []
+          for (const k in tx.result.kvs)
+            prs.push(obj.lmdb.put(k, tx.result.kvs[k]))
+          await Promise.all(prs)
+        },
+        get: async (key, obj) => await obj.lmdb.get(key),
+      },
       state: { owner: this.admin, secure: false },
     })
     await this.db.initialize()
