@@ -2,11 +2,6 @@ const fs = require("fs")
 const path = require("path")
 const Arweave = require("arweave")
 const wallet_name = process.argv[2]
-const contractType = (process.argv[3] || 1) * 1
-//const contractTxIdIntmax = process.argv[3]
-const contractTxIdInternetIdentity = process.argv[4]
-const contractTxIdEthereum = process.argv[5]
-const contractTxIdBundler = process.argv[6]
 const { isNil } = require("ramda")
 const { WarpFactory, LoggerFactory } = require("warp-contracts")
 const { DeployPlugin, ArweaveSigner } = require("warp-contracts-plugin-deploy")
@@ -18,56 +13,25 @@ if (isNil(wallet_name)) {
 
 let warp, walletAddress, arweave, wallet
 
-async function deployContract(secure) {
+async function deployContract() {
   const contractSrc = fs.readFileSync(
-    path.join(
-      __dirname,
-      `../dist/${
-        contractType === 1
-          ? "weavedb"
-          : contractType === 2
-          ? "weavedb-kv"
-          : "weavedb-bpt"
-      }/contract.js`
-    ),
+    path.join(__dirname, "../dist/bundler/bundler.js"),
     "utf8"
   )
   const stateFromFile = JSON.parse(
     fs.readFileSync(
-      path.join(
-        __dirname,
-        `../dist/${
-          contractType === 1
-            ? "weavedb"
-            : contractType === 2
-            ? "weavedb-kv"
-            : "weavedb-bpt"
-        }/initial-state.json`
-      ),
+      path.join(__dirname, "../dist/bundler/initial-state-bundler.json"),
       "utf8"
     )
   )
-  let opt = {}
-  if (contractType > 1) opt.useKVStorage = true
-  const initialState = {
-    ...stateFromFile,
-    ...{
-      owner: walletAddress,
-    },
-  }
-  //initialState.contracts.intmax = contractTxIdIntmax
-  initialState.contracts.dfinity = contractTxIdInternetIdentity
-  initialState.contracts.ethereum = contractTxIdEthereum
-  if (contractType === 3) initialState.contracts.bundler = contractTxIdBundler
+  const initialState = stateFromFile
+
   const res = await warp.createContract.deploy({
     wallet: new ArweaveSigner(wallet),
     initState: JSON.stringify(initialState),
-    evaluationManifest: {
-      evaluationOptions: opt,
-    },
     src: contractSrc,
   })
-  console.log("deployed WeaveDB contract")
+  console.log("deployed Internet Identity contract")
   console.log(res)
   return res.contractTxId
 }
@@ -92,7 +56,8 @@ const deploy = async () => {
   }
   wallet = JSON.parse(fs.readFileSync(wallet_path, "utf8"))
   walletAddress = await arweave.wallets.jwkToAddress(wallet)
-  await deployContract(true)
+
+  await deployContract()
   process.exit()
 }
 

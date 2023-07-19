@@ -86,7 +86,11 @@ class OffChain extends Base {
               lastExecuted: 0,
               crons: {},
             },
-            contracts: { ethereum: "ethereum", dfinity: "dfinity" },
+            contracts: {
+              ethereum: "ethereum",
+              dfinity: "dfinity",
+              bundler: "bundler",
+            },
           }
     )
     this.initialState = clone(this.state)
@@ -118,7 +122,7 @@ class OffChain extends Base {
       transaction: { id: createId() },
       contracts: {
         viewContractState: async (contract, param, SmartWeave) => {
-          const { handle } = require(`weavedb-contracts/${contract}/contract`)
+          const { handle } = require(`${base}/${contract}/contract`)
           try {
             return await handle({}, { input: param }, SmartWeave)
           } catch (e) {

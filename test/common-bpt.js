@@ -1,6 +1,43 @@
 const { expect } = require("chai")
 const { parseQuery } = require("../sdk/contracts/weavedb-bpt/lib/utils")
+const { readFileSync } = require("fs")
+const { resolve } = require("path")
 const tests = {
+  "should get info": async ({
+    db,
+    arweave_wallet,
+    dfinityTxId,
+    ethereumTxId,
+    bundlerTxId,
+    ver,
+    init,
+  }) => {
+    const addr = await db.arweave.wallets.jwkToAddress(arweave_wallet)
+    const version = require(ver)
+    const initial_state = JSON.parse(
+      readFileSync(resolve(__dirname, init), "utf8")
+    )
+    expect(await db.getInfo()).to.eql({
+      auth: {
+        algorithms: ["secp256k1", "secp256k1-2", "ed25519", "rsa256"],
+        name: "weavedb",
+        version: "1",
+      },
+      canEvolve: true,
+      contracts: {
+        dfinity: dfinityTxId,
+        ethereum: ethereumTxId,
+        bundler: bundlerTxId,
+      },
+      evolve: null,
+      isEvolving: false,
+      secure: false,
+      version,
+      owner: addr,
+      evolveHistory: [],
+    })
+    return
+  },
   "should get a collection": async ({ db, arweave_wallet }) => {
     const Bob = {
       name: "Bob",
