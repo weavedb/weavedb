@@ -12,9 +12,8 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   defaults: true,
   oneofs: true,
 })
-const { port = 9090, config = "./weavedb.config.js" } = require("yargs")(
-  process.argv.slice(2)
-).argv
+const { port = 9090, config = "./weavedb.standalone.config.js" } =
+  require("yargs")(process.argv.slice(2)).argv
 const weavedb = grpc.loadPackageDefinition(packageDefinition).weavedb
 const { open } = require("lmdb")
 const path = require("path")
