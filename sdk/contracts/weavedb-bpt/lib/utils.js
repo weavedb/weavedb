@@ -1,7 +1,7 @@
 let fpjson = require("fpjson-lang")
 fpjson = fpjson.default || fpjson
 const jsonLogic = require("json-logic-js")
-const md5 = require("md5")
+const md5 = require("./md5")
 const {
   assoc,
   tail,

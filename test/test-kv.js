@@ -32,7 +32,7 @@ describe("WeaveDB", function () {
       ethereumTxId,
       intercallTxId,
       contractTxId,
-    } = await initBeforeEach(false, false, "evm", true, false))
+    } = await initBeforeEach(false, false, "evm", 2, false))
   })
 
   afterEach(async () => {

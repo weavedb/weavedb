@@ -23,7 +23,7 @@ const {
 } = require("ramda")
 const { err } = require("../../common/lib/utils")
 const BPT = require("./BPT")
-const md5 = require("md5")
+const md5 = require("./md5")
 
 const idsorter = ["__id__", "asc"]
 const order = 100

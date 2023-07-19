@@ -21,7 +21,13 @@ async function deployContract(secure) {
   const contractSrc = fs.readFileSync(
     path.join(
       __dirname,
-      `../dist/${contractType === 1 ? "weavedb" : "weavedb-kv"}/contract.js`
+      `../dist/${
+        contractType === 1
+          ? "weavedb"
+          : contractType === 2
+          ? "weavedb-kv"
+          : "weavedb-bpt"
+      }/contract.js`
     ),
     "utf8"
   )
@@ -30,21 +36,25 @@ async function deployContract(secure) {
       path.join(
         __dirname,
         `../dist/${
-          contractType === 1 ? "weavedb" : "weavedb-kv"
+          contractType === 1
+            ? "weavedb"
+            : contractType === 2
+            ? "weavedb-kv"
+            : "weavedb-bpt"
         }/initial-state.json`
       ),
       "utf8"
     )
   )
+  let opt = {}
+  if (contractType > 1) opt.useKVStorage = true
 
   const initialState = {
     ...stateFromFile,
     ...{
       owner: walletAddress,
       evaluationManifest: {
-        evaluationOptions: {
-          useKVStorage: true,
-        },
+        evaluationOptions: opt,
       },
     },
   }
