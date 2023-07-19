@@ -8,7 +8,6 @@
     "@peculiar/webcrypto": "^1.4.3",
     "fpjson-lang": "^0.1.3",
     "json-logic-js": "^2.0.2",
-    "md5": "^2.3.0",
     "ramda": "^0.28.0",
     "wasmbuilder": "^0.0.16",
     "wasmcurves": "^0.2.1"

@@ -59,12 +59,46 @@ async function deployContracts({
   arweave,
   contractTxId,
   arweave_wallet,
-  kv = false,
+  type = 1,
 }) {
   arweave_wallet ||= await arweave.wallets.generate()
   await addFunds(arweave, arweave_wallet)
   const walletAddress = await arweave.wallets.jwkToAddress(arweave_wallet)
 
+  async function deployContractBPT(
+    secure,
+    contractTxIdIntmax,
+    contractTxIdDfinity,
+    contractTxIdEthereum
+  ) {
+    const contractSrc = fs.readFileSync(
+      path.join(__dirname, "../dist/weavedb-bpt/contract.js"),
+      "utf8"
+    )
+    const stateFromFile = JSON.parse(
+      fs.readFileSync(
+        path.join(__dirname, "../dist/weavedb-bpt/initial-state.json"),
+        "utf8"
+      )
+    )
+    let initialState = {
+      ...stateFromFile,
+      ...{
+        secure,
+        owner: walletAddress,
+      },
+    }
+    //initialState.contracts.intmax = contractTxIdIntmax
+    initialState.contracts.dfinity = contractTxIdDfinity
+    initialState.contracts.ethereum = contractTxIdEthereum
+    const contract = await warp.createContract.deploy({
+      wallet: arweave_wallet,
+      initState: JSON.stringify(initialState),
+      src: contractSrc,
+    })
+    await arweave.api.get("mine")
+    return contract
+  }
   async function deployContractKV(
     secure,
     contractTxIdIntmax,
@@ -287,7 +321,12 @@ async function deployContracts({
     dfinityTxId = await deployContractDfinity()
     ethereumTxId = await deployContractEthereum()
     intercallTxId = await deployIntercallContract()
-    const deployer = kv ? deployContractKV : deployContract
+    const deployer =
+      type === 2
+        ? deployContractKV
+        : type === 3
+        ? deployContractBPT
+        : deployContract
     contract = await deployer(secure, intmaxTxId, dfinityTxId, ethereumTxId)
   } else {
     contract = { contractTxId }
@@ -311,7 +350,7 @@ async function initBeforeEach(
   secure = false,
   subscribe = false,
   wallet_type = "evm",
-  kv = false
+  type = 1
 ) {
   wallet = Wallet.generate()
   wallet2 = Wallet.generate()
@@ -332,7 +371,7 @@ async function initBeforeEach(
     secure,
     warp,
     arweave,
-    kv,
+    type,
   })
   const name = "weavedb"
   const version = "1"

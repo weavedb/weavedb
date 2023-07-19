@@ -2,7 +2,7 @@ const { providers, Wallet, utils } = require("ethers")
 const { expect } = require("chai")
 const { mergeLeft } = require("ramda")
 const { init, stop, initBeforeEach, addFunds } = require("./util")
-
+const { tests: local } = require("./common-bpt")
 const tests = require("./common")
 describe("WeaveDB", function () {
   let wallet,
@@ -32,7 +32,7 @@ describe("WeaveDB", function () {
       ethereumTxId,
       intercallTxId,
       contractTxId,
-    } = await initBeforeEach(false, false, "evm", true, false))
+    } = await initBeforeEach(false, false, "evm", 3, false))
   })
 
   afterEach(async () => {
@@ -41,16 +41,20 @@ describe("WeaveDB", function () {
     } catch (e) {}
   })
 
-  tests(it, () => ({
-    db,
-    ver: "../sdk/contracts/weavedb-bpt/lib/version",
-    init: "../dist/weavedb-bpt/initial-state.json",
-    wallet,
-    Arweave,
-    arweave_wallet,
-    walletAddress,
-    dfinityTxId,
-    ethereumTxId,
-    contractTxId,
-  }))
+  tests(
+    it,
+    () => ({
+      db,
+      ver: "../sdk/contracts/weavedb-bpt/lib/version",
+      init: "../dist/weavedb-bpt/initial-state.json",
+      wallet,
+      Arweave,
+      arweave_wallet,
+      walletAddress,
+      dfinityTxId,
+      ethereumTxId,
+      contractTxId,
+    }),
+    local
+  )
 })

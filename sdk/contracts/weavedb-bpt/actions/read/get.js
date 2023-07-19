@@ -17,7 +17,7 @@ const {
   pranges: _pranges,
   range: _range,
 } = require("../../lib/index")
-const md5 = require("md5")
+const md5 = require("../../lib/md5")
 
 const get = async (state, action, cursor = false, SmartWeave, kvs) => {
   let parsed = parseQuery(action.input.query)
