@@ -338,7 +338,7 @@ const tests = {
     expect(await db.get("ppl", "Bob")).to.eql({ name: "Bob", age: 25 })
   },
 
-  "should add index": async ({ db, arweave_wallet }) => {
+  "should add index.only": async ({ db, arweave_wallet }) => {
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Alice", age: 25 }
     const data3 = { name: "Beth", age: 5 }
@@ -372,11 +372,15 @@ const tests = {
       data2,
       { name: "Beth", age: 30 },
     ])
-    /*
+
+    await db.addIndex([["name"], ["age"]], "ppl", {
+      ar: arweave_wallet,
+    })
+
     expect(
-      await db.get("ppl", ["age"], ["name", "in", ["Alice", "John"]])
-    ).to.eql([data4, data2])
-    */
+      await db.get("ppl", ["name"], ["age"], ["name", "in", ["Alice", "John"]])
+    ).to.eql([data2, data4])
+
     expect(await db.getIndexes("ppl")).to.eql([
       [["__id__", "asc"]],
       [["name", "asc"]],
@@ -396,6 +400,10 @@ const tests = {
         ["height", "desc"],
       ],
       [["height", "asc"]],
+      [
+        ["name", "asc"],
+        ["age", "asc"],
+      ],
     ])
   },
 
