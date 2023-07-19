@@ -1,6 +1,5 @@
-const pako = require("pako")
 const { validate } = require("../../lib/validate")
-const { err, wrapResult } = require("../../../common/lib/utils")
+const { err, wrapResult, read } = require("../../../common/lib/utils")
 const { clone } = require("../../../common/lib/pure")
 const { isNil } = require("ramda")
 const { set } = require("./set")
@@ -42,15 +41,15 @@ const bundle = async (
       kvs
     ))
   }
-  const compressed = new Uint8Array(
-    Buffer.from(action.input.query, "base64")
-      .toString("binary")
-      .split("")
-      .map(function (c) {
-        return c.charCodeAt(0)
-      })
+  const { data } = await read(
+    state.contracts.bundler,
+    {
+      function: "inflate",
+      data: action.input.query,
+    },
+    SmartWeave
   )
-  const queries = JSON.parse(pako.inflate(compressed, { to: "string" }))
+  const queries = JSON.parse(data)
   let validity = []
   let errors = []
   let i = 0

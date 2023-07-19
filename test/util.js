@@ -69,7 +69,8 @@ async function deployContracts({
     secure,
     contractTxIdIntmax,
     contractTxIdDfinity,
-    contractTxIdEthereum
+    contractTxIdEthereum,
+    contractTxIdBundler
   ) {
     const contractSrc = fs.readFileSync(
       path.join(__dirname, "../dist/weavedb-bpt/contract.js"),
@@ -91,6 +92,7 @@ async function deployContracts({
     //initialState.contracts.intmax = contractTxIdIntmax
     initialState.contracts.dfinity = contractTxIdDfinity
     initialState.contracts.ethereum = contractTxIdEthereum
+    initialState.contracts.bundler = contractTxIdBundler
     const contract = await warp.createContract.deploy({
       wallet: arweave_wallet,
       initState: JSON.stringify(initialState),
@@ -241,6 +243,32 @@ async function deployContracts({
     return contractTxId
   }
 
+  async function deployContractBundler() {
+    const contractSrc = fs.readFileSync(
+      path.join(__dirname, "../dist/bundler/bundler.js"),
+      "utf8"
+    )
+    const stateFromFile = JSON.parse(
+      fs.readFileSync(
+        path.join(__dirname, "../dist/bundler/initial-state-bundler.json"),
+        "utf8"
+      )
+    )
+    const initialState = {
+      ...stateFromFile,
+      ...{
+        owner: walletAddress,
+      },
+    }
+    const { contractTxId } = await warp.createContract.deploy({
+      wallet: arweave_wallet,
+      initState: JSON.stringify(initialState),
+      src: contractSrc,
+    })
+    await arweave.api.get("mine")
+    return contractTxId
+  }
+
   async function deployContractIntmax(
     contractTxIdPoseidon1,
     contractTxIdPoseidon2
@@ -305,6 +333,7 @@ async function deployContracts({
   let intmaxTxId,
     dfinityTxId,
     ethereumTxId,
+    bundlerTxId,
     poseidon1TxId,
     poseidon2TxId,
     intercallTxId
@@ -320,6 +349,7 @@ async function deployContracts({
     intmaxTxId = await deployContractIntmax(poseidon1TxId, poseidon2TxId)
     dfinityTxId = await deployContractDfinity()
     ethereumTxId = await deployContractEthereum()
+    bundlerTxId = await deployContractBundler()
     intercallTxId = await deployIntercallContract()
     const deployer =
       type === 2
@@ -327,7 +357,13 @@ async function deployContracts({
         : type === 3
         ? deployContractBPT
         : deployContract
-    contract = await deployer(secure, intmaxTxId, dfinityTxId, ethereumTxId)
+    contract = await deployer(
+      secure,
+      intmaxTxId,
+      dfinityTxId,
+      ethereumTxId,
+      bundlerTxId
+    )
   } else {
     contract = { contractTxId }
   }
@@ -338,6 +374,7 @@ async function deployContracts({
     intmaxTxId,
     dfinityTxId,
     ethereumTxId,
+    bundlerTxId,
     intercallTxId,
     poseidon1TxId,
     poseidon2TxId,
@@ -362,6 +399,7 @@ async function initBeforeEach(
     intmaxTxId,
     dfinityTxId,
     ethereumTxId,
+    bundlerTxId,
     intercallTxId,
     poseidon1TxId,
     poseidon2TxId,
@@ -400,6 +438,7 @@ async function initBeforeEach(
     intmaxTxId,
     dfinityTxId,
     ethereumTxId,
+    bundlerTxId,
     intercallTxId,
     contractTxId,
   }
