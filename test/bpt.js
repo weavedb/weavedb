@@ -26,6 +26,7 @@ const {
   compose,
   join,
   flatten,
+  isNil,
 } = require("ramda")
 const alpha = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -167,13 +168,17 @@ describe("B+Tree", function () {
     ]
 
     await addIndex(sorter, ...opt)
+    expect(
+      isNil((await getIndexes(["ppl"], temp, SW))["age/desc/name/desc"])
+    ).to.eql(false)
     expect(pluck("key")(await _range(sorter, {}, ...init(opt)))).to.eql([
       "Beth",
       "Alice",
     ])
-
     await removeIndex(sorter, ...opt)
-    expect(pluck("key")(await _range(sorter, {}, ...init(opt)))).to.eql([])
+    expect(
+      isNil((await getIndexes(["ppl"], temp, SW))["age/desc/name/desc"])
+    ).to.eql(true)
   })
 
   it("should return mod stats", async () => {

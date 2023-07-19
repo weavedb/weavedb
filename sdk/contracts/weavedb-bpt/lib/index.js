@@ -21,6 +21,7 @@ const {
   splitEvery,
   equals,
 } = require("ramda")
+const { err } = require("../../common/lib/utils")
 const BPT = require("./BPT")
 const md5 = require("md5")
 
@@ -339,9 +340,10 @@ const _update = async (data, id, old_data, idtree, kv, SW, signer) => {
     newkeys[key] = true
     if (isArray) {
       const akey = `${sp[0]}/array`
+      const item = sp[1].split(":")[1] ?? null
       if (isNil(_indexes[akey])) _indexes[akey] = { key: akey, items: {} }
-      if (isNil(_indexes[akey].items[sp[2]])) {
-        _indexes[akey].items[sp[2]] = { key, order }
+      if (!isNil(item) && isNil(_indexes[akey].items[item])) {
+        _indexes[akey].items[item] = { key, order }
       }
       const sort_fields = splitEvery(2, k.split("/"))
 
@@ -598,13 +600,14 @@ const pranges = async (_ranges, limit, kvs, SW) => {
     }
     delete v.opt.limit
     const kv = new KV(`${v.path.join("/")}/`, _KV(kvs, SW))
-    const tree = new BPT(order, v.sort, kv, v.prefix)
+    await checkIndex(v.prefix, v.path, kvs, SW)
+    const tree = new BPT(order, [...v.sort, idsorter], kv, v.prefix)
     const cur = { val: null, tree, cur: await tree.range(v.opt, true) }
     curs.push(cur)
   }
   const comp = curs[0].tree.comp.bind(curs[0].tree)
   let sorter = curs[0].tree.sort_fields
-  if (!equals(last(sorter), ["__id__", "asc"])) sorter.push(["__id__", "asc"])
+  if (!equals(last(sorter), idsorter)) sorter.push(idsorter)
   while (curs.length > 0) {
     const val = await curs[0].cur()
     curs[0].val = val
@@ -659,6 +662,22 @@ const ranges = async (_ranges, limit, path, kvs, SW) => {
   return res
 }
 
+const checkIndex = async (prefix, path, kvs, SW) => {
+  const indexes = await getIndexes(path, kvs, SW)
+  const sort_fields = compose(
+    map(v => {
+      return [v[0], (v[1] || "asc").split(":")[0]]
+    }),
+    splitEvery(2)
+  )(prefix.split("/"))
+  const key = compose(join("/"), flatten)(sort_fields)
+  if (
+    (sort_fields.length > 1 || sort_fields[0][0].split(".").length > 1) &&
+    isNil(indexes[key])
+  ) {
+    err(`missing index ${JSON.stringify(sort_fields)}`)
+  }
+}
 const range = async (
   sort_fields,
   opt = {},
@@ -679,6 +698,7 @@ const range = async (
     join("/"),
     flatten
   )(sort_fields.length === 0 && _prefix === "" ? [idsorter] : sort_fields)}`
+  await checkIndex(prefix, path, kvs, SW)
   const tree = new BPT(order, [...sort_fields, idsorter], kv, prefix)
   return await tree.range(opt, cursor)
 }
