@@ -251,7 +251,6 @@ export const setupWeaveDB = async ({
       },
     })
     await _sdk.initialize()
-    console.log(_sdk)
   } else if (isRPC) {
     try {
       _sdk = new Client({
