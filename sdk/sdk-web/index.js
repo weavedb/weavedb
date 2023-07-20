@@ -26,6 +26,7 @@ const {
   WarpFactory,
   LoggerFactory,
   defaultCacheOptions,
+  c,
 } = require("warp-contracts")
 
 const {
@@ -529,6 +530,7 @@ class SDK extends Base {
       },
     }
   }
+
   async viewState(params, attempt = 0) {
     try {
       return await this.db.viewState(params)
@@ -540,6 +542,7 @@ class SDK extends Base {
       }
     }
   }
+
   async read(params, nocache = this.nocache_default) {
     if (!nocache && !isNil(this.state)) {
       try {

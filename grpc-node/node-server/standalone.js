@@ -29,6 +29,7 @@ const weavedb = grpc.loadPackageDefinition(packageDefinition).weavedb
 const { open } = require("lmdb")
 const path = require("path")
 const EthCrypto = require("eth-crypto")
+const eth = EthCrypto.createIdentity()
 
 class Standalone {
   constructor({ port = 9090, conf }) {
@@ -61,14 +62,12 @@ class Standalone {
     console.log(`server ready on ${this.port}!`)
   }
   async bundle() {
-    const len = 1
+    const len = 2
     try {
       if (this.txs.length >= len) {
         this.bundling = this.txs.splice(0, len)
         console.log(`bundling...${pluck("id")(this.bundling)}`)
-        const result = await this.warp.bundle(this.bundling, {
-          privateKey: this.bundler.privateKey,
-        })
+        const result = await this.warp.bundle(pluck("param")(this.bundling))
         console.log(result.success)
         if (result.success !== true) this.txs = concat(this.bundling, this.txs)
       }
@@ -119,6 +118,7 @@ class Standalone {
         type: 3,
         contractTxId: this.conf.contractTxId,
         remoteStateSyncEnabled: false,
+        nocache: true,
       })
       await this.warp.init()
     }

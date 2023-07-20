@@ -328,7 +328,19 @@ class Base {
       multisigs,
       onDryWrite,
     ]
-    if (
+    if (func === "bundle" && this.type === 3) {
+      return await this.writeWithoutWallet(
+        func,
+        query,
+        dryWrite,
+        bundle,
+        extra,
+        relay,
+        jobID,
+        multisigs,
+        onDryWrite
+      )
+    } else if (
       isNil(intmax) &&
       isNil(ii) &&
       isNil(ar) &&
@@ -1105,6 +1117,24 @@ class Base {
       console.log(e)
     }
     return keys
+  }
+
+  async writeWithoutWallet(
+    func,
+    query,
+    dryWrite = true,
+    bundle,
+    extra = {},
+    relay,
+    jobID,
+    multisigs,
+    onDryWrite
+  ) {
+    const param = mergeLeft(extra, { function: func, query })
+    if (!isNil(jobID)) param.jobID = jobID
+    if (!isNil(multisigs)) param.multisigs = multisigs
+    bundle ||= this.network === "mainnet"
+    return await this.write(func, param, dryWrite, bundle, relay, onDryWrite)
   }
 }
 
