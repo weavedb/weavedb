@@ -30,17 +30,7 @@ const bundle = async (
   SmartWeave,
   kvs
 ) => {
-  let original_signer = null
-  if (isNil(signer)) {
-    ;({ signer, original_signer } = await validate(
-      state,
-      action,
-      "bundle",
-      SmartWeave,
-      true,
-      kvs
-    ))
-  }
+  const original_signer = action.caller
   const { data } = await read(
     state.contracts.bundler,
     {
