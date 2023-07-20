@@ -1210,7 +1210,7 @@ const tests = {
     expect(await db.get("ppl", "Bob")).to.eql(data)
   },
 
-  "should bundle mulitple transactions": async ({ db }) => {
+  "should bundle mulitple transactions.only": async ({ db }) => {
     const arweave_wallet2 = await db.arweave.wallets.generate()
     const arweave_wallet3 = await db.arweave.wallets.generate()
     const data = { name: "Bob", age: 20 }
@@ -1222,6 +1222,7 @@ const tests = {
       ar: arweave_wallet3,
     })
     await db.bundle([params, params2])
+    console.log(await db.get("ppl"))
     expect(await db.get("ppl", "Bob")).to.eql(data)
     expect(await db.get("ppl", "Alice")).to.eql(data2)
   },

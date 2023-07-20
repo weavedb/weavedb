@@ -86,11 +86,7 @@ class OffChain extends Base {
               lastExecuted: 0,
               crons: {},
             },
-            contracts: {
-              ethereum: "ethereum",
-              dfinity: "dfinity",
-              bundler: "bundler",
-            },
+            contracts: { ethereum: "ethereum", dfinity: "dfinity" },
           }
     )
     this.initialState = clone(this.state)
@@ -122,7 +118,7 @@ class OffChain extends Base {
       transaction: { id: createId() },
       contracts: {
         viewContractState: async (contract, param, SmartWeave) => {
-          const { handle } = require(`${base}/${contract}/contract`)
+          const { handle } = require(`weavedb-contracts/${contract}/contract`)
           try {
             return await handle({}, { input: param }, SmartWeave)
           } catch (e) {
@@ -172,11 +168,12 @@ class OffChain extends Base {
         tx = await this.handle(clone(this.state), { input: param }, sw)
         this.state = tx.state
         if (typeof this.cache === "object") {
-          await this.cache.onWrite(tx, this)
+          await this.cache.onWrite(tx, this, param)
         } else if (this.type === 3) {
           for (const k in tx.result.kvs) this.kvs[k] = tx.result.kvs[k]
         }
       } catch (e) {
+        console.log(e)
         //console.log(typeof e === "object" ? e.message : e)
         error = e
       }

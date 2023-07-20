@@ -3,8 +3,19 @@ const grpc = require("@grpc/grpc-js")
 const protoLoader = require("@grpc/proto-loader")
 const { addReflection } = require("grpc-server-reflection")
 const PROTO_PATH = __dirname + "/weavedb.proto"
-const { isNil, is, pluck, o, flatten, map, append, includes } = require("ramda")
+const {
+  isNil,
+  is,
+  pluck,
+  o,
+  flatten,
+  map,
+  append,
+  includes,
+  concat,
+} = require("ramda")
 const DB = require("weavedb-offchain")
+const Warp = require("weavedb-sdk-node")
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
   longs: String,
@@ -17,15 +28,22 @@ const { port = 9090, config = "./weavedb.standalone.config.js" } =
 const weavedb = grpc.loadPackageDefinition(packageDefinition).weavedb
 const { open } = require("lmdb")
 const path = require("path")
+const EthCrypto = require("eth-crypto")
 
 class Standalone {
   constructor({ port = 9090, conf }) {
     this.conf = conf
     this.port = port
+    this.txs = []
+    this.tx_count = 0
+    this.bundling = null
+    this.bundler = EthCrypto.createIdentity()
+    console.log(`Bundler: ${this.bundler.address}`)
   }
   async init() {
     await this.initDB()
     this.startServer()
+    this.bundle()
   }
   startServer() {
     const server = new grpc.Server()
@@ -42,6 +60,23 @@ class Standalone {
     )
     console.log(`server ready on ${this.port}!`)
   }
+  async bundle() {
+    const len = 1
+    try {
+      if (this.txs.length >= len) {
+        this.bundling = this.txs.splice(0, len)
+        console.log(`bundling...${pluck("id")(this.bundling)}`)
+        const result = await this.warp.bundle(this.bundling, {
+          privateKey: this.bundler.privateKey,
+        })
+        console.log(result.success)
+        if (result.success !== true) this.txs = concat(this.bundling, this.txs)
+      }
+    } catch (e) {
+      console.log(e)
+    }
+    setTimeout(() => this.bundle(), 3000)
+  }
   async initDB() {
     this.admin = await Arweave.init().wallets.jwkToAddress(
       this.conf.admin.owner
@@ -55,20 +90,38 @@ class Standalone {
             path: path.resolve(
               __dirname,
               "cache",
-              this.conf.dbname ?? "weavedb"
+              `${this.conf.dbname ?? "weavedb"}${
+                isNil(this.conf.contractTxId)
+                  ? ""
+                  : `-${this.conf.contractTxId}`
+              }`
             ),
           })),
-        onWrite: async (tx, obj) => {
+        onWrite: async (tx, obj, param) => {
           let prs = []
           for (const k in tx.result.kvs)
             prs.push(obj.lmdb.put(k, tx.result.kvs[k]))
           await Promise.all(prs)
+          this.txs.push({
+            id: ++this.tx_count,
+            txid: tx.result.transaction.id,
+            param,
+          })
         },
         get: async (key, obj) => await obj.lmdb.get(key),
       },
       state: { owner: this.admin, secure: false },
     })
     await this.db.initialize()
+    if (!isNil(this.conf.contractTxId)) {
+      console.log(`contractTxId: ${this.conf.contractTxId}`)
+      this.warp = new Warp({
+        type: 3,
+        contractTxId: this.conf.contractTxId,
+        remoteStateSyncEnabled: false,
+      })
+      await this.warp.init()
+    }
   }
 
   parseQuery(call, callback) {

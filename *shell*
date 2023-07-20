@@ -1,0 +1,3447 @@
+➜  offchain git:(v0.28) ✗ cd ../
+cd ../
+➜  sdk git:(v0.28) ✗ cd offchain/
+cd offchain/
+➜  offchain git:(v0.28) ✗ cd ../contracts/
+cd ../contracts/
+➜  contracts git:(v0.28) ✗ ls
+ls
+common  dfinity  ethereum  intmax  package.json  poseidon  weavedb  weavedb-bpt  weavedb-kv  yarn.lock
+➜  contracts git:(v0.28) ✗ cd ../
+cd ../
+➜  sdk git:(v0.28) ✗ cd offchain/
+cd offchain/
+➜  offchain git:(v0.28) ✗ yarn add weavedb-base
+yarn add weavedb-base
+yarn add v1.22.19
+[1/4] Resolving packages...
+[2/4] Fetching packages...
+[3/4] Linking dependencies...
+warning "weavedb-contracts > fpjson-lang@0.1.3" has unmet peer dependency "react@^18.2.0".
+[4/4] Building fresh packages...
+                                                                                                                                                                                                                                                                                                                                     
+                                                                                                                                                                                                                                                                                                                                     
+                                                                                                                                                                                                                                                                                                                                     
+                                                                                                                                                                                                                                                                                                                                     
+success Saved 1 new dependency.
+info Direct dependencies
+└─ weavedb-base@0.27.4
+info All dependencies
+└─ weavedb-base@0.27.4
+Done in 10.34s.
+➜  offchain git:(v0.28) ✗ yarn add weavedb-contracts
+yarn add weavedb-contracts
+yarn add v1.22.19
+[1/4] Resolving packages...
+[2/4] Fetching packages...
+[3/4] Linking dependencies...
+warning "weavedb-contracts > fpjson-lang@0.1.3" has unmet peer dependency "react@^18.2.0".
+[4/4] Building fresh packages...
+success Saved 1 new dependency.
+info Direct dependencies
+└─ weavedb-contracts@0.28.1
+info All dependencies
+└─ weavedb-contracts@0.28.1
+Done in 1.57s.
+➜  offchain git:(v0.28) ✗ cd ../
+cd ../
+➜  sdk git:(v0.28) ✗ cd ../
+cd ../
+➜  weavedb git:(v0.28) ✗ cd grpc-node/node-server/
+cd grpc-node/node-server/
+➜  node-server git:(v0.28) ✗ ls
+ls
+cache               contract-manager-server.js  lib           package.json  standalone.Dockerfile  static_codegen  weavedb.proto                 yarn.lock
+contract-loader.js  Dockerfile                  node_modules  server.js     standalone.js          test            weavedb.standalone.config.js
+➜  node-server git:(v0.28) ✗ mkdir packages
+mkdir packages
+➜  node-server git:(v0.28) ✗ cp ../../../weavedb-dirty/grpc-node/node-server/packages/test.js ./
+cp ../../../weavedb-dirty/grpc-node/node-server/packages/test.js ./
+➜  node-server git:(v0.28) ✗ cd packages/
+cd packages/
+➜  packages git:(v0.28) ✗ ls
+ls
+➜  packages git:(v0.28) ✗ mv ../test.js ./
+mv ../test.js ./
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'tkytq7v2nmge422f1tobat4g',
+  transaction: {
+    id: 'tkytq7v2nmge422f1tobat4g',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 2, timestamp: 1689784367, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: '---2WzKK0CqfwKHhtruRWx0qDbFHtPQ6GuOxFl9DE28',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: null,
+  transaction: null,
+  block: null,
+  success: false,
+  nonce: 1,
+  signer: 'rQ-tlvB_wbC7CLP4OR6D-GQYqRTfEUsAEzwZF19tLlk',
+  duration: 0,
+  error: {},
+  function: 'addIndex'
+}
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: null,
+  transaction: null,
+  block: null,
+  success: false,
+  nonce: 1,
+  signer: 'mItqif7S68edO-c6h7NLleWM690yi_9PcLOQ557F2KQ',
+  duration: 0,
+  error: {},
+  function: 'addIndex'
+}
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: null,
+  transaction: null,
+  block: null,
+  success: false,
+  nonce: 1,
+  signer: 'oguCi1T6gVN4JnsJ_ax3X6YWs__K2nWX0anZSocR9ig',
+  duration: 0,
+  error: {},
+  function: 'addIndex'
+}
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+/home/basque/dev/weavedb/grpc-node/node-server/node_modules/weavedb-node-client/node_modules/arweave/node/lib/utils.js:81
+    b64UrlString = b64UrlString.replace(/\-/g, "+").replace(/\_/g, "/");
+                                ^
+
+TypeError: Cannot read properties of undefined (reading 'replace')
+    at b64UrlDecode (/home/basque/dev/weavedb/grpc-node/node-server/node_modules/weavedb-node-client/node_modules/arweave/node/lib/utils.js:81:33)
+    at Object.b64UrlToBuffer (/home/basque/dev/weavedb/grpc-node/node-server/node_modules/weavedb-node-client/node_modules/arweave/node/lib/utils.js:62:45)
+    at Wallets.ownerToAddress (/home/basque/dev/weavedb/grpc-node/node-server/node_modules/weavedb-node-client/node_modules/arweave/node/wallets.js:87:80)
+    at Wallets.getAddress (/home/basque/dev/weavedb/grpc-node/node-server/node_modules/weavedb-node-client/node_modules/arweave/node/wallets.js:83:25)
+    at Wallets.jwkToAddress (/home/basque/dev/weavedb/grpc-node/node-server/node_modules/weavedb-node-client/node_modules/arweave/node/wallets.js:67:25)
+    at SDK.writeWithAR (/home/basque/dev/weavedb/grpc-node/node-server/node_modules/weavedb-base/index.js:615:41)
+    at SDK._write2 (/home/basque/dev/weavedb/grpc-node/node-server/node_modules/weavedb-base/index.js:249:20)
+    at SDK._write (/home/basque/dev/weavedb/grpc-node/node-server/node_modules/weavedb-base/index.js:172:23)
+    at Base.<computed> [as addIndex] (/home/basque/dev/weavedb/grpc-node/node-server/node_modules/weavedb-base/index.js:810:17)
+    at test3 (/home/basque/dev/weavedb/grpc-node/node-server/packages/test.js:185:14)
+
+Node.js v18.13.0
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'mgl93s3mnx1jvy911ik2bk8x',
+  transaction: {
+    id: 'mgl93s3mnx1jvy911ik2bk8x',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 4, timestamp: 1689784645, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: '2J0dqD4MvOStHY6aEGEYJ7Z-CggOO9g1mCLeQk1GgeA',
+  duration: 0,
+  error: null,
+  function: 'addIndex'
+}
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'd8wkazjf6cs0n920gvrmadru',
+  transaction: {
+    id: 'd8wkazjf6cs0n920gvrmadru',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 100, timestamp: 1689784677, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: '2J0dqD4MvOStHY6aEGEYJ7Z-CggOO9g1mCLeQk1GgeA',
+  duration: 0,
+  error: null,
+  function: 'addIndex'
+}
+➜  packages git:(v0.28) ✗ cd ../
+cd ../
+➜  node-server git:(v0.28) ✗ cd ../
+cd ../
+➜  grpc-node git:(v0.28) ✗ cd ../
+cd ../
+➜  weavedb git:(v0.28) ✗ cd ../simple-quick-start/components/
+➜  weavedb git:(v0.28) ✗ cd ../simple-quick-start/components/
+➜  components cd ../
+cd ../
+➜  simple-quick-start cd ../weavedb
+cd ../weavedb
+➜  weavedb git:(v0.28) ✗ git status
+git status
+On branch v0.28
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   test/common.js
+
+no changes added to commit (use "git add" and/or "git commit -a")
+➜  weavedb git:(v0.28) ✗ git add -A
+git add -A
+➜  weavedb git:(v0.28) ✗ git commit -am '[tests-bpt] update index test'
+git commit -am '[tests-bpt] update index test'
+[v0.28 26be710] [tests-bpt] update index test
+ 1 file changed, 13 insertions(+), 5 deletions(-)
+➜  weavedb git:(v0.28) git push origin v0.28
+git push origin v0.28
+Enumerating objects: 7, done.
+Counting objects: 100% (7/7), done.
+Delta compression using up to 12 threads
+Compressing objects: 100% (4/4), done.
+Writing objects: 100% (4/4), 480 bytes | 480.00 KiB/s, done.
+Total 4 (delta 3), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (3/3), completed with 3 local objects.        
+To https://github.com/weavedb/weavedb.git
+   0d90230..26be710  v0.28 -> v0.28
+➜  weavedb git:(v0.28) ✗ cd contracts/
+cd contracts/
+➜  contracts git:(v0.28) ✗ ls
+ls
+dfinity  ethereum  intercall  intmax  poseidon  weavedb  weavedb-kv
+➜  contracts git:(v0.28) ✗ cp weavedb-kv -r weavedb-bpt
+cp weavedb-kv -r weavedb-bpt
+➜  contracts git:(v0.28) ✗ cd weavedb-bpt/
+cd weavedb-bpt/
+➜  weavedb-bpt git:(v0.28) ✗ ls
+ls
+contract.js
+➜  weavedb-bpt git:(v0.28) ✗ cd ../
+cd ../
+➜  contracts git:(v0.28) ✗ cd ../
+cd ../
+➜  weavedb git:(v0.28) ✗ cd ../
+cd ../
+➜  dev cd test-weave/
+cd test-weave/
+➜  test-weave yarn add md5
+yarn add md5
+yarn add v1.22.19
+[1/4] Resolving packages...
+[2/4] Fetching packages...
+[3/4] Linking dependencies...
+warning "@dfinity/agent > ts-node@10.9.1" has unmet peer dependency "@types/node@*".
+warning "@dfinity/agent > ts-node@10.9.1" has unmet peer dependency "typescript@>=2.7".
+warning "@lit-protocol/lit-node-client-nodejs > lit-siwe@1.1.8" has unmet peer dependency "@ethersproject/contracts@^5.2.0".
+warning "@lit-protocol/lit-node-client-nodejs > lit-siwe@1.1.8" has unmet peer dependency "@ethersproject/hash@^5.4.0".
+warning "@lit-protocol/lit-node-client-nodejs > lit-siwe@1.1.8" has unmet peer dependency "@ethersproject/providers@^5.2.0".
+warning "@lit-protocol/lit-node-client-nodejs > lit-siwe@1.1.8" has unmet peer dependency "@ethersproject/wallet@^5.2.0".
+warning "warp-contracts-plugin-subscription > warp-contracts-pubsub > @aws-amplify/core > @aws-sdk/client-cloudwatch-logs > @aws-sdk/middleware-retry > react-native-get-random-values@1.8.0" has unmet peer dependency "react-native@>=0.56".
+warning "weavedb-sdk > fpjson-lang@0.1.3" has unmet peer dependency "react@^18.2.0".
+warning "weavedb-sdk-node > warp-contracts-lmdb@1.1.10" has incorrect peer dependency "warp-contracts@^1.4.2".
+warning Workspaces can only be enabled in private projects.
+warning Workspaces can only be enabled in private projects.
+warning Workspaces can only be enabled in private projects.
+[4/4] Building fresh packages...
+warning Workspaces can only be enabled in private projects.
+warning Workspaces can only be enabled in private projects.
+warning Workspaces can only be enabled in private projects.
+success Saved 1 new dependency.
+info Direct dependencies
+└─ md5@2.3.0
+info All dependencies
+└─ md5@2.3.0
+Done in 3.34s.
+➜  test-weave node md5.js 
+node md5.js 
+900150983cd24fb0d6963f7d28e17f72
+➜  test-weave node md5.js 
+node md5.js 
+900150983cd24fb0d6963f7d28e17f72
+900150983cd24fb0d6963f7d28e17f72
+➜  test-weave node md5.js 
+node md5.js 
+900150983cd24fb0d6963f7d28e17f72
+900150983cd24fb0d6963f7d28e17f72
+➜  test-weave node md5.js 
+node md5.js 
+900150983cd24fb0d6963f7d28e17f72
+900150983cd24fb0d6963f7d28e17f72
+➜  test-weave node md5.js 
+node md5.js 
+900150983cd24fb0d6963f7d28e17f72
+900150983cd24fb0d6963f7d28e17f72
+➜  test-weave node md5.js 
+node md5.js 
+900150983cd24fb0d6963f7d28e17f72
+900150983cd24fb0d6963f7d28e17f72
+➜  test-weave node md5.js 
+node md5.js 
+900150983cd24fb0d6963f7d28e17f72
+900150983cd24fb0d6963f7d28e17f72
+➜  test-weave node md5.js 
+node md5.js 
+900150983cd24fb0d6963f7d28e17f72
+900150983cd24fb0d6963f7d28e17f72
+➜  test-weave node md5.js 
+node md5.js 
+900150983cd24fb0d6963f7d28e17f72
+900150983cd24fb0d6963f7d28e17f72
+➜  test-weave node md5.js 
+node md5.js 
+900150983cd24fb0d6963f7d28e17f72
+900150983cd24fb0d6963f7d28e17f72
+➜  test-weave node md5.js 
+node md5.js 
+/home/basque/dev/test-weave/md5.js:74
+      c = b.length
+            ^
+
+TypeError: Cannot read properties of undefined (reading 'length')
+    at /home/basque/dev/test-weave/md5.js:74:13
+    at md52 (/home/basque/dev/test-weave/md5.js:90:5)
+    at Object.<anonymous> (/home/basque/dev/test-weave/md5.js:171:13)
+    at Module._compile (node:internal/modules/cjs/loader:1218:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1272:10)
+    at Module.load (node:internal/modules/cjs/loader:1081:32)
+    at Module._load (node:internal/modules/cjs/loader:922:12)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:81:12)
+    at node:internal/main/run_main_module:23:47
+
+Node.js v18.13.0
+➜  test-weave node md5.js 
+node md5.js 
+/home/basque/dev/test-weave/md5.js:75
+      c = b.length
+            ^
+
+TypeError: Cannot read properties of undefined (reading 'length')
+    at /home/basque/dev/test-weave/md5.js:75:13
+    at md52 (/home/basque/dev/test-weave/md5.js:91:5)
+    at Object.<anonymous> (/home/basque/dev/test-weave/md5.js:172:13)
+    at Module._compile (node:internal/modules/cjs/loader:1218:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1272:10)
+    at Module.load (node:internal/modules/cjs/loader:1081:32)
+    at Module._load (node:internal/modules/cjs/loader:922:12)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:81:12)
+    at node:internal/main/run_main_module:23:47
+
+Node.js v18.13.0
+➜  test-weave node md5.js 
+node md5.js 
+900150983cd24fb0d6963f7d28e17f72
+900150983cd24fb0d6963f7d28e17f72
+➜  test-weave cd ../
+cd ../
+➜  dev cd weavedb/sdk/contracts/
+cd weavedb/sdk/contracts/
+➜  contracts git:(v0.28) ✗ yarn remove md5
+yarn remove md5
+yarn remove v1.22.19
+[1/2] Removing module md5...
+[2/2] Regenerating lockfile and installing missing dependencies...
+warning " > fpjson-lang@0.1.3" has unmet peer dependency "react@^18.2.0".
+success Uninstalled packages.
+Done in 0.36s.
+➜  contracts git:(v0.28) ✗ grep -r 'md5' weavedb-bpt/*.js
+grep -r 'md5' weavedb-bpt/*.js
+➜  contracts git:(v0.28) ✗ grep -r 'md5' weavedb-bpt/*/*.js
+grep -r 'md5' weavedb-bpt/*/*.js
+weavedb-bpt/lib/index.js:const md5 = require("./md5")
+weavedb-bpt/lib/index.js:          const _md5 = md5(JSON.stringify(v))
+weavedb-bpt/lib/index.js:          const _prefix = `${sort_fields[0][0]}/array:${_md5}`
+weavedb-bpt/lib/index.js:          const akey = `${sort_fields[0][0]}/array:${_md5}/${map(v =>
+weavedb-bpt/lib/index.js:          if (isNil(kvs[_md5])) {
+weavedb-bpt/lib/index.js:            array_indexes[_md5] = { order, key: akey }
+weavedb-bpt/lib/index.js:            _tree = kvs[_md5]
+weavedb-bpt/lib/index.js:          const _md5 = md5(JSON.stringify(v))
+weavedb-bpt/lib/index.js:          const _prefix = `${sort_fields[0][0]}/array:${_md5}`
+weavedb-bpt/lib/index.js:          const akey = `${sort_fields[0][0]}/array:${_md5}/${map(v =>
+weavedb-bpt/lib/index.js:          if (isNil(kvs[_md5])) {
+weavedb-bpt/lib/index.js:            array_indexes[_md5] = { order, key: akey }
+weavedb-bpt/lib/index.js:            _tree = kvs[_md5]
+weavedb-bpt/lib/index.js:            const _md5 = md5(JSON.stringify(v))
+weavedb-bpt/lib/index.js:            let akey = `${sort_fields[0][0]}/array:${_md5}`
+weavedb-bpt/lib/index.js:            if (isNil(indexes[k].items[_md5])) continue
+weavedb-bpt/lib/index.js:            let prefix = `${ar[0]}/array:${_md5}`
+weavedb-bpt/lib/index.js:            news.push(`${k}/array:${md5(JSON.stringify(v))}`)
+weavedb-bpt/lib/index.js:            dels.push(`${k}/array:${md5(JSON.stringify(v))}`)
+weavedb-bpt/lib/index.js:            news.push(`${k}/array:${md5(JSON.stringify(v))}`)
+weavedb-bpt/lib/index.js:            dels.push(`${k}/array:${md5(JSON.stringify(v))}`)
+weavedb-bpt/lib/index.js:            dels.push(`${k}/array:${md5(JSON.stringify(v))}`)
+weavedb-bpt/lib/index.js:            news.push(`${k}/array:${md5(JSON.stringify(v))}`)
+weavedb-bpt/lib/index.js:                map(v => md5(JSON.stringify(v)))
+weavedb-bpt/lib/index.js:                map(v => md5(JSON.stringify(v)))
+weavedb-bpt/lib/index.js:        const _md5 = md5(JSON.stringify(v))
+weavedb-bpt/lib/index.js:        const key = `${_prefix}:${_md5}`
+weavedb-bpt/lib/index.js:        if (isNil(_indexes[_prefix].items[_md5])) {
+weavedb-bpt/lib/index.js:          _indexes[_prefix].items[_md5] = { order, key }
+weavedb-bpt/lib/index.js:          `${k}/array:${md5(JSON.stringify(v))}`,
+weavedb-bpt/lib/index.js:          const _md5 = md5(JSON.stringify(v))
+weavedb-bpt/lib/index.js:          const _prefix = `${sort_fields[0][0]}/array:${_md5}`
+weavedb-bpt/lib/index.js:          const akey = `${sort_fields[0][0]}/array:${_md5}/${map(v =>
+weavedb-bpt/lib/index.js:          if (isNil(_indexes[k].items[_md5])) {
+weavedb-bpt/lib/index.js:            _indexes[k].items[_md5] = { order, key: akey }
+weavedb-bpt/lib/md5.js:const md5 = function (e) {
+weavedb-bpt/lib/md5.js:module.export = md5
+weavedb-bpt/lib/utils.js:const md5 = require("./md5")
+weavedb-bpt/lib/utils.js:        const prefix = `${q.array[0]}/array:${md5(JSON.stringify(v))}`
+weavedb-bpt/lib/utils.js:      const prefix = `${q.array[0]}/array:${md5(JSON.stringify(q.array[2]))}`
+➜  contracts git:(v0.28) ✗ grep -r 'md5 =' weavedb-bpt/*/*.js
+grep -r 'md5 =' weavedb-bpt/*/*.js
+weavedb-bpt/lib/index.js:const md5 = require("./md5")
+weavedb-bpt/lib/index.js:          const _md5 = md5(JSON.stringify(v))
+weavedb-bpt/lib/index.js:          const _md5 = md5(JSON.stringify(v))
+weavedb-bpt/lib/index.js:            const _md5 = md5(JSON.stringify(v))
+weavedb-bpt/lib/index.js:        const _md5 = md5(JSON.stringify(v))
+weavedb-bpt/lib/index.js:          const _md5 = md5(JSON.stringify(v))
+weavedb-bpt/lib/md5.js:const md5 = function (e) {
+weavedb-bpt/lib/utils.js:const md5 = require("./md5")
+➜  contracts git:(v0.28) ✗ grep -r 'md5 = require' weavedb-bpt/*/*.js
+grep -r 'md5 = require' weavedb-bpt/*/*.js
+weavedb-bpt/lib/index.js:const md5 = require("./md5")
+weavedb-bpt/lib/utils.js:const md5 = require("./md5")
+➜  contracts git:(v0.28) ✗ grep -r 'md5 = require' weavedb-bpt/*/*/*.js
+grep -r 'md5 = require' weavedb-bpt/*/*/*.js
+weavedb-bpt/actions/read/get.js:const md5 = require("md5")
+➜  contracts git:(v0.28) ✗ cd ../
+cd ../
+➜  sdk git:(v0.28) ✗ cd sdk-web/
+cd sdk-web/
+➜  sdk-web git:(v0.28) ✗ yarn add weavedb-base
+yarn add weavedb-base
+yarn add v1.22.19
+[1/5] Validating package.json...
+[2/5] Resolving packages...
+[3/5] Fetching packages...
+[4/5] Linking dependencies...
+warning "weavedb-contracts > fpjson-lang@0.1.3" has unmet peer dependency "react@^18.2.0".
+[5/5] Building fresh packages...
+                                                                                                                                                                
+                                                                                                                                                                
+                                                                                                                                                                
+                                                                                                                                                                
+success Saved lockfile.
+success Saved 1 new dependency.
+info Direct dependencies
+└─ weavedb-base@0.27.4
+info All dependencies
+└─ weavedb-base@0.27.4
+Done in 13.18s.
+➜  sdk-web git:(v0.28) ✗ npm publish
+npm publish
+npm notice 
+npm notice 📦  weavedb-sdk@0.28.0
+npm notice === Tarball Contents === 
+npm notice 2.7kB  RedisCache.js
+npm notice 31.9kB index.js     
+npm notice 842B   package.json 
+npm notice === Tarball Details === 
+npm notice name:          weavedb-sdk                             
+npm notice version:       0.28.0                                  
+npm notice filename:      weavedb-sdk-0.28.0.tgz                  
+npm notice package size:  8.1 kB                                  
+npm notice unpacked size: 35.5 kB                                 
+npm notice shasum:        9c714cff6295a370411ce3d2bb5c4dd2a50064b5
+npm notice integrity:     sha512-q3q/VZL8gwks6[...]gpF7JLmEVZY0w==
+npm notice total files:   3                                       
+npm notice 
+npm notice Publishing to https://registry.npmjs.org/
++ weavedb-sdk@0.28.0
+➜  sdk-web git:(v0.28) ✗ cd ../sdk-node/
+cd ../sdk-node/
+➜  sdk-node git:(v0.28) ✗ yarn add weavedb-sdk
+yarn add weavedb-sdk
+yarn add v1.22.19
+[1/5] Validating package.json...
+[2/5] Resolving packages...
+[3/5] Fetching packages...
+[4/5] Linking dependencies...
+warning "@aws-amplify/api > @aws-amplify/api-graphql > @aws-amplify/core > @aws-sdk/client-cloudwatch-logs > @aws-sdk/middleware-retry > react-native-get-random-values@1.8.0" has unmet peer dependency "react-native@>=0.56".
+warning " > warp-contracts-lmdb@1.1.10" has unmet peer dependency "warp-contracts@^1.4.2".
+warning "weavedb-sdk > weavedb-contracts > fpjson-lang@0.1.3" has unmet peer dependency "react@^18.2.0".
+warning Workspaces can only be enabled in private projects.
+[5/5] Building fresh packages...
+                                                                                                                                                                
+                                                                                                                                                                
+                                                                                                                                                                
+                                                                                                                                                                
+success Saved lockfile.
+warning Workspaces can only be enabled in private projects.
+success Saved 2 new dependencies.
+info Direct dependencies
+└─ weavedb-sdk@0.28.0
+info All dependencies
+├─ weavedb-base@0.27.4
+└─ weavedb-sdk@0.28.0
+Done in 16.66s.
+➜  sdk-node git:(v0.28) ✗ npm publish
+npm publish
+npm notice 
+npm notice 📦  weavedb-sdk-node@0.28.0
+npm notice === Tarball Contents === 
+npm notice 439B  index.js                             
+npm notice 604B  package.json                         
+npm notice 2.4kB warp-contracts-plugin-subscription.js
+npm notice === Tarball Details === 
+npm notice name:          weavedb-sdk-node                        
+npm notice version:       0.28.0                                  
+npm notice filename:      weavedb-sdk-node-0.28.0.tgz             
+npm notice package size:  1.5 kB                                  
+npm notice unpacked size: 3.5 kB                                  
+npm notice shasum:        ccb35aefa3551e9c61200cadc4b1db3de23ee028
+npm notice integrity:     sha512-EhgaJBBlzj+go[...]3eu0DsLEYpl6A==
+npm notice total files:   3                                       
+npm notice 
+npm notice Publishing to https://registry.npmjs.org/
++ weavedb-sdk-node@0.28.0
+➜  sdk-node git:(v0.28) ✗ cd ../
+cd ../
+➜  sdk git:(v0.28) ✗ cd ../
+cd ../
+➜  weavedb git:(v0.28) ✗ history | grep deploy
+history | grep deploy
+  456  node scripts/deploy.js mainnet
+  458  node scripts/deploy.js mainnet OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94 RQpDSz3PSyYSn6LRzWnX85bu6iGqCZKLxkdwQVoKzTI dtLqn4y5fFD5xyiRCzaYjWxz5k8I6VxoVeARFphhuY4
+  606  node scripts/deployEthereum.js mainnet
+  607  node scripts/deployInternetIdentity.js mainnet
+  646  yarn deploy --wallet mainnet
+  648  git commit -am 'fix deployFromSourceTX'
+  686  yarn deploy mainnet
+  964  graph deploy --product hosted-service ocrybit/badge
+  968  graph deploy --product hosted-service ocrybit/badge2
+ 1073  rm scripts/deployACL.sol 
+ 1075  npx hardhat run scripts/deployACL.js 0xfF2914F36A25B5E1732F4F62C840b1534Cc3cD68 --network goerli
+ 1076  npx hardhat run scripts/deployACL.js --nft_address 0xfF2914F36A25B5E1732F4F62C840b1534Cc3cD68 --network goerli
+ 1077  npx hardhat run scripts/deployACL.js --network goerli "0xfF2914F36A25B5E1732F4F62C840b1534Cc3cD68"
+ 1078  npx hardhat run scripts/deployACL.js 1 --network goerli
+ 1079  NFT_ADDRESS=0xfF2914F36A25B5E1732F4F62C840b1534Cc3cD68 npx hardhat run scripts/deployACL.js --network goerli
+ 1120  graph deploy
+ 1345  git commit -am '[console] add loading sign when deploying'
+ 1365  git commit -am '[contract] getInfo / [console] fix deployment'
+ 1421  yarn deploy 
+ 1535  npx hardhat run scripts/deploy.js --network goerli
+ 1769  git commit -am '[node] limit the number of contracts whitelisted users can deploy'
+ 1833  npx hardhat run scripts/deployACL.js 0xnfsdf --network goerli
+ 1834  npx hardhat run scripts/deployACL.js "0xnfsdffafdsfdsf" --network goerli
+ 1835  npx hardhat run scripts/deployACL.js --network goerli
+ 1837  git commit -am '[example] fix deployACL script arguments'
+ 1926  git commit -am 'fix deploy script argument'
+ 2295  firebase deploy --only firestore
+ 2728  yarn add warp-contracts-plugin-deploy
+ 2730  yarn add warp-contracts-plugin-deploy
+ 2736  history | grep deploy
+ 2737  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 2751  history | grep deploy
+ 2752  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 2753  grep -r 'deploy(' */*.js
+ 2754  grep -r 'deploy(' */*/*.js
+ 2755  grep -r 'deploy(' */*/*/*.js
+ 2756  grep -r 'deploy(' */*.js
+ 2757  grep -r 'deploy(' */*/*/*.js
+ 2758  grep -r 'deploy(' */*.js
+ 2759  grep -r 'deploy(' */*/*.js
+ 2762  yarn add warp-contracts-plugin-deploy
+ 2823  history | grep deploy
+ 2824  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 2937  history | grep deploy
+ 2938  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 2960  yarn add warp-contracts-plugin-deploy
+ 2973  yarn add warp-contracts-plugin-deploy@0.0.11
+ 3011  git commit -am '[sdk-web] remove deploy plugin to fix arbundle error'
+ 3054  history | grep deploy
+ 3056  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 3279  history | grep deploy
+ 3280  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 2
+ 3410  history | grep deploy
+ 3411  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 3413  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 3577  history | grep deploy
+ 3578  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 3595  history | grep deploy
+ 3596  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 3611  git commit -am '[console] deploy contract with Lens relayer'
+ 3682  history | grep deploy
+ 3683  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 4196  history | grep deploy
+ 4197  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 4237  history | grep deploy
+ 4238  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 4938  git commit -am '[console] add deployment with WebAuthn relayer job'
+ 5329  avalanche subnet deploy mySubnet
+ 5519  history | grep deploy
+ 5520  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 5526  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 2
+ 5528  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 2
+ 5687  yarn add warp-contracts-plugin-deploy@2343
+ 5927  history | grep deploy
+ 5928  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 2
+ 5930  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 2
+ 6274  npx hardhat --network localhost run ./scripts/deploy.ts
+ 6373  git clone https://github.com/scroll-tech/scroll-contract-deploy-demo.git
+ 6374  cd scroll-contract-deploy-demo/
+ 6377  yarn deploy:scrollTestnet
+ 6386  cd ../scroll-contract-deploy-demo/
+ 6391  npx hardhat run --network scrollTestnet scripts/deploy-intmax.ts
+ 6392  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6397  cd scroll-contract-deploy-demo/
+ 6398  npx hardhat run --network scrollTestnet scripts/deploy-intmax.ts
+ 6399  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6401  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6403  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6405  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6407  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6414  cp ../../../../scroll-contract-deploy-demo/artifacts/contracts/SimpleAuction.sol/SimpleAuction.* artifacts/contracts/SimpleAuction.sol/
+ 6422  cd scroll-contract-deploy-demo/
+ 6431  cp ../../../../scroll-contract-deploy-demo/artifacts/contracts/SimpleAuction.sol/SimpleAuction.* artifacts/contracts/SimpleAuction.sol/
+ 6447  cd ../scroll-contract-deploy-demo/
+ 6449  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6451  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6453  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6456  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6460  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6463  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6628  history | grep deploy
+ 6629  yarn deploy
+ 6684  history | grep deploy
+ 6685  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 2
+ 6689  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 2
+ 6988  history | grep deploy
+ 6989  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 7002  history | grep deploy
+ 7003  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 7030  git commit -am '[console] fix deployment manifest'
+ 7186  history | grep deploy
+ 7187  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 7189  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 7191  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 7487  history | grep deploy
+ 7488  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 7491  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 8266  rm deployEXM.js 
+ 8360  rm deployFromSourceTx.js 
+ 8365  rm deploy.js 
+ 8366  rm deployEthereum.js 
+ 8367  rm deployInternetIdentity.js 
+ 8368  rm deployIntmax.js 
+ 9027  history | grep deploy
+ 9028  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 9034  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 9061  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 9271  git commit -am '[console] add offchain deployment'
+➜  weavedb git:(v0.28) ✗ node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 3
+node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 3
+wallet doesn't exist
+➜  weavedb git:(v0.28) ✗ cp -r ../weavedb-dirty/scripts/.wallets scripts/
+cp -r ../weavedb-dirty/scripts/.wallets scripts/
+➜  weavedb git:(v0.28) ✗ node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 3
+node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 3
+/home/basque/dev/weavedb/node_modules/warp-contracts-plugin-deploy/lib/cjs/deploy/impl/CreateContractImpl.js:153
+            throw new Error(`Error while posting contract. Sequencer responded with status ${response.status} ${response.statusText}`);
+                  ^
+
+Error: Error while posting contract. Sequencer responded with status 500 Internal Server Error
+    at CreateContractImpl.postContract (/home/basque/dev/weavedb/node_modules/warp-contracts-plugin-deploy/lib/cjs/deploy/impl/CreateContractImpl.js:153:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async CreateContractImpl.deployContractBundlr (/home/basque/dev/weavedb/node_modules/warp-contracts-plugin-deploy/lib/cjs/deploy/impl/CreateContractImpl.js:215:9)
+    at async CreateContractImpl.deployFromSourceTx (/home/basque/dev/weavedb/node_modules/warp-contracts-plugin-deploy/lib/cjs/deploy/impl/CreateContractImpl.js:69:41)
+    at async CreateContractImpl.deploy (/home/basque/dev/weavedb/node_modules/warp-contracts-plugin-deploy/lib/cjs/deploy/impl/CreateContractImpl.js:26:16)
+    at async deployContract (/home/basque/dev/weavedb/scripts/deploy.js:64:15)
+    at async deploy (/home/basque/dev/weavedb/scripts/deploy.js:94:3)
+
+Node.js v18.13.0
+➜  weavedb git:(v0.28) ✗ node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 2
+node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 2
+deployed WeaveDB contract
+{
+  contractTxId: 'J4z8TMju71ST7C642onm8cb8O135BLyVe0K0sNP-AgY',
+  srcTxId: 'f4ZRaBAkQ2ncd5PflIzupknvze8GhDE_j1Nj19cpRfA'
+}
+➜  weavedb git:(v0.28) ✗ node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 3
+node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 3
+/home/basque/dev/weavedb/node_modules/warp-contracts-plugin-deploy/lib/cjs/deploy/impl/CreateContractImpl.js:153
+            throw new Error(`Error while posting contract. Sequencer responded with status ${response.status} ${response.statusText}`);
+                  ^
+
+Error: Error while posting contract. Sequencer responded with status 500 Internal Server Error
+    at CreateContractImpl.postContract (/home/basque/dev/weavedb/node_modules/warp-contracts-plugin-deploy/lib/cjs/deploy/impl/CreateContractImpl.js:153:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async CreateContractImpl.deployContractBundlr (/home/basque/dev/weavedb/node_modules/warp-contracts-plugin-deploy/lib/cjs/deploy/impl/CreateContractImpl.js:215:9)
+    at async CreateContractImpl.deployFromSourceTx (/home/basque/dev/weavedb/node_modules/warp-contracts-plugin-deploy/lib/cjs/deploy/impl/CreateContractImpl.js:69:41)
+    at async CreateContractImpl.deploy (/home/basque/dev/weavedb/node_modules/warp-contracts-plugin-deploy/lib/cjs/deploy/impl/CreateContractImpl.js:26:16)
+    at async deployContract (/home/basque/dev/weavedb/scripts/deploy.js:64:15)
+    at async deploy (/home/basque/dev/weavedb/scripts/deploy.js:94:3)
+
+Node.js v18.13.0
+➜  weavedb git:(v0.28) ✗ ls -lh dist/weavedb-kv/contract.js 
+ls -lh dist/weavedb-kv/contract.js 
+-rw-r--r-- 1 basque basque 592K Jul 20 01:23 dist/weavedb-kv/contract.js
+➜  weavedb git:(v0.28) ✗ ls -lh dist/weavedb-bpt/contract.js 
+ls -lh dist/weavedb-bpt/contract.js 
+-rw-r--r-- 1 basque basque 650K Jul 20 01:23 dist/weavedb-bpt/contract.js
+➜  weavedb git:(v0.28) ✗ ls -lh dist/weavedb/contract.js 
+ls -lh dist/weavedb/contract.js 
+-rw-r--r-- 1 basque basque 584K Jul 20 01:23 dist/weavedb/contract.js
+➜  weavedb git:(v0.28) ✗ yarn build
+yarn build
+yarn run v1.22.19
+$ yarn clean && node build.js && npm run cp
+$ rimraf ./dist
+
+> weavedb@0.9.0 cp
+> copyfiles -u 2 ./sdk/contracts/**/*.json dist
+
+Done in 0.72s.
+➜  weavedb git:(v0.28) ✗ ls -lh dist/weavedb-bpt/contract.js 
+ls -lh dist/weavedb-bpt/contract.js 
+-rw-r--r-- 1 basque basque 511K Jul 20 01:46 dist/weavedb-bpt/contract.js
+➜  weavedb git:(v0.28) ✗ node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 3
+node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 3
+deployed WeaveDB contract
+{
+  contractTxId: 'OUG3tYEz-BziWxFmnMePjy07Uf_qUwWI-f7JkjeLslw',
+  srcTxId: '5xqN1-Qxar9eAfnEymBcjvzG4qbVBKxv0JBnxog6-qU'
+}
+➜  weavedb git:(v0.28) ✗ ls -lh dist/weavedb-bpt/contract.js 
+ls -lh dist/weavedb-bpt/contract.js 
+-rw-r--r-- 1 basque basque 650K Jul 20 01:47 dist/weavedb-bpt/contract.js
+➜  weavedb git:(v0.28) ✗ ls -lh dist/weavedb-bpt/contract.js 
+ls -lh dist/weavedb-bpt/contract.js 
+-rw-r--r-- 1 basque basque 650K Jul 20 01:47 dist/weavedb-bpt/contract.js
+➜  weavedb git:(v0.28) ✗ ls
+ls
+assets    cache    contracts  docs      grpc-node     logs          package.json  scripts  test
+build.js  console  dist       examples  index-engine  node_modules  README.md     sdk      yarn.lock
+➜  weavedb git:(v0.28) ✗ git status
+git status
+On branch v0.28
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   build.js
+	modified:   scripts/deploy.js
+	modified:   sdk/contracts/package.json
+	modified:   sdk/contracts/weavedb-bpt/actions/read/get.js
+	modified:   sdk/contracts/weavedb-bpt/lib/index.js
+	modified:   sdk/contracts/weavedb-bpt/lib/utils.js
+	modified:   sdk/contracts/yarn.lock
+	modified:   sdk/sdk-node/package.json
+	modified:   sdk/sdk-node/yarn.lock
+	modified:   sdk/sdk-web/package.json
+	modified:   sdk/sdk-web/yarn.lock
+	modified:   test/common.js
+	modified:   test/offchain-bpt.js
+	modified:   test/test-bpt.js
+	modified:   test/test-kv.js
+	modified:   test/util.js
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	contracts/weavedb-bpt/
+	sdk/contracts/weavedb-bpt/lib/md5.js
+	test/common-bpt.js
+
+no changes added to commit (use "git add" and/or "git commit -a")
+➜  weavedb git:(v0.28) ✗ git add -A
+git add -A
+➜  weavedb git:(v0.28) ✗ git commit -am '[contract-bpt] pass all contract tests'
+git commit -am '[contract-bpt] pass all contract tests'
+[v0.28 03c838d] [contract-bpt] pass all contract tests
+ 19 files changed, 471 insertions(+), 259 deletions(-)
+ create mode 100644 contracts/weavedb-bpt/contract.js
+ create mode 100644 sdk/contracts/weavedb-bpt/lib/md5.js
+ create mode 100644 test/common-bpt.js
+➜  weavedb git:(v0.28) git push origin v0.28
+git push origin v0.28
+Enumerating objects: 60, done.
+Counting objects: 100% (60/60), done.
+Delta compression using up to 12 threads
+Compressing objects: 100% (32/32), done.
+Writing objects: 100% (33/33), 6.26 KiB | 6.26 MiB/s, done.
+Total 33 (delta 24), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (24/24), completed with 24 local objects.        
+To https://github.com/weavedb/weavedb.git
+   26be710..03c838d  v0.28 -> v0.28
+➜  weavedb git:(v0.28) cd sdk/contracts/
+cd sdk/contracts/
+➜  contracts git:(v0.28) ls
+ls
+common  dfinity  ethereum  intmax  node_modules  package.json  poseidon  weavedb  weavedb-bpt  weavedb-kv  yarn.lock
+➜  contracts git:(v0.28) mkdir bundler
+mkdir bundler
+➜  contracts git:(v0.28) cd bundler/
+cd bundler/
+➜  bundler git:(v0.28) ✗ cp ../ethereum/initial-state-eth.json initial-state-bundler.json
+cp ../ethereum/initial-state-eth.json initial-state-bundler.json
+➜  bundler git:(v0.28) ✗ mkdir actions
+mkdir actions
+➜  bundler git:(v0.28) ✗ mkdir lib
+mkdir lib
+➜  bundler git:(v0.28) ✗ mkdir actions/read
+mkdir actions/read
+➜  bundler git:(v0.28) ✗ cd ../
+cd ../
+➜  contracts git:(v0.28) ✗ cd ../
+cd ../
+➜  sdk git:(v0.28) ✗ cd ../
+cd ../
+➜  weavedb git:(v0.28) ✗ cd contracts/
+cd contracts/
+➜  contracts git:(v0.28) ✗ ls
+ls
+dfinity  ethereum  intercall  intmax  poseidon  weavedb  weavedb-bpt  weavedb-kv
+➜  contracts git:(v0.28) ✗ cp ethereum -r bundler
+cp ethereum -r bundler
+➜  contracts git:(v0.28) ✗ cd bundler/
+cd bundler/
+➜  bundler git:(v0.28) ✗ ls
+ls
+eth.js
+➜  bundler git:(v0.28) ✗ mv eth.js bundler.js
+mv eth.js bundler.js
+➜  bundler git:(v0.28) ✗ cd ../
+cd ../
+➜  contracts git:(v0.28) ✗ cd ../
+cd ../
+➜  weavedb git:(v0.28) ✗ yarn build.js 
+yarn build.js 
+yarn run v1.22.19
+error Command "build.js" not found.
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.
+➜  weavedb git:(v0.28) ✗ yarn build
+yarn build
+yarn run v1.22.19
+$ yarn clean && node build.js && npm run cp
+$ rimraf ./dist
+
+> weavedb@0.9.0 cp
+> copyfiles -u 2 ./sdk/contracts/**/*.json dist
+
+Done in 0.70s.
+➜  weavedb git:(v0.28) ✗ yarn build
+yarn build
+yarn run v1.22.19
+$ yarn clean && node build.js && npm run cp
+$ rimraf ./dist
+
+> weavedb@0.9.0 cp
+> copyfiles -u 2 ./sdk/contracts/**/*.json dist
+
+Done in 0.70s.
+➜  weavedb git:(v0.28) ✗ history | grep deployEthereum
+history | grep deployEthereum
+  606  node scripts/deployEthereum.js mainnet
+ 8366  rm deployEthereum.js 
+➜  weavedb git:(v0.28) ✗ node scripts/deployBundler.js mainnet
+node scripts/deployBundler.js mainnet
+deployed Internet Identity contract
+{
+  contractTxId: 'lry5KMRj6j13sLHsKxs1D2joLjcj6yNHtNQQQoaHRug',
+  srcTxId: 'X8NtXuO2K654Ifp0K9SET605VclTdTrg10CZp9HTaPw'
+}
+➜  weavedb git:(v0.28) ✗ cp ../weavedb-dirty/.env ./
+cp ../weavedb-dirty/.env ./
+➜  weavedb git:(v0.28) ✗   srcTxId: 'X8NtXuO2K654Ifp0K9SET605VclTdTrg10CZp9HTaPw'
+  srcTxId: 'X8NtXuO2K654Ifp0K9SET605VclTdTrg10CZp9HTaPw'
+zsh: command not found: srcTxId:
+➜  weavedb git:(v0.28) ✗ history | grep deploy
+history | grep deploy
+  456  node scripts/deploy.js mainnet
+  458  node scripts/deploy.js mainnet OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94 RQpDSz3PSyYSn6LRzWnX85bu6iGqCZKLxkdwQVoKzTI dtLqn4y5fFD5xyiRCzaYjWxz5k8I6VxoVeARFphhuY4
+  606  node scripts/deployEthereum.js mainnet
+  607  node scripts/deployInternetIdentity.js mainnet
+  646  yarn deploy --wallet mainnet
+  648  git commit -am 'fix deployFromSourceTX'
+  686  yarn deploy mainnet
+  964  graph deploy --product hosted-service ocrybit/badge
+  968  graph deploy --product hosted-service ocrybit/badge2
+ 1073  rm scripts/deployACL.sol 
+ 1075  npx hardhat run scripts/deployACL.js 0xfF2914F36A25B5E1732F4F62C840b1534Cc3cD68 --network goerli
+ 1076  npx hardhat run scripts/deployACL.js --nft_address 0xfF2914F36A25B5E1732F4F62C840b1534Cc3cD68 --network goerli
+ 1077  npx hardhat run scripts/deployACL.js --network goerli "0xfF2914F36A25B5E1732F4F62C840b1534Cc3cD68"
+ 1078  npx hardhat run scripts/deployACL.js 1 --network goerli
+ 1079  NFT_ADDRESS=0xfF2914F36A25B5E1732F4F62C840b1534Cc3cD68 npx hardhat run scripts/deployACL.js --network goerli
+ 1120  graph deploy
+ 1345  git commit -am '[console] add loading sign when deploying'
+ 1365  git commit -am '[contract] getInfo / [console] fix deployment'
+ 1421  yarn deploy 
+ 1535  npx hardhat run scripts/deploy.js --network goerli
+ 1769  git commit -am '[node] limit the number of contracts whitelisted users can deploy'
+ 1833  npx hardhat run scripts/deployACL.js 0xnfsdf --network goerli
+ 1834  npx hardhat run scripts/deployACL.js "0xnfsdffafdsfdsf" --network goerli
+ 1835  npx hardhat run scripts/deployACL.js --network goerli
+ 1837  git commit -am '[example] fix deployACL script arguments'
+ 1926  git commit -am 'fix deploy script argument'
+ 2295  firebase deploy --only firestore
+ 2728  yarn add warp-contracts-plugin-deploy
+ 2730  yarn add warp-contracts-plugin-deploy
+ 2736  history | grep deploy
+ 2737  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 2751  history | grep deploy
+ 2752  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 2753  grep -r 'deploy(' */*.js
+ 2754  grep -r 'deploy(' */*/*.js
+ 2755  grep -r 'deploy(' */*/*/*.js
+ 2756  grep -r 'deploy(' */*.js
+ 2757  grep -r 'deploy(' */*/*/*.js
+ 2758  grep -r 'deploy(' */*.js
+ 2759  grep -r 'deploy(' */*/*.js
+ 2762  yarn add warp-contracts-plugin-deploy
+ 2823  history | grep deploy
+ 2824  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 2937  history | grep deploy
+ 2938  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 2960  yarn add warp-contracts-plugin-deploy
+ 2973  yarn add warp-contracts-plugin-deploy@0.0.11
+ 3011  git commit -am '[sdk-web] remove deploy plugin to fix arbundle error'
+ 3054  history | grep deploy
+ 3056  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 3279  history | grep deploy
+ 3280  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 2
+ 3410  history | grep deploy
+ 3411  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 3413  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 3577  history | grep deploy
+ 3578  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 3595  history | grep deploy
+ 3596  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 3611  git commit -am '[console] deploy contract with Lens relayer'
+ 3682  history | grep deploy
+ 3683  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 4196  history | grep deploy
+ 4197  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 4237  history | grep deploy
+ 4238  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 4938  git commit -am '[console] add deployment with WebAuthn relayer job'
+ 5329  avalanche subnet deploy mySubnet
+ 5519  history | grep deploy
+ 5520  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 5526  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 2
+ 5528  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 2
+ 5687  yarn add warp-contracts-plugin-deploy@2343
+ 5927  history | grep deploy
+ 5928  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 2
+ 5930  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 2
+ 6274  npx hardhat --network localhost run ./scripts/deploy.ts
+ 6373  git clone https://github.com/scroll-tech/scroll-contract-deploy-demo.git
+ 6374  cd scroll-contract-deploy-demo/
+ 6377  yarn deploy:scrollTestnet
+ 6386  cd ../scroll-contract-deploy-demo/
+ 6391  npx hardhat run --network scrollTestnet scripts/deploy-intmax.ts
+ 6392  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6397  cd scroll-contract-deploy-demo/
+ 6398  npx hardhat run --network scrollTestnet scripts/deploy-intmax.ts
+ 6399  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6401  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6403  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6405  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6407  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6414  cp ../../../../scroll-contract-deploy-demo/artifacts/contracts/SimpleAuction.sol/SimpleAuction.* artifacts/contracts/SimpleAuction.sol/
+ 6422  cd scroll-contract-deploy-demo/
+ 6431  cp ../../../../scroll-contract-deploy-demo/artifacts/contracts/SimpleAuction.sol/SimpleAuction.* artifacts/contracts/SimpleAuction.sol/
+ 6447  cd ../scroll-contract-deploy-demo/
+ 6449  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6451  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6453  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6456  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6460  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6463  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6628  history | grep deploy
+ 6629  yarn deploy
+ 6684  history | grep deploy
+ 6685  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 2
+ 6689  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 2
+ 6988  history | grep deploy
+ 6989  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 7002  history | grep deploy
+ 7003  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 7030  git commit -am '[console] fix deployment manifest'
+ 7186  history | grep deploy
+ 7187  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 7189  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 7191  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 7487  history | grep deploy
+ 7488  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 7491  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 8266  rm deployEXM.js 
+ 8360  rm deployFromSourceTx.js 
+ 8365  rm deploy.js 
+ 8366  rm deployEthereum.js 
+ 8367  rm deployInternetIdentity.js 
+ 8368  rm deployIntmax.js 
+ 9027  history | grep deploy
+ 9028  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 9034  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 9061  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 9271  git commit -am '[console] add offchain deployment'
+10125  history | grep deploy
+10126  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 3
+10128  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 3
+10129  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 2
+10130  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 3
+10137  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 3
+10166  history | grep deployEthereum
+10167  node scripts/deployBundler.js mainnet
+➜  weavedb git:(v0.28) ✗ node scripts/deploy.js mainnet 3 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w X8NtXuO2K654Ifp0K9SET605VclTdTrg10CZp9HTaPw
+<y2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w X8NtXuO2K654Ifp0K9SET605VclTdTrg10CZp9HTaPw
+deployed WeaveDB contract
+{
+  contractTxId: '08HfuftLTwd3qKjaPyjE8MRkDnjYlEAcWKvQ_ObsyqM',
+  srcTxId: 'd83ii9j_zms1czP6y_jYNIKI-JqM7akP21smVRTYRZ0'
+}
+➜  weavedb git:(v0.28) ✗   srcTxId: 'd83ii9j_zms1czP6y_jYNIKI-JqM7akP21smVRTYRZ0'
+  srcTxId: 'd83ii9j_zms1czP6y_jYNIKI-JqM7akP21smVRTYRZ0'
+zsh: command not found: srcTxId:
+➜  weavedb git:(v0.28) ✗ node scripts/deploy.js mainnet 3 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w X8NtXuO2K654Ifp0K9SET605VclTdTrg10CZp9HTaPw
+<y2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w X8NtXuO2K654Ifp0K9SET605VclTdTrg10CZp9HTaPw
+{ useKVStorage: true }
+deployed WeaveDB contract
+{
+  contractTxId: 'NnWE2gUQC6XwhnyJxU6s4EpvFhOPfN6HUKcIgUeLqNY',
+  srcTxId: 'MLjcHJQPfvApLdJgXe4o7gLOE22taqx9N4N55Mo4aP4'
+}
+➜  weavedb git:(v0.28) ✗ node scripts/deploy.js mainnet 3 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w X8NtXuO2K654Ifp0K9SET605VclTdTrg10CZp9HTaPw
+<y2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w X8NtXuO2K654Ifp0K9SET605VclTdTrg10CZp9HTaPw
+{ useKVStorage: true }
+deployed WeaveDB contract
+{
+  contractTxId: 'IFNWUsajXa3NhIVya7qouSsCE1TtomwB5_t77nzt9ck',
+  srcTxId: 'n9iGZJrXBcAnP3uHAQWyr1L92xeooa4KInWsu6izhbY'
+}
+➜  weavedb git:(v0.28) ✗ node scripts/deploy.js mainnet 3 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w X8NtXuO2K654Ifp0K9SET605VclTdTrg10CZp9HTaPw
+<y2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w X8NtXuO2K654Ifp0K9SET605VclTdTrg10CZp9HTaPw
+deployed WeaveDB contract
+{
+  contractTxId: 'R8NhYFHE9JoHXHqyAnd2z3w7zCIHBzznG65gZetBoE8',
+  srcTxId: 'SSq5Al8qOvfkfz-1nL1P_MsGlt9tj1gT7LTakuDsCdc'
+}
+➜  weavedb git:(v0.28) ✗   srcTxId: 'SSq5Al8qOvfkfz-1nL1P_MsGlt9tj1gT7LTakuDsCdc'
+  srcTxId: 'SSq5Al8qOvfkfz-1nL1P_MsGlt9tj1gT7LTakuDsCdc'
+zsh: command not found: srcTxId:
+➜  weavedb git:(v0.28) ✗ yarn deploy
+yarn deploy
+yarn run v1.22.19
+$ yarn build && node scripts/deployFromSourceTx.js mainnet SSq5Al8qOvfkfz-1nL1P_MsGlt9tj1gT7LTakuDsCdc 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w X8NtXuO2K654Ifp0K9SET605VclTdTrg10CZp9HTaPw
+$ yarn clean && node build.js && npm run cp
+$ rimraf ./dist
+
+> weavedb@0.9.0 cp
+> copyfiles -u 2 ./sdk/contracts/**/*.json dist
+
+{
+  contractTxId: 'KzmQ7aBQGOn3kmIN6U2cDh-ZLj-BkADx5OfJCOhTmNw',
+  srcTxId: 'SSq5Al8qOvfkfz-1nL1P_MsGlt9tj1gT7LTakuDsCdc'
+}
+Done in 2.17s.
+➜  weavedb git:(v0.28) ✗ git status
+git status
+On branch v0.28
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   build.js
+	modified:   docs/docs/sdk/version.md
+	modified:   package.json
+	modified:   scripts/deploy.js
+	modified:   scripts/deployFromSourceTx.js
+	modified:   sdk/contracts/ethereum/contract.js
+	modified:   sdk/contracts/weavedb-bpt/actions/write/bundle.js
+	modified:   sdk/offchain/index.js
+	modified:   test/common-bpt.js
+	modified:   test/offchain-bpt.js
+	modified:   test/test-bpt.js
+	modified:   test/util.js
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	contracts/bundler/
+	scripts/deployBundler.js
+	sdk/contracts/bundler/
+
+no changes added to commit (use "git add" and/or "git commit -a")
+➜  weavedb git:(v0.28) ✗ cd sdk/contracts/
+cd sdk/contracts/
+➜  contracts git:(v0.28) ✗ npm publish
+npm publish
+npm notice 
+npm notice 📦  weavedb-contracts@0.28.2
+npm notice === Tarball Contents === 
+npm notice 371B   bundler/actions/read/inflate.js                  
+npm notice 485B   bundler/contract.js                              
+npm notice 3B     bundler/initial-state-bundler.json               
+npm notice 447B   common/actions/read/getAddressLink.js            
+npm notice 293B   common/actions/read/getAlgorithms.js             
+npm notice 262B   common/actions/read/getCrons.js                  
+npm notice 334B   common/actions/read/getEvolve.js                 
+npm notice 502B   common/actions/read/getInfo.js                   
+npm notice 205B   common/actions/read/getLinkedContract.js         
+npm notice 216B   common/actions/read/getOwner.js                  
+npm notice 180B   common/actions/read/getRelayerJob.js             
+npm notice 329B   common/actions/read/getTriggers.js               
+npm notice 98B    common/actions/read/hash.js                      
+npm notice 180B   common/actions/read/listRelayerJobs.js           
+npm notice 3.0kB  common/lib/cron.js                               
+npm notice 31.0kB common/lib/jsonschema/attribute.js               
+npm notice 17.3kB common/lib/jsonschema/helpers.js                 
+npm notice 620B   common/lib/jsonschema/index.js                   
+npm notice 2.8kB  common/lib/jsonschema/scan.js                    
+npm notice 10.6kB common/lib/jsonschema/validator.js               
+npm notice 448B   common/lib/pure.js                               
+npm notice 10.3kB common/lib/utils.js                              
+npm notice 2.6kB  dfinity/actions/read/verifyInternetIdentity.js   
+npm notice 529B   dfinity/contract.js                              
+npm notice 61B    dfinity/initial-state-ii.json                    
+npm notice 69.8kB dfinity/lib/tweetnacl/index.js                   
+npm notice 329B   ethereum/actions/read/verify.js                  
+npm notice 328B   ethereum/actions/read/verify712.js               
+npm notice 601B   ethereum/contract.js                             
+npm notice 3B     ethereum/initial-state-eth.json                  
+npm notice 5.8kB  ethereum/lib/eth-sig-util/ethereumjs-abi-utils.js
+npm notice 767B   ethereum/lib/eth-sig-util/personal-sign.js       
+npm notice 5.3kB  ethereum/lib/eth-sig-util/sign-typed-data.js     
+npm notice 1.3kB  ethereum/lib/eth-sig-util/utils.js               
+npm notice 11.1kB ethereum/lib/ethereum-cryptography/keccak.js     
+npm notice 6.6kB  ethereum/lib/ethereumjs/util.js                  
+npm notice 463B   ethereum/lib/ethjs-util/index.js                 
+npm notice 1.6kB  intmax/actions/read/verifyPoseidon.js            
+npm notice 828B   intmax/contract.js                               
+npm notice 61B    intmax/initial-state-intmax.json                 
+npm notice 3.5kB  intmax/lib/circomlibjs/babyjub.js                
+npm notice 2.2kB  intmax/lib/circomlibjs/eddsa.js                  
+npm notice 51B    intmax/lib/circomlibjs/index.js                  
+npm notice 30B    intmax/lib/circomlibjs/pco.js                    
+npm notice 1.8MB  intmax/lib/circomlibjs/poseidon_constants_opt.js 
+npm notice 14.7kB intmax/lib/circomlibjs/poseidon_wasm.js          
+npm notice 2.2kB  intmax/lib/ffjavascript/bigbuffer.js             
+npm notice 2.4kB  intmax/lib/ffjavascript/bls12381.js              
+npm notice 2.1kB  intmax/lib/ffjavascript/bn128.js                 
+npm notice 2.1kB  intmax/lib/ffjavascript/chacha.js                
+npm notice 1.2kB  intmax/lib/ffjavascript/curves.js                
+npm notice 3.0kB  intmax/lib/ffjavascript/engine_applykey.js       
+npm notice 1.5kB  intmax/lib/ffjavascript/engine_batchconvert.js   
+npm notice 24.2kB intmax/lib/ffjavascript/engine_fft.js            
+npm notice 5.2kB  intmax/lib/ffjavascript/engine_multiexp.js       
+npm notice 3.6kB  intmax/lib/ffjavascript/engine_pairing.js        
+npm notice 2.1kB  intmax/lib/ffjavascript/engine.js                
+npm notice 7.3kB  intmax/lib/ffjavascript/f1field.js               
+npm notice 3.9kB  intmax/lib/ffjavascript/fft.js                   
+npm notice 3.7kB  intmax/lib/ffjavascript/fsqrt.js                 
+npm notice 1.9kB  intmax/lib/ffjavascript/futils.js                
+npm notice 862B   intmax/lib/ffjavascript/index.js                 
+npm notice 954B   intmax/lib/ffjavascript/random.js                
+npm notice 5.2kB  intmax/lib/ffjavascript/scalar.js                
+npm notice 3.2kB  intmax/lib/ffjavascript/threadman_thread.js      
+npm notice 6.1kB  intmax/lib/ffjavascript/threadman.js             
+npm notice 6.1kB  intmax/lib/ffjavascript/utils.js                 
+npm notice 11.8kB intmax/lib/ffjavascript/wasm_curve.js            
+npm notice 7.9kB  intmax/lib/ffjavascript/wasm_field1.js           
+npm notice 4.2kB  intmax/lib/ffjavascript/wasm_field2.js           
+npm notice 4.6kB  intmax/lib/ffjavascript/wasm_field3.js           
+npm notice 1.9kB  intmax/lib/sha.js/hash.js                        
+npm notice 3.4kB  intmax/lib/sha.js/sha256.js                      
+npm notice 333B   package.json                                     
+npm notice 759B   poseidon/contract.js                             
+npm notice 42B    poseidon/initial-state-poseidon-constants.json   
+npm notice 2.0kB  weavedb-bpt/actions/read/get.js                  
+npm notice 492B   weavedb-bpt/actions/read/getIndexes.js           
+npm notice 352B   weavedb-bpt/actions/read/getRules.js             
+npm notice 403B   weavedb-bpt/actions/read/getSchema.js            
+npm notice 263B   weavedb-bpt/actions/read/ids.js                  
+npm notice 499B   weavedb-bpt/actions/read/listCollections.js      
+npm notice 429B   weavedb-bpt/actions/read/nonce.js                
+npm notice 253B   weavedb-bpt/actions/read/version.js              
+npm notice 1.4kB  weavedb-bpt/actions/write/add.js                 
+npm notice 2.3kB  weavedb-bpt/actions/write/addAddressLink.js      
+npm notice 1.7kB  weavedb-bpt/actions/write/addCron.js             
+npm notice 981B   weavedb-bpt/actions/write/addIndex.js            
+npm notice 924B   weavedb-bpt/actions/write/addOwner.js            
+npm notice 1.4kB  weavedb-bpt/actions/write/addRelayerJob.js       
+npm notice 1.3kB  weavedb-bpt/actions/write/addTrigger.js          
+npm notice 4.2kB  weavedb-bpt/actions/write/batch.js               
+npm notice 3.9kB  weavedb-bpt/actions/write/bundle.js              
+npm notice 1.0kB  weavedb-bpt/actions/write/evolve.js              
+npm notice 986B   weavedb-bpt/actions/write/linkContract.js        
+npm notice 1.2kB  weavedb-bpt/actions/write/migrate.js             
+npm notice 3.7kB  weavedb-bpt/actions/write/relay.js               
+npm notice 1.3kB  weavedb-bpt/actions/write/remove.js              
+npm notice 939B   weavedb-bpt/actions/write/removeAddressLink.js   
+npm notice 879B   weavedb-bpt/actions/write/removeCron.js          
+npm notice 871B   weavedb-bpt/actions/write/removeIndex.js         
+npm notice 871B   weavedb-bpt/actions/write/removeOwner.js         
+npm notice 936B   weavedb-bpt/actions/write/removeRelayerJob.js    
+npm notice 1.1kB  weavedb-bpt/actions/write/removeTrigger.js       
+npm notice 1.3kB  weavedb-bpt/actions/write/set.js                 
+npm notice 1.0kB  weavedb-bpt/actions/write/setAlgorithms.js       
+npm notice 742B   weavedb-bpt/actions/write/setCanEvolve.js        
+npm notice 1.4kB  weavedb-bpt/actions/write/setRules.js            
+npm notice 1.1kB  weavedb-bpt/actions/write/setSchema.js           
+npm notice 769B   weavedb-bpt/actions/write/setSecure.js           
+npm notice 972B   weavedb-bpt/actions/write/unlinkContract.js      
+npm notice 1.5kB  weavedb-bpt/actions/write/update.js              
+npm notice 1.5kB  weavedb-bpt/actions/write/upsert.js              
+npm notice 9.8kB  weavedb-bpt/contract.js                          
+npm notice 301B   weavedb-bpt/initial-state.json                   
+npm notice 30.1kB weavedb-bpt/lib/BPT.js                           
+npm notice 575B   weavedb-bpt/lib/cron.js                          
+npm notice 23.8kB weavedb-bpt/lib/index.js                         
+npm notice 5.8kB  weavedb-bpt/lib/md5.js                           
+npm notice 20.1kB weavedb-bpt/lib/utils.js                         
+npm notice 687B   weavedb-bpt/lib/validate.js                      
+npm notice 26B    weavedb-bpt/lib/version.js                       
+npm notice 11.7kB weavedb-kv/actions/read/get.js                   
+npm notice 462B   weavedb-kv/actions/read/getIndexes.js            
+npm notice 352B   weavedb-kv/actions/read/getRules.js              
+npm notice 403B   weavedb-kv/actions/read/getSchema.js             
+npm notice 263B   weavedb-kv/actions/read/ids.js                   
+npm notice 499B   weavedb-kv/actions/read/listCollections.js       
+npm notice 429B   weavedb-kv/actions/read/nonce.js                 
+npm notice 253B   weavedb-kv/actions/read/version.js               
+npm notice 1.8kB  weavedb-kv/actions/write/add.js                  
+npm notice 2.3kB  weavedb-kv/actions/write/addAddressLink.js       
+npm notice 1.7kB  weavedb-kv/actions/write/addCron.js              
+npm notice 1.2kB  weavedb-kv/actions/write/addIndex.js             
+npm notice 924B   weavedb-kv/actions/write/addOwner.js             
+npm notice 1.4kB  weavedb-kv/actions/write/addRelayerJob.js        
+npm notice 1.3kB  weavedb-kv/actions/write/addTrigger.js           
+npm notice 4.2kB  weavedb-kv/actions/write/batch.js                
+npm notice 4.0kB  weavedb-kv/actions/write/bundle.js               
+npm notice 1.0kB  weavedb-kv/actions/write/evolve.js               
+npm notice 986B   weavedb-kv/actions/write/linkContract.js         
+npm notice 1.2kB  weavedb-kv/actions/write/migrate.js              
+npm notice 3.7kB  weavedb-kv/actions/write/relay.js                
+npm notice 1.6kB  weavedb-kv/actions/write/remove.js               
+npm notice 939B   weavedb-kv/actions/write/removeAddressLink.js    
+npm notice 965B   weavedb-kv/actions/write/removeCron.js           
+npm notice 918B   weavedb-kv/actions/write/removeIndex.js          
+npm notice 871B   weavedb-kv/actions/write/removeOwner.js          
+npm notice 936B   weavedb-kv/actions/write/removeRelayerJob.js     
+npm notice 1.1kB  weavedb-kv/actions/write/removeTrigger.js        
+npm notice 1.8kB  weavedb-kv/actions/write/set.js                  
+npm notice 1.0kB  weavedb-kv/actions/write/setAlgorithms.js        
+npm notice 742B   weavedb-kv/actions/write/setCanEvolve.js         
+npm notice 1.4kB  weavedb-kv/actions/write/setRules.js             
+npm notice 1.1kB  weavedb-kv/actions/write/setSchema.js            
+npm notice 769B   weavedb-kv/actions/write/setSecure.js            
+npm notice 972B   weavedb-kv/actions/write/unlinkContract.js       
+npm notice 1.8kB  weavedb-kv/actions/write/update.js               
+npm notice 2.0kB  weavedb-kv/actions/write/upsert.js               
+npm notice 9.8kB  weavedb-kv/contract.js                           
+npm notice 301B   weavedb-kv/initial-state.json                    
+npm notice 575B   weavedb-kv/lib/cron.js                           
+npm notice 9.2kB  weavedb-kv/lib/index.js                          
+npm notice 8.0kB  weavedb-kv/lib/utils.js                          
+npm notice 687B   weavedb-kv/lib/validate.js                       
+npm notice 26B    weavedb-kv/lib/version.js                        
+npm notice 11.1kB weavedb/actions/read/get.js                      
+npm notice 772B   weavedb/actions/read/getIndexes.js               
+npm notice 265B   weavedb/actions/read/getRules.js                 
+npm notice 316B   weavedb/actions/read/getSchema.js                
+npm notice 157B   weavedb/actions/read/ids.js                      
+npm notice 373B   weavedb/actions/read/listCollections.js          
+npm notice 361B   weavedb/actions/read/nonce.js                    
+npm notice 254B   weavedb/actions/read/version.js                  
+npm notice 1.4kB  weavedb/actions/write/add.js                     
+npm notice 2.3kB  weavedb/actions/write/addAddressLink.js          
+npm notice 1.6kB  weavedb/actions/write/addCron.js                 
+npm notice 995B   weavedb/actions/write/addIndex.js                
+npm notice 893B   weavedb/actions/write/addOwner.js                
+npm notice 1.3kB  weavedb/actions/write/addRelayerJob.js           
+npm notice 1.3kB  weavedb/actions/write/addTrigger.js              
+npm notice 3.9kB  weavedb/actions/write/batch.js                   
+npm notice 5.9kB  weavedb/actions/write/bundle.js                  
+npm notice 1.0kB  weavedb/actions/write/evolve.js                  
+npm notice 947B   weavedb/actions/write/linkContract.js            
+npm notice 957B   weavedb/actions/write/migrate.js                 
+npm notice 3.8kB  weavedb/actions/write/relay.js                   
+npm notice 1.3kB  weavedb/actions/write/remove.js                  
+npm notice 908B   weavedb/actions/write/removeAddressLink.js       
+npm notice 935B   weavedb/actions/write/removeCron.js              
+npm notice 901B   weavedb/actions/write/removeIndex.js             
+npm notice 841B   weavedb/actions/write/removeOwner.js             
+npm notice 897B   weavedb/actions/write/removeRelayerJob.js        
+npm notice 1.1kB  weavedb/actions/write/removeTrigger.js           
+npm notice 1.5kB  weavedb/actions/write/set.js                     
+npm notice 979B   weavedb/actions/write/setAlgorithms.js           
+npm notice 712B   weavedb/actions/write/setCanEvolve.js            
+npm notice 1.3kB  weavedb/actions/write/setRules.js                
+npm notice 983B   weavedb/actions/write/setSchema.js               
+npm notice 691B   weavedb/actions/write/setSecure.js               
+npm notice 933B   weavedb/actions/write/unlinkContract.js          
+npm notice 1.5kB  weavedb/actions/write/update.js                  
+npm notice 1.6kB  weavedb/actions/write/upsert.js                  
+npm notice 9.1kB  weavedb/contract.js                              
+npm notice 361B   weavedb/initial-state.json                       
+npm notice 575B   weavedb/lib/cron.js                              
+npm notice 7.6kB  weavedb/lib/index.js                             
+npm notice 5.9kB  weavedb/lib/utils.js                             
+npm notice 680B   weavedb/lib/validate.js                          
+npm notice 26B    weavedb/lib/version.js                           
+npm notice === Tarball Details === 
+npm notice name:          weavedb-contracts                       
+npm notice version:       0.28.2                                  
+npm notice filename:      weavedb-contracts-0.28.2.tgz            
+npm notice package size:  1.0 MB                                  
+npm notice unpacked size: 2.5 MB                                  
+npm notice shasum:        336ec46cfbddbf1af9f1c156abe9cfeb8354aa1d
+npm notice integrity:     sha512-Fsc0c1c8u9NfH[...]wXO66nzfEypiQ==
+npm notice total files:   210                                     
+npm notice 
+npm notice Publishing to https://registry.npmjs.org/
++ weavedb-contracts@0.28.2
+➜  contracts git:(v0.28) ✗ cd ../offchain/
+cd ../offchain/
+➜  offchain git:(v0.28) ✗ yarn add weavedb-contracts
+yarn add weavedb-contracts
+yarn add v1.22.19
+[1/4] Resolving packages...
+[2/4] Fetching packages...
+[3/4] Linking dependencies...
+warning "weavedb-contracts > fpjson-lang@0.1.3" has unmet peer dependency "react@^18.2.0".
+[4/4] Building fresh packages...
+success Saved lockfile.
+success Saved 1 new dependency.
+info Direct dependencies
+└─ weavedb-contracts@0.28.2
+info All dependencies
+└─ weavedb-contracts@0.28.2
+Done in 4.50s.
+➜  offchain git:(v0.28) ✗ npm publish
+npm publish
+npm notice 
+npm notice 📦  weavedb-offchain@0.28.2
+npm notice === Tarball Contents === 
+npm notice 6.0kB index.js    
+npm notice 316B  package.json
+npm notice === Tarball Details === 
+npm notice name:          weavedb-offchain                        
+npm notice version:       0.28.2                                  
+npm notice filename:      weavedb-offchain-0.28.2.tgz             
+npm notice package size:  1.9 kB                                  
+npm notice unpacked size: 6.3 kB                                  
+npm notice shasum:        9aceb8ed7d58bf7f725be4fc0909647b4455124a
+npm notice integrity:     sha512-EhRj0j5eUDbJ+[...]Q6jxthpAzEoxQ==
+npm notice total files:   2                                       
+npm notice 
+npm notice Publishing to https://registry.npmjs.org/
++ weavedb-offchain@0.28.2
+➜  offchain git:(v0.28) ✗ cd ../
+cd ../
+➜  sdk git:(v0.28) ✗ cd ../
+cd ../
+➜  weavedb git:(v0.28) ✗ git add -A
+git add -A
+➜  weavedb git:(v0.28) ✗ git commit -am '[contracts-bpt] separate bundler contract'
+git commit -am '[contracts-bpt] separate bundler contract'
+[v0.28 a6f75ea] [contracts-bpt] separate bundler contract
+ 20 files changed, 237 insertions(+), 37 deletions(-)
+ create mode 100644 contracts/bundler/bundler.js
+ create mode 100644 scripts/deployBundler.js
+ create mode 100644 sdk/contracts/bundler/actions/read/inflate.js
+ create mode 100644 sdk/contracts/bundler/contract.js
+ create mode 100644 sdk/contracts/bundler/initial-state-bundler.json
+➜  weavedb git:(v0.28) git push origin v0.28
+git push origin v0.28
+Enumerating objects: 67, done.
+Counting objects: 100% (67/67), done.
+Delta compression using up to 12 threads
+Compressing objects: 100% (35/35), done.
+Writing objects: 100% (38/38), 5.04 KiB | 2.52 MiB/s, done.
+Total 38 (delta 27), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (27/27), completed with 26 local objects.        
+To https://github.com/weavedb/weavedb.git
+   03c838d..a6f75ea  v0.28 -> v0.28
+➜  weavedb git:(v0.28) cd grpc-node/node-server/
+cd grpc-node/node-server/
+➜  node-server git:(v0.28) cd packages/
+cd packages/
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+/home/basque/dev/weavedb/grpc-node/node-server/node_modules/weavedb-base/index.js:485
+    if (isNil(signer)) throw Error("No wallet to sign")
+                             ^
+
+Error: No wallet to sign
+    at SDK.writeWithEVM (/home/basque/dev/weavedb/grpc-node/node-server/node_modules/weavedb-base/index.js:485:30)
+    at SDK._write2 (/home/basque/dev/weavedb/grpc-node/node-server/node_modules/weavedb-base/index.js:250:20)
+    at SDK._write (/home/basque/dev/weavedb/grpc-node/node-server/node_modules/weavedb-base/index.js:172:23)
+    at Base.<computed> [as set] (/home/basque/dev/weavedb/grpc-node/node-server/node_modules/weavedb-base/index.js:810:17)
+    at test3 (/home/basque/dev/weavedb/grpc-node/node-server/packages/test.js:178:24)
+
+Node.js v18.13.0
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'd1paved26kulphvl11491h1v',
+  transaction: {
+    id: 'd1paved26kulphvl11491h1v',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 2, timestamp: 1689811640, indep_hash: null },
+  success: true,
+  nonce: 2,
+  signer: '2J0dqD4MvOStHY6aEGEYJ7Z-CggOO9g1mCLeQk1GgeA',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'vgodpxmbnt3tfcbzywbl4yr3',
+  transaction: {
+    id: 'vgodpxmbnt3tfcbzywbl4yr3',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 2, timestamp: 1689812332, indep_hash: null },
+  success: true,
+  nonce: 3,
+  signer: '2J0dqD4MvOStHY6aEGEYJ7Z-CggOO9g1mCLeQk1GgeA',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+/home/basque/dev/weavedb/grpc-node/node-server/node_modules/weavedb-node-client/index.js:135
+    if (!isNil(q.err)) throw new Error(q.err)
+                             ^
+
+Error: No wallet to sign
+    at SDK.write (/home/basque/dev/weavedb/grpc-node/node-server/node_modules/weavedb-node-client/index.js:135:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async SDK.writeWithAR (/home/basque/dev/weavedb/grpc-node/node-server/node_modules/weavedb-base/index.js:658:12)
+    at async SDK._write2 (/home/basque/dev/weavedb/grpc-node/node-server/node_modules/weavedb-base/index.js:249:9)
+    at async SDK._write (/home/basque/dev/weavedb/grpc-node/node-server/node_modules/weavedb-base/index.js:172:12)
+    at async test3 (/home/basque/dev/weavedb/grpc-node/node-server/packages/test.js:178:15)
+
+Node.js v18.13.0
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+null
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'i85uw20vw6frxcq7dsd89hkg',
+  transaction: {
+    id: 'i85uw20vw6frxcq7dsd89hkg',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 3, timestamp: 1689812502, indep_hash: null },
+  success: true,
+  nonce: 5,
+  signer: '2J0dqD4MvOStHY6aEGEYJ7Z-CggOO9g1mCLeQk1GgeA',
+  duration: 0,
+  error: null,
+  function: 'bundle'
+}
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'cy7004qb316p08xkeelm4rmd',
+  transaction: {
+    id: 'cy7004qb316p08xkeelm4rmd',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 6, timestamp: 1689812548, indep_hash: null },
+  success: true,
+  nonce: 6,
+  signer: '2J0dqD4MvOStHY6aEGEYJ7Z-CggOO9g1mCLeQk1GgeA',
+  duration: 0,
+  error: null,
+  function: 'bundle'
+}
+{ age: 3 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'jis9up9p8p4rbsefzzwmpqh7',
+  transaction: {
+    id: 'jis9up9p8p4rbsefzzwmpqh7',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 10, timestamp: 1689812557, indep_hash: null },
+  success: true,
+  nonce: 7,
+  signer: '2J0dqD4MvOStHY6aEGEYJ7Z-CggOO9g1mCLeQk1GgeA',
+  duration: 0,
+  error: null,
+  function: 'bundle'
+}
+{ age: 3 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'q9ubrs2ulaegxxqs7s5jzp6c',
+  transaction: {
+    id: 'q9ubrs2ulaegxxqs7s5jzp6c',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 3, timestamp: 1689812862, indep_hash: null },
+  success: true,
+  nonce: 8,
+  signer: '2J0dqD4MvOStHY6aEGEYJ7Z-CggOO9g1mCLeQk1GgeA',
+  duration: 0,
+  error: null,
+  function: 'bundle'
+}
+{ age: 3 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'd5mf94thveg16yejrod9kyjj',
+  transaction: {
+    id: 'd5mf94thveg16yejrod9kyjj',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 3, timestamp: 1689812900, indep_hash: null },
+  success: true,
+  nonce: 9,
+  signer: '2J0dqD4MvOStHY6aEGEYJ7Z-CggOO9g1mCLeQk1GgeA',
+  duration: 0,
+  error: null,
+  function: 'bundle'
+}
+{ age: 3 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'jymese6634zqc22eq1n8il4d',
+  transaction: {
+    id: 'jymese6634zqc22eq1n8il4d',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 3, timestamp: 1689812955, indep_hash: null },
+  success: true,
+  nonce: 10,
+  signer: '2J0dqD4MvOStHY6aEGEYJ7Z-CggOO9g1mCLeQk1GgeA',
+  duration: 0,
+  error: null,
+  function: 'bundle'
+}
+{ age: 3 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'qebfsnhf9z0gip9pa9npy3ve',
+  transaction: {
+    id: 'qebfsnhf9z0gip9pa9npy3ve',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 3, timestamp: 1689812994, indep_hash: null },
+  success: true,
+  nonce: 11,
+  signer: '2J0dqD4MvOStHY6aEGEYJ7Z-CggOO9g1mCLeQk1GgeA',
+  duration: 0,
+  error: null,
+  function: 'bundle'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'xs8yrf08fcyiis38dprwqgz2',
+  transaction: {
+    id: 'xs8yrf08fcyiis38dprwqgz2',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 3, timestamp: 1689813464, indep_hash: null },
+  success: true,
+  nonce: 12,
+  signer: '2J0dqD4MvOStHY6aEGEYJ7Z-CggOO9g1mCLeQk1GgeA',
+  duration: 0,
+  error: null,
+  function: 'bundle'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'hhvt1mlcidvibvwcvuz6gbtw',
+  transaction: {
+    id: 'hhvt1mlcidvibvwcvuz6gbtw',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 2, timestamp: 1689814620, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'x4NqKLRL_zZQMHG_md8zb56WPi8UXUXdgWTIxeBualg',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'shienoa34z3vnzv972xjo7m7',
+  transaction: {
+    id: 'shienoa34z3vnzv972xjo7m7',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 2, timestamp: 1689814664, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'tw14tSFcM0qazvITWGTLPKIFMzqGpK5W80e1ot5lGCM',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'bsle6wy11fsncb22qdb8ojsi',
+  transaction: {
+    id: 'bsle6wy11fsncb22qdb8ojsi',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 2, timestamp: 1689814902, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'Lx-fPu5D0prt7JYHOolEvcCoEnIAVlzariKG7oaqcUs',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'ripzmk2pje9gy8qo2phz59fz',
+  transaction: {
+    id: 'ripzmk2pje9gy8qo2phz59fz',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 2, timestamp: 1689814931, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'ObdfYGh6_5JBe6kd5W6RtBXik38fIMhhFcUiQ3xJ2Z8',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'h14f9c62lpz4abmdax68xare',
+  transaction: {
+    id: 'h14f9c62lpz4abmdax68xare',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 2, timestamp: 1689815031, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'kUHBc_ZtTX_dRSC6ENl8BLFdA3FfwQaGWgElZwmKyP4',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'md0ge1174nv5xwctpxitp7xo',
+  transaction: {
+    id: 'md0ge1174nv5xwctpxitp7xo',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 5, timestamp: 1689815035, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'jMc3oZAFvsbJrl4HNYfomGjGn_glZMCUrGyAXejf8PM',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'sdrgx6vwcx26ov2lib4a8ktb',
+  transaction: {
+    id: 'sdrgx6vwcx26ov2lib4a8ktb',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 2, timestamp: 1689815268, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'gkkCZeC0SaKaqZxNI9nw8BwAthG94RB_W0ua07XoU7I',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'yigsry0ogk0mxp9dvwy6h2ny',
+  transaction: {
+    id: 'yigsry0ogk0mxp9dvwy6h2ny',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 5, timestamp: 1689815274, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'HyBLkJsQ8V71Eg8Z5YdfZ38237L160PoM-VwGJG13Qc',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'utggsyuzzmg7bf78irzwwm56',
+  transaction: {
+    id: 'utggsyuzzmg7bf78irzwwm56',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 2, timestamp: 1689815336, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: '0STlYRWCeOcvwO7BdZ8nlq7Hv98YicuKNnYhTy2EUjQ',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'kcn7tgh8podzmv3gebaztaev',
+  transaction: {
+    id: 'kcn7tgh8podzmv3gebaztaev',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 5, timestamp: 1689815343, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'UflsriLCovxDd3i2esWzUwM8O_jCDzhNlK2qFyrAmdw',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'mb5qltr4xpmjmfzju6f4kpeb',
+  transaction: {
+    id: 'mb5qltr4xpmjmfzju6f4kpeb',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 8, timestamp: 1689815352, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'DfxtXvZAP1zbIEpki4fN2ui_si0X3x7kCWgs5JqiStY',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'pkbexeo0cohxv3y9a9ccxkns',
+  transaction: {
+    id: 'pkbexeo0cohxv3y9a9ccxkns',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 2, timestamp: 1689815379, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'jgJ3Bebh4oUnss50ZI26lGtwi5JYeLi6oAPwMQ-Hm00',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'y0axt06w64iuehym5snjfjyh',
+  transaction: {
+    id: 'y0axt06w64iuehym5snjfjyh',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 5, timestamp: 1689815383, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'tfcp-p0hZu9qnDTf2dl20IewENwO4VIIxyzMWX-en44',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'p9xqhn3o4sb1fe9cu395sd8d',
+  transaction: {
+    id: 'p9xqhn3o4sb1fe9cu395sd8d',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 8, timestamp: 1689815387, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: '8M0LkT6K0nod3IXHxI0cEC7Kw6_BYwEUNZksCj93HoA',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'x103f1sdmtqvpx1jm35y61be',
+  transaction: {
+    id: 'x103f1sdmtqvpx1jm35y61be',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 2, timestamp: 1689830980, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'kgAYTwm5rKjFbVyZvm8En4L4exd-MA4zUFB4Vuzeu0k',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'itvs94iyaog8wl6dmnp0mrc2',
+  transaction: {
+    id: 'itvs94iyaog8wl6dmnp0mrc2',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 5, timestamp: 1689830982, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'xiV8Pl_9Q5wqKWJvFurFTwmo1mM_mtzVIRPMWKOSgrY',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'rg9tqbtg29qwqmi4hk1ba2td',
+  transaction: {
+    id: 'rg9tqbtg29qwqmi4hk1ba2td',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 8, timestamp: 1689830986, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'KXkGPrEdL2iu5UfUbUlYsHn-uWJ-IGb3ecb8BcvPFG0',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'bxlulo6a4msnd0j0a5v7pdl3',
+  transaction: {
+    id: 'bxlulo6a4msnd0j0a5v7pdl3',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 11, timestamp: 1689830991, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: '4oPrZMgvwQY1FPCMMwqS_V7DHz708WN64H1Ormw3LNM',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'tdtcfxsttz4gcded32af2dtg',
+  transaction: {
+    id: 'tdtcfxsttz4gcded32af2dtg',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 14, timestamp: 1689830995, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: '5Vg_dHoRPCuAiN1fyc8KBlNvBt9bSfWrmFN07w39GWo',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ cd ../
+cd ../
+➜  node-server git:(v0.28) ✗ cd ../
+cd ../
+➜  grpc-node git:(v0.28) ✗ cd ../
+cd ../
+➜  weavedb git:(v0.28) ✗ history | grep deploy
+history | grep deploy
+  456  node scripts/deploy.js mainnet
+  458  node scripts/deploy.js mainnet OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94 RQpDSz3PSyYSn6LRzWnX85bu6iGqCZKLxkdwQVoKzTI dtLqn4y5fFD5xyiRCzaYjWxz5k8I6VxoVeARFphhuY4
+  606  node scripts/deployEthereum.js mainnet
+  607  node scripts/deployInternetIdentity.js mainnet
+  646  yarn deploy --wallet mainnet
+  648  git commit -am 'fix deployFromSourceTX'
+  686  yarn deploy mainnet
+  964  graph deploy --product hosted-service ocrybit/badge
+  968  graph deploy --product hosted-service ocrybit/badge2
+ 1073  rm scripts/deployACL.sol 
+ 1075  npx hardhat run scripts/deployACL.js 0xfF2914F36A25B5E1732F4F62C840b1534Cc3cD68 --network goerli
+ 1076  npx hardhat run scripts/deployACL.js --nft_address 0xfF2914F36A25B5E1732F4F62C840b1534Cc3cD68 --network goerli
+ 1077  npx hardhat run scripts/deployACL.js --network goerli "0xfF2914F36A25B5E1732F4F62C840b1534Cc3cD68"
+ 1078  npx hardhat run scripts/deployACL.js 1 --network goerli
+ 1079  NFT_ADDRESS=0xfF2914F36A25B5E1732F4F62C840b1534Cc3cD68 npx hardhat run scripts/deployACL.js --network goerli
+ 1120  graph deploy
+ 1345  git commit -am '[console] add loading sign when deploying'
+ 1365  git commit -am '[contract] getInfo / [console] fix deployment'
+ 1421  yarn deploy 
+ 1535  npx hardhat run scripts/deploy.js --network goerli
+ 1769  git commit -am '[node] limit the number of contracts whitelisted users can deploy'
+ 1833  npx hardhat run scripts/deployACL.js 0xnfsdf --network goerli
+ 1834  npx hardhat run scripts/deployACL.js "0xnfsdffafdsfdsf" --network goerli
+ 1835  npx hardhat run scripts/deployACL.js --network goerli
+ 1837  git commit -am '[example] fix deployACL script arguments'
+ 1926  git commit -am 'fix deploy script argument'
+ 2295  firebase deploy --only firestore
+ 2728  yarn add warp-contracts-plugin-deploy
+ 2730  yarn add warp-contracts-plugin-deploy
+ 2736  history | grep deploy
+ 2737  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 2751  history | grep deploy
+ 2752  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 2753  grep -r 'deploy(' */*.js
+ 2754  grep -r 'deploy(' */*/*.js
+ 2755  grep -r 'deploy(' */*/*/*.js
+ 2756  grep -r 'deploy(' */*.js
+ 2757  grep -r 'deploy(' */*/*/*.js
+ 2758  grep -r 'deploy(' */*.js
+ 2759  grep -r 'deploy(' */*/*.js
+ 2762  yarn add warp-contracts-plugin-deploy
+ 2823  history | grep deploy
+ 2824  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 2937  history | grep deploy
+ 2938  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 2960  yarn add warp-contracts-plugin-deploy
+ 2973  yarn add warp-contracts-plugin-deploy@0.0.11
+ 3011  git commit -am '[sdk-web] remove deploy plugin to fix arbundle error'
+ 3054  history | grep deploy
+ 3056  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 3279  history | grep deploy
+ 3280  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 2
+ 3410  history | grep deploy
+ 3411  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 3413  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 3577  history | grep deploy
+ 3578  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 3595  history | grep deploy
+ 3596  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 3611  git commit -am '[console] deploy contract with Lens relayer'
+ 3682  history | grep deploy
+ 3683  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 4196  history | grep deploy
+ 4197  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 4237  history | grep deploy
+ 4238  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 4938  git commit -am '[console] add deployment with WebAuthn relayer job'
+ 5329  avalanche subnet deploy mySubnet
+ 5519  history | grep deploy
+ 5520  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w
+ 5526  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 2
+ 5528  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 2
+ 5687  yarn add warp-contracts-plugin-deploy@2343
+ 5927  history | grep deploy
+ 5928  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 2
+ 5930  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 2
+ 6274  npx hardhat --network localhost run ./scripts/deploy.ts
+ 6373  git clone https://github.com/scroll-tech/scroll-contract-deploy-demo.git
+ 6374  cd scroll-contract-deploy-demo/
+ 6377  yarn deploy:scrollTestnet
+ 6386  cd ../scroll-contract-deploy-demo/
+ 6391  npx hardhat run --network scrollTestnet scripts/deploy-intmax.ts
+ 6392  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6397  cd scroll-contract-deploy-demo/
+ 6398  npx hardhat run --network scrollTestnet scripts/deploy-intmax.ts
+ 6399  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6401  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6403  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6405  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6407  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6414  cp ../../../../scroll-contract-deploy-demo/artifacts/contracts/SimpleAuction.sol/SimpleAuction.* artifacts/contracts/SimpleAuction.sol/
+ 6422  cd scroll-contract-deploy-demo/
+ 6431  cp ../../../../scroll-contract-deploy-demo/artifacts/contracts/SimpleAuction.sol/SimpleAuction.* artifacts/contracts/SimpleAuction.sol/
+ 6447  cd ../scroll-contract-deploy-demo/
+ 6449  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6451  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6453  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6456  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6460  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6463  npx hardhat run --network scrollTestnet scripts/deploy-intmax.js
+ 6628  history | grep deploy
+ 6629  yarn deploy
+ 6684  history | grep deploy
+ 6685  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 2
+ 6689  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 2
+ 6988  history | grep deploy
+ 6989  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 7002  history | grep deploy
+ 7003  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 7030  git commit -am '[console] fix deployment manifest'
+ 7186  history | grep deploy
+ 7187  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 7189  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 7191  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 7487  history | grep deploy
+ 7488  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 7491  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 8266  rm deployEXM.js 
+ 8360  rm deployFromSourceTx.js 
+ 8365  rm deploy.js 
+ 8366  rm deployEthereum.js 
+ 8367  rm deployInternetIdentity.js 
+ 8368  rm deployIntmax.js 
+ 9027  history | grep deploy
+ 9028  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 9034  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 9061  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 1
+ 9271  git commit -am '[console] add offchain deployment'
+10125  history | grep deploy
+10126  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 3
+10128  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 3
+10129  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 2
+10130  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 3
+10137  node scripts/deploy.js mainnet 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w 3
+10166  history | grep deployEthereum
+10167  node scripts/deployBundler.js mainnet
+10169  history | grep deploy
+10170  node scripts/deploy.js mainnet 3 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w X8NtXuO2K654Ifp0K9SET605VclTdTrg10CZp9HTaPw
+10171  yarn deploy
+➜  weavedb git:(v0.28) ✗ yarn deploy
+yarn deploy
+yarn run v1.22.19
+$ yarn build && node scripts/deployFromSourceTx.js mainnet SSq5Al8qOvfkfz-1nL1P_MsGlt9tj1gT7LTakuDsCdc 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w X8NtXuO2K654Ifp0K9SET605VclTdTrg10CZp9HTaPw
+$ yarn clean && node build.js && npm run cp
+$ rimraf ./dist
+
+> weavedb@0.9.0 cp
+> copyfiles -u 2 ./sdk/contracts/**/*.json dist
+
+{
+  contractTxId: 'zO4kviGXQrzQZpWwqmHOISPY0BaHfWYmxP7A9J_Ki3M',
+  srcTxId: 'SSq5Al8qOvfkfz-1nL1P_MsGlt9tj1gT7LTakuDsCdc'
+}
+Done in 3.42s.
+➜  weavedb git:(v0.28) ✗ node test.js 
+node test.js 
+node:internal/modules/cjs/loader:1042
+  throw err;
+  ^
+
+Error: Cannot find module '/home/basque/dev/weavedb/test.js'
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1039:15)
+    at Module._load (node:internal/modules/cjs/loader:885:27)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:81:12)
+    at node:internal/main/run_main_module:23:47 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+
+Node.js v18.13.0
+➜  weavedb git:(v0.28) ✗ cd grpc-node/node-server/
+cd grpc-node/node-server/
+➜  node-server git:(v0.28) ✗ ls
+ls
+cache               contract-manager-server.js  lib           package.json  server.js              standalone.js   test           weavedb.standalone.config.js
+contract-loader.js  Dockerfile                  node_modules  packages      standalone.Dockerfile  static_codegen  weavedb.proto  yarn.lock
+➜  node-server git:(v0.28) ✗ cd packages/
+cd packages/
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'q9aystbhrse0uaxwj0db06gt',
+  transaction: {
+    id: 'q9aystbhrse0uaxwj0db06gt',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 2, timestamp: 1689832043, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'wqbMhpfsLieMtE8vghkYI0RhbYt59oPzRB4sc2nQLB0',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'h78iruza5zu096qnl3ckwofz',
+  transaction: {
+    id: 'h78iruza5zu096qnl3ckwofz',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 5, timestamp: 1689832051, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: '2Wm-ZSVJJij8NEdRdZ9WvukyjR4RV9Fp5bisV_oqw14',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'hstouj9osmx4oianmd6u045y',
+  transaction: {
+    id: 'hstouj9osmx4oianmd6u045y',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 8, timestamp: 1689832055, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'H0smnlQkY-GEz4v1AUwoB2_IT-GHoO7-IWOfv6jDdz8',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'pbfdxka5a8nehj3zj59lf2cz',
+  transaction: {
+    id: 'pbfdxka5a8nehj3zj59lf2cz',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 13, timestamp: 1689832319, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'mHgv0R6IkyESurAHjWNoGQslIDuY1jTKbe7EbzUsHsg',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'e4knek1dqe4gj22ch11qe1ii',
+  transaction: {
+    id: 'e4knek1dqe4gj22ch11qe1ii',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 16, timestamp: 1689832325, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: '_dvwDaB2yhSSArok20bwwKOX5NDxd867JAEEVMSubdA',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+{ age: 4 }
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'tevacw6sgjm2obnyy9hxf2z8',
+  transaction: {
+    id: 'tevacw6sgjm2obnyy9hxf2z8',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 2, timestamp: 1689832561, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: '6YaKCShBxiufSfko5tP0jCQ2EmidpeCrEOa9q_8fJ3I',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[ { age: 46 } ]
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 's6ltocupzdlwmwias1qu5edi',
+  transaction: {
+    id: 's6ltocupzdlwmwias1qu5edi',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 5, timestamp: 1689832567, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: '4puztmTUehylF39hv3fNacd_4bj0tzSXXi3Ot8S9HqE',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[ { age: 45 }, { age: 46 } ]
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'l8pfj9km3v2c8ugubbhkjfku',
+  transaction: {
+    id: 'l8pfj9km3v2c8ugubbhkjfku',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 8, timestamp: 1689832570, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'xYggifvQip0IREr-KywsPyCZl1sLqk6BCj4pFmYaETs',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[ { age: 21 }, { age: 45 }, { age: 46 } ]
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'eczdimquz3cjwiqs1tejgfff',
+  transaction: {
+    id: 'eczdimquz3cjwiqs1tejgfff',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 11, timestamp: 1689832635, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'uaImez-oSXE5A3d92Com8BCuvXacm0B3JemSKxjwdBk',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[ { age: 52 }, { age: 21 }, { age: 45 }, { age: 46 } ]
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'utnm9b4k431xoyk0z907j71h',
+  transaction: {
+    id: 'utnm9b4k431xoyk0z907j71h',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 14, timestamp: 1689832638, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'sUeyfuPQDiCf62BBl9byxcqmvJU8uY3J4Mt6Rc1psww',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[ { age: 52 }, { age: 93 }, { age: 21 }, { age: 45 }, { age: 46 } ]
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'h61afuclw0ff86yf66ejllfy',
+  transaction: {
+    id: 'h61afuclw0ff86yf66ejllfy',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 17, timestamp: 1689832640, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: '8qAPFs1bmvbS9oKH9-tj2YIoNz8bMQMZRMdUVwdGRRE',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[
+  { age: 52 },
+  { age: 93 },
+  { age: 38 },
+  { age: 21 },
+  { age: 45 },
+  { age: 46 }
+]
+➜  packages git:(v0.28) ✗ yarn deploy
+yarn deploy
+yarn run v1.22.19
+warning package.json: No license field
+error Command "deploy" not found.
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.
+➜  packages git:(v0.28) ✗ cd ../../
+cd ../../
+➜  grpc-node git:(v0.28) ✗ cd ../
+cd ../
+➜  weavedb git:(v0.28) ✗ yarn deploy
+yarn deploy
+yarn run v1.22.19
+$ yarn build && node scripts/deployFromSourceTx.js mainnet SSq5Al8qOvfkfz-1nL1P_MsGlt9tj1gT7LTakuDsCdc 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w X8NtXuO2K654Ifp0K9SET605VclTdTrg10CZp9HTaPw
+$ yarn clean && node build.js && npm run cp
+$ rimraf ./dist
+
+> weavedb@0.9.0 cp
+> copyfiles -u 2 ./sdk/contracts/**/*.json dist
+
+{
+  contractTxId: 'WgCcWvsy1qQvmjNOkSijSHCt9ZNjdXcKYqtp7KqSQuI',
+  srcTxId: 'SSq5Al8qOvfkfz-1nL1P_MsGlt9tj1gT7LTakuDsCdc'
+}
+Done in 2.12s.
+➜  weavedb git:(v0.28) ✗ cd grpc-node/node-server/
+cd grpc-node/node-server/
+➜  node-server git:(v0.28) ✗ cd packages/
+cd packages/
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'f7sqtisp62vfd7sq2qstkb5f',
+  transaction: {
+    id: 'f7sqtisp62vfd7sq2qstkb5f',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 2, timestamp: 1689832900, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: '68XqKKHy49_wTi-mh-xZlx8ffqpXoX_NTDfa1wYN590',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[
+  { age: 52 },
+  { age: 93 },
+  { age: 38 },
+  { age: 87 },
+  { age: 21 },
+  { age: 45 },
+  { age: 46 }
+]
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'sz7g8bz156255zi5tkdupfeq',
+  transaction: {
+    id: 'sz7g8bz156255zi5tkdupfeq',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 5, timestamp: 1689832923, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 's8OAKI-Q7EkngQLlR6jlM_22QJK3mFuyyQW19UJAMTI',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[
+  { age: 52 },
+  { age: 93 },
+  { age: 38 },
+  { age: 87 },
+  { age: 76 },
+  { age: 21 },
+  { age: 45 },
+  { age: 46 }
+]
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'of9o7w6cxwmtom2h4dlcbe3y',
+  transaction: {
+    id: 'of9o7w6cxwmtom2h4dlcbe3y',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 2, timestamp: 1689833055, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'FGD1_cBV_hlWkcbFIDNuzwy5P0q6ULBZRkZutdFO5NE',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[ { age: 12 } ]
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'u354jfmm9gkk6c9gkebihw7d',
+  transaction: {
+    id: 'u354jfmm9gkk6c9gkebihw7d',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 5, timestamp: 1689833058, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'wC0fY5PP2MsETD75Wg5m06ieHs_MhB0mbRxhjCNxjCI',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[ { age: 12 }, { age: 88 } ]
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'rsiyne1tre5z7cb1zufi1rp0',
+  transaction: {
+    id: 'rsiyne1tre5z7cb1zufi1rp0',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 8, timestamp: 1689833062, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'FiCOsc2WCRSGhmsbJzCz0gsKffXZn266qwko8Db1HUo',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[ { age: 11 }, { age: 12 }, { age: 88 } ]
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'p46k3tp1ep4x1rap03tk6y2u',
+  transaction: {
+    id: 'p46k3tp1ep4x1rap03tk6y2u',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 2, timestamp: 1689833210, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'f-fEY-khXB6kXbQUArWIy-dI5oFpSfGWGNV0-ulUs24',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[ { age: 11 }, { age: 12 }, { age: 81 }, { age: 88 } ]
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'kxijze5jkd2ool6rm8rfxjhe',
+  transaction: {
+    id: 'kxijze5jkd2ool6rm8rfxjhe',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 5, timestamp: 1689833212, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'kYaSsKIxnf2uDaEoGiaJezuuMoldekxy4G5Yi8E3zLk',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[ { age: 11 }, { age: 12 }, { age: 55 }, { age: 81 }, { age: 88 } ]
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'clfbsi0zk71072gpw125275a',
+  transaction: {
+    id: 'clfbsi0zk71072gpw125275a',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 8, timestamp: 1689833214, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'Fdit6TnLorSLw5C9hDq0DY9JByVVLWl8wDBgIlUWeXE',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[
+  { age: 11 },
+  { age: 12 },
+  { age: 55 },
+  { age: 81 },
+  { age: 88 },
+  { age: 70 }
+]
+➜  packages git:(v0.28) ✗ cd ../
+cd ../
+➜  node-server git:(v0.28) ✗ cd ../
+cd ../
+➜  grpc-node git:(v0.28) ✗ cd ../
+cd ../
+➜  weavedb git:(v0.28) ✗ yarn deploy
+yarn deploy
+yarn run v1.22.19
+$ yarn build && node scripts/deployFromSourceTx.js mainnet SSq5Al8qOvfkfz-1nL1P_MsGlt9tj1gT7LTakuDsCdc 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w lry5KMRj6j13sLHsKxs1D2joLjcj6yNHtNQQQoaHRug
+$ yarn clean && node build.js && npm run cp
+$ rimraf ./dist
+
+> weavedb@0.9.0 cp
+> copyfiles -u 2 ./sdk/contracts/**/*.json dist
+
+{
+  contractTxId: 'i6FYCUTsCCv6snoUf6SX8jU5IqRf0JgexDOaie7Mg9s',
+  srcTxId: 'SSq5Al8qOvfkfz-1nL1P_MsGlt9tj1gT7LTakuDsCdc'
+}
+Done in 2.42s.
+➜  weavedb git:(v0.28) ✗ node grpc-node/node-server/packages/test.js 
+node grpc-node/node-server/packages/test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'z4irnxr343zv93e9zo62m7hf',
+  transaction: {
+    id: 'z4irnxr343zv93e9zo62m7hf',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 2, timestamp: 1689833502, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: '7iTdl4WaQv2NxYIb3kapVCYNAdjLLzhJiwpMiHCx63g',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[ { age: 14 } ]
+➜  weavedb git:(v0.28) ✗ node grpc-node/node-server/packages/test.js 
+node grpc-node/node-server/packages/test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'ia15gohmso6fis0ulwqk03te',
+  transaction: {
+    id: 'ia15gohmso6fis0ulwqk03te',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 5, timestamp: 1689833505, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'eIorMHj5ynul-TwWJQOAq3mrOjE9RYOQl_W2dz1xXZ8',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[ { age: 14 }, { age: 74 } ]
+➜  weavedb git:(v0.28) ✗ node grpc-node/node-server/packages/test.js 
+node grpc-node/node-server/packages/test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'h3slcqamkybidiasbtgmuv7p',
+  transaction: {
+    id: 'h3slcqamkybidiasbtgmuv7p',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 8, timestamp: 1689833507, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'srbhIP4zt9JC9FwtOqfxZAp9mq6y80dN6_DQLZ2atH8',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[ { age: 23 }, { age: 14 }, { age: 74 } ]
+➜  weavedb git:(v0.28) ✗ node grpc-node/node-server/packages/test.js 
+node grpc-node/node-server/packages/test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'yr61xqizz404m3792etu7qr3',
+  transaction: {
+    id: 'yr61xqizz404m3792etu7qr3',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 11, timestamp: 1689833552, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'wPj6Okhe7etNt8ilGDyBOQZ0wOxhOjFzdQwWfIeWHZE',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[ { age: 23 }, { age: 14 }, { age: 30 }, { age: 74 } ]
+➜  weavedb git:(v0.28) ✗ node grpc-node/node-server/packages/test.js 
+node grpc-node/node-server/packages/test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'jm1thgugejqkpgd4y474o8sy',
+  transaction: {
+    id: 'jm1thgugejqkpgd4y474o8sy',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 14, timestamp: 1689833555, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'NK2_DQwFQhaY51ZofYHce-7XchYHtOdQbMJdUWglSSg',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[ { age: 23 }, { age: 83 }, { age: 14 }, { age: 30 }, { age: 74 } ]
+➜  weavedb git:(v0.28) ✗ node grpc-node/node-server/packages/test.js 
+node grpc-node/node-server/packages/test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'pp6ohgjtgx43lwoh5bdr2zuv',
+  transaction: {
+    id: 'pp6ohgjtgx43lwoh5bdr2zuv',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 17, timestamp: 1689833559, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'Hx4r52vNV9I6DPWgeCsFy-DMPthBuKXD64JH69rXBmk',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[
+  { age: 23 },
+  { age: 44 },
+  { age: 83 },
+  { age: 14 },
+  { age: 30 },
+  { age: 74 }
+]
+➜  weavedb git:(v0.28) ✗ node grpc-node/node-server/packages/test.js 
+node grpc-node/node-server/packages/test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'zbzogcxgu6llyf1mtqo89xi0',
+  transaction: {
+    id: 'zbzogcxgu6llyf1mtqo89xi0',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 20, timestamp: 1689833571, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'QMMKNRBzqwc_Eoq-vYlBKG9xPTDVjX-ainK1y-bYz2o',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[
+  { age: 23 },
+  { age: 31 },
+  { age: 44 },
+  { age: 83 },
+  { age: 14 },
+  { age: 30 },
+  { age: 74 }
+]
+➜  weavedb git:(v0.28) ✗ node grpc-node/node-server/packages/test.js 
+node grpc-node/node-server/packages/test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'sh37w0ycnsjjrx8c11990jzt',
+  transaction: {
+    id: 'sh37w0ycnsjjrx8c11990jzt',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 2, timestamp: 1689833591, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: '_WEogcE4SX4Jdt8IoojNm-F9ZSms8lBDl32m6EgL1zQ',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[
+  { age: 23 },
+  { age: 31 },
+  { age: 44 },
+  { age: 83 },
+  { age: 14 },
+  { age: 30 },
+  { age: 8 },
+  { age: 74 }
+]
+➜  weavedb git:(v0.28) ✗ node grpc-node/node-server/packages/test.js 
+node grpc-node/node-server/packages/test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'vpq62p1b9fig0e7dw0vmmbxy',
+  transaction: {
+    id: 'vpq62p1b9fig0e7dw0vmmbxy',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 5, timestamp: 1689833593, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'iwTCaTBXAUUkzB6xkdnOo3ydsR5AUNaNVlskWp43e0I',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[
+  { age: 23 }, { age: 31 },
+  { age: 44 }, { age: 83 },
+  { age: 14 }, { age: 29 },
+  { age: 30 }, { age: 8 },
+  { age: 74 }
+]
+➜  weavedb git:(v0.28) ✗ node grpc-node/node-server/packages/test.js 
+node grpc-node/node-server/packages/test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'rskml5iyklsryugfcrf28bp0',
+  transaction: {
+    id: 'rskml5iyklsryugfcrf28bp0',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 8, timestamp: 1689833597, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'qJ72u1pprFJqOymEi9YbLHaJ6dDfBnsVJ0MwqLlGTTw',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[
+  { age: 23 }, { age: 10 },
+  { age: 31 }, { age: 44 },
+  { age: 83 }, { age: 14 },
+  { age: 29 }, { age: 30 },
+  { age: 8 },  { age: 74 }
+]
+➜  weavedb git:(v0.28) ✗ node grpc-node/node-server/packages/test.js 
+node grpc-node/node-server/packages/test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'vc1ppb4gbns4jf9iz01napzi',
+  transaction: {
+    id: 'vc1ppb4gbns4jf9iz01napzi',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 2, timestamp: 1689833684, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'rs-d9z-mzitkw2yvaHFNCSLIsG1Yx3BqycZxIvgv8CY',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[
+  { age: 23 }, { age: 10 },
+  { age: 31 }, { age: 44 },
+  { age: 83 }, { age: 14 },
+  { age: 21 }, { age: 29 },
+  { age: 30 }, { age: 8 },
+  { age: 74 }
+]
+➜  weavedb git:(v0.28) ✗ node grpc-node/node-server/packages/test.js 
+node grpc-node/node-server/packages/test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'h6iqq6sli63xj5i7t45qjnom',
+  transaction: {
+    id: 'h6iqq6sli63xj5i7t45qjnom',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 5, timestamp: 1689833688, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'ZUrb5_JjxF-D-KFmfQfYWmEF6KxXTEliV0-RewJC16c',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[
+  { age: 23 }, { age: 10 },
+  { age: 46 }, { age: 31 },
+  { age: 44 }, { age: 83 },
+  { age: 14 }, { age: 21 },
+  { age: 29 }, { age: 30 },
+  { age: 8 },  { age: 74 }
+]
+➜  weavedb git:(v0.28) ✗ node grpc-node/node-server/packages/test.js 
+node grpc-node/node-server/packages/test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'rnka0n19p0k33d29uoe1nmye',
+  transaction: {
+    id: 'rnka0n19p0k33d29uoe1nmye',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 2, timestamp: 1689833724, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'SqmHBIMizYtlaRZeI6-CNfT4CFDm2f-E2ihfNnMjMc8',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[
+  { age: 23 }, { age: 10 },
+  { age: 46 }, { age: 31 },
+  { age: 89 }, { age: 44 },
+  { age: 83 }, { age: 14 },
+  { age: 21 }, { age: 29 },
+  { age: 30 }, { age: 8 },
+  { age: 74 }
+]
+➜  weavedb git:(v0.28) ✗ node grpc-node/node-server/packages/test.js 
+node grpc-node/node-server/packages/test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'lxz8cvhrmd89728ihmhopyos',
+  transaction: {
+    id: 'lxz8cvhrmd89728ihmhopyos',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 5, timestamp: 1689833728, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'whsvkwFOT4ROQ7WLRSNXq_HcZFpqxjNOUMvBDdDAjBM',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[
+  { age: 23 }, { age: 10 },
+  { age: 46 }, { age: 31 },
+  { age: 89 }, { age: 44 },
+  { age: 83 }, { age: 14 },
+  { age: 21 }, { age: 29 },
+  { age: 30 }, { age: 8 },
+  { age: 74 }, { age: 13 }
+]
+➜  weavedb git:(v0.28) ✗ cd grpc-node/node-server/packages/
+cd grpc-node/node-server/packages/
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'kkcyrbh2i4gv4xsrnlzxwxs1',
+  transaction: {
+    id: 'kkcyrbh2i4gv4xsrnlzxwxs1',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 2, timestamp: 1689834219, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'isA-GQlA1pbe-HpAH0QxWVCAILTRDrmhtTonFp8LIf8',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[
+  { age: 23 }, { age: 10 },
+  { age: 46 }, { age: 31 },
+  { age: 89 }, { age: 44 },
+  { age: 83 }, { age: 14 },
+  { age: 21 }, { age: 29 },
+  { age: 30 }, { age: 2 },
+  { age: 8 },  { age: 74 },
+  { age: 13 }
+]
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'kkrpl540jj1xn9kme9cooes8',
+  transaction: {
+    id: 'kkrpl540jj1xn9kme9cooes8',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 5, timestamp: 1689834222, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'w8ik7zWKf9AV887Ab2dBCrm9EEVc2Zc5-J3yJ5P49mA',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[
+  { age: 23 }, { age: 10 },
+  { age: 46 }, { age: 31 },
+  { age: 89 }, { age: 44 },
+  { age: 83 }, { age: 14 },
+  { age: 16 }, { age: 21 },
+  { age: 29 }, { age: 30 },
+  { age: 2 },  { age: 8 },
+  { age: 74 }, { age: 13 }
+]
+➜  packages git:(v0.28) ✗ node test.js 
+node test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'csr7obgj9gmp2l0grkqclpe2',
+  transaction: {
+    id: 'csr7obgj9gmp2l0grkqclpe2',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 8, timestamp: 1689834226, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'dbzxMOKhdfxYF0kFV__sMNEu_7KmQ4v77msTJBKJ2IM',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[
+  { age: 23 }, { age: 10 },
+  { age: 46 }, { age: 31 },
+  { age: 89 }, { age: 44 },
+  { age: 83 }, { age: 14 },
+  { age: 16 }, { age: 21 },
+  { age: 77 }, { age: 29 },
+  { age: 30 }, { age: 2 },
+  { age: 8 },  { age: 74 },
+  { age: 13 }
+]
+➜  packages git:(v0.28) ✗ cd ../../
+cd ../../
+➜  grpc-node git:(v0.28) ✗ cd ../
+cd ../
+➜  weavedb git:(v0.28) ✗ yarn deploy
+yarn deploy
+yarn run v1.22.19
+$ yarn build && node scripts/deployFromSourceTx.js mainnet SSq5Al8qOvfkfz-1nL1P_MsGlt9tj1gT7LTakuDsCdc 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w lry5KMRj6j13sLHsKxs1D2joLjcj6yNHtNQQQoaHRug
+$ yarn clean && node build.js && npm run cp
+$ rimraf ./dist
+
+> weavedb@0.9.0 cp
+> copyfiles -u 2 ./sdk/contracts/**/*.json dist
+
+{
+  contractTxId: 'AXr1gJaI0iXpuhMhyf0wVJrKHWIlF9lWNv17jnh69Bs',
+  srcTxId: 'SSq5Al8qOvfkfz-1nL1P_MsGlt9tj1gT7LTakuDsCdc'
+}
+Done in 1.88s.
+➜  weavedb git:(v0.28) ✗ node grpc-node/node-server/packages/test.js 
+node grpc-node/node-server/packages/test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'g0of5t0c0x9l9xat9vuzcs06',
+  transaction: {
+    id: 'g0of5t0c0x9l9xat9vuzcs06',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 2, timestamp: 1689835901, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'ruzvUO3iY6gHHa4Ef6Q0hsaS2XKaM82kJUvFbo2p5xc',
+  duration: 1,
+  error: null,
+  function: 'set'
+}
+[ { age: 32 } ]
+➜  weavedb git:(v0.28) ✗ node grpc-node/node-server/packages/test.js 
+node grpc-node/node-server/packages/test.js 
+secp256k1 unavailable, reverting to browser version
+secp256k1 unavailable, reverting to browser version
+{
+  results: [],
+  originalTxId: 'tqwiqkc7uz863435yxrhgvjr',
+  transaction: {
+    id: 'tqwiqkc7uz863435yxrhgvjr',
+    owner: null,
+    tags: null,
+    quantity: null,
+    target: null,
+    reward: null
+  },
+  block: { height: 2, timestamp: 1689836349, indep_hash: null },
+  success: true,
+  nonce: 1,
+  signer: 'nSvj0GqwvwHVuABSEePDpS4b-vBGcFnWYdwdUq_2teg',
+  duration: 0,
+  error: null,
+  function: 'set'
+}
+[ { age: 68 }, { age: 32 } ]
+➜  weavedb git:(v0.28) ✗ yarn deploy insecure
+yarn deploy insecure
+yarn run v1.22.19
+$ yarn build && node scripts/deployFromSourceTx.js mainnet SSq5Al8qOvfkfz-1nL1P_MsGlt9tj1gT7LTakuDsCdc 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w lry5KMRj6j13sLHsKxs1D2joLjcj6yNHtNQQQoaHRug insecure
+$ yarn clean && node build.js && npm run cp
+$ rimraf ./dist
+
+> weavedb@0.9.0 cp
+> copyfiles -u 2 ./sdk/contracts/**/*.json dist
+
+{
+  contractTxId: 'R8J89NQRRe3xfLAPgniqq6LAFM-McaH4YADNIHPB3kI',
+  srcTxId: 'SSq5Al8qOvfkfz-1nL1P_MsGlt9tj1gT7LTakuDsCdc'
+}
+Done in 2.13s.
+➜  weavedb git:(v0.28) ✗ yarn deploy insecure
+yarn deploy insecure
+yarn run v1.22.19
+$ yarn build && node scripts/deployFromSourceTx.js mainnet SSq5Al8qOvfkfz-1nL1P_MsGlt9tj1gT7LTakuDsCdc 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w lry5KMRj6j13sLHsKxs1D2joLjcj6yNHtNQQQoaHRug insecure
+$ yarn clean && node build.js && npm run cp
+$ rimraf ./dist
+
+> weavedb@0.9.0 cp
+> copyfiles -u 2 ./sdk/contracts/**/*.json dist
+
+{
+  contractTxId: 'pcjm83H0jDR_hsaKpoFosb4OAE0R-IweIgz9v47uZ7s',
+  srcTxId: 'SSq5Al8qOvfkfz-1nL1P_MsGlt9tj1gT7LTakuDsCdc'
+}
+Done in 2.16s.
+➜  weavedb git:(v0.28) ✗ 
