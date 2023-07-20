@@ -49,7 +49,7 @@ async function deployContract(secure) {
   )
   let opt = {}
   if (contractType > 1) opt.useKVStorage = true
-  const initialState = {
+  let initialState = {
     ...stateFromFile,
     ...{
       owner: walletAddress,

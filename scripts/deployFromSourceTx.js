@@ -1,5 +1,10 @@
 require("dotenv").config()
-let { wallet = null } = require("yargs")(process.argv.slice(2)).argv
+const { privateToAddress } = require("ethereumjs-util")
+let {
+  wallet = null,
+  insecure = true,
+  privateKey = null,
+} = require("yargs")(process.argv.slice(2)).argv
 
 const fs = require("fs")
 const path = require("path")
@@ -7,7 +12,6 @@ const Arweave = require("arweave")
 const { isNil } = require("ramda")
 const wallet_name = process.argv[2]
 const srcTxId = process.argv[3] || process.env.SOURCE_TX_ID
-//const contractTxId_Intmax = process.argv[4] || process.env.INTMAX_SOURCE_TX_ID
 const contractTxId_II = process.argv[4] || process.env.II_SOURCE_TX_ID
 const contractTxId_ETH = process.argv[5] || process.env.ETH_SOURCE_TX_ID
 const contractTxId_BUNDLER = process.argv[6] || process.env.BUNDLER_SOURCE_TX_ID
@@ -53,6 +57,13 @@ const deploy = async () => {
       owner: walletAddress,
     },
   }
+  if (!isNil(privateKey)) {
+    initialState.owner = `0x${privateToAddress(
+      Buffer.from(privateKey.replace(/^0x/, ""), "hex")
+    ).toString("hex")}`.toLowerCase()
+  }
+
+  if (insecure) initialState.secure = false
   // initialState.contracts.intmax = contractTxId_Intmax
   initialState.contracts.dfinity = contractTxId_II
   initialState.contracts.ethereum = contractTxId_ETH
