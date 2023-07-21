@@ -65,7 +65,7 @@ export default function Home() {
                   Function
                 </Box>
                 <Box as="td" p={2}>
-                  Doc
+                  Path
                 </Box>
                 <Box as="td" p={2}>
                   Query Owner
@@ -81,8 +81,24 @@ export default function Home() {
                 {map(_v => {
                   let v = _v.data
                   let path = "-"
-                  if (includes(v.param.function, ["set", "update", "upsert"])) {
+                  if (
+                    includes(v.param.function, [
+                      "add",
+                      "set",
+                      "update",
+                      "upsert",
+                      "addIndex",
+                      "removeIndex",
+                      "setSchema",
+                      "removeIndex",
+                      "setRules",
+                      "addTrigger",
+                      "removeTrigger",
+                    ])
+                  ) {
                     path = v.param.query.slice(1).join(" / ")
+                  } else if (includes(v.param.function, ["delete"])) {
+                    path = v.param.query.join(" / ")
                   }
                   return (
                     <>
