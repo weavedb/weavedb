@@ -30,7 +30,7 @@
     "tweetnacl": "^1.0.3",
     "weavedb-client": "^0.27.0",
     "weavedb-node-client": "^0.25.0",
-    "weavedb-offchain": "^0.28.5",
+    "weavedb-offchain": "^0.28.6",
     "weavedb-sdk-node": "^0.28.2",
     "yargs": "^17.6.2"
   },
