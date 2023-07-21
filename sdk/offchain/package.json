@@ -1,6 +1,6 @@
 {
   "name": "weavedb-offchain",
-  "version": "0.28.4",
+  "version": "0.28.5",
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
@@ -8,7 +8,7 @@
     "@paralleldrive/cuid2": "^2.2.0",
     "arweave": "^1.11.4",
     "ramda": "^0.28.0",
-    "weavedb-base": "^0.28.0",
-    "weavedb-contracts": "^0.28.4"
+    "weavedb-base": "^0.28.1",
+    "weavedb-contracts": "^0.28.5"
   }
 }

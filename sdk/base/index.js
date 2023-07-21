@@ -293,7 +293,8 @@ class Base {
       relay,
       jobID,
       multisigs,
-      linkedAccount
+      linkedAccount,
+      noauth
     if (!isNil(opt)) {
       ;({
         jobID,
@@ -310,6 +311,7 @@ class Base {
         extra,
         multisigs,
         linkedAccount,
+        noauth,
       } = opt)
     }
     if (!isNil(linkedAccount)) wallet = linkedAccount
@@ -328,7 +330,7 @@ class Base {
       multisigs,
       onDryWrite,
     ]
-    if (func === "bundle" && this.type === 3) {
+    if ((func === "bundle" && this.type === 3) || noauth || this.noauth) {
       return await this.writeWithoutWallet(
         func,
         query,
@@ -388,6 +390,7 @@ class Base {
   setDefaultWallet(wallet, type = "evm") {
     this.defaultWallet = { wallet, type }
   }
+
   _repeatQuery(func, query, attempt = 1) {
     return new Promise((req, rej) => {
       setTimeout(async () => {
@@ -404,6 +407,7 @@ class Base {
       }, 1000)
     })
   }
+
   async repeatQuery(func, query, attempt = 1) {
     try {
       return await func(...query)
@@ -412,6 +416,7 @@ class Base {
       return this._repeatQuery(func, query)
     }
   }
+
   async createTempAddressWithWebAuthn(_identity, expiry, linkTo, opt = {}) {
     if (typeof window === "undefined") {
       throw new Error("WebAuthn is only compaitble with browser")
@@ -512,6 +517,7 @@ class Base {
     identity.webauthn = _identity
     return { identity, tx: await this.write("relay", relay_params) }
   }
+
   async createTempAddressWithLens(expiry, linkTo, opt = {}) {
     try {
       if (typeof window === "undefined") {

@@ -12,8 +12,15 @@ if (!isNil(arweave.default)) arweave = arweave.default
 const { createId } = require("@paralleldrive/cuid2")
 
 class OffChain extends Base {
-  constructor({ state = {}, cache = "memory", type = 1, contractTxId }) {
+  constructor({
+    state = {},
+    cache = "memory",
+    type = 1,
+    contractTxId,
+    noauth = false,
+  }) {
     super()
+    this.noauth = noauth
     this.kvs = {}
     this.network = "offchain"
     this.cache = cache
@@ -89,6 +96,7 @@ class OffChain extends Base {
             contracts: { ethereum: "ethereum", dfinity: "dfinity" },
           }
     )
+    if (noauth) delete this.state.auth
     this.initialState = clone(this.state)
     this.height = 0
   }
