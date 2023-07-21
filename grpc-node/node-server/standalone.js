@@ -190,7 +190,11 @@ class Standalone {
   async query(call, callback) {
     let parsed = this.parseQuery(call, callback)
     const { res, nocache, txid, func, query, isAdmin } = parsed
-    //return res(null, null)
+    console.log(res, nocache, txid, func, query, isAdmin)
+    if (txid === "log" && func !== "get") {
+      res("only get is allowed with log", null)
+      return
+    }
     this.execUser(parsed)
   }
   async execUser(parsed) {
@@ -212,7 +216,7 @@ class Standalone {
     let err = null
     let dryWrite = false
     let _onDryWrite = null
-
+    const db = txid === "log" ? this.wal : this.db
     try {
       let _query = query === `""` ? [] : JSON.parse(query)
       if (is(Object, _query) && is(Object, _query.dryWrite)) {
@@ -220,19 +224,19 @@ class Standalone {
         delete _query.dryWirte
       }
       if (func === "getNonce") {
-        result = await this.db.getNonce(..._query)
+        result = await db.getNonce(..._query)
       } else if (key.func === "cget") {
         if (nocache) {
-          result = await this.db.cget(..._query, true)
+          result = await db.cget(..._query, true)
         } else {
-          result = await this.db.cget(..._query)
+          result = await db.cget(..._query)
         }
         if (key.type === "collection") {
           if (func === "get") result = pluck("data", result)
         } else {
           if (func === "get") result = isNil(result) ? null : result.data
         }
-      } else if (includes(func)(this.db.reads)) {
+      } else if (includes(func)(db.reads)) {
         if (includes(func)(["getVersion"]) || nocache) {
           try {
             _query.push(true)
@@ -240,7 +244,7 @@ class Standalone {
             console.log(e)
           }
         }
-        result = await this.db[key.func](..._query)
+        result = await db[key.func](..._query)
       } else {
         dryWrite = !nocache
         let virtual_txid = null
@@ -256,14 +260,7 @@ class Standalone {
               cache,
               read: _onDryWrite?.read || null,
             }
-        result = await this.db.write(
-          key.func,
-          _query,
-          true,
-          true,
-          false,
-          onDryWrite
-        )
+        result = await db.write(key.func, _query, true, true, false, onDryWrite)
         //if (!isNil(virtual_txid)) this.results[virtual_txid] = result
       }
     } catch (e) {
