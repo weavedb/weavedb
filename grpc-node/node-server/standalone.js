@@ -84,8 +84,8 @@ class Standalone {
     this.db = new DB({
       type: 3,
       cache: {
-        initialize: async obj =>
-          (obj.lmdb = open({
+        initialize: async obj => {
+          obj.lmdb = open({
             path: path.resolve(
               __dirname,
               "cache",
@@ -95,7 +95,8 @@ class Standalone {
                   : `-${this.conf.contractTxId}`
               }`
             ),
-          })),
+          })
+        },
         onWrite: async (tx, obj, param) => {
           let prs = []
           for (const k in tx.result.kvs)

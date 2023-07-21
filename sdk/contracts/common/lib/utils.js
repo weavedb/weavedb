@@ -294,6 +294,7 @@ const auth = async (
   kvs,
   fn
 ) => {
+  if (isNil(state.auth)) return { signer: null, original_signer: null }
   const {
     query,
     nonce,
