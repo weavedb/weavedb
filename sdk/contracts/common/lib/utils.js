@@ -264,6 +264,7 @@ const parse = async (
   let owner = state.owner || []
   if (is(String)(owner)) owner = of(owner)
   if (
+    !isNil(state.auth) &&
     includes(func)([
       "addRelayerJob",
       "removeRelayerJob",

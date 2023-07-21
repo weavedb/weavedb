@@ -23,7 +23,7 @@ await db.getVersion()
 
 #### Added Features
 
--  remove signature from [bundle query]((/docs/sdk/queries#bundle))
+-  remove signature from [bundle query](/docs/sdk/queries#bundle)
 
 ### v0.28.0-alpha (July 20, 2023)
 

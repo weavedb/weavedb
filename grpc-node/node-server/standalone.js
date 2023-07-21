@@ -13,6 +13,7 @@ const {
   append,
   includes,
   concat,
+  path: _path,
 } = require("ramda")
 const DB = require("weavedb-offchain")
 const Warp = require("weavedb-sdk-node")
@@ -29,7 +30,6 @@ const weavedb = grpc.loadPackageDefinition(packageDefinition).weavedb
 const { open } = require("lmdb")
 const path = require("path")
 const EthCrypto = require("eth-crypto")
-const eth = EthCrypto.createIdentity()
 
 class Standalone {
   constructor({ port = 9090, conf }) {
@@ -64,12 +64,27 @@ class Standalone {
   async bundle() {
     const len = 2
     try {
-      if (this.txs.length >= len) {
-        this.bundling = this.txs.splice(0, len)
-        console.log(`bundling...${pluck("id")(this.bundling)}`)
-        const result = await this.warp.bundle(pluck("param")(this.bundling))
-        console.log(result.success)
-        if (result.success !== true) this.txs = concat(this.bundling, this.txs)
+      const bundling = await this.wal.cget(
+        "txs",
+        ["commit"],
+        ["id"],
+        ["commit", "==", false],
+        len
+      )
+
+      if (bundling.length > 0) {
+        console.log(
+          `commitint to Warp...${map(_path(["data", "id"]))(bundling)}`
+        )
+        const result = await this.warp.bundle(
+          map(_path(["data", "param"]))(bundling)
+        )
+        console.log(`bundle tx result: ${result.success}`)
+        if (result.success === true) {
+          await this.wal.batch(
+            map(v => ["update", { commit: true }, "txs", v.id], bundling)
+          )
+        }
       }
     } catch (e) {
       console.log(e)
@@ -81,11 +96,45 @@ class Standalone {
       this.conf.admin.owner
     )
     console.log(`Admin Account: ${this.admin}`)
+    this.wal = new DB({
+      type: 3,
+      noauth: true,
+      cache: {
+        initialize: async obj => {
+          obj.lmdb_wal = open({
+            path: path.resolve(
+              __dirname,
+              "cache",
+              `${this.conf.dbname ?? "weavedb"}${
+                isNil(this.conf.contractTxId)
+                  ? ""
+                  : `-${this.conf.contractTxId}`
+              }-wal`
+            ),
+          })
+        },
+        onWrite: async (tx, obj, param) => {
+          let prs = []
+          for (const k in tx.result.kvs)
+            prs.push(obj.lmdb_wal.put(k, tx.result.kvs[k]))
+          await Promise.all(prs)
+        },
+        get: async (key, obj) => {
+          return await obj.lmdb_wal.get(key)
+        },
+      },
+      state: { owner: this.admin, secure: false },
+    })
+    await this.wal.initialize()
+    await this.wal.addIndex([["commit"], ["id"]], "txs", {
+      ar: this.conf.admin.owner,
+    })
+    this.tx_count = (await this.wal.get("txs", ["id", "desc"], 1))[0]?.id ?? 0
     this.db = new DB({
       type: 3,
       cache: {
-        initialize: async obj => {
-          obj.lmdb = open({
+        initialize: async obj =>
+          (obj.lmdb = open({
             path: path.resolve(
               __dirname,
               "cache",
@@ -95,18 +144,19 @@ class Standalone {
                   : `-${this.conf.contractTxId}`
               }`
             ),
-          })
-        },
+          })),
         onWrite: async (tx, obj, param) => {
           let prs = []
           for (const k in tx.result.kvs)
             prs.push(obj.lmdb.put(k, tx.result.kvs[k]))
           await Promise.all(prs)
-          this.txs.push({
+          const t = {
             id: ++this.tx_count,
             txid: tx.result.transaction.id,
+            commit: false,
             param,
-          })
+          }
+          await this.wal.set(t, "txs", `${t.id}`)
         },
         get: async (key, obj) => await obj.lmdb.get(key),
       },
@@ -119,7 +169,6 @@ class Standalone {
         type: 3,
         contractTxId: this.conf.contractTxId,
         remoteStateSyncEnabled: false,
-        nocache: true,
       })
       await this.warp.init()
     }
