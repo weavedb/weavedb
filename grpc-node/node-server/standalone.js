@@ -131,9 +131,7 @@ class Standalone {
       state: { owner: this.owner, secure: false },
     })
     await this.wal.initialize()
-    await this.wal.addIndex([["commit"], ["id"]], "txs", {
-      ar: this.conf.admin.owner,
-    })
+    await this.wal.addIndex([["commit"], ["id"]], "txs")
     this.tx_count = (await this.wal.get("txs", ["id", "desc"], 1))[0]?.id ?? 0
     this.db = new DB({
       type: 3,
