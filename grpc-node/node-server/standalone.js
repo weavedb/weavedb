@@ -74,7 +74,7 @@ class Standalone {
 
       if (bundling.length > 0) {
         console.log(
-          `commitint to Warp...${map(_path(["data", "id"]))(bundling)}`
+          `commiting to Warp...${map(_path(["data", "id"]))(bundling)}`
         )
         const result = await this.warp.bundle(
           map(_path(["data", "param"]))(bundling)
@@ -82,7 +82,15 @@ class Standalone {
         console.log(`bundle tx result: ${result.success}`)
         if (result.success === true) {
           await this.wal.batch(
-            map(v => ["update", { commit: true }, "txs", v.id], bundling)
+            map(
+              v => [
+                "update",
+                { commit: true, warp: result.originalTxId },
+                "txs",
+                v.id,
+              ],
+              bundling
+            )
           )
         }
       }
@@ -151,9 +159,11 @@ class Standalone {
             prs.push(obj.lmdb.put(k, tx.result.kvs[k]))
           await Promise.all(prs)
           const t = {
+            signer: tx.result.original_signer,
             id: ++this.tx_count,
             txid: tx.result.transaction.id,
             commit: false,
+            timestamp: tx.result.block.timestamp,
             param,
           }
           await this.wal.set(t, "txs", `${t.id}`)
@@ -190,9 +200,8 @@ class Standalone {
   async query(call, callback) {
     let parsed = this.parseQuery(call, callback)
     const { res, nocache, txid, func, query, isAdmin } = parsed
-    console.log(res, nocache, txid, func, query, isAdmin)
-    if (txid === "log" && func !== "get") {
-      res("only get is allowed with log", null)
+    if (txid === "log" && !includes(func)(["get", "cget"])) {
+      res("only get/cget is allowed with log", null)
       return
     }
     this.execUser(parsed)
