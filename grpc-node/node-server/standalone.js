@@ -100,10 +100,7 @@ class Standalone {
     setTimeout(() => this.bundle(), 3000)
   }
   async initDB() {
-    this.admin = await Arweave.init().wallets.jwkToAddress(
-      this.conf.admin.owner
-    )
-    console.log(`Admin Account: ${this.admin}`)
+    console.log(`Owner Account: ${this.owner}`)
     this.wal = new DB({
       type: 3,
       noauth: true,
@@ -131,7 +128,7 @@ class Standalone {
           return await obj.lmdb_wal.get(key)
         },
       },
-      state: { owner: this.admin, secure: false },
+      state: { owner: this.owner, secure: false },
     })
     await this.wal.initialize()
     await this.wal.addIndex([["commit"], ["id"]], "txs", {
@@ -170,7 +167,7 @@ class Standalone {
         },
         get: async (key, obj) => await obj.lmdb.get(key),
       },
-      state: { owner: this.admin, secure: false },
+      state: { owner: this.owner, secure: false },
     })
     await this.db.initialize()
     if (!isNil(this.conf.contractTxId)) {
