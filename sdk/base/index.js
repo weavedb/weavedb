@@ -65,6 +65,7 @@ const no_paths = [
   "listRelayerJobs",
   "getEvolve",
   "getInfo",
+  "getBundlers",
   "addCron",
   "removeCron",
   "setAlgorithms",
@@ -159,6 +160,7 @@ class Base {
       "listCollections",
       "getInfo",
       "getNonce",
+      "getBundlers",
     ]
   }
   signer() {
@@ -234,6 +236,10 @@ class Base {
   }
   async addOwner(address, opt) {
     return this._write2("addOwner", { address }, opt)
+  }
+
+  async setBundlers(bundlers, opt) {
+    return this._write2("setBundlers", { bundlers }, opt)
   }
 
   async migrate(version, opt) {
@@ -1165,7 +1171,7 @@ for (const v of readQueries) {
   }
 }
 
-const reads = ["getOwner", "getEvolve", "getInfo"]
+const reads = ["getOwner", "getEvolve", "getInfo", "getBundlers"]
 
 for (const v of reads) {
   Base.prototype[v] = async function (nocache) {

@@ -23,7 +23,6 @@ const addOwner = async (
   }
 
   const owner = isOwner(signer, state)
-  if (!is(String)(action.input.query.address)) err("Value must be string.")
 
   if (!is(String)(action.input.query.address)) err("Value must be string.")
 

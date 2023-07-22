@@ -184,6 +184,7 @@ const tests = {
       await db.get("ppl", ["letters", "array-contains-any", ["j", "t"]])
     ).to.eql([Beth, John])
   },
+
   "should update nested object with dot notation": async ({
     db,
     arweave_wallet,
@@ -217,12 +218,28 @@ const tests = {
       [data3]
     )
   },
+
   "should parse queries": async ({ db }) => {
     expect(parseQuery(["ppl", ["age", "==", 4]]).queries[0].opt).to.eql({
       limit: 1000,
       startAt: { age: 4 },
       endAt: { age: 4 },
     })
+  },
+
+  "should set bundlers": async ({ db, walletAddress, arweave_wallet }) => {
+    const bundlers = [walletAddress]
+    await db.setBundlers(bundlers, { ar: arweave_wallet })
+    expect(await db.getBundlers()).to.eql(bundlers)
+    const tx = await db.bundle([await db.sign("add", {}, "ppl")])
+    expect(tx.success).to.eql(true)
+    const tx2 = await db.add({}, "ppl", { ar: arweave_wallet })
+    expect(tx2.success).to.eql(false)
+
+    await db.setBundlers(["0xabc"], { ar: arweave_wallet })
+    const tx3 = await db.bundle([await db.sign("add", {}, "ppl")])
+    expect(tx2.success).to.eql(false)
+    return
   },
 }
 

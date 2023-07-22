@@ -1,6 +1,6 @@
 const { equals, isNil, init, last } = require("ramda")
 const { parse, trigger } = require("../../lib/utils")
-const { validateSchema, wrapResult } = require("../../../common/lib/utils")
+const { err, validateSchema, wrapResult } = require("../../../common/lib/utils")
 const { validate } = require("../../lib/validate")
 const { put } = require("../../lib/index")
 
@@ -12,8 +12,12 @@ const upsert = async (
   SmartWeave,
   kvs,
   executeCron,
-  depth = 1
+  depth = 1,
+  type = "direct"
 ) => {
+  if ((state.bundlers ?? []).length !== 0 && type === "direct") {
+    err("only bundle queries are allowed")
+  }
   let original_signer = null
   if (isNil(signer)) {
     ;({ signer, original_signer } = await validate(

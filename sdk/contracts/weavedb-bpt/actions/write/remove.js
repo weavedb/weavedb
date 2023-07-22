@@ -13,8 +13,12 @@ const remove = async (
   SmartWeave,
   kvs,
   executeCron,
-  depth
+  depth,
+  type = "direct"
 ) => {
+  if ((state.bundlers ?? []).length !== 0 && type === "direct") {
+    err("only bundle queries are allowed")
+  }
   let original_signer = null
   if (isNil(signer)) {
     ;({ signer, original_signer } = await validate(

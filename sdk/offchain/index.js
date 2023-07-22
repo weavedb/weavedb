@@ -18,8 +18,10 @@ class OffChain extends Base {
     type = 1,
     contractTxId,
     noauth = false,
+    caller = null,
   }) {
     super()
+    this.caller = caller
     this.noauth = noauth
     this.kvs = {}
     this.network = "offchain"
@@ -93,7 +95,11 @@ class OffChain extends Base {
               lastExecuted: 0,
               crons: {},
             },
-            contracts: { ethereum: "ethereum", dfinity: "dfinity" },
+            contracts: {
+              ethereum: "ethereum",
+              dfinity: "dfinity",
+              bundler: "bundler",
+            },
           }
     )
     if (noauth) delete this.state.auth
@@ -173,7 +179,11 @@ class OffChain extends Base {
       let tx = null
       let sw = this.getSW()
       try {
-        tx = await this.handle(clone(this.state), { input: param }, sw)
+        tx = await this.handle(
+          clone(this.state),
+          { caller: this.caller, input: param },
+          sw
+        )
         this.state = tx.state
         if (typeof this.cache === "object") {
           await this.cache.onWrite(tx, this, param)

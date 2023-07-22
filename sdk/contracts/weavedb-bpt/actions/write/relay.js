@@ -33,8 +33,15 @@ const relay = async (
   signer,
   contractErr = true,
   SmartWeave,
-  kvs
+  kvs,
+  executeCron,
+  depth = 1,
+  type = "direct"
 ) => {
+  if ((state.bundlers ?? []).length !== 0 && type === "direct") {
+    err("only bundle queries are allowed")
+  }
+
   let jobID = head(action.input.query)
   let input = nth(1, action.input.query)
   let query = nth(2, action.input.query)
@@ -115,10 +122,31 @@ const relay = async (
       err("relayer data validation error")
     }
   }
-  const params = [state, action2, null, null, SmartWeave, kvs]
+  const params = [
+    state,
+    action2,
+    null,
+    null,
+    SmartWeave,
+    kvs,
+    executeCron,
+    undefined,
+    type,
+  ]
   switch (action2.input.function) {
     case "add":
-      return await add(state, action2, null, undefined, null, SmartWeave, kvs)
+      return await add(
+        state,
+        action2,
+        null,
+        undefined,
+        null,
+        SmartWeave,
+        kvs,
+        executeCron,
+        undefined,
+        type
+      )
     case "set":
       return await set(...params)
     case "update":
@@ -137,7 +165,10 @@ const relay = async (
         null,
         SmartWeave,
         action2.extra.linkTo,
-        kvs
+        kvs,
+        executeCron,
+        undefined,
+        type
       )
     default:
       err(

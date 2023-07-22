@@ -1,7 +1,7 @@
 const { validate } = require("../../lib/validate")
 const { err, wrapResult, read } = require("../../../common/lib/utils")
 const { clone } = require("../../../common/lib/pure")
-const { isNil } = require("ramda")
+const { isNil, includes } = require("ramda")
 const { set } = require("./set")
 const { add } = require("./add")
 const { update } = require("./update")
@@ -21,6 +21,9 @@ const { removeCron } = require("./removeCron")
 const { removeIndex } = require("./removeIndex")
 const { removeOwner } = require("./removeOwner")
 const { removeRelayerJob } = require("./removeRelayerJob")
+const { addTrigger } = require("./addTrigger")
+const { removeTrigger } = require("./removeTrigger")
+const { setBundlers } = require("./setBundlers")
 
 const bundle = async (
   state,
@@ -28,8 +31,13 @@ const bundle = async (
   signer,
   contractErr = true,
   SmartWeave,
-  kvs
+  kvs,
+  executeCron
 ) => {
+  const bundlers = state.bundlers ?? []
+  if (bundlers.length !== 0 && !includes(action.caller, bundlers)) {
+    err(`bundler [${action.caller}] is not allowed`)
+  }
   const original_signer = action.caller
   const { data } = await read(
     state.contracts.bundler,
@@ -46,11 +54,25 @@ const bundle = async (
   for (const q of queries) {
     let valid = true
     let error = null
-    let params = [clone(state), { input: q }, undefined, false, SmartWeave, kvs]
+    let params = [
+      clone(state),
+      { input: q },
+      undefined,
+      false,
+      SmartWeave,
+      kvs,
+      executeCron,
+      undefined,
+      "bundle",
+    ]
     try {
       const op = q.function
       let res = null
       switch (op) {
+        case "relay":
+          res = await set(...params)
+          break
+
         case "add":
           res = await add(
             clone(state),
@@ -58,7 +80,11 @@ const bundle = async (
             undefined,
             i,
             false,
-            SmartWeave
+            SmartWeave,
+            kvs,
+            executeCron,
+            undefined,
+            "bundle"
           )
           break
         case "set":
@@ -114,6 +140,17 @@ const bundle = async (
         case "removeRelayerJob":
           res = await removeRelayerJob(...params)
           break
+        case "addTrigger":
+          res = await addTrigger(...params)
+          break
+        case "removeTrigger":
+          res = await removeTrigger(...params)
+          break
+
+        case "setBundlers":
+          res = await setBundlers(...params)
+          break
+
         default:
           throw new Error(
             `No function supplied or function not recognised: "${q}"`
