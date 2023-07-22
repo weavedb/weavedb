@@ -15,7 +15,7 @@ await db.getVersion()
 
 ## Change Logs
 
-### v0.28.2-alpha (July 20, 2023)
+### v0.28.2-alpha (July 22, 2023)
 
 #### Source Transaction Id
 
