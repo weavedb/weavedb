@@ -1,8 +1,8 @@
 const { err, isOwner, wrapResult } = require("../../../common/lib/utils")
-const { isNil, is } = require("ramda")
+const { includes, is, of, append, isNil } = require("ramda")
 const { validate } = require("../../lib/validate")
 
-const setCanEvolve = async (
+const setBundlers = async (
   state,
   action,
   signer,
@@ -13,16 +13,12 @@ const setCanEvolve = async (
   depth = 1,
   type = "direct"
 ) => {
-  if ((state.bundlers ?? []).length !== 0 && type === "direct") {
-    err("only bundle queries are allowed")
-  }
-
   let original_signer = null
   if (isNil(signer)) {
     ;({ signer, original_signer } = await validate(
       state,
       action,
-      "setCanEvolve",
+      "setBundlers",
       SmartWeave,
       true,
       kvs
@@ -30,11 +26,9 @@ const setCanEvolve = async (
   }
 
   const owner = isOwner(signer, state)
-  if (!is(Boolean)(action.input.query.value)) {
-    err("Value must be a boolean.")
-  }
-  state.canEvolve = action.input.query.value
+
+  if (!is(Array)(action.input.query.bundlers)) err("Value must be an array.")
+  state.bundlers = action.input.query.bundlers
   return wrapResult(state, original_signer, SmartWeave)
 }
-
-module.exports = { setCanEvolve }
+module.exports = { setBundlers }

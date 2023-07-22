@@ -10,8 +10,15 @@ const addIndex = async (
   signer,
   contractErr = true,
   SmartWeave,
-  kvs
+  kvs,
+  executeCron,
+  depth = 1,
+  type = "direct"
 ) => {
+  if ((state.bundlers ?? []).length !== 0 && type === "direct") {
+    err("only bundle queries are allowed")
+  }
+
   let original_signer = null
   if (isNil(signer)) {
     ;({ signer, original_signer } = await validate(

@@ -79,6 +79,8 @@ const writes = [
   "removeOwner",
   "addAddressLink",
   "removeAddressLink",
+  "addTrigger",
+  "removeTrigger",
 ]
 
 const addHash =

@@ -31,8 +31,12 @@ describe("WeaveDB Offchain BPT", function () {
 
   beforeEach(async () => {
     contractTxId = "offchain"
-    const walletAddress = await arweave.wallets.jwkToAddress(arweave_wallet)
-    db = new DB({ state: { secure: false, owner: walletAddress }, type: 3 })
+    walletAddress = await arweave.wallets.jwkToAddress(arweave_wallet)
+    db = new DB({
+      state: { secure: false, owner: walletAddress },
+      type: 3,
+      caller: walletAddress,
+    })
     db.setDefaultWallet(wallet)
   })
 

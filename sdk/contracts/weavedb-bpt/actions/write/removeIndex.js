@@ -1,6 +1,6 @@
 const { isNil } = require("ramda")
 const { parse } = require("../../lib/utils")
-const { wrapResult } = require("../../../common/lib/utils")
+const { err, wrapResult } = require("../../../common/lib/utils")
 const { validate } = require("../../lib/validate")
 const { removeIndex: __removeIndex } = require("../../lib/index")
 
@@ -10,8 +10,15 @@ const removeIndex = async (
   signer,
   contractErr = true,
   SmartWeave,
-  kvs
+  kvs,
+  executeCron,
+  depth = 1,
+  type = "direct"
 ) => {
+  if ((state.bundlers ?? []).length !== 0 && type === "direct") {
+    err("only bundle queries are allowed")
+  }
+
   let original_signer = null
   if (isNil(signer)) {
     ;({ signer, original_signer } = await validate(

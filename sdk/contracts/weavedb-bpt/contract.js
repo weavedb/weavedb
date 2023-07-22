@@ -11,6 +11,7 @@ const { listRelayerJobs } = require("../common/actions/read/listRelayerJobs")
 const { getEvolve } = require("../common/actions/read/getEvolve")
 const { getInfo } = require("../common/actions/read/getInfo")
 const { getTriggers } = require("../common/actions/read/getTriggers")
+const { getBundlers } = require("./actions/read/getBundlers")
 
 const { ids } = require("./actions/read/ids")
 const { nonce } = require("./actions/read/nonce")
@@ -50,6 +51,7 @@ const { relay } = require("./actions/write/relay")
 const { migrate } = require("./actions/write/migrate")
 const { addTrigger } = require("./actions/write/addTrigger")
 const { removeTrigger } = require("./actions/write/removeTrigger")
+const { setBundlers } = require("./actions/write/setBundlers")
 
 const { cron, executeCron } = require("./lib/cron")
 const { err, isEvolving } = require("../common/lib/utils")
@@ -79,6 +81,9 @@ const writes = [
   "removeOwner",
   "addAddressLink",
   "removeAddressLink",
+  "addTrigger",
+  "removeTrigger",
+  "setBundlers",
 ]
 
 const addHash =
@@ -116,7 +121,15 @@ async function handle(state, action, _SmartWeave) {
   }
 
   const readParams = [state, action, _SmartWeave, kvs]
-  const writeParams = [state, action, undefined, undefined, _SmartWeave, kvs]
+  const writeParams = [
+    state,
+    action,
+    undefined,
+    undefined,
+    _SmartWeave,
+    kvs,
+    executeCron,
+  ]
   let res = null
   switch (action.input.function) {
     case "get":
@@ -157,6 +170,9 @@ async function handle(state, action, _SmartWeave) {
       return await version(...readParams)
     case "getOwner":
       return await getOwner(...readParams)
+    case "getBundlers":
+      return await getBundlers(...readParams)
+
     case "getEvolve":
       return await getEvolve(...readParams)
     case "add":
@@ -174,25 +190,19 @@ async function handle(state, action, _SmartWeave) {
       )
       break
     case "set":
-      res = await addHash(_SmartWeave)(await set(...writeParams, executeCron))
+      res = await addHash(_SmartWeave)(await set(...writeParams))
       break
     case "upsert":
-      res = await addHash(_SmartWeave)(
-        await upsert(...writeParams, executeCron)
-      )
+      res = await addHash(_SmartWeave)(await upsert(...writeParams))
       break
     case "update":
-      res = await addHash(_SmartWeave)(
-        await update(...writeParams, executeCron)
-      )
+      res = await addHash(_SmartWeave)(await update(...writeParams))
       break
     case "delete":
-      res = await addHash(_SmartWeave)(
-        await remove(...writeParams, executeCron)
-      )
+      res = await addHash(_SmartWeave)(await remove(...writeParams))
       break
     case "batch":
-      res = await addHash(_SmartWeave)(await batch(...writeParams, executeCron))
+      res = await addHash(_SmartWeave)(await batch(...writeParams))
       break
     case "bundle":
       res = await addHash(_SmartWeave)(await bundle(...writeParams))
@@ -205,6 +215,9 @@ async function handle(state, action, _SmartWeave) {
       break
     case "removeOwner":
       res = await addHash(_SmartWeave)(await removeOwner(...writeParams))
+      break
+    case "setBundlers":
+      res = await addHash(_SmartWeave)(await setBundlers(...writeParams))
       break
     case "setAlgorithms":
       res = await addHash(_SmartWeave)(await setAlgorithms(...writeParams))
