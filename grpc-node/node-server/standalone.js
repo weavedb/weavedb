@@ -117,9 +117,11 @@ class Standalone {
               }-wal`
             ),
           })
+          let saved_state = await obj.lmdb_wal.get("state")
+          if (!isNil(saved_state)) obj.state = saved_state
         },
         onWrite: async (tx, obj, param) => {
-          let prs = []
+          let prs = [obj.lmdb_wal.put("state", tx.state)]
           for (const k in tx.result.kvs)
             prs.push(obj.lmdb_wal.put(k, tx.result.kvs[k]))
           await Promise.all(prs)
@@ -136,8 +138,8 @@ class Standalone {
     this.db = new DB({
       type: 3,
       cache: {
-        initialize: async obj =>
-          (obj.lmdb = open({
+        initialize: async obj => {
+          obj.lmdb = open({
             path: path.resolve(
               __dirname,
               "cache",
@@ -147,9 +149,12 @@ class Standalone {
                   : `-${this.conf.contractTxId}`
               }`
             ),
-          })),
+          })
+          let saved_state = await obj.lmdb.get("state")
+          if (!isNil(saved_state)) obj.state = saved_state
+        },
         onWrite: async (tx, obj, param) => {
-          let prs = []
+          let prs = [obj.lmdb.put("state", tx.state)]
           for (const k in tx.result.kvs)
             prs.push(obj.lmdb.put(k, tx.result.kvs[k]))
           await Promise.all(prs)
