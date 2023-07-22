@@ -5411,10 +5411,10 @@ weavedb-node-client@^0.28.0:
     ramda "^0.28.0"
     weavedb-base "^0.28.2"
 
-weavedb-offchain@^0.28.9:
-  version "0.28.9"
-  resolved "https://registry.yarnpkg.com/weavedb-offchain/-/weavedb-offchain-0.28.9.tgz#b1954707479ba166470f1a7232f1f243cbb604ce"
-  integrity sha512-FPVAfgIn954vU47/MVza+gDIuOXf0g48ckpzmBaXsrWjhj8sO/CUNr3/0GeG9h5h41QKqeDY3+gmnckknLX8rQ==
+weavedb-offchain@^0.28.10:
+  version "0.28.10"
+  resolved "https://registry.yarnpkg.com/weavedb-offchain/-/weavedb-offchain-0.28.10.tgz#dec4ccf27c24247ff24dba9dca4e6569b184a826"
+  integrity sha512-6bSfc2q890ZCuHDRgLd7ZCbGVs2miGjDyb5ylyivI+2byh1DGOzTbnMks4//HWAZTaq4ahNssipd4/TzDFHhew==
   dependencies:
     "@metamask/legacy-web3" "^2.0.0"
     "@paralleldrive/cuid2" "^2.2.0"
@@ -5423,21 +5423,21 @@ weavedb-offchain@^0.28.9:
     weavedb-base "^0.28.2"
     weavedb-contracts "^0.28.9"
 
-weavedb-sdk-node@^0.28.4:
-  version "0.28.4"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk-node/-/weavedb-sdk-node-0.28.4.tgz#e2bcda5ea831888ffd3fe7eb79c83bd02560292e"
-  integrity sha512-HKQOtaYKI9q54VokKWBGsFV9vTF+Q4Dj/XC8tkB/hCSXhOFpkQG3Fr9ByhfApIrdrgBa/DpsP1Vu7LF7SmFbCg==
+weavedb-sdk-node@^0.28.5:
+  version "0.28.5"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk-node/-/weavedb-sdk-node-0.28.5.tgz#ab6d5def420e8ff60b85c233c0ff850d537c9b62"
+  integrity sha512-GWoZllWqASJSCQDwztPWzcZaVW10dhNAg2ZGpJzrldQBEyAcuXPRHxT33euPB63L0rNfL9cjFsIbAh/yx8LFkQ==
   dependencies:
     "@aws-amplify/api" "^5.0.14"
     redis "^4.6.5"
     warp-contracts-lmdb "^1.1.10"
     warp-contracts-pubsub "^1.0.5"
-    weavedb-sdk "^0.28.5"
+    weavedb-sdk "^0.28.6"
 
-weavedb-sdk@^0.28.5:
-  version "0.28.5"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.28.5.tgz#b505b11be4b12b33782c8e9ae9f4c0fc3f1355f2"
-  integrity sha512-vFWnDQg158Pf/Yl5Bgs1OpWkXNLaDLo6U4hlaVKZcidtY5qizco6AgZJFuhdRyAa5y7YVQdQrGBfNmVGeQF9xw==
+weavedb-sdk@^0.28.6:
+  version "0.28.6"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.28.6.tgz#9784b6456fc7bc6994eef4f01d8d4004b1327a91"
+  integrity sha512-J/t8zxy/qL+Rdc85uixj2VU7ZPD/zIdbQUprVTOlPaNW1kHid2G7wVLV9fvuYaazHFwfy8Xk61Xsvuln/mLNYQ==
   dependencies:
     "@lit-protocol/sdk-browser" "^1.3.3"
     "@metamask/legacy-web3" "^2.0.0"

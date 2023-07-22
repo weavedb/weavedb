@@ -61,23 +61,37 @@ class Standalone {
     )
     console.log(`server ready on ${this.port}!`)
   }
+  measureSizes(bundles) {
+    let sizes = 0
+    let _bundlers = []
+    for (let v of bundles) {
+      if (isNil(v.data?.param)) continue
+      const len = JSON.stringify(v.data.param).length
+      if (sizes + len <= 3970) {
+        _bundlers.push(v)
+        sizes += len
+      } else {
+        break
+      }
+    }
+    return _bundlers
+  }
   async bundle() {
-    const len = 2
     try {
       const bundling = await this.wal.cget(
         "txs",
         ["commit"],
         ["id"],
         ["commit", "==", false],
-        len
+        10
       )
-
-      if (bundling.length > 0) {
+      const bundles = this.measureSizes(bundling)
+      if (bundles.length > 0) {
         console.log(
-          `commiting to Warp...${map(_path(["data", "id"]))(bundling)}`
+          `commiting to Warp...${map(_path(["data", "id"]))(bundles)}`
         )
         const result = await this.warp.bundle(
-          map(_path(["data", "param"]))(bundling)
+          map(_path(["data", "param"]))(bundles)
         )
         console.log(`bundle tx result: ${result.success}`)
         if (result.success === true) {
@@ -89,7 +103,7 @@ class Standalone {
                 "txs",
                 v.id,
               ],
-              bundling
+              bundles
             )
           )
         }
