@@ -172,6 +172,20 @@ class OffChain extends Base {
   }
 
   async write(func, param, dryWrite, bundle, relay = false, onDryWrite) {
+    if (JSON.stringify(param).length > 3970) {
+      return {
+        nonce: param.nonce,
+        signer: param.caller,
+        cache: false,
+        success: false,
+        duration: 0,
+        error: { message: "data too large" },
+        function: param.function,
+        state: null,
+        result: null,
+        results: [],
+      }
+    }
     if (relay) {
       return param
     } else {

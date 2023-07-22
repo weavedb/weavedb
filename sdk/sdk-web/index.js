@@ -568,6 +568,20 @@ class SDK extends Base {
   }
 
   async write(func, param, dryWrite, bundle, relay = false, onDryWrite) {
+    if (JSON.stringify(param).length > 3970) {
+      return {
+        nonce: param.nonce,
+        signer: param.caller,
+        cache: false,
+        success: false,
+        duration: 0,
+        error: { message: "data too large" },
+        function: param.function,
+        state: null,
+        result: null,
+        results: [],
+      }
+    }
     let cache = !isNil(onDryWrite?.cache)
       ? onDryWrite.cache
       : !this.nocache_default
@@ -833,6 +847,7 @@ class SDK extends Base {
   }
   async send(param, bundle, start, read) {
     let tx = null
+    let mess = null
     try {
       tx = await this.db[
         bundle && this.network !== "localhost"
@@ -840,17 +855,18 @@ class SDK extends Base {
           : "writeInteraction"
       ](param, {})
     } catch (e) {
+      mess = e?.message ?? null
       console.log(e)
     }
     if (this.network === "localhost") await this.mineBlock()
     let state
-    if (isNil(tx.originalTxId)) {
+    if (isNil(tx?.originalTxId)) {
       return {
         success: false,
         nonce: param.nonce,
         signer: param.caller,
         duration: Date.now() - start,
-        error: { message: "tx didn't go through" },
+        error: { message: mess ?? "tx didn't go through" },
         function: param.function,
         results: [],
       }
