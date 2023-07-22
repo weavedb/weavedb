@@ -292,7 +292,23 @@ const query1 = await db.sign("set", {name: "Bob"}, "people", "Bob", {evm: wallet
 const query2 = await db.sign("set", {name: "Alice"}, "people", "Alice", {ii: wallet2})
 const query3 = await db.sign("set", {name: "Beth"}, "people", "Beth", {ar: wallet3})
 
-await db.bundle([query1, query2, query3], {ar: bundler_wallet})
+// bundle query needs no signer wallet
+await db.bundle([query1, query2, query3])
 ```
+
+### setBundlers / getBundlers
+
+Restrict bundlers, if bundlers are set, no one else but bundlers can write to the DB
+
+```js
+await db.setBundlers([ BUNDLER_ADDRESS_1, BUNDLER_ADDRESS_2 ], {evm : admin_wallet})
+// now only bundle queries can be accepted
+
+await db.getBundlers()
+// return bundlers, if empty, anyone can execute bundle queries
+```
+:::info
+Restricting bundlers is useful to make queries consistent with low latencies via a rollup node.
+:::
 
 
