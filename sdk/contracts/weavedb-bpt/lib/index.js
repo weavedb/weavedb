@@ -504,7 +504,7 @@ const put = async (_data, id, path, kvs, SW, signer, create = false) => {
   let old_data = await idtree.data(id)
   if (!isNil(old_data?.val)) {
     if (create) {
-      await del(id, path, kv, SW)
+      await del(id, path, kvs, SW)
     } else {
       return await _update(_data, id, old_data, idtree, kv, SW, signer)
     }
