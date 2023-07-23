@@ -147,7 +147,7 @@ class Standalone {
         get: async (key, obj) => {
           let val = this.kvs_wal[key]
           if (typeof val === "undefined") val = await obj.lmdb_wal.get(key)
-          return await obj.lmdb_wal.get(key)
+          return val
         },
       },
       state: { owner: this.conf.owner, secure: false },
