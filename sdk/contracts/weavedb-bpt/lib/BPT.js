@@ -617,7 +617,10 @@ class BPT {
     if (isNil(val.val)) return [null, null, null]
     let node = await this.search(val, undefined, stats)
     if (isNil(node)) return [val, null, null]
-    return [val, ...(await this.searchNode(node, key, val, true, stats))]
+    return [
+      val,
+      ...(await this.searchNode(node, key, val, true, undefined, stats)),
+    ]
   }
 
   async binarySearch(node, val, cache = {}, stats, reverse) {

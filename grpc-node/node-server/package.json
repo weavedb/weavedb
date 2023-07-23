@@ -29,7 +29,7 @@
     "redis": "^4.6.4",
     "tweetnacl": "^1.0.3",
     "weavedb-node-client": "^0.28.0",
-    "weavedb-offchain": "^0.28.10",
+    "weavedb-offchain": "^0.28.11",
     "weavedb-sdk-node": "^0.28.5",
     "yargs": "^17.6.2"
   },
