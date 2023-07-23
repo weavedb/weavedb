@@ -39,6 +39,8 @@ class Standalone {
     this.tx_count = 0
     this.bundling = null
     this.bundler = EthCrypto.createIdentity()
+    this.kvs = {}
+    this.kvs_wal = {}
     console.log(`Bundler: ${this.bundler.address}`)
   }
   async init() {
@@ -136,11 +138,15 @@ class Standalone {
         },
         onWrite: async (tx, obj, param) => {
           let prs = [obj.lmdb_wal.put("state", tx.state)]
-          for (const k in tx.result.kvs)
+          for (const k in tx.result.kvs) {
+            this.kvs_wal[k] = tx.result.kvs[k]
             prs.push(obj.lmdb_wal.put(k, tx.result.kvs[k]))
-          await Promise.all(prs)
+          }
+          Promise.all(prs).then(() => {})
         },
         get: async (key, obj) => {
+          let val = this.kvs_wal[key]
+          if (typeof val === "undefined") val = await obj.lmdb_wal.get(key)
           return await obj.lmdb_wal.get(key)
         },
       },
@@ -169,9 +175,11 @@ class Standalone {
         },
         onWrite: async (tx, obj, param) => {
           let prs = [obj.lmdb.put("state", tx.state)]
-          for (const k in tx.result.kvs)
+          for (const k in tx.result.kvs) {
+            this.kvs[k] = tx.result.kvs[k]
             prs.push(obj.lmdb.put(k, tx.result.kvs[k]))
-          await Promise.all(prs)
+          }
+          Promise.all(prs).then(() => {})
           const t = {
             signer: tx.result.original_signer,
             id: ++this.tx_count,
@@ -182,7 +190,11 @@ class Standalone {
           }
           await this.wal.set(t, "txs", `${t.id}`)
         },
-        get: async (key, obj) => await obj.lmdb.get(key),
+        get: async (key, obj) => {
+          let val = this.kvs[key]
+          if (typeof val === "undefined") val = await obj.lmdb.get(key)
+          return val
+        },
       },
       state: { owner: this.conf.owner, secure: false },
     })
