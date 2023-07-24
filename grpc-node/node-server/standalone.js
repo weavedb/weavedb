@@ -49,7 +49,7 @@ class Standalone {
   async init() {
     await this.initDB()
     this.startServer()
-    this.bundle()
+    if (!isNil(this.conf.contractTxId)) this.bundle()
   }
   startServer() {
     const server = new grpc.Server()
@@ -159,6 +159,7 @@ class Standalone {
     await this.wal.addIndex([["commit"], ["id"]], "txs")
     this.tx_count = (await this.wal.get("txs", ["id", "desc"], 1))[0]?.id ?? 0
     console.log(`${this.tx_count} txs has been cached`)
+    const state = { owner: this.conf.owner, secure: this.conf.secure ?? true }
     this.db = new DB({
       type: 3,
       cache: {
@@ -176,6 +177,8 @@ class Standalone {
           })
           let saved_state = await obj.lmdb.get("state")
           if (!isNil(saved_state)) obj.state = saved_state
+          console.log(`DB initialized!`)
+          console.log(obj.state)
         },
         onWrite: async (tx, obj, param) => {
           let prs = [obj.lmdb.put("state", tx.state)]
@@ -199,7 +202,7 @@ class Standalone {
           return val
         },
       },
-      state: { owner: this.conf.owner, secure: false },
+      state,
     })
     await this.db.initialize()
     const contractTxId = this.conf.contractTxId
