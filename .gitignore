@@ -3,7 +3,7 @@ scripts/.wallets
 scripts/.db
 packages
 !node/packages
-
+\*shell\*
 # Logs
 logs
 *.log
