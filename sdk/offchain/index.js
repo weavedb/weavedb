@@ -9,7 +9,7 @@ const version_bpt = require(`${base}/weavedb-bpt/lib/version`)
 const Base = require("weavedb-base")
 let arweave = require("arweave")
 if (!isNil(arweave.default)) arweave = arweave.default
-const { createId } = require("@paralleldrive/cuid2")
+const md5 = require("md5")
 
 class OffChain extends Base {
   constructor({
@@ -110,8 +110,10 @@ class OffChain extends Base {
   async initialize() {
     if (typeof this.cache === "object") await this.cache.initialize(this)
   }
-
-  getSW() {
+  getTxId(input) {
+    return md5(JSON.stringify({ contractTxId: this.contractTxId, input }))
+  }
+  getSW(input) {
     let kvs = {}
     return {
       kv: {
@@ -129,7 +131,7 @@ class OffChain extends Base {
         timestamp: Math.round(Date.now() / 1000),
         height: ++this.height,
       },
-      transaction: { id: createId() },
+      transaction: { id: this.getTxId(input) },
       contracts: {
         viewContractState: async (contract, param, SmartWeave) => {
           const { handle } = require(`weavedb-contracts/${contract}/contract`)
@@ -144,7 +146,7 @@ class OffChain extends Base {
   }
 
   async read(input) {
-    return (await this.handle(clone(this.state), { input }, this.getSW()))
+    return (await this.handle(clone(this.state), { input }, this.getSW(input)))
       .result
   }
 
@@ -152,15 +154,10 @@ class OffChain extends Base {
     let results = []
     for (const v of queries || []) {
       let res = { success: false, err: null, result: null }
+      const input = { function: v[0], query: tail(v) }
       try {
         res.result = (
-          await this.handle(
-            clone(state),
-            {
-              input: { function: v[0], query: tail(v) },
-            },
-            this.getSW()
-          )
+          await this.handle(clone(state), { input }, this.getSW(input))
         ).result
         res.success = true
       } catch (e) {
@@ -172,7 +169,7 @@ class OffChain extends Base {
   }
 
   async write(func, param, dryWrite, bundle, relay = false, onDryWrite) {
-    if (JSON.stringify(param).length > 3970) {
+    if (JSON.stringify(param).length > 3900) {
       return {
         nonce: param.nonce,
         signer: param.caller,
@@ -191,7 +188,7 @@ class OffChain extends Base {
     } else {
       let error = null
       let tx = null
-      let sw = this.getSW()
+      let sw = this.getSW(param)
       try {
         tx = await this.handle(
           clone(this.state),

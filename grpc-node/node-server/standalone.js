@@ -1,9 +1,12 @@
+const pako = require("pako")
+const md5 = require("md5")
 const Arweave = require("arweave")
 const grpc = require("@grpc/grpc-js")
 const protoLoader = require("@grpc/proto-loader")
 const { addReflection } = require("grpc-server-reflection")
 const PROTO_PATH = __dirname + "/weavedb.proto"
 const {
+  keys,
   isNil,
   is,
   pluck,
@@ -69,7 +72,7 @@ class Standalone {
     for (let v of bundles) {
       if (isNil(v.data?.param)) continue
       const len = JSON.stringify(v.data.param).length
-      if (sizes + len <= 3970) {
+      if (sizes + len <= 3900) {
         _bundlers.push(v)
         sizes += len
       } else {
@@ -155,6 +158,7 @@ class Standalone {
     await this.wal.initialize()
     await this.wal.addIndex([["commit"], ["id"]], "txs")
     this.tx_count = (await this.wal.get("txs", ["id", "desc"], 1))[0]?.id ?? 0
+    console.log(`${this.tx_count} txs has been cached`)
     this.db = new DB({
       type: 3,
       cache: {
@@ -181,12 +185,11 @@ class Standalone {
           }
           Promise.all(prs).then(() => {})
           const t = {
-            signer: tx.result.original_signer,
             id: ++this.tx_count,
             txid: tx.result.transaction.id,
             commit: false,
-            timestamp: tx.result.block.timestamp,
-            param,
+            tx_ts: tx.result.block.timestamp,
+            input: param,
           }
           await this.wal.set(t, "txs", `${t.id}`)
         },
@@ -199,15 +202,62 @@ class Standalone {
       state: { owner: this.conf.owner, secure: false },
     })
     await this.db.initialize()
-    if (!isNil(this.conf.contractTxId)) {
-      console.log(`contractTxId: ${this.conf.contractTxId}`)
+    const contractTxId = this.conf.contractTxId
+    if (!isNil(contractTxId)) {
+      console.log(`contractTxId: ${contractTxId}`)
       this.warp = new Warp({
         type: 3,
-        contractTxId: this.conf.contractTxId,
+        contractTxId: contractTxId,
         remoteStateSyncEnabled: false,
         nocache: true,
+        progress: async input => {
+          console.log(
+            `loading ${this.conf.contractTxId} [${input.currentInteraction}/${input.allInteractions}]`
+          )
+        },
       })
       await this.warp.init()
+      const _state = await this.warp.readState()
+      let len = 0
+      try {
+        len = keys(_state.cachedValue.validity).length
+      } catch (e) {}
+      if (this.tx_count === 0 && len > 0) {
+        console.log("recovering WAL...")
+        const txs = await this.warp.warp.interactionsLoader.load(contractTxId)
+        for (let v of txs) {
+          for (const tag of v.tags || []) {
+            if (tag.name === "Input") {
+              const input = JSON.parse(tag.value)
+              if (input.function === "bundle") {
+                const compressed = new Uint8Array(
+                  Buffer.from(input.query, "base64")
+                    .toString("binary")
+                    .split("")
+                    .map(function (c) {
+                      return c.charCodeAt(0)
+                    })
+                )
+                for (const input of JSON.parse(
+                  pako.inflate(compressed, { to: "string" })
+                )) {
+                  let t = {
+                    id: ++this.tx_count,
+                    warp: v.id,
+                    commit: true,
+                    txid: md5(JSON.stringify({ contractTxId, input })),
+                    input,
+                    blk_ts: v.block.timestamp,
+                  }
+                  console.log(`saving... [${this.tx_count}] ${t.txid}`)
+                  await this.wal.set(t, "txs", `${t.id}`)
+                }
+                break
+              }
+            }
+          }
+        }
+      }
     }
   }
 

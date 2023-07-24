@@ -68,7 +68,7 @@ export default function Home() {
                   Path
                 </Box>
                 <Box as="td" p={2}>
-                  Query Owner
+                  Signer
                 </Box>
                 <Box as="td" p={2}>
                   Timestamp
@@ -124,10 +124,12 @@ export default function Home() {
                           {path}
                         </Box>
                         <Box as="td" p={2}>
-                          {v.signer}
+                          {v.input.caller}
                         </Box>
                         <Box as="td" p={2}>
-                          {dayjs((v.timestamp ?? 0) * 1000).fromNow(true)}
+                          {dayjs((v.tx_ts ?? v.blk_ts ?? 0) * 1000).fromNow(
+                            true
+                          )}
                         </Box>
                         <Box as="td" p={2}>
                           {!isNil(v.warp) ? (
@@ -161,7 +163,7 @@ export default function Home() {
                               >
                                 Query
                               </Flex>
-                              <Box>{JSON.stringify(v.param.query)}</Box>
+                              <Box>{JSON.stringify(v.input.query)}</Box>
                             </Flex>
                             <Flex pb={2}>
                               <Flex
@@ -175,7 +177,7 @@ export default function Home() {
                               >
                                 Signature
                               </Flex>
-                              <Box>{v.param.signature}</Box>
+                              <Box>{v.input.signature}</Box>
                             </Flex>
                           </Box>
                         </Box>

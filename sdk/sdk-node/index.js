@@ -1,7 +1,7 @@
 const SDK = require("weavedb-sdk")
 class SDKNODE extends SDK {
   constructor(param) {
-    const { LmdbCache } = require("warp-contracts-lmdb")
+    const { LmdbCache } = require("./warp-contracts-lmdb")
     const { createClient } = require("redis")
     const {
       WarpSubscriptionPlugin,
