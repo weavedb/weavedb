@@ -574,7 +574,7 @@ class SDK extends Base {
   }
 
   async write(func, param, dryWrite, bundle, relay = false, onDryWrite) {
-    if (JSON.stringify(param).length > 3970) {
+    if (JSON.stringify(param).length > 3900) {
       return {
         nonce: param.nonce,
         signer: param.caller,
