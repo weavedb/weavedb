@@ -70,7 +70,7 @@ const bundle = async (
       let res = null
       switch (op) {
         case "relay":
-          res = await set(...params)
+          res = await relay(...params)
           break
 
         case "add":

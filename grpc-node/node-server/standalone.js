@@ -205,6 +205,7 @@ class Standalone {
         type: 3,
         contractTxId: this.conf.contractTxId,
         remoteStateSyncEnabled: false,
+        nocache: true,
       })
       await this.warp.init()
     }

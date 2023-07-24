@@ -50,6 +50,7 @@ Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
 const Base = require("weavedb-base")
 const { handle } = require("weavedb-contracts/weavedb/contract")
 const { handle: handle_kv } = require("weavedb-contracts/weavedb-kv/contract")
+const { handle: handle_bpt } = require("weavedb-contracts/weavedb-bpt/contract")
 
 const _on = async (state, input, handle) => {
   const block = input.interaction.block
@@ -146,7 +147,8 @@ class SDK extends Base {
     this.LitJsSdk = require("@lit-protocol/sdk-browser")
     this.kvs = {}
     this.type = type
-    this.handle = this.type === 1 ? handle : handle_kv
+    this.handle =
+      this.type === 1 ? handle : this.type === 2 ? handle_kv : handle_bpt
     if (!isNil(useVM2)) this.useVM2 = useVM2
     this.LmdbCache = LmdbCache
     this.createClient = createClient
@@ -243,6 +245,10 @@ class SDK extends Base {
           res(_state)
           try {
             if (
+              compareVersions(this.state?.version || "0.26.0", "0.27.0") >= 0
+            ) {
+              this.handle = handle_bpt
+            } else if (
               compareVersions(this.state?.version || "0.26.0", "0.27.0") >= 0
             ) {
               this.handle = handle_kv
@@ -622,6 +628,7 @@ class SDK extends Base {
               "relay",
               "addTrigger",
               "removeTrigger",
+              "bundle",
             ])
           ) {
             cache = false
