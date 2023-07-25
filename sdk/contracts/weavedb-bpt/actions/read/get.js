@@ -83,7 +83,8 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
         }))(parsed.queries),
         limit,
         kvs,
-        SmartWeave
+        SmartWeave,
+        parsed.sortByTail
       )
     }
     return {

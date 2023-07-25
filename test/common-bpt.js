@@ -179,10 +179,46 @@ const tests = {
       John,
     ])
 
+    // where in with sort
+    expect(await db.get("ppl", ["weight"], ["age", "in", [20, 30]])).to.eql([
+      Alice,
+      Beth,
+      Bob,
+    ])
+
+    // where not-in with sort
+    expect(
+      await db.get("ppl", ["weight", "desc"], ["age", "not-in", [30]])
+    ).to.eql([John, Bob])
+
+    // where != with sort
+    expect(await db.get("ppl", ["weight", "desc"], ["age", "!=", 30])).to.eql([
+      John,
+      Bob,
+    ])
+
     // where array-contains-any
     expect(
       await db.get("ppl", ["letters", "array-contains-any", ["j", "t"]])
     ).to.eql([Beth, John])
+
+    // where array-contains-any with sort
+
+    await db.addIndex(
+      [["letters", "array"], ["age", "desc"], ["weight"]],
+      "ppl",
+      {
+        ar: arweave_wallet,
+      }
+    )
+    expect(
+      await db.get(
+        "ppl",
+        ["age", "desc"],
+        ["weight", "asc"],
+        ["letters", "array-contains-any", ["j", "t", "a"]]
+      )
+    ).to.eql([John, Alice, Beth])
   },
 
   "should update nested object with dot notation": async ({

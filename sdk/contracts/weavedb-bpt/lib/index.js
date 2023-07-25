@@ -589,25 +589,34 @@ const put = async (_data, id, path, kvs, SW, signer, create = false) => {
   return { before: old_data, after: { key: id, val: _data, setter: signer } }
 }
 
-const pranges = async (_ranges, limit, kvs, SW) => {
+const pranges = async (_ranges, limit, kvs, SW, sortByTail = false) => {
   let curs = []
   let res = []
   for (let v of _ranges) {
-    if (v.sort.length === 1 && v.sort[0][1] === "desc") {
+    if (isNil(v.prefix) && v.sort.length === 1 && v.sort[0][1] === "desc") {
       v.sort[0][1] = "asc"
       v.opt ??= {}
       v.opt.reverse = true
     }
     delete v.opt.limit
     const kv = new KV(`${v.path.join("/")}/`, _KV(kvs, SW))
-    await checkIndex(v.prefix, v.path, kvs, SW)
-    const tree = new BPT(order, [...v.sort, idsorter], kv, v.prefix)
+    let prefix = v.prefix ?? ""
+    let suffix = `${compose(
+      join("/"),
+      flatten
+    )(v.sort.length === 0 && prefix === "" ? [idsorter] : v.sort)}`
+    if (prefix !== "" && suffix !== "") suffix = `/${suffix}`
+    prefix += suffix
+    await checkIndex(prefix, v.path, kvs, SW)
+    const tree = new BPT(order, [...v.sort, idsorter], kv, prefix)
     const cur = { val: null, tree, cur: await tree.range(v.opt, true) }
     curs.push(cur)
   }
   const comp = curs[0].tree.comp.bind(curs[0].tree)
   let sorter = curs[0].tree.sort_fields
   if (!equals(last(sorter), idsorter)) sorter.push(idsorter)
+  if (sortByTail) sorter = tail(sorter)
+
   while (curs.length > 0) {
     const val = await curs[0].cur()
     curs[0].val = val
