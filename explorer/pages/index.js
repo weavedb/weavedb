@@ -82,7 +82,7 @@ export default function Home() {
                   let v = _v.data
                   let path = "-"
                   if (
-                    includes(v.param.function, [
+                    includes(v.input.function, [
                       "add",
                       "set",
                       "update",
@@ -96,9 +96,9 @@ export default function Home() {
                       "removeTrigger",
                     ])
                   ) {
-                    path = v.param.query.slice(1).join(" / ")
-                  } else if (includes(v.param.function, ["delete"])) {
-                    path = v.param.query.join(" / ")
+                    path = v.input.query.slice(1).join(" / ")
+                  } else if (includes(v.input.function, ["delete"])) {
+                    path = v.input.query.join(" / ")
                   }
                   return (
                     <>
@@ -118,7 +118,7 @@ export default function Home() {
                           {v.txid}
                         </Box>
                         <Box as="td" p={2}>
-                          {v.param.function}
+                          {v.input.function}
                         </Box>
                         <Box as="td" p={2}>
                           {path}

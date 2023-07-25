@@ -572,6 +572,7 @@ const _parser = query => {
       : !isNil(_filter["!="])
       ? [_filter["!="]]
       : null)
+  q.sortByTail = false
   return q
 }
 const checkStartEnd = q => {
@@ -665,6 +666,17 @@ const checkSort = q => {
   }
   if (!isNil(q.range?.[0][0])) {
     sort.push([q.range?.[0][0]])
+    if (includes(q.range[0][1], ["!=", "in", "not-in"])) {
+      const qkeys = pluck(0, q.sort)
+      if (qkeys.length !== 0 && qkeys[0] !== q.range[0][0]) {
+        if (includes(q.range[0][0], qkeys)) {
+          err(`the wrong sort ${JSON.stringify(q.sort)}`)
+        } else {
+          q.sort.unshift([q.range[0][0], "asc"])
+          q.sortByTail = true
+        }
+      }
+    }
   }
   let i = 0
   for (const v of q.sort || []) {
@@ -685,6 +697,7 @@ const checkSort = q => {
     return v
   })(sort)
 }
+
 const buildQueries = q => {
   q.queries = []
   if (!isNil(q.array)) {
@@ -768,7 +781,7 @@ const buildQueries = q => {
         i++
       }
     }
-    q.type = "ranges"
+    q.type = q.sortByTail ? "pranges" : "ranges"
   } else {
     q.type = "range"
     let opt = { limit: q.limit }
