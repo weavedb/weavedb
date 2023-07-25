@@ -238,6 +238,15 @@ const tests = {
         ["height", "==", 160]
       )
     ).to.eql([Alice])
+    expect(
+      await db.get(
+        "ppl",
+        ["height"],
+        ["weight", "desc"],
+        ["age", "==", 30],
+        ["height", "==", 160]
+      )
+    ).to.eql([Alice])
   },
 
   "should update nested object with dot notation": async ({
