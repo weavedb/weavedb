@@ -678,6 +678,17 @@ const checkSort = q => {
       }
     }
   }
+  if (q.equals.length > 0) {
+    if (q.sort.length === 0 || q.equals[0][0] !== q.sort[0][0]) {
+      const qkeys = pluck(0, q.sort)
+      if (includes(q.equals[0][0], qkeys)) {
+        err(`the wrong sort ${JSON.stringify(q.sort)}`)
+      } else {
+        q.sort.unshift([q.equals[0][0], "asc"])
+      }
+    }
+  }
+
   let i = 0
   for (const v of q.sort || []) {
     if (isNil(sort[i])) {
