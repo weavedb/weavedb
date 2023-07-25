@@ -135,7 +135,7 @@ const tests = {
       Alice,
     ])
 
-    // where =
+    // where ==
     expect(await db.get("ppl", ["age", "==", 30])).to.eql([Alice, Beth])
 
     // where >
@@ -219,6 +219,12 @@ const tests = {
         ["letters", "array-contains-any", ["j", "t", "a"]]
       )
     ).to.eql([John, Alice, Beth])
+
+    // where == with sort
+    expect(await db.get("ppl", ["weight", "desc"], ["age", "==", 30])).to.eql([
+      Beth,
+      Alice,
+    ])
   },
 
   "should update nested object with dot notation": async ({
