@@ -225,6 +225,19 @@ const tests = {
       Beth,
       Alice,
     ])
+
+    // where multiple == with sort
+    await db.addIndex([["age"], ["height"], ["weight", "desc"]], "ppl", {
+      ar: arweave_wallet,
+    })
+    expect(
+      await db.get(
+        "ppl",
+        ["weight", "desc"],
+        ["age", "==", 30],
+        ["height", "==", 160]
+      )
+    ).to.eql([Alice])
   },
 
   "should update nested object with dot notation": async ({

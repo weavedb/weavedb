@@ -3,6 +3,9 @@ fpjson = fpjson.default || fpjson
 const jsonLogic = require("json-logic-js")
 const md5 = require("./md5")
 const {
+  reverse,
+  indexOf,
+  prop,
   assoc,
   tail,
   pluck,
@@ -18,6 +21,7 @@ const {
   last,
   intersection,
   append,
+  difference,
 } = require("ramda")
 const {
   parse: _parse,
@@ -661,9 +665,23 @@ const checkStartEnd = q => {
 }
 const checkSort = q => {
   let sort = []
-  for (const v of q.equals) {
-    sort.push([v[0]])
+  if (q.equals.length > 0) {
+    const eq_keys = pluck(0, q.equals)
+    const qkeys = pluck(0, q.sort)
+    let ex = false
+    for (const v of qkeys) {
+      if (!includes(v, eq_keys)) {
+        ex = true
+      } else if (ex) {
+        err(`the wrong sort ${JSON.stringify(q.sort)}`)
+      }
+    }
+    const dups = intersection(eq_keys, qkeys)
+    const imap = indexOf(prop(0), q.sort)
+    let new_sort = slice(dups.length, q.sort.length, q.sort)
+    for (const v of reverse(eq_keys)) q.sort.unshift(imap[v] ?? [v, "asc"])
   }
+
   if (!isNil(q.range?.[0][0])) {
     sort.push([q.range?.[0][0]])
     if (includes(q.range[0][1], ["!=", "in", "not-in"])) {
@@ -675,16 +693,6 @@ const checkSort = q => {
           q.sort.unshift([q.range[0][0], "asc"])
           q.sortByTail = true
         }
-      }
-    }
-  }
-  if (q.equals.length > 0) {
-    if (q.sort.length === 0 || q.equals[0][0] !== q.sort[0][0]) {
-      const qkeys = pluck(0, q.sort)
-      if (includes(q.equals[0][0], qkeys)) {
-        err(`the wrong sort ${JSON.stringify(q.sort)}`)
-      } else {
-        q.sort.unshift([q.equals[0][0], "asc"])
       }
     }
   }
