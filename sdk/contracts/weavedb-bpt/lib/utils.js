@@ -679,7 +679,8 @@ const checkSort = q => {
     const dups = intersection(eq_keys, qkeys)
     const imap = indexOf(prop(0), q.sort)
     let new_sort = slice(dups.length, q.sort.length, q.sort)
-    for (const v of reverse(eq_keys)) q.sort.unshift(imap[v] ?? [v, "asc"])
+    for (const v of reverse(eq_keys)) new_sort.unshift(imap[v] ?? [v, "asc"])
+    q.sort = new_sort
   }
 
   if (!isNil(q.range?.[0][0])) {
