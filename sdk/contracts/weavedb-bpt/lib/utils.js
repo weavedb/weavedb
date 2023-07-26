@@ -529,7 +529,14 @@ const _parser = query => {
               _filter[v[1]] = v
             }
           } else if (v[1] === "==") {
-            if (_keys[v[0]])
+            if (
+              !isNil(_filter.range) ||
+              !isNil(_filter["!="]) ||
+              !isNil(_filter["in"]) ||
+              !isNil(_filter["not-in"])
+            ) {
+              err(`== must come before inequity [${JSON.stringify(v)}]`)
+            } else if (_keys[v[0]])
               err(`only one == per field is allowed [${JSON.stringify(v)}]`)
             _filter["=="].push(v)
             _keys[v[0]] = true
@@ -679,10 +686,12 @@ const checkSort = q => {
     const dups = intersection(eq_keys, qkeys)
     const imap = indexOf(prop(0), q.sort)
     let new_sort = slice(dups.length, q.sort.length, q.sort)
-    for (const v of reverse(eq_keys)) new_sort.unshift(imap[v] ?? [v, "asc"])
+    for (const v of reverse(eq_keys)) {
+      new_sort.unshift(imap[v] ?? [v, "asc"])
+      sort.unshift(imap[v] ?? [v, "asc"])
+    }
     q.sort = new_sort
   }
-
   if (!isNil(q.range?.[0][0])) {
     sort.push([q.range?.[0][0]])
     if (includes(q.range[0][1], ["!=", "in", "not-in"])) {
@@ -691,13 +700,12 @@ const checkSort = q => {
         if (includes(q.range[0][0], qkeys)) {
           err(`the wrong sort ${JSON.stringify(q.sort)}`)
         } else {
-          q.sort.unshift([q.range[0][0], "asc"])
+          q.sort.splice(q.equals.length, 0, [q.range[0][0], "asc"])
           q.sortByTail = true
         }
       }
     }
   }
-
   let i = 0
   for (const v of q.sort || []) {
     if (isNil(sort[i])) {
