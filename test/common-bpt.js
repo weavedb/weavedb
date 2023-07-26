@@ -38,7 +38,7 @@ const tests = {
     })
     return
   },
-  "should get a collection": async ({ db, arweave_wallet }) => {
+  "should get a collection.only": async ({ db, arweave_wallet }) => {
     const Bob = {
       name: "Bob",
       age: 20,
@@ -247,6 +247,19 @@ const tests = {
         ["height", "==", 160]
       )
     ).to.eql([Alice])
+
+    await db.addIndex([["age"], ["height"], ["weight", "desc"]], "ppl", {
+      ar: arweave_wallet,
+    })
+
+    expect(
+      await db.get(
+        "ppl",
+        ["age", "==", 30],
+        ["height", "!=", 160],
+        ["weight", "desc"]
+      )
+    ).to.eql([Beth])
   },
 
   "should update nested object with dot notation": async ({
