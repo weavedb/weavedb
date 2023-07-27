@@ -737,10 +737,10 @@ class Base {
     if (!isNil(expiry)) param.expiry = expiry
     if (!isNil(linkTo)) param.linkTo = linkTo
     const tx = await this.addAddressLink(param, { nonce, ...opt })
-    if (isNil(tx.err)) {
-      identity.signer = tx.caller
+    if (tx.success) {
+      identity.signer = tx.signer
       identity.type = type
-      identity.linkedAccount = linkTo || tx.caller
+      identity.linkedAccount = linkTo || tx.signer
       return { tx, identity }
     } else {
       return null
