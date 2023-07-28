@@ -53,10 +53,16 @@ const executeCron =
         const _default = job[3]
         vars[_var] =
           (
-            await ops.get(state, {
-              caller: state.owner,
-              input: { function: "get", query: await parse(query) },
-            })
+            await ops.get(
+              state,
+              {
+                caller: state.owner,
+                input: { function: "get", query: await parse(query) },
+              },
+              undefined,
+              SmartWeave,
+              kvs
+            )
           ).result || _default
       } else if (
         includes(op)(["set", "upsert", "add", "delete", "update", "batch"])
