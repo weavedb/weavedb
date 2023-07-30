@@ -47,6 +47,7 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
             id: last(parsed.path),
             setter: _data.setter,
             data: _data.__data || null,
+            __cursor__: true,
           }
         : _data.__data || null,
     }
@@ -55,36 +56,52 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
     const { limit, path, sort } = parsed
     if (parsed.type === "range") {
       res = await _range(
-        sort,
+        clone(sort),
         parsed.queries[0].opt,
         path,
         kvs,
         SmartWeave,
         false,
-        parsed.queries[0].prefix
+        parsed.queries[0].prefix,
+        {
+          start: parsed.startCursor,
+          end: parsed.endCursor,
+          reverse: parsed.reverse,
+        }
       )
     } else if (parsed.type === "ranges") {
       res = await _ranges(
         map(v => ({
           ...v,
-          sort,
+          sort: clone(sort),
         }))(parsed.queries),
         limit,
         path,
         kvs,
-        SmartWeave
+        SmartWeave,
+        {
+          start: parsed.startCursor,
+          end: parsed.endCursor,
+          reverse: parsed.reverse,
+          sortRange: parsed.sortRange,
+        }
       )
     } else if (parsed.type === "pranges") {
       res = await _pranges(
         map(v => ({
           ...v,
-          sort,
+          sort: clone(sort),
           path,
         }))(parsed.queries),
         limit,
         kvs,
         SmartWeave,
-        parsed.sortByTail
+        parsed.sortByTail,
+        {
+          start: parsed.startCursor,
+          end: parsed.endCursor,
+          reverse: parsed.reverse,
+        }
       )
     }
     return {

@@ -1,4 +1,8 @@
 const {
+  reverse,
+  sortBy,
+  prop,
+  init,
   path,
   last,
   append,
@@ -589,7 +593,14 @@ const put = async (_data, id, path, kvs, SW, signer, create = false) => {
   return { before: old_data, after: { key: id, val: _data, setter: signer } }
 }
 
-const pranges = async (_ranges, limit, kvs, SW, sortByTail = false) => {
+const pranges = async (
+  _ranges,
+  limit,
+  kvs,
+  SW,
+  sortByTail = false,
+  cur = {}
+) => {
   let curs = []
   let res = []
   for (let v of _ranges) {
@@ -609,8 +620,9 @@ const pranges = async (_ranges, limit, kvs, SW, sortByTail = false) => {
     prefix += suffix
     await checkIndex(prefix, v.path, kvs, SW)
     const tree = new BPT(order, [...v.sort, idsorter], kv, prefix)
-    const cur = { val: null, tree, cur: await tree.range(v.opt, true) }
-    curs.push(cur)
+    modOpt(v.opt, cur, tree)
+    const _cur = { val: null, tree, cur: await tree.range(v.opt, true) }
+    curs.push(_cur)
   }
   const comp = curs[0].tree.comp.bind(curs[0].tree)
   let sorter = curs[0].tree.sort_fields
@@ -656,15 +668,43 @@ const pranges = async (_ranges, limit, kvs, SW, sortByTail = false) => {
   return isNil(limit) ? res : res.slice(0, limit)
 }
 
-const ranges = async (_ranges, limit, path, kvs, SW) => {
+const ranges = async (_ranges, limit, path, kvs, SW, cur = {}) => {
   let res = []
   let count = 0
-  for (let v of _ranges) {
+  let __ranges = _ranges
+  if (_ranges[0].sort.length === 1 && _ranges[0].sort[0][1] === "desc") {
+    if (cur.sortRange) {
+      __ranges = reverse(__ranges)
+      for (let v of __ranges) {
+        let new_range = {}
+        if (!isNil(v.startAt)) {
+          new_range["endAt"] = v.startAt
+          delete v.startAt
+        }
+        if (!isNil(v.endAt)) {
+          new_range["startAt"] = v.endAt
+          delete v.endAt
+        }
+        if (!isNil(v.startAfter)) {
+          new_range["endBefore"] = v.startAfter
+          delete v.startAfter
+        }
+        if (!isNil(v.endBefore)) {
+          new_range["startAfter"] = v.endBefore
+          delete v.endBefore
+        }
+        for (let k in new_range) {
+          v[k] = new_range[k]
+        }
+      }
+    }
+  }
+  for (let v of __ranges) {
     if (!isNil(limit)) {
       v.opt ??= {}
       v.opt.limit = limit - count
     }
-    res = concat(res, await range(v.sort, v.opt, path, kvs, SW))
+    res = concat(res, await range(v.sort, v.opt, path, kvs, SW, false, "", cur))
     count += res.length
     if (!isNil(limit) && count >= limit) break
   }
@@ -687,6 +727,117 @@ const checkIndex = async (prefix, path, kvs, SW) => {
     err(`missing index ${JSON.stringify(sort_fields)}`)
   }
 }
+const modOpt = (opt, cur = {}, tree) => {
+  let reversed = {}
+  if (opt.reverse) {
+    let new_range = {}
+    if (cur.reverse.start) {
+      if (!isNil(opt.startAt)) {
+        new_range.endAt = opt.startAt
+        delete opt.startAt
+        reversed.start = true
+      } else if (!isNil(opt.startAfter)) {
+        new_range.endBefore = opt.startAfter
+        delete opt.startAfter
+        reversed.start = true
+      }
+    }
+    if (cur.reverse.end) {
+      if (!isNil(opt.endAt)) {
+        new_range.startAt = opt.endAt
+        delete opt.endAt
+        reversed.end = true
+      } else if (!isNil(opt.endBefore)) {
+        new_range.startAfter = opt.endBefore
+        delete opt.endBefore
+        reversed.end = true
+      }
+    }
+    for (let k in new_range) {
+      opt[k] = new_range[k]
+    }
+  }
+  if (!isNil(cur.start)) {
+    if (!isNil(opt.startAt)) {
+      const comp = tree.comp(
+        { key: cur.start[1].id, val: cur.start[1].data },
+        { val: opt.startAt },
+        opt.reverse,
+        init(tree.sort_fields)
+      )
+      if ((reversed.end && comp >= 0) || (reversed.end !== true && comp <= 0)) {
+        delete opt.startAt
+        opt[cur.start[0]] = cur.start[1].data
+      }
+    } else if (!isNil(opt.startAfter)) {
+      const comp = tree.comp(
+        { key: cur.start[1].id, val: cur.start[1].data },
+        { val: opt.startAfter },
+        opt.reverse,
+        init(tree.sort_fields)
+      )
+      if (cur.start[0] === "startAt") {
+        if ((reversed.end && comp > 0) || (reversed.end !== true && comp < 0)) {
+          delete opt.startAfter
+          opt[cur.start[0]] = cur.start[1].data
+        }
+      } else {
+        if (
+          (reversed.end && comp >= 0) ||
+          (reversed.end !== true && comp <= 0)
+        ) {
+          opt.startAfter = cur.start[1].data
+        }
+      }
+    } else {
+      opt[cur.start[0]] = cur.start[1].data
+    }
+  }
+
+  if (!isNil(cur.end)) {
+    if (!isNil(opt.endAt)) {
+      const comp = tree.comp(
+        { key: cur.end[1].id, val: cur.end[1].data },
+        { val: opt.endAt },
+        opt.reverse,
+        init(tree.sort_fields)
+      )
+      if (
+        (reversed.start && comp <= 0) ||
+        (reversed.start !== true && comp >= 0)
+      ) {
+        delete opt.endAt
+        opt[cur.end[0]] = cur.end[1].data
+      }
+    } else if (!isNil(opt.endBefore)) {
+      const comp = tree.comp(
+        { key: cur.end[1].id, val: cur.end[1].data },
+        { val: opt.endBefore },
+        opt.reverse,
+        init(tree.sort_fields)
+      )
+      if (cur.end[0] === "endAt") {
+        if (
+          (reversed.start && comp < 0) ||
+          (reversed.start !== true && comp > 0)
+        ) {
+          delete opt.endBefore
+          opt[cur.end[0]] = cur.end[1].data
+        }
+      } else {
+        if (
+          (reversed.start && comp <= 0) ||
+          (reversed.start !== true && comp >= 0)
+        ) {
+          opt.endBefore = cur.end[1].data
+        }
+      }
+    } else {
+      opt[cur.end[0]] = cur.end[1].data
+    }
+  }
+  return opt
+}
 const range = async (
   sort_fields,
   opt = {},
@@ -694,7 +845,8 @@ const range = async (
   kvs,
   SW,
   cursor = false,
-  _prefix = ""
+  _prefix = "",
+  cur = {}
 ) => {
   const kv = new KV(`${path.join("/")}/`, _KV(kvs, SW))
   if (sort_fields.length === 1 && sort_fields[0][1] === "desc") {
@@ -709,7 +861,8 @@ const range = async (
   )(sort_fields.length === 0 && _prefix === "" ? [idsorter] : sort_fields)}`
   await checkIndex(prefix, path, kvs, SW)
   const tree = new BPT(order, [...sort_fields, idsorter], kv, prefix)
-  return await tree.range(opt, cursor)
+  const _opt = modOpt(clone(opt), cur, tree)
+  return await tree.range(_opt, cursor)
 }
 
 const get = async (id, path, kvs, SW) => {
