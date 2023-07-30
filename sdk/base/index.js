@@ -691,7 +691,7 @@ class Base {
       addr = evm
     }
     if (isNil(addr) && !isNil(this.web3)) {
-      const accounts = await ethereum.request({ method: "eth_accounts" })
+      const accounts = await ethereum.request({ method: "eth_requestAccounts" })
       addr = accounts[0]
     }
     opt.wallet = wallet
@@ -779,7 +779,7 @@ class Base {
       signer = wallet.getAddressString()
       pkey = wallet.getPrivateKey()
     } else if (!isNil(this.web3)) {
-      const accounts = await ethereum.request({ method: "eth_accounts" })
+      const accounts = await ethereum.request({ method: "eth_requestAccounts" })
       signer = accounts[0]
     }
     if (isNil(signer)) throw Error("No wallet to sign")
