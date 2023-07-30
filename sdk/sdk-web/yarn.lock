@@ -4214,10 +4214,10 @@ weavedb-base@^0.28.3:
     pako "^2.1.0"
     ramda "^0.28.0"
 
-weavedb-contracts@^0.28.17:
-  version "0.28.17"
-  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.28.17.tgz#4b605d4e29f1c7831c67955b14e84712217d368a"
-  integrity sha512-SvA8cl8Ey9Ymd4rW+R2bNpAZfe5J3AOkMbbKHUAy5zbqo+NETtiqQujgwWtdLtSsSEPo9XLC67+C+JGa5UtywQ==
+weavedb-contracts@^0.28.19:
+  version "0.28.19"
+  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.28.19.tgz#b969cb57805d39a9d717654256990caa4dab8f79"
+  integrity sha512-51IiUkbE92I/wJRrz5BwbpZgccJwmOfr24kiSKqL3Ncq2z5iCiKIs+DM3nFsRBeIbT4GYil+83wok9ElxvAKbw==
   dependencies:
     "@noble/curves" "^0.9.0"
     "@peculiar/webcrypto" "^1.4.3"

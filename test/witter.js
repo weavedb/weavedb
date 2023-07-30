@@ -30,6 +30,12 @@ const tests = {
       "posts",
       `${aid}`
     )
+    await db.set(
+      { reposts: 0, likes: 0, comments: 0, owner: "b" },
+      "posts",
+      `aaa2`
+    )
+
     await db.set(like, "likes", `${aid}:${user}`)
 
     expect((await db.get("posts", `${aid}`)).likes).to.eql(1)
@@ -131,8 +137,9 @@ const tests = {
     }
     await db.addTrigger(trg4, "follows", { ar: arweave_wallet })
     await db.set({ from: "c", to: "a" }, "follows", "c:a")
+    await db.set({ from: "c", to: "b" }, "follows", "c:b")
     expect((await db.get("users", "a")).followers).to.eql(1)
-    expect((await db.get("users", "c")).following).to.eql(1)
+    expect((await db.get("users", "c")).following).to.eql(2)
 
     const trg5 = {
       key: "last",
@@ -170,6 +177,19 @@ const tests = {
       "posts",
       "eee"
     )
+    await db.set(
+      {
+        repost: "",
+        reply_to: "aaa2",
+        reposts: 0,
+        likes: 0,
+        comments: 0,
+        owner: "c",
+      },
+      "posts",
+      "fff"
+    )
+
     const trg6 = {
       key: "timeline",
       on: "create",
@@ -199,7 +219,21 @@ const tests = {
             ["last", "desc"],
           ],
         ],
-        ["let", "to", ["pluck", "from", { var: "followers" }]],
+        ["get", "received", ["timeline", ["aid", "==", { var: "aid" }]]],
+        [
+          "let",
+          "receivers",
+          [
+            ["compose", ["flatten"], ["pluck", "broadcast"]],
+            { var: "received" },
+          ],
+        ],
+        ["let", "new_receivers", ["pluck", "from", { var: "followers" }]],
+        [
+          "let",
+          "to",
+          ["difference", { var: "new_receivers" }, { var: "receivers" }],
+        ],
         [
           "do",
           [
@@ -226,6 +260,8 @@ const tests = {
                     aid: { var: "aid" },
                     date: { var: "data.after.date" },
                     broadcast: { var: "to" },
+                    receivers: { var: "receivers" },
+                    received: { var: "received" },
                   },
                   "timeline",
                   { var: "data.after.id" },
@@ -241,14 +277,24 @@ const tests = {
     }
 
     await db.addTrigger(trg6, "posts", { ar: arweave_wallet })
+
     await db.addIndex(
       [
         ["to", "asc"],
-        ["last", "desc"],
+        ["from", "asc"],
       ],
       "follows",
       { ar: arweave_wallet }
     )
+    await db.addIndex(
+      [
+        ["from", "asc"],
+        ["to", "asc"],
+      ],
+      "follows",
+      { ar: arweave_wallet }
+    )
+
     await db.set(
       {
         repost: "aaa",
@@ -263,7 +309,25 @@ const tests = {
       "posts",
       `ddd`
     )
-    console.log(await db.get("timeline"))
+    await db.set(
+      {
+        repost: "aaa",
+        reply_to: "",
+        reposts: 0,
+        likes: 0,
+        comments: 0,
+        owner: "b",
+        id: "repto2",
+        date: db.ts(),
+      },
+      "posts",
+      `ggg`
+    )
+    const tl = await db.get("timeline")
+    for (let v of tl) {
+      console.log(v)
+      console.log(v.broadcast)
+    }
   },
 }
 

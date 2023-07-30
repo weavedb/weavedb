@@ -3,6 +3,8 @@ fpjson = fpjson.default || fpjson
 const jsonLogic = require("json-logic-js")
 const md5 = require("./md5")
 const {
+  sortBy,
+  identity,
   reverse,
   indexOf,
   prop,
@@ -409,9 +411,13 @@ const _parser = query => {
   let _startAfter = null
   let _endAt = null
   let _endBefore = null
+  let _startAtCursor = null
+  let _startAfterCursor = null
+  let _endAtCursor = null
+  let _endBeforeCursor = null
   let _array_contains = null
   let _array_contains_any = null
-  for (const v of opt) {
+  for (const v of clone(opt)) {
     if (is(Number)(v)) {
       if (isNil(q.limit)) {
         if (v > 1000) err(`limit cannot be above 1000 [${v}]`)
@@ -428,36 +434,76 @@ const _parser = query => {
       if (v.length === 0) {
         err(`empty query option []`)
       } else if (v[0] === "startAt") {
-        if (!isNil(_startAt) || !isNil(_startAfter)) {
+        if (
+          !isNil(_startAt) ||
+          !isNil(_startAfter) ||
+          !isNil(_startAtCursor) ||
+          !isNil(_startAfterCursor)
+        ) {
           err(`only one startAt/startAfter is allowed`)
         } else if (v.length <= 1) {
           err(`startAt has no value`)
         } else {
-          _startAt = v
+          if (v[1].__cursor__) {
+            _startAtCursor = v
+            _startAtCursor[1].data.__id__ = _startAtCursor[1].id
+          } else {
+            _startAt = v
+          }
         }
       } else if (v[0] === "startAfter") {
-        if (!isNil(_startAt) || !isNil(_startAfter)) {
+        if (
+          !isNil(_startAt) ||
+          !isNil(_startAfter) ||
+          !isNil(_startAtCursor) ||
+          !isNil(_startAfterCursor)
+        ) {
           err(`only one startAt/startAfter is allowed`)
         } else if (v.length <= 1) {
           err(`startAfter has no value`)
         } else {
-          _startAfter = v
+          if (v[1].__cursor__) {
+            _startAfterCursor = v
+            _startAfterCursor[1].data.__id__ = _startAfterCursor[1].id
+          } else {
+            _startAfter = v
+          }
         }
       } else if (v[0] === "endAt") {
-        if (!isNil(_endAt) || !isNil(_endBefore)) {
+        if (
+          !isNil(_endAt) ||
+          !isNil(_endBefore) ||
+          !isNil(_endAtCursor) ||
+          !isNil(_endBeforeCursor)
+        ) {
           err(`only one endAt/endBefore is allowed`)
         } else if (v.length <= 1) {
           err(`endAt has no value`)
         } else {
-          _endAt = v
+          if (v[1].__cursor__) {
+            _endAtCursor = v
+            _endAtCursor[1].data.__id__ = _endAtCursor[1].id
+          } else {
+            _endAt = v
+          }
         }
       } else if (v[0] === "endBefore") {
-        if (!isNil(_endAt) || !isNil(_endBefore)) {
+        if (
+          !isNil(_endAt) ||
+          !isNil(_endBefore) ||
+          !isNil(_endAtCursor) ||
+          !isNil(_endBeforeCursor)
+        ) {
           err(`only one endAt/endBefore is allowed`)
         } else if (v.length <= 1) {
           err(`endBefore has no value`)
         } else {
-          _endBefore = v
+          if (v[1].__cursor__) {
+            _endBeforeCursor = v
+            _endBeforeCursor[1].data.__id__ = _endBeforeCursor[1].id
+          } else {
+            _endBefore = v
+          }
         }
       } else if (v.length === 3) {
         if (
@@ -571,7 +617,10 @@ const _parser = query => {
   q.limit ??= 1000
   q.start = _startAt ?? _startAfter ?? null
   q.end = _endAt ?? _endBefore ?? null
+  q.startCursor = _startAtCursor ?? _startAfterCursor ?? null
+  q.endCursor = _endAtCursor ?? _endBeforeCursor ?? null
   q.sort = _sort ?? []
+  q.reverse = { start: false, end: false }
   q.array = _filter["array-contains"] ?? _filter["array-contains-any"] ?? null
   q.equals = _filter["=="]
   q.range =
@@ -651,19 +700,23 @@ const checkStartEnd = q => {
         end[1] ??= {}
         if (end[0] === "endAt") end[0] = "endBefore"
         end[1][v[0]] = v[2]
+        q.reverse.end = true
       } else if (v[1] === "<=") {
         end ??= ["endAt"]
         end[1] ??= {}
         end[1][v[0]] = v[2]
+        q.reverse.end = true
       } else if (v[1] === ">") {
         start ??= ["startAfter"]
         start[1] ??= {}
         if (start[0] === "startAt") start[0] = "startAfter"
         start[1][v[0]] = v[2]
+        q.reverse.start = true
       } else if (v[1] === ">=") {
         start ??= ["startAt"]
         start[1] ??= {}
         start[1][v[0]] = v[2]
+        q.reverse.start = true
       }
     }
   }
@@ -729,7 +782,7 @@ const checkSort = q => {
 const buildQueries = q => {
   q.queries = []
   if (!isNil(q.array)) {
-    let opt = {}
+    let opt = { limit: q.limit }
     if (!isNil(q.start)) opt[q.start[0]] = q.start[1]
     if (!isNil(q.end)) opt[q.end[0]] = q.end[1]
     if (q.array[1] === "array-contains-any") {
@@ -746,47 +799,58 @@ const buildQueries = q => {
   } else if (includes(q.range?.[0]?.[1], ["!=", "not-in", "in"])) {
     const op = q.range?.[0]?.[1]
     if (op === "!=") {
+      let opt1 = {}
       let end = clone(q.end)
       end ??= ["endBefore"]
       end[1] ??= {}
       if (end[0] !== "endBefore") end[0] = "endBefore"
       end[1][q.range[0][0]] = q.range[0][2]
-      let opt1 = { endBefore: end[1] }
+      opt1.endBefore = end[1]
       if (!isNil(q.start)) opt1[q.start[0]] = q.start[1]
-
+      let opt2 = {}
       let start = clone(q.start)
       start ??= ["startAfter"]
       start[1] ??= {}
       if (start[0] !== "startAfter") start[0] = "startAfter"
       start[1][q.range[0][0]] = q.range[0][2]
-      let opt2 = { startAfter: start[1] }
+      opt2.startAfter = start[1]
       if (!isNil(q.end)) opt2[q.end[0]] = q.end[1]
       q.queries = [{ opt: opt1 }, { opt: opt2 }]
+      q.reverse.start = true
+      q.reverse.end = true
+      q.sortRange = true
     } else if (op === "in") {
-      for (let v of q.range[0][2]) {
+      let __ranges = sortBy(identity)(q.range[0][2])
+      for (let v of __ranges) {
+        let opt = {}
         let start = clone(q.start)
         start ??= ["startAt"]
         start[1] ??= {}
         start[1][q.range[0][0]] = v
+        opt.startAt = start[1]
         let end = clone(q.end)
         end ??= ["endAt"]
         end[1] ??= {}
         end[1][q.range[0][0]] = v
-        q.queries.push({ opt: { startAt: start[1], endAt: end[1] } })
+        opt.endAt = end[1]
+        q.queries.push({ opt })
+        q.sortRange = true
+        q.reverse.start = true
+        q.reverse.end = true
       }
     } else if (op === "not-in") {
       let i = 0
       let prev = null
-      for (let v of q.range[0][2]) {
+      let __ranges = sortBy(identity)(q.range[0][2])
+      for (let v of __ranges) {
         let opt = {}
         let start = clone(q.start)
         if (i !== 0) {
-          start ??= ["startAt"]
+          start ??= ["startAfter"]
           start[1] ??= {}
-          start[1][q.range[0][0]] = v
+          start[1][q.range[0][0]] = prev
         }
         if (!isNil(start)) opt[start[0]] = start[1]
-
         let end = clone(q.end)
         end ??= ["endBefore"]
         end[1] ??= {}
@@ -808,6 +872,9 @@ const buildQueries = q => {
         prev = v
         i++
       }
+      q.sortRange = true
+      q.reverse.start = true
+      q.reverse.end = true
     }
     q.type = q.sortByTail ? "pranges" : "ranges"
   } else {

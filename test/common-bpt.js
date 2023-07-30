@@ -168,6 +168,7 @@ const tests = {
     expect(await db.get("ppl", ["age"], ["age", "!=", 30])).to.eql([Bob, John])
 
     // where in
+
     expect(await db.get("ppl", ["age", "in", [20, 30]])).to.eql([
       Bob,
       Alice,
@@ -260,6 +261,245 @@ const tests = {
         ["weight", "desc"]
       )
     ).to.eql([Beth])
+
+    // array-contains with limit
+    expect(await db.get("ppl", ["letters", "array-contains", "b"], 1)).to.eql([
+      Beth,
+    ])
+
+    const alice = await db.cget("ppl", "Alice")
+    const bob = await db.cget("ppl", "Bob")
+    const beth = await db.cget("ppl", "Beth")
+    const john = await db.cget("ppl", "John")
+    // cursor
+    expect(await db.get("ppl", ["age"], ["startAfter", alice])).to.eql([
+      Beth,
+      John,
+    ])
+
+    expect(await db.get("ppl", ["age", ">", 20], ["startAfter", alice])).to.eql(
+      [Beth, John]
+    )
+
+    expect(
+      await db.get("ppl", ["age", ">=", 20], ["startAfter", alice])
+    ).to.eql([Beth, John])
+
+    expect(await db.get("ppl", ["age", ">", 30], ["startAt", alice])).to.eql([
+      John,
+    ])
+
+    expect(await db.get("ppl", ["age"], ["endBefore", alice])).to.eql([Bob])
+
+    expect(await db.get("ppl", ["age", "<=", 29], ["endBefore", beth])).to.eql([
+      Bob,
+    ])
+
+    expect(await db.get("ppl", ["age", ">=", 20], ["endBefore", beth])).to.eql([
+      Bob,
+      Alice,
+    ])
+
+    expect(await db.get("ppl", ["age", ">=", 20], ["endAt", alice])).to.eql([
+      Bob,
+      Alice,
+    ])
+
+    // array-contains with cursor
+    await db.addIndex([["letters", "array"], ["name"]], "ppl", {
+      ar: arweave_wallet,
+    })
+
+    expect(
+      await db.get(
+        "ppl",
+        ["name", ">", "Beth"],
+        ["letters", "array-contains", "b"],
+        ["startAfter", beth]
+      )
+    ).to.eql([Bob])
+
+    // array-contains-any with cursor
+    expect(
+      await db.get(
+        "ppl",
+        ["letters", "array-contains-any", ["b", "j"]],
+        ["startAfter", beth]
+      )
+    ).to.eql([Bob, John])
+
+    // where in with cursor
+    expect(
+      await db.get("ppl", ["age", "in", [20, 30]], ["startAfter", alice])
+    ).to.eql([Beth])
+
+    // where not-in with cursor
+    expect(
+      await db.get(
+        "ppl",
+        ["age"],
+        ["age", "not-in", [20, 30]],
+        ["startAfter", john]
+      )
+    ).to.eql([])
+
+    // where =! with cursor
+    expect(
+      await db.get("ppl", ["age"], ["age", "!=", 30], ["startAfter", bob])
+    ).to.eql([John])
+
+    // desc/reverse tests
+    expect(
+      await db.get(
+        "ppl",
+        ["age", "desc"],
+        ["age", ">", 20],
+        ["startAfter", john]
+      )
+    ).to.eql([Beth, Alice])
+
+    expect(
+      await db.get(
+        "ppl",
+        ["age", "desc"],
+        ["age", ">=", 30],
+        ["startAt", beth],
+        ["endAt", beth]
+      )
+    ).to.eql([Beth])
+
+    expect(
+      await db.get("ppl", ["age", "desc"], ["age", "<", 40], ["startAt", alice])
+    ).to.eql([Alice, Bob])
+
+    expect(
+      await db.get(
+        "ppl",
+        ["age", "desc"],
+        ["age", "<=", 40],
+        ["startAfter", alice]
+      )
+    ).to.eql([Bob])
+    expect(
+      await db.get(
+        "ppl",
+        ["age", "desc"],
+        ["age", "<", 40],
+        ["startAfter", alice]
+      )
+    ).to.eql([Bob])
+
+    expect(
+      await db.get(
+        "ppl",
+        ["age", "desc"],
+        ["age", ">", 20],
+        ["endBefore", alice]
+      )
+    ).to.eql([John, Beth])
+
+    expect(
+      await db.get("ppl", ["age", "desc"], ["age", ">=", 30], ["endAt", alice])
+    ).to.eql([John, Beth, Alice])
+
+    expect(
+      await db.get("ppl", ["age", "desc"], ["age", "<", 40], ["endAt", bob])
+    ).to.eql([Beth, Alice, Bob])
+
+    expect(
+      await db.get(
+        "ppl",
+        ["age", "desc"],
+        ["age", "<=", 40],
+        ["endBefore", bob]
+      )
+    ).to.eql([John, Beth, Alice])
+
+    // in with desc
+    expect(await db.get("ppl", ["age", "asc"], ["age", "in", [40, 20]])).to.eql(
+      [Bob, John]
+    )
+    expect(
+      await db.get("ppl", ["age", "desc"], ["age", "in", [40, 20]])
+    ).to.eql([John, Bob])
+
+    expect(
+      await db.get(
+        "ppl",
+        ["age", "desc"],
+        ["age", "in", [40, 20]],
+        ["startAfter", john]
+      )
+    ).to.eql([Bob])
+    expect(
+      await db.get(
+        "ppl",
+        ["age", "desc"],
+        ["age", "in", [40, 20]],
+        ["startAt", john],
+        ["endBefore", bob]
+      )
+    ).to.eql([John])
+    expect(await db.get("ppl", ["age", "not-in", [40, 20]])).to.eql([
+      Alice,
+      Beth,
+    ])
+
+    expect(
+      await db.get("ppl", ["age", "desc"], ["age", "not-in", [40, 20]])
+    ).to.eql([Beth, Alice])
+
+    expect(
+      await db.get(
+        "ppl",
+        ["age", "desc"],
+        ["age", "not-in", [40, 20]],
+        ["startAfter", beth]
+      )
+    ).to.eql([Alice])
+
+    expect(
+      await db.get(
+        "ppl",
+        ["age", "desc"],
+        ["age", "!=", 30],
+        ["startAfter", john]
+      )
+    ).to.eql([Bob])
+
+    await db.addIndex([["letters", "array"], ["age"]], "ppl", {
+      ar: arweave_wallet,
+    })
+
+    expect(
+      await db.get(
+        "ppl",
+        ["age", "desc"],
+        ["letters", "array-contains", "b"],
+        ["age", "in", [20, 40]],
+        ["startAt", bob]
+      )
+    ).to.eql([Bob])
+
+    await db.addIndex(
+      [
+        ["letters", "array"],
+        ["age", "desc"],
+      ],
+      "ppl",
+      {
+        ar: arweave_wallet,
+      }
+    )
+    expect(
+      await db.get(
+        "ppl",
+        ["age", "desc"],
+        ["letters", "array-contains-any", ["b", "j"]],
+        ["age", "in", [20, 40]],
+        ["startAt", john]
+      )
+    ).to.eql([John, Beth, Bob])
   },
 
   "should update nested object with dot notation": async ({
