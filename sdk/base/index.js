@@ -163,6 +163,10 @@ class Base {
       "getBundlers",
     ]
   }
+  data(key) {
+    return { __op: "data", key }
+  }
+
   signer() {
     return { __op: "signer" }
   }
@@ -300,7 +304,8 @@ class Base {
       jobID,
       multisigs,
       linkedAccount,
-      noauth
+      noauth,
+      data
     if (!isNil(opt)) {
       ;({
         jobID,
@@ -318,6 +323,7 @@ class Base {
         multisigs,
         linkedAccount,
         noauth,
+        data,
       } = opt)
     }
     if (!isNil(linkedAccount)) wallet = linkedAccount
@@ -335,6 +341,7 @@ class Base {
       jobID,
       multisigs,
       onDryWrite,
+      data,
     ]
     if ((func === "bundle" && this.type === 3) || noauth || this.noauth) {
       return await this.writeWithoutWallet(
@@ -346,7 +353,8 @@ class Base {
         relay,
         jobID,
         multisigs,
-        onDryWrite
+        onDryWrite,
+        data
       )
     } else if (
       isNil(intmax) &&
@@ -389,7 +397,8 @@ class Base {
           relay,
           jobID,
           multisigs,
-          onDryWrite
+          onDryWrite,
+          data
         )
   }
 
@@ -737,14 +746,10 @@ class Base {
     if (!isNil(expiry)) param.expiry = expiry
     if (!isNil(linkTo)) param.linkTo = linkTo
     const tx = await this.addAddressLink(param, { nonce, ...opt })
-    if (tx.success) {
-      identity.signer = tx.signer
-      identity.type = type
-      identity.linkedAccount = linkTo || tx.signer
-      return { tx, identity }
-    } else {
-      return null
-    }
+    identity.signer = tx.signer
+    identity.type = type
+    identity.linkedAccount = linkTo || tx.signer
+    return { tx, identity }
   }
 
   async addAddressLink(query, opt) {
@@ -767,7 +772,8 @@ class Base {
     relay,
     jobID,
     multisigs,
-    onDryWrite
+    onDryWrite,
+    __data__
   ) {
     let signer, caller, pkey
     if (!isNil(privateKey)) {
@@ -820,14 +826,14 @@ class Base {
           version: "V4",
         })
 
-    const param = mergeLeft(extra, {
+    let param = mergeLeft(extra, {
       function: func,
       query,
       signature,
       nonce,
       caller,
     })
-
+    if (!isNil(__data__)) param.data = __data__
     if (!isNil(jobID)) param.jobID = jobID
     if (!isNil(multisigs)) param.multisigs = multisigs
     bundle ||= this.network === "mainnet"
@@ -845,7 +851,8 @@ class Base {
     relay,
     jobID,
     multisigs,
-    onDryWrite
+    onDryWrite,
+    __data__
   ) {
     let addr = ii.toJSON()[0]
     const isaddr = !isNil(addr)
@@ -885,6 +892,7 @@ class Base {
       caller: addr,
       type: "ed25519",
     })
+    if (!isNil(__data__)) param.data = __data__
     if (!isNil(jobID)) param.jobID = jobID
     if (!isNil(multisigs)) param.multisigs = multisigs
     return await this.write(func, param, dryWrite, bundle, relay, onDryWrite)
@@ -901,7 +909,8 @@ class Base {
     relay,
     jobID,
     multisigs,
-    onDryWrite
+    onDryWrite,
+    __data__
   ) {
     const wallet = is(Object, ar) && ar.walletName === "ArConnect" ? ar : null
     let addr = null
@@ -952,6 +961,7 @@ class Base {
       pubKey,
       type: "rsa256",
     })
+    if (!isNil(__data__)) param.data = __data__
     if (!isNil(jobID)) param.jobID = jobID
     if (!isNil(multisigs)) param.multisigs = multisigs
     return await this.write(func, param, dryWrite, bundle, relay, onDryWrite)
@@ -968,7 +978,8 @@ class Base {
     relay,
     jobID,
     multisigs,
-    onDryWrite
+    onDryWrite,
+    __data__
   ) {
     const wallet = is(Object, intmax) ? intmax : null
     let addr = null
@@ -1034,6 +1045,7 @@ class Base {
             type: "secp256k1-2",
           }
     )
+    if (!isNil(__data__)) param.data = __data__
     if (!isNil(jobID)) param.jobID = jobID
     if (!isNil(multisigs)) param.multisigs = multisigs
     return await this.write(func, param, dryWrite, bundle, relay, onDryWrite)
@@ -1140,9 +1152,11 @@ class Base {
     relay,
     jobID,
     multisigs,
-    onDryWrite
+    onDryWrite,
+    __data__
   ) {
     const param = mergeLeft(extra, { function: func, query })
+    if (!isNil(__data__)) param.data = __data__
     if (!isNil(jobID)) param.jobID = jobID
     if (!isNil(multisigs)) param.multisigs = multisigs
     bundle ||= this.network === "mainnet"

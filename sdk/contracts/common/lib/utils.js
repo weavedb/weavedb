@@ -31,7 +31,14 @@ const getField = (data, path) => {
   }
 }
 
-const mergeData = (_data, new_data, overwrite = false, signer, SmartWeave) => {
+const mergeData = (
+  _data,
+  new_data,
+  extra = {},
+  overwrite = false,
+  signer,
+  SmartWeave
+) => {
   let exists = true
   if (isNil(_data.__data) || overwrite) {
     _data.__data = {}
@@ -41,7 +48,9 @@ const mergeData = (_data, new_data, overwrite = false, signer, SmartWeave) => {
     const path = exists ? k.split(".") : [k]
     const [field, obj] = getField(_data.__data, path)
     const d = new_data[k]
-    if (is(Object)(d) && d.__op === "arrayUnion") {
+    if (is(Object)(d) && d.__op === "data") {
+      obj[field] = extra[d.key] ?? null
+    } else if (is(Object)(d) && d.__op === "arrayUnion") {
       if (complement(is)(Array, d.arr)) err()
       if (complement(is)(Array, obj[field])) obj[field] = []
       obj[field] = concat(obj[field], d.arr)
@@ -281,7 +290,10 @@ const parse = async (
     ]) &&
     !includes(signer)(owner)
   ) {
-    err("caller is not contract owner", contractErr)
+    err(
+      `caller[${signer}] is not contract owner[${owner.join(", ")}]`,
+      contractErr
+    )
   }
   return { data, query, new_data, path, _data, schema, col, next_data }
 }

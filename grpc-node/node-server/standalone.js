@@ -60,7 +60,10 @@ class Standalone {
       `0.0.0.0:${this.port}`,
       grpc.ServerCredentials.createInsecure(),
       () => {
-        addReflection(server, "./static_codegen/descriptor_set.bin")
+        addReflection(
+          server,
+          path.resolve(__dirname, "./static_codegen/descriptor_set.bin")
+        )
         server.start()
       }
     )
@@ -160,14 +163,15 @@ class Standalone {
     this.tx_count = (await this.wal.get("txs", ["id", "desc"], 1))[0]?.id ?? 0
     console.log(`${this.tx_count} txs has been cached`)
     const state = { owner: this.conf.owner, secure: this.conf.secure ?? true }
+    const dir = this.conf.cacheDir ?? path.resolve(__dirname, "cache")
     this.db = new DB({
       type: 3,
       cache: {
         initialize: async obj => {
           obj.lmdb = open({
             path: path.resolve(
-              __dirname,
-              "cache",
+              dir,
+              "rollup",
               `${this.conf.dbname ?? "weavedb"}${
                 isNil(this.conf.contractTxId)
                   ? ""
@@ -209,6 +213,7 @@ class Standalone {
     if (!isNil(contractTxId)) {
       console.log(`contractTxId: ${contractTxId}`)
       this.warp = new Warp({
+        lmdb: { dir: this.conf.cacheDir ?? null },
         type: 3,
         contractTxId: contractTxId,
         remoteStateSyncEnabled: false,
