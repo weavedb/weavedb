@@ -123,6 +123,7 @@ class Standalone {
   }
   async initDB() {
     console.log(`Owner Account: ${this.conf.owner}`)
+    const dir = this.conf.cacheDir ?? path.resolve(__dirname, "cache")
     this.wal = new DB({
       type: 3,
       noauth: true,
@@ -130,8 +131,8 @@ class Standalone {
         initialize: async obj => {
           obj.lmdb_wal = open({
             path: path.resolve(
-              __dirname,
-              "cache",
+              dir,
+              "rollup",
               `${this.conf.dbname ?? "weavedb"}${
                 isNil(this.conf.contractTxId)
                   ? ""
@@ -163,7 +164,6 @@ class Standalone {
     this.tx_count = (await this.wal.get("txs", ["id", "desc"], 1))[0]?.id ?? 0
     console.log(`${this.tx_count} txs has been cached`)
     const state = { owner: this.conf.owner, secure: this.conf.secure ?? true }
-    const dir = this.conf.cacheDir ?? path.resolve(__dirname, "cache")
     this.db = new DB({
       type: 3,
       cache: {
@@ -213,7 +213,7 @@ class Standalone {
     if (!isNil(contractTxId)) {
       console.log(`contractTxId: ${contractTxId}`)
       this.warp = new Warp({
-        lmdb: { dir: this.conf.cacheDir ?? null },
+        lmdb: { dir: path.resolve(dir, "warp") },
         type: 3,
         contractTxId: contractTxId,
         remoteStateSyncEnabled: false,
