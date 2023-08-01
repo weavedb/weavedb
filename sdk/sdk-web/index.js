@@ -314,7 +314,9 @@ class SDK extends Base {
           contractTxId =>
             new this.LmdbCache({
               ...defaultCacheOptions,
-              dbLocation: `./cache/warp/kv/lmdb/${contractTxId}`,
+              dbLocation: `${
+                this.lmdb.dir ?? "./cache"
+              }/warp/kv/lmdb/${contractTxId}`,
             })
         )
       }
@@ -323,19 +325,19 @@ class SDK extends Base {
           .useStateCache(
             new this.LmdbCache({
               ...this.Warp.defaultCacheOptions,
-              dbLocation: `./cache/warp/state`,
+              dbLocation: `${this.lmdb.dir ?? "./cache"}/warp/state`,
               ...(this.lmdb.state || {}),
             })
           )
           .useContractCache(
             new this.LmdbCache({
               ...this.Warp.defaultCacheOptions,
-              dbLocation: `./cache/warp/contracts`,
+              dbLocation: `${this.lmdb.dir ?? "./cache"}/warp/contracts`,
               ...(this.lmdb.contracts || {}),
             }),
             new this.LmdbCache({
               ...this.Warp.defaultCacheOptions,
-              dbLocation: `./cache/warp/src`,
+              dbLocation: `${this.lmdb.dir ?? "./cache"}/warp/src`,
               ...(this.lmdb.src || {}),
             })
           )
@@ -574,6 +576,7 @@ class SDK extends Base {
   }
 
   async write(func, param, dryWrite, bundle, relay = false, onDryWrite) {
+    delete param.data
     if (JSON.stringify(param).length > 3900) {
       return {
         nonce: param.nonce,

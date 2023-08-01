@@ -41,13 +41,12 @@ const relay = async (
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
     err("only bundle queries are allowed")
   }
-
   let jobID = head(action.input.query)
   let input = nth(1, action.input.query)
   let query = nth(2, action.input.query)
   let relayer = null
   const relayers = state.relayers || {}
-  if (isNil(relayers[jobID])) err("relayer jobID doesn't exist")
+  if (isNil(relayers[jobID])) err(`relayer jobID [${jobID}] doesn't exist`)
   let original_signer = null
   if (relayers[jobID].internalWrites !== true) {
     if (isNil(signer)) {
@@ -64,8 +63,7 @@ const relay = async (
   } else {
     relayer = action.caller
   }
-
-  if (input.jobID !== jobID) err("the wrong jobID")
+  if (input.jobID !== jobID) err(`jobID mismatch [${input.jobID}|${jobID}]`)
   let action2 = { input, relayer, extra: query, jobID }
   if (!isNil(relayers[jobID].relayers)) {
     const allowed_relayers = map(v => (/^0x.+$/.test(v) ? toLower(v) : v))(

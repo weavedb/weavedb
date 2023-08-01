@@ -15,6 +15,16 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.28.12-alpha (August 1, 2023)
+
+#### Source Transaction Id
+
+[Pn8N5kerhwi6U9mYk4JQ6mVPoFGdMVzQDZiWzNtInqM](https://sonar.warp.cc/#/app/source/Pn8N5kerhwi6U9mYk4JQ6mVPoFGdMVzQDZiWzNtInqM)
+
+#### Added Features
+
+-  [data()](/docs/sdk/queries#data)
+
 ### v0.28.11-alpha (July 30, 2023)
 
 #### Source Transaction Id
