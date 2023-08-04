@@ -6,6 +6,7 @@ const protoLoader = require("@grpc/proto-loader")
 const { addReflection } = require("grpc-server-reflection")
 const PROTO_PATH = __dirname + "/weavedb.proto"
 const {
+  last,
   keys,
   isNil,
   is,
@@ -44,6 +45,9 @@ class Standalone {
     this.bundler = EthCrypto.createIdentity()
     this.kvs = {}
     this.kvs_wal = {}
+    this.kvs_plg = {}
+    this.dir = this.conf.cacheDir ?? path.resolve(__dirname, "cache")
+    this.plugins = {}
     console.log(`Bundler: ${this.bundler.address}`)
   }
   async init() {
@@ -123,7 +127,175 @@ class Standalone {
   }
   async initDB() {
     console.log(`Owner Account: ${this.conf.owner}`)
-    const dir = this.conf.cacheDir ?? path.resolve(__dirname, "cache")
+    await this.initWAL()
+    await this.initOffchain()
+    await this.initWarp()
+    await this.initPlugins()
+  }
+  async initPlugins() {
+    this.plugins.notifications = new DB({
+      type: 3,
+      noauth: true,
+      cache: {
+        initialize: async obj => {
+          obj.lmdb_plg_notifications = open({
+            path: path.resolve(
+              this.dir,
+              "plugins",
+              `${this.conf.dbname ?? "weavedb"}${
+                isNil(this.conf.contractTxId)
+                  ? ""
+                  : `-${this.conf.contractTxId}`
+              }-notifications`
+            ),
+          })
+          let saved_state = await obj.lmdb_plg_notifications.get("state")
+          if (!isNil(saved_state)) obj.state = saved_state
+        },
+        onWrite: async (tx, obj, param) => {
+          let prs = [obj.lmdb_plg_notifications.put("state", tx.state)]
+          for (const k in tx.result.kvs) {
+            this.kvs_plg[k] = tx.result.kvs[k]
+            prs.push(obj.lmdb_plg_notifications.put(k, tx.result.kvs[k]))
+          }
+          Promise.all(prs).then(() => {})
+        },
+        get: async (key, obj) => {
+          let val = this.kvs_plg[key]
+          if (typeof val === "undefined")
+            val = await obj.lmdb_plg_notifications.get(key)
+          return val
+        },
+      },
+      state: { owner: this.conf.owner, secure: false },
+    })
+    await this.plugins.notifications.initialize()
+    console.log("plugin initialized")
+    const last_wal =
+      (await this.plugins.notifications.get("conf", "notifications"))
+        ?.last_wal ?? null
+    console.log(JSON.stringify(last_wal))
+    console.log(`last WAL: ${last_wal}`)
+    await this.getWAL(last_wal)
+  }
+  async execPlugin(v, arts = {}) {
+    const func = v.data.input.function
+    const data = v.data.input.query[0]
+    const col = v.data.input.query[1]
+    if (func === "set" && col === "likes") {
+      const from = data.user
+      arts[data.aid] ??= await this.db.get("posts", data.aid)
+      const article = arts[data.aid]
+      const to = article.owner
+      const date = data.date
+      const id = md5(`like:${from}:${to}:${article.id}:${date}`)
+      await this.plugins.notifications.set(
+        {
+          wid: v.data.id,
+          type: "like",
+          id,
+          from,
+          to,
+          date,
+          aid: article.id,
+          viewed: false,
+        },
+        "notifications",
+        id
+      )
+      console.log(
+        `[${to.slice(0, 5)}] ${article.id} liked by ${from.slice(
+          0,
+          5
+        )} at ${date}`
+      )
+    }
+    if (func === "set" && col === "follows") {
+      const from = data.from
+      const to = data.to
+      const date = data.date
+      const id = md5(`follow:${from}:${to}:${date}`)
+      await this.plugins.notifications.set(
+        { wid: v.data.id, type: "follow", id, from, to, date, viewed: false },
+        "notifications",
+        id
+      )
+      console.log(
+        `[${to.slice(0, 5)}] followed by ${from.slice(0, 5)} at ${date}`
+      )
+    }
+    if (func === "set" && col === "posts") {
+      if (data.repost !== "") {
+        arts[data.aid] ??= await this.db.get("posts", data.repost)
+        const article = arts[data.aid]
+        const from = data.owner
+        const to = article.owner
+        const date = data.date
+        const id = md5(`repost:${from}:${to}:${article.id}:${data.id}:${date}`)
+        await this.plugins.notifications.set(
+          {
+            wid: v.data.id,
+            type: "repost",
+            id,
+            from,
+            to,
+            date,
+            aid: article.id,
+            rid: data.id,
+            viewed: false,
+          },
+          "notifications",
+          id
+        )
+        console.log(
+          `[${to.slice(0, 5)}] reposted by ${from.slice(0, 5)} at ${date}`
+        )
+      } else if (data.reply_to !== "") {
+        arts[data.reply_to] ??= await this.db.get("posts", data.reply_to)
+        const article = arts[data.reply_to]
+        const from = data.owner
+        const to = article.owner
+        const date = data.date
+        const id = md5(`reply:${from}:${to}:${article.id}:${data.id}:${date}`)
+        await this.plugins.notifications.set(
+          {
+            wid: v.data.id,
+            type: "reply",
+            id,
+            from,
+            to,
+            date,
+            aid: article.id,
+            rid: data.id,
+            viewed: false,
+          },
+          "notifications",
+          id
+        )
+        console.log(
+          `[${to.slice(0, 5)}] replied by ${from.slice(0, 5)} at ${date}`
+        )
+      }
+    }
+  }
+  async getWAL(next = null) {
+    const limit = 10
+    let params = ["txs", ["id"]]
+    if (!isNil(next)) params.push(["startAfter", next])
+    let arts = {}
+    const txs = await this.wal.cget(...params, limit)
+    for (let v of txs) await this.execPlugin(v, arts)
+    if (txs.length > 0) {
+      const last_wal = last(txs).data.id
+      await this.plugins.notifications.set(
+        { last_wal },
+        "conf",
+        "notifications"
+      )
+      if (txs.length === limit) this.getWAL(last(txs))
+    }
+  }
+  async initWAL() {
     this.wal = new DB({
       type: 3,
       noauth: true,
@@ -131,7 +303,7 @@ class Standalone {
         initialize: async obj => {
           obj.lmdb_wal = open({
             path: path.resolve(
-              dir,
+              this.dir,
               "rollup",
               `${this.conf.dbname ?? "weavedb"}${
                 isNil(this.conf.contractTxId)
@@ -163,6 +335,8 @@ class Standalone {
     await this.wal.addIndex([["commit"], ["id"]], "txs")
     this.tx_count = (await this.wal.get("txs", ["id", "desc"], 1))[0]?.id ?? 0
     console.log(`${this.tx_count} txs has been cached`)
+  }
+  async initOffchain() {
     const state = { owner: this.conf.owner, secure: this.conf.secure ?? true }
     this.db = new DB({
       type: 3,
@@ -170,7 +344,7 @@ class Standalone {
         initialize: async obj => {
           obj.lmdb = open({
             path: path.resolve(
-              dir,
+              this.dir,
               "rollup",
               `${this.conf.dbname ?? "weavedb"}${
                 isNil(this.conf.contractTxId)
@@ -199,6 +373,15 @@ class Standalone {
             input: param,
           }
           await this.wal.set(t, "txs", `${t.id}`)
+          this.execPlugin({ id: t.id, data: t })
+            .then(async () => {
+              await this.plugins.notifications.set(
+                { last_wal: t.id },
+                "conf",
+                "notifications"
+              )
+            })
+            .catch(e => console.log(e))
         },
         get: async (key, obj) => {
           let val = this.kvs[key]
@@ -209,11 +392,13 @@ class Standalone {
       state,
     })
     await this.db.initialize()
+  }
+  async initWarp() {
     const contractTxId = this.conf.contractTxId
     if (!isNil(contractTxId)) {
       console.log(`contractTxId: ${contractTxId}`)
       this.warp = new Warp({
-        lmdb: { dir: path.resolve(dir, "warp") },
+        lmdb: { dir: path.resolve(this.dir, "warp") },
         type: 3,
         contractTxId: contractTxId,
         remoteStateSyncEnabled: false,
@@ -268,7 +453,6 @@ class Standalone {
       }
     }
   }
-
   parseQuery(call, callback) {
     const res = (err, result = null) => {
       callback(null, {
@@ -310,7 +494,12 @@ class Standalone {
     let err = null
     let dryWrite = false
     let _onDryWrite = null
-    const db = txid === "log" ? this.wal : this.db
+    const db =
+      txid === "log"
+        ? this.wal
+        : txid === "notifications"
+        ? this.plugins.notifications
+        : this.db
     try {
       let _query = query === `""` ? [] : JSON.parse(query)
       if (is(Object, _query) && is(Object, _query.dryWrite)) {
