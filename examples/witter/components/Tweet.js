@@ -108,13 +108,11 @@ function Tweet({
               />
             </Link>
             <Box flex={1}>
-              {reply && !isNil(tweets[tweet.reply_to]?.data.title) ? (
+              {reply && !isNil(tweets[tweet.reply_to]?.title) ? (
                 <Flex align="center" fontSize="12px">
                   <Box as="i" className="far fa-comment" mr={2} />
                   <Box mr={1}>reply to</Box>
-                  <Box fontWeight="bold">
-                    {tweets[tweet.reply_to].data.title}
-                  </Box>
+                  <Box fontWeight="bold">{tweets[tweet.reply_to].title}</Box>
                 </Flex>
               ) : !isNil(repost) ? (
                 <Flex align="center" fontSize="12px">
