@@ -187,6 +187,7 @@ class Standalone {
       arts[data.aid] ??= await this.db.get("posts", data.aid)
       const article = arts[data.aid]
       const to = article.owner
+      if (from === to) return
       const date = data.date
       const id = md5(`like:${from}:${to}:${article.id}:${date}`)
       await this.plugins.notifications.set(
@@ -238,6 +239,7 @@ class Standalone {
         const article = arts[data.aid]
         const from = data.owner
         const to = article.owner
+        if (from === to) return
         const date = data.date
         const id = md5(`repost:${from}:${to}:${article.id}:${data.id}:${date}`)
         await this.plugins.notifications.set(

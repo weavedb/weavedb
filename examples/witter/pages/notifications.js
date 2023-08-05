@@ -124,7 +124,6 @@ function Page() {
         const notes = await db.cget(
           "notifications",
           ["to", "==", user.address],
-          ["from", "!=", user.address],
           ["date", "desc"],
           limit
         )
@@ -409,7 +408,6 @@ function Page() {
                       const _notes = await db.cget(
                         "notifications",
                         ["to", "==", user.address],
-                        ["from", "!=", user.address],
                         ["date", "desc"],
                         ["startAfter", last(notes)],
                         limit

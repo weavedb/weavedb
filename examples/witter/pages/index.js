@@ -243,7 +243,13 @@ function Page() {
                 if (v2.rid !== "") {
                   const rpost = tweets[v2.rid]
                   repost = rpost?.owner
-                  if (!isNil(rpost) && !isNil(rpost.description)) parent = rpost
+                  if (
+                    !isNil(rpost) &&
+                    !isNil(rpost.description) &&
+                    v2.rid !== v2.aid
+                  ) {
+                    parent = rpost
+                  }
                 }
                 return (
                   <Tweet

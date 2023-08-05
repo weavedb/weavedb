@@ -154,7 +154,7 @@ function StatusPage() {
           const _replies = await db.cget(
             "posts",
             ["owner", "==", user.address],
-            ["reply_to", "!=", ""],
+            ["reply", "==", true],
             ["date", "desc"],
             limit
           )
@@ -752,7 +752,7 @@ function StatusPage() {
                         const _replies = await db.cget(
                           "posts",
                           ["owner", "==", puser.address],
-                          ["reply_to", "!=", ""],
+                          ["reply", "==", true],
                           ["date", "desc"],
                           ["startAfter", last(replies)],
                           limit
