@@ -69,6 +69,7 @@ export const postArticle = async ({
     comments: 0,
     reply_to: "",
     repost: "",
+    reply: false,
   }
   if (!isNil(cover)) post.cover = db.data("cover")
   const sign = await db.sign("set", post, "posts", id, {
@@ -191,6 +192,7 @@ export const repostPost = async ({ user, tweet }) => {
     owner: user.address,
     repost: tweet.id,
     reply_to: "",
+    reply: false,
   }
   await db.set(repost, "posts", `${id}`, identity)
   return { repost }
@@ -215,6 +217,7 @@ export const postStatus = async ({ body, user, title, replyTo, repost }) => {
     reposts: 0,
     comments: 0,
     reply_to: repost !== "" ? "" : replyTo ?? "",
+    reply: (repost !== "" ? "" : replyTo ?? "") !== "",
     repost,
     description: body,
   }
