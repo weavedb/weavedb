@@ -245,7 +245,7 @@ class Standalone {
         await this.plugins.notifications.set(
           {
             wid: v.data.id,
-            type: "repost",
+            type: isNil(data.description) ? "repost" : "quote",
             id,
             from,
             to,
@@ -258,7 +258,9 @@ class Standalone {
           id
         )
         console.log(
-          `[${to.slice(0, 5)}] reposted by ${from.slice(0, 5)} at ${date}`
+          `[${to.slice(0, 5)}] ${
+            isNil(data.description) ? "reposted" : "quoted"
+          } by ${from.slice(0, 5)} at ${date}`
         )
       } else if (data.reply_to !== "") {
         arts[data.reply_to] ??= await this.db.get("posts", data.reply_to)
