@@ -32,7 +32,7 @@ import Header from "../components/Header"
 import SDK from "weavedb-client"
 import EditUser from "../components/EditUser"
 import EditStatus from "../components/EditStatus"
-import { checkUser, initDB } from "../lib/db"
+import { checkUser, initDB, getTweets, getUsers } from "../lib/db"
 const limit = 10
 function Page() {
   const [posts, setPosts] = useState([])
@@ -66,25 +66,21 @@ function Page() {
     })()
   }, [])
 
-  const getUsers = async __users => {
-    const db = await initDB()
-    const _users = compose(difference(__, keys(users)), uniq)(__users)
-    if (_users.length > 0) {
-      setUsers(
-        compose(
-          mergeRight(users),
-          indexBy(prop("address"))
-        )(await db.get("users", ["address", "in", _users]))
-      )
-    }
-  }
-
   useEffect(() => {
-    ;(async () => await getUsers(map(path(["data", "owner"]))(posts)))()
+    ;(async () =>
+      await getUsers({
+        ids: map(path(["data", "owner"]))(posts),
+        setUsers,
+        users,
+      }))()
   }, [posts])
   useEffect(() => {
     ;(async () => {
-      await getUsers(compose(pluck("owner"), values)(tweets))
+      await getUsers({
+        ids: compose(pluck("owner"), values)(tweets),
+        users,
+        setUsers,
+      })
       const db = await initDB()
     })()
   }, [tweets])
@@ -92,7 +88,11 @@ function Page() {
   useEffect(() => {
     ;(async () => {
       if (!isNil(user)) {
-        await getUsers(compose(pluck("owner"), values)(tweets))
+        await getUsers({
+          ids: compose(pluck("owner"), values)(tweets),
+          users,
+          setUsers,
+        })
         const db = await initDB()
         const ids = difference(keys(tweets), keys(likes))
         if (ids.length > 0) {
@@ -114,7 +114,11 @@ function Page() {
   useEffect(() => {
     ;(async () => {
       if (!isNil(user)) {
-        await getUsers(compose(pluck("owner"), values)(tweets))
+        await getUsers({
+          ids: compose(pluck("owner"), values)(tweets),
+          users,
+          setUsers,
+        })
         const db = await initDB()
         const ids = difference(keys(tweets), keys(reposts))
         if (ids.length > 0) {
@@ -165,21 +169,13 @@ function Page() {
 
   useEffect(() => {
     ;(async () => {
-      let aid = []
+      let aids = []
       for (let v of pluck("data")(timeline)) {
-        aid.push(v.aid)
-        if (v.rid !== "") aid.push(v.rid)
+        aids.push(v.aid)
+        if (v.rid !== "") aids.push(v.rid)
       }
-      aid = uniq(aid)
-      const db = await initDB()
-      if (aid.length > 0) {
-        setTweets(
-          mergeLeft(
-            indexBy(prop("id"), await db.get("posts", ["id", "in", aid])),
-            tweets
-          )
-        )
-      }
+      aids = uniq(aids)
+      if (aids.length > 0) await getTweets({ ids: aids, tweets, setTweets })
     })()
   }, [timeline])
 

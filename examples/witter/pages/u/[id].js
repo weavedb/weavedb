@@ -29,7 +29,13 @@ import {
 import Tweet from "../../components/Tweet"
 import Header from "../../components/Header"
 import SDK from "weavedb-client"
-import { followUser, initDB, checkUser } from "../../lib/db"
+import {
+  followUser,
+  initDB,
+  checkUser,
+  getTweets,
+  getUsers,
+} from "../../lib/db"
 import EditUser from "../../components/EditUser"
 import EditStatus from "../../components/EditStatus"
 const limit = 10
@@ -59,22 +65,14 @@ function StatusPage() {
   const [isNextFollowers, setIsNextFollowers] = useState(false)
   const [isNextFollowing, setIsNextFollowing] = useState(false)
 
-  const getUsers = async __users => {
-    const db = await initDB()
-    const _users = compose(difference(__, keys(users)), uniq)(__users)
-    if (_users.length > 0) {
-      setUsers(
-        compose(
-          mergeRight(users),
-          indexBy(prop("address"))
-        )(await db.get("users", ["address", "in", _users]))
-      )
-    }
-  }
   useEffect(() => {
     ;(async () => {
       if (!isNil(user)) {
-        await getUsers(compose(pluck("owner"), values)(tweets))
+        await getUsers({
+          ids: compose(pluck("owner"), values)(tweets),
+          users,
+          setUsers,
+        })
         const db = await initDB()
         const ids = difference(keys(tweets), keys(likes))
         if (ids.length > 0) {
@@ -97,7 +95,11 @@ function StatusPage() {
   useEffect(() => {
     ;(async () => {
       if (!isNil(user)) {
-        await getUsers(compose(pluck("owner"), values)(tweets))
+        await getUsers({
+          ids: compose(pluck("owner"), values)(tweets),
+          setUsers,
+          users,
+        })
         const db = await initDB()
         const ids = difference(keys(tweets), keys(reposts))
         if (ids.length > 0) {
@@ -190,61 +192,73 @@ function StatusPage() {
     }
   }, [router])
 
-  const getTweets = async ids => {
-    const db = await initDB()
-    const _ids = compose(difference(__, keys(tweets)), uniq)(ids)
-    if (!isEmpty(_ids)) {
-      const _tweets = indexBy(prop("id"))(
-        await db.cget("posts", ["id", "in", _ids])
-      )
-      setTweets(mergeLeft(_tweets, tweets))
-    }
-  }
-
   useEffect(() => {
     ;(async () => {
-      await getTweets(
-        compose(
+      await getTweets({
+        ids: compose(
           uniq,
           reject(isEmpty),
           map(path(["data", "reply_to"]))
-        )(values(tweets))
-      )
-      await getUsers(map(path(["data", "owner"]))(values(tweets)))
+        )(values(tweets)),
+        tweets,
+        setTweets,
+      })
+      await getUsers({
+        ids: map(path(["data", "owner"]))(values(tweets)),
+        users,
+        setUsers,
+      })
     })()
   }, [tweets])
 
   useEffect(() => {
     ;(async () => {
-      await getUsers(map(path(["data", "address"]))(values(following)))
+      await getUsers({
+        ids: map(path(["data", "address"]))(values(following)),
+        users,
+        setUsers,
+      })
     })()
   }, [following])
 
   useEffect(() => {
     ;(async () => {
-      await getUsers(map(path(["data", "address"]))(values(followers)))
+      await getUsers({
+        ids: map(path(["data", "address"]))(values(followers)),
+        users,
+        setUsers,
+      })
     })()
   }, [followers])
 
   useEffect(() => {
     ;(async () => {
-      let _tweets = indexBy(prop("id"))(posts)
+      let _tweets = indexBy(prop("id"))(pluck("data", posts))
       setTweets(mergeLeft(_tweets, tweets))
-      await getTweets(
-        compose(reject(isEmpty), map(path(["data", "repost"])))(values(posts))
-      )
+      await getTweets({
+        ids: compose(
+          reject(isEmpty),
+          map(path(["data", "repost"]))
+        )(values(posts)),
+        setTweets,
+        tweets,
+      })
     })()
   }, [posts])
 
   useEffect(() => {
     ;(async () => {
-      await getTweets(map(path(["data", "aid"]))(plikes))
+      await getTweets({
+        ids: map(path(["data", "aid"]))(plikes),
+        setTweets,
+        tweets,
+      })
     })()
   }, [plikes])
 
   useEffect(() => {
     ;(async () => {
-      let _tweets = indexBy(prop("id"))(replies)
+      let _tweets = indexBy(prop("id"))(pluck("data", replies))
       setTweets(mergeLeft(_tweets, tweets))
     })()
   }, [replies])
@@ -577,31 +591,31 @@ function StatusPage() {
             ) : tab === "likes" ? (
               <>
                 {map(v2 => {
-                  const v = tweets[v2.data.aid] ?? { data: {} }
+                  const v = tweets[v2.data.aid] ?? {}
                   return (
                     <Tweet
                       {...{
                         likes,
-                        reposted: reposts[v.data.id],
+                        reposted: reposts[v.id],
                         users,
                         tweets,
                         tweet: {
-                          cover: v.data.cover,
-                          id: v.data.id,
-                          date: v.data.date,
-                          title: v.data.title,
-                          user: v.data.owner,
-                          reposts: v.data.reposts,
-                          likes: v.data.likes,
-                          comments: v.data.comments,
-                          reply_to: v.data.reply_to,
-                          body: v.data.description,
+                          cover: v.cover,
+                          id: v.id,
+                          date: v.date,
+                          title: v.title,
+                          user: v.owner,
+                          reposts: v.reposts,
+                          likes: v.likes,
+                          comments: v.comments,
+                          reply_to: v.reply_to,
+                          body: v.description,
                         },
                         repost:
-                          tab === "posts" && v.data.owner !== puser?.address
-                            ? v.data.owner
+                          tab === "posts" && v.owner !== puser?.address
+                            ? v.owner
                             : null,
-                        reply: v.data.reply_to !== "",
+                        reply: v.reply_to !== "",
                       }}
                     />
                   )
@@ -644,32 +658,32 @@ function StatusPage() {
                 {map(v2 => {
                   const v =
                     v2.data.repost === ""
-                      ? v2
-                      : tweets[v2.data.repost] ?? { data: {} }
+                      ? v2.data
+                      : tweets[v2.data.repost] ?? {}
                   return (
                     <Tweet
                       {...{
                         likes,
-                        reposted: reposts[v.data.id],
+                        reposted: reposts[v.id],
                         users,
                         tweets,
                         tweet: {
-                          cover: v.data.cover,
-                          id: v.data.id,
-                          date: v.data.date,
-                          title: v.data.title,
-                          user: v.data.owner,
-                          reposts: v.data.reposts,
-                          likes: v.data.likes,
-                          comments: v.data.comments,
-                          reply_to: v.data.reply_to,
-                          body: v.data.description,
+                          cover: v.cover,
+                          id: v.id,
+                          date: v.date,
+                          title: v.title,
+                          user: v.owner,
+                          reposts: v.reposts,
+                          likes: v.likes,
+                          comments: v.comments,
+                          reply_to: v.reply_to,
+                          body: v.description,
                         },
                         repost:
                           tab === "posts" && v2.data.repost !== ""
                             ? puser.address
                             : null,
-                        reply: tab === "replies" || v.data.reply_to !== "",
+                        reply: tab === "replies" || v.reply_to !== "",
                       }}
                     />
                   )
