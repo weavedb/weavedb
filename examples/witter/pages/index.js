@@ -1,0 +1,368 @@
+import { useState, useEffect } from "react"
+import {
+  Input,
+  Textarea,
+  Box,
+  Flex,
+  ChakraProvider,
+  Image,
+} from "@chakra-ui/react"
+import Link from "next/link"
+import {
+  prepend,
+  concat,
+  values,
+  mergeRight,
+  __,
+  difference,
+  keys,
+  compose,
+  uniq,
+  path,
+  prop,
+  map,
+  indexBy,
+  isNil,
+  pluck,
+  last,
+  mergeLeft,
+} from "ramda"
+import Tweet from "../components/Tweet"
+import Header from "../components/Header"
+import SDK from "weavedb-client"
+import EditUser from "../components/EditUser"
+import EditStatus from "../components/EditStatus"
+import { checkUser, initDB } from "../lib/db"
+const limit = 10
+function Page() {
+  const [posts, setPosts] = useState([])
+  const [isNext, setIsNext] = useState(false)
+  const [isNextTL, setIsNextTL] = useState(false)
+  const [users, setUsers] = useState({})
+  const [user, setUser] = useState(null)
+  const [identity, setIdentity] = useState(null)
+  const [editUser, setEditUser] = useState(false)
+  const [editStatus, setEditStatus] = useState(false)
+  const [tab, setTab] = useState("all")
+  const [timeline, setTimeline] = useState([])
+  const [reposts, setReposts] = useState({})
+  const [tweets, setTweets] = useState({})
+  const [likes, setLikes] = useState({})
+  useEffect(() => {
+    ;(async () => {
+      const db = await initDB()
+      const _posts = await db.cget(
+        "posts",
+        ["date", "desc"],
+        ["reply_to", "==", ""],
+        ["repost", "==", ""],
+        limit
+      )
+      setPosts(_posts)
+      setIsNext(_posts.length >= limit)
+      setTweets(
+        mergeLeft(compose(indexBy(path(["data", "id"])))(_posts), tweets)
+      )
+    })()
+  }, [])
+
+  const getUsers = async __users => {
+    const db = await initDB()
+    const _users = compose(difference(__, keys(users)), uniq)(__users)
+    if (_users.length > 0) {
+      setUsers(
+        compose(
+          mergeRight(users),
+          indexBy(prop("address"))
+        )(await db.get("users", ["address", "in", _users]))
+      )
+    }
+  }
+
+  useEffect(() => {
+    ;(async () => await getUsers(map(path(["data", "owner"]))(posts)))()
+  }, [posts])
+  useEffect(() => {
+    ;(async () => {
+      await getUsers(compose(pluck("owner"), values)(tweets))
+      const db = await initDB()
+    })()
+  }, [tweets])
+
+  useEffect(() => {
+    ;(async () => {
+      if (!isNil(user)) {
+        await getUsers(compose(pluck("owner"), values)(tweets))
+        const db = await initDB()
+        const ids = difference(keys(tweets), keys(likes))
+        if (ids.length > 0) {
+          let new_likes = indexBy(prop("aid"))(
+            await db.get(
+              "likes",
+              ["user", "==", user.address],
+              ["aid", "in", ids]
+            )
+          )
+          for (let v of ids) {
+            if (isNil(new_likes[v])) new_likes[v] = null
+          }
+          setLikes(mergeLeft(new_likes, likes))
+        }
+      }
+    })()
+  }, [tweets, user])
+  useEffect(() => {
+    ;(async () => {
+      if (!isNil(user)) {
+        await getUsers(compose(pluck("owner"), values)(tweets))
+        const db = await initDB()
+        const ids = difference(keys(tweets), keys(reposts))
+        if (ids.length > 0) {
+          let new_reposts = indexBy(prop("repost"))(
+            await db.get(
+              "posts",
+              ["owner", "==", user.address],
+              ["repost", "in", ids]
+            )
+          )
+          for (let v of ids) {
+            if (isNil(new_reposts[v])) new_reposts[v] = null
+          }
+          setReposts(mergeLeft(new_reposts, reposts))
+        }
+      }
+    })()
+  }, [tweets, user])
+  useEffect(() => {
+    ;(async () => {
+      const { user, identity } = await checkUser()
+      if (!isNil(identity)) {
+        setIdentity(identity)
+        if (isNil(user)) {
+          setEditUser(true)
+        } else {
+          setUser(user)
+        }
+      }
+    })()
+  }, [])
+
+  useEffect(() => {
+    ;(async () => {
+      if (!isNil(user)) {
+        const db = await initDB()
+        const _tl = await db.cget(
+          "timeline",
+          ["broadcast", "array-contains", user.address],
+          ["date", "desc"],
+          limit
+        )
+        setTimeline(_tl)
+        setIsNextTL(_tl.length >= limit)
+      }
+    })()
+  }, [user])
+
+  useEffect(() => {
+    ;(async () => {
+      let aid = []
+      for (let v of pluck("data")(timeline)) {
+        aid.push(v.aid)
+        if (v.rid !== "") aid.push(v.rid)
+      }
+      aid = uniq(aid)
+      const db = await initDB()
+      if (aid.length > 0) {
+        setTweets(
+          mergeLeft(
+            indexBy(prop("id"), await db.get("posts", ["id", "in", aid])),
+            tweets
+          )
+        )
+      }
+    })()
+  }, [timeline])
+
+  const tabs = [
+    { key: "all", name: "All Posts" },
+    { key: "following", name: "Following" },
+  ]
+
+  return (
+    <ChakraProvider>
+      <style jsx global>{`
+        html,
+        body,
+        #__next {
+          height: 100%;
+          color: #333;
+        }
+      `}</style>
+      <Flex justify="center" minH="100%">
+        <Box flex={1}></Box>
+        <Box
+          w="100%"
+          maxW="760px"
+          minH="100%"
+          sx={{ borderX: "1px solid #ccc" }}
+        >
+          <Header
+            {...{
+              user,
+              setUser,
+              setEditUser,
+              identity,
+              setIdentity,
+              setEditStatus,
+            }}
+          />
+          {isNil(user) ? null : (
+            <Flex sx={{ borderBottom: "1px solid #ccc" }} mt={3}>
+              {map(v => {
+                return (
+                  <Flex
+                    onClick={() => setTab(v.key)}
+                    justify="center"
+                    flex={1}
+                    mx={8}
+                    pb={2}
+                    sx={{
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                      borderBottom: tab === v.key ? "3px solid #666" : "",
+                    }}
+                  >
+                    {v.name}
+                  </Flex>
+                )
+              })(tabs)}
+            </Flex>
+          )}
+          {tab === "following" ? (
+            <>
+              {map(v2 => {
+                const v = tweets[v2.aid] ?? {}
+                let repost = null
+                if (v2.rid !== "") repost = tweets[v2.rid]?.owner
+                return (
+                  <Tweet
+                    likes={likes}
+                    reposted={!isNil(reposts[v.id])}
+                    {...{
+                      users,
+                      tweets,
+                      tweet: {
+                        cover: v.cover,
+                        id: v.id,
+                        date: v.date,
+                        title: v.title,
+                        user: v.owner,
+                        reposts: v.reposts,
+                        likes: v.likes,
+                        comments: v.comments,
+                        reply_to: v.reply_to,
+                        body: v.description,
+                      },
+                      repost,
+                      reply: tab === "replies" || v.reply_to !== "",
+                    }}
+                  />
+                )
+              })(pluck("data", timeline))}
+              {!isNextTL ? null : (
+                <Flex p={4} justify="center">
+                  <Flex
+                    justify="center"
+                    w="300px"
+                    py={2}
+                    bg="#333"
+                    color="white"
+                    height="auto"
+                    align="center"
+                    sx={{
+                      borderRadius: "20px",
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                    onClick={async () => {
+                      const db = await initDB()
+                      const _tl = await db.cget(
+                        "timeline",
+                        ["broadcast", "array-contains", user.address],
+                        ["date", "desc"],
+                        ["startAfter", last(timeline)],
+                        limit
+                      )
+                      setTimeline(concat(timeline, _tl))
+                      setIsNextTL(_tl.length >= limit)
+                    }}
+                  >
+                    Load More
+                  </Flex>
+                </Flex>
+              )}
+            </>
+          ) : (
+            <>
+              {map(v => (
+                <Tweet
+                  reposted={!isNil(reposts[v.id])}
+                  likes={likes}
+                  users={users}
+                  tweet={{
+                    cover: v.cover,
+                    id: v.id,
+                    date: v.date,
+                    title: v.title,
+                    user: v.owner,
+                    reposts: v.reposts,
+                    likes: v.likes,
+                    comments: v.comments,
+                  }}
+                  body={v.description}
+                />
+              ))(pluck("data", posts))}
+              {!isNext ? null : (
+                <Flex p={4} justify="center">
+                  <Flex
+                    justify="center"
+                    w="300px"
+                    py={2}
+                    bg="#333"
+                    color="white"
+                    height="auto"
+                    align="center"
+                    sx={{
+                      borderRadius: "20px",
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                    onClick={async () => {
+                      const db = await initDB()
+                      const _posts = await db.cget(
+                        "posts",
+                        ["date", "desc"],
+                        ["reply_to", "==", ""],
+                        ["repost", "==", ""],
+                        ["startAfter", last(posts)],
+                        limit
+                      )
+                      setPosts(concat(posts, _posts))
+                      setIsNext(_posts.length >= limit)
+                    }}
+                  >
+                    Load More
+                  </Flex>
+                </Flex>
+              )}
+            </>
+          )}
+        </Box>
+        <Box flex={1}></Box>
+      </Flex>
+      <EditUser {...{ setEditUser, editUser, identity, setUser, user }} />
+    </ChakraProvider>
+  )
+}
+
+export default Page
