@@ -32,6 +32,7 @@ import Header from "../../components/Header"
 import SDK from "weavedb-client"
 import { initDB, checkUser, getUsers } from "../../lib/db"
 import EditUser from "../../components/EditUser"
+import EditRepost from "../../components/EditRepost"
 import EditStatus from "../../components/EditStatus"
 const limit = 10
 
@@ -44,8 +45,10 @@ function StatusPage() {
   const [user, setUser] = useState(null)
   const [identity, setIdentity] = useState(null)
   const [editUser, setEditUser] = useState(false)
+  const [editRepost, setEditRepost] = useState(false)
   const [editStatus, setEditStatus] = useState(false)
   const [replyTo, setReplyTo] = useState(null)
+  const [repost, setRepost] = useState(false)
   const [reposted, setReposted] = useState(false)
   const [reposts, setReposts] = useState({})
   const [isNextComment, setIsNextComment] = useState(false)
@@ -193,6 +196,7 @@ function StatusPage() {
             >
               <Article
                 {...{
+                  setEditRepost,
                   reposted: reposts[tweet.data.id],
                   likes,
                   setLikes,
@@ -231,6 +235,7 @@ function StatusPage() {
                 p={4}
                 onClick={() => {
                   setReplyTo(tweet.data.id)
+                  setRepost(false)
                   setEditStatus(true)
                 }}
                 sx={{
@@ -329,8 +334,38 @@ function StatusPage() {
         </Flex>
       )}
       <EditUser {...{ setEditUser, editUser, identity, setUser, user }} />
+      {isNil(tweet) ? null : (
+        <EditRepost
+          post={{
+            id: tweet.data.id,
+            title: tweet.data.title,
+            description: tweet.data.description,
+            body: tweet.data.content,
+            cover: tweet.data.cover,
+            likes: tweet.data.likes,
+            reposts: tweet.data.reposts,
+            comments: tweet.data.comments,
+          }}
+          user={user}
+          {...{
+            setRepost,
+            setReplyTo,
+            setEditStatus,
+            reposted: reposts[tweet.data.id],
+            setEditRepost,
+            editRepost,
+            setRetweet: repost => {
+              setTweet(
+                assocPath(["data", "reposts"], tweet.data.reposts + 1, tweet)
+              )
+              setReposts(mergeLeft({ [tweet.data.id]: repost }, reposts))
+            },
+          }}
+        />
+      )}
       <EditStatus
         {...{
+          repost,
           setEditStatus,
           editStatus,
           user,
@@ -338,13 +373,23 @@ function StatusPage() {
           setPost: isNil(replyTo)
             ? null
             : post => {
-                setTweet(
-                  assocPath(
-                    ["data", "comments"],
-                    tweet.data.comments + 1,
-                    tweet
+                if (repost) {
+                  setTweet(
+                    assocPath(
+                      ["data", "reposts"],
+                      tweet.data.reposts + 1,
+                      tweet
+                    )
                   )
-                )
+                } else {
+                  setTweet(
+                    assocPath(
+                      ["data", "comments"],
+                      tweet.data.comments + 1,
+                      tweet
+                    )
+                  )
+                }
                 setComments(prepend({ id: post.id, data: post }, comments))
               },
         }}

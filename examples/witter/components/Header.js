@@ -66,7 +66,7 @@ function Header({
           }}
         >
           <Box as="i" className="fas fa-arrow-left" mr={4} />
-          <Box fontWeight="bold">{title ?? user?.name ?? "Witter"}</Box>
+          <Box fontWeight="bold">{title ?? user?.name ?? "Witter Testnet"}</Box>
         </Flex>
       </Link>
       <Box flex={1} />

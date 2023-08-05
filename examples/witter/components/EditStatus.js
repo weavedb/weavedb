@@ -4,6 +4,7 @@ import { postStatus } from "../lib/db"
 import { isNil, assoc } from "ramda"
 import { useRouter } from "next/router"
 export default function EditUser({
+  repost,
   editStatus,
   setEditStatus,
   user,
@@ -48,7 +49,11 @@ export default function EditUser({
         </Flex>
         <Box px={4} pb={4} pt={isNil(user) ? 4 : 0}>
           <Flex fontSize="24px" justify="center" fontWeight="bold" mb={4}>
-            {isNil(replyTo) ? "New Post" : "Write Reply"}
+            {repost
+              ? "Write Comment"
+              : isNil(replyTo)
+              ? "New Post"
+              : "Write Reply"}
           </Flex>
           {!isNil(replyTo) ? null : (
             <>
@@ -94,6 +99,7 @@ export default function EditUser({
               onClick={async () => {
                 if (ok) {
                   const { err, post } = await postStatus({
+                    repost: repost ? replyTo : "",
                     replyTo,
                     body,
                     title,
@@ -109,7 +115,7 @@ export default function EditUser({
                 }
               }}
             >
-              Post
+              {repost ? "Repost" : "Post"}
             </Flex>
           </Box>
         </Box>

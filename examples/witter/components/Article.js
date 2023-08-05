@@ -8,6 +8,7 @@ dayjs.extend(relativeTime)
 import GithubMarkdown from "../lib/GithubMarkdown"
 
 export default function Article({
+  setEditRepost,
   post,
   user,
   puser,
@@ -66,16 +67,13 @@ export default function Article({
         ml={10}
         color={reposted ? "#00BA7C" : ""}
         sx={{
-          cursor: preview || reposted || isNil(user) ? "default" : "pointer",
+          cursor: preview || isNil(user) ? "default" : "pointer",
           "hover:": {
-            opacity: preview || reposted || isNil(user) ? 1 : 0.75,
+            opacity: preview || isNil(user) ? 1 : 0.75,
           },
         }}
         onClick={async () => {
-          if (!preview && !reposted && !isNil(user)) {
-            const { repost } = await repostPost({ user, tweet: post })
-            setRetweet(repost)
-          }
+          if (!preview && !isNil(user)) setEditRepost(true)
         }}
       >
         <Box as="i" className="fas fa-retweet" mr={2} />

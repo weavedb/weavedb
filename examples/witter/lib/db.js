@@ -204,7 +204,7 @@ export const followUser = async ({ user, puser }) => {
   return { follow: { id, data: follow } }
 }
 
-export const postStatus = async ({ body, user, title, replyTo }) => {
+export const postStatus = async ({ body, user, title, replyTo, repost }) => {
   const { identity } = await lf.getItem("user")
   const id = nanoid()
   let post = {
@@ -214,8 +214,8 @@ export const postStatus = async ({ body, user, title, replyTo }) => {
     likes: 0,
     reposts: 0,
     comments: 0,
-    reply_to: replyTo ?? "",
-    repost: "",
+    reply_to: repost !== "" ? "" : replyTo ?? "",
+    repost,
     description: body,
   }
   if (isNil(replyTo)) post.title = title
