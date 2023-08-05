@@ -17,23 +17,16 @@ function Header({
   setReplyTo,
   type = "default",
 }) {
-  const [isNotification, setIsNotification] = useState(false)
+  const [count, setCount] = useState(0)
 
   useEffect(() => {
     ;(async () => {
       if (!isNil(user)) {
         const ndb = await initNDB()
-        const items = await ndb.cget(
-          "notifications",
-          ["to", "==", user.address],
-          ["viewed", "==", false],
-          ["from", "!=", user.address],
-          ["date", "desc"],
-          1
-        )
-        setIsNotification(items.length > 0)
+        const count = await ndb.get("counts", user.address)
+        setCount(isNil(count) ? 0 : count.count)
       } else {
-        setIsNotification(false)
+        setCount(0)
       }
     })()
   }, [user])
@@ -138,13 +131,29 @@ function Header({
           <Link href="/notifications">
             <Box mx={2} sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}>
               <Flex
-                bg={isNotification ? "#7A40B1" : "#999"}
+                bg={count > 0 ? "#1D9BF0" : "#999"}
                 boxSize="30px"
-                sx={{ borderRadius: "50%" }}
+                sx={{ borderRadius: "50%", position: "relative" }}
                 justify="center"
                 align="center"
               >
                 <Box as="i" className="fas fa-bell" color="white" />
+                {count > 0 ? (
+                  <Box
+                    fontSize="10px"
+                    sx={{
+                      borderRadius: "3px",
+                      position: "absolute",
+                      bottom: "-5px",
+                      left: "22px",
+                    }}
+                    px={1}
+                    bg="crimson"
+                    color="white"
+                  >
+                    {count}
+                  </Box>
+                ) : null}
               </Flex>
             </Box>
           </Link>
