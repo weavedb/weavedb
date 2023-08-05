@@ -198,7 +198,7 @@ class Standalone {
           to,
           date,
           aid: article.id,
-          viewed: false,
+          viewed: from === to,
         },
         "notifications",
         id
@@ -216,7 +216,15 @@ class Standalone {
       const date = data.date
       const id = md5(`follow:${from}:${to}:${date}`)
       await this.plugins.notifications.set(
-        { wid: v.data.id, type: "follow", id, from, to, date, viewed: false },
+        {
+          wid: v.data.id,
+          type: "follow",
+          id,
+          from,
+          to,
+          date,
+          viewed: from === to,
+        },
         "notifications",
         id
       )
@@ -242,7 +250,7 @@ class Standalone {
             date,
             aid: article.id,
             rid: data.id,
-            viewed: false,
+            viewed: from === to,
           },
           "notifications",
           id
@@ -267,7 +275,7 @@ class Standalone {
             date,
             aid: article.id,
             rid: data.id,
-            viewed: false,
+            viewed: from === to,
           },
           "notifications",
           id
