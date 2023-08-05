@@ -39,7 +39,7 @@ import Header from "../components/Header"
 import SDK from "weavedb-client"
 import EditUser from "../components/EditUser"
 import EditStatus from "../components/EditStatus"
-import { checkUser, initDB, initNDB } from "../lib/db"
+import { checkUser, initDB, initNDB, getUsers, getTweets } from "../lib/db"
 const limit = 10
 function Page() {
   const [notes, setNotes] = useState([])
@@ -64,7 +64,7 @@ function Page() {
     ;(async () => {
       let nmap = {}
       let users = []
-      let tweets = []
+      let _tweets = []
       let _noteIDs = {}
       for (let v of notes) {
         let extra = {}
@@ -74,14 +74,14 @@ function Page() {
         switch (v.data.type) {
           case "like":
             id = `like:${v.data.aid}`
-            tweets.push(v.data.aid)
+            _tweets.push(v.data.aid)
             extra.type = "like"
             extra.aid = v.data.aid
             break
           case "reply":
             id = `reply:${v.data.aid}:${v.data.from}`
-            tweets.push(v.data.aid)
-            tweets.push(v.data.rid)
+            _tweets.push(v.data.aid)
+            _tweets.push(v.data.rid)
             extra.type = "reply"
             extra.aid = v.data.aid
             extra.rid = v.data.rid
@@ -92,7 +92,7 @@ function Page() {
             break
           case "repost":
             id = `repost:${v.data.aid}`
-            tweets.push(v.data.aid)
+            _tweets.push(v.data.aid)
             extra.type = "repost"
             extra.aid = v.data.aid
             break
@@ -105,8 +105,8 @@ function Page() {
         nmap[id].users = uniq(nmap[id].users)
         users.push(v.data.from)
       }
-      await getUsers(uniq(users))
-      await getTweets(uniq(tweets))
+      await getUsers({ ids: uniq(users), users, setUsers })
+      await getTweets({ ids: uniq(_tweets), tweets, setTweets })
       setNoteIDs(mergeLeft(_noteIDs, noteIDs))
       setNotifications(
         concat(
@@ -143,29 +143,7 @@ function Page() {
       }
     })()
   }, [user])
-  const getTweets = async ids => {
-    const db = await initDB()
-    const _ids = compose(difference(__, keys(tweets)), uniq)(ids)
-    if (!isEmpty(_ids)) {
-      const _tweets = indexBy(prop("id"))(
-        await db.cget("posts", ["id", "in", _ids])
-      )
-      setTweets(mergeLeft(_tweets, tweets))
-    }
-  }
 
-  const getUsers = async __users => {
-    const db = await initDB()
-    const _users = compose(difference(__, keys(users)), uniq)(__users)
-    if (_users.length > 0) {
-      setUsers(
-        compose(
-          mergeRight(users),
-          indexBy(prop("address"))
-        )(await db.get("users", ["address", "in", _users]))
-      )
-    }
-  }
   useEffect(() => {
     ;(async () => {
       const { user, identity } = await checkUser()
@@ -265,12 +243,8 @@ function Page() {
                     : v2.type === "follow"
                     ? "#1D9BF0"
                     : "#333"
-                const post = isNil(v2.aid)
-                  ? null
-                  : (tweets[v2.aid] ?? { data: {} }).data
-                const reply = isNil(v2.rid)
-                  ? null
-                  : (tweets[v2.rid] ?? { data: {} }).data
+                const post = isNil(v2.aid) ? null : tweets[v2.aid] ?? {}
+                const reply = isNil(v2.rid) ? null : tweets[v2.rid] ?? {}
                 let link =
                   v2.type === "like"
                     ? `/s/${post.id}`

@@ -1,7 +1,19 @@
 import SDK from "weavedb-client"
 let db = null
 let ndb = null
-import { isEmpty, mergeLeft, isNil } from "ramda"
+import {
+  concat,
+  compose,
+  difference,
+  __,
+  keys,
+  uniq,
+  indexBy,
+  prop,
+  isEmpty,
+  mergeLeft,
+  isNil,
+} from "ramda"
 import lf from "localforage"
 import { nanoid } from "nanoid"
 
@@ -210,4 +222,36 @@ export const postStatus = async ({ body, user, title, replyTo }) => {
 
   await db.set(post, "posts", post.id, identity)
   return { post }
+}
+
+let __tweets = {}
+let __ids = []
+export const getTweets = async ({ ids, tweets, setTweets }) => {
+  if (ids.length === 0) return
+  const db = await initDB()
+  const new_ids = uniq(ids)
+  const _ids = difference(new_ids, __ids)
+  __ids = uniq(concat(__ids, new_ids))
+  if (!isEmpty(_ids)) {
+    const _tweets = indexBy(prop("id"))(
+      await db.get("posts", ["id", "in", _ids])
+    )
+    __tweets = mergeLeft(_tweets, __tweets)
+  }
+  setTweets(__tweets)
+}
+
+let __users = {}
+let __user_ids = []
+export const getUsers = async ({ ids, users, setUsers }) => {
+  const db = await initDB()
+  const new_ids = uniq(ids)
+  const _ids = difference(new_ids, __user_ids)
+  if (!isEmpty(_ids)) {
+    const _users = indexBy(prop("address"))(
+      await db.get("users", ["address", "in", _ids])
+    )
+    __users = mergeLeft(_users, __users)
+  }
+  setUsers(__users)
 }

@@ -26,12 +26,11 @@ import {
   indexBy,
   prop,
 } from "ramda"
-import { timeline, users, tweets, body } from "../../lib/tweets"
 import Tweet from "../../components/Tweet"
 import Article from "../../components/Article"
 import Header from "../../components/Header"
 import SDK from "weavedb-client"
-import { initDB, checkUser } from "../../lib/db"
+import { initDB, checkUser, getUsers } from "../../lib/db"
 import EditUser from "../../components/EditUser"
 import EditStatus from "../../components/EditStatus"
 const limit = 10
@@ -52,19 +51,6 @@ function StatusPage() {
   const [isNextComment, setIsNextComment] = useState(false)
   const [tweets, setTweets] = useState({})
 
-  const getUsers = async __users => {
-    const db = await initDB()
-    const _users = compose(difference(__, keys(users)), uniq)(__users)
-    if (_users.length > 0) {
-      setUsers(
-        compose(
-          mergeRight(users),
-          indexBy(prop("address"))
-        )(await db.get("users", ["address", "in", _users]))
-      )
-    }
-  }
-
   useEffect(() => {
     if (!isNil(router.query.id)) {
       ;(async () => {
@@ -72,7 +58,7 @@ function StatusPage() {
         let post = await db.cget("posts", router.query.id)
         if (!isNil(post)) {
           setTweet(post)
-          await getUsers([post.data.owner])
+          await getUsers({ ids: [post.data.owner], users, setUsers })
           const _comments = await db.cget(
             "posts",
             ["reply_to", "==", post.data.id],
@@ -101,7 +87,11 @@ function StatusPage() {
   }, [])
   useEffect(() => {
     ;(async () => {
-      await getUsers(map(path(["data", "owner"]))(values(tweets)))
+      await getUsers({
+        ids: map(path(["data", "owner"]))(values(tweets)),
+        setUsers,
+        users,
+      })
     })()
   }, [tweets])
 
@@ -118,7 +108,11 @@ function StatusPage() {
   useEffect(() => {
     ;(async () => {
       if (!isNil(user)) {
-        await getUsers(compose(pluck("owner"), values)(tweets))
+        await getUsers({
+          ids: compose(pluck("owner"), values)(tweets),
+          users,
+          setUsers,
+        })
         const db = await initDB()
         const ids = difference(keys(tweets), keys(reposts))
         if (ids.length > 0) {
@@ -141,7 +135,11 @@ function StatusPage() {
   useEffect(() => {
     ;(async () => {
       if (!isNil(user)) {
-        await getUsers(compose(pluck("owner"), values)(tweets))
+        await getUsers({
+          ids: compose(pluck("owner"), values)(tweets),
+          users,
+          setUsers,
+        })
         const db = await initDB()
         const ids = difference(keys(tweets), keys(likes))
         if (ids.length > 0) {
