@@ -41,6 +41,7 @@ import EditUser from "../components/EditUser"
 import EditStatus from "../components/EditStatus"
 import { checkUser, initDB, initNDB, getUsers, getTweets } from "../lib/db"
 const limit = 10
+import Embed from "../components/Embed"
 function Page() {
   const [notes, setNotes] = useState([])
   const [noteIDs, setNoteIDs] = useState({})
@@ -96,6 +97,14 @@ function Page() {
             extra.type = "repost"
             extra.aid = v.data.aid
             break
+          case "quote":
+            id = `quote:${v.data.aid}:${v.data.id}`
+            _tweets.push(v.data.aid)
+            _tweets.push(v.data.rid)
+            extra.type = "quote"
+            extra.aid = v.data.aid
+            extra.rid = v.data.rid
+            break
         }
         nmap[id] ??= { ...extra, count: 0, date: 0, users: [], viewed: true }
         nmap[id].count++
@@ -105,8 +114,13 @@ function Page() {
         nmap[id].users = uniq(nmap[id].users)
         users.push(v.data.from)
       }
+      const __tweets = await getTweets({
+        ids: uniq(_tweets),
+        tweets,
+        setTweets,
+      })
+      users = users.concat(users, pluck("owner", values(__tweets)))
       await getUsers({ ids: uniq(users), users, setUsers })
-      await getTweets({ ids: uniq(_tweets), tweets, setTweets })
       setNoteIDs(mergeLeft(_noteIDs, noteIDs))
       setNotifications(
         concat(
@@ -127,7 +141,6 @@ function Page() {
           ["date", "desc"],
           limit
         )
-        console.log(notes)
         setNotes(notes)
         setIsNextNote(notes.length >= limit)
         const batches = compose(
@@ -230,7 +243,7 @@ function Page() {
                 const icon =
                   v2.type === "like"
                     ? "fas fa-heart"
-                    : v2.type === "repost"
+                    : v2.type === "repost" || v2.type === "quote"
                     ? "fas fa-retweet"
                     : v2.type === "follow"
                     ? "fas fa-user"
@@ -238,7 +251,7 @@ function Page() {
                 const icolor =
                   v2.type === "like"
                     ? "#F91880"
-                    : v2.type === "repost"
+                    : v2.type === "repost" || v2.type === "quote"
                     ? "#00BA7C"
                     : v2.type === "follow"
                     ? "#1D9BF0"
@@ -248,7 +261,7 @@ function Page() {
                 let link =
                   v2.type === "like"
                     ? `/s/${post.id}`
-                    : v2.type === "repost"
+                    : v2.type === "repost" || v2.type === "quote"
                     ? `/s/${post.id}`
                     : v2.type === "follow"
                     ? `/u/${user1?.handle ?? ""}`
@@ -345,6 +358,17 @@ function Page() {
                                     "your post"
                                   )}
                                 </>
+                              ) : v2.type === "quote" ? (
+                                <>
+                                  quoted{" "}
+                                  {!isNil(post.title) ? (
+                                    <Link href={`/s/${post.id}`}>
+                                      <b>{post.title}</b>
+                                    </Link>
+                                  ) : (
+                                    "your post"
+                                  )}
+                                </>
                               ) : v2.type === "follow" ? (
                                 "followed you"
                               ) : (
@@ -377,10 +401,38 @@ function Page() {
                           >
                             {v2.type === "repost" || v2.type === "like"
                               ? post?.description ?? ""
-                              : v2.type === "reply"
+                              : v2.type === "reply" || v2.type === "quote"
                               ? reply?.description ?? ""
                               : null}
                           </Box>
+                        )}
+                        {v2.type !== "quote" ? null : (
+                          <Link href={`/s/${post.id}`}>
+                            <Box
+                              my={3}
+                              sx={{
+                                ":hover": { opacity: 0.75 },
+                                border: "1px solid #ccc",
+                                borderRadius: "10px",
+                              }}
+                            >
+                              <Embed
+                                {...{
+                                  tweets,
+                                  parent: true,
+                                  tweet: {
+                                    title: post.title,
+                                    user: post.owner,
+                                    date: post.date,
+                                    body: post.description,
+                                    cover: post.cover,
+                                    id: post.id,
+                                  },
+                                  users,
+                                }}
+                              />
+                            </Box>
+                          </Link>
                         )}
                       </Box>
                       <Box w="50px" />

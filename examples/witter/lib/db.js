@@ -242,6 +242,7 @@ export const getTweets = async ({ ids, tweets, setTweets }) => {
     __tweets = mergeLeft(_tweets, __tweets)
   }
   setTweets(__tweets)
+  return __tweets
 }
 
 let __users = {}
