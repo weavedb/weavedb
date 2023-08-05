@@ -239,12 +239,18 @@ function Page() {
               {map(v2 => {
                 const v = tweets[v2.aid] ?? {}
                 let repost = null
-                if (v2.rid !== "") repost = tweets[v2.rid]?.owner
+                let parent = null
+                if (v2.rid !== "") {
+                  const rpost = tweets[v2.rid]
+                  repost = rpost?.owner
+                  if (!isNil(rpost) && !isNil(rpost.description)) parent = rpost
+                }
                 return (
                   <Tweet
                     likes={likes}
                     reposted={!isNil(reposts[v.id])}
                     {...{
+                      parent,
                       users,
                       tweets,
                       tweet: {

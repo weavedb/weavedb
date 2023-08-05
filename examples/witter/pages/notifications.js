@@ -128,6 +128,7 @@ function Page() {
           ["date", "desc"],
           limit
         )
+        console.log(notes)
         setNotes(notes)
         setIsNextNote(notes.length >= limit)
         const batches = compose(

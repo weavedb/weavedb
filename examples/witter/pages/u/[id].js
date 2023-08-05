@@ -592,9 +592,15 @@ function StatusPage() {
               <>
                 {map(v2 => {
                   const v = tweets[v2.data.aid] ?? {}
+                  const parent =
+                    v2.data.repost !== "" && !isNil(v2.data.description)
+                      ? v2.data
+                      : null
+
                   return (
                     <Tweet
                       {...{
+                        parent,
                         likes,
                         reposted: reposts[v.id],
                         users,
@@ -660,9 +666,14 @@ function StatusPage() {
                     v2.data.repost === ""
                       ? v2.data
                       : tweets[v2.data.repost] ?? {}
+                  const parent =
+                    v2.data.repost !== "" && !isNil(v2.data.description)
+                      ? v2.data
+                      : null
                   return (
                     <Tweet
                       {...{
+                        parent,
                         likes,
                         reposted: reposts[v.id],
                         users,
