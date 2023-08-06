@@ -569,6 +569,15 @@ function StatusPage() {
                       tweet
                     )
                   )
+                  if (!isNil(parent)) {
+                    setParent(
+                      assocPath(
+                        ["data", "comments"],
+                        parent.data.comments + 1,
+                        parent
+                      )
+                    )
+                  }
                 }
                 setComments(prepend({ id: post.id, data: post }, comments))
               },

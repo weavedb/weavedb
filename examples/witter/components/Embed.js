@@ -192,7 +192,6 @@ const Embed = ({
             ) : (
               tweet.body
             )}
-            {tweet.id}
           </Box>
           {isNil(embed) ? null : (
             <Box
