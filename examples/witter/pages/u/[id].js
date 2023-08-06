@@ -38,6 +38,7 @@ import {
 } from "../../lib/db"
 import EditUser from "../../components/EditUser"
 import EditStatus from "../../components/EditStatus"
+import EditPost from "../../components/EditPost"
 const limit = 10
 
 function StatusPage() {
@@ -47,6 +48,7 @@ function StatusPage() {
   const [identity, setIdentity] = useState(null)
   const [editUser, setEditUser] = useState(false)
   const [editStatus, setEditStatus] = useState(false)
+  const [editPost, setEditPost] = useState(false)
   const [users, setUsers] = useState({})
   const [tab, setTab] = useState("posts")
   const [posts, setPosts] = useState([])
@@ -336,6 +338,7 @@ function StatusPage() {
                   : null
               }
               {...{
+                setEditPost,
                 user,
                 setUser,
                 setEditUser,
@@ -771,6 +774,20 @@ function StatusPage() {
           <Box flex={1}></Box>
         </Flex>
       )}
+      <EditPost
+        {...{
+          setEditStatus,
+          setEditPost,
+          editPost,
+        }}
+      />
+      <EditStatus
+        {...{
+          setEditStatus,
+          editStatus,
+          user,
+        }}
+      />
       <EditUser
         {...{ setEditUser, editUser, identity, setUser, user, setPuser }}
       />

@@ -33,6 +33,7 @@ import SDK from "weavedb-client"
 import { initDB, checkUser, getUsers } from "../../lib/db"
 import EditUser from "../../components/EditUser"
 import EditRepost from "../../components/EditRepost"
+import EditPost from "../../components/EditPost"
 import EditStatus from "../../components/EditStatus"
 const limit = 10
 
@@ -46,6 +47,7 @@ function StatusPage() {
   const [identity, setIdentity] = useState(null)
   const [editUser, setEditUser] = useState(false)
   const [editRepost, setEditRepost] = useState(false)
+  const [editPost, setEditPost] = useState(false)
   const [editStatus, setEditStatus] = useState(false)
   const [replyTo, setReplyTo] = useState(null)
   const [repost, setRepost] = useState(false)
@@ -179,6 +181,7 @@ function StatusPage() {
           <Box w="100%" maxW="760px" minH="100%">
             <Header
               {...{
+                setEditPost,
                 setReplyTo,
                 user,
                 setUser,
@@ -366,6 +369,14 @@ function StatusPage() {
           }}
         />
       )}
+      <EditPost
+        {...{
+          setEditStatus,
+          setEditPost,
+          editPost,
+          setReplyTo,
+        }}
+      />
       <EditStatus
         {...{
           repost,

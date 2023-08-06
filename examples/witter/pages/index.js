@@ -32,6 +32,7 @@ import Header from "../components/Header"
 import SDK from "weavedb-client"
 import EditUser from "../components/EditUser"
 import EditStatus from "../components/EditStatus"
+import EditPost from "../components/EditPost"
 import { checkUser, initDB, getTweets, getUsers } from "../lib/db"
 const limit = 10
 function Page() {
@@ -43,6 +44,7 @@ function Page() {
   const [identity, setIdentity] = useState(null)
   const [editUser, setEditUser] = useState(false)
   const [editStatus, setEditStatus] = useState(false)
+  const [editPost, setEditPost] = useState(false)
   const [tab, setTab] = useState("all")
   const [timeline, setTimeline] = useState([])
   const [reposts, setReposts] = useState({})
@@ -206,6 +208,7 @@ function Page() {
             {...{
               user,
               setUser,
+              setEditPost,
               setEditUser,
               identity,
               setIdentity,
@@ -368,6 +371,20 @@ function Page() {
         </Box>
         <Box flex={1}></Box>
       </Flex>
+      <EditPost
+        {...{
+          setEditStatus,
+          setEditPost,
+          editPost,
+        }}
+      />
+      <EditStatus
+        {...{
+          setEditStatus,
+          editStatus,
+          user,
+        }}
+      />
       <EditUser {...{ setEditUser, editUser, identity, setUser, user }} />
     </ChakraProvider>
   )

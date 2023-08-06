@@ -13,11 +13,7 @@ export default function EditUser({
 }) {
   const router = useRouter()
   const [body, setBody] = useState("")
-  const [title, setTitle] = useState("")
-  const ok =
-    body.length > 0 &&
-    body.length <= 280 &&
-    (!isNil(replyTo) || (title.length > 0 && title.length <= 100))
+  const ok = body.length > 0 && body.length <= 280
   return !editStatus ? null : (
     <Flex
       h="100%"
@@ -55,22 +51,6 @@ export default function EditUser({
               ? "New Post"
               : "Write Reply"}
           </Flex>
-          {!isNil(replyTo) ? null : (
-            <>
-              <Box fontSize="12px" mx={1} mt={3} mb={1}>
-                Title ( 100 characters )
-              </Box>
-              <Box>
-                <Input
-                  placeholder="title"
-                  value={title}
-                  onChange={e => {
-                    if (e.target.value.length <= 50) setTitle(e.target.value)
-                  }}
-                />
-              </Box>
-            </>
-          )}
           <Box fontSize="12px" mx={1} mt={3} mb={1}>
             Body ( 280 characters )
           </Box>
@@ -102,11 +82,9 @@ export default function EditUser({
                     repost: repost ? replyTo : "",
                     replyTo,
                     body,
-                    title,
                     user,
                   })
                   if (isNil(err)) {
-                    setTitle("")
                     setBody("")
                     setEditStatus(false)
                     if (!isNil(setPost)) setPost(post)
