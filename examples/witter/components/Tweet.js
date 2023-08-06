@@ -41,14 +41,7 @@ function Tweet({
       }}
     />
   )
-  const embed =
-    isLink && !isNil(tweet.title) ? (
-      <Link href={`/s/${tweet.id}`}>{content}</Link>
-    ) : reply && !isNil(tweet.reply_to) ? (
-      <Link href={`/s/${tweet.reply_to}`}>{content}</Link>
-    ) : (
-      content
-    )
+  const embed = <Link href={`/s/${tweet.id}`}>{content}</Link>
 
   const pr = isNil(parent) ? null : (
     <Embed
@@ -58,6 +51,7 @@ function Tweet({
         reposted: false,
         users,
         tweets,
+        setRetweet,
         tweet: {
           cover: parent.cover,
           id: parent.id,

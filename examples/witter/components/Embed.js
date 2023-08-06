@@ -41,6 +41,31 @@ const Embed = ({
   const puser = users[tweet.user] ?? {}
   const renderer = new PlainTextRenderer()
   marked.setOptions({ sanitize: false })
+  let metadata = []
+  if (!isNil(repost) && isNil(parent)) {
+    metadata.push(
+      <Flex align="center" fontSize="12px">
+        <Box as="i" className="fas fa-retweet" mr={2} />
+        <Box mr={1}>reposted by</Box>
+        <Link
+          href={`/u/${users[repost]?.handle}`}
+          onClick={e => e.stopPropagation()}
+        >
+          <Box fontWeight="bold">{users[repost]?.name}</Box>
+        </Link>
+      </Flex>
+    )
+  }
+  if (reply && !isNil(tweets[tweet.reply_to]?.title)) {
+    metadata.push(
+      <Flex align="center" fontSize="12px" ml={metadata.length == 0 ? 0 : 6}>
+        <Box as="i" className="far fa-comment" mr={2} />
+        <Box mr={1}>reply to</Box>
+        <Box fontWeight="bold">{tweets[tweet.reply_to].title}</Box>
+      </Flex>
+    )
+  }
+
   const content = (
     <>
       <Flex
@@ -48,18 +73,8 @@ const Embed = ({
         align="center"
         sx={{
           borderBottom: isNil(parent) ? "1px solid #ccc" : "0px",
-          cursor:
-            (reply && !isNil(tweet.reploy_to)) ||
-            (isLink && !isNil(tweet.title))
-              ? "pointer"
-              : "default",
-          ":hover": {
-            opacity:
-              (reply && !isNil(tweet.reply_to)) ||
-              (isLink && !isNil(tweet.title))
-                ? 0.75
-                : 1,
-          },
+          cursor: "pointer",
+          ":hover": { opacity: 0.75 },
         }}
       >
         {!isNil(parent) ? null : (
@@ -115,24 +130,7 @@ const Embed = ({
               </Link>
             )}
             <Box flex={1}>
-              {reply && !isNil(tweets[tweet.reply_to]?.title) ? (
-                <Flex align="center" fontSize="12px">
-                  <Box as="i" className="far fa-comment" mr={2} />
-                  <Box mr={1}>reply to</Box>
-                  <Box fontWeight="bold">{tweets[tweet.reply_to].title}</Box>
-                </Flex>
-              ) : !isNil(repost) && isNil(parent) ? (
-                <Flex align="center" fontSize="12px">
-                  <Box as="i" className="fas fa-retweet" mr={2} />
-                  <Box mr={1}>reposted by</Box>
-                  <Link
-                    href={`/u/${users[repost]?.handle}`}
-                    onClick={e => e.stopPropagation()}
-                  >
-                    <Box fontWeight="bold">{users[repost]?.name}</Box>
-                  </Link>
-                </Flex>
-              ) : null}
+              {metadata.length === 0 ? null : <Flex>{metadata}</Flex>}
               {isNil(tweet.title) ? null : (
                 <Flex align="center">
                   <Box
@@ -211,35 +209,31 @@ const Embed = ({
           )}
           {!isNil(parent) ? null : (
             <Flex mt={2} ml={[10, null, null, 0]}>
-              {reply ? null : (
-                <>
-                  <Box>
-                    <Box as="i" className="far fa-comment" mr={2} />
-                    {tweet.comments}
-                  </Box>
-                  <Box
-                    ml={10}
-                    color={reposted ? "#00BA7C" : ""}
-                    sx={{
-                      cursor: reposted || isNil(user) ? "default" : "pointer",
-                      "hover:": {
-                        opacity: reposted || isNil(user) ? 1 : 0.75,
-                      },
-                    }}
-                    onClick={async () => {
-                      if (!reposted && !isNil(user)) {
-                        const { repost } = await repostPost({ user, tweet })
-                        setRetweet(repost)
-                      }
-                    }}
-                  >
-                    <Box as="i" className="fas fa-retweet" mr={2} />
-                    {tweet.reposts}
-                  </Box>
-                </>
-              )}
+              <Box>
+                <Box as="i" className="far fa-comment" mr={2} />
+                {tweet.comments}
+              </Box>
               <Box
-                ml={reply ? 0 : 10}
+                ml={10}
+                color={reposted ? "#00BA7C" : ""}
+                sx={{
+                  cursor: reposted || isNil(user) ? "default" : "pointer",
+                  "hover:": {
+                    opacity: reposted || isNil(user) ? 1 : 0.75,
+                  },
+                }}
+                onClick={async () => {
+                  if (!reposted && !isNil(user)) {
+                    const { repost } = await repostPost({ user, tweet })
+                    setRetweet(repost)
+                  }
+                }}
+              >
+                <Box as="i" className="fas fa-retweet" mr={2} />
+                {tweet.reposts}
+              </Box>
+              <Box
+                ml={10}
                 color={!isNil(likes[tweet.id]) ? "#F91880" : ""}
                 sx={{
                   cursor:
