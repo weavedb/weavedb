@@ -282,6 +282,15 @@ function StatusPage() {
                   user,
                   likes,
                   setLikes,
+                  reposted: reposts[v.id],
+                  setRetweet: repost => {
+                    let _comments = clone(comments)
+                    for (let v2 of _comments) {
+                      if (v.id === v2.id) v2.data.reposts += 1
+                    }
+                    setComments(_comments)
+                    setReposts(assoc(v.id, repost, reposts))
+                  },
                   setTweet: () => {
                     let _comments = clone(comments)
                     for (let v2 of _comments) {

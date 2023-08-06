@@ -308,6 +308,7 @@ function StatusPage() {
     { key: "following", name: "Following" },
     { key: "followers", name: "Followers" },
   ]
+  console.log("................................................")
   return (
     <ChakraProvider>
       <style jsx global>{`
@@ -673,6 +674,13 @@ function StatusPage() {
                     v2.data.repost !== "" && !isNil(v2.data.description)
                       ? v2.data
                       : null
+                  const repost =
+                    tab === "posts" && v2.data.repost !== ""
+                      ? puser.address
+                      : null
+                  const reply =
+                    tab === "replies" ||
+                    (isNil(repost) ? v2.data.reply_to !== "" : v.reply_to)
                   return (
                     <Tweet
                       {...{
@@ -693,11 +701,8 @@ function StatusPage() {
                           reply_to: v.reply_to,
                           body: v.description,
                         },
-                        repost:
-                          tab === "posts" && v2.data.repost !== ""
-                            ? puser.address
-                            : null,
-                        reply: tab === "replies" || v.reply_to !== "",
+                        repost,
+                        reply,
                       }}
                     />
                   )
