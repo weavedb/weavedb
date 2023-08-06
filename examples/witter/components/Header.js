@@ -14,6 +14,7 @@ function Header({
   setIdentity,
   setEditUser,
   setEditStatus,
+  setEditPost,
   setReplyTo,
   type = "default",
 }) {
@@ -94,21 +95,16 @@ function Header({
       ) : (
         <>
           {type === "default" ? (
-            <Link href="/new">
-              <Box
-                onClick={async () => {
-                  //if (!isNil(setReplyTo)) setReplyTo(null)
-                  //setEditStatus(true)
-                }}
-                mx={2}
-                sx={{
-                  cursor: "pointer",
-                  ":hover": { opacity: 0.75 },
-                }}
-              >
-                New Post
-              </Box>
-            </Link>
+            <Box
+              onClick={() => setEditPost(true)}
+              mx={2}
+              sx={{
+                cursor: "pointer",
+                ":hover": { opacity: 0.75 },
+              }}
+            >
+              New Post
+            </Box>
           ) : (
             <>
               {map(v => {
