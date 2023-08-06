@@ -20,6 +20,7 @@ dayjs.extend(relativeTime)
 import { repostPost, likePost } from "../lib/db"
 
 const Embed = ({
+  disabled = false,
   embed,
   reposted = false,
   setRetweet,
@@ -65,7 +66,6 @@ const Embed = ({
       </Flex>
     )
   }
-
   const content = (
     <>
       <Flex
@@ -73,8 +73,8 @@ const Embed = ({
         align="center"
         sx={{
           borderBottom: isNil(parent) ? "1px solid #ccc" : "0px",
-          cursor: "pointer",
-          ":hover": { opacity: 0.75 },
+          cursor: isLink ? "pointer" : "default",
+          ":hover": { opacity: isLink ? 0.75 : 1 },
         }}
       >
         {!isNil(parent) ? null : (
@@ -85,9 +85,7 @@ const Embed = ({
           >
             <Link
               href={`/u/${puser.handle}`}
-              onClick={e => {
-                e.stopPropagation()
-              }}
+              onClick={e => e.stopPropagation()}
             >
               <Image
                 src={puser.image ?? "/images/default-icon.png"}
@@ -194,6 +192,7 @@ const Embed = ({
             ) : (
               tweet.body
             )}
+            {tweet.id}
           </Box>
           {isNil(embed) ? null : (
             <Box
@@ -219,13 +218,16 @@ const Embed = ({
                 sx={{
                   cursor: reposted || isNil(user) ? "default" : "pointer",
                   "hover:": {
-                    opacity: reposted || isNil(user) ? 1 : 0.75,
+                    opacity: disabled || reposted || isNil(user) ? 1 : 0.75,
                   },
                 }}
-                onClick={async () => {
-                  if (!reposted && !isNil(user)) {
-                    const { repost } = await repostPost({ user, tweet })
-                    setRetweet(repost)
+                onClick={async e => {
+                  if (!disabled) {
+                    e.preventDefault()
+                    if (!reposted && !isNil(user)) {
+                      const { repost } = await repostPost({ user, tweet })
+                      setRetweet(repost)
+                    }
                   }
                 }}
               >
@@ -241,14 +243,20 @@ const Embed = ({
                       ? "default"
                       : "pointer",
                   ":hover": {
-                    opacity: !isNil(likes[tweet.id]) || isNil(user) ? 1 : 0.75,
+                    opacity:
+                      disabled || !isNil(likes[tweet.id]) || isNil(user)
+                        ? 1
+                        : 0.75,
                   },
                 }}
-                onClick={async () => {
-                  if (isNil(likes[tweet.id]) && !isNil(user)) {
-                    const { like } = await likePost({ user, tweet })
-                    setLikes(mergeLeft({ [tweet.id]: like }, likes))
-                    setTweet()
+                onClick={async e => {
+                  if (!disabled) {
+                    e.preventDefault()
+                    if (isNil(likes[tweet.id]) && !isNil(user)) {
+                      const { like } = await likePost({ user, tweet })
+                      setLikes(mergeLeft({ [tweet.id]: like }, likes))
+                      setTweet()
+                    }
                   }
                 }}
               >

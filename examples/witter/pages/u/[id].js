@@ -308,7 +308,6 @@ function StatusPage() {
     { key: "following", name: "Following" },
     { key: "followers", name: "Followers" },
   ]
-  console.log("................................................")
   return (
     <ChakraProvider>
       <style jsx global>{`

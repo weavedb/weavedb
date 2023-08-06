@@ -39,6 +39,7 @@ const limit = 10
 
 function StatusPage() {
   const router = useRouter()
+  const [parent, setParent] = useState(null)
   const [tweet, setTweet] = useState(null)
   const [users, setUsers] = useState({})
   const [likes, setLikes] = useState({})
@@ -55,15 +56,23 @@ function StatusPage() {
   const [reposts, setReposts] = useState({})
   const [isNextComment, setIsNextComment] = useState(false)
   const [tweets, setTweets] = useState({})
-
   useEffect(() => {
     if (!isNil(router.query.id)) {
       ;(async () => {
+        setParent(null)
         const db = await initDB()
         let post = await db.cget("posts", router.query.id)
         if (!isNil(post)) {
           setTweet(post)
-          await getUsers({ ids: [post.data.owner], users, setUsers })
+          let _users = [post.data.owner]
+          if (post.data.reply_to !== "") {
+            let par = await db.cget("posts", post.data.reply_to)
+            if (!isNil(par)) {
+              _users.push(par.data.owner)
+              setParent(par)
+            }
+          }
+          await getUsers({ ids: _users, users, setUsers })
           const _comments = await db.cget(
             "posts",
             ["reply_to", "==", post.data.id],
@@ -191,20 +200,111 @@ function StatusPage() {
                 setEditStatus,
               }}
             />
-            <Box
-              pb={3}
-              maxW="760px"
-              w="100%"
-              display="flex"
-              px={[2, 4, 6]}
-              sx={{ borderBottom: "1px solid #ccc" }}
-            >
-              <Article
+            {isNil(parent) ? null : parent.data.reply_to !== "" ? (
+              <Tweet
                 {...{
-                  setEditRepost,
-                  reposted: reposts[tweet.data.id],
+                  disabled: true,
+                  user,
                   likes,
                   setLikes,
+                  isLink: true,
+                  reposted: reposts[parent.data.id],
+                  setTweet: () => {
+                    setTweet(
+                      assocPath(["data", "likes"], parent.data.likes + 1, tweet)
+                    )
+                  },
+                  setRetweet: repost => {
+                    setTweet(
+                      assocPath(
+                        ["data", "reposts"],
+                        parent.data.reposts + 1,
+                        tweet
+                      )
+                    )
+                    setReposts(mergeLeft({ [parent.data.id]: repost }, reposts))
+                  },
+                  tweet: {
+                    body: parent.data.description,
+                    id: parent.data.id,
+                    date: parent.data.date,
+                    user: parent.data.owner,
+                    reposts: parent.data.reposts,
+                    likes: parent.data.likes,
+                    comments: parent.data.comments,
+                  },
+                  users,
+                  reply: true,
+                }}
+              />
+            ) : (
+              <Link href={`/s/${tweet.data.reply_to}`}>
+                <Box
+                  pb={3}
+                  maxW="760px"
+                  w="100%"
+                  display="flex"
+                  px={[2, 4, 6]}
+                  sx={{
+                    cursor: "pointer",
+                    ":hover": { opacity: 0.75, bg: "#f9f9f9" },
+                    borderBottom: "1px solid #ccc",
+                  }}
+                >
+                  <Article
+                    {...{
+                      disabled: true,
+                      setEditRepost,
+                      reposted: reposts[parent.data.id],
+                      likes,
+                      setLikes,
+                      setTweet: () => {
+                        setTweet(
+                          assocPath(
+                            ["data", "likes"],
+                            parent.data.likes + 1,
+                            tweet
+                          )
+                        )
+                      },
+                      setRetweet: repost => {
+                        setTweet(
+                          assocPath(
+                            ["data", "reposts"],
+                            parent.data.reposts + 1,
+                            tweet
+                          )
+                        )
+                        setReposts(
+                          mergeLeft({ [parent.data.id]: repost }, reposts)
+                        )
+                      },
+                    }}
+                    post={{
+                      id: parent.data.id,
+                      title: parent.data.title,
+                      description: parent.data.description,
+                      body: parent.data.content,
+                      cover: parent.data.cover,
+                      likes: parent.data.likes,
+                      reposts: parent.data.reposts,
+                      quotes: parent.data.quotes,
+                      comments: parent.data.comments,
+                    }}
+                    user={user}
+                    puser={users[parent.data.owner]}
+                  />
+                </Box>
+              </Link>
+            )}
+            {tweet.data.reply_to !== "" || isNil(tweet.data.title) ? (
+              <Tweet
+                {...{
+                  user,
+                  likes,
+                  setLikes,
+                  isLink: false,
+                  reposted: reposts[tweet.data.id],
                   setTweet: () => {
                     setTweet(
                       assocPath(["data", "likes"], tweet.data.likes + 1, tweet)
@@ -220,22 +320,72 @@ function StatusPage() {
                     )
                     setReposts(mergeLeft({ [tweet.data.id]: repost }, reposts))
                   },
+                  tweet: {
+                    body: tweet.data.description,
+                    id: tweet.data.id,
+                    date: tweet.data.date,
+                    user: tweet.data.owner,
+                    reposts: tweet.data.reposts,
+                    likes: tweet.data.likes,
+                    comments: tweet.data.comments,
+                  },
+                  users,
+                  reply: true,
                 }}
-                post={{
-                  id: tweet.data.id,
-                  title: tweet.data.title,
-                  description: tweet.data.description,
-                  body: tweet.data.content,
-                  cover: tweet.data.cover,
-                  likes: tweet.data.likes,
-                  reposts: tweet.data.reposts,
-                  quotes: tweet.data.quotes,
-                  comments: tweet.data.comments,
-                }}
-                user={user}
-                puser={users[tweet.data.owner]}
               />
-            </Box>
+            ) : (
+              <Box
+                pb={3}
+                maxW="760px"
+                w="100%"
+                display="flex"
+                px={[2, 4, 6]}
+                sx={{ borderBottom: "1px solid #ccc" }}
+              >
+                <Article
+                  {...{
+                    setEditRepost,
+                    reposted: reposts[tweet.data.id],
+                    likes,
+                    setLikes,
+                    setTweet: () => {
+                      setTweet(
+                        assocPath(
+                          ["data", "likes"],
+                          tweet.data.likes + 1,
+                          tweet
+                        )
+                      )
+                    },
+                    setRetweet: repost => {
+                      setTweet(
+                        assocPath(
+                          ["data", "reposts"],
+                          tweet.data.reposts + 1,
+                          tweet
+                        )
+                      )
+                      setReposts(
+                        mergeLeft({ [tweet.data.id]: repost }, reposts)
+                      )
+                    },
+                  }}
+                  post={{
+                    id: tweet.data.id,
+                    title: tweet.data.title,
+                    description: tweet.data.description,
+                    body: tweet.data.content,
+                    cover: tweet.data.cover,
+                    likes: tweet.data.likes,
+                    reposts: tweet.data.reposts,
+                    quotes: tweet.data.quotes,
+                    comments: tweet.data.comments,
+                  }}
+                  user={user}
+                  puser={users[tweet.data.owner]}
+                />
+              </Box>
+            )}
             {isNil(user) ? null : (
               <Flex
                 p={4}
@@ -388,6 +538,7 @@ function StatusPage() {
       />
       <EditStatus
         {...{
+          tweet: tweet?.data,
           repost,
           setEditStatus,
           editStatus,

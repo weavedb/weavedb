@@ -10,6 +10,7 @@ export default function EditUser({
   user,
   replyTo,
   setPost,
+  tweet,
 }) {
   const router = useRouter()
   const [body, setBody] = useState("")
@@ -83,6 +84,7 @@ export default function EditUser({
                     replyTo,
                     body,
                     user,
+                    tweet,
                   })
                   if (isNil(err)) {
                     setBody("")
