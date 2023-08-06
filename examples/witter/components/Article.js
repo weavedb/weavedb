@@ -181,11 +181,28 @@ export default function Article({
               borderBottom: "1px #ccc solid",
             }}
             py={3}
-            justify="center"
+            fontSize="14px"
+            px={4}
           >
-            <Comment />
-            <Repost />
-            <Like />
+            <Box>
+              <b>{post.comments ?? 0}</b> Comments
+            </Box>
+            <Box ml={6}>
+              <b>{(post.reposts ?? 0) - (post.quotes ?? 0)}</b> Reposts
+            </Box>
+            <Box ml={6}>
+              <b>{post.quotes ?? 0}</b> Quotes
+            </Box>
+            <Box ml={6}>
+              <b>{post.likes ?? 0}</b> Likes
+            </Box>
+            <Box flex={1} />
+            {!preview && user.address === puser.address ? (
+              <>
+                <Box ml={6}>Edit</Box>
+                <Box ml={6}>Delete</Box>
+              </>
+            ) : null}
           </Flex>
         ) : null}
         <Box
