@@ -19,10 +19,13 @@ function Tweet({
   reply = false,
   repost = null,
   parent,
+  disabled = false,
 }) {
   const content = (
     <Embed
       {...{
+        disabled: isNil(parent) ? disabled : false,
+        isLink: isNil(parent) ? isLink : true,
         reposted,
         setRetweet,
         user,
@@ -41,11 +44,17 @@ function Tweet({
       }}
     />
   )
-  const embed = <Link href={`/s/${tweet.id}`}>{content}</Link>
+  const embed = isLink ? (
+    <Link href={`/s/${tweet.id}`}>{content}</Link>
+  ) : (
+    content
+  )
 
   const pr = isNil(parent) ? null : (
     <Embed
       {...{
+        disabled,
+        isLink,
         embed,
         likes,
         reposted: false,

@@ -2,6 +2,7 @@ import SDK from "weavedb-client"
 let db = null
 let ndb = null
 import {
+  append,
   concat,
   compose,
   difference,
@@ -207,7 +208,14 @@ export const followUser = async ({ user, puser }) => {
   return { follow: { id, data: follow } }
 }
 
-export const postStatus = async ({ body, user, title, replyTo, repost }) => {
+export const postStatus = async ({
+  body,
+  user,
+  title,
+  replyTo,
+  repost,
+  tweet,
+}) => {
   const { identity } = await lf.getItem("user")
   const id = nanoid()
   let post = {
@@ -224,7 +232,7 @@ export const postStatus = async ({ body, user, title, replyTo, repost }) => {
     description: body,
   }
   if (isNil(replyTo)) post.title = title
-
+  if (!isNil(tweet)) post.parents = append(tweet.id, tweet.parents ?? [])
   await db.set(post, "posts", post.id, identity)
   return { post }
 }

@@ -8,6 +8,7 @@ dayjs.extend(relativeTime)
 import GithubMarkdown from "../lib/GithubMarkdown"
 
 export default function Article({
+  disabled = false,
   setEditRepost,
   post,
   user,
@@ -37,7 +38,7 @@ export default function Article({
           },
         }}
         onClick={async () => {
-          if (!preview && isNil(likes[post.id]) && !isNil(user)) {
+          if (!disabled && !preview && isNil(likes[post.id]) && !isNil(user)) {
             const { like } = await likePost({ user, tweet: post })
             setLikes(mergeLeft({ [post.id]: like }, likes))
             setTweet()
@@ -73,7 +74,7 @@ export default function Article({
           },
         }}
         onClick={async () => {
-          if (!preview && !isNil(user)) setEditRepost(true)
+          if (!disabled && !preview && !isNil(user)) setEditRepost(true)
         }}
       >
         <Box as="i" className="fas fa-retweet" mr={2} />
@@ -170,7 +171,7 @@ export default function Article({
         )}
 
         {post.description === "" ? null : (
-          <Flex fontSize="16px" mt={2} mb={4} justify="center">
+          <Flex fontSize="16px" mt={2} mb={4} justify="center" mx={6}>
             <i>{post.description}</i>
           </Flex>
         )}
