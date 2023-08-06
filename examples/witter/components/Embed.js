@@ -199,7 +199,7 @@ const Embed = ({
           </Box>
           {isNil(embed) ? null : (
             <Box
-              my={3}
+              my={4}
               sx={{
                 ":hover": { opacity: 0.75 },
                 border: "1px solid #ccc",

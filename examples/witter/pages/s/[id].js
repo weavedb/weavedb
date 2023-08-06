@@ -82,12 +82,14 @@ function StatusPage() {
       })()
     }
   }, [router])
+
   useEffect(() => {
     ;(async () => {
       const { user, identity } = await checkUser()
       setUser(user)
     })()
   }, [])
+
   useEffect(() => {
     ;(async () => {
       await getUsers({
@@ -224,6 +226,7 @@ function StatusPage() {
                   cover: tweet.data.cover,
                   likes: tweet.data.likes,
                   reposts: tweet.data.reposts,
+                  quotes: tweet.data.quotes,
                   comments: tweet.data.comments,
                 }}
                 user={user}
@@ -374,13 +377,19 @@ function StatusPage() {
             ? null
             : post => {
                 if (repost) {
-                  setTweet(
-                    assocPath(
-                      ["data", "reposts"],
-                      tweet.data.reposts + 1,
-                      tweet
-                    )
+                  let new_post = assocPath(
+                    ["data", "reposts"],
+                    tweet.data.reposts + 1,
+                    tweet
                   )
+                  if (!isNil(post.description)) {
+                    new_post = assocPath(
+                      ["data", "quotes"],
+                      new_post.data.quotes + 1,
+                      new_post
+                    )
+                  }
+                  setTweet(new_post)
                 } else {
                   setTweet(
                     assocPath(
