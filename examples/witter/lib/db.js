@@ -2,6 +2,7 @@ import SDK from "weavedb-client"
 let db = null
 let ndb = null
 import {
+  dissoc,
   append,
   concat,
   compose,
@@ -239,6 +240,12 @@ export const postStatus = async ({
   console.log(post)
   await db.set(post, "posts", post.id, identity)
   return { post }
+}
+
+export const deletePost = async ({ tweet }) => {
+  const { identity } = await lf.getItem("user")
+  await db.update({ date: db.del() }, "posts", tweet.id, identity)
+  return { post: dissoc("date", tweet) }
 }
 
 let __tweets = {}

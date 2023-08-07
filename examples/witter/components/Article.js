@@ -1,13 +1,14 @@
 import { Box, Flex, Image } from "@chakra-ui/react"
 import Link from "next/link"
 import { mergeLeft, isNil } from "ramda"
-import { repostPost, likePost } from "../lib/db"
+import { deletePost, repostPost, likePost } from "../lib/db"
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
 dayjs.extend(relativeTime)
 import GithubMarkdown from "../lib/GithubMarkdown"
 
 export default function Article({
+  delTweet,
   setShowReposts,
   setShowLikes,
   main = false,
@@ -25,6 +26,7 @@ export default function Article({
   setTweet,
   repost = null,
 }) {
+  const isDeleted = isNil(post.date)
   const Like = () => {
     return (
       <Box
@@ -88,36 +90,23 @@ export default function Article({
   return (
     <Box my={1} mx={2} flex={1}>
       <GithubMarkdown />
-      <Flex
-        mb={4}
-        align={[post.title !== "" ? "flex-start" : "center", null, "center"]}
-      >
-        <Box flex={1}>
-          <Box
-            as="h1"
-            my={4}
-            fontSize={["16px", "24px", , "32px"]}
-            fontWeight="bold"
-            lineHeight="120%"
-          >
-            {post.title}
-          </Box>
-          <Flex fontSize="14px" color="#666" align="center">
-            {preview ? (
-              <Image
-                src={puser?.image ?? "/images/default-icon.png"}
-                boxSize="40px"
-                m={1}
-                mr={3}
-                sx={{ borderRadius: "50%" }}
-              />
-            ) : (
-              <Link
-                href={`/u/${puser?.handle}`}
-                onClick={e => {
-                  e.stopPropagation()
-                }}
-              >
+      {isDeleted ? null : (
+        <Flex
+          mb={4}
+          align={[post.title !== "" ? "flex-start" : "center", null, "center"]}
+        >
+          <Box flex={1}>
+            <Box
+              as="h1"
+              my={4}
+              fontSize={["16px", "24px", , "32px"]}
+              fontWeight="bold"
+              lineHeight="120%"
+            >
+              {post.title}
+            </Box>
+            <Flex fontSize="14px" color="#666" align="center">
+              {preview ? (
                 <Image
                   src={puser?.image ?? "/images/default-icon.png"}
                   boxSize="40px"
@@ -125,13 +114,6 @@ export default function Article({
                   mr={3}
                   sx={{ borderRadius: "50%" }}
                 />
-              </Link>
-            )}
-            <Box>
-              {preview ? (
-                <Box color="#333" fontWeight="bold">
-                  {puser?.name}
-                </Box>
               ) : (
                 <Link
                   href={`/u/${puser?.handle}`}
@@ -139,14 +121,20 @@ export default function Article({
                     e.stopPropagation()
                   }}
                 >
+                  <Image
+                    src={puser?.image ?? "/images/default-icon.png"}
+                    boxSize="40px"
+                    m={1}
+                    mr={3}
+                    sx={{ borderRadius: "50%" }}
+                  />
+                </Link>
+              )}
+              <Box>
+                {preview ? (
                   <Box color="#333" fontWeight="bold">
                     {puser?.name}
                   </Box>
-                </Link>
-              )}
-              <Flex>
-                {preview ? (
-                  <Box>@{puser?.handle}</Box>
                 ) : (
                   <Link
                     href={`/u/${puser?.handle}`}
@@ -154,26 +142,48 @@ export default function Article({
                       e.stopPropagation()
                     }}
                   >
-                    <Box>@{puser?.handle}</Box>
+                    <Box color="#333" fontWeight="bold">
+                      {puser?.name}
+                    </Box>
                   </Link>
                 )}
-                <Box mx={1}>·</Box>
-                <Box>
-                  {preview ? "Preview" : dayjs(post.date).fromNow(true)}
-                </Box>
-              </Flex>
-            </Box>
-          </Flex>
-        </Box>
-      </Flex>
+                <Flex>
+                  {preview ? (
+                    <Box>@{puser?.handle}</Box>
+                  ) : (
+                    <Link
+                      href={`/u/${puser?.handle}`}
+                      onClick={e => {
+                        e.stopPropagation()
+                      }}
+                    >
+                      <Box>@{puser?.handle}</Box>
+                    </Link>
+                  )}
+                  <Box mx={1}>·</Box>
+                  <Box>
+                    {preview ? "Preview" : dayjs(post.date).fromNow(true)}
+                  </Box>
+                </Flex>
+              </Box>
+            </Flex>
+          </Box>
+        </Flex>
+      )}
+
       <Box fontSize="14px" className="markdown-body">
-        {isNil(post.cover) ? null : (
+        {isDeleted || isNil(post.cover) ? null : (
           <Flex justify="center" mb={4}>
             <Image src={post.cover} />
           </Flex>
         )}
-
-        {post.description === "" ? null : (
+        {isDeleted ? (
+          <Flex fontSize="16px" pt={3} mb={4} justify="center" mx={6}>
+            <Box as="i" color="crimson">
+              This post has been deleted by the owner
+            </Box>
+          </Flex>
+        ) : post.description === "" ? null : (
           <Flex fontSize="16px" mt={2} mb={4} justify="center" mx={6}>
             <i>{post.description}</i>
           </Flex>
@@ -229,20 +239,36 @@ export default function Article({
               <b>{post.likes ?? 0}</b> Likes
             </Box>
             <Box flex={1} />
-            {!preview && user?.address === puser?.address ? (
+            {!isDeleted && !preview && user?.address === puser?.address ? (
               <>
                 <Box ml={6}>Edit</Box>
-                <Box ml={6}>Delete</Box>
+                <Box
+                  onClick={async () => {
+                    if (confirm("Would you like to delete this post?")) {
+                      const { post: _post } = await deletePost({ tweet: post })
+                      delTweet(_post)
+                    }
+                  }}
+                  ml={6}
+                  sx={{
+                    cursor: "pointer",
+                    ":hover": { textDecoration: "underline" },
+                  }}
+                >
+                  Delete
+                </Box>
               </>
             ) : null}
           </Flex>
         ) : null}
-        <Box
-          my={4}
-          fontSize="16px"
-          dangerouslySetInnerHTML={{ __html: post.content }}
-        />
-        {preview ? null : (
+        {isDeleted ? null : (
+          <Box
+            my={4}
+            fontSize="16px"
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
+        )}
+        {isDeleted || preview ? null : (
           <Flex mt={2}>
             <Comment />
             <Repost />

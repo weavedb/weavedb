@@ -1,8 +1,9 @@
 import Link from "next/link"
 import { isNil } from "ramda"
 import Embed from "./Embed"
-import { Box } from "@chakra-ui/react"
+import { Flex, Box } from "@chakra-ui/react"
 function Tweet({
+  delTweet,
   reposted = false,
   setRetweet,
   user = {},
@@ -25,9 +26,12 @@ function Tweet({
   setShowLikes,
   setShowReposts,
 }) {
+  const isDeleted = isNil(parent) ? isNil(tweet.date) : isNil(parent.date)
   const content = (
     <Embed
       {...{
+        isDeleted,
+        delTweet,
         setShowReposts,
         setShowLikes,
         setEditRepost,
@@ -61,6 +65,8 @@ function Tweet({
   const pr = isNil(parent) ? null : (
     <Embed
       {...{
+        isDeleted,
+        delTweet,
         setShowReposts,
         setShowLikes,
         setEditRepost,

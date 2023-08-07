@@ -3,6 +3,7 @@ import { useState, useEffect } from "react"
 import { Box, Flex, ChakraProvider, Image } from "@chakra-ui/react"
 import Link from "next/link"
 import {
+  dissocPath,
   assoc,
   assocPath,
   last,
@@ -189,6 +190,7 @@ function StatusPage() {
       }
     })()
   }, [tweets, user])
+  const isDeleted = !isNil(tweet) && isNil(tweet.data.date)
   return (
     <ChakraProvider>
       <style jsx global>{`
@@ -260,6 +262,9 @@ function StatusPage() {
                   setLikes,
                   isLink: false,
                   reposted: reposts[tweet.data.id],
+                  delTweet: post => {
+                    setTweet(dissocPath(["data", "date"], tweet))
+                  },
                   setTweet: () => {
                     setTweet(
                       assocPath(["data", "likes"], tweet.data.likes + 1, tweet)
@@ -298,6 +303,9 @@ function StatusPage() {
                     reposted: reposts[tweet.data.id],
                     likes,
                     setLikes,
+                    delTweet: post => {
+                      setTweet(dissocPath(["data", "date"], tweet))
+                    },
                     setTweet: () => {
                       setTweet(
                         assocPath(
@@ -326,7 +334,7 @@ function StatusPage() {
                 />
               </Box>
             )}
-            {isNil(user) ? null : (
+            {isDeleted || isNil(user) ? null : (
               <Flex
                 p={4}
                 onClick={() => {
