@@ -40,6 +40,7 @@ const limit = 10
 function StatusPage() {
   const router = useRouter()
   const [parent, setParent] = useState(null)
+  const [embed, setEmbed] = useState(null)
   const [tweet, setTweet] = useState(null)
   const [users, setUsers] = useState({})
   const [likes, setLikes] = useState({})
@@ -47,11 +48,11 @@ function StatusPage() {
   const [user, setUser] = useState(null)
   const [identity, setIdentity] = useState(null)
   const [editUser, setEditUser] = useState(false)
-  const [editRepost, setEditRepost] = useState(false)
+  const [editRepost, setEditRepost] = useState(null)
   const [editPost, setEditPost] = useState(false)
   const [editStatus, setEditStatus] = useState(false)
   const [replyTo, setReplyTo] = useState(null)
-  const [repost, setRepost] = useState(false)
+  const [repost, setRepost] = useState(null)
   const [reposted, setReposted] = useState(false)
   const [reposts, setReposts] = useState({})
   const [isNextComment, setIsNextComment] = useState(false)
@@ -71,6 +72,15 @@ function StatusPage() {
               _users.push(par.data.owner)
               setParent(par)
             }
+          }
+          if (!isNil(post.data.repost) && post.data.repost !== "") {
+            let _embed = await db.cget("posts", post.data.repost)
+            setEmbed(_embed)
+            if (!isNil(_embed)) {
+              _users.push(_embed.data.owner)
+            }
+          } else {
+            setEmbed(null)
           }
           await getUsers({ ids: _users, users, setUsers })
           const _comments = await db.cget(
@@ -224,17 +234,7 @@ function StatusPage() {
                     )
                     setReposts(mergeLeft({ [parent.data.id]: repost }, reposts))
                   },
-                  tweet: {
-                    title: parent.data.title,
-                    cover: parent.data.cover,
-                    body: parent.data.description,
-                    id: parent.data.id,
-                    date: parent.data.date,
-                    user: parent.data.owner,
-                    reposts: parent.data.reposts,
-                    likes: parent.data.likes,
-                    comments: parent.data.comments,
-                  },
+                  tweet: parent.data,
                   users,
                   reply: true,
                 }}
@@ -243,6 +243,8 @@ function StatusPage() {
             {tweet.data.reply_to !== "" || isNil(tweet.data.title) ? (
               <Tweet
                 {...{
+                  parent: isNil(embed) ? null : tweet.data,
+                  setEditRepost,
                   main: true,
                   user,
                   likes,
@@ -264,15 +266,7 @@ function StatusPage() {
                     )
                     setReposts(mergeLeft({ [tweet.data.id]: repost }, reposts))
                   },
-                  tweet: {
-                    body: tweet.data.description,
-                    id: tweet.data.id,
-                    date: tweet.data.date,
-                    user: tweet.data.owner,
-                    reposts: tweet.data.reposts,
-                    likes: tweet.data.likes,
-                    comments: tweet.data.comments,
-                  },
+                  tweet: isNil(embed) ? tweet.data : embed.data,
                   users,
                   reply: true,
                 }}
@@ -315,17 +309,7 @@ function StatusPage() {
                       )
                     },
                   }}
-                  post={{
-                    id: tweet.data.id,
-                    title: tweet.data.title,
-                    description: tweet.data.description,
-                    body: tweet.data.content,
-                    cover: tweet.data.cover,
-                    likes: tweet.data.likes,
-                    reposts: tweet.data.reposts,
-                    quotes: tweet.data.quotes,
-                    comments: tweet.data.comments,
-                  }}
+                  post={tweet.data}
                   user={user}
                   puser={users[tweet.data.owner]}
                 />
@@ -336,7 +320,7 @@ function StatusPage() {
                 p={4}
                 onClick={() => {
                   setReplyTo(tweet.data.id)
-                  setRepost(false)
+                  setRepost(null)
                   setEditStatus(true)
                 }}
                 sx={{
@@ -374,6 +358,7 @@ function StatusPage() {
             {map(v => (
               <Tweet
                 {...{
+                  setEditRepost,
                   user,
                   likes,
                   setLikes,
@@ -446,29 +431,28 @@ function StatusPage() {
       <EditUser {...{ setEditUser, editUser, identity, setUser, user }} />
       {isNil(tweet) ? null : (
         <EditRepost
-          post={{
-            id: tweet.data.id,
-            title: tweet.data.title,
-            description: tweet.data.description,
-            body: tweet.data.content,
-            cover: tweet.data.cover,
-            likes: tweet.data.likes,
-            reposts: tweet.data.reposts,
-            comments: tweet.data.comments,
-          }}
           user={user}
           {...{
             setRepost,
             setReplyTo,
             setEditStatus,
-            reposted: reposts[tweet.data.id],
+            reposted: reposts[editRepost?.id],
             setEditRepost,
             editRepost,
             setRetweet: repost => {
-              setTweet(
-                assocPath(["data", "reposts"], tweet.data.reposts + 1, tweet)
-              )
-              setReposts(mergeLeft({ [tweet.data.id]: repost }, reposts))
+              if (editRepost.id === tweet.data.id) {
+                setTweet(
+                  assocPath(["data", "reposts"], tweet.data.reposts + 1, tweet)
+                )
+                setReposts(mergeLeft({ [tweet.data.id]: repost }, reposts))
+              } else {
+                let _comments = clone(comments)
+                for (let v of _comments) {
+                  if (v.id === repost.repost) v.data.reposts += 1
+                }
+                setComments(_comments)
+                setReposts(assoc(repost.repost, repost, reposts))
+              }
             },
           }}
         />
@@ -492,39 +476,65 @@ function StatusPage() {
           setPost: isNil(replyTo)
             ? null
             : post => {
-                if (repost) {
-                  let new_post = assocPath(
-                    ["data", "reposts"],
-                    tweet.data.reposts + 1,
-                    tweet
-                  )
-                  if (!isNil(post.description)) {
-                    new_post = assocPath(
-                      ["data", "quotes"],
-                      new_post.data.quotes + 1,
-                      new_post
-                    )
-                  }
-                  setTweet(new_post)
-                } else {
-                  setTweet(
-                    assocPath(
-                      ["data", "comments"],
-                      tweet.data.comments + 1,
+                if (isNil(repost)) {
+                  if (post.repost === tweet.data.id) {
+                    let new_post = assocPath(
+                      ["data", "reposts"],
+                      tweet.data.reposts + 1,
                       tweet
                     )
-                  )
-                  if (!isNil(parent)) {
-                    setParent(
+                    if (!isNil(post.description)) {
+                      new_post = assocPath(
+                        ["data", "quotes"],
+                        new_post.data.quotes + 1,
+                        new_post
+                      )
+                    }
+                    setTweet(new_post)
+                  } else {
+                    setTweet(
                       assocPath(
                         ["data", "comments"],
-                        parent.data.comments + 1,
-                        parent
+                        tweet.data.comments + 1,
+                        tweet
                       )
                     )
+                    if (!isNil(parent)) {
+                      setParent(
+                        assocPath(
+                          ["data", "comments"],
+                          parent.data.comments + 1,
+                          parent
+                        )
+                      )
+                    }
+                  }
+                  setComments(prepend({ id: post.id, data: post }, comments))
+                } else {
+                  if (post.repost === tweet.data.id) {
+                    let new_post = assocPath(
+                      ["data", "reposts"],
+                      tweet.data.reposts + 1,
+                      tweet
+                    )
+                    if (!isNil(post.description)) {
+                      new_post = assocPath(
+                        ["data", "quotes"],
+                        new_post.data.quotes + 1,
+                        new_post
+                      )
+                    }
+                    setTweet(new_post)
+                  } else {
+                    let _comments = clone(comments)
+                    for (let v of _comments) {
+                      if (v.data.id === post.repost) {
+                        v.data.reposts += 1
+                      }
+                    }
+                    setComments(_comments)
                   }
                 }
-                setComments(prepend({ id: post.id, data: post }, comments))
               },
         }}
       />

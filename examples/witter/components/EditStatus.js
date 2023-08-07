@@ -80,11 +80,11 @@ export default function EditUser({
               onClick={async () => {
                 if (ok) {
                   const { err, post } = await postStatus({
-                    repost: repost ? replyTo : "",
+                    repost: repost?.id ?? "",
                     replyTo,
                     body,
                     user,
-                    tweet,
+                    tweet: repost ?? tweet,
                   })
                   if (isNil(err)) {
                     setBody("")
