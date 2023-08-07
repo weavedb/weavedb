@@ -22,10 +22,12 @@ function Tweet({
   disabled = false,
   main = false,
   setEditRepost,
+  setShowLikes,
 }) {
   const content = (
     <Embed
       {...{
+        setShowLikes,
         setEditRepost,
         main: isNil(parent) ? main : false,
         disabled: isNil(parent) ? disabled : false,
@@ -57,6 +59,7 @@ function Tweet({
   const pr = isNil(parent) ? null : (
     <Embed
       {...{
+        setShowLikes,
         setEditRepost,
         main,
         user,
@@ -67,18 +70,12 @@ function Tweet({
         reposted: false,
         users,
         tweets,
+        setLikes,
+        setTweet,
+        likes,
+        reposted,
         setRetweet,
-        tweet: {
-          cover: parent.cover,
-          id: parent.id,
-          date: parent.date,
-          user: parent.owner,
-          reposts: parent.reposts,
-          likes: parent.likes,
-          comments: parent.comments,
-          reply_to: "",
-          body: parent.description,
-        },
+        tweet: parent,
         repost: null,
         reply: false,
       }}

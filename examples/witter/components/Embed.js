@@ -20,6 +20,7 @@ dayjs.extend(relativeTime)
 import { repostPost, likePost } from "../lib/db"
 
 const Embed = ({
+  setShowLikes,
   setEditRepost,
   main = false,
   disabled = false,
@@ -248,7 +249,15 @@ const Embed = ({
               <b>{tweet.quotes ?? 0}</b> Quotes
             </Box>
           </Link>
-          <Box ml={6}>
+          <Box
+            onClick={() => setShowLikes(true)}
+            ml={6}
+            color="#333"
+            sx={{
+              cursor: "pointer",
+              ":hover": { textDecoration: "underline" },
+            }}
+          >
             <b>{tweet.likes ?? 0}</b> Likes
           </Box>
           <Box flex={1} />
