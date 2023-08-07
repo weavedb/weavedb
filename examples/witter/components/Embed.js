@@ -20,6 +20,7 @@ dayjs.extend(relativeTime)
 import { repostPost, likePost } from "../lib/db"
 
 const Embed = ({
+  setEditRepost,
   main = false,
   disabled = false,
   embed,
@@ -40,7 +41,7 @@ const Embed = ({
   repost = null,
   parent,
 }) => {
-  const puser = users[tweet.user] ?? {}
+  const puser = users[tweet.owner ?? tweet.user] ?? {}
   const renderer = new PlainTextRenderer()
   marked.setOptions({ sanitize: false })
   let metadata = []
@@ -190,12 +191,13 @@ const Embed = ({
                 </>
               )
             ) : (
-              tweet.body
+              tweet.description ?? tweet.body
             )}
           </Box>
           {isNil(embed) ? null : (
             <Box
-              my={4}
+              mt={4}
+              mb={main ? 2 : 0}
               sx={{
                 ":hover": { opacity: 0.75 },
                 border: "1px solid #ccc",
@@ -275,18 +277,15 @@ const Embed = ({
             ml={10}
             color={reposted ? "#00BA7C" : ""}
             sx={{
-              cursor: reposted || isNil(user) ? "default" : "pointer",
-              "hover:": {
-                opacity: disabled || reposted || isNil(user) ? 1 : 0.75,
+              cursor: isNil(user) ? "default" : "pointer",
+              ":hover": {
+                opacity: disabled || isNil(user) ? 1 : 0.75,
               },
             }}
             onClick={async e => {
               if (!disabled) {
                 e.preventDefault()
-                if (!reposted && !isNil(user)) {
-                  const { repost } = await repostPost({ user, tweet })
-                  setRetweet(repost)
-                }
+                if (!disabled && !isNil(user)) setEditRepost(tweet)
               }
             }}
           >

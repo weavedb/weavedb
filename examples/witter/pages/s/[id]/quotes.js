@@ -199,7 +199,11 @@ function Page() {
               setEditStatus,
             }}
           />
-          {tab === "all" ? (
+          {posts.length === 0 ? (
+            <Flex h="100px" justify="center" align="center">
+              No Posts Found
+            </Flex>
+          ) : (
             <>
               {map(v2 => {
                 const v = tweets[v2.repost] ?? {}
@@ -210,6 +214,8 @@ function Page() {
                     likes={likes}
                     reposted={true}
                     {...{
+                      isLink: true,
+                      disabled: true,
                       parent,
                       users,
                       tweets,
@@ -265,7 +271,7 @@ function Page() {
                 </Flex>
               )}
             </>
-          ) : null}
+          )}
         </Box>
         <Box flex={1}></Box>
       </Flex>

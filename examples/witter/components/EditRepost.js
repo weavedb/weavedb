@@ -13,10 +13,10 @@ export default function EditUser({
   setEditStatus,
   user,
   reposted,
-  post,
   setRetweet,
 }) {
-  return !editRepost ? null : (
+  const post = editRepost
+  return isNil(editRepost) ? null : (
     <Flex
       h="100%"
       w="100%"
@@ -35,7 +35,7 @@ export default function EditUser({
       >
         <Flex fontSize="18px" justify="flex-end" mx={4} mt={2} mb="-15px">
           <Box
-            onClick={() => setEditRepost(false)}
+            onClick={() => setEditRepost(null)}
             sx={{
               cursor: "pointer",
               ":hover": { opacity: 0.75 },
@@ -63,7 +63,7 @@ export default function EditUser({
               if (!reposted && !isNil(user)) {
                 const { repost } = await repostPost({ user, tweet: post })
                 setRetweet(repost)
-                setEditRepost(false)
+                setEditRepost(null)
               }
             }}
           >
@@ -85,9 +85,9 @@ export default function EditUser({
             }}
             onClick={() => {
               setReplyTo(post.id)
-              setRepost(true)
+              setRepost(post)
               setEditStatus(true)
-              setEditRepost(false)
+              setEditRepost(null)
             }}
           >
             <Box as="i" className="far fa-comment" mr={3} />

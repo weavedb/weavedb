@@ -75,7 +75,7 @@ export default function Article({
           },
         }}
         onClick={async () => {
-          if (!disabled && !preview && !isNil(user)) setEditRepost(true)
+          if (!disabled && !preview && !isNil(user)) setEditRepost(post)
         }}
       >
         <Box as="i" className="fas fa-retweet" mr={2} />
@@ -219,7 +219,7 @@ export default function Article({
         <Box
           my={4}
           fontSize="16px"
-          dangerouslySetInnerHTML={{ __html: post.body }}
+          dangerouslySetInnerHTML={{ __html: post.content }}
         />
         {preview ? null : (
           <Flex mt={2}>

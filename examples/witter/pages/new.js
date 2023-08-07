@@ -125,7 +125,7 @@ export default function Editor() {
                       preview: true,
                       post: {
                         description: body,
-                        body: HTML,
+                        content: HTML,
                         cover: coverIcon,
                         title,
                       },
