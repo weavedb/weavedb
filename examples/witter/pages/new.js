@@ -78,29 +78,30 @@ export default function Editor() {
   const maxW = "760px"
   return (
     <ChakraProvider>
+      <Header
+        {...{
+          wide: true,
+          conf: { tab, setTab },
+          type: "editor",
+          user,
+          setUser,
+          setEditUser,
+          identity,
+          setIdentity,
+          setEditStatus,
+        }}
+      />
+
       <GithubMarkdown />
-      <Flex justify="center" minH="100%">
+      <Flex justify="center" minH="100%" pt="50px">
         <Box flex={1}></Box>
         <Box w="100%" maxW={maxW} minH="100%">
-          <Header
-            {...{
-              conf: { tab, setTab },
-              type: "editor",
-              user,
-              setUser,
-              setEditUser,
-              identity,
-              setIdentity,
-              setEditStatus,
-            }}
-          />
-
           {isNil(user) ? (
             <Flex
               justify="center"
               align="center"
               w="100%"
-              h="calc(100vh - 47px)"
+              h="calc(100vh - 50px)"
             >
               Sign In to Edit
             </Flex>
@@ -122,6 +123,8 @@ export default function Editor() {
                 >
                   <Article
                     {...{
+                      disabled: true,
+                      main: true,
                       preview: true,
                       post: {
                         description: body,

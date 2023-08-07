@@ -23,10 +23,12 @@ function Tweet({
   main = false,
   setEditRepost,
   setShowLikes,
+  setShowReposts,
 }) {
   const content = (
     <Embed
       {...{
+        setShowReposts,
         setShowLikes,
         setEditRepost,
         main: isNil(parent) ? main : false,
@@ -59,6 +61,7 @@ function Tweet({
   const pr = isNil(parent) ? null : (
     <Embed
       {...{
+        setShowReposts,
         setShowLikes,
         setEditRepost,
         main,

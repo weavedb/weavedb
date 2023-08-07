@@ -8,6 +8,8 @@ dayjs.extend(relativeTime)
 import GithubMarkdown from "../lib/GithubMarkdown"
 
 export default function Article({
+  setShowReposts,
+  setShowLikes,
   main = false,
   disabled = false,
   setEditRepost,
@@ -189,10 +191,20 @@ export default function Article({
             <Box>
               <b>{post.comments ?? 0}</b> Comments
             </Box>
-            <Box ml={6} color="#333">
+            <Box
+              sx={{
+                cursor: "pointer",
+                ":hover": { textDecoration: "underline", color: "#333" },
+              }}
+              onClick={() => {
+                if (!disabled) setShowReposts(true)
+              }}
+              ml={6}
+              color="#333"
+            >
               <b>{(post.reposts ?? 0) - (post.quotes ?? 0)}</b> Reposts
             </Box>
-            <Link href={`/s/${post.id}/quotes`}>
+            <Link href={disabled ? "" : `/s/${post.id}/quotes`}>
               <Box
                 ml={6}
                 color="#333"
@@ -204,7 +216,16 @@ export default function Article({
               </Box>
             </Link>
 
-            <Box ml={6}>
+            <Box
+              onClick={() => {
+                if (!disabled) setShowLikes(true)
+              }}
+              ml={6}
+              sx={{
+                cursor: "pointer",
+                ":hover": { textDecoration: "underline", color: "#333" },
+              }}
+            >
               <b>{post.likes ?? 0}</b> Likes
             </Box>
             <Box flex={1} />

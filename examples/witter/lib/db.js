@@ -195,6 +195,7 @@ export const repostPost = async ({ user, tweet }) => {
     repost: tweet.id,
     reply_to: "",
     reply: false,
+    quote: false,
   }
   await db.set(repost, "posts", `${id}`, identity)
   return { repost }
@@ -230,6 +231,7 @@ export const postStatus = async ({
     reply: (repost !== "" ? "" : replyTo ?? "") !== "",
     repost,
     description: body,
+    quote: repost !== "",
   }
   if (repost !== "") post.quote = true
   if (isNil(replyTo)) post.title = title

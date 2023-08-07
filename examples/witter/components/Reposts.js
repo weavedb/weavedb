@@ -6,32 +6,34 @@ import { useRouter } from "next/router"
 import Link from "next/link"
 import { initDB, checkUser, getUsers } from "../lib/db"
 const limit = 10
-export default function Likes({ setShowLikes, post }) {
+export default function Reposts({ setShowReposts, post }) {
   const [users, setUsers] = useState([])
-  const [likes, setLikes] = useState([])
+  const [reposts, setReposts] = useState([])
   const [isNext, setIsNext] = useState([])
   useEffect(() => {
     ;(async () => {
       const db = await initDB()
-      const _likes = await db.cget(
-        "likes",
-        ["aid", "==", post.id],
+      console.log(post)
+      const _reposts = await db.cget(
+        "posts",
+        ["repost", "==", post.id],
+        ["quote", "==", false],
         ["date", "desc"],
         limit
       )
-      setLikes(_likes)
-      setIsNext(_likes.length >= limit)
+      setReposts(_reposts)
+      setIsNext(_reposts.length >= limit)
     })()
   }, [])
   useEffect(() => {
     ;(async () => {
       await getUsers({
-        ids: map(path(["data", "user"]), likes),
+        ids: map(path(["data", "owner"]), reposts),
         users,
         setUsers,
       })
     })()
-  }, [likes])
+  }, [reposts])
   return (
     <Flex
       h="100%"
@@ -53,11 +55,11 @@ export default function Likes({ setShowLikes, post }) {
       >
         <Flex fontSize="18px" mx={4} my={2}>
           <Box fontWeight="bold" mx={2}>
-            Liked by
+            Reposted by
           </Box>
           <Box flex={1} />
           <Box
-            onClick={() => setShowLikes(false)}
+            onClick={() => setShowReposts(false)}
             sx={{
               cursor: "pointer",
               ":hover": { opacity: 0.75 },
@@ -67,7 +69,7 @@ export default function Likes({ setShowLikes, post }) {
           </Box>
         </Flex>
         {map(v => {
-          const u = users[v.data.user] ?? {}
+          const u = users[v.data.owner] ?? {}
           return isNil(u) ? null : (
             <Link href={`/u/${u.handle}`}>
               <Box
@@ -96,7 +98,7 @@ export default function Likes({ setShowLikes, post }) {
               </Box>
             </Link>
           )
-        })(likes)}
+        })(reposts)}
         {!isNext ? null : (
           <Flex p={4} justify="center">
             <Flex
@@ -114,15 +116,16 @@ export default function Likes({ setShowLikes, post }) {
               }}
               onClick={async () => {
                 const db = await initDB()
-                const _likes = await db.cget(
-                  "likes",
-                  ["aid", "==", post.id],
+                const _reposts = await db.cget(
+                  "posts",
+                  ["repost", "==", post.id],
+                  ["quote", "==", false],
                   ["date", "desc"],
-                  ["startAfter", last(likes)],
+                  ["startAfter", last(reposts)],
                   limit
                 )
-                setLikes(concat(likes, _likes))
-                setIsNext(_likes.length >= limit)
+                setReposts(concat(reposts, _reposts))
+                setIsNext(_reposts.length >= limit)
               }}
             >
               Load More
