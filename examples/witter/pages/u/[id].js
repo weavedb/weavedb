@@ -308,6 +308,7 @@ function StatusPage() {
     { key: "following", name: "Following" },
     { key: "followers", name: "Followers" },
   ]
+  const isFollow = includes(tab, ["following", "followers"])
   return (
     <ChakraProvider>
       <style jsx global>{`
@@ -318,8 +319,64 @@ function StatusPage() {
           color: #333;
         }
       `}</style>
+      <Header
+        link={isFollow ? null : "/"}
+        title={isFollow ? _user?.name : "Home"}
+        func={isFollow ? () => setTab("posts") : null}
+        {...{
+          setEditPost,
+          user,
+          setUser,
+          setEditUser,
+          setIdentity,
+          identity,
+          setEditStatus,
+        }}
+      />
+      {isFollow ? (
+        <Flex
+          bg="white"
+          w="100%"
+          justify="center"
+          sx={{
+            position: "fixed",
+            top: "50px",
+            left: 0,
+          }}
+        >
+          <Flex
+            fontSize="14px"
+            w="100%"
+            maxW="760px"
+            align="center"
+            pt={2}
+            px={4}
+            bg="white"
+            sx={{ borderBottom: "1px solid #ccc", borderX: "1px solid #ccc" }}
+          >
+            {map(v => {
+              return (
+                <Flex
+                  onClick={() => setTab(v.key)}
+                  justify="center"
+                  flex={1}
+                  mx={8}
+                  pb={2}
+                  sx={{
+                    cursor: "pointer",
+                    ":hover": { opacity: 0.75 },
+                    borderBottom: tab === v.key ? "3px solid #666" : "",
+                  }}
+                >
+                  {v.name}
+                </Flex>
+              )
+            })(tabs2)}
+          </Flex>
+        </Flex>
+      ) : null}
       {isNil(puser) ? null : (
-        <Flex justify="center" minH="100%">
+        <Flex justify="center" minH="100%" pt={isFollow ? "91px" : "50px"}>
           <Box flex={1}></Box>
           <Box
             w="100%"
@@ -327,27 +384,7 @@ function StatusPage() {
             minH="100%"
             sx={{ borderX: "1px solid #ccc" }}
           >
-            <Header
-              link={includes(tab, ["following", "followers"]) ? null : "/"}
-              title={
-                includes(tab, ["following", "followers"]) ? _user?.name : "Home"
-              }
-              func={
-                includes(tab, ["following", "followers"])
-                  ? () => setTab("posts")
-                  : null
-              }
-              {...{
-                setEditPost,
-                user,
-                setUser,
-                setEditUser,
-                setIdentity,
-                identity,
-                setEditStatus,
-              }}
-            />
-            {includes(tab, ["following", "followers"]) ? null : (
+            {isFollow ? null : (
               <>
                 <Box
                   title={_user.cover}
@@ -466,27 +503,29 @@ function StatusPage() {
                 </Box>
               </>
             )}
-            <Flex sx={{ borderBottom: "1px solid #ccc" }} mt={3}>
-              {map(v => {
-                return (
-                  <Flex
-                    onClick={() => setTab(v.key)}
-                    justify="center"
-                    flex={1}
-                    mx={8}
-                    pb={2}
-                    sx={{
-                      cursor: "pointer",
-                      ":hover": { opacity: 0.75 },
-                      borderBottom: tab === v.key ? "3px solid #666" : "",
-                    }}
-                  >
-                    {v.name}
-                  </Flex>
-                )
-              })(includes(tab, ["following", "followers"]) ? tabs2 : tabs)}
-            </Flex>
-            {includes(tab, ["following", "followers"]) ? (
+            {!isFollow ? (
+              <Flex sx={{ borderBottom: "1px solid #ccc" }} mt={3}>
+                {map(v => {
+                  return (
+                    <Flex
+                      onClick={() => setTab(v.key)}
+                      justify="center"
+                      flex={1}
+                      mx={8}
+                      pb={2}
+                      sx={{
+                        cursor: "pointer",
+                        ":hover": { opacity: 0.75 },
+                        borderBottom: tab === v.key ? "3px solid #666" : "",
+                      }}
+                    >
+                      {v.name}
+                    </Flex>
+                  )
+                })(tabs)}
+              </Flex>
+            ) : null}
+            {isFollow ? (
               <>
                 {map(v => {
                   const u = users[v]

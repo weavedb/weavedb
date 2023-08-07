@@ -50,10 +50,10 @@ header h1 {
   position: relative;
   line-height: 1.7;
   font-weight: 400;
-  height:calc(100vh - 47px);
+  height:calc(100vh - 50px);
 }
 .editor-container {
-    height:calc(100vh - 84px);
+    height:calc(100vh - 87px);
     max-width:760px;
     
 }

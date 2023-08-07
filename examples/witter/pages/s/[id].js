@@ -199,22 +199,23 @@ function StatusPage() {
           color: #333;
         }
       `}</style>
+      <Header
+        {...{
+          setEditPost,
+          setReplyTo,
+          user,
+          setUser,
+          setEditUser,
+          identity,
+          setIdentity,
+          setEditStatus,
+        }}
+      />
+
       {isNil(tweet) ? null : (
-        <Flex justify="center" minH="100%" pb={10}>
+        <Flex justify="center" minH="100%" pb={10} pt="50px">
           <Box flex={1}></Box>
           <Box w="100%" maxW="760px" minH="100%">
-            <Header
-              {...{
-                setEditPost,
-                setReplyTo,
-                user,
-                setUser,
-                setEditUser,
-                identity,
-                setIdentity,
-                setEditStatus,
-              }}
-            />
             {isNil(parent) ? null : (
               <Tweet
                 {...{

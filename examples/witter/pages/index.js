@@ -196,7 +196,64 @@ function Page() {
           color: #333;
         }
       `}</style>
-      <Flex justify="center" minH="100%">
+      <Header
+        {...{
+          user,
+          setUser,
+          setEditPost,
+          setEditUser,
+          identity,
+          setIdentity,
+          setEditStatus,
+        }}
+      />
+      {isNil(user) ? null : (
+        <Flex
+          bg="white"
+          w="100%"
+          justify="center"
+          sx={{
+            position: "fixed",
+            top: "50px",
+            left: 0,
+          }}
+        >
+          <Flex
+            fontSize="14px"
+            w="100%"
+            maxW="760px"
+            align="center"
+            pt={2}
+            px={4}
+            bg="white"
+            sx={{ borderBottom: "1px solid #ccc", borderX: "1px solid #ccc" }}
+          >
+            {map(v => {
+              return (
+                <Flex
+                  onClick={e => {
+                    e.stopPropagation()
+                    setTab(v.key)
+                  }}
+                  justify="center"
+                  flex={1}
+                  mx={8}
+                  pb={2}
+                  sx={{
+                    cursor: "pointer",
+                    ":hover": { opacity: 0.75 },
+                    borderBottom: tab === v.key ? "3px solid #666" : "",
+                  }}
+                >
+                  {v.name}
+                </Flex>
+              )
+            })(tabs)}
+          </Flex>
+        </Flex>
+      )}
+
+      <Flex justify="center" minH="100%" pt={isNil(user) ? "50px" : "91px"}>
         <Box flex={1}></Box>
         <Box
           w="100%"
@@ -204,39 +261,6 @@ function Page() {
           minH="100%"
           sx={{ borderX: "1px solid #ccc" }}
         >
-          <Header
-            {...{
-              user,
-              setUser,
-              setEditPost,
-              setEditUser,
-              identity,
-              setIdentity,
-              setEditStatus,
-            }}
-          />
-          {isNil(user) ? null : (
-            <Flex sx={{ borderBottom: "1px solid #ccc" }} mt={3}>
-              {map(v => {
-                return (
-                  <Flex
-                    onClick={() => setTab(v.key)}
-                    justify="center"
-                    flex={1}
-                    mx={8}
-                    pb={2}
-                    sx={{
-                      cursor: "pointer",
-                      ":hover": { opacity: 0.75 },
-                      borderBottom: tab === v.key ? "3px solid #666" : "",
-                    }}
-                  >
-                    {v.name}
-                  </Flex>
-                )
-              })(tabs)}
-            </Flex>
-          )}
           {tab === "following" ? (
             <>
               {map(v2 => {
@@ -256,6 +280,7 @@ function Page() {
                 }
                 return (
                   <Tweet
+                    disabled={true}
                     likes={likes}
                     reposted={!isNil(reposts[v.id])}
                     {...{
@@ -317,6 +342,7 @@ function Page() {
             <>
               {map(v => (
                 <Tweet
+                  disabled={true}
                   reposted={!isNil(reposts[v.id])}
                   likes={likes}
                   users={users}

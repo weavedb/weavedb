@@ -196,13 +196,15 @@ export default function Article({
                 cursor: "pointer",
                 ":hover": { textDecoration: "underline", color: "#333" },
               }}
-              onClick={() => setShowReposts(true)}
+              onClick={() => {
+                if (!disabled) setShowReposts(true)
+              }}
               ml={6}
               color="#333"
             >
               <b>{(post.reposts ?? 0) - (post.quotes ?? 0)}</b> Reposts
             </Box>
-            <Link href={`/s/${post.id}/quotes`}>
+            <Link href={disabled ? "" : `/s/${post.id}/quotes`}>
               <Box
                 ml={6}
                 color="#333"
@@ -215,7 +217,9 @@ export default function Article({
             </Link>
 
             <Box
-              onClick={() => setShowLikes(true)}
+              onClick={() => {
+                if (!disabled) setShowLikes(true)
+              }}
               ml={6}
               sx={{
                 cursor: "pointer",
