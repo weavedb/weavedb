@@ -642,6 +642,7 @@ function StatusPage() {
                   return (
                     <Tweet
                       {...{
+                        disabled: true,
                         parent,
                         likes,
                         reposted: reposts[v.id],
@@ -722,6 +723,7 @@ function StatusPage() {
                   return (
                     <Tweet
                       {...{
+                        disabled: true,
                         parent,
                         likes,
                         reposted: reposts[v.id],
