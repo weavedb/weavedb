@@ -5,7 +5,7 @@ import Embed from "./Embed"
 function Tweet({
   reposted = false,
   setRetweet,
-  user,
+  user = {},
   likes = {},
   setLikes,
   _tweet,
@@ -20,10 +20,12 @@ function Tweet({
   repost = null,
   parent,
   disabled = false,
+  main = false,
 }) {
   const content = (
     <Embed
       {...{
+        main: isNil(parent) ? main : false,
         disabled: isNil(parent) ? disabled : false,
         isLink: isNil(parent) ? isLink : true,
         reposted,
@@ -49,10 +51,11 @@ function Tweet({
   ) : (
     content
   )
-
   const pr = isNil(parent) ? null : (
     <Embed
       {...{
+        main,
+        user,
         disabled,
         isLink,
         embed,

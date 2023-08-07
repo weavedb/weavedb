@@ -300,6 +300,7 @@ function StatusPage() {
             {tweet.data.reply_to !== "" || isNil(tweet.data.title) ? (
               <Tweet
                 {...{
+                  main: true,
                   user,
                   likes,
                   setLikes,
@@ -344,6 +345,7 @@ function StatusPage() {
               >
                 <Article
                   {...{
+                    main: true,
                     setEditRepost,
                     reposted: reposts[tweet.data.id],
                     likes,
