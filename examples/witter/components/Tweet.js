@@ -22,11 +22,12 @@ function Tweet({
   disabled = false,
   main = false,
   setEditRepost,
+  setShowLikes,
 }) {
-  if (main) console.log("...", tweet)
   const content = (
     <Embed
       {...{
+        setShowLikes,
         setEditRepost,
         main: isNil(parent) ? main : false,
         disabled: isNil(parent) ? disabled : false,
@@ -58,6 +59,7 @@ function Tweet({
   const pr = isNil(parent) ? null : (
     <Embed
       {...{
+        setShowLikes,
         setEditRepost,
         main,
         user,
