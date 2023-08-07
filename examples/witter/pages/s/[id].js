@@ -200,7 +200,7 @@ function StatusPage() {
                 setEditStatus,
               }}
             />
-            {isNil(parent) ? null : parent.data.reply_to !== "" ? (
+            {isNil(parent) ? null : (
               <Tweet
                 {...{
                   disabled: true,
@@ -225,6 +225,8 @@ function StatusPage() {
                     setReposts(mergeLeft({ [parent.data.id]: repost }, reposts))
                   },
                   tweet: {
+                    title: parent.data.title,
+                    cover: parent.data.cover,
                     body: parent.data.description,
                     id: parent.data.id,
                     date: parent.data.date,
@@ -237,65 +239,6 @@ function StatusPage() {
                   reply: true,
                 }}
               />
-            ) : (
-              <Link href={`/s/${tweet.data.reply_to}`}>
-                <Box
-                  pb={3}
-                  maxW="760px"
-                  w="100%"
-                  display="flex"
-                  px={[2, 4, 6]}
-                  sx={{
-                    cursor: "pointer",
-                    ":hover": { opacity: 0.75, bg: "#f9f9f9" },
-                    borderBottom: "1px solid #ccc",
-                  }}
-                >
-                  <Article
-                    {...{
-                      disabled: true,
-                      setEditRepost,
-                      reposted: reposts[parent.data.id],
-                      likes,
-                      setLikes,
-                      setTweet: () => {
-                        setTweet(
-                          assocPath(
-                            ["data", "likes"],
-                            parent.data.likes + 1,
-                            tweet
-                          )
-                        )
-                      },
-                      setRetweet: repost => {
-                        setTweet(
-                          assocPath(
-                            ["data", "reposts"],
-                            parent.data.reposts + 1,
-                            tweet
-                          )
-                        )
-                        setReposts(
-                          mergeLeft({ [parent.data.id]: repost }, reposts)
-                        )
-                      },
-                    }}
-                    post={{
-                      id: parent.data.id,
-                      title: parent.data.title,
-                      description: parent.data.description,
-                      body: parent.data.content,
-                      cover: parent.data.cover,
-                      likes: parent.data.likes,
-                      reposts: parent.data.reposts,
-                      quotes: parent.data.quotes,
-                      comments: parent.data.comments,
-                    }}
-                    user={user}
-                    puser={users[parent.data.owner]}
-                  />
-                </Box>
-              </Link>
             )}
             {tweet.data.reply_to !== "" || isNil(tweet.data.title) ? (
               <Tweet

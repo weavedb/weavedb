@@ -176,7 +176,7 @@ export default function Article({
             <i>{post.description}</i>
           </Flex>
         )}
-        {main || preview ? (
+        {main ? (
           <Flex
             sx={{
               borderTop: "1px #ccc solid",
@@ -189,17 +189,26 @@ export default function Article({
             <Box>
               <b>{post.comments ?? 0}</b> Comments
             </Box>
-            <Box ml={6}>
+            <Box ml={6} color="#333">
               <b>{(post.reposts ?? 0) - (post.quotes ?? 0)}</b> Reposts
             </Box>
-            <Box ml={6}>
-              <b>{post.quotes ?? 0}</b> Quotes
-            </Box>
+            <Link href={`/s/${post.id}/quotes`}>
+              <Box
+                ml={6}
+                color="#333"
+                sx={{
+                  ":hover": { textDecoration: "underline", color: "#333" },
+                }}
+              >
+                <b>{post.quotes ?? 0}</b> Quotes
+              </Box>
+            </Link>
+
             <Box ml={6}>
               <b>{post.likes ?? 0}</b> Likes
             </Box>
             <Box flex={1} />
-            {!preview && user?.address === puser.address ? (
+            {!preview && user?.address === puser?.address ? (
               <>
                 <Box ml={6}>Edit</Box>
                 <Box ml={6}>Delete</Box>
@@ -212,7 +221,7 @@ export default function Article({
           fontSize="16px"
           dangerouslySetInnerHTML={{ __html: post.body }}
         />
-        {!main || preview ? null : (
+        {preview ? null : (
           <Flex mt={2}>
             <Comment />
             <Repost />

@@ -231,6 +231,7 @@ export const postStatus = async ({
     repost,
     description: body,
   }
+  if (repost !== "") post.quote = true
   if (isNil(replyTo)) post.title = title
   if (!isNil(tweet)) post.parents = append(tweet.id, tweet.parents ?? [])
   await db.set(post, "posts", post.id, identity)
