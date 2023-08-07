@@ -229,17 +229,23 @@ const Embed = ({
           py={3}
           fontSize="14px"
           pr={4}
+          ml="70px"
         >
-          <Box w="75px" />
-          <Box>
+          <Box ml={4}>
             <b>{tweet.comments ?? 0}</b> Comments
           </Box>
           <Box ml={6}>
             <b>{(tweet.reposts ?? 0) - (tweet.quotes ?? 0)}</b> Reposts
           </Box>
-          <Box ml={6}>
-            <b>{tweet.quotes ?? 0}</b> Quotes
-          </Box>
+          <Link href={`/s/${tweet.id}/quotes`}>
+            <Box
+              ml={6}
+              color="#333"
+              sx={{ ":hover": { textDecoration: "underline" } }}
+            >
+              <b>{tweet.quotes ?? 0}</b> Quotes
+            </Box>
+          </Link>
           <Box ml={6}>
             <b>{tweet.likes ?? 0}</b> Likes
           </Box>

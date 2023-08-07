@@ -41,7 +41,6 @@ function Header({
 
   return (
     <Flex
-      fontSize="18px"
       py={2}
       px={4}
       align="center"
@@ -67,7 +66,9 @@ function Header({
           }}
         >
           <Box as="i" className="fas fa-arrow-left" mr={4} />
-          <Box fontWeight="bold">{title ?? user?.name ?? "Witter Testnet"}</Box>
+          <Box fontSize="18px" fontWeight="bold">
+            {title ?? user?.name ?? "Witter Testnet"}
+          </Box>
         </Flex>
       </Link>
       <Box flex={1} />
