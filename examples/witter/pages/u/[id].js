@@ -648,18 +648,7 @@ function StatusPage() {
                         reposted: reposts[v.id],
                         users,
                         tweets,
-                        tweet: {
-                          cover: v.cover,
-                          id: v.id,
-                          date: v.date,
-                          title: v.title,
-                          user: v.owner,
-                          reposts: v.reposts,
-                          likes: v.likes,
-                          comments: v.comments,
-                          reply_to: v.reply_to,
-                          body: v.description,
-                        },
+                        tweet: v,
                         repost:
                           tab === "posts" && v.owner !== puser?.address
                             ? v.owner
@@ -729,18 +718,7 @@ function StatusPage() {
                         reposted: reposts[v.id],
                         users,
                         tweets,
-                        tweet: {
-                          cover: v.cover,
-                          id: v.id,
-                          date: v.date,
-                          title: v.title,
-                          user: v.owner,
-                          reposts: v.reposts,
-                          likes: v.likes,
-                          comments: v.comments,
-                          reply_to: v.reply_to,
-                          body: v.description,
-                        },
+                        tweet: v,
                         repost,
                         reply,
                       }}
