@@ -23,6 +23,7 @@ function Tweet({
   main = false,
   setEditRepost,
 }) {
+  if (main) console.log("...", tweet)
   const content = (
     <Embed
       {...{
@@ -67,18 +68,12 @@ function Tweet({
         reposted: false,
         users,
         tweets,
+        setLikes,
+        setTweet,
+        likes,
+        reposted,
         setRetweet,
-        tweet: {
-          cover: parent.cover,
-          id: parent.id,
-          date: parent.date,
-          user: parent.owner,
-          reposts: parent.reposts,
-          likes: parent.likes,
-          comments: parent.comments,
-          reply_to: "",
-          body: parent.description,
-        },
+        tweet: parent,
         repost: null,
         reply: false,
       }}
