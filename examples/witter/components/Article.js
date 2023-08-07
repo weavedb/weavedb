@@ -8,6 +8,7 @@ dayjs.extend(relativeTime)
 import GithubMarkdown from "../lib/GithubMarkdown"
 
 export default function Article({
+  main = false,
   disabled = false,
   setEditRepost,
   post,
@@ -175,7 +176,7 @@ export default function Article({
             <i>{post.description}</i>
           </Flex>
         )}
-        {!preview && !isNil(post.body) ? (
+        {main || preview ? (
           <Flex
             sx={{
               borderTop: "1px #ccc solid",
@@ -198,7 +199,7 @@ export default function Article({
               <b>{post.likes ?? 0}</b> Likes
             </Box>
             <Box flex={1} />
-            {!preview && user.address === puser.address ? (
+            {!preview && user?.address === puser.address ? (
               <>
                 <Box ml={6}>Edit</Box>
                 <Box ml={6}>Delete</Box>
@@ -211,7 +212,7 @@ export default function Article({
           fontSize="16px"
           dangerouslySetInnerHTML={{ __html: post.body }}
         />
-        {preview ? null : (
+        {!main || preview ? null : (
           <Flex mt={2}>
             <Comment />
             <Repost />

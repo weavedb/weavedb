@@ -20,11 +20,12 @@ dayjs.extend(relativeTime)
 import { repostPost, likePost } from "../lib/db"
 
 const Embed = ({
+  main = false,
   disabled = false,
   embed,
   reposted = false,
   setRetweet,
-  user,
+  user = {},
   likes = {},
   setLikes,
   _tweet,
@@ -72,7 +73,6 @@ const Embed = ({
         p={2}
         align="center"
         sx={{
-          borderBottom: isNil(parent) ? "1px solid #ccc" : "0px",
           cursor: isLink ? "pointer" : "default",
           ":hover": { opacity: isLink ? 0.75 : 1 },
         }}
@@ -205,71 +205,6 @@ const Embed = ({
               {embed}
             </Box>
           )}
-          {!isNil(parent) ? null : (
-            <Flex mt={2} ml={[10, null, null, 0]}>
-              <Box>
-                <Box as="i" className="far fa-comment" mr={2} />
-                {tweet.comments}
-              </Box>
-              <Box
-                ml={10}
-                color={reposted ? "#00BA7C" : ""}
-                sx={{
-                  cursor: reposted || isNil(user) ? "default" : "pointer",
-                  "hover:": {
-                    opacity: disabled || reposted || isNil(user) ? 1 : 0.75,
-                  },
-                }}
-                onClick={async e => {
-                  if (!disabled) {
-                    e.preventDefault()
-                    if (!reposted && !isNil(user)) {
-                      const { repost } = await repostPost({ user, tweet })
-                      setRetweet(repost)
-                    }
-                  }
-                }}
-              >
-                <Box as="i" className="fas fa-retweet" mr={2} />
-                {tweet.reposts}
-              </Box>
-              <Box
-                ml={10}
-                color={!isNil(likes[tweet.id]) ? "#F91880" : ""}
-                sx={{
-                  cursor:
-                    !isNil(likes[tweet.id]) || isNil(user)
-                      ? "default"
-                      : "pointer",
-                  ":hover": {
-                    opacity:
-                      disabled || !isNil(likes[tweet.id]) || isNil(user)
-                        ? 1
-                        : 0.75,
-                  },
-                }}
-                onClick={async e => {
-                  if (!disabled) {
-                    e.preventDefault()
-                    if (isNil(likes[tweet.id]) && !isNil(user)) {
-                      const { like } = await likePost({ user, tweet })
-                      setLikes(mergeLeft({ [tweet.id]: like }, likes))
-                      setTweet()
-                    }
-                  }
-                }}
-              >
-                <Box
-                  as="i"
-                  className={
-                    !isNil(likes[tweet.id]) ? "fas fa-heart" : "far fa-heart"
-                  }
-                  mr={2}
-                />
-                {tweet.likes}
-              </Box>
-            </Flex>
-          )}
         </Box>
         {isNil(embed) && !isNil(tweet.cover) ? (
           <Box
@@ -285,6 +220,106 @@ const Embed = ({
           <Box mr={2} />
         )}
       </Flex>
+      {!main ? null : (
+        <Flex
+          sx={{
+            borderTop: "1px #ccc solid",
+            borderBottom: "1px #ccc solid",
+          }}
+          py={3}
+          fontSize="14px"
+          pr={4}
+        >
+          <Box w="75px" />
+          <Box>
+            <b>{tweet.comments ?? 0}</b> Comments
+          </Box>
+          <Box ml={6}>
+            <b>{(tweet.reposts ?? 0) - (tweet.quotes ?? 0)}</b> Reposts
+          </Box>
+          <Box ml={6}>
+            <b>{tweet.quotes ?? 0}</b> Quotes
+          </Box>
+          <Box ml={6}>
+            <b>{tweet.likes ?? 0}</b> Likes
+          </Box>
+          <Box flex={1} />
+          {user?.address === puser.address ? (
+            <>
+              <Box ml={6}>Delete</Box>
+            </>
+          ) : null}
+        </Flex>
+      )}
+      {!isNil(parent) ? null : (
+        <Flex
+          ml={[10, null, null, 0]}
+          sx={{
+            borderBottom: isNil(parent) ? "1px solid #ccc" : "0px",
+          }}
+          pt={main ? 3 : 0}
+          pb={main ? 3 : 2}
+        >
+          <Box w="75px" />
+          <Box>
+            <Box as="i" className="far fa-comment" mr={2} />
+            {tweet.comments}
+          </Box>
+          <Box
+            ml={10}
+            color={reposted ? "#00BA7C" : ""}
+            sx={{
+              cursor: reposted || isNil(user) ? "default" : "pointer",
+              "hover:": {
+                opacity: disabled || reposted || isNil(user) ? 1 : 0.75,
+              },
+            }}
+            onClick={async e => {
+              if (!disabled) {
+                e.preventDefault()
+                if (!reposted && !isNil(user)) {
+                  const { repost } = await repostPost({ user, tweet })
+                  setRetweet(repost)
+                }
+              }
+            }}
+          >
+            <Box as="i" className="fas fa-retweet" mr={2} />
+            {tweet.reposts}
+          </Box>
+          <Box
+            ml={10}
+            color={!isNil(likes[tweet.id]) ? "#F91880" : ""}
+            sx={{
+              cursor:
+                !isNil(likes[tweet.id]) || isNil(user) ? "default" : "pointer",
+              ":hover": {
+                opacity:
+                  disabled || !isNil(likes[tweet.id]) || isNil(user) ? 1 : 0.75,
+              },
+            }}
+            onClick={async e => {
+              if (!disabled) {
+                e.preventDefault()
+                if (isNil(likes[tweet.id]) && !isNil(user)) {
+                  const { like } = await likePost({ user, tweet })
+                  setLikes(mergeLeft({ [tweet.id]: like }, likes))
+                  setTweet()
+                }
+              }
+            }}
+          >
+            <Box
+              as="i"
+              className={
+                !isNil(likes[tweet.id]) ? "fas fa-heart" : "far fa-heart"
+              }
+              mr={2}
+            />
+            {tweet.likes}
+          </Box>
+        </Flex>
+      )}
     </>
   )
   return content
