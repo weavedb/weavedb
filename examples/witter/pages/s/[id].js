@@ -201,6 +201,7 @@ function StatusPage() {
       `}</style>
       <Header
         {...{
+          wide: true,
           setEditPost,
           setReplyTo,
           user,

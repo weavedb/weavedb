@@ -188,7 +188,18 @@ function Page() {
           color: #333;
         }
       `}</style>
-      <Flex justify="center" minH="100%">
+      <Header
+        {...{
+          setEditPost,
+          user,
+          setUser,
+          setEditUser,
+          identity,
+          setIdentity,
+          setEditStatus,
+        }}
+      />
+      <Flex justify="center" minH="100%" pt="50px">
         <Box flex={1}></Box>
         <Box
           w="100%"
@@ -196,17 +207,6 @@ function Page() {
           minH="100%"
           sx={{ borderX: "1px solid #ccc" }}
         >
-          <Header
-            {...{
-              setEditPost,
-              user,
-              setUser,
-              setEditUser,
-              identity,
-              setIdentity,
-              setEditStatus,
-            }}
-          />
           {isNil(user) || true ? null : (
             <Flex sx={{ borderBottom: "1px solid #ccc" }} mt={3}>
               {map(v => {
