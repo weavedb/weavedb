@@ -36,6 +36,7 @@ import EditRepost from "../../components/EditRepost"
 import EditPost from "../../components/EditPost"
 import EditStatus from "../../components/EditStatus"
 import Likes from "../../components/Likes"
+import Reposts from "../../components/Reposts"
 const limit = 10
 
 function StatusPage() {
@@ -59,6 +60,8 @@ function StatusPage() {
   const [isNextComment, setIsNextComment] = useState(false)
   const [tweets, setTweets] = useState({})
   const [showLikes, setShowLikes] = useState(false)
+  const [showReposts, setShowReposts] = useState(false)
+
   useEffect(() => {
     if (!isNil(router.query.id)) {
       ;(async () => {
@@ -245,6 +248,7 @@ function StatusPage() {
             {tweet.data.reply_to !== "" || isNil(tweet.data.title) ? (
               <Tweet
                 {...{
+                  setShowReposts,
                   setShowLikes,
                   parent: isNil(embed) ? null : tweet.data,
                   setEditRepost,
@@ -285,6 +289,8 @@ function StatusPage() {
               >
                 <Article
                   {...{
+                    setShowReposts,
+                    setShowLikes,
                     main: true,
                     setEditRepost,
                     reposted: reposts[tweet.data.id],
@@ -461,6 +467,9 @@ function StatusPage() {
         />
       )}
       {showLikes ? <Likes {...{ setShowLikes, post: tweet.data }} /> : null}
+      {showReposts ? (
+        <Reposts {...{ setShowReposts, post: tweet.data }} />
+      ) : null}
       <EditPost
         {...{
           setEditStatus,
