@@ -26,7 +26,7 @@ export default function Article({
   setTweet,
   repost = null,
 }) {
-  const isDeleted = isNil(post.date)
+  const isDeleted = !preview && isNil(post.date)
   const Like = () => {
     return (
       <Box
@@ -241,7 +241,18 @@ export default function Article({
             <Box flex={1} />
             {!isDeleted && !preview && user?.address === puser?.address ? (
               <>
-                <Box ml={6}>Edit</Box>
+                <Link href={`/s/${post.id}/edit`}>
+                  <Box
+                    sx={{
+                      cursor: "pointer",
+                      ":hover": { textDecoration: "underline", color: "#333" },
+                    }}
+                    color="#333"
+                    ml={6}
+                  >
+                    Edit
+                  </Box>
+                </Link>
                 <Box
                   onClick={async () => {
                     if (confirm("Would you like to delete this post?")) {
