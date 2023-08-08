@@ -56,28 +56,52 @@ export const postArticle = async ({
   body,
   cover,
   user: _user,
+  editID,
 }) => {
   const { identity } = await lf.getItem("user")
-  const id = nanoid()
+  const id = editID ?? nanoid()
+  const date = Date.now()
   let post = {
     id,
-    date: Date.now(),
     title,
     description,
     body: db.data("body"),
-    owner: user.address,
-    likes: 0,
-    reposts: 0,
-    quotes: 0,
-    comments: 0,
-    reply_to: "",
-    repost: "",
-    reply: false,
   }
   if (!isNil(cover)) post.cover = db.data("cover")
-  const sign = await db.sign("set", post, "posts", id, {
-    ...identity,
-    jobID: "article",
+  let sign = null
+  if (isNil(editID)) {
+    post = mergeLeft(
+      {
+        owner: user.address,
+        likes: 0,
+        reposts: 0,
+        quotes: 0,
+        comments: 0,
+        reply_to: "",
+        repost: "",
+        reply: false,
+        date,
+      },
+      post
+    )
+    sign = await db.sign("set", post, "posts", id, {
+      ...identity,
+      jobID: "article",
+    })
+  } else {
+    post.updated = date
+    sign = await db.sign("update", post, "posts", id, {
+      ...identity,
+      jobID: "article",
+    })
+  }
+  const __body = JSON.stringify({
+    title,
+    description,
+    owner: user.address,
+    date: post.date,
+    type: "html",
+    content: body,
   })
   let {
     tx: _tx,
@@ -88,7 +112,7 @@ export const postArticle = async ({
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ body, query: sign, cover }),
+    body: JSON.stringify({ body: __body, query: sign, cover }),
   }).then(e => e.json())
   post.body = _body
   post.cover = _cover

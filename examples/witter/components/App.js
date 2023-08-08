@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { isNil } from "ramda"
-import { $generateHtmlFromNodes } from "@lexical/html"
+import { $generateNodesFromDOM, $generateHtmlFromNodes } from "@lexical/html"
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext"
 import { SettingsContext, useSettings } from "./context/SettingsContext"
 import { LexicalComposer } from "@lexical/react/LexicalComposer"
@@ -17,8 +17,16 @@ import TypingPerfPlugin from "./plugins/TypingPerfPlugin"
 import Settings from "./Settings"
 import Editor from "./Editor"
 import lf from "localforage"
-
-export default function App({ setHTML }) {
+let isChecked = false
+export default function App({
+  setHTML,
+  editID,
+  editContent,
+  setTitle,
+  setBody,
+  title,
+  body,
+}) {
   const {
     settings: { isCollab, emptyEditor, measureTypingPerf },
   } = useSettings()
@@ -26,14 +34,16 @@ export default function App({ setHTML }) {
   const [isInit, setIsInit] = useState(false)
   useEffect(() => {
     ;(async () => {
-      setVal((await lf.getItem("edit")) || null)
+      const _val = await lf.getItem(`edit-${editID ?? "new"}`)
+      setVal(_val || null)
       setIsInit(true)
     })()
   }, [])
-
   const initialConfig = {
     editorState: !isNil(val)
-      ? JSON.stringify(val)
+      ? isNil(val.date)
+        ? JSON.stringify(val)
+        : JSON.stringify(val.nodes)
       : isCollab
       ? null
       : undefined,
@@ -54,8 +64,30 @@ export default function App({ setHTML }) {
   }
   function onChange(e, editor) {
     const json = e.editorState.toJSON()
-    lf.setItem("edit", json)
-    editor.update(() => setHTML($generateHtmlFromNodes(editor, null)))
+    const date = Date.now()
+    if (isChecked)
+      lf.setItem(`edit-${editID ?? "new"}`, { date, nodes: json, title, body })
+    editor.update(() => {
+      if (!isNil(editContent)) {
+        if (!isChecked) {
+          isChecked = true
+          if (
+            !isNil(editContent) &&
+            (editContent.date || 0) > (val?.date ?? 0)
+          ) {
+            const parser = new DOMParser()
+            const dom = parser.parseFromString(editContent.content, "text/html")
+            const nodes = $generateNodesFromDOM(editor, dom)
+            const root = $getRoot()
+            root.clear()
+            root.append(...nodes)
+            setTitle(editContent.title)
+            setBody(editContent.description)
+          }
+        }
+      }
+      setHTML($generateHtmlFromNodes(editor, null))
+    })
   }
   return !isInit ? null : (
     <SettingsContext>
