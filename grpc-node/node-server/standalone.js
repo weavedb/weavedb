@@ -179,9 +179,11 @@ class Standalone {
     await this.getWAL(last_wal)
   }
   async execPlugin(v, arts = {}) {
-    const func = v.data.input.function
-    const data = v.data.input.query[0]
-    const col = v.data.input.query[1]
+    const input =
+      v.data.input.function === "relay" ? v.data.input.query[1] : v.data.input
+    const func = input.function
+    const data = input.query[0]
+    const col = input.query[1]
     if (func === "set" && col === "likes") {
       const from = data.user
       arts[data.aid] ??= await this.db.get("posts", data.aid)
@@ -267,6 +269,7 @@ class Standalone {
         const article = arts[data.reply_to]
         const from = data.owner
         const to = article.owner
+        if (from === to) return
         const date = data.date
         const id = md5(`reply:${from}:${to}:${article.id}:${data.id}:${date}`)
         await this.plugins.notifications.set(
@@ -393,7 +396,7 @@ class Standalone {
                 "notifications"
               )
             })
-            .catch(e => console.log(e))
+            .catch(e => console.log("err", e))
         },
         get: async (key, obj) => {
           let val = this.kvs[key]
