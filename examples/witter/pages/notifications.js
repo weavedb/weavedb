@@ -177,7 +177,6 @@ function Page() {
     { key: "all", name: "All Posts" },
     { key: "following", name: "Following" },
   ]
-
   return (
     <ChakraProvider>
       <style jsx global>{`
@@ -264,7 +263,9 @@ function Page() {
                 let link =
                   v2.type === "like"
                     ? `/s/${post.id}`
-                    : v2.type === "repost" || v2.type === "quote"
+                    : v2.type === "quote"
+                    ? `/s/${reply.id}`
+                    : v2.type === "repost"
                     ? `/s/${post.id}`
                     : v2.type === "follow"
                     ? `/u/${user1?.handle ?? ""}`
@@ -409,6 +410,22 @@ function Page() {
                               : null}
                           </Box>
                         )}
+                        {v2.type === "quote" && !isNil(reply.cover) ? (
+                          <Flex p={4} justify="center">
+                            <Link target="_blank" href={reply.cover}>
+                              <Image
+                                onClick={e => e.stopPropagation()}
+                                src={reply.cover}
+                                maxW="500px"
+                                maxH="500px"
+                                sx={{
+                                  cursor: "pointer",
+                                  ":hover": { opacity: 0.75 },
+                                }}
+                              />
+                            </Link>
+                          </Flex>
+                        ) : null}
                         {v2.type !== "quote" ? null : (
                           <Link href={`/s/${post.id}`}>
                             <Box
@@ -423,14 +440,7 @@ function Page() {
                                 {...{
                                   tweets,
                                   parent: true,
-                                  tweet: {
-                                    title: post.title,
-                                    user: post.owner,
-                                    date: post.date,
-                                    body: post.description,
-                                    cover: post.cover,
-                                    id: post.id,
-                                  },
+                                  tweet: post,
                                   users,
                                 }}
                               />
