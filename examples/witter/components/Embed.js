@@ -20,7 +20,6 @@ dayjs.extend(relativeTime)
 import { repostPost, likePost, deletePost } from "../lib/db"
 
 const Embed = ({
-  isDeleted,
   delTweet,
   setShowReposts,
   setShowLikes,
@@ -45,6 +44,7 @@ const Embed = ({
   repost = null,
   parent,
 }) => {
+  const isDeleted = isNil(tweet.date)
   const puser = users[tweet.owner ?? tweet.user] ?? {}
   const renderer = new PlainTextRenderer()
   marked.setOptions({ sanitize: false })
@@ -187,7 +187,7 @@ const Embed = ({
           </Flex>
           <Box
             fontSize="14px"
-            mt={2}
+            my={2}
             className="markdown-body"
             pl={!isNil(parent) ? 0 : [10, null, null, 0]}
           >
@@ -210,6 +210,23 @@ const Embed = ({
               tweet.description ?? tweet.body
             )}
           </Box>
+          {isDeleted ? null : !isNil(tweet.cover) && isNil(tweet.title) ? (
+            <Flex p={4} justify="center">
+              <Link target="_blank" href={tweet.cover}>
+                <Image
+                  src={tweet.cover}
+                  maxW="500px"
+                  maxH="500px"
+                  sx={{
+                    cursor: disabled ? "default" : "pointer",
+                    ":hover": { opacity: disabled ? 1 : 0.75 },
+                  }}
+                />
+              </Link>
+            </Flex>
+          ) : (
+            <Box mr={2} />
+          )}
           {isNil(embed) ? null : (
             <Box
               mt={4}
@@ -224,7 +241,9 @@ const Embed = ({
             </Box>
           )}
         </Box>
-        {isDeleted ? null : isNil(embed) && !isNil(tweet.cover) ? (
+        {isDeleted ? null : isNil(embed) &&
+          !isNil(tweet.cover) &&
+          !isNil(tweet.title) ? (
           <Box
             sx={{
               backgroundPosition: "center",
@@ -284,7 +303,7 @@ const Embed = ({
             <b>{tweet.likes ?? 0}</b> Likes
           </Box>
           <Box flex={1} />
-          {user?.address === puser.address ? (
+          {user?.address === puser.address && !isDeleted ? (
             <>
               <Box
                 onClick={async () => {

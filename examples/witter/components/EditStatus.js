@@ -1,4 +1,4 @@
-import { Input, Textarea, Box, Flex } from "@chakra-ui/react"
+import { Input, Textarea, Box, Flex, Image } from "@chakra-ui/react"
 import { useState, useEffect } from "react"
 import { postStatus } from "../lib/db"
 import { isNil, assoc } from "ramda"
@@ -14,6 +14,8 @@ export default function EditUser({
 }) {
   const router = useRouter()
   const [body, setBody] = useState("")
+  const [coverIcon, setCoverIcon] = useState(null)
+  const [updating, setUpdating] = useState(false)
   const ok = body.length > 0 && body.length <= 280
   return !editStatus ? null : (
     <Flex
@@ -64,7 +66,101 @@ export default function EditUser({
               }}
             />
           </Box>
-          <Box mt={4}>
+          <Flex align="center" mt={2}>
+            <Box flex={1} px={4}>
+              <Box
+                as="label"
+                htmlFor="cover-image"
+                fontSize="20px"
+                sx={{
+                  cursor: "pointer",
+                  ":hover": { opacity: 0.75 },
+                }}
+              >
+                <Box as="i" className="far fa-image" />
+              </Box>
+              <Input
+                id="cover-image"
+                display="none"
+                p={1}
+                accept=".jpg,.png,.jpeg"
+                type="file"
+                onChange={async e => {
+                  if (!isNil(e.target.files[0])) {
+                    const {
+                      readAndCompressImage,
+                    } = require("browser-image-resizer")
+                    const file = await readAndCompressImage(e.target.files[0], {
+                      maxWidth: 800,
+                      maxHeight: 800,
+                      mimeType: e.target.files[0].type,
+                    })
+                    let reader = new FileReader()
+                    reader.readAsDataURL(file)
+                    reader.onload = () => setCoverIcon(reader.result)
+                  }
+                }}
+              />
+            </Box>
+          </Flex>
+          {isNil(coverIcon) ? null : (
+            <Flex justify="center" w="100%" mb={2}>
+              <Box flex={1} />
+              <Image
+                sx={{
+                  cursor: "pointer",
+                  ":hover": { opacity: 0.75 },
+                }}
+                my={4}
+                src={coverIcon}
+                maxW="500px"
+                maxH="500px"
+                onClick={() => {
+                  const base64ImageData = coverIcon
+                  const contentType = coverIcon.split(";")[0].split(":")[1]
+
+                  const byteCharacters = atob(
+                    base64ImageData.substr(`data:${contentType};base64,`.length)
+                  )
+                  const byteArrays = []
+
+                  for (
+                    let offset = 0;
+                    offset < byteCharacters.length;
+                    offset += 1024
+                  ) {
+                    const slice = byteCharacters.slice(offset, offset + 1024)
+
+                    const byteNumbers = new Array(slice.length)
+                    for (let i = 0; i < slice.length; i++) {
+                      byteNumbers[i] = slice.charCodeAt(i)
+                    }
+
+                    const byteArray = new Uint8Array(byteNumbers)
+
+                    byteArrays.push(byteArray)
+                  }
+                  const blob = new Blob(byteArrays, { type: contentType })
+                  const blobUrl = URL.createObjectURL(blob)
+                  window.open(blobUrl, "_blank")
+                }}
+              />
+              <Flex flex={1} justify="flex-end">
+                <Box
+                  m={6}
+                  onClick={() => setCoverIcon(null)}
+                  sx={{
+                    cursor: "pointer",
+                    ":hover": { opacity: 0.75 },
+                  }}
+                  as="i"
+                  fontSize="20px"
+                  className="fas fa-times"
+                />
+              </Flex>
+            </Flex>
+          )}
+          <Box mt={2}>
             <Flex
               bg={ok ? "#333" : "#ccc"}
               color="white"
@@ -79,22 +175,36 @@ export default function EditUser({
               }}
               onClick={async () => {
                 if (ok) {
-                  const { err, post } = await postStatus({
-                    repost: repost?.id ?? "",
-                    replyTo,
-                    body,
-                    user,
-                    tweet: repost ?? tweet,
-                  })
-                  if (isNil(err)) {
-                    setBody("")
-                    setEditStatus(false)
-                    if (!isNil(setPost)) setPost(post)
-                    if (isNil(replyTo)) router.push(`/s/${post.id}`)
-                  }
+                  setUpdating(true)
+                  try {
+                    const { err, post } = await postStatus({
+                      repost: repost?.id ?? "",
+                      replyTo,
+                      body,
+                      user,
+                      tweet: repost ?? tweet,
+                      cover: coverIcon,
+                    })
+                    if (isNil(err)) {
+                      setBody("")
+                      setEditStatus(false)
+                      if (!isNil(setPost)) setPost(post)
+                      if (isNil(replyTo)) router.push(`/s/${post.id}`)
+                    }
+                  } catch (e) {}
+                  setUpdating(false)
                 }
               }}
             >
+              {updating ? (
+                <Box
+                  as="i"
+                  className="fas fa-circle-notch fa-spin"
+                  mr={2}
+                  ml="-22px"
+                  mb="2px"
+                />
+              ) : null}
               {repost ? "Repost" : "Post"}
             </Flex>
           </Box>

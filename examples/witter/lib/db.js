@@ -248,6 +248,7 @@ export const postStatus = async ({
   replyTo,
   repost,
   tweet,
+  cover,
 }) => {
   const { identity } = await lf.getItem("user")
   const id = nanoid()
@@ -268,9 +269,24 @@ export const postStatus = async ({
   if (repost !== "") post.quote = true
   if (isNil(replyTo)) post.title = title
   if (!isNil(tweet)) post.parents = append(tweet.id, tweet.parents ?? [])
-  console.log(post)
-  await db.set(post, "posts", post.id, identity)
-  return { post }
+  if (!isNil(cover)) {
+    post.cover = db.data("cover")
+    const sign = await db.sign("set", post, "posts", id, {
+      ...identity,
+      jobID: "article",
+    })
+    let { tx: _tx, cover: _cover } = await fetch("/api/updateArticle", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query: sign, cover }),
+    }).then(e => e.json())
+    post.cover = _cover
+  } else {
+    await db.set(post, "posts", post.id, identity)
+  }
+  return { err: null, post }
 }
 
 export const deletePost = async ({ tweet }) => {

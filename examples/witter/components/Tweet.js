@@ -26,11 +26,9 @@ function Tweet({
   setShowLikes,
   setShowReposts,
 }) {
-  const isDeleted = isNil(parent) ? isNil(tweet.date) : isNil(parent.date)
   const content = (
     <Embed
       {...{
-        isDeleted,
         delTweet,
         setShowReposts,
         setShowLikes,
@@ -65,7 +63,6 @@ function Tweet({
   const pr = isNil(parent) ? null : (
     <Embed
       {...{
-        isDeleted,
         delTweet,
         setShowReposts,
         setShowLikes,

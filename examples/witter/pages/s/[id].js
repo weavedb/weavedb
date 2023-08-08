@@ -397,15 +397,7 @@ function StatusPage() {
                     }
                     setComments(_comments)
                   },
-                  tweet: {
-                    body: v.description,
-                    id: v.id,
-                    date: v.date,
-                    user: v.owner,
-                    reposts: v.reposts,
-                    likes: v.likes,
-                    comments: v.comments,
-                  },
+                  tweet: v,
                   users,
                   reply: true,
                 }}
