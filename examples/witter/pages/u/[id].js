@@ -3,6 +3,7 @@ import { useState, useEffect } from "react"
 import { Box, Flex, ChakraProvider, Image } from "@chakra-ui/react"
 import Link from "next/link"
 import {
+  pathEq,
   reject,
   isEmpty,
   path,
@@ -31,6 +32,7 @@ import Header from "../../components/Header"
 import SDK from "weavedb-client"
 import {
   followUser,
+  unfollowUser,
   initDB,
   checkUser,
   getTweets,
@@ -432,16 +434,34 @@ function StatusPage() {
                       ) : puser.handle !== user?.handle && !isNil(user) ? (
                         <Flex
                           onClick={() => setEditUser(true)}
-                          px={8}
-                          py={2}
+                          p={2}
                           bg="#333"
                           color="white"
                           height="auto"
                           align="center"
+                          w="140px"
+                          justify="center"
                           sx={{
                             borderRadius: "20px",
-                            cursor: isFollowing ? "default" : "pointer",
-                            ":hover": { opacity: isFollowing ? 1 : 0.75 },
+                            cursor: "pointer",
+                            ":hover": {
+                              opacity: 0.75,
+                              bg: isFollowing ? "crimson" : "",
+                            },
+                            ":before": {
+                              content: isFollowing
+                                ? `"Following"`
+                                : isFollowed
+                                ? `"Follow Back"`
+                                : `"Follow"`,
+                            },
+                            ":hover:before": {
+                              content: isFollowing
+                                ? `"Unfollow"`
+                                : isFollowed
+                                ? `"Follow Back"`
+                                : `"Follow"`,
+                            },
                           }}
                           onClick={async () => {
                             if (!isFollowing) {
@@ -457,15 +477,28 @@ function StatusPage() {
                                 )
                               )
                               setFollowers(prepend(follow, followers))
+                            } else if (
+                              confirm("Would you like to unfollow this user?")
+                            ) {
+                              const { follow } = await unfollowUser({
+                                user,
+                                puser,
+                              })
+                              setIsFollowing(false)
+                              setPuser(
+                                mergeLeft(
+                                  { followers: puser.followers - 1 },
+                                  puser
+                                )
+                              )
+                              setFollowers(
+                                reject(pathEq(["data", "from"], user.address))(
+                                  followers
+                                )
+                              )
                             }
                           }}
-                        >
-                          {isFollowing
-                            ? "Following"
-                            : isFollowed
-                            ? "Follow Back"
-                            : "Follow"}
-                        </Flex>
+                        ></Flex>
                       ) : null}
                     </Box>
                   </Flex>

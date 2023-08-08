@@ -234,6 +234,13 @@ export const followUser = async ({ user, puser }) => {
   return { follow: { id, data: follow } }
 }
 
+export const unfollowUser = async ({ user, puser }) => {
+  const { identity } = await lf.getItem("user")
+  const id = `${user.address}:${puser.address}`
+  await db.delete("follows", id, identity)
+  return { follow: { id, data: null } }
+}
+
 export const postStatus = async ({
   body,
   user,
