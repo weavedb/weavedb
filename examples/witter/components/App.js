@@ -65,15 +65,18 @@ export default function App({
   function onChange(e, editor) {
     const json = e.editorState.toJSON()
     const date = Date.now()
-    if (isChecked)
-      lf.setItem(`edit-${editID ?? "new"}`, { date, nodes: json, title, body })
+    if (isChecked) lf.setItem(`edit-${editID ?? "new"}`, { date, nodes: json })
     editor.update(() => {
       if (!isNil(editContent)) {
         if (!isChecked) {
           isChecked = true
+          const empty =
+            !isNil(val?.nodes?.root) &&
+            val.nodes.root.children.length === 1 &&
+            val.nodes.root.children[0].children.length === 0
           if (
             !isNil(editContent) &&
-            (editContent.date || 0) > (val?.date ?? 0)
+            (empty || (editContent.date || 0) > (val?.date ?? 0))
           ) {
             const parser = new DOMParser()
             const dom = parser.parseFromString(editContent.content, "text/html")
