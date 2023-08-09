@@ -12,8 +12,8 @@ For this example, we will build a simple markdown note taking dapp where you can
 ![](/img/relayer-bundlr-1.png)
 
 1. A relayer job can be preset on the WeaveDB instance with `jobId`, `allowed_relayers`, `extra data schema`. All the conditions must be met before relayed queries go through.
-2. The data owner signs metadata to attach to the `note` and send the `signed query` and the `note` to the relayer.
-3. The relayer upload the `note` to Arweave using Bundlr and get the `tx.id` for it, attach the `tx.id` as an extra piece of data, then sign it with eip712, then send the transaction to the WeaveDB contract on Warp.
+2. The data owner signs metadata to attach to the `note` and sends the `signed query` and the `note` to the relayer.
+3. The relayer uploads the `note` to Arweave using Bundlr and gets the `tx.id` for it, attaches the `tx.id` as an extra piece of data, then signs it with eip712, then sends the transaction to the WeaveDB contract on Warp.
 4. The WeaveDB contract verifies the eip712 signatures and validates `jobID`, `allowed relayers` and `extra data schema`.
 5. The initial query data can be modified with access control rules on the collection. We will check if the `signer` is the data `owner`, and add the `owner` and `tx.id` to the original data.
 6. To access the `note`, the frontend dapp can first get the metadata from WeaveDB and use the `tx.id` to fetch the `note` at `arweave.net/[tx.id]`.
