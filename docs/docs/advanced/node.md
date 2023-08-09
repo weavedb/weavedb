@@ -232,7 +232,7 @@ module.exports = {
 
 ##### 3. Install Docker and Docker Compose according to your environment
 
-##### 4. Run Docker Conompose
+##### 4. Run Docker Compose
 
 ```bash
 yarn run-node
