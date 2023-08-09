@@ -30,7 +30,7 @@ export const initDB = async () => {
 export const initNDB = async () => {
   ndb ??= new SDK({
     rpc: process.env.NEXT_PUBLIC_RPC,
-    contractTxId: "notifications",
+    contractTxId: "offchain#notifications",
   })
   return ndb
 }
