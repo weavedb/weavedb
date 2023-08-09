@@ -1,3 +1,5 @@
+import showdown from "showdown"
+const converter = new showdown.Converter()
 import { useRouter } from "next/router"
 import { useState, useEffect } from "react"
 import { Box, Flex, ChakraProvider, Image } from "@chakra-ui/react"
@@ -62,7 +64,7 @@ function StatusPage() {
   const [tweets, setTweets] = useState({})
   const [showLikes, setShowLikes] = useState(false)
   const [showReposts, setShowReposts] = useState(false)
-
+  const [noHeader, setNoHeader] = useState(false)
   useEffect(() => {
     if (!isNil(router.query.id)) {
       ;(async () => {
@@ -99,10 +101,15 @@ function StatusPage() {
           setIsNextComment(_comments.length >= limit)
           if (!isNil(post.data.body)) {
             try {
-              const json = await fetch(post.data.body, { mode: "cors" }).then(
-                v => v.json()
+              let url = post.data.body
+              if (/hideaki-97c59/.test(url)) setNoHeader(true)
+              const json = await fetch(url, { mode: "cors" }).then(v =>
+                v.json()
               )
-              setTweet(assocPath(["data", "content"], json.content)(post))
+              const format = json.type ?? json.format ?? "md"
+              let body = json.content ?? json.body
+              if (format === "md") body = converter.makeHtml(body)
+              setTweet(assocPath(["data", "content"], body)(post))
             } catch (e) {}
           }
         }
@@ -296,6 +303,7 @@ function StatusPage() {
               >
                 <Article
                   {...{
+                    noHeader,
                     setShowReposts,
                     setShowLikes,
                     main: true,

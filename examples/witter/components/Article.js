@@ -25,6 +25,7 @@ export default function Article({
   _tweet,
   setTweet,
   repost = null,
+  noHeader = true,
 }) {
   const isDeleted = !preview && isNil(post.date)
   const Like = () => {
@@ -172,7 +173,7 @@ export default function Article({
       )}
 
       <Box fontSize="14px" className="markdown-body">
-        {isDeleted || isNil(post.cover) ? null : (
+        {noHeader || isDeleted || isNil(post.cover) ? null : (
           <Flex justify="center" mb={4}>
             <Image src={post.cover} />
           </Flex>
@@ -183,7 +184,7 @@ export default function Article({
               This post has been deleted by the owner
             </Box>
           </Flex>
-        ) : post.description === "" ? null : (
+        ) : noHeader || post.description === "" ? null : (
           <Flex fontSize="16px" mt={2} mb={4} justify="center" mx={6}>
             <i>{post.description}</i>
           </Flex>
