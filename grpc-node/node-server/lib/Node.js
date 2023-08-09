@@ -106,9 +106,12 @@ class Node {
       })
     }
     const { method, query, nocache } = call.request
-    let [func, txid] = method.split("@")
-    if (!isNil(txid)) txid = txid.split("@")[0]
-    return { nocache, res, txid, func, query, isAdmin: func === "admin" }
+    const [func, id] = method.split("@")
+    let txid, type
+    if (!isNil(id)) {
+      ;[txid, type] = id.split("#")
+    }
+    return { type, nocache, res, txid, func, query, isAdmin: func === "admin" }
   }
 
   async rateLimit(txid) {

@@ -13,7 +13,7 @@ export default function Home() {
   useEffect(() => {
     ;(async () => {
       db = new DB({
-        contractTxId: "log",
+        contractTxId: "offchaing#log",
         rpc: process.env.NEXT_PUBLIC_WEAVEDB_RPC,
       })
       const txs = await db.cget("txs", ["id", "desc"], 20)

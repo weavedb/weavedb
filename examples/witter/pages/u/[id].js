@@ -218,7 +218,7 @@ function StatusPage() {
   useEffect(() => {
     ;(async () => {
       await getUsers({
-        ids: map(path(["data", "address"]))(values(following)),
+        ids: map(path(["data", "to"]))(values(following)),
         users,
         setUsers,
       })
@@ -228,7 +228,7 @@ function StatusPage() {
   useEffect(() => {
     ;(async () => {
       await getUsers({
-        ids: map(path(["data", "address"]))(values(followers)),
+        ids: map(path(["data", "from"]))(values(followers)),
         users,
         setUsers,
       })
