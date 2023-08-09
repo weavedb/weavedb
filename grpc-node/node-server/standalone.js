@@ -71,6 +71,10 @@ class Server {
   async query(call, callback) {
     const parsed = this.parseQuery(call, callback)
     const { type, res, nocache, txid, func, query, isAdmin } = parsed
+    if (isNil(this.rollups[txid])) {
+      res(`DB [${txid}] doesn't exist`, null)
+      return
+    }
     this.rollups[txid].execUser(parsed)
   }
 }

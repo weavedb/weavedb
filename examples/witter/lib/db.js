@@ -18,20 +18,15 @@ import {
 } from "ramda"
 import lf from "localforage"
 import { nanoid } from "nanoid"
-
+const contractTxId = process.env.NEXT_PUBLIC_TXID ?? "offchain"
+const rpc = process.env.NEXT_PUBLIC_RPC
 export const initDB = async () => {
-  db ??= new SDK({
-    rpc: process.env.NEXT_PUBLIC_RPC,
-    contractTxId: "offchain",
-  })
+  db ??= new SDK({ rpc, contractTxId })
   return db
 }
 
 export const initNDB = async () => {
-  ndb ??= new SDK({
-    rpc: process.env.NEXT_PUBLIC_RPC,
-    contractTxId: "offchain#notifications",
-  })
+  ndb ??= new SDK({ rpc, contractTxId: `${contractTxId}#notifications` })
   return ndb
 }
 

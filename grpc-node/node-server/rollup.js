@@ -129,13 +129,14 @@ class Rollup {
         onWrite: async (tx, obj, param) => {
           let prs = [obj.lmdb_plg_notifications.put("state", tx.state)]
           for (const k in tx.result.kvs) {
-            this.kvs_plg[k] = tx.result.kvs[k]
+            //this.kvs_plg[k] = tx.result.kvs[k]
             prs.push(obj.lmdb_plg_notifications.put(k, tx.result.kvs[k]))
           }
           Promise.all(prs).then(() => {})
         },
         get: async (key, obj) => {
-          let val = this.kvs_plg[key]
+          //let val = this.kvs_plg[key]
+          let val
           if (typeof val === "undefined")
             val = await obj.lmdb_plg_notifications.get(key)
           return val
@@ -304,13 +305,14 @@ class Rollup {
         onWrite: async (tx, obj, param) => {
           let prs = [obj.lmdb_wal.put("state", tx.state)]
           for (const k in tx.result.kvs) {
-            this.kvs_wal[k] = tx.result.kvs[k]
+            //this.kvs_wal[k] = tx.result.kvs[k]
             prs.push(obj.lmdb_wal.put(k, tx.result.kvs[k]))
           }
           Promise.all(prs).then(() => {})
         },
         get: async (key, obj) => {
-          let val = this.kvs_wal[key]
+          //let val = this.kvs_wal[key]
+          let val
           if (typeof val === "undefined") val = await obj.lmdb_wal.get(key)
           return val
         },
@@ -340,7 +342,7 @@ class Rollup {
         onWrite: async (tx, obj, param) => {
           let prs = [obj.lmdb.put("state", tx.state)]
           for (const k in tx.result.kvs) {
-            this.kvs[k] = tx.result.kvs[k]
+            //this.kvs[k] = tx.result.kvs[k]
             prs.push(obj.lmdb.put(k, tx.result.kvs[k]))
           }
           Promise.all(prs).then(() => {})
@@ -363,7 +365,8 @@ class Rollup {
             .catch(e => console.log("err", e))
         },
         get: async (key, obj) => {
-          let val = this.kvs[key]
+          //let val = this.kvs[key]
+          let val
           if (typeof val === "undefined") val = await obj.lmdb.get(key)
           return val
         },
@@ -436,7 +439,6 @@ class Rollup {
   async execUser(parsed) {
     const { type, res, nocache, txid, func, query } = parsed
     if (type === "log" && !includes(func)(["get", "cget"])) {
-      console.log(parsed)
       res("only get/cget is allowed with log", null)
       return
     }
