@@ -377,7 +377,7 @@ class Rollup {
   }
   async initWarp() {
     const contractTxId = this.txid
-    if (!isNil(contractTxId)) {
+    if (this.rollup) {
       console.log(`contractTxId: ${contractTxId}`)
       this.warp = new Warp({
         lmdb: { dir: path.resolve(this.dir, "warp") },

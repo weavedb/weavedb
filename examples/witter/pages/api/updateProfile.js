@@ -18,11 +18,14 @@ export default async (req, res) => {
   let extra = {}
   const addr = req.body.query.query[0].address
   const nonce = req.body.query.nonce
+  const prefix = isNil(process.env.GCS_PREFIX)
+    ? ""
+    : `${process.env.GCS_PREFIX}/`
   if (!isNil(req.body.image)) {
     try {
       const buf = Buffer.from(req.body.image.split(",")[1], "base64")
       const ext = req.body.image.split(";")[0].split("/")[1]
-      const filename = `profile/${addr}/image-${nonce}.${ext}`
+      const filename = `${prefix}profile/${addr}/image-${nonce}.${ext}`
       await bucket.file(filename).save(buf)
       await bucket.file(filename).makePublic()
       image = `https://storage.googleapis.com/${process.env.GCS_BUCKET}/${filename}`
@@ -35,7 +38,7 @@ export default async (req, res) => {
     try {
       const buf = Buffer.from(req.body.cover.split(",")[1], "base64")
       const ext = req.body.cover.split(";")[0].split("/")[1]
-      const filename = `profile/${addr}/cover-${nonce}.${ext}`
+      const filename = `${prefix}profile/${addr}/cover-${nonce}.${ext}`
       await bucket.file(filename).save(buf)
       await bucket.file(filename).makePublic()
       cover = `https://storage.googleapis.com/${process.env.GCS_BUCKET}/${filename}`
