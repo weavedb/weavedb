@@ -22,8 +22,17 @@ const path = require("path")
 const EthCrypto = require("eth-crypto")
 
 class Rollup {
-  constructor({ port = 9090, conf, txid, rollup = false }) {
-    this.conf = conf
+  constructor({
+    port = 9090,
+    txid,
+    rollup = false,
+    owner,
+    secure,
+    dbname = "weavedb",
+    dir,
+  }) {
+    this.secure = secure
+    this.owner = owner
     this.rollup = false
     this.port = port
     this.txid = txid
@@ -35,8 +44,8 @@ class Rollup {
     this.kvs_wal = {}
     this.kvs_plg = {}
     this.dir = path.resolve(
-      this.conf.cacheDir ?? path.resolve(__dirname, "cache"),
-      this.conf.dbname ?? "weavedb",
+      dir ?? path.resolve(__dirname, "cache"),
+      dbname,
       this.txid
     )
     this.plugins = {}
@@ -99,7 +108,7 @@ class Rollup {
     setTimeout(() => this.bundle(), 3000)
   }
   async initDB() {
-    console.log(`Owner Account: ${this.conf.owner}`)
+    console.log(`Owner Account: ${this.owner}`)
     await this.initWAL()
     await this.initOffchain()
     await this.initWarp()
@@ -132,7 +141,7 @@ class Rollup {
           return val
         },
       },
-      state: { owner: this.conf.owner, secure: false },
+      state: { owner: this.owner, secure: false },
     })
     await this.plugins.notifications.initialize()
     console.log("plugin initialized")
@@ -306,7 +315,7 @@ class Rollup {
           return val
         },
       },
-      state: { owner: this.conf.owner, secure: false },
+      state: { owner: this.owner, secure: false },
     })
     await this.wal.initialize()
     await this.wal.addIndex([["commit"], ["id"]], "txs")
@@ -314,8 +323,9 @@ class Rollup {
     console.log(`${this.tx_count} txs has been cached`)
   }
   async initOffchain() {
-    const state = { owner: this.conf.owner, secure: this.conf.secure ?? true }
+    const state = { owner: this.owner, secure: this.secure ?? true }
     this.db = new DB({
+      contractTxId: this.txid,
       type: 3,
       cache: {
         initialize: async obj => {
@@ -363,7 +373,7 @@ class Rollup {
     await this.db.initialize()
   }
   async initWarp() {
-    const contractTxId = this.conf.contractTxId
+    const contractTxId = this.txid
     if (!isNil(contractTxId)) {
       console.log(`contractTxId: ${contractTxId}`)
       this.warp = new Warp({
@@ -374,7 +384,7 @@ class Rollup {
         nocache: true,
         progress: async input => {
           console.log(
-            `loading ${this.conf.contractTxId} [${input.currentInteraction}/${input.allInteractions}]`
+            `loading ${this.txid} [${input.currentInteraction}/${input.allInteractions}]`
           )
         },
       })
@@ -425,15 +435,15 @@ class Rollup {
 
   async execUser(parsed) {
     const { type, res, nocache, txid, func, query } = parsed
-    if (type !== "offchain" && !includes(func)(["get", "cget"])) {
+    if (type === "log" && !includes(func)(["get", "cget"])) {
+      console.log(parsed)
       res("only get/cget is allowed with log", null)
       return
     }
     const _query = JSON.parse(query)
     const key = DB.getKeyInfo(
       type,
-      !isNil(_query.query) ? _query : { function: func, query: _query },
-      this.conf.cache_prefix
+      !isNil(_query.query) ? _query : { function: func, query: _query }
     )
     let data = null
     let result, err, dryWrite

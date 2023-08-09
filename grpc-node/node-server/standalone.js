@@ -2,7 +2,7 @@ const grpc = require("@grpc/grpc-js")
 const protoLoader = require("@grpc/proto-loader")
 const { addReflection } = require("grpc-server-reflection")
 const PROTO_PATH = __dirname + "/weavedb.proto"
-const { isNil, includes } = require("ramda")
+const { isNil, includes, mapObjIndexed } = require("ramda")
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
   longs: String,
@@ -18,10 +18,18 @@ const { Rollup } = require("./rollup")
 
 class Server {
   constructor({ port = 9090 }) {
+    const conf = require(config)
     this.port = port
-    this.rollups = {
-      offchain: new Rollup({ txid: "offchain", conf: require(config) }),
-    }
+    this.rollups = mapObjIndexed(
+      (v, txid) =>
+        new Rollup({
+          txid,
+          secure: v.secure ?? conf.secure,
+          owner: v.owner ?? conf.owner,
+          dbname: v.dbname ?? conf.dbname,
+          dir: v.dir ?? conf.dir,
+        })
+    )(conf.rollups || { offchain: {} })
     for (let k in this.rollups) this.rollups[k].init()
     this.startServer()
   }
