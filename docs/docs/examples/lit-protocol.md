@@ -11,13 +11,13 @@ For this example, we will build a messaging dapp where you can send encrypted me
 
 1. A relayer job can be preset on the WeaveDB instance with `jobId`, `allowed_relayers`, `extra data schema`. All the conditions must be met before relayed queries go through.
 2. The sender `#1` and the receiver `#3` mint NFTs.
-3. The sender encrypt a message to the receiver with the condition that `receiver = owner of #3 token` using Lit Protocol. To be specific, the sender specifies multiple `tokenID`s including one of his/her own (e.g. `1,3`), so he/she can also decrypt and view the message.
+3. The sender encrypts a message to the receiver with the condition that `receiver = owner of #3 token` using Lit Protocol. To be specific, the sender specifies multiple `tokenID`s including one of his/her own (e.g. `1,3`), so he/she can also decrypt and view the message.
 4. The sender packages the received data (`encryptedString`, `encryptedSymmetricKey`) and the access condition(`evmContractConditions`) into an object, and we call it `Lit Object` for now.
-5. The sender signs initial data (`date`) with eip712 and sends it to the relayer with `jobID`. The `signer address` can be later obtained by verifying the eip712 signatrue.
-6. The relayer checks the sender is an owner of one of the receiver `tokenIDs` and add extra data (`isOwner`, `lit`, `tokenIds`) to the signed query, then signs it with eip712 and send the transaction to the WeaveDB contract on Warp.
+5. The sender signs initial data (`date`) with eip712 and sends it to the relayer with `jobID`. The `signer address` can be later obtained by verifying the eip712 signature.
+6. The relayer checks the sender is an owner of one of the receiver `tokenIDs` and add extra data (`isOwner`, `lit`, `tokenIds`) to the signed query, then signs it with eip712 and sends the transaction to the WeaveDB contract on Warp.
 7. The WeaveDB contract verifies the eip712 signatures and validates `jobID`, `allowed relayers` and `extra data schema`.
 8. The initial query data can be modified with access control rules on the collection. We will check if `isOwner` is `true` and if `block.timestamp` is equal to the `date`, and if so, add `tokenIds`, `lit` and `owner` to the initial data to make it `{ date, tokenIDs, lit : { encryptedString, evmContractConditions, encryptedSymmetricKey } , owner }`. This data schema is preset on the collection, so the data gets rejected unless it satisfies this schema.
-9. The receiver fetch the doc including the `Lit Object`, which contains the encrypted message and send the `evmContractConditions` and `encryptedSymmetricKey` to Lit Protocol.
+9. The receiver fetch the doc including the `Lit Object`, which contains the encrypted message and sends the `evmContractConditions` and `encryptedSymmetricKey` to Lit Protocol.
 10. Lit Protocol verifies the decryptor meets the access conditions(`decryptor = one of the owners of the specified tokenIDs`), and if so, it sends back the decrypted `symmetricKey`.
 11. The receiver uses the `symmetricKey` to decrypt the `encryptedString` to get the message from the sender.
 
@@ -75,7 +75,7 @@ graph init --product hosted-service username/your-subgraph-name
 - `Contract address` : 0xYourNFTContractAddress
 - `Contract name` : NFT
 - `Index contract events as entities` : false
-- `Add another contarct?` : false
+- `Add another contract?` : false
 
 Set your deploy key for the subgraph. You can get the deploy key from [your subgraph page](https://thegraph.com/hosted-service/dashboard).
 
@@ -119,7 +119,7 @@ dataSources:
       file: ./src/nft.ts
 ```
 
-Open `schema.graphql` and relpace the content with the following.
+Open `schema.graphql` and replace the content with the following.
 
 ```graphql
 type Token @entity {
@@ -191,7 +191,7 @@ For example, a query to get the `tokenIDs` of `0x078694d69426112c7df330732e28F51
 
 You can set up complex access control conditions with Lit Protocol using multiple smart contract functions.
 
-But you can also make it easiler by deploying a simple real-only ACL contract and using only one aggregator function.
+But you can also make it easier by deploying a simple real-only ACL contract and using only one aggregator function.
 
 We will deploy an `ACL` contract with `isOwner` function that checks if the `addr` is the owner of any one of the given `tokenIds`.
 
@@ -249,7 +249,7 @@ Then deploy the contract to the Goerli testnet.
 npx hardhat run scripts/deployACL.js --network goerli
 ```
 
-Now you should receive yoru contract address. To verify the contract on Etherscan, run the following.
+Now you should receive your contract address. To verify the contract on Etherscan, run the following.
 
 ```bash
 npx hardhat verify --network goerli 0xACLContractAddress 0xNFTContractAddress
@@ -296,7 +296,7 @@ await db.setSchema(schema, "lit_messages", { ar: wallet })
 - `tokenIDs` : tokenIDs the message is sent to, only the owners of those tokenIDs can decrypt the message
 - `owner` : sender address
 - `lit` : lit object with encrypted message, encrypted key, and access conditions
-- `date` : date the messege is sent
+- `date` : date the message is sent
 
 ### Set up Relayer Job
 
@@ -380,7 +380,7 @@ node scripts/lit-setup.js mainnet mainnet YOUR_CONTRACT_TX_ID RELAYER_EVM_ADDRES
 
 ## NextJS Frontend Dapp
 
-If you followed [the previous tutorial](/docs/examples/relayer-nft), you should have a frontend dapp set up alreasy.
+If you followed [the previous tutorial](/docs/examples/relayer-nft), you should have a frontend dapp set up already.
 
 If not, you should follow the first two sections now.
 
