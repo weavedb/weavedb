@@ -34,7 +34,7 @@ WeaveDB offers several advantages over traditional web2 solutions:
 - **Cross-chain data bridges**: Allowing developers to easily import their data from different blockchain networks and even web2 APIs.
 - **Data encryption**: You can use Lit protocol to encrypt data, ensuring data privacy and security.
 - **Scalability**: WeaveDB is virtually infinitely scalable, making it ideal for large-scale decentralized applications.
-- **Built-in decentralized indexer**: Making it easy to search and query large datasets without relying on a centralzied indexer.
+- **Built-in decentralized indexer**: Making it easy to search and query large datasets without relying on a centralized indexer.
 - **Scheduled tasks**: Allowing developers to execute actions on-chain at specified times.
 
 :::caution
