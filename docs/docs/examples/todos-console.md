@@ -182,7 +182,7 @@ For simplicity, we will write everything in one file at `/page/index.js`.
 
 ### Install Dependencies
 
-Open a new terminal and move to the root directry to continue depelopment.
+Open a new terminal and move to the root directory to continue development.
 
 We use these minimum dependencies.
 
