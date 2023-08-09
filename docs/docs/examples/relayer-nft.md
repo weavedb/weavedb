@@ -11,7 +11,7 @@ An off-chain relayer will validate NFT ownerships from another blockchain, and o
 1. A relayer job can be preset on the WeaveDB instance with `jobId`, `allowed_relayers`, `extra data schema`. All the conditions must be met before relayed queries go through.
 2. The NFT owner mints an NFT.
 3. The owner signs query data (`tokenID`, `Message`) with eip712 and sends it to the relayer with `jobID`. The `signer address` can be later obtained by verifying the eip712 signatrue.
-4. The relayer checks the owner of the `tokenID` and add the `owner` address to the signed query, then signs it with eip712 and send the transaction to the WeaveDB contract on Warp.
+4. The relayer checks the owner of the `tokenID` and adds the `owner` address to the signed query, then signs it with eip712 and sends the transaction to the WeaveDB contract on Warp.
 5. The WeaveDB contract verifies the eip712 signatures and validates `jobID`, `allowed relayers` and `extra data schema`. `owner` is the extra data to be validated.
 6. The original query data (`tokenID`, `Message`) can be modified with access control rules on the collection. We will check if the `signer` is the `owner`, and if so, add the `owner` field to the original data.
 
@@ -260,7 +260,7 @@ For simplicity, we will write everything in one file at `/page/index.js`.
 
 ### Install Dependencies
 
-Open a new terminal and move to the root directry to continue depelopment.
+Open a new terminal and move to the root directory to continue development.
 
 We use these minimum dependencies.
 
@@ -331,7 +331,7 @@ NEXT_PUBLIC_WEAVEDB_RPC_WEB="http://localhost:8080"
 
 We will set up the relayer as NextJS serverless api located at `/pages/api/ownerOf`.
 
-The relayer receives signed parameters from frontend users and checks the owner of the NFT with `tokenID` embedded in the prameters, then relays the DB query with an additional data of `owner` attached to the query.
+The relayer receives signed parameters from frontend users and checks the owner of the NFT with `tokenID` embedded in the parameters, then relays the DB query with an additional data of `owner` attached to the query.
 
 ```js
 const { Contract, providers } = require("ethers")
@@ -624,7 +624,7 @@ const res = await fetch("/api/ownerOf", {
 :::
 
 
-The Messages component loops through `nfts` and list the messages with a link to the owner page on Etherscan.
+The Messages component loops through `nfts` and lists the messages with a link to the owner page on Etherscan.
 
 ```jsx
   const Messages = () => (
