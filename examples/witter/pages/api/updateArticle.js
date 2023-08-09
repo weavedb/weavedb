@@ -19,11 +19,14 @@ export default async (req, res) => {
   const addr = req.body.query.query[0].owner
   const id = req.body.query.query[0].id
   const nonce = req.body.query.nonce
+  const prefix = isNil(process.env.GCS_PREFIX)
+    ? ""
+    : `${process.env.GCS_PREFIX}/`
   if (!isNil(req.body.body)) {
     try {
       const buf = req.body.body
       const ext = "json"
-      const filename = `articles/${addr}/body-${id}-${nonce}.${ext}`
+      const filename = `${prefix}articles/${addr}/body-${id}-${nonce}.${ext}`
       await bucket.file(filename).save(buf)
       await bucket.file(filename).makePublic()
       body = `https://${process.env.GCS_BUCKET}.storage.googleapis.com/${filename}`
@@ -36,7 +39,7 @@ export default async (req, res) => {
     try {
       const buf = Buffer.from(req.body.cover.split(",")[1], "base64")
       const ext = req.body.cover.split(";")[0].split("/")[1]
-      const filename = `profile/${addr}/cover-${id}-${nonce}.${ext}`
+      const filename = `${prefix}profile/${addr}/cover-${id}-${nonce}.${ext}`
       await bucket.file(filename).save(buf)
       await bucket.file(filename).makePublic()
       cover = `https://storage.googleapis.com/${process.env.GCS_BUCKET}/${filename}`

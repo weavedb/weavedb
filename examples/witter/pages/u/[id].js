@@ -311,6 +311,7 @@ function StatusPage() {
     { key: "followers", name: "Followers" },
   ]
   const isFollow = includes(tab, ["following", "followers"])
+  console.log(_user)
   return (
     <ChakraProvider>
       <style jsx global>{`
