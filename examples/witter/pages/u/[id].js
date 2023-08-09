@@ -202,13 +202,13 @@ function StatusPage() {
         ids: compose(
           uniq,
           reject(isEmpty),
-          map(path(["data", "reply_to"]))
+          map(path(["reply_to"]))
         )(values(tweets)),
         tweets,
         setTweets,
       })
       await getUsers({
-        ids: map(path(["data", "owner"]))(values(tweets)),
+        ids: map(path(["owner"]))(values(tweets)),
         users,
         setUsers,
       })
