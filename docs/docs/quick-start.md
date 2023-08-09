@@ -119,7 +119,7 @@ delete people Bob
 upsert {name:"Bob",age:20} people Bob
 ```
 
-The defferences between `set`, `upsert`, `update` are:
+The differences between `set`, `upsert`, `update` are:
 
 - `set` will reset the whole doc if the doc already exists.
 - `update` will fail if the doc does not exist.
@@ -289,7 +289,7 @@ With decentralized DBs, it's extremely essential to control who can update what,
 
 In this tutorial, we will only explore basic `JsonLogic` parts.
 
-You can set up rules to either the entire write operation with `write` or specific operations with`create`, `update` and `delete`.
+You can set up rules to either the entire write operation with `write` or specific operations with `create`, `update` and `delete`.
 
 So `write` = `create` + `update` + `delete`.
 
@@ -497,7 +497,7 @@ You can also pack any number of dryRead queries with `onDryWrite.read` to immedi
 For a great UX, dapps would utilize dryWrite/dryRead, which, in most cases, takes less than 50ms, whereas the equivalent tx without dryWrite could take 4-5 seconds.
 
 :::info
-The WeaveDB dryWrite with a virtual state is faster than the WarpSDK dryWrite which requires a http call to sync with the latest state. But it might give you a different result from the actual finality. If there is any discrepancy, it will be solved in 5 seconds. But handle the dryWrite results with care.
+The WeaveDB dryWrite with a virtual state is faster than the WarpSDK dryWrite which requires an http call to sync with the latest state. But it might give you a different result from the actual finality. If there is any discrepancy, it will be solved in 5 seconds. But handle the dryWrite results with care.
 :::
 
 :::info
@@ -539,7 +539,7 @@ Lens Profiles are Polygon NFTs, which requires a different way to securely verif
 
 ![](/img/lens-auth.png)
 
-The [Lit Action](https://developer.litprotocol.com/coreConcepts/LitActionsAndPKPs/actions/litActions) is [an immutable script stored in IPFS](https://cloudflare-ipfs.com/ipfs/QmYq1RhS5A1LaEFZqN5rCBGnggYC9orEgHc9qEwnPfJci8), which validates ownerships of Lens Profiles and signs WeaveDB queries with a PKP ([Programmable Key Pair](https://developer.litprotocol.com/coreConcepts/LitActionsAndPKPs/PKPs)). The privateKeys of PKPs are decentralized by [threshold cryptography](https://academy.binance.com/en/articles/threshold-signatures-explained) and controled by NFT to grant access to Lit Action scripts, but we use the [Mint/Grant/Burn](https://developer.litprotocol.com/coreconcepts/litactionsandpkps/intro/#what-is-mintgrantburn) technique to immediately abandon the ownership after granting access to only one IPFS address, so the PKP(0xF810D4a6F0118E6a6a86A9FBa0dd9EA669e1CC2E) associated with the IPFS script can only produce signatures within that script.
+The [Lit Action](https://developer.litprotocol.com/coreConcepts/LitActionsAndPKPs/actions/litActions) is [an immutable script stored in IPFS](https://cloudflare-ipfs.com/ipfs/QmYq1RhS5A1LaEFZqN5rCBGnggYC9orEgHc9qEwnPfJci8), which validates ownerships of Lens Profiles and signs WeaveDB queries with a PKP ([Programmable Key Pair](https://developer.litprotocol.com/coreConcepts/LitActionsAndPKPs/PKPs)). The privateKeys of PKPs are decentralized by [threshold cryptography](https://academy.binance.com/en/articles/threshold-signatures-explained) and controlled by NFT to grant access to Lit Action scripts, but we use the [Mint/Grant/Burn](https://developer.litprotocol.com/coreconcepts/litactionsandpkps/intro/#what-is-mintgrantburn) technique to immediately abandon the ownership after granting access to only one IPFS address, so the PKP(0xF810D4a6F0118E6a6a86A9FBa0dd9EA669e1CC2E) associated with the IPFS script can only produce signatures within that script.
 
 So any queries signed by the PKP are guaranteed to be validated through the immutable IPFS script of Lit Action, which securely bridges data from Polygon to WeaveDB (Arweave). WeaveDB verifies the PKP signature and links the verified Lens Profile to a disposal EVM address, so the user doesn't have to repeat this authentication process again.
 
@@ -550,7 +550,7 @@ To enable the Lens authentication, you need to set up a relayer job (`auth:lens`
 
 #### Generating Disposal Key Pair
 
-For optimal UX for dapp users, you would want to generate a disposal key pair and let it auto-sign transactions without wallet pop-ups evey time they are to update data.
+For optimal UX for dapp users, you would want to generate a disposal key pair and let it auto-sign transactions without wallet pop-ups every time they are to update data.
 
 We will explore the disposal key flow, but for any other usages, refer to [the Authentication document](/docs/sdk/auth).
 
@@ -586,7 +586,7 @@ The `identity` object.
 const identity = {
   privateKey, // the disposal account privKey
   publicKey, // the disposal account pubKey
-  address, // the disposale account address
+  address, // the disposal account address
   linkedAccount, // the original account address, `lens:123` for lens
   signer, // the generator of the identity, same as linkedAddress except for lens
   type, // evm | ar | ii | intmax | lens
@@ -812,7 +812,7 @@ Set these up using [the Web Console](/docs/quick-start#set-up-schema).
 
 #### 3. Set up Access Control Rules
 
-For users, we want the docid to be the same as `uid` and users can only update theire own data.
+For users, we want the docid to be the same as `uid` and users can only update their own data.
 
 ```javascript
 {
