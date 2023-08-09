@@ -36,7 +36,7 @@ module.exports = function override(config) {
 ```
 ### v0.27.x
 
-To work with v0.27.x, you need to set `type: 2` when instanciating the SDK. This will turn on the KVS feature required for v0.27.x.
+To work with v0.27.x, you need to set `type: 2` when instantiating the SDK. This will turn on the KVS feature required for v0.27.x.
 
 ```js
 import SDK from "weavedb-sdk"
