@@ -1,18 +1,13 @@
 const pako = require("pako")
 const md5 = require("md5")
-const Arweave = require("arweave")
 const {
   last,
   keys,
   isNil,
   is,
   pluck,
-  o,
-  flatten,
   map,
-  append,
   includes,
-  concat,
   path: _path,
 } = require("ramda")
 const DB = require("weavedb-offchain")
@@ -30,6 +25,7 @@ class Rollup {
     secure,
     dbname = "weavedb",
     dir,
+    plugins = {},
   }) {
     this.secure = secure
     this.owner = owner
@@ -42,19 +38,20 @@ class Rollup {
     this.bundler = EthCrypto.createIdentity()
     this.kvs = {}
     this.kvs_wal = {}
-    this.kvs_plg = {}
     this.dir = path.resolve(
       dir ?? path.resolve(__dirname, "cache"),
       dbname,
       this.txid
     )
-    this.plugins = {}
+    this.plugins = plugins
     console.log(`Bundler: ${this.bundler.address}`)
   }
+
   async init() {
     await this.initDB()
     if (this.rollup) this.bundle()
   }
+
   measureSizes(bundles) {
     let sizes = 0
     let _bundlers = []
@@ -70,6 +67,7 @@ class Rollup {
     }
     return _bundlers
   }
+
   async bundle() {
     try {
       const bundling = await this.wal.cget(
@@ -107,6 +105,7 @@ class Rollup {
     }
     setTimeout(() => this.bundle(), 3000)
   }
+
   async initDB() {
     console.log(`Owner Account: ${this.owner}`)
     await this.initWAL()
@@ -114,182 +113,26 @@ class Rollup {
     await this.initWarp()
     await this.initPlugins()
   }
+
   async initPlugins() {
-    this.plugins.notifications = new DB({
-      type: 3,
-      noauth: true,
-      cache: {
-        initialize: async obj => {
-          obj.lmdb_plg_notifications = open({
-            path: path.resolve(this.dir, "plugins", `notifications`),
-          })
-          let saved_state = await obj.lmdb_plg_notifications.get("state")
-          if (!isNil(saved_state)) obj.state = saved_state
-        },
-        onWrite: async (tx, obj, param) => {
-          let prs = [obj.lmdb_plg_notifications.put("state", tx.state)]
-          for (const k in tx.result.kvs) {
-            //this.kvs_plg[k] = tx.result.kvs[k]
-            prs.push(obj.lmdb_plg_notifications.put(k, tx.result.kvs[k]))
-          }
-          Promise.all(prs).then(() => {})
-        },
-        get: async (key, obj) => {
-          //let val = this.kvs_plg[key]
-          let val
-          if (typeof val === "undefined")
-            val = await obj.lmdb_plg_notifications.get(key)
-          return val
-        },
-      },
-      state: { owner: this.owner, secure: false },
-    })
-    await this.plugins.notifications.initialize()
-    console.log("plugin initialized")
-    const last_wal =
-      (await this.plugins.notifications.get("conf", "notifications"))
-        ?.last_wal ?? null
-    console.log(JSON.stringify(last_wal))
-    console.log(`last WAL: ${last_wal}`)
-    await this.getWAL(last_wal)
-  }
-  async execPlugin(v, arts = {}) {
-    const input =
-      v.data.input.function === "relay" ? v.data.input.query[1] : v.data.input
-    const func = input.function
-    const data = input.query[0]
-    const col = input.query[1]
-    if (func === "set" && col === "likes") {
-      const from = data.user
-      arts[data.aid] ??= await this.db.get("posts", data.aid)
-      const article = arts[data.aid]
-      const to = article.owner
-      if (from === to) return
-      const date = data.date
-      const id = md5(`like:${from}:${to}:${article.id}:${date}`)
-      await this.plugins.notifications.set(
-        {
-          wid: v.data.id,
-          type: "like",
-          id,
-          from,
-          to,
-          date,
-          aid: article.id,
-          viewed: from === to,
-        },
-        "notifications",
-        id
-      )
-      console.log(
-        `<${this.txid}> (${v.id}) [${to.slice(0, 5)}] ${
-          article.id
-        } liked by ${from.slice(0, 5)} at ${date}`
-      )
-    }
-    if (func === "set" && col === "follows") {
-      const from = data.from
-      const to = data.to
-      const date = data.date
-      const id = md5(`follow:${from}:${to}:${date}`)
-      await this.plugins.notifications.set(
-        {
-          wid: v.data.id,
-          type: "follow",
-          id,
-          from,
-          to,
-          date,
-          viewed: from === to,
-        },
-        "notifications",
-        id
-      )
-      console.log(
-        `<${this.txid}> (${v.id}) [${to.slice(0, 5)}] followed by ${from.slice(
-          0,
-          5
-        )} at ${date}`
-      )
-    }
-    if (func === "set" && col === "posts") {
-      if (data.repost !== "") {
-        arts[data.aid] ??= await this.db.get("posts", data.repost)
-        const article = arts[data.aid]
-        const from = data.owner
-        const to = article.owner
-        if (from === to) return
-        const date = data.date
-        const id = md5(`repost:${from}:${to}:${article.id}:${data.id}:${date}`)
-        await this.plugins.notifications.set(
-          {
-            wid: v.data.id,
-            type: isNil(data.description) ? "repost" : "quote",
-            id,
-            from,
-            to,
-            date,
-            aid: article.id,
-            rid: data.id,
-            viewed: from === to,
-          },
-          "notifications",
-          id
-        )
-        console.log(
-          `<${this.txid}> (${v.id}) [${to.slice(0, 5)}] ${
-            isNil(data.description) ? "reposted" : "quoted"
-          } by ${from.slice(0, 5)} at ${date}`
-        )
-      } else if (data.reply_to !== "") {
-        arts[data.reply_to] ??= await this.db.get("posts", data.reply_to)
-        const article = arts[data.reply_to]
-        const from = data.owner
-        const to = article.owner
-        if (from === to) return
-        const date = data.date
-        const id = md5(`reply:${from}:${to}:${article.id}:${data.id}:${date}`)
-        await this.plugins.notifications.set(
-          {
-            wid: v.data.id,
-            type: "reply",
-            id,
-            from,
-            to,
-            date,
-            aid: article.id,
-            rid: data.id,
-            viewed: from === to,
-          },
-          "notifications",
-          id
-        )
-        console.log(
-          `<${this.txid}> (${v.id}) [${to.slice(0, 5)}] replied by ${from.slice(
-            0,
-            5
-          )} at ${date}`
-        )
-      }
+    for (let k in this.plugins) {
+      const Plugin = require(`./plugins/${k}`)
+      this.plugins[k].db = new Plugin({
+        owner: this.plugins[k].owner ?? this.owner,
+        dir: this.plugins[k].dir ?? this.dir,
+        db: this.db,
+        txid: this.txid,
+      })
+      await this.plugins[k].db.pdb.initialize()
+      console.log("plugin initialized")
+      const last_wal =
+        (await this.plugins[k].db.pdb.get("conf", k))?.last_wal ?? null
+      console.log(JSON.stringify(last_wal))
+      console.log(`last WAL: ${last_wal}`)
+      await this.getWAL(last_wal, this.plugins[k].db)
     }
   }
-  async getWAL(next = null) {
-    const limit = 10
-    let params = ["txs", ["id"]]
-    if (!isNil(next)) params.push(["startAfter", next])
-    let arts = {}
-    const txs = await this.wal.cget(...params, limit)
-    for (let v of txs) await this.execPlugin(v, arts)
-    if (txs.length > 0) {
-      const last_wal = last(txs).data.id
-      await this.plugins.notifications.set(
-        { last_wal },
-        "conf",
-        "notifications"
-      )
-      if (txs.length === limit) this.getWAL(last(txs))
-    }
-  }
+
   async initWAL() {
     this.wal = new DB({
       type: 3,
@@ -305,14 +148,13 @@ class Rollup {
         onWrite: async (tx, obj, param) => {
           let prs = [obj.lmdb_wal.put("state", tx.state)]
           for (const k in tx.result.kvs) {
-            //this.kvs_wal[k] = tx.result.kvs[k]
+            this.kvs_wal[k] = tx.result.kvs[k]
             prs.push(obj.lmdb_wal.put(k, tx.result.kvs[k]))
           }
           Promise.all(prs).then(() => {})
         },
         get: async (key, obj) => {
-          //let val = this.kvs_wal[key]
-          let val
+          let val = this.kvs_wal[key]
           if (typeof val === "undefined") val = await obj.lmdb_wal.get(key)
           return val
         },
@@ -324,6 +166,7 @@ class Rollup {
     this.tx_count = (await this.wal.get("txs", ["id", "desc"], 1))[0]?.id ?? 0
     console.log(`${this.tx_count} txs has been cached`)
   }
+
   async initOffchain() {
     const state = { owner: this.owner, secure: this.secure ?? true }
     this.db = new DB({
@@ -354,15 +197,11 @@ class Rollup {
             input: param,
           }
           await this.wal.set(t, "txs", `${t.id}`)
-          this.execPlugin({ id: t.id, data: t })
-            .then(async () => {
-              await this.plugins.notifications.set(
-                { last_wal: t.id },
-                "conf",
-                "notifications"
-              )
-            })
-            .catch(e => console.log("err", e))
+          for (let k in this.plugins) {
+            this.plugins[k].db
+              .exec({ id: t.id, data: t })
+              .catch(e => console.log("err", e))
+          }
         },
         get: async (key, obj) => {
           //let val = this.kvs[key]
@@ -375,6 +214,7 @@ class Rollup {
     })
     await this.db.initialize()
   }
+
   async initWarp() {
     const contractTxId = this.txid
     if (this.rollup) {
@@ -436,6 +276,16 @@ class Rollup {
     }
   }
 
+  async getWAL(next = null, pdb) {
+    const limit = 10
+    let params = ["txs", ["id"]]
+    if (!isNil(next)) params.push(["startAfter", next])
+    let arts = {}
+    const txs = await this.wal.cget(...params, limit)
+    for (let v of txs) await pdb.exec(v, arts)
+    if (txs.length === limit) this.getWAL(last(txs), pdb)
+  }
+
   async execUser(parsed) {
     const { type, res, nocache, txid, func, query } = parsed
     if (type === "log" && !includes(func)(["get", "cget"])) {
@@ -462,9 +312,10 @@ class Rollup {
     const db =
       type === "log"
         ? this.wal
-        : type === "notifications"
-        ? this.plugins.notifications
-        : this.db
+        : type === "offchain"
+        ? this.db
+        : this.plugins[type]?.db?.pdb
+    if (isNil(db)) res("DB not found", null)
     try {
       let _query = query === `""` ? [] : JSON.parse(query)
       if (is(Object, _query) && is(Object, _query.dryWrite)) {
