@@ -28,6 +28,7 @@ class Server {
           owner: v.owner ?? conf.owner,
           dbname: v.dbname ?? conf.dbname,
           dir: v.dir ?? conf.dir,
+          plugins: v.plugins ?? conf.plugins ?? {},
         })
     )(conf.rollups || { offchain: {} })
     for (let k in this.rollups) this.rollups[k].init()
