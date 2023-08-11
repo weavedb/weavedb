@@ -47,6 +47,7 @@ function Header({
       justify="center"
       height="50px"
       sx={{
+        zIndex: 99,
         position: "fixed",
         top: 0,
         left: 0,

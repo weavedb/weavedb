@@ -20,6 +20,7 @@ dayjs.extend(relativeTime)
 import { repostPost, likePost, deletePost } from "../lib/db"
 
 const Embed = ({
+  isComment,
   delTweet,
   setShowReposts,
   setShowLikes,
@@ -75,7 +76,8 @@ const Embed = ({
   const content = (
     <>
       <Flex
-        p={2}
+        px={2}
+        pt={2}
         align="center"
         sx={{
           cursor: isLink ? "pointer" : "default",
@@ -103,7 +105,7 @@ const Embed = ({
             )}
           </Box>
         )}
-        <Box my={1} mx={2} flex={1}>
+        <Box mt={isNil(tweet.title) ? 1 : 0} mx={2} flex={1}>
           <Flex
             align={[
               !isNil(tweet.title) ? "flex-start" : "center",
@@ -229,7 +231,7 @@ const Embed = ({
           )}
           {isNil(embed) ? null : (
             <Box
-              mt={4}
+              mt={3}
               mb={main ? 2 : 0}
               sx={{
                 ":hover": { opacity: 0.75 },
@@ -326,14 +328,14 @@ const Embed = ({
       )}
       {!isNil(parent) ? null : (
         <Flex
-          ml={[10, null, null, 0]}
           sx={{
-            borderBottom: isNil(parent) ? "1px solid #ccc" : "0px",
+            borderBottom:
+              !isComment && isNil(parent) ? "1px solid #ccc" : "0px",
           }}
-          pt={main ? 3 : 0}
+          pt={main ? 3 : isNil(embed) ? 0 : 2}
           pb={main ? 3 : 2}
         >
-          <Box w="75px" />
+          <Box w={["58px", null, null, "75px"]} />
           <Box>
             <Box as="i" className="far fa-comment" mr={2} />
             {tweet.comments}
@@ -374,7 +376,7 @@ const Embed = ({
                 if (isNil(likes[tweet.id]) && !isNil(user)) {
                   const { like } = await likePost({ user, tweet })
                   setLikes(mergeLeft({ [tweet.id]: like }, likes))
-                  setTweet()
+                  setTweet(like)
                 }
               }
             }}
