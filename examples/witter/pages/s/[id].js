@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 import { Box, Flex, ChakraProvider, Image } from "@chakra-ui/react"
 import Link from "next/link"
 import {
+  addIndex,
   dissocPath,
   assoc,
   assocPath,
@@ -382,34 +383,39 @@ function StatusPage() {
                 </Flex>
               </Flex>
             )}
-            {map(v => (
-              <Tweet
-                {...{
-                  setEditRepost,
-                  user,
-                  likes,
-                  setLikes,
-                  reposted: reposts[v.id],
-                  setRetweet: repost => {
-                    let _comments = clone(comments)
-                    for (let v2 of _comments) {
-                      if (v.id === v2.id) v2.data.reposts += 1
-                    }
-                    setComments(_comments)
-                    setReposts(assoc(v.id, repost, reposts))
-                  },
-                  setTweet: () => {
-                    let _comments = clone(comments)
-                    for (let v2 of _comments) {
-                      if (v2.id === v.id) v2.data.likes += 1
-                    }
-                    setComments(_comments)
-                  },
-                  tweet: v,
-                  users,
-                  reply: true,
-                }}
-              />
+            {addIndex(map)((v, i) => (
+              <>
+                <Tweet
+                  {...{
+                    reposts,
+                    isLast: true,
+                    isComment: true,
+                    setEditRepost,
+                    user,
+                    likes,
+                    setLikes,
+                    reposted: reposts[v.id],
+                    setRetweet: repost => {
+                      let _comments = clone(comments)
+                      for (let v2 of _comments) {
+                        if (v.id === v2.id) v2.data.reposts += 1
+                      }
+                      setComments(_comments)
+                      setReposts(assoc(v.id, repost, reposts))
+                    },
+                    setTweet: () => {
+                      let _comments = clone(comments)
+                      for (let v2 of _comments) {
+                        if (v2.id === v.id) v2.data.likes += 1
+                      }
+                      setComments(_comments)
+                    },
+                    tweet: v,
+                    users,
+                    reply: true,
+                  }}
+                />
+              </>
             ))(pluck("data")(comments))}
             {!isNextComment ? null : (
               <Flex p={4} justify="center">
