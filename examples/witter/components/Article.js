@@ -204,37 +204,53 @@ export default function Article({
             </Box>
             <Box
               sx={{
-                cursor: "pointer",
-                ":hover": { textDecoration: "underline", color: "#333" },
+                cursor:
+                  !disabled && post.reposts - post.quotes > 0
+                    ? "pointer"
+                    : "default",
+                ":hover":
+                  !disabled && post.reposts - post.quotes > 0
+                    ? { textDecoration: "underline", color: "#333" }
+                    : {},
               }}
               onClick={() => {
-                if (!disabled) setShowReposts(true)
+                if (!disabled && post.reposts - post.quotes > 0)
+                  setShowReposts(true)
               }}
               ml={6}
               color="#333"
             >
               <b>{(post.reposts ?? 0) - (post.quotes ?? 0)}</b> Reposts
             </Box>
-            <Link href={disabled ? "" : `/s/${post.id}/quotes`}>
-              <Box
-                ml={6}
-                color="#333"
-                sx={{
-                  ":hover": { textDecoration: "underline", color: "#333" },
-                }}
-              >
+            {disabled || post.quotes === 0 ? (
+              <Box ml={6} color="#333" sx={{ cursor: "default" }}>
                 <b>{post.quotes ?? 0}</b> Quotes
               </Box>
-            </Link>
+            ) : (
+              <Link href={`/s/${post.id}/quotes`}>
+                <Box
+                  ml={6}
+                  color="#333"
+                  sx={{
+                    ":hover": { textDecoration: "underline", color: "#333" },
+                  }}
+                >
+                  <b>{post.quotes ?? 0}</b> Quotes
+                </Box>
+              </Link>
+            )}
 
             <Box
               onClick={() => {
-                if (!disabled) setShowLikes(true)
+                if (!disabled && post.likes > 0) setShowLikes(true)
               }}
               ml={6}
               sx={{
-                cursor: "pointer",
-                ":hover": { textDecoration: "underline", color: "#333" },
+                cursor: !disabled && post.likes > 0 ? "pointer" : "default",
+                ":hover":
+                  !disabled && post.likes > 0
+                    ? { textDecoration: "underline", color: "#333" }
+                    : {},
               }}
             >
               <b>{post.likes ?? 0}</b> Likes

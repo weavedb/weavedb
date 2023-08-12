@@ -277,29 +277,43 @@ const Embed = ({
             ml={6}
             color="#333"
             sx={{
-              cursor: "pointer",
-              ":hover": { textDecoration: "underline" },
+              cursor: tweet.reposts - tweet.quotes > 0 ? "pointer" : "default",
+              ":hover":
+                tweet.reposts - tweet.quotes > 0
+                  ? { textDecoration: "underline" }
+                  : {},
             }}
-            onClick={() => setShowReposts(true)}
+            onClick={() => {
+              if (tweet.reposts - tweet.quotes > 0) setShowReposts(true)
+            }}
           >
             <b>{(tweet.reposts ?? 0) - (tweet.quotes ?? 0)}</b> Reposts
           </Box>
-          <Link href={`/s/${tweet.id}/quotes`}>
-            <Box
-              ml={6}
-              color="#333"
-              sx={{ ":hover": { textDecoration: "underline" } }}
-            >
+          {tweet.quotes === 0 ? (
+            <Box ml={6} color="#333" sx={{ cursor: "default" }}>
               <b>{tweet.quotes ?? 0}</b> Quotes
             </Box>
-          </Link>
+          ) : (
+            <Link href={`/s/${tweet.id}/quotes`}>
+              <Box
+                ml={6}
+                color="#333"
+                sx={{ ":hover": { textDecoration: "underline" } }}
+              >
+                <b>{tweet.quotes ?? 0}</b> Quotes
+              </Box>
+            </Link>
+          )}
           <Box
-            onClick={() => setShowLikes(true)}
+            onClick={() => {
+              if (tweet.likes > 0) setShowLikes(true)
+            }}
             ml={6}
             color="#333"
             sx={{
-              cursor: "pointer",
-              ":hover": { textDecoration: "underline" },
+              cursor: tweet.likes === 0 ? "default" : "pointer",
+              ":hover":
+                tweet.likes === 0 ? {} : { textDecoration: "underline" },
             }}
           >
             <b>{tweet.likes ?? 0}</b> Likes
