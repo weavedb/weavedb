@@ -211,6 +211,11 @@ function StatusPage() {
       `}</style>
       <Header
         {...{
+          title: isNil(tweet?.data?.title)
+            ? tweet?.data?.reply_to !== ""
+              ? "Reply"
+              : "Status"
+            : "Article",
           wide: true,
           setEditPost,
           setReplyTo,

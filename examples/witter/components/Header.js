@@ -1,4 +1,5 @@
 import { Image, Box, Flex } from "@chakra-ui/react"
+import { useRouter } from "next/router"
 import Link from "next/link"
 import { isNil, map } from "ramda"
 import { initNDB, login, logout } from "../lib/db"
@@ -19,6 +20,7 @@ function Header({
   type = "default",
   wide = false,
 }) {
+  const router = useRouter()
   const [count, setCount] = useState(0)
 
   useEffect(() => {
@@ -66,12 +68,13 @@ function Header({
           borderX: wide ? "" : "1px solid #ccc",
         }}
       >
-        <Link
-          href={link ?? (!isNil(user) ? `/u/${user.handle}` : "/")}
+        <Box
           onClick={e => {
             if (!isNil(func)) {
               e.preventDefault()
               func()
+            } else {
+              router.back()
             }
           }}
         >
@@ -87,8 +90,19 @@ function Header({
               {title ?? user?.name ?? "Witter Testnet"}
             </Box>
           </Flex>
-        </Link>
+        </Box>
         <Box flex={1} />
+        <Link href={`/`}>
+          <Box
+            mx={2}
+            sx={{
+              cursor: "pointer",
+              ":hover": { opacity: 0.75 },
+            }}
+          >
+            Home
+          </Box>
+        </Link>
         {isNil(user) ? (
           <Box
             onClick={async () => {
@@ -179,6 +193,17 @@ function Header({
                 <Box mx={2} color="#ccc">
                   |
                 </Box>
+                <Link href={`/u/${user.handle}`}>
+                  <Box
+                    mx={2}
+                    sx={{
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                  >
+                    Profile
+                  </Box>
+                </Link>
                 <Box
                   onClick={async () => {
                     if (confirm("Would you like to sign out?")) {
