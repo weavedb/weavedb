@@ -63,7 +63,7 @@ export default function Likes({ setShowLikes, post }) {
               ":hover": { opacity: 0.75 },
             }}
           >
-            x
+            <Box as="i" className="fas fa-times" />
           </Box>
         </Flex>
         {map(v => {

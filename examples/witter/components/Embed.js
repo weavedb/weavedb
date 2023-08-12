@@ -20,6 +20,7 @@ dayjs.extend(relativeTime)
 import { repostPost, likePost, deletePost } from "../lib/db"
 
 const Embed = ({
+  buttons = true,
   isComment,
   delTweet,
   setShowReposts,
@@ -340,7 +341,7 @@ const Embed = ({
           ) : null}
         </Flex>
       )}
-      {!isNil(parent) ? null : (
+      {!buttons || !isNil(parent) ? null : (
         <Flex
           sx={{
             borderBottom:

@@ -503,6 +503,7 @@ function StatusPage() {
         {...{
           tweet: tweet?.data,
           repost,
+          users,
           setEditStatus,
           editStatus,
           user,

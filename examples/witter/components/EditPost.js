@@ -35,7 +35,7 @@ export default function EditUser({
               ":hover": { opacity: 0.75 },
             }}
           >
-            x
+            <Box as="i" className="fas fa-times" />
           </Box>
         </Flex>
 

@@ -3,7 +3,10 @@ import { useState, useEffect } from "react"
 import { postStatus } from "../lib/db"
 import { isNil, assoc } from "ramda"
 import { useRouter } from "next/router"
+import Tweet from "./Tweet"
+
 export default function EditUser({
+  users,
   repost,
   editStatus,
   setEditStatus,
@@ -43,9 +46,14 @@ export default function EditUser({
               ":hover": { opacity: 0.75 },
             }}
           >
-            x
+            <Box as="i" className="fas fa-times" />
           </Box>
         </Flex>
+        {!repost && !isNil(tweet) ? (
+          <Box p={2} mx={2} sx={{ borderBottom: "1px solid #ccc" }} mb={4}>
+            <Tweet {...{ isLink: false, tweet, users, buttons: false }} />
+          </Box>
+        ) : null}
         <Box px={4} pb={4} pt={isNil(user) ? 4 : 0}>
           <Flex fontSize="24px" justify="center" fontWeight="bold" mb={4}>
             {repost
@@ -160,6 +168,17 @@ export default function EditUser({
               </Flex>
             </Flex>
           )}
+          {!isNil(repost) ? (
+            <Box
+              sx={{ border: "1px solid #ccc", borderRadius: "10px" }}
+              mb={4}
+              mt={2}
+            >
+              <Tweet
+                {...{ isLink: false, tweet: repost, users, buttons: false }}
+              />
+            </Box>
+          ) : null}
           <Box mt={2}>
             <Flex
               bg={ok ? "#333" : "#ccc"}

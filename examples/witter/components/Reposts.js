@@ -66,7 +66,7 @@ export default function Reposts({ setShowReposts, post }) {
               ":hover": { opacity: 0.75 },
             }}
           >
-            x
+            <Box as="i" className="fas fa-times" />
           </Box>
         </Flex>
         {map(v => {
