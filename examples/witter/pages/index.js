@@ -198,6 +198,7 @@ function Page() {
       `}</style>
       <Header
         {...{
+          title: "Home",
           user,
           setUser,
           setEditPost,
@@ -216,6 +217,7 @@ function Page() {
             position: "fixed",
             top: "50px",
             left: 0,
+            zIndex: 99,
           }}
         >
           <Flex

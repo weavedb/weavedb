@@ -195,7 +195,7 @@ const Embed = ({
           >
             {isDeleted ? (
               <Flex justify="center">
-                <Box as="i" color="crimson">
+                <Box as="i" color="crimson" mb={2}>
                   This post has been deleted by the owner
                 </Box>
               </Flex>
@@ -332,7 +332,7 @@ const Embed = ({
             borderBottom:
               !isComment && isNil(parent) ? "1px solid #ccc" : "0px",
           }}
-          pt={main ? 3 : isNil(embed) ? 0 : 2}
+          pt={main ? 3 : isNil(embed) ? 0 : 3}
           pb={main ? 3 : 2}
         >
           <Box w={["58px", null, null, "75px"]} />

@@ -189,7 +189,9 @@ export default function EditUser({
                       setBody("")
                       setEditStatus(false)
                       if (!isNil(setPost)) setPost(post)
-                      if (isNil(replyTo)) router.push(`/s/${post.id}`)
+                      if (isNil(replyTo) && isNil(repost)) {
+                        router.push(`/s/${post.id}`)
+                      }
                     }
                   } catch (e) {}
                   setUpdating(false)

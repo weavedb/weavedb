@@ -54,7 +54,7 @@ function Tweet({
   isComment,
   _isNext,
 }) {
-  const limit = 1
+  const limit = 10
   const [comments, setComments] = useState([])
   const [isNext, setIsNext] = useState(null)
   const [show, setShow] = useState(true)
@@ -296,6 +296,7 @@ function Tweet({
           setEditStatus: setEditStatus2,
           editStatus: editStatus2,
           user,
+          repost: repost2,
           setPost: post => {
             let _comments = clone(comments)
             for (let v of _comments) {
@@ -304,7 +305,7 @@ function Tweet({
               }
             }
             setComments(_comments)
-            setReposts2(assoc(repost.repost, repost, reposts2))
+            setReposts2(assoc(post.repost, post, reposts2))
           },
         }}
       />

@@ -54,6 +54,7 @@ function StatusPage() {
   const [users, setUsers] = useState({})
   const [tab, setTab] = useState("posts")
   const [posts, setPosts] = useState([])
+  const [articles, setArticles] = useState([])
   const [replies, setReplies] = useState([])
   const [tweets, setTweets] = useState({})
   const [plikes, setPLikes] = useState([])
@@ -64,6 +65,7 @@ function StatusPage() {
   const [isFollowing, setIsFollowing] = useState(false)
   const [isFollowed, setIsFollowed] = useState(false)
   const [isNext, setIsNext] = useState(false)
+  const [isNextArticles, setIsNextArticles] = useState(false)
   const [isNextReplies, setIsNextReplies] = useState(false)
   const [isNextLikes, setIsNextLikes] = useState(false)
   const [isNextFollowers, setIsNextFollowers] = useState(false)
@@ -92,29 +94,16 @@ function StatusPage() {
           }
           setLikes(mergeLeft(new_likes, likes))
         }
-      }
-    })()
-  }, [tweets, user])
-
-  useEffect(() => {
-    ;(async () => {
-      if (!isNil(user)) {
-        await getUsers({
-          ids: compose(pluck("owner"), values)(tweets),
-          setUsers,
-          users,
-        })
-        const db = await initDB()
-        const ids = difference(keys(tweets), keys(reposts))
+        const ids2 = difference(keys(tweets), keys(reposts))
         if (ids.length > 0) {
           let new_reposts = indexBy(prop("repost"))(
             await db.get(
               "posts",
               ["owner", "==", user.address],
-              ["repost", "in", ids]
+              ["repost", "in", ids2]
             )
           )
-          for (let v of ids) {
+          for (let v of ids2) {
             if (isNil(new_reposts[v])) new_reposts[v] = null
           }
           setReposts(mergeLeft(new_reposts, reposts))
@@ -155,6 +144,17 @@ function StatusPage() {
           )
           setPosts(_posts)
           setIsNext(_posts.length >= limit)
+
+          const _articles = await db.cget(
+            "posts",
+            ["owner", "==", user.address],
+            ["article", "==", true],
+            ["date", "desc"],
+            limit
+          )
+          setArticles(_articles)
+          setIsNextArticles(_articles.length >= limit)
+
           const _replies = await db.cget(
             "posts",
             ["owner", "==", user.address],
@@ -302,6 +302,7 @@ function StatusPage() {
   const _user = puser
   const tabs = [
     { key: "posts", name: "Posts" },
+    { key: "articles", name: "Articles" },
     { key: "replies", name: "Replies" },
     { key: "likes", name: "Likes" },
   ]
@@ -323,7 +324,7 @@ function StatusPage() {
       `}</style>
       <Header
         link={isFollow ? null : "/"}
-        title={isFollow ? _user?.name : "Home"}
+        title={isFollow ? _user?.name : _user?.name}
         func={isFollow ? () => setTab("posts") : null}
         {...{
           setEditPost,
@@ -724,7 +725,7 @@ function StatusPage() {
                   </Flex>
                 )}
               </>
-            ) : tab === "posts" || tab === "replies" ? (
+            ) : tab === "posts" || tab === "replies" || tab === "articles" ? (
               <>
                 {map(v2 => {
                   const v =
@@ -757,7 +758,46 @@ function StatusPage() {
                       }}
                     />
                   )
-                })(tab === "posts" ? posts : replies)}
+                })(
+                  tab === "articles"
+                    ? articles
+                    : tab === "posts"
+                    ? posts
+                    : replies
+                )}
+                {tab !== "articles" || !isNextArticles ? null : (
+                  <Flex p={4} justify="center">
+                    <Flex
+                      justify="center"
+                      w="300px"
+                      py={2}
+                      bg="#333"
+                      color="white"
+                      height="auto"
+                      align="center"
+                      sx={{
+                        borderRadius: "20px",
+                        cursor: "pointer",
+                        ":hover": { opacity: 0.75 },
+                      }}
+                      onClick={async () => {
+                        const db = await initDB()
+                        const _articles = await db.cget(
+                          "posts",
+                          ["owner", "==", puser.address],
+                          ["article", "==", true],
+                          ["date", "desc"],
+                          ["startAfter", last(posts)],
+                          limit
+                        )
+                        setArticles(concat(articles, _articles))
+                        setIsNextArticles(_articles.length >= limit)
+                      }}
+                    >
+                      Load More
+                    </Flex>
+                  </Flex>
+                )}
                 {tab !== "posts" || !isNext ? null : (
                   <Flex p={4} justify="center">
                     <Flex

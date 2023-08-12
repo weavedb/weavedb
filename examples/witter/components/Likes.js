@@ -37,7 +37,7 @@ export default function Likes({ setShowLikes, post }) {
       h="100%"
       w="100%"
       bg="rgba(0,0,0,0.5)"
-      sx={{ position: "fixed", top: 0, left: 0 }}
+      sx={{ position: "fixed", top: 0, left: 0, zIndex: 100 }}
       align="center"
       justify="center"
     >

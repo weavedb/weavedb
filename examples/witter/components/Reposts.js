@@ -5,6 +5,7 @@ import { last, map, isNil, assoc, path, concat } from "ramda"
 import { useRouter } from "next/router"
 import Link from "next/link"
 import { initDB, checkUser, getUsers } from "../lib/db"
+
 const limit = 10
 export default function Reposts({ setShowReposts, post }) {
   const [users, setUsers] = useState([])
@@ -13,7 +14,6 @@ export default function Reposts({ setShowReposts, post }) {
   useEffect(() => {
     ;(async () => {
       const db = await initDB()
-      console.log(post)
       const _reposts = await db.cget(
         "posts",
         ["repost", "==", post.id],
@@ -34,12 +34,13 @@ export default function Reposts({ setShowReposts, post }) {
       })
     })()
   }, [reposts])
+
   return (
     <Flex
       h="100%"
       w="100%"
       bg="rgba(0,0,0,0.5)"
-      sx={{ position: "fixed", top: 0, left: 0 }}
+      sx={{ position: "fixed", top: 0, left: 0, zIndex: 100 }}
       align="center"
       justify="center"
     >
