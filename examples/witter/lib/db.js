@@ -59,7 +59,7 @@ export const postArticle = async ({
   let post = {
     id,
     title,
-    article: true,
+    type: "article",
     description,
     body: db.data("body"),
   }

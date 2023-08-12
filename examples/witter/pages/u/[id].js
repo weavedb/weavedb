@@ -148,7 +148,7 @@ function StatusPage() {
           const _articles = await db.cget(
             "posts",
             ["owner", "==", user.address],
-            ["article", "==", true],
+            ["type", "==", "article"],
             ["date", "desc"],
             limit
           )
@@ -785,7 +785,7 @@ function StatusPage() {
                         const _articles = await db.cget(
                           "posts",
                           ["owner", "==", puser.address],
-                          ["article", "==", true],
+                          ["type", "==", "article"],
                           ["date", "desc"],
                           ["startAfter", last(posts)],
                           limit
