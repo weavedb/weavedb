@@ -24,6 +24,7 @@ import EditRepost from "./EditRepost"
 import EditStatus from "./EditStatus"
 
 function Tweet({
+  buttons = true,
   nested = false,
   _setComments,
   _comments,
@@ -114,6 +115,7 @@ function Tweet({
   const content = (
     <Embed
       {...{
+        buttons,
         isComment:
           isNil(parent) && (_isNext || !isLast || tweet.comments > 0)
             ? isComment
@@ -154,6 +156,7 @@ function Tweet({
   const pr = isNil(parent) ? null : (
     <Embed
       {...{
+        buttons,
         isComment: isComment && (_isNext || !isLast || tweet.comments > 0),
         delTweet,
         setShowReposts,
