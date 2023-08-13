@@ -39,7 +39,7 @@ const limit = 10
 function Page() {
   const [posts, setPosts] = useState([])
   const [isNext, setIsNext] = useState(false)
-  const [isNextTL, setIsNextTL] = useState(false)
+  const [isNextUsers, setIsNextUsers] = useState(false)
   const [users, setUsers] = useState({})
   const [user, setUser] = useState(null)
   const [identity, setIdentity] = useState(null)
@@ -47,7 +47,7 @@ function Page() {
   const [editStatus, setEditStatus] = useState(false)
   const [editPost, setEditPost] = useState(false)
   const [tab, setTab] = useState("all")
-  const [timeline, setTimeline] = useState([])
+  const [husers, setHusers] = useState([])
   const [reposts, setReposts] = useState({})
   const [tweets, setTweets] = useState({})
   const [likes, setLikes] = useState({})
@@ -68,6 +68,14 @@ function Page() {
         setTweets(
           mergeLeft(compose(indexBy(path(["data", "id"])))(_posts), tweets)
         )
+        const _users = await db.cget(
+          "users",
+          ["hashes", "array-contains", router.query.id.toLowerCase()],
+          ["followers", "desc"],
+          limit
+        )
+        setHusers(_users)
+        setIsNextUsers(_users.length >= limit)
       }
     })()
   }, [router])
@@ -158,35 +166,10 @@ function Page() {
     })()
   }, [])
 
-  useEffect(() => {
-    ;(async () => {
-      if (!isNil(user)) {
-        const db = await initDB()
-        const _tl = await db.cget(
-          "timeline",
-          ["broadcast", "array-contains", user.address],
-          ["date", "desc"],
-          limit
-        )
-        setTimeline(_tl)
-        setIsNextTL(_tl.length >= limit)
-      }
-    })()
-  }, [user])
-
-  useEffect(() => {
-    ;(async () => {
-      let aids = []
-      for (let v of pluck("data")(timeline)) {
-        aids.push(v.aid)
-        if (v.rid !== "") aids.push(v.rid)
-      }
-      aids = uniq(aids)
-      if (aids.length > 0) await getTweets({ ids: aids, tweets, setTweets })
-    })()
-  }, [timeline])
-
-  const tabs = [{ key: "all", name: "Latest" }]
+  const tabs = [
+    { key: "all", name: "Latest" },
+    { key: "users", name: "Users" },
+  ]
 
   return (
     <ChakraProvider>
@@ -210,54 +193,52 @@ function Page() {
           setEditStatus,
         }}
       />
-      {isNil(user) ? null : (
+      <Flex
+        bg="white"
+        w="100%"
+        justify="center"
+        sx={{
+          position: "fixed",
+          top: "50px",
+          left: 0,
+          zIndex: 99,
+        }}
+      >
         <Flex
-          bg="white"
+          fontSize="14px"
           w="100%"
-          justify="center"
-          sx={{
-            position: "fixed",
-            top: "50px",
-            left: 0,
-            zIndex: 99,
-          }}
+          maxW="760px"
+          align="center"
+          pt={2}
+          px={4}
+          bg="white"
+          sx={{ borderBottom: "1px solid #ccc", borderX: "1px solid #ccc" }}
         >
-          <Flex
-            fontSize="14px"
-            w="100%"
-            maxW="760px"
-            align="center"
-            pt={2}
-            px={4}
-            bg="white"
-            sx={{ borderBottom: "1px solid #ccc", borderX: "1px solid #ccc" }}
-          >
-            {map(v => {
-              return (
-                <Flex
-                  onClick={e => {
-                    e.stopPropagation()
-                    setTab(v.key)
-                  }}
-                  justify="center"
-                  flex={1}
-                  mx={8}
-                  pb={2}
-                  sx={{
-                    cursor: "pointer",
-                    ":hover": { opacity: 0.75 },
-                    borderBottom: tab === v.key ? "3px solid #666" : "",
-                  }}
-                >
-                  {v.name}
-                </Flex>
-              )
-            })(tabs)}
-          </Flex>
+          {map(v => {
+            return (
+              <Flex
+                onClick={e => {
+                  e.stopPropagation()
+                  setTab(v.key)
+                }}
+                justify="center"
+                flex={1}
+                mx={8}
+                pb={2}
+                sx={{
+                  cursor: "pointer",
+                  ":hover": { opacity: 0.75 },
+                  borderBottom: tab === v.key ? "3px solid #666" : "",
+                }}
+              >
+                {v.name}
+              </Flex>
+            )
+          })(tabs)}
         </Flex>
-      )}
+      </Flex>
 
-      <Flex justify="center" minH="100%" pt={isNil(user) ? "50px" : "91px"}>
+      <Flex justify="center" minH="100%" pt={"91px"}>
         <Box flex={1}></Box>
         <Box
           w="100%"
@@ -265,51 +246,39 @@ function Page() {
           minH="100%"
           sx={{ borderX: "1px solid #ccc" }}
         >
-          {tab === "following" ? (
+          {tab === "users" ? (
             <>
-              {map(v2 => {
-                const v = tweets[v2.aid] ?? {}
-                let repost = null
-                let parent = null
-                if (v2.rid !== "") {
-                  const rpost = tweets[v2.rid]
-                  repost = rpost?.owner
-                  if (
-                    !isNil(rpost) &&
-                    !isNil(rpost.description) &&
-                    v2.rid !== v2.aid
-                  ) {
-                    parent = rpost
-                  }
-                }
+              {map(u => {
                 return (
-                  <Tweet
-                    disabled={true}
-                    likes={likes}
-                    reposted={!isNil(reposts[v.id])}
-                    {...{
-                      parent,
-                      users,
-                      tweets,
-                      tweet: {
-                        cover: v.cover,
-                        id: v.id,
-                        date: v.date,
-                        title: v.title,
-                        user: v.owner,
-                        reposts: v.reposts,
-                        likes: v.likes,
-                        comments: v.comments,
-                        reply_to: v.reply_to,
-                        body: v.description,
-                      },
-                      repost,
-                      reply: tab === "replies" || v.reply_to !== "",
-                    }}
-                  />
+                  <Link href={`/u/${u.handle}`}>
+                    <Box
+                      p={2}
+                      sx={{
+                        borderBottom: "1px solid #ccc",
+                        cursor: "pointer",
+                        ":hover": { opacity: 0.75 },
+                      }}
+                    >
+                      <Flex align="center">
+                        <Image
+                          m={2}
+                          src={u.image ?? "/images/default-icon.png"}
+                          boxSize="50px"
+                          sx={{ borderRadius: "50%" }}
+                        />
+                        <Box>
+                          <Box>
+                            <Box fontWeight="bold">{u.name}</Box>
+                            <Box color="#666">@{u.handle}</Box>
+                          </Box>
+                          <Box fontSize="15px">{u.description}</Box>
+                        </Box>
+                      </Flex>
+                    </Box>
+                  </Link>
                 )
-              })(pluck("data", timeline))}
-              {!isNextTL ? null : (
+              })(pluck("data", husers))}
+              {!isNextUsers ? null : (
                 <Flex p={4} justify="center">
                   <Flex
                     justify="center"
@@ -326,15 +295,19 @@ function Page() {
                     }}
                     onClick={async () => {
                       const db = await initDB()
-                      const _tl = await db.cget(
-                        "timeline",
-                        ["broadcast", "array-contains", user.address],
-                        ["date", "desc"],
-                        ["startAfter", last(timeline)],
+                      const _users = await db.cget(
+                        "users",
+                        [
+                          "hashes",
+                          "array-contains",
+                          router.query.id.toLowerCase(),
+                        ],
+                        ["followers", "desc"],
+                        ["startAfter", last(husers)],
                         limit
                       )
-                      setTimeline(concat(timeline, _tl))
-                      setIsNextTL(_tl.length >= limit)
+                      setHusers(concat(husers, _users))
+                      setIsNextUsers(_users.length >= limit)
                     }}
                   >
                     Load More

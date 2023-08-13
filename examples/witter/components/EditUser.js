@@ -1,7 +1,10 @@
 import { Image, Input, Textarea, Box, Flex } from "@chakra-ui/react"
 import { useState, useEffect } from "react"
 import { updateProfile } from "../lib/db"
-import { isNil, assoc } from "ramda"
+import { map, isNil, assoc } from "ramda"
+import dynamic from "next/dynamic"
+const App = dynamic(() => import("./App2"), { ssr: false })
+
 export default function EditUser({
   editUser,
   setEditUser,
@@ -17,6 +20,10 @@ export default function EditUser({
   const [coverIcon, setCoverIcon] = useState(null)
   const [taken, setTaken] = useState({})
   const [updating, setUpdating] = useState(false)
+  const [HTML, setHTML] = useState("")
+  const [json, setJSON] = useState(null)
+  const [text, setText] = useState("")
+
   useEffect(() => {
     if (!isNil(user)) {
       setHandle(user.handle ?? "")
@@ -34,6 +41,7 @@ export default function EditUser({
     isNil(taken[handle.toLowerCase()]) &&
     handle.length >= 2 &&
     name.length > 0 &&
+    text.length < 140 &&
     !updating
 
   return !editUser ? null : (
@@ -144,8 +152,17 @@ export default function EditUser({
               }}
             />
           </Box>
-          <Box fontSize="12px" mx={1} mt={3} mb={1}>
-            Intro ( 140 characters )
+          <Box
+            fontSize="12px"
+            mx={1}
+            mt={3}
+            mb={1}
+            color={text.length > 140 ? "crimson" : "#333"}
+          >
+            Intro ( {text.length} / 140 characters )
+          </Box>
+          <Box className="simple_post" minH="100px">
+            <App {...{ setHTML, setJSON, setText }} />
           </Box>
           <Box>
             <Textarea
@@ -216,14 +233,33 @@ export default function EditUser({
                 if (ok) {
                   setUpdating(true)
                   try {
+                    const getHashes = (json, hashes, mentions) => {
+                      for (let v of json.children) {
+                        if (v.type === "hashtag") hashes.push(v.text)
+                        if (v.type === "mention") mentions.push(v.text)
+                        if (!isNil(v.children)) getHashes(v, hashes, mentions)
+                      }
+                    }
+                    let hashes = []
+                    let mentions = []
+                    getHashes(json.root, hashes, mentions)
+                    const _hashes = map(v => v.replace(/^#/, "").toLowerCase())(
+                      hashes
+                    )
+                    const _mentions = map(v =>
+                      v.replace(/^@/, "").toLowerCase()
+                    )(mentions)
+
                     const { err, user: _user } = await updateProfile({
                       name,
                       handle,
-                      intro,
+                      intro: text,
                       image: icon,
                       cover: coverIcon,
                       address: identity.signer,
                       user,
+                      hashes: _hashes,
+                      mentions: _mentions,
                     })
                     if (err === "handle") {
                       alert("Handle is taken")

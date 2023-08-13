@@ -125,6 +125,8 @@ export const updateProfile = async ({
   handle,
   intro,
   user: _user,
+  hashes,
+  mentions,
 }) => {
   const { identity } = await lf.getItem("user")
   if (isNil(_user)) {
@@ -139,6 +141,8 @@ export const updateProfile = async ({
     handle: handle.toLowerCase(),
     description: intro,
     cover,
+    hashes,
+    mentions,
   }
   let user = {}
   for (let k in new_fields) {
