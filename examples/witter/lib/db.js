@@ -2,6 +2,7 @@ import SDK from "weavedb-client"
 let db = null
 let ndb = null
 import {
+  pluck,
   dissoc,
   append,
   concat,
@@ -16,6 +17,7 @@ import {
   mergeLeft,
   isNil,
 } from "ramda"
+
 import lf from "localforage"
 import { nanoid } from "nanoid"
 const contractTxId = process.env.NEXT_PUBLIC_TXID ?? "offchain"
@@ -246,6 +248,7 @@ export const postStatus = async ({
   tweet,
   cover,
   hashes = [],
+  mentions = [],
 }) => {
   const { identity } = await lf.getItem("user")
   const id = nanoid()
@@ -262,7 +265,8 @@ export const postStatus = async ({
     repost,
     description: body,
     quote: repost !== "",
-    hashes,
+    hashes: uniq(hashes),
+    mentions: uniq(mentions),
   }
   if (repost !== "") post.quote = true
   if (isNil(replyTo)) post.title = title
@@ -324,4 +328,15 @@ export const getUsers = async ({ ids, users, setUsers }) => {
     __users = mergeLeft(_users, __users)
   }
   setUsers(__users)
+}
+
+export const searchUsers = async (str, cb) => {
+  const db = await initDB()
+  const users = await db.get(
+    "users",
+    ["handle"],
+    ["startAt", str.toLowerCase()],
+    5
+  )
+  cb(users)
 }

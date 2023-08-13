@@ -3753,6 +3753,11 @@ linkify-plugin-hashtag@^4.1.1:
   resolved "https://registry.yarnpkg.com/linkify-plugin-hashtag/-/linkify-plugin-hashtag-4.1.1.tgz#c98f32a41b8513cc4497434e32d28eb701a0f33f"
   integrity sha512-vrTU3+Jmqry79QlKoK5Iy2yTbFE1/jwp217SkRmSaNSx4CqXhYSDXdmrKeqpRDXMLLOLbnrepxtklTMMu5/mIQ==
 
+linkify-plugin-mention@^4.1.1:
+  version "4.1.1"
+  resolved "https://registry.yarnpkg.com/linkify-plugin-mention/-/linkify-plugin-mention-4.1.1.tgz#3ff4a45edc43d56e14582bf66dcadd152a45aeaa"
+  integrity sha512-7qIOT3FhU4+WlbdRC5sZYZJckOSgBI4Hg6pDXtIOtyaJOYKK3vos4L86yb1veVbyAO2hf4CKoEAGrEvIqKviIA==
+
 linkifyjs@^4.1.1:
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/linkifyjs/-/linkifyjs-4.1.1.tgz#73d427e3bbaaf4ca8e71c589ad4ffda11a9a5fde"

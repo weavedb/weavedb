@@ -75,6 +75,12 @@ function Page() {
         _noteIDs[v.data.wid] = true
         let id = null
         switch (v.data.type) {
+          case "mention":
+            id = `mention:${v.data.aid}`
+            _tweets.push(v.data.aid)
+            extra.type = "mention"
+            extra.aid = v.data.aid
+            break
           case "like":
             id = `like:${v.data.aid}`
             _tweets.push(v.data.aid)
@@ -249,7 +255,9 @@ function Page() {
                     ? "fas fa-retweet"
                     : v2.type === "follow"
                     ? "fas fa-user"
-                    : "far fa-comment"
+                    : v2.type === "comment"
+                    ? "far fa-comment"
+                    : "fas fa-at"
                 const icolor =
                   v2.type === "like"
                     ? "#F91880"
@@ -375,7 +383,7 @@ function Page() {
                                 </>
                               ) : v2.type === "follow" ? (
                                 "followed you"
-                              ) : (
+                              ) : v2.type === "comment" ? (
                                 <>
                                   replied to{" "}
                                   {!isNil(post.title) ? (
@@ -386,6 +394,8 @@ function Page() {
                                     "your post"
                                   )}
                                 </>
+                              ) : (
+                                <>mentioned you in a post</>
                               )}
                             </span>
                           </Box>
@@ -403,7 +413,9 @@ function Page() {
                             fontSize="14px"
                             mt={!isNil(reply) || !isNil(post) ? 2 : 0}
                           >
-                            {v2.type === "repost" || v2.type === "like"
+                            {v2.type === "repost" ||
+                            v2.type === "like" ||
+                            v2.type === "mention"
                               ? post?.description ?? ""
                               : v2.type === "reply" || v2.type === "quote"
                               ? reply?.description ?? ""

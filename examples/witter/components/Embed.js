@@ -3,6 +3,8 @@ import Link from "next/link"
 import * as linkify from "linkifyjs"
 import linkifyHtml from "linkify-html"
 import "linkify-plugin-hashtag"
+import "linkify-plugin-mention"
+
 import {
   mergeLeft,
   isNil,
@@ -224,6 +226,7 @@ const Embed = ({
                       nl2br: true,
                       formatHref: {
                         hashtag: href => "/hashtag/" + href.substr(1),
+                        mention: href => "/u" + href,
                       },
                     }),
                   }}

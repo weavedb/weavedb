@@ -195,16 +195,21 @@ export default function EditUser({
                 ":hover": { opacity: ok ? 0.75 : 1 },
               }}
               onClick={async () => {
-                const getHashes = (json, hashes) => {
+                const getHashes = (json, hashes, mentions) => {
                   for (let v of json.children) {
                     if (v.type === "hashtag") hashes.push(v.text)
-                    if (!isNil(v.children)) getHashes(v, hashes)
+                    if (v.type === "mention") mentions.push(v.text)
+                    if (!isNil(v.children)) getHashes(v, hashes, mentions)
                   }
                 }
                 let hashes = []
-                getHashes(json.root, hashes)
+                let mentions = []
+                getHashes(json.root, hashes, mentions)
                 const _hashes = map(v => v.replace(/^#/, "").toLowerCase())(
                   hashes
+                )
+                const _mentions = map(v => v.replace(/^@/, "").toLowerCase())(
+                  mentions
                 )
                 if (ok) {
                   setUpdating(true)
@@ -217,6 +222,7 @@ export default function EditUser({
                       user,
                       tweet: repost ?? tweet,
                       cover: coverIcon,
+                      mentions: _mentions,
                     })
                     if (isNil(err)) {
                       setText("")
