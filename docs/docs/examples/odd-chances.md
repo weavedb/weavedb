@@ -94,7 +94,7 @@ await db.setRules(schema_game_results, "game_results")
 ```
 - `let create` forces the field `has_won` to store the result of the defined JsonLogic every time a document is created to the `game_results` collection.
 - The FPJSON code in `let create` checks if the `date`(block timestamp) is an even number, returning a boolean value that is compared to the player's guess stored in the `is_even` boolean field.
-- `has_won` field will be set to `true` if both comparison are equals, else set to `false`.
+- `has_won` field will be set to `true` if both comparisons are equal, else set to `false`.
 - `allow create` defines the rules when a document is created to the `game_results` collection.
 - `last_guess_date` must not be the same as the `block.timestamp`
 - `user_address` must be `signer` of the transaction.
@@ -131,7 +131,7 @@ To keep things simple, we'll put everything in one file at `/page/index.js`
 
 ### Install Dependencies
 
-Open a new terminal and move to the project root directry.
+Open a new terminal and move to the project root directory.
 ```bash
 cd odd-chances
 yarn add ramda localforage weavedb-sdk buffer ethers chart.js react-toastify @chakra-ui/react @emotion/react @emotion/styled framer-motion @chakra-ui/icons

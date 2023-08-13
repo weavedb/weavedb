@@ -11,7 +11,7 @@ The managed node service will be decentralized in the future.
 
 With the light client, browser users don't have to hold a full cache from the Warp SDK, which makes read queries extremely fast.
 
-A remote gRPC node must exists for the DB instance and the endpoint URL must be specified as `rpc`.
+A remote gRPC node must exist for the DB instance and the endpoint URL must be specified as `rpc`.
 
 ## For Web Browsers
 

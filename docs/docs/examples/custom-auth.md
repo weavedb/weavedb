@@ -6,7 +6,7 @@ sidebar_position: 8
 
 Custom authentication methods can be added in the same way Lens Profile authentication is built in.
 
-In this example, we will demonstrate how you can set up a custom authentication method using the [Lens Profile NFT](https://polygonscan.com/address/0xdb46d1dc155634fbc732f92e853b10b288ad5a1d) on the Polygon mainnet. Users will be recognized by their NFT tokenIDs instead of their wallet addresses. In this way, if a Lens Profile NFT is transffered to a different address, the entire WeaveDB data associated with the NFT will also be automatically inherited by the new owner.
+In this example, we will demonstrate how you can set up a custom authentication method using the [Lens Profile NFT](https://polygonscan.com/address/0xdb46d1dc155634fbc732f92e853b10b288ad5a1d) on the Polygon mainnet. Users will be recognized by their NFT tokenIDs instead of their wallet addresses. In this way, if a Lens Profile NFT is transferred to a different address, the entire WeaveDB data associated with the NFT will also be automatically inherited by the new owner.
 
 :::info
 The Lens Profile authentication method is already built-in with WeaveDB and you can execute the authentication with one simple SDK function `await db.createTempAddressWithLens()`. But this demo shows how you can implement your own authentication method in the same way.
@@ -15,9 +15,9 @@ The Lens Profile authentication method is already built-in with WeaveDB and you 
 ![](/img/custom-auth.png)
 
 1. The user owns a Lit Profile NFT (tokenID).
-2. A temp evm address is gerenated before authentication.
+2. A temp evm address is generated before authentication.
 3. The Lit Action will be executed, which verifies the ownership of the NFT, and signs with a PKP.
-4. WeaveDB verifies the PKP signature and link the temp address with the tokenID.
+4. WeaveDB verifies the PKP signature and links the temp address with the tokenID.
 
 The Lit Action is an immutable script stored on IPFS, and the PKP can only sign in that script, which means as long as the PKP signature is valid, the ownership of the Lens Profile is guaranteed by this verifiable flow. This is how WeaveDB can securely use data from outside sources by using Lit Actions as oracles.
 

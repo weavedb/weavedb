@@ -8,7 +8,7 @@ This demo is a variant of the [custom authentication](/docs/examples/custom-auth
 
 [Next.ID](https://next.id) is a decentralized protocol to link web2 social identities to crypto public keys. You can, for example, use the [Mask Extension](https://mask.io/) or [MetaMask](https://metamask.io/) to sign a generated payload, and tweet it to your Twitter timeline, and verify your ownership of the Twitter account to link it to the signer public key, as explained [here](https://docs.next.id/getting-started/quick-start).
 
-Once your web2 identity is verified, you can always proove that your crypto wallet is the owner of that identity, which could replace the centralized OAuth flow of web2 services.
+Once your web2 identity is verified, you can always prove that your crypto wallet is the owner of that identity, which could replace the centralized OAuth flow of web2 services.
 
 :::info
 We are in the process of making the Next.ID flow built-in with the WeaveDB SDK and the core contracts. This demo is rather to show you what is possible with the [custom authentication](/docs/examples/custom-auth) flow.
@@ -288,7 +288,7 @@ AUTH_SIG= '{"sig":"...","derivedVia":"web3.eth.personal.sign","signedMessage":"l
 - `TWITTER_BEARER_TOKEN` - Twitter API bearer token to fetch profile data.
 - `AUTH_SIG` - Lit Action [AuthSig](https://developer.litprotocol.com/sdk/explanation/authentication/authsig/) for the dapp admin to call the Lit Action.
 
-You can get an AuthSig by runnining the following code in browser with the `expiration` set in 100 years. The dapp admin will connect with the Lit Action via the `/api/auth` endpoint, so you might not want the AuthSig to expire.
+You can get an AuthSig by running the following code in browser with the `expiration` set in 100 years. The dapp admin will connect with the Lit Action via the `/api/auth` endpoint, so you might not want the AuthSig to expire.
 
 ```javascript
 import { checkAndSignAuthMessage } from '@lit-protocol/lit-node-client';
@@ -299,7 +299,7 @@ const authSig = await checkAndSignAuthMessage({
 });
 ```
 :::info
-You could let users call the Lit Action in browser, but in that case, the dapp needs to requre every user for an additional signature to generate an AuthSig, which will greatly degrade the authentication UX.
+You could let users call the Lit Action in browser, but in that case, the dapp needs to require every user for an additional signature to generate an AuthSig, which will greatly degrade the authentication UX.
 :::
 
 #### `/api/auth`
@@ -358,7 +358,7 @@ Finally, we will show you only the authentication related functions used in the 
 
 ##### connectWithWeaveDB
 
-Connecting with an WeaveDB contract.
+Connecting with a WeaveDB contract.
 
 ```javascript
 export async function connectWithWeaveDB(contractTxId) {
