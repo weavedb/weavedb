@@ -245,6 +245,7 @@ export const postStatus = async ({
   repost,
   tweet,
   cover,
+  hashes = [],
 }) => {
   const { identity } = await lf.getItem("user")
   const id = nanoid()
@@ -261,6 +262,7 @@ export const postStatus = async ({
     repost,
     description: body,
     quote: repost !== "",
+    hashes,
   }
   if (repost !== "") post.quote = true
   if (isNil(replyTo)) post.title = title

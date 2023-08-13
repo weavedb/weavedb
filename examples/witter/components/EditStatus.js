@@ -1,9 +1,11 @@
 import { Input, Textarea, Box, Flex, Image } from "@chakra-ui/react"
 import { useState, useEffect } from "react"
 import { postStatus } from "../lib/db"
-import { isNil, assoc } from "ramda"
+import { map, isNil, assoc } from "ramda"
 import { useRouter } from "next/router"
 import Tweet from "./Tweet"
+import dynamic from "next/dynamic"
+const App = dynamic(() => import("./App2"), { ssr: false })
 
 export default function EditUser({
   users,
@@ -16,10 +18,12 @@ export default function EditUser({
   tweet,
 }) {
   const router = useRouter()
-  const [body, setBody] = useState("")
   const [coverIcon, setCoverIcon] = useState(null)
   const [updating, setUpdating] = useState(false)
-  const ok = body.length > 0 && body.length <= 280
+  const [HTML, setHTML] = useState("")
+  const [json, setJSON] = useState(null)
+  const [text, setText] = useState("")
+  const ok = text.length > 0 && text.length <= 280
   return !editStatus ? null : (
     <Flex
       h="100%"
@@ -55,27 +59,18 @@ export default function EditUser({
           </Box>
         ) : null}
         <Box px={4} pb={4} pt={isNil(user) ? 4 : 0}>
-          <Flex fontSize="24px" justify="center" fontWeight="bold" mb={4}>
+          <Flex fontSize="24px" justify="center" fontWeight="bold">
             {repost
               ? "Write Comment"
               : isNil(replyTo)
               ? "New Post"
               : "Write Reply"}
           </Flex>
-          <Box fontSize="12px" mx={1} mt={3} mb={1}>
-            Body ( 280 characters )
-          </Box>
-          <Box>
-            <Textarea
-              placeholder="body"
-              value={body}
-              onChange={e => {
-                if (e.target.value.length < 280) setBody(e.target.value)
-              }}
-            />
+          <Box className="simple_post" minH="100px">
+            <App {...{ setHTML, setJSON, setText }} />
           </Box>
           <Flex align="center" mt={2}>
-            <Box flex={1} px={4}>
+            <Flex flex={1} px={8} align="center">
               <Box
                 as="label"
                 htmlFor="cover-image"
@@ -109,7 +104,14 @@ export default function EditUser({
                   }
                 }}
               />
-            </Box>
+              <Box flex={1} />
+              <Box
+                fontSize="20px"
+                color={text.length > 280 ? "crimson" : "#333"}
+              >
+                {text.length}
+              </Box>
+            </Flex>
           </Flex>
           {isNil(coverIcon) ? null : (
             <Flex justify="center" w="100%" mb={2}>
@@ -193,19 +195,33 @@ export default function EditUser({
                 ":hover": { opacity: ok ? 0.75 : 1 },
               }}
               onClick={async () => {
+                const getHashes = (json, hashes) => {
+                  for (let v of json.children) {
+                    if (v.type === "hashtag") hashes.push(v.text)
+                    if (!isNil(v.children)) getHashes(v, hashes)
+                  }
+                }
+                let hashes = []
+                getHashes(json.root, hashes)
+                const _hashes = map(v => v.replace(/^#/, "").toLowerCase())(
+                  hashes
+                )
                 if (ok) {
                   setUpdating(true)
                   try {
                     const { err, post } = await postStatus({
+                      hashes: _hashes,
                       repost: repost?.id ?? "",
                       replyTo,
-                      body,
+                      body: text,
                       user,
                       tweet: repost ?? tweet,
                       cover: coverIcon,
                     })
                     if (isNil(err)) {
-                      setBody("")
+                      setText("")
+                      setHTML("")
+                      setJSON(null)
                       setEditStatus(false)
                       if (!isNil(setPost)) setPost(post)
                       if (isNil(replyTo) && isNil(repost)) {

@@ -1,4 +1,5 @@
 import Link from "next/link"
+
 import {
   concat,
   last,
@@ -16,6 +17,7 @@ import {
   indexBy,
   prop,
 } from "ramda"
+
 import Embed from "./Embed"
 import { Flex, Box } from "@chakra-ui/react"
 import { initDB } from "../lib/db"
@@ -303,9 +305,7 @@ function Tweet({
           setPost: post => {
             let _comments = clone(comments)
             for (let v of _comments) {
-              if (v.data.id === post.repost) {
-                v.data.reposts += 1
-              }
+              if (v.data.id === post.repost) v.data.reposts += 1
             }
             setComments(_comments)
             setReposts2(assoc(post.repost, post, reposts2))
