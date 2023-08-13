@@ -8,6 +8,9 @@
 
 @import 'https://fonts.googleapis.com/css?family=Reenie+Beanie';
 
+#typeahead-menu{
+    z-index: 150;
+}
 body {
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, '.SFNSText-Regular',
@@ -52,11 +55,18 @@ header h1 {
   font-weight: 400;
   height:calc(100vh - 50px);
 }
+.simple_post .editor-shell{
+    height:auto;
+}
 .editor-container {
     height:calc(100vh - 87px);
     max-width:760px;
     
 }
+.simple_post .editor-container{
+    height:auto;
+}
+
 .editor-shell .editor-container {
   background: #fff;
   position: relative;

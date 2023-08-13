@@ -1,5 +1,10 @@
 import { Box, Flex, ChakraProvider, Image } from "@chakra-ui/react"
 import Link from "next/link"
+import * as linkify from "linkifyjs"
+import linkifyHtml from "linkify-html"
+import "linkify-plugin-hashtag"
+import "linkify-plugin-mention"
+
 import {
   mergeLeft,
   isNil,
@@ -18,7 +23,9 @@ import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
 dayjs.extend(relativeTime)
 import { repostPost, likePost, deletePost } from "../lib/db"
-
+const toHTML = txt => {
+  return `<div>${txt.replace(/\n/g, "<br />")}</div>`
+}
 const Embed = ({
   buttons = true,
   isComment,
@@ -65,6 +72,7 @@ const Embed = ({
       </Flex>
     )
   }
+
   if (reply && !isNil(tweets[tweet.reply_to]?.title)) {
     metadata.push(
       <Flex align="center" fontSize="12px" ml={metadata.length == 0 ? 0 : 6}>
@@ -74,6 +82,7 @@ const Embed = ({
       </Flex>
     )
   }
+
   const content = (
     <>
       <Flex
@@ -210,7 +219,19 @@ const Embed = ({
                 </>
               )
             ) : (
-              tweet.description ?? tweet.body
+              <>
+                <Box
+                  dangerouslySetInnerHTML={{
+                    __html: linkifyHtml(tweet.description ?? tweet.body, {
+                      nl2br: true,
+                      formatHref: {
+                        hashtag: href => "/hashtag/" + href.substr(1),
+                        mention: href => "/u" + href,
+                      },
+                    }),
+                  }}
+                />
+              </>
             )}
           </Box>
           {isDeleted ? null : !isNil(tweet.cover) && isNil(tweet.title) ? (

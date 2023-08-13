@@ -40,7 +40,9 @@ class Notifications {
     })
   }
 
-  async exec(v, arts = {}) {
+  async exec(v, cache = {}) {
+    cache.arts ??= {}
+    cache.users ??= {}
     const input =
       v.data.input.function === "relay" ? v.data.input.query[1] : v.data.input
     const func = input.function
@@ -48,8 +50,8 @@ class Notifications {
     const col = input.query[1]
     if (func === "set" && col === "likes") {
       const from = data.user
-      arts[data.aid] ??= await this.db.get("posts", data.aid)
-      const article = arts[data.aid]
+      cache.cache.arts[data.aid] ??= await this.db.get("posts", data.aid)
+      const article = cache.arts[data.aid]
       const to = article.owner
       if (from === to) return
       const date = data.date
@@ -100,9 +102,40 @@ class Notifications {
       )
     }
     if (func === "set" && col === "posts") {
+      for (let _to of data.mentions || []) {
+        const article = data
+        cache.users[_to] ??= (
+          await this.db.get("users", ["handle", "==", _to])
+        )[0]
+        const to = cache.users[_to]?.address
+        const from = data.owner
+        if (isNil(to) || from === to) return
+        const date = data.date
+        const id = md5(`mention:${from}:${to}:${article.id}:${date}`)
+        await this.pdb.set(
+          {
+            wid: v.data.id,
+            type: "mention",
+            id,
+            from,
+            to,
+            date,
+            aid: article.id,
+            viewed: from === to,
+          },
+          "notifications",
+          id
+        )
+        console.log(
+          `<${this.txid}> (${v.id}) [${to.slice(
+            0,
+            5
+          )}:${_to}] mentioned by ${from.slice(0, 5)} at ${date}`
+        )
+      }
       if (data.repost !== "") {
-        arts[data.aid] ??= await this.db.get("posts", data.repost)
-        const article = arts[data.aid]
+        cache.arts[data.aid] ??= await this.db.get("posts", data.repost)
+        const article = cache.arts[data.aid]
         const from = data.owner
         const to = article.owner
         if (from === to) return
@@ -129,8 +162,8 @@ class Notifications {
           } by ${from.slice(0, 5)} at ${date}`
         )
       } else if (data.reply_to !== "") {
-        arts[data.reply_to] ??= await this.db.get("posts", data.reply_to)
-        const article = arts[data.reply_to]
+        cache.arts[data.reply_to] ??= await this.db.get("posts", data.reply_to)
+        const article = cache.arts[data.reply_to]
         const from = data.owner
         const to = article.owner
         if (from === to) return

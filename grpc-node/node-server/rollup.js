@@ -280,9 +280,9 @@ class Rollup {
     const limit = 10
     let params = ["txs", ["id"]]
     if (!isNil(next)) params.push(["startAfter", next])
-    let arts = {}
+    let cache = {}
     const txs = await this.wal.cget(...params, limit)
-    for (let v of txs) await pdb.exec(v, arts)
+    for (let v of txs) await pdb.exec(v, cache)
     if (txs.length === limit) this.getWAL(last(txs), pdb)
   }
 

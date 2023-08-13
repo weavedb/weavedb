@@ -1,3 +1,8 @@
+import * as linkify from "linkifyjs"
+import linkifyHtml from "linkify-html"
+import "linkify-plugin-hashtag"
+import "linkify-plugin-mention"
+
 import { useRouter } from "next/router"
 import { useState, useEffect } from "react"
 import { Box, Flex, ChakraProvider, Image } from "@chakra-ui/react"
@@ -38,6 +43,7 @@ import {
   getTweets,
   getUsers,
 } from "../../lib/db"
+
 import EditUser from "../../components/EditUser"
 import EditStatus from "../../components/EditStatus"
 import EditPost from "../../components/EditPost"
@@ -299,6 +305,7 @@ function StatusPage() {
       }
     })()
   }, [user, puser])
+
   const _user = puser
   const tabs = [
     { key: "posts", name: "Posts" },
@@ -311,7 +318,9 @@ function StatusPage() {
     { key: "following", name: "Following" },
     { key: "followers", name: "Followers" },
   ]
+
   const isFollow = includes(tab, ["following", "followers"])
+
   return (
     <ChakraProvider>
       <style jsx global>{`
@@ -510,7 +519,17 @@ function StatusPage() {
                     @{_user.handle}
                   </Box>
                   <Box mx="30px" mb={2} fontSize="15px">
-                    {_user.description}
+                    <Box
+                      dangerouslySetInnerHTML={{
+                        __html: linkifyHtml(_user.description, {
+                          nl2br: true,
+                          formatHref: {
+                            hashtag: href => "/hashtag/" + href.substr(1),
+                            mention: href => "/u" + href,
+                          },
+                        }),
+                      }}
+                    />
                   </Box>
                   <Flex mx="30px" mb={2} fontSize="15px">
                     <Box
@@ -727,43 +746,54 @@ function StatusPage() {
               </>
             ) : tab === "posts" || tab === "replies" || tab === "articles" ? (
               <>
-                {map(v2 => {
-                  const v =
-                    v2.data.repost === ""
-                      ? v2.data
-                      : tweets[v2.data.repost] ?? {}
-                  const parent =
-                    v2.data.repost !== "" && !isNil(v2.data.description)
-                      ? v2.data
-                      : null
-                  const repost =
-                    tab === "posts" && v2.data.repost !== ""
-                      ? puser.address
-                      : null
-                  const reply =
-                    tab === "replies" ||
-                    (isNil(repost) ? v2.data.reply_to !== "" : v.reply_to)
-                  return (
-                    <Tweet
-                      {...{
-                        disabled: true,
-                        parent,
-                        likes,
-                        reposted: reposts[v.id],
-                        users,
-                        tweets,
-                        tweet: v,
-                        repost,
-                        reply,
-                      }}
-                    />
+                {(tab === "articles"
+                  ? articles
+                  : tab === "posts"
+                  ? posts
+                  : replies
+                ).length === 0 ? (
+                  <Flex justify="center" p={10}>
+                    No Post Found
+                  </Flex>
+                ) : (
+                  map(v2 => {
+                    const v =
+                      v2.data.repost === ""
+                        ? v2.data
+                        : tweets[v2.data.repost] ?? {}
+                    const parent =
+                      v2.data.repost !== "" && !isNil(v2.data.description)
+                        ? v2.data
+                        : null
+                    const repost =
+                      tab === "posts" && v2.data.repost !== ""
+                        ? puser.address
+                        : null
+                    const reply =
+                      tab === "replies" ||
+                      (isNil(repost) ? v2.data.reply_to !== "" : v.reply_to)
+                    return (
+                      <Tweet
+                        {...{
+                          disabled: true,
+                          parent,
+                          likes,
+                          reposted: reposts[v.id],
+                          users,
+                          tweets,
+                          tweet: v,
+                          repost,
+                          reply,
+                        }}
+                      />
+                    )
+                  })(
+                    tab === "articles"
+                      ? articles
+                      : tab === "posts"
+                      ? posts
+                      : replies
                   )
-                })(
-                  tab === "articles"
-                    ? articles
-                    : tab === "posts"
-                    ? posts
-                    : replies
                 )}
                 {tab !== "articles" || !isNextArticles ? null : (
                   <Flex p={4} justify="center">
