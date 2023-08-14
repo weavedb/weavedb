@@ -4,7 +4,7 @@ const getTriggers = async (state, action, SmartWeave) => {
   if (path.length % 2 === 0) err()
   const trigger_key = `trigger.${path.join("/")}`
   return {
-    result: state.triggers[trigger_key] ?? [],
+    result: state.triggers?.[trigger_key] ?? [],
   }
 }
 

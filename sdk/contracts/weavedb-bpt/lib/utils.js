@@ -637,6 +637,7 @@ const _parser = query => {
   q.sortByTail = false
   return q
 }
+
 const checkStartEnd = q => {
   if (q.equals.length > 0 && !isNil(q.range)) {
     if (includes(q.range[0][0], pluck(0, q.equals))) {
@@ -725,6 +726,7 @@ const checkStartEnd = q => {
   q.start = start
   q.end = end
 }
+
 const checkSort = q => {
   let sort = []
   if (q.equals.length > 0) {
@@ -747,11 +749,20 @@ const checkSort = q => {
     }
     q.sort = new_sort
   }
+  const next_index = sort.length
   if (!isNil(q.range?.[0][0])) {
-    sort.push([q.range?.[0][0]])
+    if (q.sort.length === sort.length || q.range[0][1] === "in") {
+      sort.push([q.range[0][0]])
+    } else if (
+      !isNil(q.sort[next_index]) &&
+      q.range[0][0] !== q.sort[next_index][0]
+    ) {
+      err(`the sort field at [${next_index}] must be [${q.range[0][0]}]`)
+    }
+
     if (includes(q.range[0][1], ["!=", "in", "not-in"])) {
       const qkeys = pluck(0, q.sort)
-      if (qkeys.length !== 0 && qkeys[0] !== q.range[0][0]) {
+      if (qkeys.length !== 0 && qkeys[next_index] !== q.range[0][0]) {
         if (includes(q.range[0][0], qkeys)) {
           err(`the wrong sort ${JSON.stringify(q.sort)}`)
         } else {

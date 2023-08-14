@@ -189,14 +189,12 @@ const tests = {
 
     // where not-in with sort
     expect(
-      await db.get("ppl", ["weight", "desc"], ["age", "not-in", [30]])
-    ).to.eql([John, Bob])
-
+      await db.get("ppl", ["age"], ["weight", "desc"], ["age", "not-in", [30]])
+    ).to.eql([Bob, John])
     // where != with sort
-    expect(await db.get("ppl", ["weight", "desc"], ["age", "!=", 30])).to.eql([
-      John,
-      Bob,
-    ])
+    expect(
+      await db.get("ppl", ["age"], ["weight", "desc"], ["age", "!=", 30])
+    ).to.eql([Bob, John])
 
     // where array-contains-any
     expect(
@@ -252,10 +250,11 @@ const tests = {
     await db.addIndex([["age"], ["height"], ["weight", "desc"]], "ppl", {
       ar: arweave_wallet,
     })
-
     expect(
       await db.get(
         "ppl",
+        ["age"],
+        ["height"],
         ["age", "==", 30],
         ["height", "!=", 160],
         ["weight", "desc"]
@@ -467,9 +466,16 @@ const tests = {
       )
     ).to.eql([Bob])
 
-    await db.addIndex([["letters", "array"], ["age"]], "ppl", {
-      ar: arweave_wallet,
-    })
+    await db.addIndex(
+      [
+        ["letters", "array"],
+        ["age", "desc"],
+      ],
+      "ppl",
+      {
+        ar: arweave_wallet,
+      }
+    )
 
     expect(
       await db.get(
@@ -481,16 +487,6 @@ const tests = {
       )
     ).to.eql([Bob])
 
-    await db.addIndex(
-      [
-        ["letters", "array"],
-        ["age", "desc"],
-      ],
-      "ppl",
-      {
-        ar: arweave_wallet,
-      }
-    )
     expect(
       await db.get(
         "ppl",
@@ -557,6 +553,41 @@ const tests = {
     const tx3 = await db.bundle([await db.sign("add", {}, "ppl")])
     expect(tx2.success).to.eql(false)
     return
+  },
+  "should add array indexes": async ({ db, arweave_wallet }) => {
+    const index = [
+      ["favs", "array"],
+      ["date", "desc"],
+    ]
+    await db.addIndex(index, "ppl", {
+      ar: arweave_wallet,
+    })
+    const bob = { favs: ["food", "juice"], name: "bob", date: 1 }
+    const alice = { favs: ["food", "cars"], name: "alice", date: 2 }
+    expect((await db.getIndexes("ppl"))[0]).to.eql(index)
+    await db.add(bob, "ppl")
+    await db.add(alice, "ppl")
+    expect(
+      await db.get("ppl", ["favs", "array-contains", "food"], ["date", "desc"])
+    ).to.eql([alice, bob])
+  },
+  "should force inequality come before sort": async ({
+    db,
+    arweave_wallet,
+  }) => {
+    await db.addIndex([["a"], ["age"]], "ppl", {
+      ar: arweave_wallet,
+    })
+    const bob = { age: 1, a: 1 }
+    await db.add(bob, "ppl")
+    let err = false
+    try {
+      await db.get("ppl", ["age"], ["a", "!=", [1]])
+    } catch (e) {
+      err = true
+    }
+    expect(err).to.eql(true)
+    expect(await db.get("ppl", ["age"], ["a", "in", [1]])).to.eql([bob])
   },
 }
 
