@@ -2,12 +2,13 @@ import * as linkify from "linkifyjs"
 import linkifyHtml from "linkify-html"
 import "linkify-plugin-hashtag"
 import "linkify-plugin-mention"
-
+import { isAddress } from "ethers"
 import { useRouter } from "next/router"
 import { useState, useEffect } from "react"
-import { Box, Flex, ChakraProvider, Image } from "@chakra-ui/react"
+import { Box, Input, Flex, ChakraProvider, Image } from "@chakra-ui/react"
 import Link from "next/link"
 import {
+  append,
   pathEq,
   reject,
   isEmpty,
@@ -51,6 +52,7 @@ const limit = 10
 
 function StatusPage() {
   const router = useRouter()
+  const [addr, setAddr] = useState("")
   const [puser, setPuser] = useState(null)
   const [user, setUser] = useState(null)
   const [identity, setIdentity] = useState(null)
@@ -68,6 +70,7 @@ function StatusPage() {
   const [reposts, setReposts] = useState({})
   const [followers, setFollowers] = useState([])
   const [following, setFollowing] = useState([])
+  const [invites, setInvites] = useState([])
   const [isFollowing, setIsFollowing] = useState(false)
   const [isFollowed, setIsFollowed] = useState(false)
   const [isNext, setIsNext] = useState(false)
@@ -197,11 +200,17 @@ function StatusPage() {
           )
           setFollowers(_followers)
           setIsNextFollowers(_followers.length >= limit)
+
+          const _invites = await db.cget("users", [
+            "invited_by",
+            "==",
+            user.address,
+          ])
+          setInvites(_invites)
         }
       })()
     }
   }, [router])
-
   useEffect(() => {
     ;(async () => {
       await getTweets({
@@ -230,6 +239,16 @@ function StatusPage() {
       })
     })()
   }, [following])
+
+  useEffect(() => {
+    ;(async () => {
+      await getUsers({
+        ids: map(path(["data", "to"]))(values(invites)),
+        users,
+        setUsers,
+      })
+    })()
+  }, [invites])
 
   useEffect(() => {
     ;(async () => {
@@ -306,7 +325,6 @@ function StatusPage() {
     })()
   }, [user, puser])
 
-  const _user = puser
   const tabs = [
     { key: "posts", name: "Posts" },
     { key: "articles", name: "Articles" },
@@ -314,13 +332,14 @@ function StatusPage() {
     { key: "likes", name: "Likes" },
   ]
 
-  const tabs2 = [
+  let tabs2 = [
     { key: "following", name: "Following" },
     { key: "followers", name: "Followers" },
   ]
-
-  const isFollow = includes(tab, ["following", "followers"])
-
+  if ((user?.invites ?? 0) > 0 && user.address === puser.address) {
+    tabs2.push({ key: "invites", name: "Invites" })
+  }
+  const isFollow = includes(tab, ["following", "followers", "invites"])
   return (
     <ChakraProvider>
       <style jsx global>{`
@@ -333,7 +352,7 @@ function StatusPage() {
       `}</style>
       <Header
         link={isFollow ? null : "/"}
-        title={isFollow ? _user?.name : _user?.name}
+        title={isFollow ? puser?.name : puser?.name}
         func={isFollow ? () => setTab("posts") : null}
         {...{
           setEditPost,
@@ -399,10 +418,10 @@ function StatusPage() {
             {isFollow ? null : (
               <>
                 <Box
-                  title={_user.cover}
+                  title={puser.cover}
                   sx={{
                     backgroundImage:
-                      _user.cover ??
+                      puser.cover ??
                       `https://picsum.photos/800/200?id=${Date.now()}`,
                     backgroundSize: "cover",
                     backgroundPosition: "center",
@@ -416,7 +435,7 @@ function StatusPage() {
                     <Image
                       ml="20px"
                       boxSize="150px"
-                      src={_user.image ?? "/images/default-icon.png"}
+                      src={puser.image ?? "/images/default-icon.png"}
                       mt="-75px"
                       sx={{
                         borderRadius: "50%",
@@ -513,15 +532,15 @@ function StatusPage() {
                     </Box>
                   </Flex>
                   <Box mx="30px" mt={4} fontSize="20px" fontWeight="bold">
-                    {_user.name}
+                    {puser.name}
                   </Box>
                   <Box mx="30px" mb={2} fontSize="15px" color="#666">
-                    @{_user.handle}
+                    @{puser.handle}
                   </Box>
                   <Box mx="30px" mb={2} fontSize="15px">
                     <Box
                       dangerouslySetInnerHTML={{
-                        __html: linkifyHtml(_user.description, {
+                        __html: linkifyHtml(puser.description, {
                           nl2br: true,
                           formatHref: {
                             hashtag: href => "/hashtag/" + href.substr(1),
@@ -538,7 +557,7 @@ function StatusPage() {
                       sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
                     >
                       <Box as="b" mr={1}>
-                        {_user.following || 0}
+                        {puser.following || 0}
                       </Box>
                       Following
                     </Box>
@@ -548,10 +567,24 @@ function StatusPage() {
                       sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
                     >
                       <Box as="b" mr={1}>
-                        {_user.followers || 0}
+                        {puser.followers || 0}
                       </Box>
                       Followers
                     </Box>
+                    {!isNil(user) &&
+                    (puser.invites || 0) > 0 &&
+                    user.address === puser.address ? (
+                      <Box
+                        mr={4}
+                        onClick={() => setTab("invites")}
+                        sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
+                      >
+                        <Box as="b" mr={1}>
+                          {invites.length} / {puser.invites || 0}
+                        </Box>
+                        Invites
+                      </Box>
+                    ) : null}
                   </Flex>
                 </Box>
               </>
@@ -582,7 +615,31 @@ function StatusPage() {
               <>
                 {map(v => {
                   const u = users[v]
-                  return isNil(u) ? null : (
+                  return isNil(u) ? null : isNil(u.handle) ? (
+                    <Box
+                      p={2}
+                      sx={{
+                        borderBottom: "1px solid #ccc",
+                        cursor: "pointer",
+                        ":hover": { opacity: 0.75 },
+                      }}
+                    >
+                      <Flex align="center">
+                        <Image
+                          m={2}
+                          src={"/images/default-icon.png"}
+                          boxSize="50px"
+                          sx={{ borderRadius: "50%" }}
+                        />
+                        <Box>
+                          <Box>
+                            <Box fontWeight="bold">{v}</Box>
+                            <Box color="#666">Not Registered Yet</Box>
+                          </Box>
+                        </Box>
+                      </Flex>
+                    </Box>
+                  ) : (
                     <Link
                       href={`/u/${u.handle}`}
                       onClick={() => setTab("posts")}
@@ -616,7 +673,57 @@ function StatusPage() {
                 })(
                   tab === "following"
                     ? map(path(["data", "to"]))(following)
-                    : map(path(["data", "from"]))(followers)
+                    : tab === "followers"
+                    ? map(path(["data", "from"]))(followers)
+                    : map(path(["data", "address"]))(invites)
+                )}
+                {tab !== "invites" ? null : (
+                  <Flex p={4} justify="center">
+                    <Input
+                      maxW="450px"
+                      sx={{ borderRadius: "5px 0 0 5px" }}
+                      placeholder="ETH Address"
+                      value={addr}
+                      onChange={e => setAddr(e.target.value)}
+                    />
+                    <Flex
+                      justify="center"
+                      w="150px"
+                      py={2}
+                      bg={isAddress(addr) ? "#333" : "#999"}
+                      color="white"
+                      height="auto"
+                      align="center"
+                      sx={{
+                        borderRadius: "0 5px 5px 0",
+                        cursor: isAddress(addr) ? "pointer" : "default",
+                        ":hover": { opacity: isAddress(addr) ? 0.75 : 1 },
+                      }}
+                      onClick={async () => {
+                        if (isAddress(addr)) {
+                          const db = await initDB()
+                          const _addr = addr.toLowerCase()
+                          const _invite = {
+                            address: _addr,
+                            invited_by: user.address,
+                          }
+                          await db.set(_invite, "users", _addr)
+                          setInvites(
+                            append(
+                              {
+                                id: _addr,
+                                data: _invite,
+                              },
+                              invites
+                            )
+                          )
+                          setAddr("")
+                        }
+                      }}
+                    >
+                      Invite
+                    </Flex>
+                  </Flex>
                 )}
                 {tab !== "following" || !isNextFollowing ? null : (
                   <Flex p={4} justify="center">
