@@ -698,19 +698,6 @@ export default function ToolbarPlugin() {
         </DropDown>
       ) : (
         <>
-          <FontDropDown
-            disabled={!isEditable}
-            style={"font-family"}
-            value={fontFamily}
-            editor={editor}
-          />
-          <FontDropDown
-            disabled={!isEditable}
-            style={"font-size"}
-            value={fontSize}
-            editor={editor}
-          />
-          <Divider />
           <button
             disabled={!isEditable}
             onClick={() => {
@@ -775,24 +762,6 @@ export default function ToolbarPlugin() {
           >
             <i className="format link" />
           </button>
-          <DropdownColorPicker
-            disabled={!isEditable}
-            buttonClassName="toolbar-item color-picker"
-            buttonAriaLabel="Formatting text color"
-            buttonIconClassName="icon font-color"
-            color={fontColor}
-            onChange={onFontColorSelect}
-            title="text color"
-          />
-          <DropdownColorPicker
-            disabled={!isEditable}
-            buttonClassName="toolbar-item color-picker"
-            buttonAriaLabel="Formatting background color"
-            buttonIconClassName="icon bg-color"
-            color={bgColor}
-            onChange={onBgColorSelect}
-            title="bg color"
-          />
           <DropDown
             disabled={!isEditable}
             buttonClassName="toolbar-item spaced"
@@ -847,27 +816,6 @@ export default function ToolbarPlugin() {
             </DropDownItem>
           </DropDown>
           <Divider />
-          {rootType === "table" && (
-            <>
-              <DropDown
-                disabled={!isEditable}
-                buttonClassName="toolbar-item spaced"
-                buttonLabel="Table"
-                buttonAriaLabel="Open table toolkit"
-                buttonIconClassName="icon table secondary"
-              >
-                <DropDownItem
-                  onClick={() => {
-                    /**/
-                  }}
-                  className="item"
-                >
-                  <span className="text">TODO</span>
-                </DropDownItem>
-              </DropDown>
-              <Divider />
-            </>
-          )}
           <DropDown
             disabled={!isEditable}
             buttonClassName="toolbar-item spaced"
@@ -903,87 +851,6 @@ export default function ToolbarPlugin() {
             </DropDownItem>
             <DropDownItem
               onClick={() => {
-                showModal("Insert Inline Image", onClose => (
-                  <InsertInlineImageDialog
-                    activeEditor={activeEditor}
-                    onClose={onClose}
-                  />
-                ))
-              }}
-              className="item"
-            >
-              <i className="icon image" />
-              <span className="text">Inline Image</span>
-            </DropDownItem>
-            <DropDownItem
-              onClick={() =>
-                insertGifOnClick({
-                  altText: "Cat typing on a laptop",
-                  src: catTypingGif,
-                })
-              }
-              className="item"
-            >
-              <i className="icon gif" />
-              <span className="text">GIF</span>
-            </DropDownItem>
-            <DropDownItem
-              onClick={() => {
-                activeEditor.dispatchCommand(
-                  INSERT_EXCALIDRAW_COMMAND,
-                  undefined
-                )
-              }}
-              className="item"
-            >
-              <i className="icon diagram-2" />
-              <span className="text">Excalidraw</span>
-            </DropDownItem>
-            <DropDownItem
-              onClick={() => {
-                showModal("Insert Table", onClose => (
-                  <InsertTableDialog
-                    activeEditor={activeEditor}
-                    onClose={onClose}
-                  />
-                ))
-              }}
-              className="item"
-            >
-              <i className="icon table" />
-              <span className="text">Table</span>
-            </DropDownItem>
-            <DropDownItem
-              onClick={() => {
-                showModal("Insert Table", onClose => (
-                  <InsertNewTableDialog
-                    activeEditor={activeEditor}
-                    onClose={onClose}
-                  />
-                ))
-              }}
-              className="item"
-            >
-              <i className="icon table" />
-              <span className="text">Table (Experimental)</span>
-            </DropDownItem>
-            <DropDownItem
-              onClick={() => {
-                showModal("Insert Poll", onClose => (
-                  <InsertPollDialog
-                    activeEditor={activeEditor}
-                    onClose={onClose}
-                  />
-                ))
-              }}
-              className="item"
-            >
-              <i className="icon poll" />
-              <span className="text">Poll</span>
-            </DropDownItem>
-
-            <DropDownItem
-              onClick={() => {
                 showModal("Insert Equation", onClose => (
                   <InsertEquationDialog
                     activeEditor={activeEditor}
@@ -995,28 +862,6 @@ export default function ToolbarPlugin() {
             >
               <i className="icon equation" />
               <span className="text">Equation</span>
-            </DropDownItem>
-            <DropDownItem
-              onClick={() => {
-                editor.update(() => {
-                  const root = $getRoot()
-                  const stickyNode = $createStickyNode(0, 0)
-                  root.append(stickyNode)
-                })
-              }}
-              className="item"
-            >
-              <i className="icon sticky" />
-              <span className="text">Sticky Note</span>
-            </DropDownItem>
-            <DropDownItem
-              onClick={() => {
-                editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND, undefined)
-              }}
-              className="item"
-            >
-              <i className="icon caret-right" />
-              <span className="text">Collapsible container</span>
             </DropDownItem>
             {EmbedConfigs.map(embedConfig => (
               <DropDownItem

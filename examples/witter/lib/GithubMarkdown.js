@@ -808,6 +808,20 @@ export default () => (
       border-radius: 3px;
     }
 
+    .markdown-body code.PlaygroundEditorTheme__code {
+      background-color: rgb(240, 242, 245);
+      font-family: Menlo, Consolas, Monaco, monospace;
+      display: block;
+      padding: 8px 8px 8px 52px;
+      line-height: 1.53;
+      font-size: 13px;
+      margin: 0;
+      margin-top: 8px;
+      margin-bottom: 8px;
+      overflow-x: auto;
+      position: relative;
+      tab-size: 2;
+    }
     .markdown-body pre {
       word-wrap: normal;
     }
