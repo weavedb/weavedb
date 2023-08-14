@@ -116,208 +116,215 @@ export default function Editor() {
           setEditStatus,
         }}
       />
-
-      <GithubMarkdown />
-      <Flex justify="center" minH="100%" pt="50px">
-        <Box flex={1}></Box>
-        <Box w="100%" maxW={maxW} minH="100%">
-          {isNil(user) ? (
-            <Flex
-              justify="center"
-              align="center"
-              w="100%"
-              h="calc(100vh - 50px)"
-            >
-              Sign In to Edit
-            </Flex>
-          ) : !isNil(editID) && isNil(editContent) ? (
-            <Flex
-              justify="center"
-              align="center"
-              w="100%"
-              h="calc(100vh - 50px)"
-            >
-              Article Not Found
-            </Flex>
-          ) : (
-            <>
-              <Flex justify="center">
-                <Box
-                  display={tab === "edit" ? "flex" : "none"}
-                  className="markdown-body"
-                >
-                  <App
-                    {...{
-                      setHTML,
-                      editID,
-                      editContent,
-                      setTitle,
-                      setBody,
-                      title,
-                      body,
-                    }}
-                  />
-                </Box>
-                <Box
-                  maxW={maxW}
+      {isNil(user?.handle) ? (
+        <Flex justify="center" align="center" w="100%" h="calc(100vh - 50px)">
+          We are currently in private alpha. Sign in to use the dapp.
+        </Flex>
+      ) : (
+        <>
+          <GithubMarkdown />
+          <Flex justify="center" minH="100%" pt="50px">
+            <Box flex={1}></Box>
+            <Box w="100%" maxW={maxW} minH="100%">
+              {isNil(user) ? (
+                <Flex
+                  justify="center"
+                  align="center"
                   w="100%"
-                  display={tab === "preview" ? "flex" : "none"}
-                  px={[2, 4, 6]}
-                  className="markdown-body"
+                  h="calc(100vh - 50px)"
                 >
-                  <Article
-                    {...{
-                      disabled: true,
-                      main: true,
-                      preview: true,
-                      post: {
-                        description: body,
-                        content: HTML,
-                        cover: coverIcon,
-                        title,
-                      },
-                      puser: user,
-                    }}
-                  />
-                </Box>
-
-                <Box
-                  maxW={maxW}
+                  Sign In to Edit
+                </Flex>
+              ) : !isNil(editID) && isNil(editContent) ? (
+                <Flex
+                  justify="center"
+                  align="center"
                   w="100%"
-                  display={tab === "post" ? "flex" : "none"}
-                  p={4}
+                  h="calc(100vh - 50px)"
                 >
-                  <Box display={["none", null, null, "block"]} w="58px" />
-                  <Box flex={1}>
-                    <Box fontSize="12px" mb={1}>
-                      Title ( 100 characters )
-                    </Box>
-                    <Box>
-                      <Input
-                        placeholder="title"
-                        value={title}
-                        onChange={async e => {
-                          if (e.target.value.length <= 50) {
-                            setTitle(e.target.value)
-                            await lf.setItem(
-                              `edit-title-${editID ?? "new"}`,
-                              e.target.value
-                            )
-                          }
+                  Article Not Found
+                </Flex>
+              ) : (
+                <>
+                  <Flex justify="center">
+                    <Box
+                      display={tab === "edit" ? "flex" : "none"}
+                      className="markdown-body"
+                    >
+                      <App
+                        {...{
+                          setHTML,
+                          editID,
+                          editContent,
+                          setTitle,
+                          setBody,
+                          title,
+                          body,
                         }}
                       />
                     </Box>
-                    <Box fontSize="12px" mx={1} mt={3} mb={1}>
-                      Description ( 280 characters )
-                    </Box>
-                    <Box>
-                      <Textarea
-                        placeholder="description"
-                        value={body}
-                        onChange={async e => {
-                          if (e.target.value.length < 280) {
-                            setBody(e.target.value)
-                            await lf.setItem(
-                              `edit-body-${editID ?? "new"}`,
-                              e.target.value
-                            )
-                          }
+                    <Box
+                      maxW={maxW}
+                      w="100%"
+                      display={tab === "preview" ? "flex" : "none"}
+                      px={[2, 4, 6]}
+                      className="markdown-body"
+                    >
+                      <Article
+                        {...{
+                          disabled: true,
+                          main: true,
+                          preview: true,
+                          post: {
+                            description: body,
+                            content: HTML,
+                            cover: coverIcon,
+                            title,
+                          },
+                          puser: user,
                         }}
                       />
                     </Box>
-                    <Flex align="center" mt={3}>
+
+                    <Box
+                      maxW={maxW}
+                      w="100%"
+                      display={tab === "post" ? "flex" : "none"}
+                      p={4}
+                    >
+                      <Box display={["none", null, null, "block"]} w="58px" />
                       <Box flex={1}>
-                        <Box fontSize="12px" mx={1} mb={1}>
-                          Cover Image
+                        <Box fontSize="12px" mb={1}>
+                          Title ( 100 characters )
                         </Box>
                         <Box>
                           <Input
-                            p={1}
-                            accept=".jpg,.png,.jpeg"
-                            type="file"
+                            placeholder="title"
+                            value={title}
                             onChange={async e => {
-                              if (!isNil(e.target.files[0])) {
-                                const {
-                                  readAndCompressImage,
-                                } = require("browser-image-resizer")
-                                const file = await readAndCompressImage(
-                                  e.target.files[0],
-                                  {
-                                    maxWidth: 800,
-                                    maxHeight: 800,
-                                    mimeType: e.target.files[0].type,
-                                  }
+                              if (e.target.value.length <= 50) {
+                                setTitle(e.target.value)
+                                await lf.setItem(
+                                  `edit-title-${editID ?? "new"}`,
+                                  e.target.value
                                 )
-                                let reader = new FileReader()
-                                reader.readAsDataURL(file)
-                                reader.onload = () =>
-                                  setCoverIcon(reader.result)
                               }
                             }}
                           />
                         </Box>
-                      </Box>
-                    </Flex>
-                    <Box px={10}>
-                      <Image mt={4} src={coverIcon} width="100%" />
-                    </Box>
-                    <Box mt={4}>
-                      <Flex
-                        bg={ok ? "#333" : "#ccc"}
-                        color="white"
-                        w="100%"
-                        justify="center"
-                        p={2}
-                        sx={{
-                          borderRadius: "5px",
-                          cursor: ok ? "pointer" : "default",
-                          ":hover": { opacity: ok ? 0.75 : 1 },
-                        }}
-                        align="center"
-                        onClick={async () => {
-                          if (ok) {
-                            try {
-                              setUpdating(true)
-                              const { err, post } = await postArticle({
-                                description: body,
-                                title,
-                                address: identity.signer,
-                                user,
-                                body: HTML,
-                                cover: coverIcon,
-                                editID,
-                              })
-                              if (isNil(err)) {
-                                await lf.removeItem("edit")
-                                router.push(`/s/${post.id}`)
+                        <Box fontSize="12px" mx={1} mt={3} mb={1}>
+                          Description ( 280 characters )
+                        </Box>
+                        <Box>
+                          <Textarea
+                            placeholder="description"
+                            value={body}
+                            onChange={async e => {
+                              if (e.target.value.length < 280) {
+                                setBody(e.target.value)
+                                await lf.setItem(
+                                  `edit-body-${editID ?? "new"}`,
+                                  e.target.value
+                                )
                               }
-                            } catch (e) {
-                              setUpdating(false)
-                            }
-                          }
-                        }}
-                      >
-                        {updating ? (
-                          <Box
-                            as="i"
-                            className="fas fa-circle-notch fa-spin"
-                            mr={2}
-                            ml="-22px"
-                            mb="2px"
+                            }}
                           />
-                        ) : null}
-                        {!isNil(editID) ? "Update" : "Publish"}
-                      </Flex>
+                        </Box>
+                        <Flex align="center" mt={3}>
+                          <Box flex={1}>
+                            <Box fontSize="12px" mx={1} mb={1}>
+                              Cover Image
+                            </Box>
+                            <Box>
+                              <Input
+                                p={1}
+                                accept=".jpg,.png,.jpeg"
+                                type="file"
+                                onChange={async e => {
+                                  if (!isNil(e.target.files[0])) {
+                                    const {
+                                      readAndCompressImage,
+                                    } = require("browser-image-resizer")
+                                    const file = await readAndCompressImage(
+                                      e.target.files[0],
+                                      {
+                                        maxWidth: 800,
+                                        maxHeight: 800,
+                                        mimeType: e.target.files[0].type,
+                                      }
+                                    )
+                                    let reader = new FileReader()
+                                    reader.readAsDataURL(file)
+                                    reader.onload = () =>
+                                      setCoverIcon(reader.result)
+                                  }
+                                }}
+                              />
+                            </Box>
+                          </Box>
+                        </Flex>
+                        <Box px={10}>
+                          <Image mt={4} src={coverIcon} width="100%" />
+                        </Box>
+                        <Box mt={4}>
+                          <Flex
+                            bg={ok ? "#333" : "#ccc"}
+                            color="white"
+                            w="100%"
+                            justify="center"
+                            p={2}
+                            sx={{
+                              borderRadius: "5px",
+                              cursor: ok ? "pointer" : "default",
+                              ":hover": { opacity: ok ? 0.75 : 1 },
+                            }}
+                            align="center"
+                            onClick={async () => {
+                              if (ok) {
+                                try {
+                                  setUpdating(true)
+                                  const { err, post } = await postArticle({
+                                    description: body,
+                                    title,
+                                    address: identity.signer,
+                                    user,
+                                    body: HTML,
+                                    cover: coverIcon,
+                                    editID,
+                                  })
+                                  if (isNil(err)) {
+                                    await lf.removeItem("edit")
+                                    router.push(`/s/${post.id}`)
+                                  }
+                                } catch (e) {
+                                  setUpdating(false)
+                                }
+                              }
+                            }}
+                          >
+                            {updating ? (
+                              <Box
+                                as="i"
+                                className="fas fa-circle-notch fa-spin"
+                                mr={2}
+                                ml="-22px"
+                                mb="2px"
+                              />
+                            ) : null}
+                            {!isNil(editID) ? "Update" : "Publish"}
+                          </Flex>
+                        </Box>
+                      </Box>
+                      <Box display={["none", null, null, "block"]} w="58px" />
                     </Box>
-                  </Box>
-                  <Box display={["none", null, null, "block"]} w="58px" />
-                </Box>
-              </Flex>
-            </>
-          )}
-        </Box>
-        <Box flex={1}></Box>
-      </Flex>
+                  </Flex>
+                </>
+              )}
+            </Box>
+            <Box flex={1}></Box>
+          </Flex>
+        </>
+      )}
       <EditUser {...{ setEditUser, editUser, identity, setUser, user }} />
     </ChakraProvider>
   )

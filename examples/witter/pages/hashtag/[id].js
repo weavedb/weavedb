@@ -193,204 +193,212 @@ function Page() {
           setEditStatus,
         }}
       />
-      <Flex
-        bg="white"
-        w="100%"
-        justify="center"
-        sx={{
-          position: "fixed",
-          top: "50px",
-          left: 0,
-          zIndex: 99,
-        }}
-      >
-        <Flex
-          fontSize="14px"
-          w="100%"
-          maxW="760px"
-          align="center"
-          pt={2}
-          px={4}
-          bg="white"
-          sx={{ borderBottom: "1px solid #ccc", borderX: "1px solid #ccc" }}
-        >
-          {map(v => {
-            return (
-              <Flex
-                onClick={e => {
-                  e.stopPropagation()
-                  setTab(v.key)
-                }}
-                justify="center"
-                flex={1}
-                mx={8}
-                pb={2}
-                sx={{
-                  cursor: "pointer",
-                  ":hover": { opacity: 0.75 },
-                  borderBottom: tab === v.key ? "3px solid #666" : "",
-                }}
-              >
-                {v.name}
-              </Flex>
-            )
-          })(tabs)}
+      {isNil(user?.handle) ? (
+        <Flex justify="center" align="center" w="100%" h="calc(100vh - 50px)">
+          We are currently in private alpha. Sign in to use the dapp.
         </Flex>
-      </Flex>
-
-      <Flex justify="center" minH="100%" pt={"91px"}>
-        <Box flex={1}></Box>
-        <Box
-          w="100%"
-          maxW="760px"
-          minH="100%"
-          sx={{ borderX: "1px solid #ccc" }}
-        >
-          {tab === "users" ? (
-            <>
-              {map(u => {
+      ) : (
+        <>
+          <Flex
+            bg="white"
+            w="100%"
+            justify="center"
+            sx={{
+              position: "fixed",
+              top: "50px",
+              left: 0,
+              zIndex: 99,
+            }}
+          >
+            <Flex
+              fontSize="14px"
+              w="100%"
+              maxW="760px"
+              align="center"
+              pt={2}
+              px={4}
+              bg="white"
+              sx={{ borderBottom: "1px solid #ccc", borderX: "1px solid #ccc" }}
+            >
+              {map(v => {
                 return (
-                  <Link href={`/u/${u.handle}`}>
-                    <Box
-                      p={2}
-                      sx={{
-                        borderBottom: "1px solid #ccc",
-                        cursor: "pointer",
-                        ":hover": { opacity: 0.75 },
-                      }}
-                    >
-                      <Flex align="center">
-                        <Image
-                          m={2}
-                          src={u.image ?? "/images/default-icon.png"}
-                          boxSize="50px"
-                          sx={{ borderRadius: "50%" }}
-                        />
-                        <Box>
-                          <Box>
-                            <Box fontWeight="bold">{u.name}</Box>
-                            <Box color="#666">@{u.handle}</Box>
-                          </Box>
-                          <Box fontSize="15px">{u.description}</Box>
-                        </Box>
-                      </Flex>
-                    </Box>
-                  </Link>
+                  <Flex
+                    onClick={e => {
+                      e.stopPropagation()
+                      setTab(v.key)
+                    }}
+                    justify="center"
+                    flex={1}
+                    mx={8}
+                    pb={2}
+                    sx={{
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                      borderBottom: tab === v.key ? "3px solid #666" : "",
+                    }}
+                  >
+                    {v.name}
+                  </Flex>
                 )
-              })(pluck("data", husers))}
-              {!isNextUsers ? null : (
-                <Flex p={4} justify="center">
-                  <Flex
-                    justify="center"
-                    w="300px"
-                    py={2}
-                    bg="#333"
-                    color="white"
-                    height="auto"
-                    align="center"
-                    sx={{
-                      borderRadius: "20px",
-                      cursor: "pointer",
-                      ":hover": { opacity: 0.75 },
-                    }}
-                    onClick={async () => {
-                      const db = await initDB()
-                      const _users = await db.cget(
-                        "users",
-                        [
-                          "hashes",
-                          "array-contains",
-                          router.query.id.toLowerCase(),
-                        ],
-                        ["followers", "desc"],
-                        ["startAfter", last(husers)],
-                        limit
-                      )
-                      setHusers(concat(husers, _users))
-                      setIsNextUsers(_users.length >= limit)
-                    }}
-                  >
-                    Load More
-                  </Flex>
-                </Flex>
+              })(tabs)}
+            </Flex>
+          </Flex>
+
+          <Flex justify="center" minH="100%" pt={"91px"}>
+            <Box flex={1}></Box>
+            <Box
+              w="100%"
+              maxW="760px"
+              minH="100%"
+              sx={{ borderX: "1px solid #ccc" }}
+            >
+              {tab === "users" ? (
+                <>
+                  {map(u => {
+                    return (
+                      <Link href={`/u/${u.handle}`}>
+                        <Box
+                          p={2}
+                          sx={{
+                            borderBottom: "1px solid #ccc",
+                            cursor: "pointer",
+                            ":hover": { opacity: 0.75 },
+                          }}
+                        >
+                          <Flex align="center">
+                            <Image
+                              m={2}
+                              src={u.image ?? "/images/default-icon.png"}
+                              boxSize="50px"
+                              sx={{ borderRadius: "50%" }}
+                            />
+                            <Box>
+                              <Box>
+                                <Box fontWeight="bold">{u.name}</Box>
+                                <Box color="#666">@{u.handle}</Box>
+                              </Box>
+                              <Box fontSize="15px">{u.description}</Box>
+                            </Box>
+                          </Flex>
+                        </Box>
+                      </Link>
+                    )
+                  })(pluck("data", husers))}
+                  {!isNextUsers ? null : (
+                    <Flex p={4} justify="center">
+                      <Flex
+                        justify="center"
+                        w="300px"
+                        py={2}
+                        bg="#333"
+                        color="white"
+                        height="auto"
+                        align="center"
+                        sx={{
+                          borderRadius: "20px",
+                          cursor: "pointer",
+                          ":hover": { opacity: 0.75 },
+                        }}
+                        onClick={async () => {
+                          const db = await initDB()
+                          const _users = await db.cget(
+                            "users",
+                            [
+                              "hashes",
+                              "array-contains",
+                              router.query.id.toLowerCase(),
+                            ],
+                            ["followers", "desc"],
+                            ["startAfter", last(husers)],
+                            limit
+                          )
+                          setHusers(concat(husers, _users))
+                          setIsNextUsers(_users.length >= limit)
+                        }}
+                      >
+                        Load More
+                      </Flex>
+                    </Flex>
+                  )}
+                </>
+              ) : (
+                <>
+                  {map(v => (
+                    <Tweet
+                      disabled={true}
+                      reposted={!isNil(reposts[v.id])}
+                      likes={likes}
+                      users={users}
+                      tweet={{
+                        cover: v.cover,
+                        id: v.id,
+                        date: v.date,
+                        title: v.title,
+                        user: v.owner,
+                        reposts: v.reposts,
+                        likes: v.likes,
+                        comments: v.comments,
+                      }}
+                      body={v.description}
+                    />
+                  ))(pluck("data", posts))}
+                  {!isNext ? null : (
+                    <Flex p={4} justify="center">
+                      <Flex
+                        justify="center"
+                        w="300px"
+                        py={2}
+                        bg="#333"
+                        color="white"
+                        height="auto"
+                        align="center"
+                        sx={{
+                          borderRadius: "20px",
+                          cursor: "pointer",
+                          ":hover": { opacity: 0.75 },
+                        }}
+                        onClick={async () => {
+                          const db = await initDB()
+                          const _posts = await db.cget(
+                            "posts",
+                            [
+                              "hashes",
+                              "array-contains",
+                              router.query.id.toLowerCase(),
+                            ],
+                            ["date", "desc"],
+                            ["startAfter", last(posts)],
+                            limit
+                          )
+                          setPosts(concat(posts, _posts))
+                          setIsNext(_posts.length >= limit)
+                        }}
+                      >
+                        Load More
+                      </Flex>
+                    </Flex>
+                  )}
+                </>
               )}
-            </>
-          ) : (
-            <>
-              {map(v => (
-                <Tweet
-                  disabled={true}
-                  reposted={!isNil(reposts[v.id])}
-                  likes={likes}
-                  users={users}
-                  tweet={{
-                    cover: v.cover,
-                    id: v.id,
-                    date: v.date,
-                    title: v.title,
-                    user: v.owner,
-                    reposts: v.reposts,
-                    likes: v.likes,
-                    comments: v.comments,
-                  }}
-                  body={v.description}
-                />
-              ))(pluck("data", posts))}
-              {!isNext ? null : (
-                <Flex p={4} justify="center">
-                  <Flex
-                    justify="center"
-                    w="300px"
-                    py={2}
-                    bg="#333"
-                    color="white"
-                    height="auto"
-                    align="center"
-                    sx={{
-                      borderRadius: "20px",
-                      cursor: "pointer",
-                      ":hover": { opacity: 0.75 },
-                    }}
-                    onClick={async () => {
-                      const db = await initDB()
-                      const _posts = await db.cget(
-                        "posts",
-                        [
-                          "hashes",
-                          "array-contains",
-                          router.query.id.toLowerCase(),
-                        ],
-                        ["date", "desc"],
-                        ["startAfter", last(posts)],
-                        limit
-                      )
-                      setPosts(concat(posts, _posts))
-                      setIsNext(_posts.length >= limit)
-                    }}
-                  >
-                    Load More
-                  </Flex>
-                </Flex>
-              )}
-            </>
-          )}
-        </Box>
-        <Box flex={1}></Box>
-      </Flex>
-      <EditPost
-        {...{
-          setEditStatus,
-          setEditPost,
-          editPost,
-        }}
-      />
-      <EditStatus
-        {...{
-          setEditStatus,
-          editStatus,
-          user,
-        }}
-      />
+            </Box>
+            <Box flex={1}></Box>
+          </Flex>
+          <EditPost
+            {...{
+              setEditStatus,
+              setEditPost,
+              editPost,
+            }}
+          />
+          <EditStatus
+            {...{
+              setEditStatus,
+              editStatus,
+              user,
+            }}
+          />
+        </>
+      )}
       <EditUser {...{ setEditUser, editUser, identity, setUser, user }} />
     </ChakraProvider>
   )

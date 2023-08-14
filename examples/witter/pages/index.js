@@ -208,88 +208,156 @@ function Page() {
           setEditStatus,
         }}
       />
-      {isNil(user) ? null : (
-        <Flex
-          bg="white"
-          w="100%"
-          justify="center"
-          sx={{
-            position: "fixed",
-            top: "50px",
-            left: 0,
-            zIndex: 99,
-          }}
-        >
-          <Flex
-            fontSize="14px"
-            w="100%"
-            maxW="760px"
-            align="center"
-            pt={2}
-            px={4}
-            bg="white"
-            sx={{ borderBottom: "1px solid #ccc", borderX: "1px solid #ccc" }}
-          >
-            {map(v => {
-              return (
-                <Flex
-                  onClick={e => {
-                    e.stopPropagation()
-                    setTab(v.key)
-                  }}
-                  justify="center"
-                  flex={1}
-                  mx={8}
-                  pb={2}
-                  sx={{
-                    cursor: "pointer",
-                    ":hover": { opacity: 0.75 },
-                    borderBottom: tab === v.key ? "3px solid #666" : "",
-                  }}
-                >
-                  {v.name}
-                </Flex>
-              )
-            })(tabs)}
-          </Flex>
+      {isNil(user?.handle) ? (
+        <Flex justify="center" align="center" w="100%" h="calc(100vh - 50px)">
+          We are currently in private alpha. Sign in to use the dapp.
         </Flex>
-      )}
+      ) : (
+        <>
+          {isNil(user) ? null : (
+            <Flex
+              bg="white"
+              w="100%"
+              justify="center"
+              sx={{
+                position: "fixed",
+                top: "50px",
+                left: 0,
+                zIndex: 99,
+              }}
+            >
+              <Flex
+                fontSize="14px"
+                w="100%"
+                maxW="760px"
+                align="center"
+                pt={2}
+                px={4}
+                bg="white"
+                sx={{
+                  borderBottom: "1px solid #ccc",
+                  borderX: "1px solid #ccc",
+                }}
+              >
+                {map(v => {
+                  return (
+                    <Flex
+                      onClick={e => {
+                        e.stopPropagation()
+                        setTab(v.key)
+                      }}
+                      justify="center"
+                      flex={1}
+                      mx={8}
+                      pb={2}
+                      sx={{
+                        cursor: "pointer",
+                        ":hover": { opacity: 0.75 },
+                        borderBottom: tab === v.key ? "3px solid #666" : "",
+                      }}
+                    >
+                      {v.name}
+                    </Flex>
+                  )
+                })(tabs)}
+              </Flex>
+            </Flex>
+          )}
 
-      <Flex justify="center" minH="100%" pt={isNil(user) ? "50px" : "91px"}>
-        <Box flex={1}></Box>
-        <Box
-          w="100%"
-          maxW="760px"
-          minH="100%"
-          sx={{ borderX: "1px solid #ccc" }}
-        >
-          {tab === "following" ? (
-            <>
-              {map(v2 => {
-                const v = tweets[v2.aid] ?? {}
-                let repost = null
-                let parent = null
-                if (v2.rid !== "") {
-                  const rpost = tweets[v2.rid]
-                  repost = rpost?.owner
-                  if (
-                    !isNil(rpost) &&
-                    !isNil(rpost.description) &&
-                    v2.rid !== v2.aid
-                  ) {
-                    parent = rpost
-                  }
-                }
-                return (
-                  <Tweet
-                    disabled={true}
-                    likes={likes}
-                    reposted={!isNil(reposts[v.id])}
-                    {...{
-                      parent,
-                      users,
-                      tweets,
-                      tweet: {
+          <Flex justify="center" minH="100%" pt={isNil(user) ? "50px" : "91px"}>
+            <Box flex={1}></Box>
+            <Box
+              w="100%"
+              maxW="760px"
+              minH="100%"
+              sx={{ borderX: "1px solid #ccc" }}
+            >
+              {tab === "following" ? (
+                <>
+                  {map(v2 => {
+                    const v = tweets[v2.aid] ?? {}
+                    let repost = null
+                    let parent = null
+                    if (v2.rid !== "") {
+                      const rpost = tweets[v2.rid]
+                      repost = rpost?.owner
+                      if (
+                        !isNil(rpost) &&
+                        !isNil(rpost.description) &&
+                        v2.rid !== v2.aid
+                      ) {
+                        parent = rpost
+                      }
+                    }
+                    return (
+                      <Tweet
+                        disabled={true}
+                        likes={likes}
+                        reposted={!isNil(reposts[v.id])}
+                        {...{
+                          parent,
+                          users,
+                          tweets,
+                          tweet: {
+                            cover: v.cover,
+                            id: v.id,
+                            date: v.date,
+                            title: v.title,
+                            user: v.owner,
+                            reposts: v.reposts,
+                            likes: v.likes,
+                            comments: v.comments,
+                            reply_to: v.reply_to,
+                            body: v.description,
+                          },
+                          repost,
+                          reply: tab === "replies" || v.reply_to !== "",
+                        }}
+                      />
+                    )
+                  })(pluck("data", timeline))}
+                  {!isNextTL ? null : (
+                    <Flex p={4} justify="center">
+                      <Flex
+                        justify="center"
+                        w="300px"
+                        py={2}
+                        bg="#333"
+                        color="white"
+                        height="auto"
+                        align="center"
+                        sx={{
+                          borderRadius: "20px",
+                          cursor: "pointer",
+                          ":hover": { opacity: 0.75 },
+                        }}
+                        onClick={async () => {
+                          const db = await initDB()
+                          const _tl = await db.cget(
+                            "timeline",
+                            ["broadcast", "array-contains", user.address],
+                            ["date", "desc"],
+                            ["startAfter", last(timeline)],
+                            limit
+                          )
+                          setTimeline(concat(timeline, _tl))
+                          setIsNextTL(_tl.length >= limit)
+                        }}
+                      >
+                        Load More
+                      </Flex>
+                    </Flex>
+                  )}
+                </>
+              ) : (
+                <>
+                  {map(v => (
+                    <Tweet
+                      disabled={true}
+                      reposted={!isNil(reposts[v.id])}
+                      likes={likes}
+                      users={users}
+                      tweet={{
                         cover: v.cover,
                         id: v.id,
                         date: v.date,
@@ -298,121 +366,64 @@ function Page() {
                         reposts: v.reposts,
                         likes: v.likes,
                         comments: v.comments,
-                        reply_to: v.reply_to,
-                        body: v.description,
-                      },
-                      repost,
-                      reply: tab === "replies" || v.reply_to !== "",
-                    }}
-                  />
-                )
-              })(pluck("data", timeline))}
-              {!isNextTL ? null : (
-                <Flex p={4} justify="center">
-                  <Flex
-                    justify="center"
-                    w="300px"
-                    py={2}
-                    bg="#333"
-                    color="white"
-                    height="auto"
-                    align="center"
-                    sx={{
-                      borderRadius: "20px",
-                      cursor: "pointer",
-                      ":hover": { opacity: 0.75 },
-                    }}
-                    onClick={async () => {
-                      const db = await initDB()
-                      const _tl = await db.cget(
-                        "timeline",
-                        ["broadcast", "array-contains", user.address],
-                        ["date", "desc"],
-                        ["startAfter", last(timeline)],
-                        limit
-                      )
-                      setTimeline(concat(timeline, _tl))
-                      setIsNextTL(_tl.length >= limit)
-                    }}
-                  >
-                    Load More
-                  </Flex>
-                </Flex>
+                      }}
+                      body={v.description}
+                    />
+                  ))(pluck("data", posts))}
+                  {!isNext ? null : (
+                    <Flex p={4} justify="center">
+                      <Flex
+                        justify="center"
+                        w="300px"
+                        py={2}
+                        bg="#333"
+                        color="white"
+                        height="auto"
+                        align="center"
+                        sx={{
+                          borderRadius: "20px",
+                          cursor: "pointer",
+                          ":hover": { opacity: 0.75 },
+                        }}
+                        onClick={async () => {
+                          const db = await initDB()
+                          const _posts = await db.cget(
+                            "posts",
+                            ["date", "desc"],
+                            ["reply_to", "==", ""],
+                            ["repost", "==", ""],
+                            ["startAfter", last(posts)],
+                            limit
+                          )
+                          setPosts(concat(posts, _posts))
+                          setIsNext(_posts.length >= limit)
+                        }}
+                      >
+                        Load More
+                      </Flex>
+                    </Flex>
+                  )}
+                </>
               )}
-            </>
-          ) : (
-            <>
-              {map(v => (
-                <Tweet
-                  disabled={true}
-                  reposted={!isNil(reposts[v.id])}
-                  likes={likes}
-                  users={users}
-                  tweet={{
-                    cover: v.cover,
-                    id: v.id,
-                    date: v.date,
-                    title: v.title,
-                    user: v.owner,
-                    reposts: v.reposts,
-                    likes: v.likes,
-                    comments: v.comments,
-                  }}
-                  body={v.description}
-                />
-              ))(pluck("data", posts))}
-              {!isNext ? null : (
-                <Flex p={4} justify="center">
-                  <Flex
-                    justify="center"
-                    w="300px"
-                    py={2}
-                    bg="#333"
-                    color="white"
-                    height="auto"
-                    align="center"
-                    sx={{
-                      borderRadius: "20px",
-                      cursor: "pointer",
-                      ":hover": { opacity: 0.75 },
-                    }}
-                    onClick={async () => {
-                      const db = await initDB()
-                      const _posts = await db.cget(
-                        "posts",
-                        ["date", "desc"],
-                        ["reply_to", "==", ""],
-                        ["repost", "==", ""],
-                        ["startAfter", last(posts)],
-                        limit
-                      )
-                      setPosts(concat(posts, _posts))
-                      setIsNext(_posts.length >= limit)
-                    }}
-                  >
-                    Load More
-                  </Flex>
-                </Flex>
-              )}
-            </>
-          )}
-        </Box>
-        <Box flex={1}></Box>
-      </Flex>
-      <EditPost
-        {...{
-          setEditStatus,
-          setEditPost,
-          editPost,
-        }}
-      />
-      <EditStatus
-        {...{
-          setEditStatus,
-          editStatus,
-          user,
-        }}
-      />
+            </Box>
+            <Box flex={1}></Box>
+          </Flex>
+          <EditPost
+            {...{
+              setEditStatus,
+              setEditPost,
+              editPost,
+            }}
+          />
+          <EditStatus
+            {...{
+              setEditStatus,
+              editStatus,
+              user,
+            }}
+          />
+        </>
+      )}
       <EditUser {...{ setEditUser, editUser, identity, setUser, user }} />
     </ChakraProvider>
   )
