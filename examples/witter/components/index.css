@@ -8,6 +8,10 @@
 
 @import 'https://fonts.googleapis.com/css?family=Reenie+Beanie';
 
+img, svg, video, canvas, audio, iframe, embed, object {
+    display: inline-block;
+}
+
 #typeahead-menu{
     z-index: 150;
 }
@@ -47,6 +51,7 @@ header h1 {
 }
 
 .editor-shell {
+    width:100%;
   border-radius: 2px;
   max-width: 1100px;
   color: #000;
@@ -110,8 +115,8 @@ header h1 {
 
 pre {
   line-height: 1.1;
-  background: #222;
-  color: #fff;
+  /*background: #222;
+  color: #fff;*/
   margin: 0;
   padding: 10px;
   font-size: 12px;

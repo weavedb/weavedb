@@ -245,14 +245,6 @@ function TextFormatFloatingToolbar({
           </button>
         </>
       )}
-      <button
-        type="button"
-        onClick={insertComment}
-        className={"popup-item spaced insert-comment"}
-        aria-label="Insert comment"
-      >
-        <i className="format add-comment" />
-      </button>
     </div>
   )
 }

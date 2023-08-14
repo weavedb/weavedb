@@ -146,8 +146,9 @@ export default function Editor() {
                 </Flex>
               ) : (
                 <>
-                  <Flex justify="center">
+                  <Flex justify="center" w="100%">
                     <Box
+                      w="100%"
                       display={tab === "edit" ? "flex" : "none"}
                       className="markdown-body"
                     >

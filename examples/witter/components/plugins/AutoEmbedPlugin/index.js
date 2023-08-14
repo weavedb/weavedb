@@ -128,9 +128,9 @@ export const FigmaEmbedConfig = {
 }
 
 export const EmbedConfigs = [
-  TwitterEmbedConfig,
+  /*TwitterEmbedConfig,*/
   YoutubeEmbedConfig,
-  FigmaEmbedConfig,
+  /*  FigmaEmbedConfig,*/
 ]
 
 function AutoEmbedMenuItem({

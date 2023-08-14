@@ -138,7 +138,9 @@ export default function Editor() {
 
   return (
     <>
-      {isRichText && <ToolbarPlugin />}
+      <Flex justify="center" w="100%">
+        {isRichText && <ToolbarPlugin />}
+      </Flex>
       <Flex direction="column" alignItems="center">
         <Box display="block" width="100%" maxW="760px">
           <Box
@@ -154,28 +156,13 @@ export default function Editor() {
             <EmojiPickerPlugin />
             <AutoEmbedPlugin />
 
-            <MentionsPlugin />
             <EmojisPlugin />
-            <HashtagPlugin />
             <KeywordsPlugin />
             <SpeechToTextPlugin />
             <AutoLinkPlugin />
-            <CommentPlugin
-              providerFactory={
-                false && isCollab ? createWebsocketProvider : undefined
-              }
-            />
             {isRichText ? (
               <>
-                {false && isCollab ? (
-                  <CollaborationPlugin
-                    id="main"
-                    providerFactory={createWebsocketProvider}
-                    shouldBootstrap={!skipCollaborationInit}
-                  />
-                ) : (
-                  <HistoryPlugin externalHistoryState={historyState} />
-                )}
+                <HistoryPlugin externalHistoryState={historyState} />
                 <RichTextPlugin
                   contentEditable={
                     <div className="editor-scroller">
@@ -236,9 +223,7 @@ export default function Editor() {
                       anchorElem={floatingAnchorElem}
                       cellMerge={true}
                     />
-                    <FloatingTextFormatToolbarPlugin
-                      anchorElem={floatingAnchorElem}
-                    />
+                    <FloatingTextFormatToolbarPlugin />
                   </>
                 )}
               </>
