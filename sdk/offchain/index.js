@@ -110,9 +110,11 @@ class OffChain extends Base {
   async initialize() {
     if (typeof this.cache === "object") await this.cache.initialize(this)
   }
+
   getTxId(input) {
     return md5(JSON.stringify({ contractTxId: this.contractTxId, input }))
   }
+
   getSW(input) {
     let kvs = {}
     return {

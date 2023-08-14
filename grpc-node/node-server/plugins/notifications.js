@@ -50,7 +50,7 @@ class Notifications {
     const col = input.query[1]
     if (func === "set" && col === "likes") {
       const from = data.user
-      cache.cache.arts[data.aid] ??= await this.db.get("posts", data.aid)
+      cache.arts[data.aid] ??= await this.db.get("posts", data.aid)
       const article = cache.arts[data.aid]
       const to = article.owner
       if (from === to) return

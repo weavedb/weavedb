@@ -604,7 +604,12 @@ const pranges = async (
   let curs = []
   let res = []
   for (let v of _ranges) {
-    if (isNil(v.prefix) && v.sort.length === 1 && v.sort[0][1] === "desc") {
+    if (
+      !isArrayIndex(v.prefix) &&
+      isNil(v.prefix) &&
+      v.sort.length === 1 &&
+      v.sort[0][1] === "desc"
+    ) {
       v.sort[0][1] = "asc"
       v.opt ??= {}
       v.opt.reverse = true
@@ -838,6 +843,8 @@ const modOpt = (opt, cur = {}, tree) => {
   }
   return opt
 }
+const isArrayIndex = prefix => prefix?.split("/")[1]?.split(":")[0] === "array"
+
 const range = async (
   sort_fields,
   opt = {},
@@ -849,7 +856,11 @@ const range = async (
   cur = {}
 ) => {
   const kv = new KV(`${path.join("/")}/`, _KV(kvs, SW))
-  if (sort_fields.length === 1 && sort_fields[0][1] === "desc") {
+  if (
+    !isArrayIndex(_prefix) &&
+    sort_fields.length === 1 &&
+    sort_fields[0][1] === "desc"
+  ) {
     sort_fields[0][1] = "asc"
     opt.reverse = true
   }
