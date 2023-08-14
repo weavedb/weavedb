@@ -204,329 +204,338 @@ function Page() {
           setEditStatus,
         }}
       />
-      <Flex justify="center" minH="100%" pt="50px">
-        <Box flex={1}></Box>
-        <Box
-          w="100%"
-          maxW="760px"
-          minH="100%"
-          sx={{ borderX: "1px solid #ccc" }}
-        >
-          {isNil(user) || true ? null : (
-            <Flex sx={{ borderBottom: "1px solid #ccc" }} mt={3}>
-              {map(v => {
-                return (
-                  <Flex
-                    onClick={() => setTab(v.key)}
-                    justify="center"
-                    flex={1}
-                    mx={8}
-                    pb={2}
-                    sx={{
-                      cursor: "pointer",
-                      ":hover": { opacity: 0.75 },
-                      borderBottom: tab === v.key ? "3px solid #666" : "",
-                    }}
-                  >
-                    {v.name}
-                  </Flex>
-                )
-              })(tabs)}
-            </Flex>
-          )}
-          {isNil(user) ? (
-            <Flex
-              justify="center"
-              align="center"
+      {isNil(user?.handle) ? (
+        <Flex justify="center" align="center" w="100%" h="calc(100vh - 50px)">
+          We are currently in private alpha. Sign in to use the dapp.
+        </Flex>
+      ) : (
+        <>
+          <Flex justify="center" minH="100%" pt="50px">
+            <Box flex={1}></Box>
+            <Box
               w="100%"
-              h="calc(100vh - 47px)"
+              maxW="760px"
+              minH="100%"
+              sx={{ borderX: "1px solid #ccc" }}
             >
-              Sign In to View Your Notifications
-            </Flex>
-          ) : (
-            <>
-              {map(v2 => {
-                const user1 = users[v2.users[0]] ?? {}
-                const user2 = users[v2.users[1]] ?? {}
-                const icon =
-                  v2.type === "like"
-                    ? "fas fa-heart"
-                    : v2.type === "repost" || v2.type === "quote"
-                    ? "fas fa-retweet"
-                    : v2.type === "follow"
-                    ? "fas fa-user"
-                    : v2.type === "comment"
-                    ? "far fa-comment"
-                    : "fas fa-at"
-                const icolor =
-                  v2.type === "like"
-                    ? "#F91880"
-                    : v2.type === "repost" || v2.type === "quote"
-                    ? "#00BA7C"
-                    : v2.type === "follow"
-                    ? "#1D9BF0"
-                    : "#333"
-                const post = isNil(v2.aid) ? null : tweets[v2.aid] ?? {}
-                const reply = isNil(v2.rid) ? null : tweets[v2.rid] ?? {}
-                let link =
-                  v2.type === "like"
-                    ? `/s/${post.id}`
-                    : v2.type === "quote"
-                    ? `/s/${reply.id}`
-                    : v2.type === "repost"
-                    ? `/s/${post.id}`
-                    : v2.type === "follow"
-                    ? `/u/${user1?.handle ?? ""}`
-                    : `/s/${post.id}`
-                return (
-                  <Link href={link}>
-                    <Flex
-                      sx={{
-                        bg: v2.viewed ? "white" : "whitesmoke",
-                        borderBottom: "1px solid #ccc",
-                        cursor: "pointer",
-                        ":hover": { opacity: 0.75 },
-                      }}
-                      p={3}
-                    >
+              {isNil(user) || true ? null : (
+                <Flex sx={{ borderBottom: "1px solid #ccc" }} mt={3}>
+                  {map(v => {
+                    return (
                       <Flex
-                        w="50px"
-                        fontSize="22px"
+                        onClick={() => setTab(v.key)}
                         justify="center"
-                        mt={1}
-                        mr={3}
+                        flex={1}
+                        mx={8}
+                        pb={2}
+                        sx={{
+                          cursor: "pointer",
+                          ":hover": { opacity: 0.75 },
+                          borderBottom: tab === v.key ? "3px solid #666" : "",
+                        }}
                       >
-                        <Box as="i" color={icolor} className={icon} />
+                        {v.name}
                       </Flex>
-
-                      <Box flex={1}>
-                        <Flex mb={2}>
-                          {map(u => {
-                            const user = users[u] ?? {}
-                            return (
-                              <Link href={`/u/${user.handle}`}>
-                                <Image
-                                  title={user.name}
-                                  mr={2}
-                                  src={
-                                    user?.image ?? "/images/default-icon.png"
-                                  }
-                                  boxSize="30px"
-                                  sx={{ borderRadius: "50%" }}
-                                />
-                              </Link>
-                            )
-                          })(v2.users)}
-                        </Flex>
-                        <Flex align="center">
-                          <Box>
-                            {v2.users.length === 1 ? (
-                              <Link href={`/u/${user1.handle}`}>
-                                <b>{user1.name}</b>
-                              </Link>
-                            ) : v2.users.length === 2 ? (
-                              <>
-                                <Link href={`/u/${user1.handle}`}>
-                                  <b>{user1.name}</b>
-                                </Link>{" "}
-                                and{" "}
-                                <Link href={`/u/${user2.handle}`}>
-                                  <b>{user2.name}</b>
-                                </Link>
-                              </>
-                            ) : (
-                              <>
-                                <Link href={`/u/${user1.handle}`}>
-                                  <b>{user1.name}</b>
-                                </Link>{" "}
-                                and{" "}
-                                <Link href={`/u/${user2.handle}`}>
-                                  <b>{v2.users.length - 1}</b>
-                                </Link>{" "}
-                                others
-                              </>
-                            )}
-                            <span>
-                              {" "}
-                              {v2.type === "like" ? (
-                                <>
-                                  liked{" "}
-                                  {!isNil(post.title) ? (
-                                    <Link href={`/s/${post.id}`}>
-                                      <b>{post.title}</b>
-                                    </Link>
-                                  ) : (
-                                    "your post"
-                                  )}
-                                </>
-                              ) : v2.type === "repost" ? (
-                                <>
-                                  reposted{" "}
-                                  {!isNil(post.title) ? (
-                                    <Link href={`/s/${post.id}`}>
-                                      <b>{post.title}</b>
-                                    </Link>
-                                  ) : (
-                                    "your post"
-                                  )}
-                                </>
-                              ) : v2.type === "quote" ? (
-                                <>
-                                  quoted{" "}
-                                  {!isNil(post.title) ? (
-                                    <Link href={`/s/${post.id}`}>
-                                      <b>{post.title}</b>
-                                    </Link>
-                                  ) : (
-                                    "your post"
-                                  )}
-                                </>
-                              ) : v2.type === "follow" ? (
-                                "followed you"
-                              ) : v2.type === "comment" ? (
-                                <>
-                                  replied to{" "}
-                                  {!isNil(post.title) ? (
-                                    <Link href={`/s/${post.id}`}>
-                                      <b>{post.title}</b>
-                                    </Link>
-                                  ) : (
-                                    "your post"
-                                  )}
-                                </>
-                              ) : (
-                                <>mentioned you in a post</>
-                              )}
-                            </span>
-                          </Box>
-                          <Box fontSize="12px" ml={1}>
-                            <Box as="span" mx={1}>
-                              ·
-                            </Box>
-                            <Box as="span" color="#666">
-                              {dayjs(v2.date).fromNow(true)}
-                            </Box>
-                          </Box>
-                        </Flex>
-                        {v2.type === "follow" ? null : (
-                          <Box
-                            fontSize="14px"
-                            mt={!isNil(reply) || !isNil(post) ? 2 : 0}
-                          >
-                            {v2.type === "repost" ||
-                            v2.type === "like" ||
-                            v2.type === "mention"
-                              ? post?.description ?? ""
-                              : v2.type === "reply" || v2.type === "quote"
-                              ? reply?.description ?? ""
-                              : null}
-                          </Box>
-                        )}
-                        {v2.type === "quote" && !isNil(reply.cover) ? (
-                          <Flex p={4} justify="center">
-                            <Link target="_blank" href={reply.cover}>
-                              <Image
-                                onClick={e => e.stopPropagation()}
-                                src={reply.cover}
-                                maxW="500px"
-                                maxH="500px"
-                                sx={{
-                                  cursor: "pointer",
-                                  ":hover": { opacity: 0.75 },
-                                }}
-                              />
-                            </Link>
-                          </Flex>
-                        ) : null}
-                        {v2.type !== "quote" ? null : (
-                          <Link href={`/s/${post.id}`}>
-                            <Box
-                              my={3}
-                              sx={{
-                                ":hover": { opacity: 0.75 },
-                                border: "1px solid #ccc",
-                                borderRadius: "10px",
-                              }}
-                            >
-                              <Embed
-                                {...{
-                                  tweets,
-                                  parent: true,
-                                  tweet: post,
-                                  users,
-                                }}
-                              />
-                            </Box>
-                          </Link>
-                        )}
-                      </Box>
-                      <Box w="50px" />
-                    </Flex>
-                  </Link>
-                )
-              })(notifications)}
-              {!isNextNote ? null : (
-                <Flex p={4} justify="center">
-                  <Flex
-                    justify="center"
-                    w="300px"
-                    py={2}
-                    bg="#333"
-                    color="white"
-                    height="auto"
-                    align="center"
-                    sx={{
-                      borderRadius: "20px",
-                      cursor: "pointer",
-                      ":hover": { opacity: 0.75 },
-                    }}
-                    onClick={async () => {
-                      const db = await initNDB()
-                      const _notes = await db.cget(
-                        "notifications",
-                        ["to", "==", user.address],
-                        ["date", "desc"],
-                        ["startAfter", last(notes)],
-                        limit
-                      )
-                      setNotes(concat(notes, _notes))
-                      setIsNextNote(_notes.length >= limit)
-                      const batches = compose(
-                        map(v => [
-                          "update",
-                          { viewed: true },
-                          "notifications",
-                          v.id,
-                        ]),
-                        filter(v => !v.data.viewed)
-                      )(_notes)
-                      if (batches.length > 0) await db.batch(batches, identity)
-                    }}
-                  >
-                    Load More
-                  </Flex>
+                    )
+                  })(tabs)}
                 </Flex>
               )}
-            </>
-          )}
-        </Box>
-        <Box flex={1}></Box>
-      </Flex>
-      <EditPost
-        {...{
-          setEditStatus,
-          setEditPost,
-          editPost,
-        }}
-      />
-      <EditStatus
-        {...{
-          setEditStatus,
-          editStatus,
-          user,
-        }}
-      />
+              {isNil(user) ? (
+                <Flex
+                  justify="center"
+                  align="center"
+                  w="100%"
+                  h="calc(100vh - 47px)"
+                >
+                  Sign In to View Your Notifications
+                </Flex>
+              ) : (
+                <>
+                  {map(v2 => {
+                    const user1 = users[v2.users[0]] ?? {}
+                    const user2 = users[v2.users[1]] ?? {}
+                    const icon =
+                      v2.type === "like"
+                        ? "fas fa-heart"
+                        : v2.type === "repost" || v2.type === "quote"
+                        ? "fas fa-retweet"
+                        : v2.type === "follow"
+                        ? "fas fa-user"
+                        : v2.type === "comment"
+                        ? "far fa-comment"
+                        : "fas fa-at"
+                    const icolor =
+                      v2.type === "like"
+                        ? "#F91880"
+                        : v2.type === "repost" || v2.type === "quote"
+                        ? "#00BA7C"
+                        : v2.type === "follow"
+                        ? "#1D9BF0"
+                        : "#333"
+                    const post = isNil(v2.aid) ? null : tweets[v2.aid] ?? {}
+                    const reply = isNil(v2.rid) ? null : tweets[v2.rid] ?? {}
+                    let link =
+                      v2.type === "like"
+                        ? `/s/${post.id}`
+                        : v2.type === "quote"
+                        ? `/s/${reply.id}`
+                        : v2.type === "repost"
+                        ? `/s/${post.id}`
+                        : v2.type === "follow"
+                        ? `/u/${user1?.handle ?? ""}`
+                        : `/s/${post.id}`
+                    return (
+                      <Link href={link}>
+                        <Flex
+                          sx={{
+                            bg: v2.viewed ? "white" : "whitesmoke",
+                            borderBottom: "1px solid #ccc",
+                            cursor: "pointer",
+                            ":hover": { opacity: 0.75 },
+                          }}
+                          p={3}
+                        >
+                          <Flex
+                            w="50px"
+                            fontSize="22px"
+                            justify="center"
+                            mt={1}
+                            mr={3}
+                          >
+                            <Box as="i" color={icolor} className={icon} />
+                          </Flex>
 
+                          <Box flex={1}>
+                            <Flex mb={2}>
+                              {map(u => {
+                                const user = users[u] ?? {}
+                                return (
+                                  <Link href={`/u/${user.handle}`}>
+                                    <Image
+                                      title={user.name}
+                                      mr={2}
+                                      src={
+                                        user?.image ??
+                                        "/images/default-icon.png"
+                                      }
+                                      boxSize="30px"
+                                      sx={{ borderRadius: "50%" }}
+                                    />
+                                  </Link>
+                                )
+                              })(v2.users)}
+                            </Flex>
+                            <Flex align="center">
+                              <Box>
+                                {v2.users.length === 1 ? (
+                                  <Link href={`/u/${user1.handle}`}>
+                                    <b>{user1.name}</b>
+                                  </Link>
+                                ) : v2.users.length === 2 ? (
+                                  <>
+                                    <Link href={`/u/${user1.handle}`}>
+                                      <b>{user1.name}</b>
+                                    </Link>{" "}
+                                    and{" "}
+                                    <Link href={`/u/${user2.handle}`}>
+                                      <b>{user2.name}</b>
+                                    </Link>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Link href={`/u/${user1.handle}`}>
+                                      <b>{user1.name}</b>
+                                    </Link>{" "}
+                                    and{" "}
+                                    <Link href={`/u/${user2.handle}`}>
+                                      <b>{v2.users.length - 1}</b>
+                                    </Link>{" "}
+                                    others
+                                  </>
+                                )}
+                                <span>
+                                  {" "}
+                                  {v2.type === "like" ? (
+                                    <>
+                                      liked{" "}
+                                      {!isNil(post.title) ? (
+                                        <Link href={`/s/${post.id}`}>
+                                          <b>{post.title}</b>
+                                        </Link>
+                                      ) : (
+                                        "your post"
+                                      )}
+                                    </>
+                                  ) : v2.type === "repost" ? (
+                                    <>
+                                      reposted{" "}
+                                      {!isNil(post.title) ? (
+                                        <Link href={`/s/${post.id}`}>
+                                          <b>{post.title}</b>
+                                        </Link>
+                                      ) : (
+                                        "your post"
+                                      )}
+                                    </>
+                                  ) : v2.type === "quote" ? (
+                                    <>
+                                      quoted{" "}
+                                      {!isNil(post.title) ? (
+                                        <Link href={`/s/${post.id}`}>
+                                          <b>{post.title}</b>
+                                        </Link>
+                                      ) : (
+                                        "your post"
+                                      )}
+                                    </>
+                                  ) : v2.type === "follow" ? (
+                                    "followed you"
+                                  ) : v2.type === "comment" ? (
+                                    <>
+                                      replied to{" "}
+                                      {!isNil(post.title) ? (
+                                        <Link href={`/s/${post.id}`}>
+                                          <b>{post.title}</b>
+                                        </Link>
+                                      ) : (
+                                        "your post"
+                                      )}
+                                    </>
+                                  ) : (
+                                    <>mentioned you in a post</>
+                                  )}
+                                </span>
+                              </Box>
+                              <Box fontSize="12px" ml={1}>
+                                <Box as="span" mx={1}>
+                                  ·
+                                </Box>
+                                <Box as="span" color="#666">
+                                  {dayjs(v2.date).fromNow(true)}
+                                </Box>
+                              </Box>
+                            </Flex>
+                            {v2.type === "follow" ? null : (
+                              <Box
+                                fontSize="14px"
+                                mt={!isNil(reply) || !isNil(post) ? 2 : 0}
+                              >
+                                {v2.type === "repost" ||
+                                v2.type === "like" ||
+                                v2.type === "mention"
+                                  ? post?.description ?? ""
+                                  : v2.type === "reply" || v2.type === "quote"
+                                  ? reply?.description ?? ""
+                                  : null}
+                              </Box>
+                            )}
+                            {v2.type === "quote" && !isNil(reply.cover) ? (
+                              <Flex p={4} justify="center">
+                                <Link target="_blank" href={reply.cover}>
+                                  <Image
+                                    onClick={e => e.stopPropagation()}
+                                    src={reply.cover}
+                                    maxW="500px"
+                                    maxH="500px"
+                                    sx={{
+                                      cursor: "pointer",
+                                      ":hover": { opacity: 0.75 },
+                                    }}
+                                  />
+                                </Link>
+                              </Flex>
+                            ) : null}
+                            {v2.type !== "quote" ? null : (
+                              <Link href={`/s/${post.id}`}>
+                                <Box
+                                  my={3}
+                                  sx={{
+                                    ":hover": { opacity: 0.75 },
+                                    border: "1px solid #ccc",
+                                    borderRadius: "10px",
+                                  }}
+                                >
+                                  <Embed
+                                    {...{
+                                      tweets,
+                                      parent: true,
+                                      tweet: post,
+                                      users,
+                                    }}
+                                  />
+                                </Box>
+                              </Link>
+                            )}
+                          </Box>
+                          <Box w="50px" />
+                        </Flex>
+                      </Link>
+                    )
+                  })(notifications)}
+                  {!isNextNote ? null : (
+                    <Flex p={4} justify="center">
+                      <Flex
+                        justify="center"
+                        w="300px"
+                        py={2}
+                        bg="#333"
+                        color="white"
+                        height="auto"
+                        align="center"
+                        sx={{
+                          borderRadius: "20px",
+                          cursor: "pointer",
+                          ":hover": { opacity: 0.75 },
+                        }}
+                        onClick={async () => {
+                          const db = await initNDB()
+                          const _notes = await db.cget(
+                            "notifications",
+                            ["to", "==", user.address],
+                            ["date", "desc"],
+                            ["startAfter", last(notes)],
+                            limit
+                          )
+                          setNotes(concat(notes, _notes))
+                          setIsNextNote(_notes.length >= limit)
+                          const batches = compose(
+                            map(v => [
+                              "update",
+                              { viewed: true },
+                              "notifications",
+                              v.id,
+                            ]),
+                            filter(v => !v.data.viewed)
+                          )(_notes)
+                          if (batches.length > 0)
+                            await db.batch(batches, identity)
+                        }}
+                      >
+                        Load More
+                      </Flex>
+                    </Flex>
+                  )}
+                </>
+              )}
+            </Box>
+            <Box flex={1}></Box>
+          </Flex>
+          <EditPost
+            {...{
+              setEditStatus,
+              setEditPost,
+              editPost,
+            }}
+          />
+          <EditStatus
+            {...{
+              setEditStatus,
+              editStatus,
+              user,
+            }}
+          />
+        </>
+      )}
       <EditUser {...{ setEditUser, editUser, identity, setUser, user }} />
     </ChakraProvider>
   )

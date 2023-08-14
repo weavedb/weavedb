@@ -152,8 +152,7 @@ export const updateProfile = async ({
   if (isEmpty(user) && isNil(image)) return { err: "nothing to update" }
   user.address = address
   let op = "update"
-  if (isNil(_user)) {
-    op = "set"
+  if (isNil(_user?.handle)) {
     user.followers = 0
     user.following = 0
   }

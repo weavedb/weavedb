@@ -227,63 +227,266 @@ function StatusPage() {
           setEditStatus,
         }}
       />
-
-      {isNil(tweet) ? null : (
-        <Flex justify="center" minH="100%" pb={10} pt="50px">
-          <Box flex={1}></Box>
-          <Box w="100%" maxW="760px" minH="100%">
-            {isNil(parent) ? null : (
-              <Tweet
-                {...{
-                  disabled: true,
-                  user,
-                  likes,
-                  setLikes,
-                  isLink: true,
-                  reposted: reposts[parent.data.id],
-                  setTweet: () => {
-                    setTweet(
-                      assocPath(["data", "likes"], parent.data.likes + 1, tweet)
-                    )
-                  },
-                  setRetweet: repost => {
-                    setTweet(
-                      assocPath(
-                        ["data", "reposts"],
-                        parent.data.reposts + 1,
-                        tweet
-                      )
-                    )
-                    setReposts(mergeLeft({ [parent.data.id]: repost }, reposts))
-                  },
-                  tweet: parent.data,
-                  users,
-                  reply: true,
-                }}
-              />
-            )}
-            {tweet.data.reply_to !== "" || isNil(tweet.data.title) ? (
-              <Tweet
-                {...{
-                  setShowReposts,
-                  setShowLikes,
-                  parent: isNil(embed) ? null : tweet.data,
-                  setEditRepost,
-                  main: true,
-                  user,
-                  likes,
-                  setLikes,
-                  isLink: false,
-                  reposted: reposts[tweet.data.id],
-                  delTweet: post => {
-                    setTweet(dissocPath(["data", "date"], tweet))
-                  },
-                  setTweet: () => {
-                    setTweet(
-                      assocPath(["data", "likes"], tweet.data.likes + 1, tweet)
-                    )
-                  },
-                  setRetweet: repost => {
+      {isNil(user?.handle) ? (
+        <Flex justify="center" align="center" w="100%" h="calc(100vh - 50px)">
+          We are currently in private alpha. Sign in to use the dapp.
+        </Flex>
+      ) : (
+        <>
+          {isNil(tweet) ? null : (
+            <Flex justify="center" minH="100%" pb={10} pt="50px">
+              <Box flex={1}></Box>
+              <Box w="100%" maxW="760px" minH="100%">
+                {isNil(parent) ? null : (
+                  <Tweet
+                    {...{
+                      disabled: true,
+                      user,
+                      likes,
+                      setLikes,
+                      isLink: true,
+                      reposted: reposts[parent.data.id],
+                      setTweet: () => {
+                        setTweet(
+                          assocPath(
+                            ["data", "likes"],
+                            parent.data.likes + 1,
+                            tweet
+                          )
+                        )
+                      },
+                      setRetweet: repost => {
+                        setTweet(
+                          assocPath(
+                            ["data", "reposts"],
+                            parent.data.reposts + 1,
+                            tweet
+                          )
+                        )
+                        setReposts(
+                          mergeLeft({ [parent.data.id]: repost }, reposts)
+                        )
+                      },
+                      tweet: parent.data,
+                      users,
+                      reply: true,
+                    }}
+                  />
+                )}
+                {tweet.data.reply_to !== "" || isNil(tweet.data.title) ? (
+                  <Tweet
+                    {...{
+                      setShowReposts,
+                      setShowLikes,
+                      parent: isNil(embed) ? null : tweet.data,
+                      setEditRepost,
+                      main: true,
+                      user,
+                      likes,
+                      setLikes,
+                      isLink: false,
+                      reposted: reposts[tweet.data.id],
+                      delTweet: post => {
+                        setTweet(dissocPath(["data", "date"], tweet))
+                      },
+                      setTweet: () => {
+                        setTweet(
+                          assocPath(
+                            ["data", "likes"],
+                            tweet.data.likes + 1,
+                            tweet
+                          )
+                        )
+                      },
+                      setRetweet: repost => {
+                        setTweet(
+                          assocPath(
+                            ["data", "reposts"],
+                            tweet.data.reposts + 1,
+                            tweet
+                          )
+                        )
+                        setReposts(
+                          mergeLeft({ [tweet.data.id]: repost }, reposts)
+                        )
+                      },
+                      tweet: isNil(embed) ? tweet.data : embed.data,
+                      users,
+                      reply: true,
+                    }}
+                  />
+                ) : (
+                  <Box
+                    pb={3}
+                    maxW="760px"
+                    w="100%"
+                    display="flex"
+                    px={[2, 4, 6]}
+                    sx={{ borderBottom: "1px solid #ccc" }}
+                  >
+                    <Article
+                      {...{
+                        noHeader,
+                        setShowReposts,
+                        setShowLikes,
+                        main: true,
+                        setEditRepost,
+                        reposted: reposts[tweet.data.id],
+                        likes,
+                        setLikes,
+                        delTweet: post => {
+                          setTweet(dissocPath(["data", "date"], tweet))
+                        },
+                        setTweet: () => {
+                          setTweet(
+                            assocPath(
+                              ["data", "likes"],
+                              tweet.data.likes + 1,
+                              tweet
+                            )
+                          )
+                        },
+                        setRetweet: repost => {
+                          setTweet(
+                            assocPath(
+                              ["data", "reposts"],
+                              tweet.data.reposts + 1,
+                              tweet
+                            )
+                          )
+                          setReposts(
+                            mergeLeft({ [tweet.data.id]: repost }, reposts)
+                          )
+                        },
+                      }}
+                      post={tweet.data}
+                      user={user}
+                      puser={users[tweet.data.owner]}
+                    />
+                  </Box>
+                )}
+                {isDeleted || isNil(user) ? null : (
+                  <Flex
+                    p={4}
+                    onClick={() => {
+                      setReplyTo(tweet.data.id)
+                      setRepost(null)
+                      setEditStatus(true)
+                    }}
+                    sx={{
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                      borderBottom: "1px solid #ccc",
+                    }}
+                    align="center"
+                  >
+                    <Image
+                      src={user.image ?? "/images/default-icon.png"}
+                      boxSize="35px"
+                      m={1}
+                      sx={{ borderRadius: "50%" }}
+                    />
+                    <Box flex={1} color="#666" pl={4}>
+                      Write your reply!
+                    </Box>
+                    <Flex
+                      mx={2}
+                      px={8}
+                      py={2}
+                      bg="#333"
+                      color="white"
+                      height="auto"
+                      align="center"
+                      sx={{
+                        borderRadius: "20px",
+                      }}
+                    >
+                      Reply
+                    </Flex>
+                  </Flex>
+                )}
+                {addIndex(map)((v, i) => (
+                  <>
+                    <Tweet
+                      {...{
+                        reposts,
+                        isLast: true,
+                        isComment: true,
+                        setEditRepost,
+                        user,
+                        likes,
+                        setLikes,
+                        reposted: reposts[v.id],
+                        setRetweet: repost => {
+                          let _comments = clone(comments)
+                          for (let v2 of _comments) {
+                            if (v.id === v2.id) v2.data.reposts += 1
+                          }
+                          setComments(_comments)
+                          setReposts(assoc(v.id, repost, reposts))
+                        },
+                        setTweet: () => {
+                          let _comments = clone(comments)
+                          for (let v2 of _comments) {
+                            if (v2.id === v.id) v2.data.likes += 1
+                          }
+                          setComments(_comments)
+                        },
+                        tweet: v,
+                        users,
+                        reply: true,
+                      }}
+                    />
+                  </>
+                ))(pluck("data")(comments))}
+                {!isNextComment ? null : (
+                  <Flex p={4} justify="center">
+                    <Flex
+                      justify="center"
+                      w="300px"
+                      py={2}
+                      bg="#333"
+                      color="white"
+                      height="auto"
+                      align="center"
+                      sx={{
+                        borderRadius: "20px",
+                        cursor: "pointer",
+                        ":hover": { opacity: 0.75 },
+                      }}
+                      onClick={async () => {
+                        const db = await initDB()
+                        const _comments = await db.cget(
+                          "posts",
+                          ["reply_to", "==", tweet.data.id],
+                          ["date", "desc"],
+                          ["startAfter", last(comments)],
+                          limit
+                        )
+                        setComments(concat(comments, _comments))
+                        setIsNextComment(_comments.length >= limit)
+                      }}
+                    >
+                      Load More
+                    </Flex>
+                  </Flex>
+                )}
+              </Box>
+              <Box flex={1}></Box>
+            </Flex>
+          )}
+          {isNil(tweet) ? null : (
+            <EditRepost
+              user={user}
+              {...{
+                setRepost,
+                setReplyTo,
+                setEditStatus,
+                reposted: reposts[editRepost?.id],
+                setEditRepost,
+                editRepost,
+                setRetweet: repost => {
+                  if (editRepost.id === tweet.data.id) {
                     setTweet(
                       assocPath(
                         ["data", "reposts"],
@@ -292,287 +495,109 @@ function StatusPage() {
                       )
                     )
                     setReposts(mergeLeft({ [tweet.data.id]: repost }, reposts))
-                  },
-                  tweet: isNil(embed) ? tweet.data : embed.data,
-                  users,
-                  reply: true,
-                }}
-              />
-            ) : (
-              <Box
-                pb={3}
-                maxW="760px"
-                w="100%"
-                display="flex"
-                px={[2, 4, 6]}
-                sx={{ borderBottom: "1px solid #ccc" }}
-              >
-                <Article
-                  {...{
-                    noHeader,
-                    setShowReposts,
-                    setShowLikes,
-                    main: true,
-                    setEditRepost,
-                    reposted: reposts[tweet.data.id],
-                    likes,
-                    setLikes,
-                    delTweet: post => {
-                      setTweet(dissocPath(["data", "date"], tweet))
-                    },
-                    setTweet: () => {
-                      setTweet(
-                        assocPath(
-                          ["data", "likes"],
-                          tweet.data.likes + 1,
-                          tweet
-                        )
-                      )
-                    },
-                    setRetweet: repost => {
-                      setTweet(
-                        assocPath(
+                  } else {
+                    let _comments = clone(comments)
+                    for (let v of _comments) {
+                      if (v.id === repost.repost) v.data.reposts += 1
+                    }
+                    setComments(_comments)
+                    setReposts(assoc(repost.repost, repost, reposts))
+                  }
+                },
+              }}
+            />
+          )}
+          {showLikes ? <Likes {...{ setShowLikes, post: tweet.data }} /> : null}
+          {showReposts ? (
+            <Reposts {...{ setShowReposts, post: tweet.data }} />
+          ) : null}
+          <EditPost
+            {...{
+              setEditStatus,
+              setEditPost,
+              editPost,
+              setReplyTo,
+            }}
+          />
+          <EditStatus
+            {...{
+              tweet: tweet?.data,
+              repost,
+              users,
+              setEditStatus,
+              editStatus,
+              user,
+              replyTo,
+              setPost: isNil(replyTo)
+                ? null
+                : post => {
+                    if (isNil(repost)) {
+                      if (post.repost === tweet.data.id) {
+                        let new_post = assocPath(
                           ["data", "reposts"],
                           tweet.data.reposts + 1,
                           tweet
                         )
-                      )
-                      setReposts(
-                        mergeLeft({ [tweet.data.id]: repost }, reposts)
-                      )
-                    },
-                  }}
-                  post={tweet.data}
-                  user={user}
-                  puser={users[tweet.data.owner]}
-                />
-              </Box>
-            )}
-            {isDeleted || isNil(user) ? null : (
-              <Flex
-                p={4}
-                onClick={() => {
-                  setReplyTo(tweet.data.id)
-                  setRepost(null)
-                  setEditStatus(true)
-                }}
-                sx={{
-                  cursor: "pointer",
-                  ":hover": { opacity: 0.75 },
-                  borderBottom: "1px solid #ccc",
-                }}
-                align="center"
-              >
-                <Image
-                  src={user.image ?? "/images/default-icon.png"}
-                  boxSize="35px"
-                  m={1}
-                  sx={{ borderRadius: "50%" }}
-                />
-                <Box flex={1} color="#666" pl={4}>
-                  Write your reply!
-                </Box>
-                <Flex
-                  mx={2}
-                  px={8}
-                  py={2}
-                  bg="#333"
-                  color="white"
-                  height="auto"
-                  align="center"
-                  sx={{
-                    borderRadius: "20px",
-                  }}
-                >
-                  Reply
-                </Flex>
-              </Flex>
-            )}
-            {addIndex(map)((v, i) => (
-              <>
-                <Tweet
-                  {...{
-                    reposts,
-                    isLast: true,
-                    isComment: true,
-                    setEditRepost,
-                    user,
-                    likes,
-                    setLikes,
-                    reposted: reposts[v.id],
-                    setRetweet: repost => {
-                      let _comments = clone(comments)
-                      for (let v2 of _comments) {
-                        if (v.id === v2.id) v2.data.reposts += 1
+                        if (!isNil(post.description)) {
+                          new_post = assocPath(
+                            ["data", "quotes"],
+                            new_post.data.quotes + 1,
+                            new_post
+                          )
+                        }
+                        setTweet(new_post)
+                      } else {
+                        setTweet(
+                          assocPath(
+                            ["data", "comments"],
+                            tweet.data.comments + 1,
+                            tweet
+                          )
+                        )
+                        if (!isNil(parent)) {
+                          setParent(
+                            assocPath(
+                              ["data", "comments"],
+                              parent.data.comments + 1,
+                              parent
+                            )
+                          )
+                        }
                       }
-                      setComments(_comments)
-                      setReposts(assoc(v.id, repost, reposts))
-                    },
-                    setTweet: () => {
-                      let _comments = clone(comments)
-                      for (let v2 of _comments) {
-                        if (v2.id === v.id) v2.data.likes += 1
+                      setComments(
+                        prepend({ id: post.id, data: post }, comments)
+                      )
+                    } else {
+                      if (post.repost === tweet.data.id) {
+                        let new_post = assocPath(
+                          ["data", "reposts"],
+                          tweet.data.reposts + 1,
+                          tweet
+                        )
+                        if (!isNil(post.description)) {
+                          new_post = assocPath(
+                            ["data", "quotes"],
+                            new_post.data.quotes + 1,
+                            new_post
+                          )
+                        }
+                        setTweet(new_post)
+                      } else {
+                        let _comments = clone(comments)
+                        for (let v of _comments) {
+                          if (v.data.id === post.repost) {
+                            v.data.reposts += 1
+                          }
+                        }
+                        setComments(_comments)
                       }
-                      setComments(_comments)
-                    },
-                    tweet: v,
-                    users,
-                    reply: true,
-                  }}
-                />
-              </>
-            ))(pluck("data")(comments))}
-            {!isNextComment ? null : (
-              <Flex p={4} justify="center">
-                <Flex
-                  justify="center"
-                  w="300px"
-                  py={2}
-                  bg="#333"
-                  color="white"
-                  height="auto"
-                  align="center"
-                  sx={{
-                    borderRadius: "20px",
-                    cursor: "pointer",
-                    ":hover": { opacity: 0.75 },
-                  }}
-                  onClick={async () => {
-                    const db = await initDB()
-                    const _comments = await db.cget(
-                      "posts",
-                      ["reply_to", "==", tweet.data.id],
-                      ["date", "desc"],
-                      ["startAfter", last(comments)],
-                      limit
-                    )
-                    setComments(concat(comments, _comments))
-                    setIsNextComment(_comments.length >= limit)
-                  }}
-                >
-                  Load More
-                </Flex>
-              </Flex>
-            )}
-          </Box>
-          <Box flex={1}></Box>
-        </Flex>
+                    }
+                  },
+            }}
+          />
+        </>
       )}
       <EditUser {...{ setEditUser, editUser, identity, setUser, user }} />
-      {isNil(tweet) ? null : (
-        <EditRepost
-          user={user}
-          {...{
-            setRepost,
-            setReplyTo,
-            setEditStatus,
-            reposted: reposts[editRepost?.id],
-            setEditRepost,
-            editRepost,
-            setRetweet: repost => {
-              if (editRepost.id === tweet.data.id) {
-                setTweet(
-                  assocPath(["data", "reposts"], tweet.data.reposts + 1, tweet)
-                )
-                setReposts(mergeLeft({ [tweet.data.id]: repost }, reposts))
-              } else {
-                let _comments = clone(comments)
-                for (let v of _comments) {
-                  if (v.id === repost.repost) v.data.reposts += 1
-                }
-                setComments(_comments)
-                setReposts(assoc(repost.repost, repost, reposts))
-              }
-            },
-          }}
-        />
-      )}
-      {showLikes ? <Likes {...{ setShowLikes, post: tweet.data }} /> : null}
-      {showReposts ? (
-        <Reposts {...{ setShowReposts, post: tweet.data }} />
-      ) : null}
-      <EditPost
-        {...{
-          setEditStatus,
-          setEditPost,
-          editPost,
-          setReplyTo,
-        }}
-      />
-      <EditStatus
-        {...{
-          tweet: tweet?.data,
-          repost,
-          users,
-          setEditStatus,
-          editStatus,
-          user,
-          replyTo,
-          setPost: isNil(replyTo)
-            ? null
-            : post => {
-                if (isNil(repost)) {
-                  if (post.repost === tweet.data.id) {
-                    let new_post = assocPath(
-                      ["data", "reposts"],
-                      tweet.data.reposts + 1,
-                      tweet
-                    )
-                    if (!isNil(post.description)) {
-                      new_post = assocPath(
-                        ["data", "quotes"],
-                        new_post.data.quotes + 1,
-                        new_post
-                      )
-                    }
-                    setTweet(new_post)
-                  } else {
-                    setTweet(
-                      assocPath(
-                        ["data", "comments"],
-                        tweet.data.comments + 1,
-                        tweet
-                      )
-                    )
-                    if (!isNil(parent)) {
-                      setParent(
-                        assocPath(
-                          ["data", "comments"],
-                          parent.data.comments + 1,
-                          parent
-                        )
-                      )
-                    }
-                  }
-                  setComments(prepend({ id: post.id, data: post }, comments))
-                } else {
-                  if (post.repost === tweet.data.id) {
-                    let new_post = assocPath(
-                      ["data", "reposts"],
-                      tweet.data.reposts + 1,
-                      tweet
-                    )
-                    if (!isNil(post.description)) {
-                      new_post = assocPath(
-                        ["data", "quotes"],
-                        new_post.data.quotes + 1,
-                        new_post
-                      )
-                    }
-                    setTweet(new_post)
-                  } else {
-                    let _comments = clone(comments)
-                    for (let v of _comments) {
-                      if (v.data.id === post.repost) {
-                        v.data.reposts += 1
-                      }
-                    }
-                    setComments(_comments)
-                  }
-                }
-              },
-        }}
-      />
     </ChakraProvider>
   )
 }
