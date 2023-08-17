@@ -55,11 +55,11 @@ function Page() {
       const db = await initDB()
       const _posts = await db.cget(
         "posts",
-        ["date", "desc"],
-        ["reply_to", "==", ""],
-        ["repost", "==", ""],
+        ["pt", "desc"],
+        ["type", "==", "article"],
         limit
       )
+      console.log(_posts)
       setPosts(_posts)
       setIsNext(_posts.length >= limit)
       setTweets(
@@ -182,7 +182,7 @@ function Page() {
   }, [timeline])
 
   const tabs = [
-    { key: "all", name: "All Posts" },
+    { key: "all", name: "Trending" },
     { key: "following", name: "Following" },
   ]
 
@@ -389,9 +389,8 @@ function Page() {
                           const db = await initDB()
                           const _posts = await db.cget(
                             "posts",
-                            ["date", "desc"],
-                            ["reply_to", "==", ""],
-                            ["repost", "==", ""],
+                            ["pt", "desc"],
+                            ["type", "==", "desc"],
                             ["startAfter", last(posts)],
                             limit
                           )

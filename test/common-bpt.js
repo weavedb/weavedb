@@ -589,6 +589,171 @@ const tests = {
     expect(err).to.eql(true)
     expect(await db.get("ppl", ["age"], ["a", "in", [1]])).to.eql([bob])
   },
+  "should run triggers": async ({ db, arweave_wallet }) => {
+    const trigger = {
+      key: "inc-count",
+      on: "create",
+      func: [
+        ["get", "art", ["posts", { var: "data.after.aid" }]],
+        [
+          "let",
+          "week",
+          ["subtract", { var: "block.timestamp" }, 60 * 60 * 24 * 7],
+        ],
+        [
+          "let",
+          "new_pt",
+          [
+            "add",
+            1,
+            [
+              "multiply",
+              ["defaultTo", 0, { var: "art.pt" }],
+              [
+                "subtract",
+                1,
+                [
+                  "divide",
+                  [
+                    "subtract",
+                    { var: "block.timestamp" },
+                    ["defaultTo", { var: "week" }, { var: "art.ptts" }],
+                  ],
+                  { var: "week" },
+                ],
+              ],
+            ],
+          ],
+        ],
+        [
+          "update",
+          [
+            {
+              likes: db.inc(1),
+              pt: { var: "new_pt" },
+              ptts: db.ts(),
+              last_like: db.ts(),
+            },
+            "posts",
+            { var: `data.after.aid` },
+          ],
+        ],
+      ],
+    }
+    await db.addTrigger(trigger, "likes", { ar: arweave_wallet })
+    await db.set({ id: "id-1", likes: 3 }, "posts", "id-1", {
+      ar: arweave_wallet,
+    })
+    await db.add({ aid: "id-1" }, "likes", { ar: arweave_wallet })
+    await db.add({ aid: "id-1" }, "likes", { ar: arweave_wallet })
+    await db.add({ aid: "id-1" }, "likes", { ar: arweave_wallet })
+    expect((await db.get("posts", "id-1")).likes).to.eql(6)
+  },
+  "should handle conditions with cron.only": async ({ db, arweave_wallet }) => {
+    await db.set({ age: 1 }, "ppl", "Bob")
+    await db.addCron(
+      {
+        do: true,
+        times: 1,
+        span: 1,
+        jobs: [["update", [{ age: db.inc(1) }, "ppl", "Bob"]]],
+      },
+      "inc_age",
+      {
+        ar: arweave_wallet,
+      }
+    )
+    expect((await db.get("ppl", "Bob")).age).to.eql(2)
+
+    await db.addCron(
+      {
+        do: true,
+        times: 1,
+        span: 1,
+        jobs: [["break"], ["update", [{ age: db.inc(1) }, "ppl", "Bob"]]],
+      },
+      "inc_age",
+      {
+        ar: arweave_wallet,
+      }
+    )
+    expect((await db.get("ppl", "Bob")).age).to.eql(2)
+
+    await db.addCron(
+      {
+        do: true,
+        times: 1,
+        span: 1,
+        jobs: [["break"], ["update", [{ age: db.inc(1) }, "ppl", "Bob"]]],
+      },
+      "inc_age",
+      {
+        ar: arweave_wallet,
+      }
+    )
+    expect((await db.get("ppl", "Bob")).age).to.eql(2)
+
+    await db.addCron(
+      {
+        do: true,
+        times: 1,
+        span: 1,
+        jobs: [
+          [
+            "if",
+            ["identity", false],
+            ["update", [{ age: db.inc(1) }, "ppl", "Bob"]],
+          ],
+        ],
+      },
+      "inc_age",
+      {
+        ar: arweave_wallet,
+      }
+    )
+    expect((await db.get("ppl", "Bob")).age).to.eql(2)
+
+    await db.addCron(
+      {
+        do: true,
+        times: 1,
+        span: 1,
+        jobs: [
+          [
+            "if",
+            ["identity", true],
+            ["update", [{ age: db.inc(1) }, "ppl", "Bob"]],
+          ],
+        ],
+      },
+      "inc_age",
+      {
+        ar: arweave_wallet,
+      }
+    )
+    expect((await db.get("ppl", "Bob")).age).to.eql(3)
+
+    await db.addCron(
+      {
+        do: true,
+        times: 1,
+        span: 1,
+        jobs: [
+          [
+            "ifelse",
+            ["identity", false],
+            ["update", [{ age: db.inc(1) }, "ppl", "Bob"]],
+            ["update", [{ age: db.inc(2) }, "ppl", "Bob"]],
+          ],
+        ],
+      },
+      "inc_age",
+      {
+        ar: arweave_wallet,
+      }
+    )
+    expect((await db.get("ppl", "Bob")).age).to.eql(5)
+  },
 }
 
 module.exports = { tests }
