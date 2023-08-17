@@ -223,7 +223,9 @@ export default function Editor() {
                       anchorElem={floatingAnchorElem}
                       cellMerge={true}
                     />
-                    <FloatingTextFormatToolbarPlugin />
+                    <FloatingTextFormatToolbarPlugin
+                      anchorElem={floatingAnchorElem}
+                    />
                   </>
                 )}
               </>

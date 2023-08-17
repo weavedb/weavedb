@@ -36,9 +36,19 @@ const executeCron =
       return query
     }
     for (let job of cron.crons.jobs) {
-      const op = head(job)
+      let op = head(job)
       let _var = null
       let query = null
+      if (op === "if") {
+        if (!fpjson(job[1], vars)) continue
+        job = job[2]
+        op = head(job)
+      }
+      if (op === "ifelse") {
+        job = fpjson(job[1], vars) ? job[2] : job[3]
+        op = head(job)
+      }
+      if (op === "break") break
       if (includes(op)(["get", "let"])) {
         _var = job[1]
         query = job[2]

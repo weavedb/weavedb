@@ -1,4 +1,5 @@
 import { Box, Flex, Image } from "@chakra-ui/react"
+import sanitizeHtml from "sanitize-html"
 import Link from "next/link"
 import { mergeLeft, isNil } from "ramda"
 import { deletePost, repostPost, likePost } from "../lib/db"
