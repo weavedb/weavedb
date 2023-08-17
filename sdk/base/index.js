@@ -1194,6 +1194,7 @@ for (const v of reads) {
 }
 
 const writes = [
+  "tick",
   "relay",
   "set",
   "delete",

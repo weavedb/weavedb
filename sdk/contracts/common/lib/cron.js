@@ -129,7 +129,7 @@ const cron = ops => async (state, SmartWeave, _kvs) => {
     }
   }
   _state.crons.lastExecuted = SmartWeave.block.timestamp
-  return { state: _state }
+  return { state: _state, count: crons.length }
 }
 
 module.exports = { cron, executeCron }

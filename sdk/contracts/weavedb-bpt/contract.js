@@ -1,9 +1,11 @@
 const { hash } = require("../common/actions/read/hash")
 const { getCrons } = require("../common/actions/read/getCrons")
 const { getAlgorithms } = require("../common/actions/read/getAlgorithms")
+
 const {
   getLinkedContract,
 } = require("../common/actions/read/getLinkedContract")
+
 const { getOwner } = require("../common/actions/read/getOwner")
 const { getAddressLink } = require("../common/actions/read/getAddressLink")
 const { getRelayerJob } = require("../common/actions/read/getRelayerJob")
@@ -23,6 +25,7 @@ const { getIndexes } = require("./actions/read/getIndexes")
 const { listCollections } = require("./actions/read/listCollections")
 
 const { set } = require("./actions/write/set")
+const { tick } = require("./actions/write/tick")
 const { upsert } = require("./actions/write/upsert")
 const { update } = require("./actions/write/update")
 const { remove } = require("./actions/write/remove")
@@ -112,14 +115,14 @@ async function handle(state, action, _SmartWeave) {
   ) {
     err("contract needs migration")
   }
+  let count = 0
   try {
     let _kvs = {}
-    ;({ state } = await cron(state, _SmartWeave, _kvs))
+    ;({ state, count } = await cron(state, _SmartWeave, _kvs))
     kvs = _kvs
   } catch (e) {
     console.log(e)
   }
-
   const readParams = [state, action, _SmartWeave, kvs]
   const writeParams = [
     state,
@@ -175,6 +178,11 @@ async function handle(state, action, _SmartWeave) {
 
     case "getEvolve":
       return await getEvolve(...readParams)
+    case "tick":
+      return await addHash(_SmartWeave)(
+        await tick(...writeParams, undefined, undefined, count)
+      )
+
     case "add":
       res = await addHash(_SmartWeave)(
         await add(

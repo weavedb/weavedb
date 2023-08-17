@@ -649,7 +649,7 @@ const tests = {
     await db.add({ aid: "id-1" }, "likes", { ar: arweave_wallet })
     expect((await db.get("posts", "id-1")).likes).to.eql(6)
   },
-  "should handle conditions with cron.only": async ({ db, arweave_wallet }) => {
+  "should handle conditions with cron": async ({ db, arweave_wallet }) => {
     await db.set({ age: 1 }, "ppl", "Bob")
     await db.addCron(
       {
@@ -753,6 +753,28 @@ const tests = {
       }
     )
     expect((await db.get("ppl", "Bob")).age).to.eql(5)
+  },
+  "should tick.only": async ({ db, arweave_wallet }) => {
+    await db.addCron(
+      {
+        span: 1,
+        times: 2,
+        jobs: [["get", "ppl", ["ppl"]]],
+      },
+      "ticker",
+      {
+        ar: arweave_wallet,
+      }
+    )
+    let success = false
+    while (true) {
+      const tx = await db.tick()
+      if (tx.success) {
+        success = true
+        break
+      }
+    }
+    expect(success).to.eql(true)
   },
 }
 

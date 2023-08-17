@@ -1,4 +1,3 @@
-const { validate } = require("../../lib/validate")
 const { err, wrapResult, read } = require("../../../common/lib/utils")
 const { clone } = require("../../../common/lib/pure")
 const { isNil, includes } = require("ramda")
