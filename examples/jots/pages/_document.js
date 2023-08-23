@@ -1,9 +1,9 @@
 import { Html, Head, Main, NextScript } from "next/document"
 
 export default function Document() {
-  const title = "Witter"
+  const title = "Jots Social"
   const description = "Decentralized Social Protocol"
-  const image = "https://witter.weavedb.dev/images/cover.png"
+  const image = "https://jots.weavedb.dev/images/cover.png"
   return (
     <Html lang="en">
       <Head>
