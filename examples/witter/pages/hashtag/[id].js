@@ -38,7 +38,9 @@ import { checkUser, initDB, getTweets, getUsers } from "../../lib/db"
 const limit = 10
 function Page() {
   const [posts, setPosts] = useState([])
+  const [trends, setTrends] = useState([])
   const [isNext, setIsNext] = useState(false)
+  const [isNextTrends, setIsNextTrends] = useState(false)
   const [isNextUsers, setIsNextUsers] = useState(false)
   const [users, setUsers] = useState({})
   const [user, setUser] = useState(null)
@@ -52,7 +54,6 @@ function Page() {
   const [tweets, setTweets] = useState({})
   const [likes, setLikes] = useState({})
   const router = useRouter()
-
   useEffect(() => {
     ;(async () => {
       if (!isNil(router.query?.id)) {
@@ -65,8 +66,20 @@ function Page() {
         )
         setPosts(_posts)
         setIsNext(_posts.length >= limit)
+        const _trends = await db.cget(
+          "posts",
+          ["hashes", "array-contains", router.query.id.toLowerCase()],
+          ["pt", "desc"],
+          limit
+        )
+        setTrends(_trends)
+        setIsNextTrends(_trends.length >= limit)
+        let _tweets = mergeLeft(
+          compose(indexBy(path(["data", "id"])))(_posts),
+          tweets
+        )
         setTweets(
-          mergeLeft(compose(indexBy(path(["data", "id"])))(_posts), tweets)
+          mergeLeft(compose(indexBy(path(["data", "id"])))(_trends), _tweets)
         )
         const _users = await db.cget(
           "users",
@@ -167,7 +180,8 @@ function Page() {
   }, [])
 
   const tabs = [
-    { key: "all", name: "Latest" },
+    { key: "all", name: "Trending" },
+    { key: "new", name: "Latest" },
     { key: "users", name: "Users" },
   ]
 
@@ -284,7 +298,7 @@ function Page() {
                       </Link>
                     )
                   })(pluck("data", husers))}
-                  {!isNextUsers ? null : (
+                  {!isNextUsers || tab !== "users" ? null : (
                     <Flex p={4} justify="center">
                       <Flex
                         justify="center"
@@ -341,8 +355,8 @@ function Page() {
                       }}
                       body={v.description}
                     />
-                  ))(pluck("data", posts))}
-                  {!isNext ? null : (
+                  ))(pluck("data", tab === "all" ? trends : posts))}
+                  {!isNext || tab !== "new" ? null : (
                     <Flex p={4} justify="center">
                       <Flex
                         justify="center"
@@ -372,6 +386,42 @@ function Page() {
                           )
                           setPosts(concat(posts, _posts))
                           setIsNext(_posts.length >= limit)
+                        }}
+                      >
+                        Load More
+                      </Flex>
+                    </Flex>
+                  )}
+                  {!isNextTrends || tab !== "all" ? null : (
+                    <Flex p={4} justify="center">
+                      <Flex
+                        justify="center"
+                        w="300px"
+                        py={2}
+                        bg="#333"
+                        color="white"
+                        height="auto"
+                        align="center"
+                        sx={{
+                          borderRadius: "20px",
+                          cursor: "pointer",
+                          ":hover": { opacity: 0.75 },
+                        }}
+                        onClick={async () => {
+                          const db = await initDB()
+                          const _trends = await db.cget(
+                            "posts",
+                            [
+                              "hashes",
+                              "array-contains",
+                              router.query.id.toLowerCase(),
+                            ],
+                            ["pt", "desc"],
+                            ["startAfter", last(trends)],
+                            limit
+                          )
+                          setTrends(concat(trends, _trends))
+                          setIsNextTrends(_trends.length >= limit)
                         }}
                       >
                         Load More

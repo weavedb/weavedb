@@ -59,7 +59,6 @@ function Page() {
         ["type", "==", "article"],
         limit
       )
-      console.log(_posts)
       setPosts(_posts)
       setIsNext(_posts.length >= limit)
       setTweets(
