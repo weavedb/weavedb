@@ -15,6 +15,17 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.28.14-alpha (August 25, 2023)
+
+#### Source Transaction Id
+
+[9VvyP3R36CAsF9MqeRVwmadvYAsrnh4JwlvZqSIBPVA](https://sonar.warp.cc/#/app/source/9VvyP3R36CAsF9MqeRVwmadvYAsrnh4JwlvZqSIBPVA)
+
+#### Added Features
+
+- [tick](/docs/sdk/crons/#tick)
+- [conditional statements](https://fpjson.weavedb.dev) for FPJSON
+
 ### v0.28.13-alpha (August 14, 2023)
 
 #### Source Transaction Id
@@ -23,7 +34,7 @@ await db.getVersion()
 
 #### Added Features
 
--  fix inequality indexes
+- fix inequality indexes
 
 ### v0.28.12-alpha (August 1, 2023)
 
@@ -33,7 +44,7 @@ await db.getVersion()
 
 #### Added Features
 
--  [data()](/docs/sdk/queries#data)
+- [data()](/docs/sdk/queries#data)
 
 ### v0.28.11-alpha (July 30, 2023)
 
@@ -43,7 +54,7 @@ await db.getVersion()
 
 #### Added Features
 
--  fix index pagination with cursor
+- fix index pagination with cursor
 
 ### v0.28.10-alpha (July 28, 2023)
 
@@ -53,7 +64,7 @@ await db.getVersion()
 
 #### Added Features
 
--  fix cron/trigger executions
+- fix cron/trigger executions
 
 ### v0.28.9-alpha (July 26, 2023)
 
@@ -63,7 +74,7 @@ await db.getVersion()
 
 #### Added Features
 
--  == with !=
+- == with !=
 
 ### v0.28.8-alpha (July 26, 2023)
 
@@ -73,7 +84,7 @@ await db.getVersion()
 
 #### Added Features
 
--  multiple == with sort
+- multiple == with sort
 
 ### v0.28.7-alpha (July 25, 2023)
 
@@ -83,7 +94,7 @@ await db.getVersion()
 
 #### Added Features
 
--  == with sort
+- == with sort
 
 ### v0.28.6-alpha (July 25, 2023)
 
@@ -93,7 +104,7 @@ await db.getVersion()
 
 #### Added Features
 
--  in/not-in/!=/array-contains-any with sort
+- in/not-in/!=/array-contains-any with sort
 
 ### v0.28.5-alpha (July 25, 2023)
 
@@ -103,7 +114,7 @@ await db.getVersion()
 
 #### Added Features
 
--  fix relay query with bundle
+- fix relay query with bundle
 
 ### v0.28.4-alpha (July 23, 2023)
 
@@ -113,7 +124,7 @@ await db.getVersion()
 
 #### Added Features
 
--  fix B+ indexer #2
+- fix B+ indexer #2
 
 ### v0.28.3-alpha (July 22, 2023)
 
@@ -123,7 +134,7 @@ await db.getVersion()
 
 #### Added Features
 
--  fix B+ tree indexer
+- fix B+ tree indexer
 
 ### v0.28.2-alpha (July 22, 2023)
 
@@ -133,7 +144,7 @@ await db.getVersion()
 
 #### Added Features
 
--  [setBundlers / getBundlers](/docs/sdk/queries#setbundlers--getbundlers)
+- [setBundlers / getBundlers](/docs/sdk/queries#setbundlers--getbundlers)
 
 ### v0.28.1-alpha (July 20, 2023)
 
@@ -143,7 +154,7 @@ await db.getVersion()
 
 #### Added Features
 
--  remove signature from [bundle query](/docs/sdk/queries#bundle)
+- remove signature from [bundle query](/docs/sdk/queries#bundle)
 
 ### v0.28.0-alpha (July 20, 2023)
 
@@ -153,7 +164,7 @@ await db.getVersion()
 
 #### Added Features
 
--  new B+ tree indexer
+- new B+ tree indexer
 
 ### v0.27.0-alpha (May 20, 2023)
 
@@ -163,7 +174,7 @@ await db.getVersion()
 
 #### Added Features
 
--  use [kv storage](https://academy.warp.cc/docs/sdk/advanced/kv-storage) for data and indexes
+- use [kv storage](https://academy.warp.cc/docs/sdk/advanced/kv-storage) for data and indexes
 - [triggers](/docs/sdk/triggers)
 
 ### v0.26.4 (July 3, 2023)
@@ -184,7 +195,7 @@ await db.getVersion()
 
 #### Added Features
 
--  [dot notation](/docs/sdk/queries#where)
+- [dot notation](/docs/sdk/queries#where)
 
 ### v0.26.2 (June 12, 2023)
 
@@ -194,7 +205,7 @@ await db.getVersion()
 
 #### Added Features
 
--  [internal writes](/docs/sdk/relayers#internal-writes)
+- [internal writes](/docs/sdk/relayers#internal-writes)
 
 ### v0.26.1 (June 9, 2023)
 
@@ -204,7 +215,7 @@ await db.getVersion()
 
 #### Added Features
 
--  fix a minor index bug
+- fix a minor index bug
 
 ### v0.26.0 (Mar 21, 2023)
 
@@ -214,7 +225,7 @@ await db.getVersion()
 
 #### Added Features
 
--  [bundle query](/docs/sdk/queries#bundle)
+- [bundle query](/docs/sdk/queries#bundle)
 
 ### v0.25.0 (Mar 10, 2023)
 
@@ -224,7 +235,7 @@ await db.getVersion()
 
 #### Added Features
 
--  built-in Lens Profile authentication
+- built-in Lens Profile authentication
 
 ### v0.24.0 (Mar 09, 2023)
 

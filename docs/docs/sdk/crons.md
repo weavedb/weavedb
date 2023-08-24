@@ -76,6 +76,14 @@ await db.getCrons()
 await db.removeCrons("count-crons")
 ```
 
+## Tick
+
+Cron executions are recorded to contract when someone executes a write query, which means if no one executes anything for a long time, cron jobs can pile up and slow down every read query. In such cases, you could execute `tick()` query, which does nothing but record cron executions.
+
+```js
+await db.tick()
+```
+
 ## JSON-based Functional Programming
 
 Since JS functions cannot be stored as SmartWeave states, we have invented a little new programming lanuguage called [FPJSON](https://fpjson.weavedb.dev) to allow writing functional instructions in the JSON format.
