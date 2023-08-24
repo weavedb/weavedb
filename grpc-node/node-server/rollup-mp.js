@@ -373,4 +373,18 @@ class Rollup {
   }
 }
 
-module.exports = { Rollup }
+let rollup
+process.on("message", ({ op, id, params }) => {
+  if (op === "new") {
+    rollup = new Rollup(params)
+  } else if (op === "init") {
+    rollup.init()
+  } else if (op === "execUser") {
+    rollup.execUser({
+      ...params,
+      res: (err, result) => process.send({ err, result, op, id }),
+    })
+  } else {
+    process.send({ op, id })
+  }
+})
