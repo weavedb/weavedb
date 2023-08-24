@@ -8,4 +8,4 @@ RUN npm install
 
 EXPOSE 9090
 
-CMD ["node", "standalone.js"]
+CMD ["node", "standalone-mp.js"]
