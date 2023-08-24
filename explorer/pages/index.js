@@ -6,21 +6,36 @@ import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
 dayjs.extend(relativeTime)
 let db = null
+let to = null
 export default function Home() {
-  const [txs, setTxs] = useState(null)
+  const [txs, setTxs] = useState([])
   const [tx, setTx] = useState(null)
   const [isnext, setIsnext] = useState(false)
+  const [tick, setTick] = useState(0)
+  useEffect(() => {
+    ;(async () => {
+      clearTimeout(to)
+      db = new DB({
+        contractTxId: "offchain#log",
+        rpc: process.env.NEXT_PUBLIC_WEAVEDB_RPC,
+      })
+      const _txs = await db.cget("txs", ["id", "desc"], 20)
+      setTxs(_txs)
+      setIsnext(_txs.length === 20)
+      let i = 0
+      setInterval(async () => setTick(++i), 5000)
+    })()
+  }, [])
   useEffect(() => {
     ;(async () => {
       db = new DB({
-        contractTxId: "offchaing#log",
+        contractTxId: "offchain#log",
         rpc: process.env.NEXT_PUBLIC_WEAVEDB_RPC,
       })
-      const txs = await db.cget("txs", ["id", "desc"], 20)
-      setTxs(txs)
-      setIsnext(txs.length === 20)
-    })([])
-  }, [])
+      const _txs = await db.cget("txs", ["id", "desc"], ["endBefore", txs[0]])
+      if (_txs.length > 0) setTxs(concat(_txs, txs))
+    })()
+  }, [tick])
   return (
     <>
       <style global jsx>{`
@@ -30,16 +45,19 @@ export default function Home() {
           height: 100%;
         }
       `}</style>
-      <Box p={6} fontSize="12px" width="100%" minH="100%" bg="#eee">
-        <Flex pb={6} justify="center">
-          <Box as="span" mx={2}>
-            WeaveDB Explorer
-          </Box>
-          /
-          <Box as="span" mx={2}>
-            {process.env.NEXT_PUBLIC_WEAVEDB_RPC}
-          </Box>
-          /
+      <Flex
+        justify="center"
+        sx={{ position: "fixed", top: 0, left: 0 }}
+        height="50px"
+        align="center"
+        w="100%"
+        px={6}
+      >
+        <Box as="span" mx={2} fontWeight="bold">
+          WeaveDB Rollup Explorer
+        </Box>
+        <Box flex={1} />
+        {isNil(process.env.NEXT_PUBLIC_CONTRACT_TX_ID) ? null : (
           <Box
             as="a"
             target="_blank"
@@ -50,9 +68,19 @@ export default function Home() {
           >
             {process.env.NEXT_PUBLIC_CONTRACT_TX_ID}
           </Box>
-        </Flex>
-        {txs === null ? null : (
-          <Box w="100%" bg="white" p={6} sx={{ borderRadius: "10px" }}>
+        )}
+      </Flex>
+      <Box
+        pb={6}
+        pt="50px"
+        px={6}
+        fontSize="12px"
+        width="100%"
+        minH="100%"
+        bg="#eee"
+      >
+        {txs.length === 0 ? null : (
+          <Box w="100%" bg="white" py={2} px={6} sx={{ borderRadius: "10px" }}>
             <Box as="table" w="100%">
               <Box as="thead" fontSize="14px" color="#999">
                 <Box as="td" p={2}>
@@ -195,7 +223,7 @@ export default function Home() {
               justify="center"
               bg="#666"
               color="white"
-              w="150px"
+              w="200px"
               py={1}
               onClick={async () => {
                 const _txs = await db.cget(
@@ -204,7 +232,6 @@ export default function Home() {
                   ["startAfter", last(txs)],
                   20
                 )
-                console.log(_txs)
                 setTxs(concat(txs, _txs))
                 setIsnext(_txs.length === 20)
               }}
