@@ -24,7 +24,7 @@ await db.getVersion()
 #### Added Features
 
 - [tick](/docs/sdk/crons/#tick)
-- [conditional statements](https://fpjson.weavedb.dev) for FPJSON
+- [conditional statements](/docs/sdk/crons#conditional-statements) for FPJSON
 
 ### v0.28.13-alpha (August 14, 2023)
 
@@ -436,4 +436,3 @@ await db.getVersion()
 - contract versioning
 - link plugin contracts
 - getAddressLink
-
