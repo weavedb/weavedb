@@ -38,9 +38,11 @@ class SDK extends Base {
     port = 1820,
     secure,
     cert = null,
+    rollup,
   }) {
     super()
-    this.contractTxId = contractTxId
+    this.rollup = rollup
+    this.contractTxId = !isNil(rollup) ? rollup.txid : contractTxId
     this.arweave_wallet = arweave_wallet
     if (isNil(arweave)) {
       if (network === "localhost") {
@@ -63,21 +65,27 @@ class SDK extends Base {
       (arweave.host === "host.docker.internal" || arweave.host === "localhost"
         ? "localhost"
         : "mainnet")
-
-    const [rpc_host, rpc_port] = rpc.split(":")
-    this.secure = +rpc_port === 443 && isNil(secure) ? true : secure || false
-    this.client = new weavedb_proto.DB(
-      rpc,
-      this.secure
-        ? grpc.ChannelCredentials.createSsl()
-        : grpc.credentials.createInsecure()
-    )
+    if (isNil(this.rollup)) {
+      const [rpc_host, rpc_port] = rpc.split(":")
+      this.secure = +rpc_port === 443 && isNil(secure) ? true : secure || false
+      this.client = new weavedb_proto.DB(
+        rpc,
+        this.secure
+          ? grpc.ChannelCredentials.createSsl()
+          : grpc.credentials.createInsecure()
+      )
+    }
     if (typeof window === "object") {
       require("@metamask/legacy-web3")
       this.web3 = window.web3
     }
-    if (all(complement(isNil))([contractTxId, name, version])) {
-      this.initialize({ contractTxId, name, version, EthWallet })
+    if (all(complement(isNil))([this.contractTxId, name, version])) {
+      this.initialize({
+        contractTxId: this.contractTxId,
+        name,
+        version,
+        EthWallet,
+      })
     }
   }
 
@@ -106,30 +114,44 @@ class SDK extends Base {
     }
     const _query = () =>
       new Promise(ret => {
-        this.client.query(request, (err, response) => {
-          if (!isNil(err)) {
-            ret({ result: null, err })
-          } else {
-            if (response.err === "") {
-              try {
-                const result =
-                  response.result === "" ? null : JSON.parse(response.result)
-                if (!isNil(result?.result?.transaction?.id)) {
-                  result.getResult = async () =>
-                    await this.node({
-                      op: "tx_result",
-                      txid: result?.result?.transaction?.id,
-                    })
-                }
-                ret({ result, err: null })
-              } catch (e) {
-                ret({ result: null, err: e })
-              }
+        if (!isNil(this.rollup)) {
+          this.rollup.execUser(
+            {
+              type: "offchain",
+              nocache,
+              txid: this.contractTxId,
+              func: func,
+              query: JSON.stringify(query),
+              res: (err, res) => ret({ err, result: res }),
+            },
+            "__admin__"
+          )
+        } else {
+          this.client.query(request, (err, response) => {
+            if (!isNil(err)) {
+              ret({ result: null, err })
             } else {
-              ret({ result: null, err: response.err })
+              if (response.err === "") {
+                try {
+                  const result =
+                    response.result === "" ? null : JSON.parse(response.result)
+                  if (!isNil(result?.result?.transaction?.id)) {
+                    result.getResult = async () =>
+                      await this.node({
+                        op: "tx_result",
+                        txid: result?.result?.transaction?.id,
+                      })
+                  }
+                  ret({ result, err: null })
+                } catch (e) {
+                  ret({ result: null, err: e })
+                }
+              } else {
+                ret({ result: null, err: response.err })
+              }
             }
-          }
-        })
+          })
+        }
       })
     let q = await _query()
     if (!isNil(q.err)) throw new Error(q.err)

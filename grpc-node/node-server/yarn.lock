@@ -5327,10 +5327,10 @@ weavedb-contracts@^0.28.24:
     wasmbuilder "^0.0.16"
     wasmcurves "^0.2.1"
 
-weavedb-node-client@^0.28.5:
-  version "0.28.5"
-  resolved "https://registry.yarnpkg.com/weavedb-node-client/-/weavedb-node-client-0.28.5.tgz#8c977adf7a50e74966a5b1b9ecfb665fbff5d9db"
-  integrity sha512-2R96zbzZlt2PbKYe3ieTKrX8jRasTMDW2bV5Ss53/AkfWrSC85U4CDtrG8d+nZXufBJRf+BrkhpgPkp70hDYpg==
+weavedb-node-client@^0.28.6:
+  version "0.28.6"
+  resolved "https://registry.yarnpkg.com/weavedb-node-client/-/weavedb-node-client-0.28.6.tgz#cdf8690e23683a0baf9fded6311d6bb3c8cadfc0"
+  integrity sha512-n+knsYAgE/Va/EljVNH5RAK5sXhSXUQOmiGoaCUAOuO8I9wJaH5kHb3r5k+Qm7b89gW4Lr7ypsRkDhMHRjM2ug==
   dependencies:
     "@grpc/grpc-js" "^1.1.0"
     "@grpc/proto-loader" "^0.5.0"

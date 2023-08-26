@@ -1,8 +1,9 @@
+const SDK = require("weavedb-node-client")
 const grpc = require("@grpc/grpc-js")
 const protoLoader = require("@grpc/proto-loader")
 const { addReflection } = require("grpc-server-reflection")
 const PROTO_PATH = __dirname + "/weavedb.proto"
-const { isNil, includes, mapObjIndexed } = require("ramda")
+const { mergeLeft, isNil, includes, mapObjIndexed, is } = require("ramda")
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
   longs: String,
@@ -19,11 +20,15 @@ const { fork } = require("child_process")
 class Rollup {
   constructor({ txid, secure, owner, dbname, dir, plugins }) {
     this.cb = {}
+    this.txid = txid
     this.db = fork(path.resolve(__dirname, "rollup-mp"))
     this.db.on("message", async ({ err, result, op, id }) => {
       if (!isNil(id)) {
         await this.cb[id](err, result)
         delete this.cb[id]
+      } else if (op === "init") {
+        console.log(`initialized: ${txid}`)
+        if (is(Function, this.afterInit)) this.afterInit()
       }
     })
     this.db.send({
@@ -31,7 +36,8 @@ class Rollup {
       params: { txid, secure, owner, dbname, dir, plugins },
     })
   }
-  init() {
+  init(afterInit) {
+    this.afterInit = afterInit
     this.db.send({ op: "init" })
   }
   execUser(parsed, id) {
@@ -46,6 +52,10 @@ class Server {
     this.count = 0
     const conf = require(config)
     this.port = port
+    const rollups = mergeLeft(
+      { __admin__: { secure: true, plugins: {} } },
+      conf.rollups || { offchain: {} }
+    )
     this.rollups = mapObjIndexed((v, txid) => {
       return new Rollup({
         txid,
@@ -55,8 +65,13 @@ class Server {
         dir: v.dir ?? conf.dir,
         plugins: v.plugins ?? conf.plugins ?? {},
       })
-    })(conf.rollups || { offchain: {} })
-    for (let k in this.rollups) this.rollups[k].init()
+    })(rollups)
+    for (let k in this.rollups)
+      this.rollups[k].init(async () => {
+        if (k === "__admin__") {
+          const db = new SDK({ rollup: this.rollups[k] })
+        }
+      })
     this.startServer()
   }
 
