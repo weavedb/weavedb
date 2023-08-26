@@ -4,6 +4,7 @@ const protoLoader = require("@grpc/proto-loader")
 const { addReflection } = require("grpc-server-reflection")
 const PROTO_PATH = __dirname + "/weavedb.proto"
 const { mergeLeft, isNil, includes, mapObjIndexed, is } = require("ramda")
+const { privateToAddress } = require("ethereumjs-util")
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
   longs: String,
@@ -50,26 +51,61 @@ class Rollup {
 class Server {
   constructor({ port = 9090 }) {
     this.count = 0
-    const conf = require(config)
+    this.conf = require(config)
     this.port = port
     const rollups = mergeLeft(
       { __admin__: { secure: true, plugins: {} } },
-      conf.rollups || { offchain: {} }
+      this.conf.rollups || { offchain: {} }
     )
     this.rollups = mapObjIndexed((v, txid) => {
       return new Rollup({
         txid,
-        secure: v.secure ?? conf.secure,
-        owner: v.owner ?? conf.owner,
-        dbname: v.dbname ?? conf.dbname,
-        dir: v.dir ?? conf.dir,
-        plugins: v.plugins ?? conf.plugins ?? {},
+        secure: v.secure ?? this.conf.secure,
+        owner: v.owner ?? this.conf.owner,
+        dbname: v.dbname ?? this.conf.dbname,
+        dir: v.dir ?? this.conf.dir,
+        plugins: v.plugins ?? this.conf.plugins ?? {},
       })
     })(rollups)
     for (let k in this.rollups)
       this.rollups[k].init(async () => {
         if (k === "__admin__") {
-          const db = new SDK({ rollup: this.rollups[k] })
+          const auth = { privateKey: this.conf.admin }
+          this.admin_db = new SDK({ rollup: this.rollups[k] })
+          const signer = `0x${privateToAddress(
+            Buffer.from(this.conf.admin.toLowerCase().replace(/^0x/, ""), "hex")
+          ).toString("hex")}`
+          const tx = await this.admin_db.setRules(
+            {
+              "allow write": {
+                "==": [{ var: "request.auth.signer" }, signer],
+              },
+            },
+            "dbs",
+            auth
+          )
+          console.log(`__admin__ rules added: ${tx.success}`)
+          for (let k in rollups) {
+            if (k !== "__admin__") {
+              const tx = await this.admin_db.set(rollups[k], "dbs", k, auth)
+              console.log(`DB ${k} added: ${tx.success}`)
+            }
+          }
+          const dbs = await this.admin_db.cget("dbs")
+          for (let v of dbs) {
+            if (isNil(this.rollups[v.id])) {
+              const key = v.id
+              this.rollups[key] = new Rollup({
+                txid: key,
+                secure: v.secure ?? this.conf.secure,
+                owner: v.owner ?? this.conf.owner,
+                dbname: v.dbname ?? this.conf.dbname,
+                dir: v.dir ?? this.conf.dir,
+                plugins: v.plugins ?? this.conf.plugins ?? {},
+              })
+              this.rollups[key].init()
+            }
+          }
         }
       })
     this.startServer()
@@ -116,7 +152,44 @@ class Server {
       res(`DB [${txid}] doesn't exist`, null)
       return
     }
-    this.rollups[txid].execUser(parsed, ++this.count)
+    if (isAdmin) {
+      const { op, key, db } = JSON.parse(query).query
+      const auth = { privateKey: this.conf.admin }
+      switch (op) {
+        case "add_db":
+          if (!isNil(await this.admin_db.get("dbs", key))) {
+            callback(null, {
+              result: null,
+              err: `${key} exists`,
+            })
+            return
+          }
+          const tx = await this.admin_db.set(db, "dbs", key, auth)
+          if (tx.success) {
+            this.rollups[key] = new Rollup({
+              txid: key,
+              secure: db.secure ?? this.conf.secure,
+              owner: db.owner ?? this.conf.owner,
+              dbname: db.dbname ?? this.conf.dbname,
+              dir: db.dir ?? this.conf.dir,
+              plugins: db.plugins ?? this.conf.plugins ?? {},
+            })
+            this.rollups[key].init()
+          }
+          callback(null, {
+            result: tx.success ? JSON.stringify(tx) : null,
+            err: tx.success ? null : "error",
+          })
+          break
+        default:
+          callback(null, {
+            result: null,
+            err: "op not found",
+          })
+      }
+    } else {
+      this.rollups[txid].execUser(parsed, ++this.count)
+    }
   }
 }
 
