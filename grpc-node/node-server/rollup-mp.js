@@ -374,11 +374,12 @@ class Rollup {
 }
 
 let rollup
-process.on("message", ({ op, id, params }) => {
+process.on("message", async ({ op, id, params }) => {
   if (op === "new") {
     rollup = new Rollup(params)
   } else if (op === "init") {
-    rollup.init()
+    await rollup.init()
+    process.send({ err: null, result: null, op, id })
   } else if (op === "execUser") {
     rollup.execUser({
       ...params,
