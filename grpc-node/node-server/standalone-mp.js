@@ -46,6 +46,9 @@ class Rollup {
     delete parsed.res
     this.db.send({ op: "execUser", params: parsed, id })
   }
+  kill() {
+    this.db.kill()
+  }
 }
 
 class Server {
@@ -179,6 +182,24 @@ class Server {
           callback(null, {
             result: tx.success ? JSON.stringify(tx) : null,
             err: tx.success ? null : "error",
+          })
+          break
+        case "remove_db":
+          if (isNil(await this.admin_db.get("dbs", key))) {
+            callback(null, {
+              result: null,
+              err: `${key} doesn't exist`,
+            })
+            return
+          }
+          const tx2 = await this.admin_db.delete("dbs", key, auth)
+          if (tx2.success) {
+            this.rollups[key].kill()
+            delete this.rollups[key]
+          }
+          callback(null, {
+            result: tx2.success ? JSON.stringify(tx2) : null,
+            err: tx2.success ? null : "error",
           })
           break
         default:
