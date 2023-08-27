@@ -13,7 +13,8 @@ const upsert = async (
   kvs,
   executeCron,
   depth = 1,
-  type = "direct"
+  type = "direct",
+  get
 ) => {
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
     err("only bundle queries are allowed")
@@ -38,7 +39,8 @@ const upsert = async (
       0,
       contractErr,
       SmartWeave,
-      kvs
+      kvs,
+      get
     )
   validateSchema(schema, next_data, contractErr)
   _data.__data = next_data

@@ -12,7 +12,8 @@ const set = async (
   kvs,
   executeCron,
   depth = 1,
-  type = "direct"
+  type = "direct",
+  get
 ) => {
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
     err("only bundle queries are allowed")
@@ -36,7 +37,8 @@ const set = async (
     0,
     contractErr,
     SmartWeave,
-    kvs
+    kvs,
+    get
   )
   validateSchema(schema, next_data, contractErr)
   let { before, after } = await put(

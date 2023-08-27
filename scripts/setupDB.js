@@ -4,6 +4,15 @@ const setupDB = async ({ db, conf, privateKey, relayer }) => {
   const auth = { privateKey }
   for (let k in conf) {
     switch (k) {
+      case "rules":
+        for (let col in conf[k]) {
+          console.log(
+            "setRules",
+            col,
+            (await db.setRules(conf[k][col], col, auth))?.success
+          )
+        }
+        break
       case "schemas":
         for (let col in conf[k]) {
           console.log(
@@ -53,7 +62,6 @@ const setupDB = async ({ db, conf, privateKey, relayer }) => {
         break
     }
   }
-  process.exit()
 }
 
 module.exports = setupDB

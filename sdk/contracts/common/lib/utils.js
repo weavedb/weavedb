@@ -265,7 +265,8 @@ const parse = async (
       action,
       SmartWeave,
       undefined,
-      kvs
+      kvs,
+      fn.get
     )
     _data = doc.doc
     ;({ next_data, schema, rules, col } = doc)

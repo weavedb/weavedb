@@ -12,6 +12,7 @@ const tick = async (
   executeCron,
   depth = 1,
   type = "direct",
+  get,
   count = 0
 ) => {
   if (count === 0) err("no crons executed")

@@ -14,7 +14,8 @@ const remove = async (
   kvs,
   executeCron,
   depth,
-  type = "direct"
+  type = "direct",
+  get
 ) => {
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
     err("only bundle queries are allowed")
@@ -38,7 +39,8 @@ const remove = async (
     0,
     contractErr,
     SmartWeave,
-    kvs
+    kvs,
+    get
   )
   if (isNil(_data.__data)) err(`Data doesn't exist`)
   let { before, after } = await del(

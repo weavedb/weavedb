@@ -14,7 +14,8 @@ const add = async (
   kvs,
   executeCron,
   depth = 1,
-  type = "direct"
+  type = "direct",
+  get
 ) => {
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
     err("only bundle queries are allowed")
@@ -39,7 +40,8 @@ const add = async (
     salt,
     contractErr,
     SmartWeave,
-    kvs
+    kvs,
+    get
   )
   if (!isNil(_data.__data)) err("doc already exists")
   validateSchema(schema, next_data, contractErr)
