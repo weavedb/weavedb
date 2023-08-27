@@ -8,6 +8,36 @@ const db = {
 }
 
 const offchain = {
+  rules: {
+    posts: {
+      "allow write": true,
+    },
+    users: {
+      "let create": {
+        create: true,
+        isOwner: [
+          "includes",
+          { var: "request.auth.signer" },
+          { var: "contract.owners" },
+        ],
+        "resource.newData.invited_by": { var: "request.auth.signer" },
+      },
+      "allow create": {
+        and: [
+          { "==": [{ var: "isOwner" }, true] },
+          {
+            "==": [{ var: "request.id" }, { var: "resource.newData.address" }],
+          },
+        ],
+      },
+    },
+    follows: {
+      "allow write": true,
+    },
+    likes: {
+      "allow write": true,
+    },
+  },
   schemas: {
     posts: {
       type: "object",

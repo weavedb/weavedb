@@ -132,6 +132,9 @@ async function handle(state, action, _SmartWeave) {
     _SmartWeave,
     kvs,
     executeCron,
+    undefined,
+    undefined,
+    get,
   ]
   let res = null
   switch (action.input.function) {
@@ -179,9 +182,7 @@ async function handle(state, action, _SmartWeave) {
     case "getEvolve":
       return await getEvolve(...readParams)
     case "tick":
-      return await addHash(_SmartWeave)(
-        await tick(...writeParams, undefined, undefined, count)
-      )
+      return await addHash(_SmartWeave)(await tick(...writeParams, count))
 
     case "add":
       res = await addHash(_SmartWeave)(
@@ -193,7 +194,10 @@ async function handle(state, action, _SmartWeave) {
           undefined,
           _SmartWeave,
           kvs,
-          executeCron
+          executeCron,
+          undefined,
+          undefined,
+          get
         )
       )
       break
@@ -285,7 +289,8 @@ async function handle(state, action, _SmartWeave) {
           undefined,
           _SmartWeave,
           undefined,
-          kvs
+          kvs,
+          get
         )
       )
       break

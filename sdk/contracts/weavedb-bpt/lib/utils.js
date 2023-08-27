@@ -24,6 +24,7 @@ const {
   intersection,
   append,
   difference,
+  path: _path,
 } = require("ramda")
 const {
   parse: _parse,
@@ -76,7 +77,7 @@ const _getCol = async (path, _signer, SmartWeave, current_path = [], kvs) => {
   }
 }
 
-const validateData = ({
+const validateData = async ({
   func,
   secure,
   rules,
@@ -91,6 +92,8 @@ const validateData = ({
   new_data,
   next_data,
   path,
+  get,
+  kvs,
 }) => {
   if (
     includes(func)(["set", "add", "update", "upsert", "delete"]) &&
@@ -150,7 +153,18 @@ const validateData = ({
       }
       return elm
     }
-
+    const _parse = (query, vars) => {
+      if (is(Array, query)) {
+        query = map(v => (is(Object, v) ? _parse(v, vars) : v))(query)
+      } else if (is(Object, query)) {
+        if (is(String, query.var)) {
+          return _path(query.var.split("."))(vars)
+        } else {
+          query = map(v => _parse(v, vars))(query)
+        }
+      }
+      return query
+    }
     if (!isNil(rules)) {
       for (let k in rules || {}) {
         const [permission, _ops] = k.split(" ")
@@ -167,12 +181,30 @@ const validateData = ({
         }
         if (ok) {
           for (let k2 in rule || {}) {
-            setElm(k2, fpjson(clone(rule[k2]), rule_data))
+            if (rule[k2][0] === "get") {
+              const result =
+                (
+                  await get(
+                    state,
+                    {
+                      input: {
+                        function: "get",
+                        query: _parse(rule[k2][1], rule_data),
+                      },
+                    },
+                    undefined,
+                    SmartWeave,
+                    kvs
+                  )
+                )?.result ?? null
+              setElm(k2, result)
+            } else {
+              setElm(k2, fpjson(clone(rule[k2]), rule_data))
+            }
           }
         }
       }
     }
-
     for (let k in rules || {}) {
       const spk = k.split(" ")
       if (spk[0] === "let") continue
@@ -187,6 +219,9 @@ const validateData = ({
       }
     }
     if (!allowed) err("operation not allowed")
+    return rule_data.resource.newData
+  } else {
+    return next_data
   }
 }
 
@@ -204,7 +239,8 @@ const getDoc = async (
   action,
   SmartWeave,
   current_path = [],
-  kvs
+  kvs,
+  get
 ) =>
   await _getDoc(
     null,
@@ -220,7 +256,9 @@ const getDoc = async (
     action,
     SmartWeave,
     current_path,
-    kvs
+    kvs,
+    undefined,
+    get
   )
 
 const _getDoc = async (
@@ -238,7 +276,8 @@ const _getDoc = async (
   SmartWeave,
   current_path = [],
   kvs,
-  doc
+  doc,
+  get
 ) => {
   data = (await kv(kvs, SmartWeave).get(`data.${current_path.join("/")}`)) || {}
   const [_col, id] = path
@@ -283,7 +322,7 @@ const _getDoc = async (
       ).__data
     }
   }
-  validateData({
+  await validateData({
     func,
     secure,
     rules,
@@ -298,6 +337,8 @@ const _getDoc = async (
     new_data,
     next_data,
     path,
+    get,
+    kvs,
   })
   return path.length >= 4
     ? await _getDoc(
@@ -315,7 +356,9 @@ const _getDoc = async (
         SmartWeave,
         current_path,
         kvs,
-        doc
+        doc,
+        get,
+        kvs
       )
     : {
         doc,
@@ -341,7 +384,8 @@ const parse = async (
   salt,
   contractErr = true,
   SmartWeave,
-  kvs
+  kvs,
+  get
 ) => {
   return await _parse(
     state,
@@ -352,7 +396,7 @@ const parse = async (
     contractErr,
     SmartWeave,
     kvs,
-    { getDoc, getCol, addNewDoc }
+    { getDoc, getCol, addNewDoc, get }
   )
 }
 

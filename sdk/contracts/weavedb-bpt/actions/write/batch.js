@@ -33,7 +33,8 @@ const batch = async (
   kvs,
   executeCron,
   depth = 1,
-  type = "direct"
+  type = "direct",
+  get
 ) => {
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
     err("only bundle queries are allowed")
@@ -76,6 +77,7 @@ const batch = async (
       executeCron,
       depth,
       type,
+      get,
     ]
     switch (op) {
       case "add":
@@ -89,7 +91,8 @@ const batch = async (
           kvs,
           executeCron,
           depth,
-          type
+          type,
+          get
         )
         break
       case "set":

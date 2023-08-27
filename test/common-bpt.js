@@ -754,7 +754,7 @@ const tests = {
     )
     expect((await db.get("ppl", "Bob")).age).to.eql(5)
   },
-  "should tick.only": async ({ db, arweave_wallet }) => {
+  "should tick": async ({ db, arweave_wallet }) => {
     await db.addCron(
       {
         span: 1,
@@ -775,6 +775,21 @@ const tests = {
       }
     }
     expect(success).to.eql(true)
+  },
+  "should get in access control rules": async ({ db, arweave_wallet }) => {
+    await db.set({ name: "Bob", age: 20 }, "users", "Bob")
+    const rules = {
+      "let create": {
+        bob: ["get", ["users", { var: "resource.newData.name" }]],
+        "resource.newData.age": { var: "bob.age" },
+      },
+      "allow write": true,
+    }
+    await db.setRules(rules, "ppl", {
+      ar: arweave_wallet,
+    })
+    await db.set({ name: "Bob" }, "ppl", "Bob")
+    expect((await db.get("ppl", "Bob")).age).to.eql(20)
   },
 }
 

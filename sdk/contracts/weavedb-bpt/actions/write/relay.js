@@ -36,7 +36,8 @@ const relay = async (
   kvs,
   executeCron,
   depth = 1,
-  type = "direct"
+  type = "direct",
+  get
 ) => {
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
     err("only bundle queries are allowed")
@@ -130,6 +131,7 @@ const relay = async (
     executeCron,
     undefined,
     type,
+    get,
   ]
   switch (action2.input.function) {
     case "add":
@@ -143,7 +145,8 @@ const relay = async (
         kvs,
         executeCron,
         undefined,
-        type
+        type,
+        get
       )
     case "set":
       return await set(...params)
@@ -166,7 +169,8 @@ const relay = async (
         kvs,
         executeCron,
         undefined,
-        type
+        type,
+        get
       )
     default:
       err(

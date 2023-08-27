@@ -116,6 +116,17 @@ await db.set({ name : "Bob" }, "people", "Bob")
 expect(await db.get("people", "Bob")).to.eql({name : "Bob", address: "0xABC" }) // true
 ```
 
+You can also execute `get` query in `let` variable assignments. Use the syntax `["get", [QUERY]]`.
+
+The following will first get `Bob` from `ppl` collection and assign it to `user`, then set `age` field with the user's age.
+
+```js
+const rules = {
+  "let create" : { "user" : ["get", ["ppl", "Bob"]], "resource.newData.age": {var: "user.age"} },
+  "allow create" : true
+}
+```
+
 ## Add-on: JSON-based Functional Programming
 Javascript functions cannot be passed and stored with Warp contracts. So WeaveDB invented a powerful & simple way to do functional programming using JSON objects. You can use most of the [ramda](https://ramdajs.com) functions, which enables highly complex logics for access controls and data validations.
 
