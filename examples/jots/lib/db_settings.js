@@ -8,6 +8,80 @@ const db = {
 }
 
 const offchain = {
+  schemas: {
+    posts: {
+      type: "object",
+      required: ["owner", "id"],
+      properties: {
+        id: { type: "string" },
+        owner: { type: "string" },
+        date: { type: "number" },
+        description: { type: "string" },
+        title: { type: "string" },
+        type: { type: "string" },
+        repost: { type: "string" },
+        reply_to: { type: "string" },
+        reply: { type: "boolean" },
+        quote: { type: "boolean" },
+        parents: { type: "array", items: { type: "string" } },
+        hashes: { type: "array", items: { type: "string" } },
+        mentions: { type: "array", items: { type: "string" } },
+        pt: { type: "number" },
+        ptts: { type: "number" },
+        last_like: { type: "number" },
+        likes: { type: "number" },
+        reposts: { type: "number" },
+        quotes: { type: "number" },
+        comments: { type: "number" },
+      },
+    },
+    users: {
+      type: "object",
+      required: ["address", "invited_by"],
+      properties: {
+        address: { type: "string" },
+        invited_by: { type: "string" },
+        name: { type: "string" },
+        image: { type: "string" },
+        cover: { type: "string" },
+        description: { type: "string" },
+        hashes: { type: "array", items: { type: "string" } },
+        mentions: { type: "array", items: { type: "string" } },
+        followers: { type: "number" },
+        following: { type: "number" },
+        invites: { type: "number" },
+      },
+    },
+    timeline: {
+      type: "object",
+      required: ["rid", "aid", "date", "broadcast"],
+      properties: {
+        date: { type: "number" },
+        rid: { type: "string" },
+        aid: { type: "string" },
+        braodcast: { type: "array", items: { type: "string" } },
+      },
+    },
+    follows: {
+      type: "object",
+      required: ["date", "from", "to"],
+      properties: {
+        date: { type: "number" },
+        from: { type: "string" },
+        to: { type: "string" },
+        last: { type: "number" },
+      },
+    },
+    likes: {
+      type: "object",
+      required: ["date", "user", "aid"],
+      properties: {
+        date: { type: "number" },
+        user: { type: "string" },
+        aid: { type: "string" },
+      },
+    },
+  },
   indexes: {
     posts: [
       [
@@ -68,12 +142,6 @@ const offchain = {
       [
         ["broadcast", "array"],
         ["date", "asc"],
-      ],
-    ],
-    invites: [
-      [
-        ["from", "asc"],
-        ["date", "desc"],
       ],
     ],
   },

@@ -4,6 +4,15 @@ const setupDB = async ({ db, conf, privateKey, relayer }) => {
   const auth = { privateKey }
   for (let k in conf) {
     switch (k) {
+      case "schemas":
+        for (let col in conf[k]) {
+          console.log(
+            "setSchema",
+            col,
+            (await db.setSchema(conf[k][col], col, auth))?.success
+          )
+        }
+        break
       case "indexes":
         for (let col in conf[k]) {
           for (let v of conf[k][col]) {
