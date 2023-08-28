@@ -160,6 +160,7 @@ const parse = async (
   contractErr = true,
   SmartWeave,
   kvs,
+  type,
   fn
 ) => {
   const { data } = state
@@ -266,7 +267,8 @@ const parse = async (
       SmartWeave,
       undefined,
       kvs,
-      fn.get
+      fn.get,
+      type
     )
     _data = doc.doc
     ;({ next_data, schema, rules, col } = doc)

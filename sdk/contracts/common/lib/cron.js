@@ -92,6 +92,7 @@ const executeCron =
         params.push(executeCron)
         params.push(depth + 1)
         params.push("cron")
+        params.push(ops.get)
         await ops[op](...params)
       }
     }

@@ -791,6 +791,47 @@ const tests = {
     await db.set({ name: "Bob" }, "ppl", "Bob")
     expect((await db.get("ppl", "Bob")).age).to.eql(20)
   },
+  "should allow if/ifelse in access control rules": async ({
+    db,
+    arweave_wallet,
+  }) => {
+    const rules = {
+      "let create": {
+        "resource.newData.age": [
+          "ifelse",
+          ["equals", "Bob", { var: "resource.newData.name" }],
+          20,
+          30,
+        ],
+      },
+      "allow create": true,
+    }
+    await db.setRules(rules, "ppl", { ar: arweave_wallet })
+    await db.set({ name: "Bob" }, "ppl", "Bob")
+    expect((await db.get("ppl", "Bob")).age).to.eql(20)
+    await db.set({ name: "Alice" }, "ppl", "Alice")
+    expect((await db.get("ppl", "Alice")).age).to.eql(30)
+  },
+  "should change method name in access control rules": async ({
+    db,
+    arweave_wallet,
+  }) => {
+    const rules = {
+      "let create": {
+        "request.method": [
+          "if",
+          ["equals", "Bob", { var: "resource.newData.name" }],
+          "Bob",
+        ],
+      },
+      "allow Bob": true,
+    }
+    await db.setRules(rules, "ppl", { ar: arweave_wallet })
+    await db.set({ name: "Bob" }, "ppl", "Bob", { ar: arweave_wallet })
+    expect((await db.get("ppl", "Bob")).name).to.eql("Bob")
+    await db.set({ name: "Alice" }, "ppl", "Alice", { ar: arweave_wallet })
+    expect(await db.get("ppl", "Alice")).to.eql(null)
+  },
 }
 
 module.exports = { tests }

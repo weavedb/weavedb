@@ -41,7 +41,8 @@ const add = async (
     contractErr,
     SmartWeave,
     kvs,
-    get
+    get,
+    type
   )
   if (!isNil(_data.__data)) err("doc already exists")
   validateSchema(schema, next_data, contractErr)

@@ -40,7 +40,8 @@ const upsert = async (
       contractErr,
       SmartWeave,
       kvs,
-      get
+      get,
+      type
     )
   validateSchema(schema, next_data, contractErr)
   _data.__data = next_data

@@ -21,6 +21,7 @@ describe("WeaveDB Offchain BPT", function () {
   const owner = EthCrypto.createIdentity()
   const relayer = EthCrypto.createIdentity()
   const acc1 = EthCrypto.createIdentity()
+  const acc2 = EthCrypto.createIdentity()
   this.timeout(0)
 
   before(async () => {
@@ -47,18 +48,24 @@ describe("WeaveDB Offchain BPT", function () {
       relayer: relayer.address.toLowerCase(),
     })
   })
+
   it("should setup service", async () => {
+    const auth = { privateKey: owner.privateKey }
     const bob = { address: acc1.address.toLowerCase() }
-    await db.set(
-      { address: acc1.address.toLowerCase() },
-      "users",
-      bob.address,
-      {
-        privateKey: owner.privateKey,
-      }
-    )
+    const alice = { address: owner.address.toLowerCase() }
+    const beth = { address: acc2.address.toLowerCase() }
+
+    await db.set({ address: alice.address }, "users", alice.address, auth)
+    await db.set({ address: bob.address }, "users", bob.address, auth)
+
+    await db.update({ invites: 3 }, "users", bob.address, auth)
+
     expect((await db.get("users", bob.address)).invited_by).to.eql(
       owner.address.toLowerCase()
     )
+    await db.set({ address: beth.address }, "users", beth.address, {
+      privateKey: acc1.privateKey,
+    })
+    console.log(await db.get("users"))
   })
 })

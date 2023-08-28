@@ -40,7 +40,8 @@ const remove = async (
     contractErr,
     SmartWeave,
     kvs,
-    get
+    get,
+    type
   )
   if (isNil(_data.__data)) err(`Data doesn't exist`)
   let { before, after } = await del(
