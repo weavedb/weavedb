@@ -39,7 +39,8 @@ const update = async (
     contractErr,
     SmartWeave,
     kvs,
-    get
+    get,
+    type
   )
   if (isNil(_data.__data)) err(`Data doesn't exist`)
   validateSchema(schema, next_data, contractErr)

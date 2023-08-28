@@ -175,13 +175,28 @@ const validateData = async ({
           ok = true
         } else {
           const ops = _ops.split(",")
-          if (intersection(ops)(["write", op]).length > 0) {
+          if (
+            intersection(ops)(["write", rule_data.request.method]).length > 0
+          ) {
             ok = true
           }
         }
         if (ok) {
           for (let k2 in rule || {}) {
-            if (rule[k2][0] === "get") {
+            let _op = rule[k2][0]
+            let logic = rule[k2]
+            if (_op === "if") {
+              if (!fpjson(clone(rule[k2][1]), rule_data)) continue
+              logic = rule[k2][2]
+            } else if (_op === "ifelse") {
+              if (fpjson(clone(rule[k2][1]), rule_data)) {
+                logic = rule[k2][2]
+              } else {
+                logic = rule[k2][3]
+              }
+            }
+            _op = logic[0]
+            if (_op === "get") {
               const result =
                 (
                   await get(
@@ -189,7 +204,7 @@ const validateData = async ({
                     {
                       input: {
                         function: "get",
-                        query: _parse(rule[k2][1], rule_data),
+                        query: _parse(logic[1], rule_data),
                       },
                     },
                     undefined,
@@ -199,7 +214,7 @@ const validateData = async ({
                 )?.result ?? null
               setElm(k2, result)
             } else {
-              setElm(k2, fpjson(clone(rule[k2]), rule_data))
+              setElm(k2, fpjson(clone(logic), rule_data))
             }
           }
         }
@@ -211,7 +226,7 @@ const validateData = async ({
       const rule = rules[k]
       const [permission, _ops] = k.split(" ")
       const ops = _ops.split(",")
-      if (intersection(ops)(["write", op]).length > 0) {
+      if (intersection(ops)(["write", rule_data.request.method]).length > 0) {
         const ok = jsonLogic.apply(rule, rule_data)
         if (permission === "allow" && ok) {
           allowed = true
@@ -240,7 +255,8 @@ const getDoc = async (
   SmartWeave,
   current_path = [],
   kvs,
-  get
+  get,
+  type
 ) =>
   await _getDoc(
     null,
@@ -258,7 +274,8 @@ const getDoc = async (
     current_path,
     kvs,
     undefined,
-    get
+    get,
+    type
   )
 
 const _getDoc = async (
@@ -277,7 +294,8 @@ const _getDoc = async (
   current_path = [],
   kvs,
   doc,
-  get
+  get,
+  type
 ) => {
   data = (await kv(kvs, SmartWeave).get(`data.${current_path.join("/")}`)) || {}
   const [_col, id] = path
@@ -322,24 +340,26 @@ const _getDoc = async (
       ).__data
     }
   }
-  await validateData({
-    func,
-    secure,
-    rules,
-    doc,
-    SmartWeave,
-    state,
-    action,
-    _signer,
-    relayer,
-    jobID,
-    extra,
-    new_data,
-    next_data,
-    path,
-    get,
-    kvs,
-  })
+  if (type !== "cron") {
+    await validateData({
+      func,
+      secure,
+      rules,
+      doc,
+      SmartWeave,
+      state,
+      action,
+      _signer,
+      relayer,
+      jobID,
+      extra,
+      new_data,
+      next_data,
+      path,
+      get,
+      kvs,
+    })
+  }
   return path.length >= 4
     ? await _getDoc(
         doc.subs,
@@ -358,7 +378,7 @@ const _getDoc = async (
         kvs,
         doc,
         get,
-        kvs
+        type
       )
     : {
         doc,
@@ -385,7 +405,8 @@ const parse = async (
   contractErr = true,
   SmartWeave,
   kvs,
-  get
+  get,
+  type
 ) => {
   return await _parse(
     state,
@@ -396,6 +417,7 @@ const parse = async (
     contractErr,
     SmartWeave,
     kvs,
+    type,
     { getDoc, getCol, addNewDoc, get }
   )
 }

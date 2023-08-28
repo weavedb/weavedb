@@ -15,6 +15,17 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.28.16-alpha (August 28, 2023)
+
+#### Source Transaction Id
+
+[WdyOy81fNMhvlHokheoiQry73Ra5ODtVQVCdI1fHbjc](https://sonar.warp.cc/#/app/source/WdyOy81fNMhvlHokheoiQry73Ra5ODtVQVCdI1fHbjc)
+
+#### Added Features
+
+- [conditional statements in access control rules](/docs/sdk/rules#conditional-statements)
+- [renaming method in access control rules](/docs/sdk/rules#renaming-method)
+
 ### v0.28.15-alpha (August 27, 2023)
 
 #### Source Transaction Id
@@ -23,7 +34,7 @@ await db.getVersion()
 
 #### Added Features
 
-- [get query in access control](/docs/sdk/rules#modify-updated-data)
+- [get query in access control](/docs/sdk/rules#get-other-data)
 
 ### v0.28.14-alpha (August 25, 2023)
 

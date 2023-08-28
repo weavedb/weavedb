@@ -13,20 +13,42 @@ const offchain = {
       "allow write": true,
     },
     users: {
-      "let create": {
-        create: true,
+      let: {
         isOwner: [
           "includes",
           { var: "request.auth.signer" },
           { var: "contract.owners" },
         ],
+        keys: ["keys", { var: "request.resource.data" }],
+        update_invites: ["equals", ["invites"], { var: "keys" }],
+      },
+      "let create": {
         "resource.newData.invited_by": { var: "request.auth.signer" },
+        user: ["get", ["users", { var: "request.auth.signer" }]],
+        invite: ["gt", { var: "user.invites" }, { var: "user.invited" }],
       },
       "allow create": {
-        and: [
-          { "==": [{ var: "isOwner" }, true] },
+        or: [
           {
-            "==": [{ var: "request.id" }, { var: "resource.newData.address" }],
+            and: [
+              { "==": [{ var: "isOwner" }, true] },
+              {
+                "==": [
+                  { var: "request.id" },
+                  { var: "resource.newData.address" },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      "allow update": {
+        or: [
+          {
+            and: [
+              { "==": [{ var: "isOwner" }, true] },
+              { "==": [{ var: "update_invites" }, true] },
+            ],
           },
         ],
       },
@@ -35,6 +57,9 @@ const offchain = {
       "allow write": true,
     },
     likes: {
+      "allow write": true,
+    },
+    test: {
       "allow write": true,
     },
   },
@@ -80,6 +105,7 @@ const offchain = {
         followers: { type: "number" },
         following: { type: "number" },
         invites: { type: "number" },
+        invited: { type: "number" },
       },
     },
     timeline: {
@@ -533,6 +559,18 @@ const offchain = {
               "posts",
               { var: `data.after.aid` },
             ],
+          ],
+        ],
+      },
+    ],
+    users: [
+      {
+        key: "inc_invited",
+        on: "create",
+        func: [
+          [
+            "update",
+            [{ invited: db.inc(1) }, "users", { var: "data.after.invited_by" }],
           ],
         ],
       },

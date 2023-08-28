@@ -38,7 +38,8 @@ const set = async (
     contractErr,
     SmartWeave,
     kvs,
-    get
+    get,
+    type
   )
   validateSchema(schema, next_data, contractErr)
   let { before, after } = await put(
