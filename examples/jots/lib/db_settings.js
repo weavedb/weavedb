@@ -10,7 +10,181 @@ const db = {
 const offchain = {
   rules: {
     posts: {
-      "allow write": true,
+      let: {
+        keys: ["keys", { var: "request.resource.data" }],
+      },
+      "let create": {
+        "resource.newData.id": { var: "request.id" },
+        "resource.newData.owner": { var: "request.auth.signer" },
+        "resource.newData.likes": 0,
+        "resource.newData.reposts": 0,
+        "resource.newData.quotes": 0,
+        "resource.newData.comments": 0,
+        "resource.newData.date": [
+          "multiply",
+          1000,
+          { var: "request.block.timestamp" },
+        ],
+        "request.method": [
+          "ifelse",
+          ["equals", "article", { var: "resource.newData.type" }],
+          "_article",
+          "_status",
+        ],
+      },
+      "let _article": {
+        isTitle: [["complement", ["isNil"]], { var: "resource.newData.title" }],
+        "resource.newData.reply": false,
+        "resource.newData.quote": false,
+        "resource.newData.reply_to": "",
+        "resource.newData.repost": "",
+        "request.method": [
+          "if",
+          ["all", ["equals", true], [{ var: "isTitle" }]],
+          "article",
+        ],
+      },
+      "let _status": {
+        noTitle: ["isNil", { var: "resource.newData.title" }],
+        repost: ["defaultTo", "", { var: "resource.newData.repost" }],
+        "request.method": [
+          "ifelse",
+          ["equals", "", { var: "repost" }],
+          "_status2",
+          "_repost",
+        ],
+      },
+
+      "let _repost": {
+        description: ["defaultTo", "", { var: "resource.newData.description" }],
+        post: ["get", ["posts", { var: "resource.newData.repost" }]],
+        exPost: [["complement", ["isNil"]], { var: "post" }],
+        "resource.newData.reply": false,
+        "resource.newData.quote": [
+          ["complement", ["equals"]],
+          "",
+          { var: "description" },
+        ],
+        "resource.newData.reply_to": "",
+        "request.method": [
+          "ifelse",
+          { var: "resource.newData.quote" },
+          "_quote",
+          "_repost2",
+        ],
+      },
+      "let _quote": {
+        "request.method": [
+          "if",
+          ["and", { var: "exPost" }, { var: "noTitle" }],
+          "quote",
+        ],
+      },
+      "let _repost2": {
+        repost: [
+          "get",
+          [
+            "posts",
+            ["quote", "==", false],
+            ["owner", "==", { var: "request.auth.signer" }],
+            ["repost", "==", { var: "resource.newData.repost" }],
+          ],
+        ],
+        noRepost: ["o", ["equals", 0], ["length"], { var: "repost" }],
+        "resource.newData.noRepost": { var: "noRepost" },
+        "request.method": [
+          "if",
+          [
+            "all",
+            ["equals", true],
+            [{ var: "exPost" }, { var: "noTitle" }, { var: "noRepost" }],
+          ],
+          "repost",
+        ],
+      },
+      "let _status2": {
+        "resource.newData.repost": "",
+        reply_to: ["defaultTo", "", { var: "resource.newData.reply_to" }],
+        reply: [["complement", ["equals"]], "", { var: "reply_to" }],
+        "request.method": ["ifelse", { var: "reply" }, "_reply", "_status3"],
+      },
+      "let _status3": {
+        "resource.newData.reply": false,
+        "resource.newData.quote": false,
+        "resource.newData.reply_to": "",
+        "request.method": [
+          "if",
+          ["all", ["equals", true], [{ var: "noTitle" }]],
+          "status",
+        ],
+      },
+      "let _reply": {
+        post: ["get", ["posts", { var: "resource.newData.reply_to" }]],
+        exPost: [["complement", ["isNil"]], { var: "post" }],
+        "resource.newData.reply": true,
+        "resource.newData.quote": false,
+        "request.method": [
+          "if",
+          ["all", ["equals", true], [{ var: "noTitle" }, { var: "exPost" }]],
+          "reply",
+        ],
+      },
+      "let update": {
+        isDataOwner: [
+          "equals",
+          { var: "request.auth.signer" },
+          { var: "resource.data.owner" },
+        ],
+        deletable: [
+          [
+            "compose",
+            ["equals", 0],
+            ["length"],
+            ["difference", { var: "keys" }],
+          ],
+          ["date"],
+        ],
+        exDate: [["complement", ["isNil"]], { var: "resource.data.date" }],
+        deleted: ["isNil", { var: "resource.newData.date" }],
+        "request.method": [
+          "ifelse",
+          [
+            "all",
+            ["equals", true],
+            [{ var: "exDate" }, { var: "deleted" }, { var: "deletable" }],
+          ],
+          "delete_post",
+          "_edit",
+        ],
+      },
+      "let _edit": {
+        valid: ["not", { var: "deleted" }],
+        article: ["equals", "article", { var: "resource.data.type" }],
+        editable: [
+          [
+            "compose",
+            ["equals", 0],
+            ["length"],
+            ["difference", { var: "keys" }],
+          ],
+          ["title", "body", "cover", "description"],
+        ],
+        "request.method": [
+          "if",
+          [
+            "all",
+            ["equals", true],
+            [
+              { var: "valid" },
+              { var: "article" },
+              { var: "editable" },
+              { var: "isDataOwner" },
+            ],
+          ],
+          "edit",
+        ],
+      },
+      "allow status,article,repost,quote,reply,edit,delete_post": true,
     },
     users: {
       let: {
@@ -20,47 +194,162 @@ const offchain = {
           { var: "contract.owners" },
         ],
         keys: ["keys", { var: "request.resource.data" }],
-        update_invites: ["equals", ["invites"], { var: "keys" }],
       },
       "let create": {
-        "resource.newData.invited_by": { var: "request.auth.signer" },
+        create_user: ["equals", ["address"], { var: "keys" }],
+        "request.method": [
+          "ifelse",
+          ["and", { var: "create_user" }, { var: "isOwner" }],
+          "create_by_owner",
+          "_create_by_user",
+        ],
+      },
+      "let _create_by_user": {
         user: ["get", ["users", { var: "request.auth.signer" }]],
-        invite: ["gt", { var: "user.invites" }, { var: "user.invited" }],
-      },
-      "allow create": {
-        or: [
-          {
-            and: [
-              { "==": [{ var: "isOwner" }, true] },
-              {
-                "==": [
-                  { var: "request.id" },
-                  { var: "resource.newData.address" },
-                ],
-              },
-            ],
-          },
+        invited: ["defaultTo", 0, { var: "user.invited" }],
+        "request.method": [
+          "if",
+          ["gt", { var: "user.invites" }, { var: "invited" }],
+          "invite_by_user",
         ],
       },
-      "allow update": {
-        or: [
-          {
-            and: [
-              { "==": [{ var: "isOwner" }, true] },
-              { "==": [{ var: "update_invites" }, true] },
-            ],
-          },
+      "let create_by_owner,invite_by_user": {
+        "resource.newData.invited_by": { var: "request.auth.signer" },
+      },
+      "let update": {
+        update_invites: ["equals", ["invites"], { var: "keys" }],
+        "request.method": [
+          "ifelse",
+          ["and", { var: "update_invites" }, { var: "isOwner" }],
+          "update_invite_by_owner",
+          "_update_profile",
         ],
       },
+      "let _update_profile": {
+        isDataOwner: [
+          "equals",
+          { var: "request.auth.signer" },
+          { var: "resource.data.address" },
+        ],
+        updatable: [
+          [
+            "compose",
+            ["equals", 0],
+            ["length"],
+            ["difference", { var: "keys" }],
+          ],
+          ["name", "description", "handle", "hashes", "mentions"],
+        ],
+        setHandle: ["includes", "handle", { var: "keys" }],
+        existHandle: [
+          ["complement", ["isNil"]],
+          { var: "resource.data.handle" },
+        ],
+        user: [
+          "if",
+          { var: "setHandle" },
+          ["get", ["users", ["handle", "==", { var: "request.data.handle" }]]],
+        ],
+        available: [
+          "if",
+          { var: "setHandle" },
+          ["o", ["equals", 0], ["length"], { var: "user" }],
+        ],
+        noHandle: ["equals", false, { var: "setHandle" }],
+        handleOK: ["or", { var: "noHandle" }, { var: "available" }],
+        "request.method": [
+          "if",
+          [
+            "all",
+            ["equals", true],
+            [{ var: "isDataOwner" }, { var: "updatable" }, { var: "handleOK" }],
+          ],
+          "update_profile",
+        ],
+      },
+      "allow create_by_owner,invite_by_user,update_invite_by_owner,update_profile": true,
     },
     follows: {
-      "allow write": true,
+      "let create": {
+        isDataOwner: [
+          "equals",
+          { var: "request.auth.signer" },
+          { var: "resource.newData.from" },
+        ],
+        from: [
+          "if",
+          { var: "isDataOwner" },
+          ["get", ["users", { var: "resource.newData.from" }]],
+        ],
+        to: [
+          "if",
+          { var: "isDataOwner" },
+          ["get", ["users", { var: "resource.newData.to" }]],
+        ],
+        _id: [
+          "join",
+          ":",
+          [{ var: "resource.newData.from" }, { var: "resource.newData.to" }],
+        ],
+        okID: ["equals", { var: "request.id" }, { var: "_id" }],
+        existFrom: [["complement", ["isNil"]], { var: "from" }],
+        existTo: [["complement", ["isNil"]], { var: "to" }],
+        "request.method": [
+          "if",
+          [
+            "all",
+            ["equals", true],
+            [
+              { var: "isDataOwner" },
+              { var: "existFrom" },
+              { var: "existTo" },
+              { var: "okID" },
+            ],
+          ],
+          "follow",
+        ],
+      },
+      "let delete": {
+        isDataOwner: [
+          "equals",
+          { var: "request.auth.signer" },
+          { var: "resource.data.from" },
+        ],
+        "request.method": [
+          "if",
+          ["all", ["equals", true], [{ var: "isDataOwner" }]],
+          "unfollow",
+        ],
+      },
+      "allow follow,unfollow": true,
     },
     likes: {
-      "allow write": true,
-    },
-    test: {
-      "allow write": true,
+      "let create": {
+        "resource.newData.user": { var: "request.auth.signer" },
+        "resource.newData.date": [
+          "multiply",
+          1000,
+          { var: "request.block.timestamp" },
+        ],
+        _id: [
+          "join",
+          ":",
+          [{ var: "resource.newData.aid" }, { var: "request.auth.signer" }],
+        ],
+        okID: ["equals", { var: "request.id" }, { var: "_id" }],
+        post: ["get", ["posts", { var: "resource.newData.aid" }]],
+        exPost: [["complement", ["isNil"]], { var: "post" }],
+        notDeleted: [
+          ["complement", ["isNil"]],
+          { var: "resource.newData.date" },
+        ],
+        "request.method": [
+          "if",
+          ["all", ["equals", true], [{ var: "notDeleted" }, { var: "okID" }]],
+          "like",
+        ],
+      },
+      "allow like": true,
     },
   },
   schemas: {
@@ -74,8 +363,8 @@ const offchain = {
         description: { type: "string" },
         title: { type: "string" },
         type: { type: "string" },
-        repost: { type: "string" },
         reply_to: { type: "string" },
+        repost: { type: "string" },
         reply: { type: "boolean" },
         quote: { type: "boolean" },
         parents: { type: "array", items: { type: "string" } },
@@ -140,6 +429,7 @@ const offchain = {
   },
   indexes: {
     posts: [
+      [["quote"], ["owner"], ["repost"]],
       [
         ["repost", "asc"],
         ["quote", "asc"],
