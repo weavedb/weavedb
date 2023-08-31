@@ -222,11 +222,14 @@ class OffChain extends Base {
           results = await this.dryRead(this.state, onDryWrite.read || [])
         }
       }
-      return {
+      let res = {
+        docID: tx?.result?.docID ?? null,
+        doc: tx?.result?.doc ?? null,
+        path: tx?.result?.path ?? null,
         results,
-        originalTxId: tx?.result?.transaction?.id || null,
-        transaction: tx?.result?.transaction || null,
-        block: tx?.result?.block || null,
+        originalTxId: tx?.result?.transaction?.id ?? null,
+        transaction: tx?.result?.transaction ?? null,
+        block: tx?.result?.block ?? null,
         success: error === null,
         nonce: param.nonce,
         signer: param.caller,
@@ -234,6 +237,15 @@ class OffChain extends Base {
         error,
         function: param.function,
       }
+      let _func = param.function
+      let _query = param.query
+      if (param.function === "relay") {
+        _func = _query[1].function
+        _query = _query[1].query
+        res.relayedFunc = _func
+        res.relayedQuery = _query
+      }
+      return res
     }
   }
 }

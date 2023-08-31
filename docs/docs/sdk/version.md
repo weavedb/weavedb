@@ -15,6 +15,16 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.29.0-beta (August 31, 2023)
+
+#### Source Transaction Id
+
+[9fz_LO8j7FqVsJyTlbEB2ECh5kPt6k9y8lUEX2zY2q4](https://sonar.warp.cc/#/app/source/9fz_LO8j7FqVsJyTlbEB2ECh5kPt6k9y8lUEX2zY2q4)
+
+#### Added Features
+
+- deterministic ID generation with input values for [add queries](/docs/sdk/queries#add)
+
 ### v0.28.16-alpha (August 28, 2023)
 
 #### Source Transaction Id
