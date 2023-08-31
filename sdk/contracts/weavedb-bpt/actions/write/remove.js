@@ -66,7 +66,11 @@ const remove = async (
     )
   }
 
-  return wrapResult(state, original_signer, SmartWeave)
+  return wrapResult(state, original_signer, SmartWeave, {
+    docID: last(path),
+    doc: null,
+    path: init(path),
+  })
 }
 
 module.exports = { remove }

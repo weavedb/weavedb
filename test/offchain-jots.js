@@ -1,3 +1,4 @@
+const { nanoid } = require("nanoid")
 const { expect } = require("chai")
 const DB = require("../sdk/offchain")
 const Arweave = require("arweave")
@@ -106,15 +107,22 @@ describe("WeaveDB Offchain BPT", function () {
       mentions: [],
       title: "post",
     }
-    await db.set(post, "posts", "abc", auth)
-    await db.set({ type: "status", repost: "abc" }, "posts", "d", auth)
-    await db.set(
-      { type: "status", repost: "abc", description: "awesome" },
+    const { docID: id1 } = await db.add(post, "posts", auth)
+    const { docID: id2 } = await db.add(
+      { type: "status", repost: id1 },
       "posts",
-      "e",
       auth
     )
-    await db.set({ type: "status", repost: "abc" }, "posts", "f", auth)
+    const { docID: id3 } = await db.add(
+      { type: "status", repost: id1, description: "awesome" },
+      "posts",
+      auth
+    )
+    const { docID: id4 } = await db.add(
+      { type: "status", repost: id1 },
+      "posts",
+      auth
+    )
     let status = {
       description: "body",
       type: "status",
@@ -124,14 +132,14 @@ describe("WeaveDB Offchain BPT", function () {
     let reply_to = {
       description: "body",
       type: "status",
-      reply_to: "abc",
+      reply_to: id1,
       hashes: [],
       mentions: [],
     }
-    await db.set(status, "posts", "g", auth)
-    await db.set(reply_to, "posts", "h", auth)
-    await db.update({ date: db.del() }, "posts", "h", auth)
-    await db.update({ title: "post2" }, "posts", "abc", auth)
-    await db.set({ aid: "g" }, "likes", `g:${alice.address}`, auth)
+    const { docID: id5 } = await db.add(status, "posts", auth)
+    const { docID: id6 } = await db.add(reply_to, "posts", auth)
+    await db.update({ date: db.del() }, "posts", id6, auth)
+    await db.update({ title: "post2" }, "posts", id1, auth)
+    await db.set({ aid: id6 }, "likes", `${id6}:${alice.address}`, auth)
   })
 })

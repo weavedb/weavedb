@@ -72,7 +72,11 @@ const update = async (
       }
     )
   }
-  return wrapResult(state, original_signer, SmartWeave)
+  return wrapResult(state, original_signer, SmartWeave, {
+    docID: last(path),
+    doc: next_data,
+    path: init(path),
+  })
 }
 
 module.exports = { update }

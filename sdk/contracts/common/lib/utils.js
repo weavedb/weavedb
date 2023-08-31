@@ -10,6 +10,7 @@ const {
   without,
   last,
 } = require("ramda")
+const md5 = require("../../weavedb-bpt/lib/md5")
 const { clone, bigIntFromBytes } = require("./pure")
 const { validate } = require("../../common/lib/jsonschema")
 
@@ -80,36 +81,8 @@ const isEvolving = state =>
   !isNil(last(state.evolveHistory)) &&
   isNil(last(state.evolveHistory).newVersion)
 
-async function getRandomIntNumber(
-  max,
-  action,
-  uniqueValue = "",
-  salt,
-  SmartWeave
-) {
-  const pseudoRandomData = SmartWeave.arweave.utils.stringToBuffer(
-    SmartWeave.block.height +
-      SmartWeave.block.timestamp +
-      SmartWeave.transaction.id +
-      action.caller +
-      uniqueValue +
-      salt.toString()
-  )
-  const hashBytes = await SmartWeave.arweave.crypto.hash(pseudoRandomData)
-  const randomBigInt = bigIntFromBytes(hashBytes)
-  return Number(randomBigInt % BigInt(max))
-}
-
-const genId = async (action, salt, SmartWeave) => {
-  const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-  let autoId = ""
-  for (let i = 0; i < 20; i++) {
-    autoId += CHARS.charAt(
-      (await getRandomIntNumber(CHARS.length, action, i, salt, SmartWeave)) - 1
-    )
-  }
-  return autoId
-}
+const genId = async (action, salt, SmartWeave) =>
+  md5(JSON.stringify(action.input))
 
 const isOwner = (signer, state) => {
   let owner = state.owner || []
