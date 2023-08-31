@@ -20,11 +20,7 @@ const offchain = {
         "resource.newData.reposts": 0,
         "resource.newData.quotes": 0,
         "resource.newData.comments": 0,
-        "resource.newData.date": [
-          "multiply",
-          1000,
-          { var: "request.block.timestamp" },
-        ],
+        "resource.newData.date": { var: "request.block.timestamp" },
         "request.method": [
           "ifelse",
           ["equals", "article", { var: "resource.newData.type" }],
@@ -196,7 +192,10 @@ const offchain = {
         keys: ["keys", { var: "request.resource.data" }],
       },
       "let create": {
-        create_user: ["equals", ["address"], { var: "keys" }],
+        "resource.newData.address": { var: "request.id" },
+        "resource.newData.followers": 0,
+        "resource.newData.following": 0,
+        create_user: ["equals", [], { var: "keys" }],
         "request.method": [
           "ifelse",
           ["and", { var: "create_user" }, { var: "isOwner" }],
@@ -248,7 +247,10 @@ const offchain = {
         user: [
           "if",
           { var: "setHandle" },
-          ["get", ["users", ["handle", "==", { var: "request.data.handle" }]]],
+          [
+            "get",
+            ["users", ["handle", "==", { var: "request.newData.handle" }]],
+          ],
         ],
         available: [
           "if",
@@ -271,21 +273,14 @@ const offchain = {
     },
     follows: {
       "let create": {
-        isDataOwner: [
-          "equals",
-          { var: "request.auth.signer" },
-          { var: "resource.newData.from" },
-        ],
-        from: [
-          "if",
-          { var: "isDataOwner" },
-          ["get", ["users", { var: "resource.newData.from" }]],
-        ],
-        to: [
-          "if",
-          { var: "isDataOwner" },
-          ["get", ["users", { var: "resource.newData.to" }]],
-        ],
+        ids: ["split", ":", { var: "request.id" }],
+        _from: ["first", { var: "ids" }],
+        _to: ["last", { var: "ids" }],
+        "resource.newData.from": { var: "request.auth.signer" },
+        "resource.newData.to": { var: "_to" },
+        "resource.newData.date": { var: "request.block.timestamp" },
+        from: ["get", ["users", { var: "resource.newData.from" }]],
+        to: ["get", ["users", { var: "resource.newData.to" }]],
         _id: [
           "join",
           ":",
@@ -299,12 +294,7 @@ const offchain = {
           [
             "all",
             ["equals", true],
-            [
-              { var: "isDataOwner" },
-              { var: "existFrom" },
-              { var: "existTo" },
-              { var: "okID" },
-            ],
+            [{ var: "existFrom" }, { var: "existTo" }, { var: "okID" }],
           ],
           "follow",
         ],
@@ -369,17 +359,17 @@ const offchain = {
         quote: { type: "boolean" },
         parents: {
           type: "array",
-          items: { type: "string", pattern: "^[0-9a-zA-Z-_]{21,21}$" },
+          items: { type: "string", pattern: "^[0-9a-zA-Z]{32,32}$" },
         },
         hashes: { type: "array", items: { type: "string" } },
         mentions: { type: "array", items: { type: "string" } },
         pt: { type: "number" },
-        ptts: { type: "number" },
-        last_like: { type: "number" },
-        likes: { type: "number" },
-        reposts: { type: "number" },
-        quotes: { type: "number" },
-        comments: { type: "number" },
+        ptts: { type: "number", multipleOf: 1 },
+        last_like: { type: "number", multipleOf: 1 },
+        likes: { type: "number", multipleOf: 1 },
+        reposts: { type: "number", multipleOf: 1 },
+        quotes: { type: "number", multipleOf: 1 },
+        comments: { type: "number", multipleOf: 1 },
       },
     },
     users: {
@@ -395,10 +385,10 @@ const offchain = {
         description: { type: "string", maxLength: 280 },
         hashes: { type: "array", items: { type: "string" } },
         mentions: { type: "array", items: { type: "string" } },
-        followers: { type: "number" },
-        following: { type: "number" },
-        invites: { type: "number" },
-        invited: { type: "number" },
+        followers: { type: "number", multipleOf: 1 },
+        following: { type: "number", multipleOf: 1 },
+        invites: { type: "number", multipleOf: 1 },
+        invited: { type: "number", multipleOf: 1 },
       },
     },
     timeline: {
@@ -407,8 +397,11 @@ const offchain = {
       properties: {
         date: { type: "number", multipleOf: 1 },
         rid: { type: "string" },
-        aid: { type: "string" },
-        braodcast: { type: "array", items: { type: "string" } },
+        aid: { type: "string", pattern: "^[0-9a-z]{32,32}$" },
+        braodcast: {
+          type: "array",
+          items: { type: "string", pattern: "^[0-9a-zA-Z]{42,42}$" },
+        },
       },
     },
     follows: {
@@ -418,7 +411,7 @@ const offchain = {
         date: { type: "number", multipleOf: 1 },
         from: { type: "string", pattern: "^[0-9a-zA-Z]{42,42}$" },
         to: { type: "string", pattern: "^[0-9a-zA-Z]{42,42}$" },
-        last: { type: "number" },
+        last: { type: "number", multipleOf: 1 },
       },
     },
     likes: {
@@ -491,7 +484,7 @@ const offchain = {
     timeline: [
       [
         ["broadcast", "array"],
-        ["date", "asc"],
+        ["date", "desc"],
       ],
     ],
   },

@@ -58,8 +58,8 @@ describe("WeaveDB Offchain BPT", function () {
     const beth = { address: acc2.address.toLowerCase() }
 
     // invite by the owner
-    await db.set({ address: alice.address }, "users", alice.address, auth)
-    await db.set({ address: bob.address }, "users", bob.address, auth)
+    await db.set({}, "users", alice.address, auth)
+    await db.set({}, "users", bob.address, auth)
 
     // give invites
     await db.update({ invites: 3 }, "users", bob.address, auth)
@@ -68,7 +68,7 @@ describe("WeaveDB Offchain BPT", function () {
     )
 
     // invite by a user
-    await db.set({ address: beth.address }, "users", beth.address, {
+    await db.set({}, "users", beth.address, {
       privateKey: acc1.privateKey,
     })
 
@@ -83,12 +83,7 @@ describe("WeaveDB Offchain BPT", function () {
     expect((await db.get("users", bob.address)).handle).to.eql(undefined)
 
     // follow user
-    await db.set(
-      { date: Date.now(), from: alice.address, to: bob.address },
-      "follows",
-      `${alice.address}:${bob.address}`,
-      auth
-    )
+    await db.set({}, "follows", `${alice.address}:${bob.address}`, auth)
     expect(
       (await db.get("follows", `${alice.address}:${bob.address}`)).from
     ).to.eql(alice.address)
@@ -135,6 +130,7 @@ describe("WeaveDB Offchain BPT", function () {
       reply_to: id1,
       hashes: [],
       mentions: [],
+      parents: [id1],
     }
     const { docID: id5 } = await db.add(status, "posts", auth)
     const { docID: id6 } = await db.add(reply_to, "posts", auth)
