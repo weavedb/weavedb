@@ -25,7 +25,12 @@ class Rollup {
     dbname = "weavedb",
     dir,
     plugins = {},
+    tick = null,
+    admin = null,
   }) {
+    this.admin = admin
+    this.tick = tick
+    this.last = 0
     this.secure = secure
     this.owner = owner
     this.rollup = false
@@ -197,6 +202,7 @@ class Rollup {
             doc: tx.result.doc,
           }
           await this.wal.set(t, "txs", `${t.id}`)
+          this.last = Date.now()
           for (let k in this.plugins) {
             this.plugins[k].db
               .exec({ id: t.id, data: t })
@@ -213,6 +219,13 @@ class Rollup {
       state,
     })
     await this.db.initialize()
+    if (!isNil(this.tick)) {
+      setInterval(() => {
+        if (Date.now() - this.last > this.tick) {
+          this.db.tick({ privateKey: this.admin })
+        }
+      }, this.tick)
+    }
   }
 
   async initWarp() {
