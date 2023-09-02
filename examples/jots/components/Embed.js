@@ -88,7 +88,7 @@ const Embed = ({
       <Flex
         px={2}
         pt={2}
-        pb={isNil(parent) ? 0 : 2}
+        pb={isNil(parent) && !main ? 0 : 2}
         align="center"
         sx={{
           cursor: isLink ? "pointer" : "default",

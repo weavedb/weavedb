@@ -19,7 +19,7 @@ const path = require("path")
 const { fork } = require("child_process")
 
 class Rollup {
-  constructor({ txid, secure, owner, dbname, dir, plugins }) {
+  constructor({ txid, secure, owner, dbname, dir, plugins, tick, admin }) {
     this.cb = {}
     this.txid = txid
     this.db = fork(path.resolve(__dirname, "rollup-mp"))
@@ -34,7 +34,7 @@ class Rollup {
     })
     this.db.send({
       op: "new",
-      params: { txid, secure, owner, dbname, dir, plugins },
+      params: { txid, secure, owner, dbname, dir, plugins, tick, admin },
     })
   }
   init(afterInit) {
@@ -68,6 +68,8 @@ class Server {
         dbname: v.dbname ?? this.conf.dbname,
         dir: v.dir ?? this.conf.dir,
         plugins: v.plugins ?? this.conf.plugins ?? {},
+        tick: v.tick ?? this.conf.tick ?? null,
+        admin: v.admin ?? this.conf.admin,
       })
     })(rollups)
     for (let k in this.rollups)
@@ -105,6 +107,8 @@ class Server {
                 dbname: v.dbname ?? this.conf.dbname,
                 dir: v.dir ?? this.conf.dir,
                 plugins: v.plugins ?? this.conf.plugins ?? {},
+                tick: v.tick ?? this.conf.tick ?? null,
+                admin: v.admin ?? this.conf.admin,
               })
               this.rollups[key].init()
             }
