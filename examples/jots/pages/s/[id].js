@@ -230,7 +230,11 @@ function StatusPage() {
       />
       {isNil(user?.handle) ? (
         <Flex justify="center" align="center" w="100%" h="calc(100vh - 50px)">
-          We are currently in private alpha. Sign in to use the dapp.
+          <Box p={8}>
+            We are currently in private alpha.
+            <br />
+            Sign in to use the dapp.
+          </Box>
         </Flex>
       ) : (
         <>

@@ -87,7 +87,7 @@ const Embed = ({
     <>
       <Flex
         px={2}
-        pt={2}
+        pt={[3, 2]}
         pb={isNil(parent) && !main ? 0 : 2}
         align="center"
         sx={{
@@ -116,7 +116,7 @@ const Embed = ({
             )}
           </Box>
         )}
-        <Box mt={isNil(tweet.title) ? 1 : 0} mx={2} flex={1}>
+        <Box mt={isNil(tweet.title) ? 1 : 0} mx={[1, 2]} flex={1}>
           <Flex
             align={[
               !isNil(tweet.title) ? "flex-start" : "center",
@@ -135,13 +135,14 @@ const Embed = ({
                 <Image
                   display={["block", null, null, "none"]}
                   src={puser.image ?? "/images/default-icon.png"}
-                  boxSize={
+                  boxSize={[
+                    "30px",
                     !isNil(tweet.title)
                       ? !isNil(body)
                         ? "40px"
                         : "30px"
-                      : "25px"
-                  }
+                      : "25px",
+                  ]}
                   mr={3}
                   sx={{ borderRadius: "50%" }}
                 />
@@ -197,6 +198,20 @@ const Embed = ({
                 </>
               )}
             </Box>
+            {isDeleted ? null : isNil(embed) &&
+              !isNil(tweet.cover) &&
+              !isNil(tweet.title) ? (
+              <Box
+                display={["block", "none"]}
+                sx={{
+                  borderRadius: "3px",
+                  backgroundPosition: "center",
+                  backgroundSize: "cover",
+                  backgroundImage: tweet.cover,
+                }}
+                boxSize="40px"
+              />
+            ) : null}
           </Flex>
           <Box
             fontSize="14px"
@@ -270,6 +285,7 @@ const Embed = ({
           !isNil(tweet.cover) &&
           !isNil(tweet.title) ? (
           <Box
+            display={["none", "block"]}
             sx={{
               backgroundPosition: "center",
               backgroundSize: "cover",
@@ -279,89 +295,93 @@ const Embed = ({
             mx={4}
           />
         ) : (
-          <Box mr={2} />
+          <Box mr={2} display={["none", "block"]} />
         )}
       </Flex>
       {!main ? null : (
-        <Flex
-          sx={{
-            borderTop: "1px #ccc solid",
-            borderBottom: "1px #ccc solid",
-          }}
-          py={3}
-          fontSize="14px"
-          pr={4}
-          ml="70px"
-        >
-          <Box ml={4}>
-            <b>{tweet.comments ?? 0}</b> Comments
-          </Box>
-          <Box
-            ml={6}
-            color="#333"
+        <>
+          <Flex
             sx={{
-              cursor: tweet.reposts - tweet.quotes > 0 ? "pointer" : "default",
-              ":hover":
-                tweet.reposts - tweet.quotes > 0
-                  ? { textDecoration: "underline" }
-                  : {},
+              borderTop: "1px #ccc solid",
+              borderBottom: "1px #ccc solid",
             }}
-            onClick={() => {
-              if (tweet.reposts - tweet.quotes > 0) setShowReposts(true)
-            }}
+            py={3}
+            fontSize="14px"
+            pr={4}
+            mx={["15px", "70px"]}
           >
-            <b>{(tweet.reposts ?? 0) - (tweet.quotes ?? 0)}</b> Reposts
-          </Box>
-          {tweet.quotes === 0 ? (
-            <Box ml={6} color="#333" sx={{ cursor: "default" }}>
-              <b>{tweet.quotes ?? 0}</b> Quotes
+            <Box ml={4}>
+              <b>{tweet.comments ?? 0}</b> Comments
             </Box>
-          ) : (
-            <Link href={`/s/${tweet.id}/quotes`}>
-              <Box
-                ml={6}
-                color="#333"
-                sx={{ ":hover": { textDecoration: "underline" } }}
-              >
+            <Box
+              ml={6}
+              color="#333"
+              sx={{
+                cursor:
+                  tweet.reposts - tweet.quotes > 0 ? "pointer" : "default",
+                ":hover":
+                  tweet.reposts - tweet.quotes > 0
+                    ? { textDecoration: "underline" }
+                    : {},
+              }}
+              onClick={() => {
+                if (tweet.reposts - tweet.quotes > 0) setShowReposts(true)
+              }}
+            >
+              <b>{(tweet.reposts ?? 0) - (tweet.quotes ?? 0)}</b> Reposts
+            </Box>
+            {tweet.quotes === 0 ? (
+              <Box ml={6} color="#333" sx={{ cursor: "default" }}>
                 <b>{tweet.quotes ?? 0}</b> Quotes
               </Box>
-            </Link>
-          )}
-          <Box
-            onClick={() => {
-              if (tweet.likes > 0) setShowLikes(true)
-            }}
-            ml={6}
-            color="#333"
-            sx={{
-              cursor: tweet.likes === 0 ? "default" : "pointer",
-              ":hover":
-                tweet.likes === 0 ? {} : { textDecoration: "underline" },
-            }}
-          >
-            <b>{tweet.likes ?? 0}</b> Likes
-          </Box>
-          <Box flex={1} />
-          {user?.address === puser.address && !isDeleted ? (
-            <>
-              <Box
-                onClick={async () => {
-                  if (confirm("Would you like to delete this post?")) {
-                    const { post } = await deletePost({ tweet })
-                    delTweet(post)
-                  }
-                }}
-                ml={6}
-                sx={{
-                  cursor: "pointer",
-                  ":hover": { textDecoration: "underline" },
-                }}
-              >
-                Delete
-              </Box>
-            </>
-          ) : null}
-        </Flex>
+            ) : (
+              <Link href={`/s/${tweet.id}/quotes`}>
+                <Box
+                  ml={6}
+                  color="#333"
+                  sx={{ ":hover": { textDecoration: "underline" } }}
+                >
+                  <b>{tweet.quotes ?? 0}</b> Quotes
+                </Box>
+              </Link>
+            )}
+            <Box
+              onClick={() => {
+                if (tweet.likes > 0) setShowLikes(true)
+              }}
+              ml={6}
+              color="#333"
+              sx={{
+                cursor: tweet.likes === 0 ? "default" : "pointer",
+                ":hover":
+                  tweet.likes === 0 ? {} : { textDecoration: "underline" },
+              }}
+            >
+              <b>{tweet.likes ?? 0}</b> Likes
+            </Box>
+            <Box flex={1} />
+            {user?.address === puser.address && !isDeleted ? (
+              <>
+                <Box
+                  display={["none", "block"]}
+                  onClick={async () => {
+                    if (confirm("Would you like to delete this post?")) {
+                      const { post } = await deletePost({ tweet })
+                      delTweet(post)
+                    }
+                  }}
+                  ml={6}
+                  sx={{
+                    cursor: "pointer",
+                    ":hover": { textDecoration: "underline" },
+                  }}
+                >
+                  Delete
+                </Box>
+              </>
+            ) : null}
+          </Flex>
+        </>
       )}
       {!buttons || !isNil(parent) ? null : (
         <Flex
@@ -372,7 +392,7 @@ const Embed = ({
           pt={main ? 3 : isNil(embed) ? 0 : 3}
           pb={main ? 3 : 2}
         >
-          <Box w={["58px", null, null, "75px"]} />
+          <Box w={[8, "58px", null, "75px"]} />
           <Box>
             <Box as="i" className="far fa-comment" mr={2} />
             {tweet.comments}
@@ -427,6 +447,28 @@ const Embed = ({
             />
             {tweet.likes}
           </Box>
+          {user?.address === puser.address && !isDeleted ? (
+            <>
+              <Flex justify="flex-end" flex={1} pr={8}>
+                <Box
+                  display={["block", "none"]}
+                  onClick={async () => {
+                    if (confirm("Would you like to delete this post?")) {
+                      const { post } = await deletePost({ tweet })
+                      delTweet(post)
+                    }
+                  }}
+                  fontSize="14px"
+                  sx={{
+                    cursor: "pointer",
+                    ":hover": { textDecoration: "underline" },
+                  }}
+                >
+                  Delete
+                </Box>
+              </Flex>
+            </>
+          ) : null}
         </Flex>
       )}
     </>
