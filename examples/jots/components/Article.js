@@ -260,7 +260,7 @@ export default function Article({
             </Box>
             <Box flex={1} />
             {!isDeleted && !preview && user?.address === puser?.address ? (
-              <>
+              <Box display={["none", "flex"]}>
                 <Link href={`/s/${post.id}/edit`}>
                   <Box
                     sx={{
@@ -288,9 +288,46 @@ export default function Article({
                 >
                   Delete
                 </Box>
-              </>
+              </Box>
             ) : null}
           </Flex>
+        ) : null}
+        {!isDeleted && !preview && user?.address === puser?.address ? (
+          <Box
+            display={["flex", "none"]}
+            fontSize="14px"
+            mt={2}
+            pr={4}
+            justifyContent="flex-end"
+          >
+            <Link href={`/s/${post.id}/edit`}>
+              <Box
+                sx={{
+                  cursor: "pointer",
+                  ":hover": { textDecoration: "underline", color: "#333" },
+                }}
+                color="#333"
+                ml={6}
+              >
+                Edit
+              </Box>
+            </Link>
+            <Box
+              onClick={async () => {
+                if (confirm("Would you like to delete this post?")) {
+                  const { post: _post } = await deletePost({ tweet: post })
+                  delTweet(_post)
+                }
+              }}
+              ml={6}
+              sx={{
+                cursor: "pointer",
+                ":hover": { textDecoration: "underline" },
+              }}
+            >
+              Delete
+            </Box>
+          </Box>
         ) : null}
         {isDeleted ? null : (
           <Box
