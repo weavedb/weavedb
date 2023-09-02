@@ -193,6 +193,8 @@ class Rollup {
             commit: false,
             tx_ts: tx.result.block.timestamp,
             input: param,
+            docID: tx.result.docID,
+            doc: tx.result.doc,
           }
           await this.wal.set(t, "txs", `${t.id}`)
           for (let k in this.plugins) {
@@ -261,6 +263,7 @@ class Rollup {
                     txid: md5(JSON.stringify({ contractTxId, input })),
                     input,
                     blk_ts: v.block.timestamp,
+                    /* add docID and doc */
                   }
                   console.log(`saving... [${this.tx_count}] ${t.txid}`)
                   await this.wal.set(t, "txs", `${t.id}`)

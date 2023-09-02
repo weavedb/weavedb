@@ -56,39 +56,23 @@ export const postArticle = async ({
   editID,
 }) => {
   const { identity } = await lf.getItem("user")
-  const id = editID ?? nanoid()
   const date = Date.now()
   let post = {
-    id,
     title,
-    type: "article",
     description,
     body: db.data("body"),
   }
   if (!isNil(cover)) post.cover = db.data("cover")
   let sign = null
   if (isNil(editID)) {
-    post = mergeLeft(
-      {
-        owner: user.address,
-        likes: 0,
-        reposts: 0,
-        quotes: 0,
-        comments: 0,
-        reply_to: "",
-        repost: "",
-        reply: false,
-        date,
-      },
-      post
-    )
-    sign = await db.sign("set", post, "posts", id, {
+    post.type = "article"
+    sign = await db.sign("add", post, "posts", {
       ...identity,
       jobID: "article",
     })
   } else {
-    post.updated = date
-    sign = await db.sign("update", post, "posts", id, {
+    console.log(post)
+    sign = await db.sign("update", post, "posts", editID, {
       ...identity,
       jobID: "article",
     })
@@ -112,9 +96,10 @@ export const postArticle = async ({
     },
     body: JSON.stringify({ body: __body, query: sign, cover }),
   }).then(e => e.json())
-  post.body = _body
-  post.cover = _cover
-  return { err: null, post }
+  let new_post = _tx.doc
+  new_post.body = _body
+  new_post.cover = _cover
+  return { err: null, post: new_post }
 }
 
 export const updateProfile = async ({
@@ -150,7 +135,6 @@ export const updateProfile = async ({
     if (!isNil(v) && (isNil(_user) || _user[k] !== v)) user[k] = v
   }
   if (isEmpty(user) && isNil(image)) return { err: "nothing to update" }
-  user.address = address
   let op = "update"
   if (isNil(_user?.handle)) {
     user.followers = 0
@@ -202,34 +186,21 @@ export const logout = async () => {
 
 export const likePost = async ({ user, tweet }) => {
   const { identity } = await lf.getItem("user")
-  const like = {
-    date: Date.now(),
-    user: user.address,
-    aid: tweet.id,
-  }
-  await db.set(like, "likes", `${like.aid}:${like.user}`, identity)
+  const like = {}
+  await db.set(like, "likes", `${tweet.id}:${user.address}`, identity)
   return { like }
 }
 
 export const repostPost = async ({ user, tweet }) => {
   const { identity } = await lf.getItem("user")
-  const id = nanoid()
-  const repost = {
-    id: `${id}`,
-    date: Date.now(),
-    owner: user.address,
-    repost: tweet.id,
-    reply_to: "",
-    reply: false,
-    quote: false,
-  }
-  await db.set(repost, "posts", `${id}`, identity)
-  return { repost }
+  const repost = { repost: tweet.id, type: "status" }
+  const { doc } = await db.add(repost, "posts", identity)
+  return { repost: doc }
 }
 
 export const followUser = async ({ user, puser }) => {
   const { identity } = await lf.getItem("user")
-  const follow = { date: Date.now(), from: user.address, to: puser.address }
+  const follow = {}
   const id = `${user.address}:${puser.address}`
   await db.set(follow, "follows", id, identity)
   return { follow: { id, data: follow } }
@@ -254,29 +225,22 @@ export const postStatus = async ({
   mentions = [],
 }) => {
   const { identity } = await lf.getItem("user")
-  const id = nanoid()
   let post = {
-    id,
-    date: Date.now(),
-    owner: user.address,
-    likes: 0,
-    reposts: 0,
-    quotes: 0,
-    comments: 0,
-    reply_to: repost !== "" ? "" : replyTo ?? "",
-    reply: (repost !== "" ? "" : replyTo ?? "") !== "",
-    repost,
     description: body,
-    quote: repost !== "",
     hashes: uniq(hashes),
     mentions: uniq(mentions),
   }
-  if (repost !== "") post.quote = true
-  if (isNil(replyTo)) post.title = title
+  if (isNil(replyTo)) {
+    post.title = title
+  } else {
+    post.replyTo = replyTo
+  }
+  if (repost !== "") post.repost = repost
   if (!isNil(tweet)) post.parents = append(tweet.id, tweet.parents ?? [])
+  let new_post = null
   if (!isNil(cover)) {
     post.cover = db.data("cover")
-    const sign = await db.sign("set", post, "posts", id, {
+    const sign = await db.sign("add", post, "posts", {
       ...identity,
       jobID: "article",
     })
@@ -287,11 +251,13 @@ export const postStatus = async ({
       },
       body: JSON.stringify({ query: sign, cover }),
     }).then(e => e.json())
-    post.cover = _cover
+    new_post = _tx.doc
+    new_post.cover = _cover
   } else {
-    await db.set(post, "posts", post.id, identity)
+    const _tx = await db.add(post, "posts", identity)
+    new_post = _tx.doc
   }
-  return { err: null, post }
+  return { err: null, post: new_post }
 }
 
 export const deletePost = async ({ tweet }) => {

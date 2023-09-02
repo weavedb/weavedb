@@ -88,6 +88,7 @@ const Embed = ({
       <Flex
         px={2}
         pt={2}
+        pb={isNil(parent) ? 0 : 2}
         align="center"
         sx={{
           cursor: isLink ? "pointer" : "default",
@@ -176,7 +177,7 @@ const Embed = ({
                             }}
                           >
                             <Image
-                              my={1}
+                              mt={1}
                               src={puser.image ?? "/images/default-icon.png"}
                               boxSize="20px"
                               mr={2}
@@ -191,7 +192,7 @@ const Embed = ({
                       </Flex>
                     </Link>
                     <Box mx={1}>·</Box>
-                    <Box>{dayjs(tweet.date).fromNow(true)}</Box>
+                    <Box>{dayjs(tweet.date * 1000).fromNow(true)}</Box>
                   </Flex>
                 </>
               )}

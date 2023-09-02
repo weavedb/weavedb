@@ -82,11 +82,17 @@ export default function Editor() {
               const json = await fetch(post.data.body, { mode: "cors" }).then(
                 v => v.json()
               )
-              setEditContent(json)
               setTitle(
-                (await lf.getItem(`edit-title-${editID ?? "new"}`)) ?? ""
+                (await lf.getItem(`edit-title-${editID ?? "new"}`)) ??
+                  post.data.title ??
+                  ""
               )
-              setBody((await lf.getItem(`edit-body-${editID ?? "new"}`)) ?? "")
+              setBody(
+                (await lf.getItem(`edit-body-${editID ?? "new"}`)) ??
+                  post.data.description ??
+                  ""
+              )
+              setEditContent(json)
             } catch (e) {}
           }
         }
@@ -294,7 +300,9 @@ export default function Editor() {
                                     editID,
                                   })
                                   if (isNil(err)) {
-                                    await lf.removeItem("edit")
+                                    await lf.removeItem(
+                                      `edit-${editID ?? "new"}`
+                                    )
                                     router.push(`/s/${post.id}`)
                                   }
                                 } catch (e) {

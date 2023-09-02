@@ -136,6 +136,6 @@ describe("WeaveDB Offchain BPT", function () {
     const { docID: id6 } = await db.add(reply_to, "posts", auth)
     await db.update({ date: db.del() }, "posts", id6, auth)
     await db.update({ title: "post2" }, "posts", id1, auth)
-    await db.set({ aid: id6 }, "likes", `${id6}:${alice.address}`, auth)
+    await db.set({}, "likes", `${id6}:${alice.address}`, auth)
   })
 })

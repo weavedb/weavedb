@@ -71,9 +71,10 @@ export default function App({
         if (!isChecked) {
           isChecked = true
           const empty =
-            !isNil(val?.nodes?.root) &&
-            val.nodes.root.children.length === 1 &&
-            val.nodes.root.children[0].children.length === 0
+            isNil(val?.nodes?.root) ||
+            (!isNil(val?.nodes?.root) &&
+              val.nodes.root.children.length === 1 &&
+              val.nodes.root.children[0].children.length === 0)
           if (
             !isNil(editContent) &&
             (empty || (editContent.date || 0) > (val?.date ?? 0))

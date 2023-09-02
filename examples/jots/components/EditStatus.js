@@ -230,7 +230,7 @@ export default function EditUser({
                       setJSON(null)
                       setEditStatus(false)
                       if (!isNil(setPost)) setPost(post)
-                      if (isNil(replyTo) && isNil(repost)) {
+                      if (isNil(replyTo) || !isNil(repost)) {
                         router.push(`/s/${post.id}`)
                       }
                     }

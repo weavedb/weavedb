@@ -723,10 +723,7 @@ function StatusPage() {
                             if (isAddress(addr)) {
                               const db = await initDB()
                               const _addr = addr.toLowerCase()
-                              const _invite = {
-                                address: _addr,
-                                invited_by: user.address,
-                              }
+                              const _invite = {}
                               await db.set(_invite, "users", _addr)
                               setInvites(
                                 append(
