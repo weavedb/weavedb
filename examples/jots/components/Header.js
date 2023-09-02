@@ -94,6 +94,7 @@ function Header({
         <Box flex={1} />
         <Link href={`/`}>
           <Box
+            display={["none", "block"]}
             mx={2}
             sx={{
               cursor: "pointer",
@@ -128,6 +129,7 @@ function Header({
           <>
             {type === "default" ? (
               <Box
+                display={["none", "block"]}
                 onClick={() => setEditPost(true)}
                 mx={2}
                 sx={{
@@ -159,6 +161,7 @@ function Header({
             <Link href="/notifications">
               <Box
                 mx={2}
+                display={["none", "block"]}
                 sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
               >
                 <Flex
@@ -190,11 +193,12 @@ function Header({
             </Link>
             {!userMenu ? null : (
               <>
-                <Box mx={2} color="#ccc">
+                <Box mx={2} color="#ccc" display={["none", "block"]}>
                   |
                 </Box>
                 <Link href={`/u/${user.handle}`}>
                   <Box
+                    display={["none", "block"]}
                     mx={2}
                     sx={{
                       cursor: "pointer",

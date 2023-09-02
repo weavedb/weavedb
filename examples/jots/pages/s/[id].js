@@ -33,6 +33,7 @@ import {
 import Tweet from "../../components/Tweet"
 import Article from "../../components/Article"
 import Header from "../../components/Header"
+import Footer from "../../components/Footer"
 import SDK from "weavedb-client"
 import { initDB, checkUser, getUsers } from "../../lib/db"
 import EditUser from "../../components/EditUser"
@@ -234,7 +235,7 @@ function StatusPage() {
       ) : (
         <>
           {isNil(tweet) ? null : (
-            <Flex justify="center" minH="100%" pb={10} pt="50px">
+            <Flex justify="center" minH="100%" pb={["50px", 0]} pt="50px">
               <Box flex={1}></Box>
               <Box w="100%" maxW="760px" minH="100%">
                 {isNil(parent) ? null : (
@@ -598,6 +599,7 @@ function StatusPage() {
         </>
       )}
       <EditUser {...{ setEditUser, editUser, identity, setUser, user }} />
+      <Footer {...{ user, setEditPost }} />
     </ChakraProvider>
   )
 }
