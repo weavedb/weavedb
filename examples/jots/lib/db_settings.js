@@ -87,7 +87,6 @@ const offchain = {
           ],
         ],
         noRepost: ["o", ["equals", 0], ["length"], { var: "repost" }],
-        "resource.newData.noRepost": { var: "noRepost" },
         "request.method": [
           "if",
           [
@@ -126,6 +125,7 @@ const offchain = {
         ],
       },
       "let update": {
+        "resource.newData.updated": { var: "request.block.timestamp" },
         isDataOwner: [
           "equals",
           { var: "request.auth.signer" },
@@ -192,10 +192,21 @@ const offchain = {
         keys: ["keys", { var: "request.resource.data" }],
       },
       "let create": {
+        user: ["get", ["users", { var: "request.auth.signer" }]],
         "resource.newData.address": { var: "request.id" },
         "resource.newData.followers": 0,
         "resource.newData.following": 0,
         create_user: ["equals", [], { var: "keys" }],
+        no_user: ["isNil", { var: "user" }],
+        no_owner: ["not", { var: "isOwner" }],
+        "request.method": [
+          "ifelse",
+          ["and", { var: "no_user" }, { var: "no_owner" }],
+          "_no_user",
+          "_is_user",
+        ],
+      },
+      "let _is_user": {
         "request.method": [
           "ifelse",
           ["and", { var: "create_user" }, { var: "isOwner" }],
@@ -204,7 +215,6 @@ const offchain = {
         ],
       },
       "let _create_by_user": {
-        user: ["get", ["users", { var: "request.auth.signer" }]],
         invited: ["defaultTo", 0, { var: "user.invited" }],
         "request.method": [
           "if",
@@ -237,7 +247,15 @@ const offchain = {
             ["length"],
             ["difference", { var: "keys" }],
           ],
-          ["name", "description", "handle", "hashes", "mentions"],
+          [
+            "name",
+            "description",
+            "handle",
+            "hashes",
+            "mentions",
+            "image",
+            "cover",
+          ],
         ],
         setHandle: ["includes", "handle", { var: "keys" }],
         existHandle: [
@@ -249,7 +267,7 @@ const offchain = {
           { var: "setHandle" },
           [
             "get",
-            ["users", ["handle", "==", { var: "request.newData.handle" }]],
+            ["users", ["handle", "==", { var: "resource.newData.handle" }]],
           ],
         ],
         available: [
@@ -315,27 +333,25 @@ const offchain = {
     },
     likes: {
       "let create": {
-        "resource.newData.user": { var: "request.auth.signer" },
-        "resource.newData.date": [
-          "multiply",
-          1000,
-          { var: "request.block.timestamp" },
+        ids: ["split", ":", { var: "request.id" }],
+        "resource.newData.aid": ["head", { var: "ids" }],
+        "resource.newData.user": ["last", { var: "ids" }],
+        "resource.newData.date": { var: "request.block.timestamp" },
+        isSigner: [
+          "equals",
+          { var: "resource.newData.user" },
+          { var: "request.auth.signer" },
         ],
-        _id: [
-          "join",
-          ":",
-          [{ var: "resource.newData.aid" }, { var: "request.auth.signer" }],
-        ],
-        okID: ["equals", { var: "request.id" }, { var: "_id" }],
         post: ["get", ["posts", { var: "resource.newData.aid" }]],
         exPost: [["complement", ["isNil"]], { var: "post" }],
-        notDeleted: [
-          ["complement", ["isNil"]],
-          { var: "resource.newData.date" },
-        ],
+        notDeleted: [["complement", ["isNil"]], { var: "post.date" }],
         "request.method": [
           "if",
-          ["all", ["equals", true], [{ var: "notDeleted" }, { var: "okID" }]],
+          [
+            "all",
+            ["equals", true],
+            [{ var: "notDeleted" }, { var: "isSigner" }],
+          ],
           "like",
         ],
       },
@@ -350,6 +366,7 @@ const offchain = {
         id: { type: "string", pattern: "^[0-9a-z]{32,32}$" },
         owner: { type: "string", pattern: "^[0-9a-zA-Z]{42,42}$" },
         date: { type: "number", multipleOf: 1 },
+        updated: { type: "number", multipleOf: 1 },
         description: { type: "string", maxLength: 280 },
         title: { type: "string", minLength: 1, maxLength: 100 },
         type: { type: "string" },
@@ -645,7 +662,12 @@ const offchain = {
             "docid",
             ["join", ":", [{ var: "data.after.owner" }, { var: "post.owner" }]],
           ],
-          ["update", [{ last: db.ts() }, "follows", { var: "docid" }]],
+          ["get", "following", ["follows", { var: "docid" }]],
+          [
+            "if",
+            [["complement", ["isNil"]], { var: "following" }],
+            ["update", [{ last: db.ts() }, "follows", { var: "docid" }]],
+          ],
         ],
       },
       {

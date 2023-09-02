@@ -46,7 +46,7 @@ class Notifications {
     const input =
       v.data.input.function === "relay" ? v.data.input.query[1] : v.data.input
     const func = input.function
-    const data = input.query[0]
+    const data = v.data.doc
     const col = input.query[1]
     if (func === "set" && col === "likes") {
       const from = data.user
@@ -77,9 +77,8 @@ class Notifications {
       )
     }
     if (func === "set" && col === "follows") {
-      const from = data.from
-      const to = data.to
-      const date = data.date
+      const [from, to] = v.data.input.query[2].split(":")
+      const date = v.data.tx_ts
       const id = md5(`follow:${from}:${to}:${date}`)
       await this.pdb.set(
         {
@@ -101,7 +100,7 @@ class Notifications {
         )} at ${date}`
       )
     }
-    if (func === "set" && col === "posts") {
+    if (func === "add" && col === "posts") {
       for (let _to of data.mentions || []) {
         const article = data
         cache.users[_to] ??= (
