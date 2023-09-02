@@ -35,6 +35,7 @@ import {
 } from "ramda"
 import Tweet from "../../components/Tweet"
 import Header from "../../components/Header"
+import Footer from "../../components/Footer"
 import SDK from "weavedb-client"
 import {
   followUser,
@@ -416,7 +417,12 @@ function StatusPage() {
             </Flex>
           ) : null}
           {isNil(puser) ? null : (
-            <Flex justify="center" minH="100%" pt={isFollow ? "91px" : "50px"}>
+            <Flex
+              justify="center"
+              minH="100%"
+              pt={isFollow ? "91px" : "50px"}
+              pb={["50px", 0]}
+            >
               <Box flex={1}></Box>
               <Box
                 w="100%"
@@ -436,22 +442,22 @@ function StatusPage() {
                         backgroundPosition: "center",
                         zIndex: 100,
                       }}
-                      h="190px"
+                      h={["100px", "190px"]}
                       w="100%"
                     />
                     <Box sx={{ zIndex: 100 }}>
                       <Flex>
                         <Image
                           ml="20px"
-                          boxSize="150px"
+                          boxSize={["80px", "150px"]}
                           src={puser.image ?? "/images/default-icon.png"}
-                          mt="-75px"
+                          mt={["-40px", "-75px"]}
                           sx={{
                             borderRadius: "50%",
                           }}
                         />
                         <Box flex={1} />
-                        <Box m={4}>
+                        <Box mx={4} mt={4} mb={[2, 4]}>
                           {puser.handle === user?.handle ? (
                             <Flex
                               onClick={() => setEditUser(true)}
@@ -542,13 +548,23 @@ function StatusPage() {
                           ) : null}
                         </Box>
                       </Flex>
-                      <Box mx="30px" mt={4} fontSize="20px" fontWeight="bold">
+                      <Box
+                        mx={["20px", "30px"]}
+                        mt={[0, 4]}
+                        fontSize="20px"
+                        fontWeight="bold"
+                      >
                         {puser.name}
                       </Box>
-                      <Box mx="30px" mb={2} fontSize="15px" color="#666">
+                      <Box
+                        mx={["20px", "30px"]}
+                        mb={2}
+                        fontSize="15px"
+                        color="#666"
+                      >
                         @{puser.handle}
                       </Box>
-                      <Box mx="30px" mb={2} fontSize="15px">
+                      <Box mx={["20px", "30px"]} mb={2} fontSize="15px">
                         <Box
                           dangerouslySetInnerHTML={{
                             __html: linkifyHtml(puser.description, {
@@ -561,7 +577,7 @@ function StatusPage() {
                           }}
                         />
                       </Box>
-                      <Flex mx="30px" mb={2} fontSize="15px">
+                      <Flex mx={["20px", "30px"]} mb={2} fontSize="15px">
                         <Box
                           mr={4}
                           onClick={() => setTab("following")}
@@ -617,7 +633,7 @@ function StatusPage() {
                           onClick={() => setTab(v.key)}
                           justify="center"
                           flex={1}
-                          mx={8}
+                          mx={[2, 8]}
                           pb={2}
                           sx={{
                             cursor: "pointer",
@@ -1045,6 +1061,7 @@ function StatusPage() {
       <EditUser
         {...{ setEditUser, editUser, identity, setUser, user, setPuser }}
       />
+      <Footer {...{ user, setEditPost }} />
     </ChakraProvider>
   )
 }
