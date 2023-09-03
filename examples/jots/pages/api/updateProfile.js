@@ -16,7 +16,7 @@ export default async (req, res) => {
   let image = null
   let cover = null
   let extra = {}
-  const addr = req.body.query.query[0].address
+  const addr = req.body.query.query[2]
   const nonce = req.body.query.nonce
   const prefix = isNil(process.env.GCS_PREFIX)
     ? ""

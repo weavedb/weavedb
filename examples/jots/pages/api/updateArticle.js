@@ -1,7 +1,7 @@
 const SDK = require("weavedb-node-client")
 const { Storage } = require("@google-cloud/storage")
 const { isNil } = require("ramda")
-
+const { nanoid } = require("nanoid")
 export default async (req, res) => {
   const storage = new Storage({
     projectId: process.env.GCS_PROJECT_ID,
@@ -17,7 +17,7 @@ export default async (req, res) => {
   let cover = null
   let extra = {}
   const addr = req.body.query.query[0].owner
-  const id = req.body.query.query[0].id
+  const id = nanoid()
   const nonce = req.body.query.nonce
   const prefix = isNil(process.env.GCS_PREFIX)
     ? ""
@@ -26,7 +26,7 @@ export default async (req, res) => {
     try {
       const buf = req.body.body
       const ext = "json"
-      const filename = `${prefix}articles/${addr}/body-${id}-${nonce}.${ext}`
+      const filename = `${prefix}articles/body-${id}-${nonce}.${ext}`
       await bucket.file(filename).save(buf)
       await bucket.file(filename).makePublic()
       body = `https://${process.env.GCS_BUCKET}.storage.googleapis.com/${filename}`
@@ -39,7 +39,7 @@ export default async (req, res) => {
     try {
       const buf = Buffer.from(req.body.cover.split(",")[1], "base64")
       const ext = req.body.cover.split(";")[0].split("/")[1]
-      const filename = `${prefix}profile/${addr}/cover-${id}-${nonce}.${ext}`
+      const filename = `${prefix}article/cover-${id}-${nonce}.${ext}`
       await bucket.file(filename).save(buf)
       await bucket.file(filename).makePublic()
       cover = `https://storage.googleapis.com/${process.env.GCS_BUCKET}/${filename}`
