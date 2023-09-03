@@ -57,8 +57,9 @@ function Page() {
       const db = await initDB()
       const _posts = await db.cget(
         "posts",
-        ["pt", "desc"],
         ["type", "==", "article"],
+        ["pt", "desc"],
+        ["date", "desc"],
         limit
       )
       setPosts(_posts)
@@ -393,8 +394,9 @@ function Page() {
                           const db = await initDB()
                           const _posts = await db.cget(
                             "posts",
+                            ["type", "==", "article"],
                             ["pt", "desc"],
-                            ["type", "==", "desc"],
+                            ["date", "desc"],
                             ["startAfter", last(posts)],
                             limit
                           )

@@ -472,6 +472,7 @@ const offchain = {
       [
         ["type", "asc"],
         ["pt", "desc"],
+        ["date", "desc"],
       ],
     ],
     users: [

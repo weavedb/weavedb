@@ -32,8 +32,10 @@ export default function Home() {
         contractTxId: "offchain#log",
         rpc: process.env.NEXT_PUBLIC_WEAVEDB_RPC,
       })
-      const _txs = await db.cget("txs", ["id", "desc"], ["endBefore", txs[0]])
-      if (_txs.length > 0) setTxs(concat(_txs, txs))
+      if (!isNil(txs[0])) {
+        const _txs = await db.cget("txs", ["id", "desc"], ["endBefore", txs[0]])
+        if (_txs.length > 0) setTxs(concat(_txs, txs))
+      }
     })()
   }, [tick])
   return (
@@ -52,21 +54,22 @@ export default function Home() {
         align="center"
         w="100%"
         px={6}
+        bg="#eee"
       >
         <Box as="span" mx={2} fontWeight="bold">
           WeaveDB Rollup Explorer
         </Box>
         <Box flex={1} />
-        {isNil(process.env.NEXT_PUBLIC_CONTRACT_TX_ID) ? null : (
+        {isNil(process.env.NEXT_PUBLIC_APP_URL) ? null : (
           <Box
             as="a"
             target="_blank"
-            href={`https://sonar.warp.cc/#/app/contract/${process.env.NEXT_PUBLIC_CONTRACT_TX_ID}?network=mainnet`}
+            href={process.env.NEXT_PUBLIC_APP_URL}
             mx={2}
             color="#4F49B6"
             sx={{ textDecoration: "underline" }}
           >
-            {process.env.NEXT_PUBLIC_CONTRACT_TX_ID}
+            {process.env.NEXT_PUBLIC_APP_URL}
           </Box>
         )}
       </Flex>
