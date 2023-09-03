@@ -226,11 +226,10 @@ export const postStatus = async ({
     hashes: uniq(hashes),
     mentions: uniq(mentions),
   }
-  if (isNil(replyTo)) {
-    post.title = title
-  } else {
-    post.replyTo = replyTo
-  }
+  if (isNil(replyTo) && !isNil(title)) post.title = title
+
+  if (!isNil(replyTo)) post.reply_to = replyTo
+
   if (repost !== "") post.repost = repost
   if (!isNil(tweet)) post.parents = append(tweet.id, tweet.parents ?? [])
   let new_post = null
