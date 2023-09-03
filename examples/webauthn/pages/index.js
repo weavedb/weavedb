@@ -54,21 +54,24 @@ export default function Home() {
           setEditUser(true)
         }
       }
+
       const _posts = await _sdk.cget("posts", ["date", "desc"], limit)
       setPosts(pluck("data", _posts))
       if (_posts.length >= limit) setNext(last(_posts))
-      setUserMap(
-        compose(
-          mergeRight(userMap),
-          indexBy(prop("uid"))
-        )(
-          await _sdk.get("users", [
-            "uid",
-            "in",
-            compose(uniq, pluck("user"), pluck("data"))(_posts),
-          ])
+      if (_posts.length > 0) {
+        setUserMap(
+          compose(
+            mergeRight(userMap),
+            indexBy(prop("uid"))
+          )(
+            await _sdk.get("users", [
+              "uid",
+              "in",
+              compose(uniq, pluck("user"), pluck("data"))(_posts),
+            ])
+          )
         )
-      )
+      }
     })()
   }, [])
   return (

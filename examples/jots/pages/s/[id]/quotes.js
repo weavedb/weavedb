@@ -30,6 +30,7 @@ import {
 } from "ramda"
 import Tweet from "../../../components/Tweet"
 import Header from "../../../components/Header"
+import Footer from "../../../components/Footer"
 import SDK from "weavedb-client"
 import EditUser from "../../../components/EditUser"
 import EditStatus from "../../../components/EditStatus"
@@ -192,7 +193,7 @@ function Page() {
         }}
       />
 
-      <Flex justify="center" minH="100%" pt="50px">
+      <Flex justify="center" minH="100%" pt="50px" pb={["50px", 0]}>
         <Box flex={1}></Box>
         <Box
           w="100%"
@@ -280,6 +281,7 @@ function Page() {
         }}
       />
       <EditUser {...{ setEditUser, editUser, identity, setUser, user }} />
+      <Footer {...{ user, setEditPost }} />
     </ChakraProvider>
   )
 }

@@ -422,6 +422,7 @@ function StatusPage() {
                         likes,
                         setLikes,
                         reposted: reposts[v.id],
+                        delTweet: post => {},
                         setRetweet: repost => {
                           let _comments = clone(comments)
                           for (let v2 of _comments) {

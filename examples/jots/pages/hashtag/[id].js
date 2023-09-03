@@ -228,7 +228,6 @@ function Page() {
               left: 0,
               zIndex: 99,
             }}
-            pb={["50px", 0]}
           >
             <Flex
               fontSize="14px"
@@ -264,7 +263,7 @@ function Page() {
             </Flex>
           </Flex>
 
-          <Flex justify="center" minH="100%" pt={"91px"}>
+          <Flex justify="center" minH="100%" pt={"91px"} pb={["50px", 0]}>
             <Box flex={1}></Box>
             <Box
               w="100%"
