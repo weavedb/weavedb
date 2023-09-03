@@ -136,10 +136,6 @@ export const updateProfile = async ({
   }
   if (isEmpty(user) && isNil(image)) return { err: "nothing to update" }
   let op = "update"
-  if (isNil(_user?.handle)) {
-    user.followers = 0
-    user.following = 0
-  }
   let tx, __image, __cover
   if (!isNil(image) || !isNil(cover)) {
     if (!isNil(image)) user.image = db.data("image")
