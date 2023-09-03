@@ -338,7 +338,7 @@ function StatusPage() {
     { key: "following", name: "Following" },
     { key: "followers", name: "Followers" },
   ]
-  if ((user?.invites ?? 0) > 0 && user.address === puser.address) {
+  if ((user?.invites ?? 0) > 0 && user?.address === puser?.address) {
     tabs2.push({ key: "invites", name: "Invites" })
   }
   const isFollow = includes(tab, ["following", "followers", "invites"])
@@ -648,6 +648,53 @@ function StatusPage() {
                 ) : null}
                 {isFollow ? (
                   <>
+                    {tab !== "invites" ? null : (
+                      <Flex
+                        p={4}
+                        justify="center"
+                        sx={{ borderBottom: "1px solid #ccc" }}
+                      >
+                        <Input
+                          maxW="450px"
+                          sx={{ borderRadius: "5px 0 0 5px" }}
+                          placeholder="ETH Address"
+                          value={addr}
+                          onChange={e => setAddr(e.target.value)}
+                        />
+                        <Flex
+                          justify="center"
+                          w="150px"
+                          py={2}
+                          bg={isAddress(addr) ? "#333" : "#999"}
+                          color="white"
+                          height="auto"
+                          align="center"
+                          sx={{
+                            borderRadius: "0 5px 5px 0",
+                            cursor: isAddress(addr) ? "pointer" : "default",
+                            ":hover": { opacity: isAddress(addr) ? 0.75 : 1 },
+                          }}
+                          onClick={async () => {
+                            if (isAddress(addr)) {
+                              const db = await initDB()
+                              const _addr = addr.toLowerCase()
+                              const _invite = {}
+                              const { doc } = await db.set(
+                                _invite,
+                                "users",
+                                _addr
+                              )
+                              setInvites(
+                                prepend({ id: _addr, data: doc }, invites)
+                              )
+                              setAddr("")
+                            }
+                          }}
+                        >
+                          Invite
+                        </Flex>
+                      </Flex>
+                    )}
                     {map(v => {
                       const u = users[v]
                       return isNil(u) ? null : isNil(u.handle) ? (
@@ -711,51 +758,6 @@ function StatusPage() {
                         : tab === "followers"
                         ? map(path(["data", "from"]))(followers)
                         : map(path(["data", "address"]))(invites)
-                    )}
-                    {tab !== "invites" ? null : (
-                      <Flex p={4} justify="center">
-                        <Input
-                          maxW="450px"
-                          sx={{ borderRadius: "5px 0 0 5px" }}
-                          placeholder="ETH Address"
-                          value={addr}
-                          onChange={e => setAddr(e.target.value)}
-                        />
-                        <Flex
-                          justify="center"
-                          w="150px"
-                          py={2}
-                          bg={isAddress(addr) ? "#333" : "#999"}
-                          color="white"
-                          height="auto"
-                          align="center"
-                          sx={{
-                            borderRadius: "0 5px 5px 0",
-                            cursor: isAddress(addr) ? "pointer" : "default",
-                            ":hover": { opacity: isAddress(addr) ? 0.75 : 1 },
-                          }}
-                          onClick={async () => {
-                            if (isAddress(addr)) {
-                              const db = await initDB()
-                              const _addr = addr.toLowerCase()
-                              const _invite = {}
-                              await db.set(_invite, "users", _addr)
-                              setInvites(
-                                append(
-                                  {
-                                    id: _addr,
-                                    data: _invite,
-                                  },
-                                  invites
-                                )
-                              )
-                              setAddr("")
-                            }
-                          }}
-                        >
-                          Invite
-                        </Flex>
-                      </Flex>
                     )}
                     {tab !== "following" || !isNextFollowing ? null : (
                       <Flex p={4} justify="center">
