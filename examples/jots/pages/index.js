@@ -30,6 +30,7 @@ import {
 import Tweet from "../components/Tweet"
 import Header from "../components/Header"
 import Footer from "../components/Footer"
+import Alpha from "../components/Alpha"
 import SDK from "weavedb-client"
 import EditUser from "../components/EditUser"
 import EditStatus from "../components/EditStatus"
@@ -209,13 +210,7 @@ function Page() {
         }}
       />
       {isNil(user?.handle) ? (
-        <Flex justify="center" align="center" w="100%" h="calc(100vh - 50px)">
-          <Box p={8}>
-            We are currently in private alpha.
-            <br />
-            Sign in to use the dapp.
-          </Box>
-        </Flex>
+        <Alpha />
       ) : (
         <>
           {isNil(user) ? null : (

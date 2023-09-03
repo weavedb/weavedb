@@ -217,7 +217,7 @@ const Embed = ({
             fontSize="14px"
             my={2}
             className="markdown-body"
-            pl={!isNil(parent) ? 0 : [10, null, null, 0]}
+            pl={["44px", "38px", null, 0]}
           >
             {isDeleted ? (
               <Flex justify="center">
@@ -251,11 +251,16 @@ const Embed = ({
             )}
           </Box>
           {isDeleted ? null : !isNil(tweet.cover) && isNil(tweet.title) ? (
-            <Flex p={4} justify="center">
+            <Flex
+              pr={4}
+              py={[2, 4]}
+              justify="center"
+              pl={["44px", "38px", null, 0]}
+            >
               <Link target="_blank" href={tweet.cover}>
                 <Image
                   src={tweet.cover}
-                  maxW="500px"
+                  maxW="100%"
                   maxH="500px"
                   sx={{
                     cursor: disabled ? "default" : "pointer",
@@ -271,6 +276,7 @@ const Embed = ({
             <Box
               mt={3}
               mb={main ? 2 : 0}
+              ml={[8, null, null, 0]}
               sx={{
                 ":hover": { opacity: 0.75 },
                 border: "1px solid #ccc",
@@ -392,7 +398,7 @@ const Embed = ({
           pt={main ? 3 : isNil(embed) ? 0 : 3}
           pb={main ? 3 : 2}
         >
-          <Box w={[8, "58px", null, "75px"]} />
+          <Box w={["58px", null, null, "75px"]} />
           <Box>
             <Box as="i" className="far fa-comment" mr={2} />
             {tweet.comments}
