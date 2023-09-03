@@ -223,6 +223,28 @@ function Header({
                 >
                   Sign Out
                 </Box>
+                {isNil(process.env.NEXT_PUBLIC_EXPLORER) ? null : (
+                  <>
+                    <Box mx={2} color="#ccc" display={["none", "block"]}>
+                      |
+                    </Box>
+                    <Link
+                      href={process.env.NEXT_PUBLIC_EXPLORER}
+                      target="_blank"
+                    >
+                      <Box
+                        display={["none", "block"]}
+                        mx={2}
+                        sx={{
+                          cursor: "pointer",
+                          ":hover": { opacity: 0.75 },
+                        }}
+                      >
+                        Explorer
+                      </Box>
+                    </Link>
+                  </>
+                )}
               </>
             )}
             <Image
