@@ -31,6 +31,7 @@ import {
 import Tweet from "../../../components/Tweet"
 import Header from "../../../components/Header"
 import Footer from "../../../components/Footer"
+import Alpha from "../../../components/Alpha"
 import SDK from "weavedb-client"
 import EditUser from "../../../components/EditUser"
 import EditStatus from "../../../components/EditStatus"
@@ -192,80 +193,83 @@ function Page() {
           setEditStatus,
         }}
       />
-
-      <Flex justify="center" minH="100%" pt="50px" pb={["50px", 0]}>
-        <Box flex={1}></Box>
-        <Box
-          w="100%"
-          maxW="760px"
-          minH="100%"
-          sx={{ borderX: "1px solid #ccc" }}
-        >
-          {posts.length === 0 ? (
-            <Flex h="100px" justify="center" align="center">
-              No Posts Found
-            </Flex>
-          ) : (
-            <>
-              {map(v2 => {
-                const v = tweets[v2.repost] ?? {}
-                let repost = v2.owner
-                let parent = v2
-                return (
-                  <Tweet
-                    likes={likes}
-                    reposted={true}
-                    {...{
-                      isLink: true,
-                      disabled: true,
-                      parent,
-                      users,
-                      tweets,
-                      tweet: v,
-                      repost,
-                      reply: tab === "replies" || v.reply_to !== "",
-                    }}
-                  />
-                )
-              })(pluck("data", posts))}
-              {!isNext ? null : (
-                <Flex p={4} justify="center">
-                  <Flex
-                    justify="center"
-                    w="300px"
-                    py={2}
-                    bg="#333"
-                    color="white"
-                    height="auto"
-                    align="center"
-                    sx={{
-                      borderRadius: "20px",
-                      cursor: "pointer",
-                      ":hover": { opacity: 0.75 },
-                    }}
-                    onClick={async () => {
-                      const db = await initDB()
-                      const _posts = await db.cget(
-                        "posts",
-                        ["date", "desc"],
-                        ["repost", "==", router.query.id],
-                        ["quote", "==", true],
-                        ["startAfter", last(posts)],
-                        limit
-                      )
-                      setPosts(concat(posts, _posts))
-                      setIsNext(_posts.length >= limit)
-                    }}
-                  >
-                    Load More
+      {isNil(user?.handle) ? (
+        <Alpha />
+      ) : (
+        <Flex justify="center" minH="100%" pt="50px" pb={["50px", 0]}>
+          <Box flex={1}></Box>
+          <Box
+            w="100%"
+            maxW="760px"
+            minH="100%"
+            sx={{ borderX: "1px solid #ccc" }}
+          >
+            {posts.length === 0 ? (
+              <Flex h="100px" justify="center" align="center">
+                No Posts Found
+              </Flex>
+            ) : (
+              <>
+                {map(v2 => {
+                  const v = tweets[v2.repost] ?? {}
+                  let repost = v2.owner
+                  let parent = v2
+                  return (
+                    <Tweet
+                      likes={likes}
+                      reposted={true}
+                      {...{
+                        isLink: true,
+                        disabled: true,
+                        parent,
+                        users,
+                        tweets,
+                        tweet: v,
+                        repost,
+                        reply: tab === "replies" || v.reply_to !== "",
+                      }}
+                    />
+                  )
+                })(pluck("data", posts))}
+                {!isNext ? null : (
+                  <Flex p={4} justify="center">
+                    <Flex
+                      justify="center"
+                      w="300px"
+                      py={2}
+                      bg="#333"
+                      color="white"
+                      height="auto"
+                      align="center"
+                      sx={{
+                        borderRadius: "20px",
+                        cursor: "pointer",
+                        ":hover": { opacity: 0.75 },
+                      }}
+                      onClick={async () => {
+                        const db = await initDB()
+                        const _posts = await db.cget(
+                          "posts",
+                          ["date", "desc"],
+                          ["repost", "==", router.query.id],
+                          ["quote", "==", true],
+                          ["startAfter", last(posts)],
+                          limit
+                        )
+                        setPosts(concat(posts, _posts))
+                        setIsNext(_posts.length >= limit)
+                      }}
+                    >
+                      Load More
+                    </Flex>
                   </Flex>
-                </Flex>
-              )}
-            </>
-          )}
-        </Box>
-        <Box flex={1}></Box>
-      </Flex>
+                )}
+              </>
+            )}
+          </Box>
+          <Box flex={1}></Box>
+        </Flex>
+      )}
       <EditPost
         {...{
           setEditStatus,

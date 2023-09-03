@@ -28,6 +28,7 @@ import {
 import { useRouter } from "next/router"
 import { useState, useEffect } from "react"
 import Header from "./Header"
+import Alpha from "./Alpha"
 import EditUser from "./EditUser"
 import EditStatus from "./EditStatus"
 import { postArticle, postStatus, checkUser, initDB } from "../lib/db"
@@ -123,13 +124,7 @@ export default function Editor() {
         }}
       />
       {isNil(user?.handle) ? (
-        <Flex justify="center" align="center" w="100%" h="calc(100vh - 50px)">
-          <Box p={8}>
-            We are currently in private alpha.
-            <br />
-            Sign in to use the dapp.
-          </Box>
-        </Flex>
+        <Alpha />
       ) : (
         <>
           <GithubMarkdown />

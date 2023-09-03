@@ -58,19 +58,24 @@ export default function EditUser({
         sx={{ borderRadius: "5px" }}
         fontSize="14px"
       >
-        {isNil(user?.handle) ? null : (
-          <Flex fontSize="18px" justify="flex-end" mx={4} mt={2} mb="-15px">
-            <Box
-              onClick={() => setEditUser(false)}
-              sx={{
-                cursor: "pointer",
-                ":hover": { opacity: 0.75 },
-              }}
-            >
-              <Box as="i" className="fas fa-times" />
-            </Box>
-          </Flex>
-        )}
+        <Flex fontSize="18px" justify="flex-end" mx={4} mt={2} mb="-15px">
+          <Box
+            onClick={() => {
+              if (isNil(user?.handle)) {
+                setUser(null)
+                logout()
+              } else {
+                setEditUser(false)
+              }
+            }}
+            sx={{
+              cursor: "pointer",
+              ":hover": { opacity: 0.75 },
+            }}
+          >
+            <Box as="i" className="fas fa-times" />
+          </Box>
+        </Flex>
         <Box px={4} pb={4} pt={isNil(user?.handle) ? 4 : 0}>
           <Flex fontSize="24px" justify="center" fontWeight="bold" mb={2}>
             {isNil(user)
