@@ -53,7 +53,7 @@ export default function EditUser({
             <Box as="i" className="fas fa-times" />
           </Box>
         </Flex>
-        {!repost && !isNil(tweet) ? (
+        {!isNil(replyTo) && !repost && !isNil(tweet) ? (
           <Box p={2} mx={2} sx={{ borderBottom: "1px solid #ccc" }} mb={4}>
             <Tweet {...{ isLink: false, tweet, users, buttons: false }} />
           </Box>
