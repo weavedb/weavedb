@@ -68,6 +68,7 @@ const getDoc = async (
       next_data = mergeData(
         clone(doc),
         new_data,
+        extra,
         true,
         _signer,
         SmartWeave
@@ -76,6 +77,7 @@ const getDoc = async (
       next_data = mergeData(
         clone(doc),
         new_data,
+        extra,
         false,
         _signer,
         SmartWeave
@@ -226,6 +228,7 @@ const parse = async (
     salt,
     contractErr,
     SmartWeave,
+    undefined,
     undefined,
     { getDoc, getCol, addNewDoc }
   )

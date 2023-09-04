@@ -5246,10 +5246,10 @@ weavedb-base@^0.28.6:
     pako "^2.1.0"
     ramda "^0.28.0"
 
-weavedb-contracts@^0.29.0:
-  version "0.29.0"
-  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.29.0.tgz#eb6cb047bb774a3d404a2ecfd5fb79aac78f8dda"
-  integrity sha512-2nrwOEDsY/ttK37L4ZL1wxEFAeVPlGwgR/ZKVIyDZ/8SPYeX4sXNXC/H3lomIRCEgAMcnVRAWo1V26WLyaX5xQ==
+weavedb-contracts@^0.29.2:
+  version "0.29.2"
+  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.29.2.tgz#9312dad2a69a4ca7ef27014335b11666f7108648"
+  integrity sha512-w0seyjYU7pvK079/qRDVz8Nlif+mdZ34TCT8RsUPeBmC176Wu7apnrfxb02uFR2zHQ83JaPCP+2q5m7iQozy/w==
   dependencies:
     "@noble/curves" "^0.9.0"
     "@peculiar/webcrypto" "^1.4.3"
@@ -5259,10 +5259,10 @@ weavedb-contracts@^0.29.0:
     wasmbuilder "^0.0.16"
     wasmcurves "^0.2.1"
 
-weavedb-sdk@^0.29.0:
-  version "0.29.0"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.29.0.tgz#fdfff3dddb0bac9ef29c39cb49e0b84c1110f110"
-  integrity sha512-ZdHPYdIxuUFa7KsNOf678DRAjk1k4w3mnaeDDHPiw0MHP5Nd03xJrSHn5NQs9jRLxDyt6xUul6Vy3Zdh0GdvmA==
+weavedb-sdk@^0.29.2:
+  version "0.29.2"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.29.2.tgz#40337bc59cd44b4fb2d7ab0e9c067876855da43c"
+  integrity sha512-WDTc5UW3sU5RlMw2wG7ijr0f7CuXCi3/UBjHB+r/HtPXs+9tsdF/7CwhQHtpsNp+B64WXddI545LZidUS4W6kQ==
   dependencies:
     "@lit-protocol/sdk-browser" "^1.3.3"
     "@metamask/legacy-web3" "^2.0.0"
@@ -5275,7 +5275,7 @@ weavedb-sdk@^0.29.0:
     warp-contracts "^1.4.14"
     warp-contracts-old "npm:warp-contracts@1.2.26"
     weavedb-base "^0.28.6"
-    weavedb-contracts "^0.29.0"
+    weavedb-contracts "^0.29.2"
 
 web-streams-polyfill@^3.0.3:
   version "3.2.1"

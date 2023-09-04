@@ -21,6 +21,8 @@ const { removeCron } = require("./removeCron")
 const { removeIndex } = require("./removeIndex")
 const { removeOwner } = require("./removeOwner")
 const { removeRelayerJob } = require("./removeRelayerJob")
+const { addTrigger } = require("./addTrigger")
+const { removeTrigger } = require("./removeTrigger")
 
 const batch = async (
   state,
@@ -132,6 +134,12 @@ const batch = async (
         break
       case "removeRelayerJob":
         res = await removeRelayerJob(...params)
+        break
+      case "addTrigger":
+        res = await addTrigger(...params)
+        break
+      case "removeTrigger":
+        res = await removeTrigger(...params)
         break
 
       default:

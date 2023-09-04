@@ -90,29 +90,8 @@ export default ({
         mb={4}
         sx={{ borderRadius: "5px" }}
       >
-        WeaveDB is still in alpha. Please use it with discretion.
+        WeaveDB is still in bata. Please use it with discretion.
       </Flex>
-      <Box
-        fontSize="12px"
-        p={4}
-        bg="#6441AF"
-        color="white"
-        mx={4}
-        mb={4}
-        sx={{ borderRadius: "5px" }}
-      >
-        For old contracts before v0.18, please use
-        <Box
-          sx={{ textDecoration: "underline" }}
-          ml={1}
-          as="a"
-          target="_blank"
-          href="https://old-console.weavedb.dev"
-        >
-          Old Console
-        </Box>
-        .
-      </Box>
     </Box>
   )
 }

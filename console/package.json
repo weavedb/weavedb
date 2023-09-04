@@ -54,7 +54,7 @@
     "weavedb-client": "^0.27.0",
     "weavedb-contracts": "^0.26.0",
     "weavedb-offchain": "^0.28.1",
-    "weavedb-sdk": "^0.27.26",
+    "weavedb-sdk": "0.27.26",
     "yargs-parser": "^21.1.1"
   }
 }
