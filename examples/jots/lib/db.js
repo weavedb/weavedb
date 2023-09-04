@@ -71,7 +71,6 @@ export const postArticle = async ({
       jobID: "article",
     })
   } else {
-    console.log(post)
     sign = await db.sign("update", post, "posts", editID, {
       ...identity,
       jobID: "article",
@@ -137,7 +136,6 @@ export const updateProfile = async ({
   if (isEmpty(user) && isNil(image)) return { err: "nothing to update" }
   let op = "update"
   let tx, __image, __cover
-  console.log(user)
   if (!isNil(image) || !isNil(cover)) {
     if (!isNil(image)) user.image = db.data("image")
     if (!isNil(cover)) user.cover = db.data("cover")

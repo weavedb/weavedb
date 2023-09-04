@@ -261,7 +261,7 @@ function Page() {
                         ? "fas fa-retweet"
                         : v2.type === "follow"
                         ? "fas fa-user"
-                        : v2.type === "comment"
+                        : v2.type === "reply"
                         ? "far fa-comment"
                         : "fas fa-at"
                     const icolor =
@@ -390,7 +390,7 @@ function Page() {
                                     </>
                                   ) : v2.type === "follow" ? (
                                     "followed you"
-                                  ) : v2.type === "comment" ? (
+                                  ) : v2.type === "reply" ? (
                                     <>
                                       replied to{" "}
                                       {!isNil(post.title) ? (
