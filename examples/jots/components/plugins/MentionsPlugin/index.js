@@ -525,6 +525,7 @@ function useMentionLookupService(mentionString) {
     }
 
     mentionsCache.set(mentionString, null)
+
     searchUsers(mentionString, newResults => {
       mentionsCache.set(mentionString, newResults)
       setResults(newResults)
@@ -582,8 +583,7 @@ function checkForAtSignMentions(text, minMatchLength) {
 }
 
 function getPossibleQueryMatch(text) {
-  const match = checkForAtSignMentions(text, 1)
-  return match === null ? checkForCapitalizedNameMentions(text, 3) : match
+  return checkForAtSignMentions(text, 1)
 }
 
 class MentionTypeaheadOption extends MenuOption {
