@@ -15,7 +15,17 @@ await db.getVersion()
 
 ## Change Logs
 
-### v0.29.0-beta (September 4, 2023)
+### v0.29.2-beta (September 4, 2023)
+
+#### Source Transaction Id
+
+[909e5jfe_bOf4q1HE0cRRXlxcmhENzmUI8nbCUhaoRY](https://sonar.warp.cc/#/app/source/909e5jfe_bOf4q1HE0cRRXlxcmhENzmUI8nbCUhaoRY)
+
+#### Added Features
+
+- fix temp address error
+
+### v0.29.1-beta (September 4, 2023)
 
 #### Source Transaction Id
 
@@ -217,6 +227,16 @@ await db.getVersion()
 
 - use [kv storage](https://academy.warp.cc/docs/sdk/advanced/kv-storage) for data and indexes
 - [triggers](/docs/sdk/triggers)
+
+### v0.26.5 (September 4, 2023)
+
+#### Source Transaction Id
+
+[1pFdmXngB5A4TXvD1cHEGNVpqdEJBYjXSmSyvy6MQiQ](https://sonar.warp.cc/#/app/source/1pFdmXngB5A4TXvD1cHEGNVpqdEJBYjXSmSyvy6MQiQ)
+
+#### Added Features
+
+- fix temp address bug
 
 ### v0.26.4 (July 3, 2023)
 

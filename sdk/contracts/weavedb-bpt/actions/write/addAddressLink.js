@@ -83,7 +83,7 @@ const addAddressLink = async (
   }
   state.auth.links[address.toLowerCase()] = {
     address: linkTo || signer,
-    expiry: expiry === 0 ? 0 : SmartWeave.block.timestamp + expiry,
+    expiry: _expiry === 0 ? 0 : SmartWeave.block.timestamp + _expiry,
   }
   return wrapResult(state, original_signer, SmartWeave)
 }

@@ -4565,6 +4565,16 @@ arweave@^1.11.4, arweave@^1.11.8:
     bignumber.js "^9.0.2"
     util "^0.12.4"
 
+arweave@^1.13.7:
+  version "1.14.4"
+  resolved "https://registry.yarnpkg.com/arweave/-/arweave-1.14.4.tgz#5ba22136aa0e7fd9495258a3931fb770c9d6bf21"
+  integrity sha512-tmqU9fug8XAmFETYwgUhLaD3WKav5DaM4p1vgJpEj/Px2ORPPMikwnSySlFymmL2qgRh2ZBcZsg11+RXPPGLsA==
+  dependencies:
+    arconnect "^0.4.2"
+    asn1.js "^5.4.1"
+    base64-js "^1.5.1"
+    bignumber.js "^9.0.2"
+
 asap@~2.0.3:
   version "2.0.6"
   resolved "https://registry.yarnpkg.com/asap/-/asap-2.0.6.tgz#e50347611d7e690943208bbdafebcbc2fb866d46"
@@ -11338,6 +11348,13 @@ undici@^4.12.2:
   resolved "https://registry.yarnpkg.com/undici/-/undici-4.16.0.tgz#469bb87b3b918818d3d7843d91a1d08da357d5ff"
   integrity sha512-tkZSECUYi+/T1i4u+4+lwZmQgLXd4BLGlrc7KZPcLIW7Jpq99+Xpc30ONv7nS6F5UNOxp/HBZSSL9MafUrvJbw==
 
+undici@^5.19.1:
+  version "5.23.0"
+  resolved "https://registry.yarnpkg.com/undici/-/undici-5.23.0.tgz#e7bdb0ed42cebe7b7aca87ced53e6eaafb8f8ca0"
+  integrity sha512-1D7w+fvRsqlQ9GscLBwcAJinqcZGHUKjbOmXdlE/v8BvEGXjeWAax+341q44EuTcHXXnfyKNbKRq4Lg7OzhMmg==
+  dependencies:
+    busboy "^1.6.0"
+
 undici@^5.8.0:
   version "5.13.0"
   resolved "https://registry.yarnpkg.com/undici/-/undici-5.13.0.tgz#56772fba89d8b25e39bddc8c26a438bd73ea69bb"
@@ -11673,6 +11690,16 @@ walker@^1.0.8:
   dependencies:
     makeerror "1.0.12"
 
+warp-arbundles@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/warp-arbundles/-/warp-arbundles-1.0.4.tgz#10c0cd662ab41b0dabad9159c7110f43425cc5cc"
+  integrity sha512-KeRac/EJ7VOK+v5+PSMh2SrzpCKOAFnJICLlqZWt6qPkDCzVwcrNE5wFxOlEk5U170ewMDAB3e86UHUblevXpw==
+  dependencies:
+    arweave "^1.13.7"
+    base64url "^3.0.1"
+    buffer "^6.0.3"
+    warp-isomorphic "^1.0.7"
+
 "warp-contracts-old@npm:warp-contracts@1.2.26":
   version "1.2.26"
   resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.2.26.tgz#9aaefeaa6139c5bf5d203d182d96c4337086ad52"
@@ -11726,9 +11753,9 @@ warp-contracts@1.2.54:
     warp-wasm-metering "1.0.1"
 
 warp-contracts@^1.4.10:
-  version "1.4.10"
-  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.4.10.tgz#8da6ec2e108b3251518e04ae9f472efd0cb18066"
-  integrity sha512-HUsgGDfMBjHKH+Qn0Td3jmxlJTpBWWxDZG98ho+SYm6HjqFfrNWOfPws9wtBHvpVPq/8JR7BPJsYfIHKaGv0Hw==
+  version "1.4.17"
+  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.4.17.tgz#0116dfbb9b9ce3a5e502944c5157f1c54ec80546"
+  integrity sha512-ZsZaASvrfNk5EwFti+o4JaqTCYsi9BCKoBPD9Wm68aohFcxoGyc97G+eBd+ghnTCal83xwpNuO8+tRmIXUOuQA==
   dependencies:
     archiver "^5.3.0"
     arweave "1.13.7"
@@ -11741,7 +11768,8 @@ warp-contracts@^1.4.10:
     safe-stable-stringify "2.4.1"
     stream-buffers "^3.0.2"
     unzipit "^1.4.0"
-    warp-isomorphic "1.0.4"
+    warp-arbundles "^1.0.4"
+    warp-isomorphic "^1.0.7"
     warp-wasm-metering "1.0.1"
 
 warp-isomorphic@1.0.0:
@@ -11759,6 +11787,14 @@ warp-isomorphic@1.0.4:
   dependencies:
     buffer "^6.0.3"
     undici "^5.8.0"
+
+warp-isomorphic@^1.0.7:
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/warp-isomorphic/-/warp-isomorphic-1.0.7.tgz#abf1ee7bce44bec7c6b97547859e614876869aa7"
+  integrity sha512-fXHbUXwdYqPm9fRPz8mjv5ndPco09aMQuTe4kXfymzOq8V6F3DLsg9cIafxvjms9/mc6eijzkLBJ63yjEENEjA==
+  dependencies:
+    buffer "^6.0.3"
+    undici "^5.19.1"
 
 warp-wasm-json-toolkit@1.0.2:
   version "1.0.2"
@@ -11810,21 +11846,7 @@ weavedb-base@^0.26.10:
     pako "^2.1.0"
     ramda "^0.28.0"
 
-weavedb-base@^0.27.2:
-  version "0.27.2"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.27.2.tgz#1cabe578a95c74818f789f26b47e328218fd44b2"
-  integrity sha512-mCN0V8HNjGZKZuZ4Qkab3rHAj4UwCDY3tWw+K804M+her2tjTOifVYSlmLmq7qBVsqSuGgbcRSAmLF5UDZz5VQ==
-  dependencies:
-    "@metamask/eth-sig-util" "^4.0.1"
-    "@metamask/legacy-web3" "^2.0.0"
-    "@simplewebauthn/server" "^7.2.0"
-    eth-crypto "^2.3.0"
-    ethereumjs-util "^7.1.5"
-    ethers "5.7.2"
-    pako "^2.1.0"
-    ramda "^0.28.0"
-
-weavedb-base@^0.27.4:
+weavedb-base@^0.27.2, weavedb-base@^0.27.4:
   version "0.27.4"
   resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.27.4.tgz#add67a60585f6c56135d775035907632767cec23"
   integrity sha512-bDTRJcXrfVig+E3RD23U1LDq2im8MjKRE4tLSal6cwi1aDhdaWFL8+OFLgJAb/hBAKUx62BfPD+xcAsEiC81GA==
@@ -11863,9 +11885,9 @@ weavedb-contracts@^0.26.0:
     ramda "^0.28.0"
 
 weavedb-contracts@^0.27.9:
-  version "0.27.9"
-  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.27.9.tgz#aafe1172b3df682974098f797a6c2628092985b3"
-  integrity sha512-yJhDnH2yWvjpCUTz4gSsJWFSlfYJQizysvpu2LcwD+YSP/7tGq1Rd+Bh6XXWXNe5h3szbZXLYdDaXHKewDiDmQ==
+  version "0.27.11"
+  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.27.11.tgz#ced885b026d6539a9a3a6c312057cdfe080cfbcd"
+  integrity sha512-Lv20ZFkjGkpti23ffMfLRBuz+qbB7TF+K9a4i7IM/iPNdD9UI9Z4qTq1Vhomv5u3QQLFOLsEpUoTHVIX3VZuYg==
   dependencies:
     "@noble/curves" "^0.9.0"
     "@peculiar/webcrypto" "^1.4.3"
@@ -11902,7 +11924,7 @@ weavedb-offchain@^0.28.1:
     weavedb-base "^0.27.4"
     weavedb-contracts "^0.28.1"
 
-weavedb-sdk@^0.27.26:
+weavedb-sdk@0.27.26:
   version "0.27.26"
   resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.27.26.tgz#7cbcf002681e4a3565faef6cc873dbbb70ea95ed"
   integrity sha512-z+ECBY9wgPamh1UwI/4eD9qby6UKzkRRE9sML2t1ZqUpG/EsusCfU6WVSllk2MONjB0V+KjON3RvFxCTBS0oXw==

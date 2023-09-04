@@ -59,6 +59,7 @@ class Log {
       err,
       _res
     try {
+      console.log(this.opt)
       res = isNil(this.opt)
         ? array
           ? await this.sdk[this.method](...this.query)
@@ -149,11 +150,11 @@ export const getOpt = async ({ val: { contractTxId, read = [] }, get }) => {
     ? { ii, onDryWrite: { cache: true, read } }
     : !isNil(identity) && !isNil(identity.tx)
     ? {
+        privateKey: identity.privateKey,
+        onDryWrite: { cache: true, read },
         wallet: /^lens:/.test(current)
           ? current.split(":").slice(0, -1).join(":")
           : current,
-        privateKey: identity.privateKey,
-        onDryWrite: { cache: true, read },
       }
     : null
   if (isNil(opt)) err = "not logged in"
