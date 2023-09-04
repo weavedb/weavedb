@@ -191,73 +191,89 @@ function Header({
                 </Flex>
               </Box>
             </Link>
-            {!userMenu ? null : (
-              <>
-                <Box mx={2} color="#ccc" display={["none", "block"]}>
-                  |
-                </Box>
-                <Link href={`/u/${user.handle}`}>
+            <Flex align="center" sx={{ position: "relative" }}>
+              <Image
+                onClick={() => setUserMenu(!userMenu)}
+                src={user.image ?? "/images/default-icon.png"}
+                boxSize="30px"
+                ml={2}
+                sx={{
+                  cursor: "pointer",
+                  ":hover": { opacity: 0.75 },
+                  borderRadius: "50%",
+                }}
+              />
+              {!userMenu ? null : (
+                <Flex
+                  py={2}
+                  bg="#333"
+                  color="white"
+                  sx={{
+                    border: "white 1px solid",
+                    borderRadius: "7px",
+                    width: "175px",
+                    position: "absolute",
+                    right: 0,
+                    top: "55px",
+                    zIndex: 1000,
+                  }}
+                  direction="column"
+                >
+                  <Link href={`/u/${user.handle}`}>
+                    <Box
+                      display={["none", "block"]}
+                      py={2}
+                      px={4}
+                      sx={{
+                        cursor: "pointer",
+                        ":hover": { opacity: 0.75 },
+                      }}
+                      onClick={() => setUserMenu(false)}
+                    >
+                      Profile
+                    </Box>
+                  </Link>
                   <Box
-                    display={["none", "block"]}
-                    mx={2}
+                    onClick={async () => {
+                      if (confirm("Would you like to sign out?")) {
+                        setUser(null)
+                        logout()
+                        setUserMenu(false)
+                      }
+                    }}
+                    py={2}
+                    px={4}
                     sx={{
                       cursor: "pointer",
                       ":hover": { opacity: 0.75 },
                     }}
                   >
-                    Profile
+                    Sign Out
                   </Box>
-                </Link>
-                <Box
-                  onClick={async () => {
-                    if (confirm("Would you like to sign out?")) {
-                      setUser(null)
-                      logout()
-                    }
-                  }}
-                  mx={2}
-                  sx={{
-                    cursor: "pointer",
-                    ":hover": { opacity: 0.75 },
-                  }}
-                >
-                  Sign Out
-                </Box>
-                {isNil(process.env.NEXT_PUBLIC_EXPLORER) ? null : (
-                  <>
-                    <Box mx={2} color="#ccc" display={["none", "block"]}>
-                      |
-                    </Box>
-                    <Link
-                      href={process.env.NEXT_PUBLIC_EXPLORER}
-                      target="_blank"
-                    >
-                      <Box
-                        display={["none", "block"]}
-                        mx={2}
-                        sx={{
-                          cursor: "pointer",
-                          ":hover": { opacity: 0.75 },
-                        }}
+                  {isNil(process.env.NEXT_PUBLIC_EXPLORER) ? null : (
+                    <>
+                      <Box as="hr" m={2} />
+                      <Link
+                        href={process.env.NEXT_PUBLIC_EXPLORER}
+                        target="_blank"
                       >
-                        Explorer
-                      </Box>
-                    </Link>
-                  </>
-                )}
-              </>
-            )}
-            <Image
-              onClick={() => setUserMenu(!userMenu)}
-              src={user.image ?? "/images/default-icon.png"}
-              boxSize="30px"
-              ml={2}
-              sx={{
-                cursor: "pointer",
-                ":hover": { opacity: 0.75 },
-                borderRadius: "50%",
-              }}
-            />
+                        <Box
+                          py={2}
+                          px={4}
+                          sx={{
+                            cursor: "pointer",
+                            ":hover": { opacity: 0.75 },
+                          }}
+                          onClick={() => setUserMenu(false)}
+                        >
+                          WeaveDB Explorer
+                        </Box>
+                      </Link>
+                    </>
+                  )}
+                </Flex>
+              )}
+            </Flex>
           </>
         )}
       </Flex>
