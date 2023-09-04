@@ -106,7 +106,7 @@ function StatusPage() {
           setLikes(mergeLeft(new_likes, likes))
         }
         const ids2 = difference(keys(tweets), keys(reposts))
-        if (ids.length > 0) {
+        if (ids2.length > 0) {
           let new_reposts = indexBy(prop("repost"))(
             await db.get(
               "posts",

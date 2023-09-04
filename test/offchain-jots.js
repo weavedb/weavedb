@@ -76,6 +76,7 @@ describe("WeaveDB Offchain BPT", function () {
     await db.update({ handle: "beth", name: "Beth" }, "users", beth.address, {
       privateKey: acc2.privateKey,
     })
+
     await db.update({ handle: "beth", name: "Bob" }, "users", bob.address, {
       privateKey: acc1.privateKey,
     })
@@ -89,14 +90,15 @@ describe("WeaveDB Offchain BPT", function () {
     ).to.eql(alice.address)
 
     // unfollow user
+    expect((await db.get("users", `${alice.address}`)).following).to.eql(1)
     await db.delete("follows", `${alice.address}:${bob.address}`, auth)
     expect(await db.get("follows", `${alice.address}:${bob.address}`)).to.eql(
       null
     )
-
+    expect((await db.get("users", `${alice.address}`)).following).to.eql(0)
     // post
     let post = {
-      description: "body",
+      description: "article_body",
       type: "article",
       hashes: [],
       mentions: [],
@@ -119,23 +121,31 @@ describe("WeaveDB Offchain BPT", function () {
       auth
     )
     let status = {
-      description: "body",
+      description: "status_body",
       type: "status",
       hashes: [],
       mentions: [],
     }
     let reply_to = {
-      description: "body",
+      description: "reply_to_body",
       type: "status",
       reply_to: id1,
       hashes: [],
       mentions: [],
       parents: [id1],
     }
+    await db.set({}, "follows", `${bob.address}:${alice.address}`, {
+      privateKey: acc1.privateKey,
+    })
+
     const { docID: id5 } = await db.add(status, "posts", auth)
     const { docID: id6 } = await db.add(reply_to, "posts", auth)
+
     await db.update({ date: db.del() }, "posts", id6, auth)
     await db.update({ title: "post2" }, "posts", id1, auth)
-    await db.set({}, "likes", `${id6}:${alice.address}`, auth)
+    await db.set({}, "likes", `${id5}:${alice.address}`, auth)
+    expect((await db.get("timeline", id5)).aid).to.eql(id5)
+    await db.update({ date: db.del() }, "posts", id5, auth)
+    expect(await db.get("timeline", id5)).to.eql(null)
   })
 })

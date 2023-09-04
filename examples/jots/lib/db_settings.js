@@ -531,6 +531,38 @@ const offchain = {
   triggers: {
     posts: [
       {
+        key: "del_timeline",
+        on: "update",
+        func: [
+          ["let", "batches", []],
+          ["let", "is_delete", ["isNil", { var: "data.after.date" }]],
+          ["get", "tl", ["timeline", { var: "data.after.id" }]],
+          ["let", "is_timeline", [["complement", ["isNil"]], { var: "tl" }]],
+          [
+            "do",
+            [
+              "when",
+              [
+                "both",
+                ["always", { var: "is_delete" }],
+                ["always", { var: "is_timeline" }],
+              ],
+              [
+                "pipe",
+                ["var", "batches"],
+                [
+                  "append",
+                  ["[]", "delete", "timeline", { var: "data.after.id" }],
+                ],
+                ["let", "batches"],
+              ],
+              { var: "data" },
+            ],
+          ],
+          ["batch", { var: "batches" }],
+        ],
+      },
+      {
         key: "timeline",
         on: "create",
         func: [
@@ -603,19 +635,24 @@ const offchain = {
             "to",
             ["difference", { var: "new_receivers" }, { var: "receivers" }],
           ],
+          ["let", "to_not_empty", [["complement", ["isEmpty"]], { var: "to" }]],
+          [
+            "let",
+            "set_timeline",
+            [
+              [
+                "both",
+                ["pathEq", ["after", "reply_to"], ""],
+                ["always", { var: "to_not_empty" }],
+              ],
+              { var: "data" },
+            ],
+          ],
           [
             "do",
             [
               "when",
-              [
-                "both",
-                ["pathEq", ["after", "reply_to"], ""],
-                [
-                  "compose",
-                  ["complement", ["isEmpty"]],
-                  ["always", { var: "to" }],
-                ],
-              ],
+              ["always", { var: "set_timeline" }],
               [
                 "pipe",
                 ["var", "batches"],
@@ -808,15 +845,6 @@ const offchain = {
           [
             "update",
             [{ following: db.inc(-1) }, "users", { var: `data.before.from` }],
-          ],
-          [
-            "let",
-            "docid",
-            [
-              "join",
-              ":",
-              [{ var: "data.after.from" }, { var: "data.after.to" }],
-            ],
           ],
         ],
       },
