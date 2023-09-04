@@ -13,7 +13,7 @@ const remove = async (
   SmartWeave,
   kvs,
   executeCron,
-  depth,
+  depth = 1,
   type = "direct",
   get
 ) => {
@@ -61,7 +61,12 @@ const remove = async (
       executeCron,
       depth,
       {
-        data: { before, after, id: last(path), setter: _data.setter },
+        data: {
+          before: before.val,
+          after: after.val,
+          id: last(path),
+          setter: _data.setter,
+        },
       }
     )
   }

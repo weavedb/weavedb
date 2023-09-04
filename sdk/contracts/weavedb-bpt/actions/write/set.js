@@ -53,7 +53,7 @@ const set = async (
   )
   if (depth < 10) {
     state = await trigger(
-      "create",
+      ["create"],
       state,
       path,
       SmartWeave,
