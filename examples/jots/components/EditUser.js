@@ -152,7 +152,7 @@ export default function EditUser({
                 </Box>
               </Flex>
               <Box fontSize="12px" mx={1} mb={1}>
-                User Handle ( 2-15 characters )
+                User Handle ( 3-15 characters )
               </Box>
               <Box>
                 <Input

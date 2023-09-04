@@ -72,13 +72,26 @@ const Embed = ({
       </Flex>
     )
   }
-
   if (reply && !isNil(tweets[tweet.reply_to]?.title)) {
     metadata.push(
       <Flex align="center" fontSize="12px" ml={metadata.length == 0 ? 0 : 6}>
         <Box as="i" className="far fa-comment" mr={2} />
-        <Box mr={1}>reply to</Box>
+        <Box mr={1}>commented on</Box>
         <Box fontWeight="bold">{tweets[tweet.reply_to].title}</Box>
+      </Flex>
+    )
+  } else if (
+    reply &&
+    !isNil(tweets[tweet.reply_to]) &&
+    !isNil(users[tweets[tweet.reply_to].owner])
+  ) {
+    metadata.push(
+      <Flex align="center" fontSize="12px" ml={metadata.length == 0 ? 0 : 6}>
+        <Box as="i" className="far fa-comment" mr={2} />
+        <Box mr={1}>replied to</Box>
+        <Box fontWeight="bold">
+          @{users[tweets[tweet.reply_to]?.owner]?.handle}
+        </Box>
       </Flex>
     )
   }
@@ -220,7 +233,7 @@ const Embed = ({
             pl={["44px", "38px", null, 0]}
           >
             {isDeleted ? (
-              <Flex justify="center">
+              <Flex>
                 <Box as="i" color="crimson" mb={2}>
                   This post has been deleted by the owner
                 </Box>

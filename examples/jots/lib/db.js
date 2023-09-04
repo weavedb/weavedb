@@ -71,7 +71,6 @@ export const postArticle = async ({
       jobID: "article",
     })
   } else {
-    console.log(post)
     sign = await db.sign("update", post, "posts", editID, {
       ...identity,
       jobID: "article",
