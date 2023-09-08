@@ -23,11 +23,14 @@
     "ramda": "^0.28.0",
     "warp-contracts": "^1.4.14",
     "warp-contracts-old": "npm:warp-contracts@1.2.26",
-    "weavedb-base": "^0.28.6",
-    "weavedb-contracts": "^0.29.2"
+    "weavedb-base": "file:../base",
+    "weavedb-contracts": "file:../contracts"
   },
   "devDependencies": {
     "esbuild": "^0.14.50",
     "rimraf": "^3.0.2"
+  },
+  "scripts": {
+    "clean": "rm -rf node_modules"
   }
 }

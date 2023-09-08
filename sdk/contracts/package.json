@@ -11,5 +11,9 @@
     "ramda": "^0.28.0",
     "wasmbuilder": "^0.0.16",
     "wasmcurves": "^0.2.1"
+  },
+  "scripts": {
+    "clean": "rm -rf node_modules"
   }
+
 }

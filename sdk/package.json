@@ -1,0 +1,26 @@
+{
+  "name": "sdk",
+  "version": "0.0.1",
+  "main": "index.js",
+  "license": "MIT",
+  
+  "workspaces": [
+    "*"
+  ],
+  "packageManager": "pnpm@8.6.0",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "_dev": "turbo run dev  --concurrency=20",
+    "_build": "turbo run build ",
+    "clean": " turbo run clean &&rm -rf node_modules",
+    "_clean": "turbo run clean && rm -rf node_modules",
+    "_start": "turbo run start ",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json}\""
+  },
+  "dependencies": {
+    "prettier": "^3.0.3",
+    "turbo": "^1.10.13"
+  }
+}
