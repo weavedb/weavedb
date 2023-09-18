@@ -89,51 +89,56 @@ class Rollup {
         10
       )
       const bundles = this.measureSizes(bundling)
+      console.log("bundles.length: ", bundles.length)
+      Object.keys(bundles).forEach(function(key) {
+        console.log(key, bundles[key]);
+      });
+
       if (bundles.length > 0) {
         console.log(
           `commiting to Warp...${map(_path(["data", "id"]))(bundles)}`
         )
-        const thedata = map(_path(["data", "input"]))(bundles);
-        console.log('map(_path(["data", "input"]))(bundles): ', thedata)
-        await fs.writeJson(`${path.join(__dirname)}/_bundle_logs/${(new Date()).getTime()}.json`, 
-        thedata, {
-          spaces: 2,
-        })
+      //   const thedata = map(_path(["data", "input"]))(bundles);
+      //   console.log('map(_path(["data", "input"]))(bundles): ', thedata)
+      //   await fs.writeJson(`${path.join(__dirname)}/_bundle_logs/${(new Date()).getTime()}.json`, 
+      //   thedata, {
+      //     spaces: 2,
+      //   })
 
-        console.log("this.bundler_wallet_type: ", this.bundler_wallet_type)
-        console.log("this.bundler_wallet_type: ", this.bundler_wallet)
-        await fs.writeJson(`${path.join(__dirname)}/_bundle_logs/${(new Date()).getTime()}_.json`, 
-        this.bundler_wallet, {
-          spaces: 2,
-        })
+      //   console.log("this.bundler_wallet_type: ", this.bundler_wallet_type)
+      //   console.log("this.bundler_wallet_type: ", this.bundler_wallet)
+      //   await fs.writeJson(`${path.join(__dirname)}/_bundle_logs/${(new Date()).getTime()}_.json`, 
+      //   this.bundler_wallet, {
+      //     spaces: 2,
+      //   })
 
-        const result = await this.warp.bundle(
-          // map(_path(["data", "param"]))(bundles)
-          // map(_path(["data", "input"]))(bundles)
-          thedata,
-          {evm: true, wallet: this.bundler_wallet}
-          // // this.bundler_wallet_type=='evm'?{evm: this.bundler_wallet}: 
-          // this.bundler_wallet_type=='evm'? {evm: true, wallet: this.bundler_wallet} :
-          // this.bundler_wallet_type=='ar'? {ar: true, wallet: this.bundler_wallet} :
-          // null
-        )
+      //   // const result = await this.warp.bundle(
+      //   //   // map(_path(["data", "param"]))(bundles)
+      //   //   // map(_path(["data", "input"]))(bundles)
+      //   //   thedata,
+      //   //   {evm: true, wallet: this.bundler_wallet}
+      //   //   // // this.bundler_wallet_type=='evm'?{evm: this.bundler_wallet}: 
+      //   //   // this.bundler_wallet_type=='evm'? {evm: true, wallet: this.bundler_wallet} :
+      //   //   // this.bundler_wallet_type=='ar'? {ar: true, wallet: this.bundler_wallet} :
+      //   //   // null
+      //   // )
         
 
-        console.log(`bundle tx result: `, result)
-        console.log(`bundle tx result.success: ${result.success}`)
-        // if (result.success === true) {
-        //   await this.wal.batch(
-        //     map(
-        //       v => [
-        //         "update",
-        //         { commit: true, warp: result.originalTxId },
-        //         "txs",
-        //         v.id,
-        //       ],
-        //       bundles
-        //     )
-        //   )
-        // }
+      //   console.log(`bundle tx result: `, result)
+      //   console.log(`bundle tx result.success: ${result.success}`)
+      //   // if (result.success === true) {
+      //   //   await this.wal.batch(
+      //   //     map(
+      //   //       v => [
+      //   //         "update",
+      //   //         { commit: true, warp: result.originalTxId },
+      //   //         "txs",
+      //   //         v.id,
+      //   //       ],
+      //   //       bundles
+      //   //     )
+      //   //   )
+      //   // }
       }
     } catch (e) {
       console.log(e)
@@ -224,6 +229,9 @@ class Rollup {
             //this.kvs[k] = tx.result.kvs[k]
             prs.push(obj.lmdb.put(k, tx.result.kvs[k]))
           }
+
+
+
           Promise.all(prs).then(() => {})
 
 
@@ -238,6 +246,7 @@ class Rollup {
             id: ++this.tx_count,
             txid: tx.result.transaction.id,
             commit: false,
+            // commit: true,
             tx_ts: tx.result.block.timestamp,
             input: param,
 
@@ -292,6 +301,7 @@ class Rollup {
       let len = 0
       try {
         len = keys(_state.cachedValue.validity).length
+        console.log("keys(_state.cachedValue.validity).length: ", len)
       } catch (e) {}
       if (this.tx_count === 0 && len > 0) {
         console.log("recovering WAL...")
@@ -312,6 +322,7 @@ class Rollup {
                 for (const input of JSON.parse(
                   pako.inflate(compressed, { to: "string" })
                 )) {
+                  console.log("input: ", input)
                   let t = {
                     id: ++this.tx_count,
                     warp: v.id,

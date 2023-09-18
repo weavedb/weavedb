@@ -213,7 +213,7 @@ class Base {
   }
 
   async getNonce(address, nocache) {
-    console.log(`weavedb-base: getNonce(address=${address}, nocache=${nocache})`)
+    // console.log(`weavedb-base: getNonce(address=${address}, nocache=${nocache})`)
     return (
       (await this.read(
         {
@@ -333,7 +333,7 @@ class Base {
         data,
       } = opt)
     }
-    console.log(`weavedb-base: _write2: func=${func}, query=`, query)
+    // console.log(`weavedb-base: _write2: func=${func}, query=`, query)
 
     if (!isNil(linkedAccount)) wallet = linkedAccount
     if (all(isNil)([wallet, ii, intmax, ar]) && !isNil(this.arweave_wallet)) {
