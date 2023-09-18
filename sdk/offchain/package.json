@@ -8,7 +8,7 @@
     "arweave": "^1.11.4",
     "md5": "^2.3.0",
     "ramda": "^0.28.0",
-    "weavedb-base": "^0.28.6",
-    "weavedb-contracts": "^0.29.2"
+    "weavedb-base": "file:../base",
+    "weavedb-contracts": "file:../contracts"
   }
 }

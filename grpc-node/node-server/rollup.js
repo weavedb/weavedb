@@ -32,6 +32,7 @@ class Rollup {
   }) {
     this.secure = secure
     this.owner = owner
+    console.log("bundler_wallet: ", bundler_wallet)
     this.bundler_wallet = bundler_wallet
     this.bundler_wallet_type = bundler_wallet_type
     
@@ -106,18 +107,20 @@ class Rollup {
           spaces: 2,
         })
 
-        // const result = await this.warp.bundle(
-        //   // map(_path(["data", "param"]))(bundles)
-        //   map(_path(["data", "input"]))(bundles)
-        //   ,
-        //   {evm: true, wallet: this.bundler_wallet}
-        //   // // this.bundler_wallet_type=='evm'?{evm: this.bundler_wallet}: 
-        //   // this.bundler_wallet_type=='evm'? {evm: true, wallet: this.bundler_wallet} :
-        //   // this.bundler_wallet_type=='ar'? {ar: true, wallet: this.bundler_wallet} :
-        //   // null
-        // )
+        const result = await this.warp.bundle(
+          // map(_path(["data", "param"]))(bundles)
+          // map(_path(["data", "input"]))(bundles)
+          thedata,
+          {evm: true, wallet: this.bundler_wallet}
+          // // this.bundler_wallet_type=='evm'?{evm: this.bundler_wallet}: 
+          // this.bundler_wallet_type=='evm'? {evm: true, wallet: this.bundler_wallet} :
+          // this.bundler_wallet_type=='ar'? {ar: true, wallet: this.bundler_wallet} :
+          // null
+        )
+        
 
-        // console.log(`bundle tx result: ${result.success}`)
+        console.log(`bundle tx result: `, result)
+        console.log(`bundle tx result.success: ${result.success}`)
         // if (result.success === true) {
         //   await this.wal.batch(
         //     map(
@@ -274,11 +277,17 @@ class Rollup {
         nocache: true,
         progress: async input => {
           console.log(
-            `loading ${this.txid} [${input.currentInteraction}/${input.allInteractions}]`
+            `loading... ${this.txid} [${input.currentInteraction}/${input.allInteractions}]`
           )
         },
       })
       await this.warp.init()
+      if (!isNil(this.bundler_wallet) && !isNil(this.bundler_wallet_type)) {
+        console.log(`this.warp.setDefaultWallet: this.bundler_wallet_type=${this.bundler_wallet_type}`)
+        console.log("this.warp.setDefaultWallet: this.bundler_wallet: ",this.bundler_wallet)
+        this.warp.setDefaultWallet(this.bundler_wallet, this.bundler_wallet_type);
+      }
+
       const _state = await this.warp.readState()
       let len = 0
       try {
@@ -311,7 +320,7 @@ class Rollup {
                     input,
                     blk_ts: v.block.timestamp,
                   }
-                  console.log(`saving... [${this.tx_count}] ${t.txid}`)
+                  console.log(`saving..... [${this.tx_count}] ${t.txid}`)
                   await this.wal.set(t, "txs", `${t.id}`)
                 }
                 break

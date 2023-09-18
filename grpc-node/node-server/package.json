@@ -31,9 +31,11 @@
     "ramda": "^0.28.0",
     "redis": "^4.6.4",
     "tweetnacl": "^1.0.3",
-    "weavedb-node-client": "^0.28.6",
-    "weavedb-offchain": "^0.29.2",
-    "weavedb-sdk-node": "^0.29.2",
+    "weavedb-base": "file:../../sdk/base",
+
+    "weavedb-node-client": "file:../../sdk/light-client-node",
+    "weavedb-offchain": "file:../../sdk/offchain",
+    "weavedb-sdk-node": "file:../../sdk/sdk-node",
     "yargs": "^17.6.2"
   },
   "devDependencies": {
