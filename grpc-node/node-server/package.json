@@ -9,6 +9,7 @@
     "test": "mocha",
     "codegen": "grpc_tools_node_protoc --js_out=import_style=commonjs,binary:./static_codegen/ --grpc_out=./static_codegen/ --descriptor_set_out=./static_codegen/descriptor_set.bin --include_imports --plugin=protoc-gen-grpc=`which grpc_tools_node_protoc_plugin`  weavedb.proto",
     "dev": "node-dev --respawn server.js",
+    "dev2": "node-dev --respawn standalone.js",
     "prettier": "prettier *.js --write"
   },
   "dependencies": {
@@ -20,6 +21,7 @@
     "aws-sdk": "^2.1306.0",
     "chai": "^4.3.7",
     "extract-zip": "^2.0.1",
+    "fs-extra": "^11.1.1",
     "google-protobuf": "~3.14.0",
     "grpc-server-reflection": "^0.1.5",
     "lmdb": "^2.8.2",

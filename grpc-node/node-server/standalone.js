@@ -16,6 +16,16 @@ const weavedb = grpc.loadPackageDefinition(packageDefinition).weavedb
 const path = require("path")
 const { Rollup } = require("./rollup")
 
+// delete cache files temporary
+const { exec }= require('child_process')
+
+;(async()=>{
+  await exec("rm -rf ./_rollups ./cache")
+  // exec("rm -rf ./cache")
+  await exec("rm -rf ./_bundle_logs ; rm -rf ./_rollups ;./cache ;  sleep 3 ; mkdir -p ./_bundle_logs")
+})()
+// process.exit(0)
+
 class Server {
   constructor({ port = 9090 }) {
     const conf = require(config)
@@ -23,7 +33,10 @@ class Server {
     this.rollups = mapObjIndexed(
       (v, txid) =>
         new Rollup({
+          rollup: !isNil(v.rollup) ? true : false,
           txid,
+          bundler_wallet: v.bundler_wallet,
+          bundler_wallet_type: v.bundler_wallet_type,
           secure: v.secure ?? conf.secure,
           owner: v.owner ?? conf.owner,
           dbname: v.dbname ?? conf.dbname,
@@ -36,6 +49,7 @@ class Server {
   }
 
   startServer() {
+
     const server = new grpc.Server()
     server.addService(weavedb.DB.service, { query: this.query.bind(this) })
     server.bindAsync(

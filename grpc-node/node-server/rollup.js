@@ -15,12 +15,16 @@ const Warp = require("weavedb-sdk-node")
 const { open } = require("lmdb")
 const path = require("path")
 const EthCrypto = require("eth-crypto")
+const { ethers } = require('ethers');
+const fs = require('fs-extra')
 
 class Rollup {
   constructor({
     txid,
     rollup = false,
     owner,
+    bundler_wallet = {},
+    bundler_wallet_type = null,
     secure,
     dbname = "weavedb",
     dir,
@@ -28,7 +32,11 @@ class Rollup {
   }) {
     this.secure = secure
     this.owner = owner
-    this.rollup = false
+    this.bundler_wallet = bundler_wallet
+    this.bundler_wallet_type = bundler_wallet_type
+    
+    // this.rollup = false
+    this.rollup = rollup
     this.txid = txid
     this.txs = []
     this.tx_count = 0
@@ -43,6 +51,8 @@ class Rollup {
     )
     this.plugins = plugins
     console.log(`Bundler: ${this.bundler.address}`)
+    console.log("this.bundler_wallet: ", this.bundler_wallet)
+    console.log("this.bundler_wallet_type: ", this.bundler_wallet_type)
   }
 
   async init() {
@@ -54,8 +64,10 @@ class Rollup {
     let sizes = 0
     let _bundlers = []
     for (let v of bundles) {
-      if (isNil(v.data?.param)) continue
-      const len = JSON.stringify(v.data.param).length
+      // if (isNil(v.data?.param)) continue
+      if (isNil(v.data?.input)) continue
+      // const len = JSON.stringify(v.data.param).length
+      const len = JSON.stringify(v.data.input).length
       if (sizes + len <= 3900) {
         _bundlers.push(v)
         sizes += len
@@ -80,28 +92,51 @@ class Rollup {
         console.log(
           `commiting to Warp...${map(_path(["data", "id"]))(bundles)}`
         )
-        const result = await this.warp.bundle(
-          map(_path(["data", "param"]))(bundles)
-        )
-        console.log(`bundle tx result: ${result.success}`)
-        if (result.success === true) {
-          await this.wal.batch(
-            map(
-              v => [
-                "update",
-                { commit: true, warp: result.originalTxId },
-                "txs",
-                v.id,
-              ],
-              bundles
-            )
-          )
-        }
+        const thedata = map(_path(["data", "input"]))(bundles);
+        console.log('map(_path(["data", "input"]))(bundles): ', thedata)
+        await fs.writeJson(`${path.join(__dirname)}/_bundle_logs/${(new Date()).getTime()}.json`, 
+        thedata, {
+          spaces: 2,
+        })
+
+        console.log("this.bundler_wallet_type: ", this.bundler_wallet_type)
+        console.log("this.bundler_wallet_type: ", this.bundler_wallet)
+        await fs.writeJson(`${path.join(__dirname)}/_bundle_logs/${(new Date()).getTime()}_.json`, 
+        this.bundler_wallet, {
+          spaces: 2,
+        })
+
+        // const result = await this.warp.bundle(
+        //   // map(_path(["data", "param"]))(bundles)
+        //   map(_path(["data", "input"]))(bundles)
+        //   ,
+        //   {evm: true, wallet: this.bundler_wallet}
+        //   // // this.bundler_wallet_type=='evm'?{evm: this.bundler_wallet}: 
+        //   // this.bundler_wallet_type=='evm'? {evm: true, wallet: this.bundler_wallet} :
+        //   // this.bundler_wallet_type=='ar'? {ar: true, wallet: this.bundler_wallet} :
+        //   // null
+        // )
+
+        // console.log(`bundle tx result: ${result.success}`)
+        // if (result.success === true) {
+        //   await this.wal.batch(
+        //     map(
+        //       v => [
+        //         "update",
+        //         { commit: true, warp: result.originalTxId },
+        //         "txs",
+        //         v.id,
+        //       ],
+        //       bundles
+        //     )
+        //   )
+        // }
       }
     } catch (e) {
       console.log(e)
     }
-    setTimeout(() => this.bundle(), 3000)
+    console.log("setTimeout....")
+    setTimeout(() => this.bundle(), 2000)
   }
 
   async initDB() {
@@ -187,12 +222,26 @@ class Rollup {
             prs.push(obj.lmdb.put(k, tx.result.kvs[k]))
           }
           Promise.all(prs).then(() => {})
+
+
+          // const messageData = ethers.utils.solidityKeccak256(
+          //   ['address', 'uint256'],
+          //   [param.caller, param.nonce]
+          // );
+          // const signer = new ethers.utils.SigningKey(messageData);
+          // // console.log("Signer:", signer);
+
           const t = {
             id: ++this.tx_count,
             txid: tx.result.transaction.id,
             commit: false,
             tx_ts: tx.result.block.timestamp,
             input: param,
+
+            // signer: param.caller,
+            // caller: param.caller,
+            // nonce: param.nonce,
+            // signer2: signer
           }
           await this.wal.set(t, "txs", `${t.id}`)
           for (let k in this.plugins) {
