@@ -126,3 +126,5 @@ dist
 .vercel
 
 _rollups
+
+_bundle_logs

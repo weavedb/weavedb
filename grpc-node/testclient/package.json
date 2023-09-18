@@ -1,0 +1,24 @@
+{
+  "name": "testclient",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node-dev  src/index.js --respawn --notify --ignore node_modules ",
+    "dev2": "node-dev  src/index2.js --respawn --notify --ignore node_modules ",
+    "dev3": "node-dev  src/index3.js --respawn --notify --ignore node_modules ",
+    "dev4": "node-dev  src/index4.js --respawn --notify --ignore node_modules ",
+    "format": "prettier --write './src/*.js|ts'",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "node-dev": "^8.0.0",
+    "prettier": "^3.0.2",
+    "weavedb-node-client": "file:../../sdk/light-client-node/",
+    "weavedb-sdk-node": "file:../../sdk/sdk-node/"
+  }
+}

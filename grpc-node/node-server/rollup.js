@@ -88,57 +88,62 @@ class Rollup {
         ["commit", "==", false],
         10
       )
-      const bundles = this.measureSizes(bundling)
-      console.log("bundles.length: ", bundles.length)
-      Object.keys(bundles).forEach(function(key) {
-        console.log(key, bundles[key]);
+      Object.keys(bundling).forEach(function(key) {
+        console.log(key, bundling[key]);
       });
+
+      const bundles = this.measureSizes(bundling)
+
+      console.log("bundles.length: ", bundles.length)
+      // Object.keys(bundles).forEach(function(key) {
+      //   console.log(key, bundles[key]);
+      // });
 
       if (bundles.length > 0) {
         console.log(
           `commiting to Warp...${map(_path(["data", "id"]))(bundles)}`
         )
-      //   const thedata = map(_path(["data", "input"]))(bundles);
-      //   console.log('map(_path(["data", "input"]))(bundles): ', thedata)
-      //   await fs.writeJson(`${path.join(__dirname)}/_bundle_logs/${(new Date()).getTime()}.json`, 
-      //   thedata, {
-      //     spaces: 2,
-      //   })
+        const thedata = map(_path(["data", "input"]))(bundles);
+        console.log('map(_path(["data", "input"]))(bundles): ', thedata)
+        await fs.writeJson(`${path.join(__dirname)}/_bundle_logs/${(new Date()).getTime()}.json`, 
+        thedata, {
+          spaces: 2,
+        })
 
-      //   console.log("this.bundler_wallet_type: ", this.bundler_wallet_type)
-      //   console.log("this.bundler_wallet_type: ", this.bundler_wallet)
-      //   await fs.writeJson(`${path.join(__dirname)}/_bundle_logs/${(new Date()).getTime()}_.json`, 
-      //   this.bundler_wallet, {
-      //     spaces: 2,
-      //   })
+        console.log("this.bundler_wallet_type: ", this.bundler_wallet_type)
+        console.log("this.bundler_wallet_type: ", this.bundler_wallet)
+        await fs.writeJson(`${path.join(__dirname)}/_bundle_logs/${(new Date()).getTime()}_.json`, 
+        this.bundler_wallet, {
+          spaces: 2,
+        })
 
-      //   // const result = await this.warp.bundle(
-      //   //   // map(_path(["data", "param"]))(bundles)
-      //   //   // map(_path(["data", "input"]))(bundles)
-      //   //   thedata,
-      //   //   {evm: true, wallet: this.bundler_wallet}
-      //   //   // // this.bundler_wallet_type=='evm'?{evm: this.bundler_wallet}: 
-      //   //   // this.bundler_wallet_type=='evm'? {evm: true, wallet: this.bundler_wallet} :
-      //   //   // this.bundler_wallet_type=='ar'? {ar: true, wallet: this.bundler_wallet} :
-      //   //   // null
-      //   // )
+        const result = await this.warp.bundle(
+          // map(_path(["data", "param"]))(bundles)
+          // map(_path(["data", "input"]))(bundles)
+          thedata,
+          {evm: true, wallet: this.bundler_wallet}
+          // // this.bundler_wallet_type=='evm'?{evm: this.bundler_wallet}: 
+          // this.bundler_wallet_type=='evm'? {evm: true, wallet: this.bundler_wallet} :
+          // this.bundler_wallet_type=='ar'? {ar: true, wallet: this.bundler_wallet} :
+          // null
+        )
         
 
-      //   console.log(`bundle tx result: `, result)
-      //   console.log(`bundle tx result.success: ${result.success}`)
-      //   // if (result.success === true) {
-      //   //   await this.wal.batch(
-      //   //     map(
-      //   //       v => [
-      //   //         "update",
-      //   //         { commit: true, warp: result.originalTxId },
-      //   //         "txs",
-      //   //         v.id,
-      //   //       ],
-      //   //       bundles
-      //   //     )
-      //   //   )
-      //   // }
+        console.log(`bundle tx result: `, result)
+        console.log(`bundle tx result.success: ${result.success}`)
+        if (result.success === true) {
+          await this.wal.batch(
+            map(
+              v => [
+                "update",
+                { commit: true, warp: result.originalTxId },
+                "txs",
+                v.id,
+              ],
+              bundles
+            )
+          )
+        }
       }
     } catch (e) {
       console.log(e)
@@ -187,6 +192,14 @@ class Rollup {
           if (!isNil(saved_state)) obj.state = saved_state
         },
         onWrite: async (tx, obj, param) => {
+          if (!isNil(obj.noOnWrite)&&obj.noOnWrite===true){
+            console.log("initWAL obj.noOnWrite===true")
+            return
+          }
+          if (!isNil(param.noOnWrite)&&param.noOnWrite===true){
+            console.log("initWAL param.noOnWrite===true")
+            return
+          }
           let prs = [obj.lmdb_wal.put("state", tx.state)]
           for (const k in tx.result.kvs) {
             this.kvs_wal[k] = tx.result.kvs[k]
@@ -224,13 +237,21 @@ class Rollup {
           console.log(obj.state)
         },
         onWrite: async (tx, obj, param) => {
+          
+          if (!isNil(obj.noOnWrite)&&obj.noOnWrite===true){
+            console.log("initOffchain obj.noOnWrite===true")
+            return
+          }
+          if (!isNil(param.noOnWrite)&&param.noOnWrite===true){
+            console.log("initOffchain param.noOnWrite===true")
+            return
+          }
+          
           let prs = [obj.lmdb.put("state", tx.state)]
           for (const k in tx.result.kvs) {
             //this.kvs[k] = tx.result.kvs[k]
             prs.push(obj.lmdb.put(k, tx.result.kvs[k]))
           }
-
-
 
           Promise.all(prs).then(() => {})
 
@@ -240,15 +261,18 @@ class Rollup {
           //   [param.caller, param.nonce]
           // );
           // const signer = new ethers.utils.SigningKey(messageData);
-          // // console.log("Signer:", signer);
+          // console.log("Signer:", signer);
 
+          
           const t = {
             id: ++this.tx_count,
             txid: tx.result.transaction.id,
             commit: false,
             // commit: true,
             tx_ts: tx.result.block.timestamp,
-            input: param,
+            input: {
+              ...param, 
+            },
 
             // signer: param.caller,
             // caller: param.caller,
@@ -271,7 +295,10 @@ class Rollup {
       },
       state,
     })
+    console.log("offchain db.initialize...")
     await this.db.initialize()
+    console.log("offchain db.initialized")
+
   }
 
   async initWarp() {
@@ -285,6 +312,7 @@ class Rollup {
         remoteStateSyncEnabled: false,
         nocache: true,
         progress: async input => {
+          // console.log("input: ", input)
           console.log(
             `loading... ${this.txid} [${input.currentInteraction}/${input.allInteractions}]`
           )
@@ -307,9 +335,27 @@ class Rollup {
         console.log("recovering WAL...")
         const txs = await this.warp.warp.interactionsLoader.load(contractTxId)
         for (let v of txs) {
+
           for (const tag of v.tags || []) {
             if (tag.name === "Input") {
               const input = JSON.parse(tag.value)
+
+              // console.log("v: ",v)
+              // const key = Warp.getKeyInfo(
+              //   'offchain',
+              //   { function: input.function, query: input.query }
+              // )
+              // console.log("key: ",key)
+              console.log("input: ",input)
+              
+              // console.log("input.query: ",input.query)
+              // console.log("input.signature: ",input.signature)
+              console.log("input.nonce: ",input.nonce)
+              console.log("input.caller: ",input.caller)
+              // input.noOnWrite = true
+              await this.db.write(input.function, input, true, true, false, {})
+
+
               if (input.function === "bundle") {
                 const compressed = new Uint8Array(
                   Buffer.from(input.query, "base64")
@@ -322,7 +368,7 @@ class Rollup {
                 for (const input of JSON.parse(
                   pako.inflate(compressed, { to: "string" })
                 )) {
-                  console.log("input: ", input)
+                  // console.log("input: ", input)
                   let t = {
                     id: ++this.tx_count,
                     warp: v.id,
@@ -333,6 +379,34 @@ class Rollup {
                   }
                   console.log(`saving..... [${this.tx_count}] ${t.txid}`)
                   await this.wal.set(t, "txs", `${t.id}`)
+
+
+                  // console.log("v: ", v)
+                  // console.log("input.function: ", input.function)
+                  // console.log("input: ", input)
+                  // const key = Warp.getKeyInfo(
+                  //   'offchain',
+                  //   { function: input.function, query: input.query }
+                  // )
+                  // console.log("key: ", key)
+                  // await db.write(key.func, _query, true, true, false, onDryWrite)
+                  // // // await this.wal.set({...t, noOnWrite:true}, "txs", `${t.id}`)
+                  // const { result, err, dryWrite } = await this.sendQuery({
+                  //   type: 'offchain',
+                  //   func: input.function,
+                  //   // txid: v.id,
+                  //   nocache: true, 
+                  //   query: JSON.stringify(input.query),
+                  //   // res:res
+                  //   res: (err, result = null) => {
+                  //   //   // console.log("result: ", result)
+                  //   //   // console.log("err: ", err)
+                  //     return 
+                  //   },
+                  // }, key)
+                  // // ;({ result, err, dryWrite } = await this.sendQuery(parsed, key))
+                  // // res(err, result)
+                  // console.log("result: ", result)
                 }
                 break
               }
@@ -376,13 +450,19 @@ class Rollup {
     let err = null
     let dryWrite = false
     let _onDryWrite = null
+
     const db =
       type === "log"
         ? this.wal
         : type === "offchain"
         ? this.db
         : this.plugins[type]?.db?.pdb
-    if (isNil(db)) res("DB not found", null)
+    if (isNil(db)){
+      console.log("sendQuery... isNil(db)")
+      res("DB not found", null)
+      return
+    }
+    console.log("sendQuery... try..")
     try {
       let _query = query === `""` ? [] : JSON.parse(query)
       if (is(Object, _query) && is(Object, _query.dryWrite)) {
@@ -390,7 +470,20 @@ class Rollup {
         delete _query.dryWirte
       }
       if (func === "getNonce") {
+        if (type === "offchain") {
+          console.log("sendQuery offchain await db.getNonce.....")
+        }
+        // if (type=="offchain") {
+        //   console.log("sendQuery offchain await this.warp.getNonce..")
+        //   result = await this.warp.getNonce(..._query)
+        // } else {
+        //   result = await db.getNonce(..._query)
+        // }
         result = await db.getNonce(..._query)
+        if (type === "offchain") {
+          console.log("sendQuery offchain await db.getNonce.....result=",result)
+        }
+        
       } else if (key.func === "cget") {
         if (nocache) {
           result = await db.cget(..._query, true)
@@ -412,10 +505,16 @@ class Rollup {
         }
         result = await db[key.func](..._query)
       } else {
+        console.log("sendQuery... write..")
+        console.log("sendQuery... write..nocache=",nocache)
+
         dryWrite = !nocache
         let virtual_txid = null
         const cache = _onDryWrite?.cache || true
-        const onDryWrite = nocache
+        console.log("sendQuery... write..cache=", cache)
+        console.log("sendQuery... write..dryWrite=", dryWrite)
+
+        const onDryWrite = nocache //&& type=="offchain"
           ? null
           : {
               cb: _res => {
@@ -426,6 +525,8 @@ class Rollup {
               cache,
               read: _onDryWrite?.read || null,
             }
+        console.log("sendQuery... db.write......")
+        
         result = await db.write(key.func, _query, true, true, false, onDryWrite)
         //if (!isNil(virtual_txid)) this.results[virtual_txid] = result
       }

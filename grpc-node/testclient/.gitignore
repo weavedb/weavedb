@@ -1,0 +1,5 @@
+*/wallet.json
+**/wallet-*.json
+arweave-keyfile-*.json
+**/arweave-keyfile-*.json
+.env

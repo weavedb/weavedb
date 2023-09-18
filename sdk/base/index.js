@@ -286,7 +286,7 @@ class Base {
   }
 
   async _write(func, ...query) {
-    console.log("weavedb-base: _write")
+    // console.log("weavedb-base: _write")
     let opt = null
     if (is(Object, last(query)) && !is(Array, last(query))) {
       opt = last(query)
