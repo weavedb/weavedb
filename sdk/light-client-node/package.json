@@ -12,5 +12,8 @@
     "arweave": "^1.12.2",
     "ramda": "^0.28.0",
     "weavedb-base": "file:../base"
+  },
+  "scripts": {
+    "clean": "rm -rf node_modules"
   }
 }

@@ -21,7 +21,9 @@
     "weavedb-sdk": "file:../sdk-web"
   },
   "devDependencies": {
-    "esbuild": "^0.14.50",
-    "rimraf": "^3.0.2"
+    "esbuild": "^0.14.50"
+  },
+  "scripts": {
+    "clean": "rm -rf node_modules"
   }
 }

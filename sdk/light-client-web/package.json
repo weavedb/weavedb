@@ -6,6 +6,7 @@
   "engines": {
     "node": ">=16.5"
   },
+  
   "dependencies": {
     "@lit-protocol/sdk-browser": "^1.3.3",
     "@metamask/legacy-web3": "^2.0.0",
@@ -13,6 +14,10 @@
     "google-protobuf": "^3.21.0",
     "grpc-web": "^1.3.1",
     "ramda": "^0.28.0",
-    "weavedb-base": "file:../base"
+    "weavedb-base": "file:../base",
+    "rimraf": "^3.0.2"
+  },
+  "scripts": {
+    "clean": "rm -rf node_modules"
   }
 }

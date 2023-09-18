@@ -20,6 +20,10 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   defaults: true,
   oneofs: true,
 })
+
+console.log("loading... light-client-node")
+
+
 const weavedb_proto = grpc.loadPackageDefinition(packageDefinition).weavedb
 let Arweave = require("arweave")
 

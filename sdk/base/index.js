@@ -4,6 +4,8 @@ const EthCrypto = require("eth-crypto")
 const { providers, Contract, utils } = require("ethers")
 const md5 = require("md5")
 
+console.log("loading... weavedb-base..")
+
 const {
   startAuthentication,
   startRegistration,
@@ -211,6 +213,7 @@ class Base {
   }
 
   async getNonce(address, nocache) {
+    console.log(`weavedb-base: getNonce(address=${address}, nocache=${nocache})`)
     return (
       (await this.read(
         {
@@ -223,6 +226,7 @@ class Base {
   }
 
   async getIds(tx, nocache) {
+    console.log(`weavedb-base: getIds`)
     return this.read(
       {
         function: "ids",
@@ -233,12 +237,14 @@ class Base {
   }
 
   async bundle(queries, opt) {
+    console.log(`weavedb-base: bundle`)
     const input = JSON.stringify(queries)
     const output = pako.deflate(input)
     const base64 = btoa(String.fromCharCode.apply(null, output))
     return this._write2("bundle", base64, opt)
   }
   async addOwner(address, opt) {
+    console.log(`weavedb-base: addOwner`)
     return this._write2("addOwner", { address }, opt)
   }
 
@@ -280,6 +286,7 @@ class Base {
   }
 
   async _write(func, ...query) {
+    console.log("weavedb-base: _write")
     let opt = null
     if (is(Object, last(query)) && !is(Array, last(query))) {
       opt = last(query)
@@ -326,6 +333,8 @@ class Base {
         data,
       } = opt)
     }
+    console.log(`weavedb-base: _write2: func=${func}, query=`, query)
+
     if (!isNil(linkedAccount)) wallet = linkedAccount
     if (all(isNil)([wallet, ii, intmax, ar]) && !isNil(this.arweave_wallet)) {
       ar = this.arweave_wallet
@@ -1061,6 +1070,8 @@ class Base {
   }
 
   async readQuery(func, ...query) {
+    console.log(`weavedb-base: readQuery: func=${func}, query=`, query)
+
     let nocache = this.nocache_default || false
     ;({ nocache, query } = this.parseQuery(func, query))
     return await this.read({ function: func, query }, nocache)

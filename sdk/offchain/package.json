@@ -10,5 +10,8 @@
     "ramda": "^0.28.0",
     "weavedb-base": "file:../base",
     "weavedb-contracts": "file:../contracts"
+  },
+  "scripts": {
+    "clean": "rm -rf node_modules"
   }
 }
