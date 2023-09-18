@@ -4,7 +4,7 @@ const EthCrypto = require("eth-crypto")
 const { providers, Contract, utils } = require("ethers")
 const md5 = require("md5")
 
-console.log("loading... weavedb-base..")
+// console.log("loading... weavedb-base..")
 
 const {
   startAuthentication,
@@ -1070,7 +1070,7 @@ class Base {
   }
 
   async readQuery(func, ...query) {
-    console.log(`weavedb-base: readQuery: func=${func}, query=`, query)
+    // console.log(`weavedb-base: readQuery: func=${func}, query=`, query)
 
     let nocache = this.nocache_default || false
     ;({ nocache, query } = this.parseQuery(func, query))
