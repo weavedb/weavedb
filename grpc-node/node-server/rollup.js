@@ -88,9 +88,9 @@ class Rollup {
         ["commit", "==", false],
         10
       )
-      Object.keys(bundling).forEach(function(key) {
-        console.log(key, bundling[key]);
-      });
+      // Object.keys(bundling).forEach(function(key) {
+      //   console.log(key, bundling[key]);
+      // });
 
       const bundles = this.measureSizes(bundling)
 
@@ -100,50 +100,50 @@ class Rollup {
       // });
 
       if (bundles.length > 0) {
-        console.log(
-          `commiting to Warp...${map(_path(["data", "id"]))(bundles)}`
-        )
+        // console.log(
+        //   `commiting to Warp...${map(_path(["data", "id"]))(bundles)}`
+        // )
         const thedata = map(_path(["data", "input"]))(bundles);
-        console.log('map(_path(["data", "input"]))(bundles): ', thedata)
+        // console.log('map(_path(["data", "input"]))(bundles): ', thedata)
         await fs.writeJson(`${path.join(__dirname)}/_bundle_logs/${(new Date()).getTime()}.json`, 
         thedata, {
           spaces: 2,
         })
 
-        console.log("this.bundler_wallet_type: ", this.bundler_wallet_type)
-        console.log("this.bundler_wallet_type: ", this.bundler_wallet)
+        // console.log("this.bundler_wallet_type: ", this.bundler_wallet_type)
+        // console.log("this.bundler_wallet_type: ", this.bundler_wallet)
         await fs.writeJson(`${path.join(__dirname)}/_bundle_logs/${(new Date()).getTime()}_.json`, 
         this.bundler_wallet, {
           spaces: 2,
         })
 
-        const result = await this.warp.bundle(
-          // map(_path(["data", "param"]))(bundles)
-          // map(_path(["data", "input"]))(bundles)
-          thedata,
-          {evm: true, wallet: this.bundler_wallet}
-          // // this.bundler_wallet_type=='evm'?{evm: this.bundler_wallet}: 
-          // this.bundler_wallet_type=='evm'? {evm: true, wallet: this.bundler_wallet} :
-          // this.bundler_wallet_type=='ar'? {ar: true, wallet: this.bundler_wallet} :
-          // null
-        )
+        // const result = await this.warp.bundle(
+        //   // map(_path(["data", "param"]))(bundles)
+        //   // map(_path(["data", "input"]))(bundles)
+        //   thedata,
+        //   {evm: true, wallet: this.bundler_wallet}
+        //   // // this.bundler_wallet_type=='evm'?{evm: this.bundler_wallet}: 
+        //   // this.bundler_wallet_type=='evm'? {evm: true, wallet: this.bundler_wallet} :
+        //   // this.bundler_wallet_type=='ar'? {ar: true, wallet: this.bundler_wallet} :
+        //   // null
+        // )
         
 
-        console.log(`bundle tx result: `, result)
-        console.log(`bundle tx result.success: ${result.success}`)
-        if (result.success === true) {
-          await this.wal.batch(
-            map(
-              v => [
-                "update",
-                { commit: true, warp: result.originalTxId },
-                "txs",
-                v.id,
-              ],
-              bundles
-            )
-          )
-        }
+        // console.log(`bundle tx result: `, result)
+        // console.log(`bundle tx result.success: ${result.success}`)
+        // if (result.success === true) {
+        //   await this.wal.batch(
+        //     map(
+        //       v => [
+        //         "update",
+        //         { commit: true, warp: result.originalTxId },
+        //         "txs",
+        //         v.id,
+        //       ],
+        //       bundles
+        //     )
+        //   )
+        // }
       }
     } catch (e) {
       console.log(e)
@@ -224,7 +224,8 @@ class Rollup {
   async initOffchain() {
     const state = { owner: this.owner, secure: this.secure ?? true }
     this.db = new DB({
-      contractTxId: this.txid,
+      // contractTxId: this.txid,
+      contractTxId: "offchain", //this.txid,
       type: 3,
       cache: {
         initialize: async obj => {
@@ -346,14 +347,25 @@ class Rollup {
               //   { function: input.function, query: input.query }
               // )
               // console.log("key: ",key)
-              console.log("input: ",input)
+              console.log("input.function: ",input.function)
+              // console.log("input: ",input)
+              // console.log("v: ",v)
               
               // console.log("input.query: ",input.query)
               // console.log("input.signature: ",input.signature)
-              console.log("input.nonce: ",input.nonce)
-              console.log("input.caller: ",input.caller)
+              // console.log("input.nonce: ",input.nonce)
+              // console.log("input.caller: ",input.caller)
               // input.noOnWrite = true
-              await this.db.write(input.function, input, true, true, false, {})
+              if (input.function === "bundle") {
+                await this.db.write(input.function, input, true, true, false, {}, true)
+              } else if (input.function === "addAddressLink") {
+                console.log("v: ",v)
+                await this.db.write(input.function, input, true, true, false, {}, true)
+              } else if (input.function === "addOwner") {
+                // console.log("v: ",v)
+              } else if (input.function === "add") {
+                // console.log("v: ",v)
+              }
 
 
               if (input.function === "bundle") {
@@ -408,7 +420,7 @@ class Rollup {
                   // // res(err, result)
                   // console.log("result: ", result)
                 }
-                break
+                // break
               }
             }
           }

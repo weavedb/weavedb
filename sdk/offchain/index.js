@@ -170,7 +170,7 @@ class OffChain extends Base {
     return results
   }
 
-  async write(func, param, dryWrite, bundle, relay = false, onDryWrite) {
+  async write(func, param, dryWrite, bundle, relay = false, onDryWrite, noOnWrite=false) {
     console.log("offchain write func=", func  )
     console.log("offchain write param=", param  )
     if (JSON.stringify(param).length > 3900) {
@@ -207,10 +207,17 @@ class OffChain extends Base {
         }
         if (typeof this.cache === "object" 
         // && param?.noOnWrite != true
+          // && noOnWrite==false
         ) {
           await this.cache.onWrite(tx, this, param)
-        } else if (this.type === 3) {
+        } else if (this.type === 3 && noOnWrite==false ){
+          console.log("offchain this.type===3")
+          console.log("offchain noOnWrite: ", noOnWrite)
+
           for (const k in tx.result.kvs) this.kvs[k] = tx.result.kvs[k]
+        } else {
+          console.log("offchain noOnWrite: ", noOnWrite)
+          console.log("offchain this.type: ", this.type)
         }
       } catch (e) {
         console.log(e)

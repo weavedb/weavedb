@@ -710,7 +710,7 @@ class SDK extends Base {
         }
         if (isNil(dryResult)) {
           let dryState = await this.db.dryWrite(param)
-          console.log("dryState: ", dryState)
+          // console.log("dryState: ", dryState)
           dryResult =
             dryState.type !== "ok"
               ? {
