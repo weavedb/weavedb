@@ -118,6 +118,7 @@ const validateData = async ({
       },
       request: {
         caller: action.caller,
+        func,
         method: op,
         auth: { signer: _signer, relayer, jobID, extra },
         block: {

@@ -299,6 +299,8 @@ Within the rules, you can access [various information](https://docs.weavedb.dev/
 {
   contract: { id, owners },
   request: {
+    method,
+	func,
     auth: { signer, relayer, jobID, extra },
     block: { height, timestamp },
     transaction: { id },

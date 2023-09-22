@@ -62,6 +62,8 @@ You can access various data within the validation blocks.
 const data = {
   contract: { id, owners },
   request: {
+    method,
+	func,
     auth: { signer, relayer, jobID, extra },
     block: { height, timestamp },
     transaction: { id },

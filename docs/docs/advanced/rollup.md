@@ -71,7 +71,7 @@ yarn
 ##### 4. Run Docker Compose
 
 ```bash
-yarn run-node
+yarn run-rollup
 # cd grpc-node && sudo docker-compose -f docker-compose-standalone.yml up --build
 ```
 
