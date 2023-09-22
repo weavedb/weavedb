@@ -540,6 +540,21 @@ const tests = {
     })
   },
 
+  "should only allow add": async ({ db, arweave_wallet }) => {
+    const rules = {
+      "allow create": { "==": [{ var: "request.func" }, "add"] },
+    }
+    await db.setRules(rules, "ppl", {
+      ar: arweave_wallet,
+    })
+
+    const data = { name: "Bob", age: 20 }
+    await db.set(data, "ppl", "Bob")
+    expect((await db.get("ppl")).length).to.eql(0)
+    await db.add(data, "ppl")
+    expect((await db.get("ppl")).length).to.eql(1)
+  },
+
   "should set bundlers": async ({ db, walletAddress, arweave_wallet }) => {
     const bundlers = [walletAddress]
     await db.setBundlers(bundlers, { ar: arweave_wallet })
@@ -553,6 +568,75 @@ const tests = {
     const tx3 = await db.bundle([await db.sign("add", {}, "ppl")])
     expect(tx2.success).to.eql(false)
     return
+  },
+  "should add index": async ({ db, arweave_wallet }) => {
+    const data = { name: "Bob", age: 20 }
+    const data2 = { name: "Alice", age: 25 }
+    const data3 = { name: "Beth", age: 5 }
+    const data4 = { name: "John", age: 20, height: 150 }
+    await db.add(data, "ppl")
+    expect(await db.get("ppl", ["age"])).to.eql([data])
+    await db.set(data2, "ppl", "Alice")
+    expect(await db.get("ppl", ["age", "desc"])).to.eql([data2, data])
+    await db.upsert(data3, "ppl", "Beth")
+    expect(await db.get("ppl", ["age", "desc"])).to.eql([data2, data, data3])
+    await db.update({ age: 30 }, "ppl", "Beth")
+    expect(await db.get("ppl", ["age", "desc"])).to.eql([
+      { name: "Beth", age: 30 },
+      data2,
+      data,
+    ])
+
+    await db.addIndex([["age"], ["name", "desc"]], "ppl", {
+      ar: arweave_wallet,
+    })
+    await db.addIndex([["age"], ["name", "desc"], ["height"]], "ppl", {
+      ar: arweave_wallet,
+    })
+    await db.addIndex([["age"], ["name", "desc"], ["height", "desc"]], "ppl", {
+      ar: arweave_wallet,
+    })
+
+    await db.upsert(data4, "ppl", "John")
+    expect(await db.get("ppl", ["age"], ["name", "desc"])).to.eql([
+      data4,
+      data,
+      data2,
+      { name: "Beth", age: 30 },
+    ])
+
+    await db.addIndex([["name"], ["age"]], "ppl", {
+      ar: arweave_wallet,
+    })
+
+    expect(
+      await db.get("ppl", ["name"], ["age"], ["name", "in", ["Alice", "John"]])
+    ).to.eql([data2, data4])
+    expect(await db.getIndexes("ppl")).to.eql([
+      [["__id__", "asc"]],
+      [["name", "asc"]],
+      [["age", "asc"]],
+      [
+        ["age", "asc"],
+        ["name", "desc"],
+      ],
+      [
+        ["age", "asc"],
+        ["name", "desc"],
+        ["height", "asc"],
+      ],
+      [
+        ["age", "asc"],
+        ["name", "desc"],
+        ["height", "desc"],
+      ],
+      [["height", "asc"]],
+
+      [
+        ["name", "asc"],
+        ["age", "asc"],
+      ],
+    ])
   },
   "should add array indexes": async ({ db, arweave_wallet }) => {
     const index = [
