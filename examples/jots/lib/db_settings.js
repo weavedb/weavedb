@@ -494,6 +494,7 @@ const offchain = {
     posts: [
       {
         key: "del_timeline",
+        version: 2,
         on: "update",
         func: [
           ["=$is_delete", ["isNil", "$data.after.date"]],
@@ -509,6 +510,7 @@ const offchain = {
       },
       {
         key: "timeline",
+        version: 2,
         on: "create",
         func: [
           [
@@ -597,6 +599,7 @@ const offchain = {
       },
       {
         key: "last",
+        version: 2,
         on: "create",
         func: [
           [
@@ -621,6 +624,7 @@ const offchain = {
       },
       {
         key: "inc_reposts",
+        version: 2,
         on: "create",
         func: [
           [
@@ -653,6 +657,7 @@ const offchain = {
       },
       {
         key: "inc_comments",
+        version: 2,
         on: "create",
         func: [
           [
@@ -688,6 +693,7 @@ const offchain = {
     follows: [
       {
         key: "follow",
+        version: 2,
         on: "create",
         func: [
           ["update()", [{ followers: db.inc(1) }, "users", "$data.after.to"]],
@@ -698,6 +704,7 @@ const offchain = {
       },
       {
         key: "unfollow",
+        version: 2,
         on: "delete",
         func: [
           ["update()", [{ followers: db.inc(-1) }, "users", "$data.before.to"]],
@@ -711,6 +718,7 @@ const offchain = {
     likes: [
       {
         key: "inc_like",
+        version: 2,
         on: "create",
         func: [
           ["=$art", ["get()", ["posts", "$data.after.aid"]]],
@@ -758,6 +766,7 @@ const offchain = {
     users: [
       {
         key: "inc_invited",
+        version: 2,
         on: "create",
         func: [
           [
@@ -794,6 +803,7 @@ const notifications = {
       {
         key: "inc_count",
         on: "create",
+        version: 2,
         func: [
           [
             "unless",
@@ -809,6 +819,7 @@ const notifications = {
       {
         key: "dec_count",
         on: "update",
+        version: 2,
         func: [
           [
             "when",
