@@ -34,7 +34,7 @@ const add = async (
   let { _data, path, schema, next_data } = await parse(
     state,
     action,
-    "add",
+    action.input.function,
     signer,
     salt,
     contractErr,
@@ -64,6 +64,7 @@ const add = async (
       depth,
       {
         data: {
+          path: init(path),
           before: before.val,
           after: after.val,
           id: last(path),

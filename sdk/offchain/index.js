@@ -204,8 +204,7 @@ class OffChain extends Base {
           for (const k in tx.result.kvs) this.kvs[k] = tx.result.kvs[k]
         }
       } catch (e) {
-        console.log(e)
-        //console.log(typeof e === "object" ? e.message : e)
+        console.log(typeof e === "object" ? e.message : e)
         error = e
       }
       const start = Date.now()

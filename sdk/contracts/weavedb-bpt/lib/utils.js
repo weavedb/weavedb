@@ -2,7 +2,11 @@ let fpjson = require("fpjson-lang")
 fpjson = fpjson.default || fpjson
 const jsonLogic = require("json-logic-js")
 const md5 = require("./md5")
+
 const {
+  keys,
+  symmetricDifference,
+  uniq,
   sortBy,
   identity,
   reverse,
@@ -33,7 +37,13 @@ const {
   getField,
   mergeData,
 } = require("../../common/lib/utils")
-const { clone, isValidName } = require("../../common/lib/pure")
+const {
+  fpj,
+  ac_funcs,
+  replace$,
+  clone,
+  isValidName,
+} = require("../../common/lib/pure")
 const { validate: validator } = require("../../common/lib/jsonschema")
 const { get: _get } = require("./index")
 
@@ -95,149 +105,110 @@ const validateData = async ({
   get,
   kvs,
 }) => {
-  if (
-    includes(func)(["set", "add", "update", "upsert", "delete"]) &&
-    (secure || !isNil(rules))
-  ) {
-    let op = func
-    if (includes(op)(["set", "add"])) op = "create"
-    if (op === "create" && !isNil(doc.__data)) op = "update"
-    if (op === "upsert") {
-      if (!isNil(doc.__data)) {
-        op = "update"
-      } else {
-        op = "create"
-      }
-    }
-    let allowed = false
-    let rule_data = {
-      contract: {
-        id: SmartWeave.contract.id,
-        version: state.version,
-        owners: is(Array, state.owner) ? state.owner : [state.owner],
-      },
-      request: {
-        caller: action.caller,
-        func,
-        method: op,
-        auth: { signer: _signer, relayer, jobID, extra },
-        block: {
-          height: SmartWeave.block.height,
-          timestamp: SmartWeave.block.timestamp,
-        },
-        transaction: {
-          id: SmartWeave.transaction.id,
-        },
-        resource: { data: new_data },
-        id: last(path),
-        path,
-      },
-      resource: {
-        data: doc.__data,
-        setter: doc.setter,
-        newData: next_data,
-        id: last(path),
-        path,
-      },
-    }
-    const setElm = (k, val) => {
-      let elm = rule_data
-      let elm_path = k.split(".")
-      let i = 0
-      for (const v of elm_path) {
-        if (i === elm_path.length - 1) {
-          elm[v] = val
-          break
-        } else if (isNil(elm[v])) elm[v] = {}
-        elm = elm[v]
-        i++
-      }
-      return elm
-    }
-    const _parse = (query, vars) => {
-      if (is(Array, query)) {
-        query = map(v => (is(Object, v) ? _parse(v, vars) : v))(query)
-      } else if (is(Object, query)) {
-        if (is(String, query.var)) {
-          return _path(query.var.split("."))(vars)
+  if (!isNil(func)) {
+    let [_func, ..._method] = func.split(":")
+    _method = _method.join(":")
+    if (
+      includes(_func)(["set", "add", "update", "upsert", "delete"]) &&
+      (secure || !isNil(rules))
+    ) {
+      let op = _func
+      if (includes(op)(["set", "add"])) op = "create"
+      if (op === "create" && !isNil(doc.__data)) op = "update"
+      if (op === "upsert") {
+        if (!isNil(doc.__data)) {
+          op = "update"
         } else {
-          query = map(v => _parse(v, vars))(query)
+          op = "create"
         }
       }
-      return query
-    }
-    if (!isNil(rules)) {
-      for (let k in rules || {}) {
-        const [permission, _ops] = k.split(" ")
-        if (permission !== "let") continue
-        const rule = rules[k]
-        let ok = false
-        if (isNil(_ops)) {
-          ok = true
-        } else {
-          const ops = _ops.split(",")
-          if (
-            intersection(ops)(["write", rule_data.request.method]).length > 0
-          ) {
-            ok = true
-          }
-        }
-        if (ok) {
-          for (let k2 in rule || {}) {
-            let _op = rule[k2][0]
-            let logic = rule[k2]
-            if (_op === "if") {
-              if (!fpjson(clone(rule[k2][1]), rule_data)) continue
-              logic = rule[k2][2]
-            } else if (_op === "ifelse") {
-              if (fpjson(clone(rule[k2][1]), rule_data)) {
-                logic = rule[k2][2]
-              } else {
-                logic = rule[k2][3]
-              }
-            }
-            _op = logic[0]
-            if (_op === "get") {
-              const result =
-                (
-                  await get(
-                    state,
-                    {
-                      input: {
-                        function: "get",
-                        query: _parse(logic[1], rule_data),
-                      },
-                    },
-                    undefined,
-                    SmartWeave,
-                    kvs
-                  )
-                )?.result ?? null
-              setElm(k2, result)
-            } else {
-              setElm(k2, fpjson(clone(logic), rule_data))
-            }
+      let allowed = false
+      let rule_data = {
+        contract: {
+          id: SmartWeave.contract.id,
+          version: state.version,
+          owners: is(Array, state.owner) ? state.owner : [state.owner],
+        },
+        request: {
+          caller: action.caller,
+          func: _func,
+          op: op,
+          method: _method === "" ? op : _method,
+          auth: { signer: _signer, relayer, jobID, extra },
+          block: {
+            height: SmartWeave.block.height,
+            timestamp: SmartWeave.block.timestamp,
+          },
+          transaction: {
+            id: SmartWeave.transaction.id,
+          },
+          resource: { data: new_data },
+          id: last(path),
+          path,
+        },
+        resource: {
+          data: doc.__data,
+          setter: doc.setter,
+          newData: next_data,
+          id: last(path),
+          path,
+        },
+      }
+      rule_data.signer = rule_data.request.auth.signer
+      rule_data.id = rule_data.request.id
+      rule_data.ts = rule_data.request.block.timestamp
+      rule_data.new = rule_data.resource.newData
+      rule_data.old = rule_data.resource.data
+      rule_data.req = rule_data.request.resource.data
+
+      const isAllowed = (_ops, request) => {
+        if (_ops === "*") return true
+        const ops = _ops.split(",")
+        let methods = uniq([
+          "write",
+          request.op,
+          request.func,
+          request.method,
+          `${request.func}:${request.method}`,
+          `${request.op}:${request.method}`,
+          `write:${request.method}`,
+        ])
+        return intersection(ops)(methods).length > 0
+      }
+      const fn = {
+        get: async query => {
+          let val = null
+          let isBreak = false
+          val =
+            (
+              await get(
+                state,
+                {
+                  input: {
+                    function: "get",
+                    query,
+                  },
+                },
+                undefined,
+                SmartWeave,
+                kvs
+              )
+            )?.result ?? null
+          return [val, isBreak]
+        },
+      }
+      if (!isNil(rules)) {
+        for (const v of rules || []) {
+          if (isAllowed(v[0], rule_data.request)) {
+            await fpj(v[1], rule_data, { ...fn, ...ac_funcs })
           }
         }
       }
+      if (!rule_data.request.allow) err("operation not allowed")
+      return rule_data.resource.newData
+    } else {
+      return next_data
     }
-    for (let k in rules || {}) {
-      const spk = k.split(" ")
-      if (spk[0] === "let") continue
-      const rule = rules[k]
-      const [permission, _ops] = k.split(" ")
-      const ops = _ops.split(",")
-      if (intersection(ops)(["write", rule_data.request.method]).length > 0) {
-        const ok = jsonLogic.apply(rule, rule_data)
-        if (permission === "allow" && ok) {
-          allowed = true
-        } else if (permission === "deny" && ok) err()
-      }
-    }
-    if (!allowed) err("operation not allowed")
-    return rule_data.resource.newData
-  } else {
-    return next_data
   }
 }
 
@@ -257,7 +228,8 @@ const getDoc = async (
   current_path = [],
   kvs,
   get,
-  type
+  type,
+  _func
 ) =>
   await _getDoc(
     null,
@@ -276,7 +248,8 @@ const getDoc = async (
     kvs,
     undefined,
     get,
-    type
+    type,
+    _func
   )
 
 const _getDoc = async (
@@ -296,7 +269,8 @@ const _getDoc = async (
   kvs,
   doc,
   get,
-  type
+  type,
+  _func
 ) => {
   data = (await kv(kvs, SmartWeave).get(`data.${current_path.join("/")}`)) || {}
   const [_col, id] = path
@@ -343,7 +317,7 @@ const _getDoc = async (
   }
   if (type !== "cron") {
     await validateData({
-      func,
+      func: _func,
       secure,
       rules,
       doc,
@@ -379,7 +353,8 @@ const _getDoc = async (
         kvs,
         doc,
         get,
-        type
+        type,
+        _func
       )
     : {
         doc,
@@ -455,7 +430,7 @@ const trigger = async (
         SmartWeave,
         _kvs,
         depth,
-        vars
+        { ...vars, batch: [] }
       )
       state = _state
       for (const k in _kvs) kvs[k] = _kvs[k]
@@ -731,27 +706,23 @@ const checkStartEnd = q => {
       if (q.start[1]?.__cursor__) {
         start[1] = assoc("__id__", q.start[1].id, q.start[1].data)
       } else {
-        let i = 0
-        for (const v of tail(q.start)) {
+        for (const [i, v] of tail(q.start).entries()) {
           if (isNil(q.sort[i]))
             err(`sort must exist for [${JSON.stringify(v)}]`)
           start[1][q.sort[i][0]] = v
-          i++
         }
       }
     } else if (!isNil(q.end)) {
       end ??= []
       end[0] = q.end[0]
       end[1] ??= {}
-      let i = 0
       if (q.end[1]?.__cursor__) {
         end[1] = assoc("__id__", q.end[1].id, q.end[1].data)
       } else {
-        for (const v of tail(q.end)) {
+        for (const [i, v] of tail(q.end).entries()) {
           if (isNil(q.sort[i]))
             err(`sort must exist for [${JSON.stringify(v)}]`)
           end[1][q.sort[i][0]] = v
-          i++
         }
       }
     }
@@ -839,8 +810,7 @@ const checkSort = q => {
       }
     }
   }
-  let i = 0
-  for (const v of q.sort || []) {
+  for (const [i, v] of (q.sort || []).entries()) {
     if (isNil(sort[i])) {
       sort[i] = v
     } else if (sort[i][0] === v[0]) {
@@ -851,7 +821,6 @@ const checkSort = q => {
     } else {
       err(`the wrong sort ${JSON.stringify(q.sort)}`)
     }
-    i++
   }
   q.sort = map(v => {
     if (isNil(v[1])) v[1] = "asc"
@@ -919,10 +888,9 @@ const buildQueries = q => {
         q.reverse.end = true
       }
     } else if (op === "not-in") {
-      let i = 0
       let prev = null
       let __ranges = sortBy(identity)(q.range[0][2])
-      for (let v of __ranges) {
+      for (let [i, v] of __ranges.entries()) {
         let opt = {}
         let start = clone(q.start)
         if (i !== 0) {
@@ -950,7 +918,6 @@ const buildQueries = q => {
         }
 
         prev = v
-        i++
       }
       q.sortRange = true
       q.reverse.start = true

@@ -26,6 +26,7 @@ const { upsert } = require("./upsert")
 const { remove } = require("./remove")
 const { addAddressLink } = require("./addAddressLink")
 const { batch } = require("./batch")
+const { query: _query } = require("./query")
 
 const relay = async (
   state,
@@ -65,7 +66,7 @@ const relay = async (
     relayer = action.caller
   }
   if (input.jobID !== jobID) err(`jobID mismatch [${input.jobID}|${jobID}]`)
-  let action2 = { input, relayer, extra: query, jobID }
+  let action2 = { caller: action.caller, input, relayer, extra: query, jobID }
   if (!isNil(relayers[jobID].relayers)) {
     const allowed_relayers = map(v => (/^0x.+$/.test(v) ? toLower(v) : v))(
       relayers[jobID].relayers || []
@@ -148,6 +149,8 @@ const relay = async (
         type,
         get
       )
+    case "query":
+      return await _query(...params)
     case "set":
       return await set(...params)
     case "update":

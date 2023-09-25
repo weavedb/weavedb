@@ -2,12 +2,13 @@ const { includes, isNil, clone } = require("ramda")
 const { parse } = require("../../lib/utils")
 const { err, wrapResult } = require("../../../common/lib/utils")
 const { validate } = require("../../lib/validate")
-const { set, what } = require("./set")
+const { set } = require("./set")
 const { add } = require("./add")
 const { update } = require("./update")
 const { upsert } = require("./upsert")
 const { remove } = require("./remove")
-//const { relay } = require("./relay")
+const { query } = require("./query")
+const { relay } = require("./relay")
 
 const { setRules } = require("./setRules")
 const { setSchema } = require("./setSchema")
@@ -97,6 +98,12 @@ const batch = async (
         break
       case "set":
         res = await set(...params)
+        break
+      case "relay":
+        res = await relay(...params)
+        break
+      case "query":
+        res = await query(...params)
         break
       case "update":
         res = await update(...params)

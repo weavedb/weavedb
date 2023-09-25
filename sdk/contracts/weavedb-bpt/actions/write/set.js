@@ -32,7 +32,7 @@ const set = async (
   let { path, schema, next_data } = await parse(
     state,
     action,
-    "set",
+    action.input.function,
     signer,
     0,
     contractErr,
@@ -62,6 +62,7 @@ const set = async (
       depth,
       {
         data: {
+          path: init(path),
           before: before.val,
           after: after.val,
           id: last(path),

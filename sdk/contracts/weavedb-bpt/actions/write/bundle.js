@@ -7,6 +7,7 @@ const { update } = require("./update")
 const { upsert } = require("./upsert")
 const { remove } = require("./remove")
 const { relay } = require("./relay")
+const { query } = require("./query")
 
 const { setRules } = require("./setRules")
 const { setSchema } = require("./setSchema")
@@ -85,6 +86,9 @@ const bundle = async (
             undefined,
             "bundle"
           )
+          break
+        case "query":
+          res = await query(...params)
           break
         case "set":
           res = await set(...params)
