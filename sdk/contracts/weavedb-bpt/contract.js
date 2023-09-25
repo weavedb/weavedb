@@ -24,6 +24,7 @@ const { getRules } = require("./actions/read/getRules")
 const { getIndexes } = require("./actions/read/getIndexes")
 const { listCollections } = require("./actions/read/listCollections")
 
+const { query } = require("./actions/write/query")
 const { set } = require("./actions/write/set")
 const { tick } = require("./actions/write/tick")
 const { upsert } = require("./actions/write/upsert")
@@ -200,6 +201,10 @@ async function handle(state, action, _SmartWeave) {
           get
         )
       )
+      break
+
+    case "query":
+      res = await addHash(_SmartWeave)(await query(...writeParams))
       break
     case "set":
       res = await addHash(_SmartWeave)(await set(...writeParams))

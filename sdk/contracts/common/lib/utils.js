@@ -127,7 +127,7 @@ const wrapResult = (state, original_signer, SmartWeave, extra) => ({
 const parse = async (
   state,
   action,
-  func,
+  _func,
   signer,
   salt,
   contractErr = true,
@@ -136,6 +136,8 @@ const parse = async (
   type,
   fn
 ) => {
+  let func
+  if (!isNil(_func)) func = _func.split(":")[0]
   const { data } = state
   const { query } = action.input
   const { relayer, jobID, extra } = action
@@ -241,7 +243,8 @@ const parse = async (
       undefined,
       kvs,
       fn.get,
-      type
+      type,
+      _func
     )
     _data = doc.doc
     ;({ next_data, schema, rules, col } = doc)

@@ -9,354 +9,316 @@ const db = {
 
 const offchain = {
   rules: {
-    posts: {
-      let: {
-        keys: ["keys", { var: "request.resource.data" }],
-      },
-      "let create": {
-        "resource.newData.id": { var: "request.id" },
-        "resource.newData.owner": { var: "request.auth.signer" },
-        "resource.newData.likes": 0,
-        "resource.newData.reposts": 0,
-        "resource.newData.quotes": 0,
-        "resource.newData.comments": 0,
-        "resource.newData.date": { var: "request.block.timestamp" },
-        "request.method": [
-          "ifelse",
-          ["equals", "article", { var: "resource.newData.type" }],
-          "_article",
-          "_status",
-        ],
-      },
-      "let _article": {
-        isTitle: [["complement", ["isNil"]], { var: "resource.newData.title" }],
-        "resource.newData.reply": false,
-        "resource.newData.quote": false,
-        "resource.newData.reply_to": "",
-        "resource.newData.repost": "",
-        "request.method": [
-          "if",
-          ["all", ["equals", true], [{ var: "isTitle" }]],
-          "article",
-        ],
-      },
-      "let _status": {
-        noTitle: ["isNil", { var: "resource.newData.title" }],
-        repost: ["defaultTo", "", { var: "resource.newData.repost" }],
-        "request.method": [
-          "ifelse",
-          ["equals", "", { var: "repost" }],
-          "_status2",
-          "_repost",
-        ],
-      },
-
-      "let _repost": {
-        description: ["defaultTo", "", { var: "resource.newData.description" }],
-        post: ["get", ["posts", { var: "resource.newData.repost" }]],
-        exPost: [["complement", ["isNil"]], { var: "post" }],
-        "resource.newData.reply": false,
-        "resource.newData.quote": [
-          ["complement", ["equals"]],
-          "",
-          { var: "description" },
-        ],
-        "resource.newData.reply_to": "",
-        "request.method": [
-          "ifelse",
-          { var: "resource.newData.quote" },
-          "_quote",
-          "_repost2",
-        ],
-      },
-      "let _quote": {
-        "request.method": [
-          "if",
-          ["and", { var: "exPost" }, { var: "noTitle" }],
-          "quote",
-        ],
-      },
-      "let _repost2": {
-        repost: [
-          "get",
+    posts: [
+      [
+        "add:status",
+        [
           [
-            "posts",
-            ["quote", "==", false],
-            ["owner", "==", { var: "request.auth.signer" }],
-            ["repost", "==", { var: "resource.newData.repost" }],
+            "update()",
+            {
+              id: "$id",
+              owner: "$signer",
+              likes: 0,
+              reposrts: 0,
+              quotes: 0,
+              comments: 0,
+              date: "$ts",
+              reply: false,
+              quote: false,
+              reply_to: "",
+              repost: "",
+              type: "status",
+              parents: [],
+            },
           ],
+          ["fields()", ["*description", "mentions", "hashes", "image"]],
+          ["allow()", true],
         ],
-        noRepost: ["o", ["equals", 0], ["length"], { var: "repost" }],
-        "request.method": [
-          "if",
+      ],
+      [
+        "add:article",
+        [
+          ["=$is_job", ["equals", "article", "$request.auth.jobID"]],
           [
-            "all",
-            ["equals", true],
-            [{ var: "exPost" }, { var: "noTitle" }, { var: "noRepost" }],
+            "update()",
+            {
+              id: "$id",
+              owner: "$signer",
+              likes: 0,
+              reposrts: 0,
+              quotes: 0,
+              comments: 0,
+              date: "$ts",
+              reply: false,
+              quote: false,
+              reply_to: "",
+              repost: "",
+              type: "article",
+              parents: [],
+            },
           ],
-          "repost",
-        ],
-      },
-      "let _status2": {
-        "resource.newData.repost": "",
-        reply_to: ["defaultTo", "", { var: "resource.newData.reply_to" }],
-        reply: [["complement", ["equals"]], "", { var: "reply_to" }],
-        "request.method": ["ifelse", { var: "reply" }, "_reply", "_status3"],
-      },
-      "let _status3": {
-        "resource.newData.reply": false,
-        "resource.newData.quote": false,
-        "resource.newData.reply_to": "",
-        "request.method": [
-          "if",
-          ["all", ["equals", true], [{ var: "noTitle" }]],
-          "status",
-        ],
-      },
-      "let _reply": {
-        post: ["get", ["posts", { var: "resource.newData.reply_to" }]],
-        exPost: [["complement", ["isNil"]], { var: "post" }],
-        "resource.newData.reply": true,
-        "resource.newData.quote": false,
-        "request.method": [
-          "if",
-          ["all", ["equals", true], [{ var: "noTitle" }, { var: "exPost" }]],
-          "reply",
-        ],
-      },
-      "let update": {
-        "resource.newData.updated": { var: "request.block.timestamp" },
-        isDataOwner: [
-          "equals",
-          { var: "request.auth.signer" },
-          { var: "resource.data.owner" },
-        ],
-        deletable: [
           [
-            "compose",
-            ["equals", 0],
-            ["length"],
-            ["difference", { var: "keys" }],
-          ],
-          ["date"],
-        ],
-        exDate: [["complement", ["isNil"]], { var: "resource.data.date" }],
-        deleted: ["isNil", { var: "resource.newData.date" }],
-        "request.method": [
-          "ifelse",
-          [
-            "all",
-            ["equals", true],
-            [{ var: "exDate" }, { var: "deleted" }, { var: "deletable" }],
-          ],
-          "delete_post",
-          "_edit",
-        ],
-      },
-      "let _edit": {
-        valid: ["not", { var: "deleted" }],
-        article: ["equals", "article", { var: "resource.data.type" }],
-        editable: [
-          [
-            "compose",
-            ["equals", 0],
-            ["length"],
-            ["difference", { var: "keys" }],
-          ],
-          ["title", "body", "cover", "description"],
-        ],
-        "request.method": [
-          "if",
-          [
-            "all",
-            ["equals", true],
+            "fields()",
             [
-              { var: "valid" },
-              { var: "article" },
-              { var: "editable" },
-              { var: "isDataOwner" },
+              "*title",
+              "*body",
+              "cover",
+              "*description",
+              "mentions",
+              "hashes",
+              "image",
             ],
           ],
-          "edit",
+          ["allowifall()", ["$is_job"]],
         ],
-      },
-      "allow status,article,repost,quote,reply,edit,delete_post": true,
-    },
-    users: {
-      let: {
-        isOwner: [
-          "includes",
-          { var: "request.auth.signer" },
-          { var: "contract.owners" },
+      ],
+      [
+        "update:del_post",
+        [
+          ["fields()", []],
+          ["=$isOwner", ["equals", "$signer", "$old.owner"]],
+          ["=$post", ["get()", ["posts", "$id"]]],
+          ["update()", { date: { _op: "del" } }],
+          ["allowifall()", ["o$post", "o$post.date", "$isOwner"]],
         ],
-        keys: ["keys", { var: "request.resource.data" }],
-      },
-      "let create": {
-        user: ["get", ["users", { var: "request.auth.signer" }]],
-        "resource.newData.address": { var: "request.id" },
-        "resource.newData.followers": 0,
-        "resource.newData.following": 0,
-        create_user: ["equals", [], { var: "keys" }],
-        no_user: ["isNil", { var: "user" }],
-        no_owner: ["not", { var: "isOwner" }],
-        "request.method": [
-          "ifelse",
-          ["and", { var: "no_user" }, { var: "no_owner" }],
-          "_no_user",
-          "_is_user",
-        ],
-      },
-      "let _is_user": {
-        "request.method": [
-          "ifelse",
-          ["and", { var: "create_user" }, { var: "isOwner" }],
-          "create_by_owner",
-          "_create_by_user",
-        ],
-      },
-      "let _create_by_user": {
-        invited: ["defaultTo", 0, { var: "user.invited" }],
-        "request.method": [
-          "if",
-          ["gt", { var: "user.invites" }, { var: "invited" }],
-          "invite_by_user",
-        ],
-      },
-      "let create_by_owner,invite_by_user": {
-        "resource.newData.invited_by": { var: "request.auth.signer" },
-      },
-      "let update": {
-        update_invites: ["equals", ["invites"], { var: "keys" }],
-        "request.method": [
-          "ifelse",
-          ["and", { var: "update_invites" }, { var: "isOwner" }],
-          "update_invite_by_owner",
-          "_update_profile",
-        ],
-      },
-      "let _update_profile": {
-        isDataOwner: [
-          "equals",
-          { var: "request.auth.signer" },
-          { var: "resource.data.address" },
-        ],
-        updatable: [
+      ],
+      [
+        "add:repost",
+        [
+          ["fields()", ["*repost"]],
+          ["=$post", ["get()", ["posts", "$new.repost"]]],
+          ["denyifany()", ["x$post", "x$post.date"]],
           [
-            "compose",
-            ["equals", 0],
-            ["length"],
-            ["difference", { var: "keys" }],
+            "=$repost",
+            [
+              "get()",
+              [
+                "posts",
+                ["quote", "==", false],
+                ["owner", "==", "$signer"],
+                ["repost", "==", "$new.repost"],
+              ],
+            ],
+          ],
+          ["=$no_repost", ["o", ["equals", 0], ["length"], "$repost"]],
+          ["denyifany()", ["!$no_repost"]],
+          [
+            "update()",
+            {
+              id: "$id",
+              owner: "$signer",
+              likes: 0,
+              reposrts: 0,
+              quotes: 0,
+              comments: 0,
+              date: "$ts",
+              reply: false,
+              quote: false,
+              reply_to: "",
+              type: "status",
+              parents: [],
+            },
+          ],
+          ["allow()", true],
+        ],
+      ],
+      [
+        "add:quote",
+        [
+          ["fields()", ["*repost", "*description", "cover"]],
+          ["=$post", ["get()", ["posts", "$new.repost"]]],
+          ["denyifany()", ["x$post", "x$post.date"]],
+          [
+            "update()",
+            {
+              id: "$id",
+              owner: "$signer",
+              likes: 0,
+              reposrts: 0,
+              quotes: 0,
+              comments: 0,
+              date: "$ts",
+              reply: false,
+              quote: true,
+              reply_to: "",
+              type: "status",
+              parents: [],
+            },
+          ],
+          ["allow()", true],
+        ],
+      ],
+      [
+        "add:reply",
+        [
+          ["fields()", ["*reply_to", "*description", "cover"]],
+          ["=$post", ["get()", ["posts", "$new.reply_to"]]],
+          ["denyifany()", ["x$post", "x$post.date"]],
+          [
+            "update()",
+            {
+              id: "$id",
+              owner: "$signer",
+              likes: 0,
+              reposrts: 0,
+              quotes: 0,
+              comments: 0,
+              date: "$ts",
+              reply: true,
+              quote: false,
+              repost: "",
+              type: "status",
+              parents: ["append", "$new.reply_to", "$post.parents"],
+            },
+          ],
+          ["allow()", true],
+        ],
+      ],
+      [
+        "update:edit",
+        [
+          ["fields()", ["title", "description", "cover", "body"]],
+          ["=$is_job", ["equals", "article", "$request.auth.jobID"]],
+          ["=$post", ["get()", ["posts", "$id"]]],
+          ["=$is_article", ["equals", "article", "$old.type"]],
+          ["denyifany()", ["x$post", "x$post.date"]],
+          ["=$isOwner", ["equals", "$signer", "$old.owner"]],
+          ["allowifall()", ["$isOwner", "$is_article", "$is_job"]],
+        ],
+      ],
+    ],
+    users: [
+      [
+        "*",
+        [
+          ["=$user", ["get()", ["users", "$signer"]]],
+          ["=$isOwner", ["includes", "$signer", "$contract.owners"]],
+          ["=$keys", ["keys", "$old"]],
+        ],
+      ],
+      [
+        "set:reg_owner",
+        [
+          ["=$is_user_owner", ["equals", "$signer", "$id"]],
+          ["fields()", []],
+          [
+            "update()",
+            {
+              address: "$id",
+              followers: 0,
+              following: 0,
+              invited_by: "$signer",
+            },
+          ],
+          ["allowifall()", ["$isOwner", "x$user", "$is_user_owner"]],
+        ],
+      ],
+      [
+        "update:give_invites",
+        [
+          ["fields()", ["*invites"]],
+          ["=$invited_user", ["get()", ["users", "$id"]]],
+          ["allowifall()", ["$isOwner", "o$invited_user"]],
+        ],
+      ],
+      [
+        "set:invite_user",
+        [
+          ["fields()", []],
+          ["denyifany()", ["x$user"]],
+          ["=$invited", ["defaultTo", 0, "$user.invited"]],
+          ["=$invites", ["defaultTo", 0, "$user.invites"]],
+          ["=$have_invites", ["gt", "$invites", "$invited"]],
+          ["=$invited_user", ["get()", ["users", "$id"]]],
+          [
+            "update()",
+            {
+              address: "$id",
+              followers: 0,
+              following: 0,
+              invited_by: "$signer",
+            },
+          ],
+          ["allowifall()", ["x$invited_user", "$have_invites"]],
+        ],
+      ],
+      [
+        "update:profile",
+        [
+          [
+            "fields()",
+            [
+              "name",
+              "description",
+              "handle",
+              "hashes",
+              "mentions",
+              "image",
+              "cover",
+            ],
+          ],
+          ["=$setHandle", ["includes", "handle", "$keys"]],
+          ["denyifall()", ["$setHandle", "o$old.handle"]],
+          [
+            "=$huser",
+            [
+              "if",
+              "$setHandle",
+              ["get()", ["users", ["handle", "==", "$new.handle"]]],
+            ],
           ],
           [
-            "name",
-            "description",
-            "handle",
-            "hashes",
-            "mentions",
-            "image",
-            "cover",
+            "=$available",
+            ["if", "$setHandle", ["o", ["equals", 0], ["length"], "$huser"]],
           ],
+          ["=$handleOK", ["or", "!$setHandle", "$available"]],
+          ["=$is_user_signer", ["equals", "$signer", "$id"]],
+          ["allowifall()", ["$is_user_signer", "$handleOK"]],
         ],
-        setHandle: ["includes", "handle", { var: "keys" }],
-        existHandle: [
-          ["complement", ["isNil"]],
-          { var: "resource.data.handle" },
+      ],
+    ],
+    follows: [
+      [
+        "*",
+        [
+          ["split()", [":", "$id", ["=$from_id", "=$to_id"]]],
+          ["=$is_from_signer", ["equals", "$from_id", "$signer"]],
+          ["=$from", ["get()", ["users", "$from_id"]]],
+          ["=$to", ["get()", ["users", "$to_id"]]],
+          ["=$follow", ["get()", ["follows", "$id"]]],
         ],
-        user: [
-          "if",
-          { var: "setHandle" },
-          [
-            "get",
-            ["users", ["handle", "==", { var: "resource.newData.handle" }]],
-          ],
+      ],
+      [
+        "set:follow",
+        [
+          ["fields()", []],
+          ["denyifany()", ["x$from", "x$to", "o$follow"]],
+          ["update()", { from: "$from_id", to: "$to_id", date: "$ts" }],
+          ["allowifall()", ["$is_from_signer"]],
         ],
-        available: [
-          "if",
-          { var: "setHandle" },
-          ["o", ["equals", 0], ["length"], { var: "user" }],
+      ],
+      [
+        "delete:unfollow",
+        [
+          ["fields()", []],
+          ["denyifany()", ["x$from", "x$to", "x$follow"]],
+          ["allowifall()", ["$is_from_signer"]],
         ],
-        noHandle: ["equals", false, { var: "setHandle" }],
-        handleOK: ["or", { var: "noHandle" }, { var: "available" }],
-        "request.method": [
-          "if",
-          [
-            "all",
-            ["equals", true],
-            [{ var: "isDataOwner" }, { var: "updatable" }, { var: "handleOK" }],
-          ],
-          "update_profile",
+      ],
+    ],
+    likes: [
+      [
+        "set:like",
+        [
+          ["split()", [":", "$id", ["=$aid", "=$user"]]],
+          ["=$like", ["get()", ["likes", "$id"]]],
+          ["=$isOwner", ["equals", "$signer", "$user"]],
+          ["denyifany()", ["o$like", "!$isOwner"]],
+          ["update()", { aid: "$aid", user: "$user", date: "$ts" }],
+          ["allow()", true],
         ],
-      },
-      "allow create_by_owner,invite_by_user,update_invite_by_owner,update_profile": true,
-    },
-    follows: {
-      "let create": {
-        ids: ["split", ":", { var: "request.id" }],
-        _from: ["first", { var: "ids" }],
-        _to: ["last", { var: "ids" }],
-        "resource.newData.from": { var: "request.auth.signer" },
-        "resource.newData.to": { var: "_to" },
-        "resource.newData.date": { var: "request.block.timestamp" },
-        from: ["get", ["users", { var: "resource.newData.from" }]],
-        to: ["get", ["users", { var: "resource.newData.to" }]],
-        _id: [
-          "join",
-          ":",
-          [{ var: "resource.newData.from" }, { var: "resource.newData.to" }],
-        ],
-        okID: ["equals", { var: "request.id" }, { var: "_id" }],
-        existFrom: [["complement", ["isNil"]], { var: "from" }],
-        existTo: [["complement", ["isNil"]], { var: "to" }],
-        "request.method": [
-          "if",
-          [
-            "all",
-            ["equals", true],
-            [{ var: "existFrom" }, { var: "existTo" }, { var: "okID" }],
-          ],
-          "follow",
-        ],
-      },
-      "let delete": {
-        isDataOwner: [
-          "equals",
-          { var: "request.auth.signer" },
-          { var: "resource.data.from" },
-        ],
-        "request.method": [
-          "if",
-          ["all", ["equals", true], [{ var: "isDataOwner" }]],
-          "unfollow",
-        ],
-      },
-      "allow follow,unfollow": true,
-    },
-    likes: {
-      "let create": {
-        ids: ["split", ":", { var: "request.id" }],
-        "resource.newData.aid": ["head", { var: "ids" }],
-        "resource.newData.user": ["last", { var: "ids" }],
-        "resource.newData.date": { var: "request.block.timestamp" },
-        isSigner: [
-          "equals",
-          { var: "resource.newData.user" },
-          { var: "request.auth.signer" },
-        ],
-        post: ["get", ["posts", { var: "resource.newData.aid" }]],
-        exPost: [["complement", ["isNil"]], { var: "post" }],
-        notDeleted: [["complement", ["isNil"]], { var: "post.date" }],
-        "request.method": [
-          "if",
-          [
-            "all",
-            ["equals", true],
-            [{ var: "notDeleted" }, { var: "isSigner" }],
-          ],
-          "like",
-        ],
-      },
-      "allow like": true,
-    },
+      ],
+    ],
   },
   schemas: {
     posts: {
@@ -534,52 +496,32 @@ const offchain = {
         key: "del_timeline",
         on: "update",
         func: [
-          ["let", "batches", []],
-          ["let", "is_delete", ["isNil", { var: "data.after.date" }]],
-          ["get", "tl", ["timeline", { var: "data.after.id" }]],
-          ["let", "is_timeline", [["complement", ["isNil"]], { var: "tl" }]],
+          ["=$is_delete", ["isNil", "$data.after.date"]],
+          ["=$tl", ["get()", "tl", ["timeline", "$data.after.id"]]],
+          ["=$is_timeline", [["complement", ["isNil"]], "$tl"]],
           [
-            "do",
-            [
-              "when",
-              [
-                "both",
-                ["always", { var: "is_delete" }],
-                ["always", { var: "is_timeline" }],
-              ],
-              [
-                "pipe",
-                ["var", "batches"],
-                [
-                  "append",
-                  ["[]", "delete", "timeline", { var: "data.after.id" }],
-                ],
-                ["let", "batches"],
-              ],
-              { var: "data" },
-            ],
+            "when",
+            ["both", ["always", "$is_delete"], ["always", "$is_timeline"]],
+            ["toBatch()", ["delete", "timeline", "$data.after.id"]],
+            "$data",
           ],
-          ["batch", { var: "batches" }],
         ],
       },
       {
         key: "timeline",
         on: "create",
         func: [
-          ["let", "batches", []],
           [
-            "let",
-            "aid",
+            "=$aid",
             [
               "when",
               ["isEmpty"],
-              ["always", { var: "data.after.id" }],
-              { var: "data.after.repost" },
+              ["always", "$data.after.id"],
+              "$data.after.repost",
             ],
           ],
           [
-            "let",
-            "receive_id",
+            "=$receive_id",
             [
               [
                 "ifElse",
@@ -588,15 +530,14 @@ const offchain = {
                   ["propSatisfies", ["isNil"], "description"],
                   ["propSatisfies", ["isNil"], "repost"],
                 ],
-                ["always", { var: "aid" }],
+                ["always", "$aid"],
                 ["prop", "id"],
               ],
-              { var: "data.after" },
+              "$data.after",
             ],
           ],
           [
-            "let",
-            "rid",
+            "=$rid",
             [
               [
                 "ifElse",
@@ -604,79 +545,54 @@ const offchain = {
                 ["always", ""],
                 ["prop", "id"],
               ],
-              { var: "data.after" },
+              "$data.after",
             ],
           ],
           [
-            "get",
-            "followers",
+            "=$followers",
             [
-              "follows",
-              ["to", "==", { var: "data.after.owner" }],
-              ["last", "desc"],
+              "get()",
+              ["follows", ["to", "==", "$data.after.owner"], ["last", "desc"]],
             ],
           ],
+          ["=$received", ["get()", ["timeline", ["aid", "==", "$receive_id"]]]],
           [
-            "get",
-            "received",
-            ["timeline", ["aid", "==", { var: "receive_id" }]],
+            "=$receivers",
+            [["compose", ["flatten"], ["pluck", "broadcast"]], "$received"],
           ],
+          ["=$new_receivers", ["pluck", "from", "$followers"]],
+          ["=$to", ["difference", "$new_receivers", "$receivers"]],
+          ["=$to_not_empty", [["complement", ["isEmpty"]], "$to"]],
           [
-            "let",
-            "receivers",
-            [
-              ["compose", ["flatten"], ["pluck", "broadcast"]],
-              { var: "received" },
-            ],
-          ],
-          ["let", "new_receivers", ["pluck", "from", { var: "followers" }]],
-          [
-            "let",
-            "to",
-            ["difference", { var: "new_receivers" }, { var: "receivers" }],
-          ],
-          ["let", "to_not_empty", [["complement", ["isEmpty"]], { var: "to" }]],
-          [
-            "let",
-            "set_timeline",
+            "=$set_timeline",
             [
               [
                 "both",
                 ["pathEq", ["after", "reply_to"], ""],
-                ["always", { var: "to_not_empty" }],
+                ["always", "$to_not_empty"],
               ],
-              { var: "data" },
+              "$data",
             ],
           ],
           [
-            "do",
+            "when",
+            ["always", "$set_timeline"],
             [
-              "when",
-              ["always", { var: "set_timeline" }],
+              "toBatch()",
               [
-                "pipe",
-                ["var", "batches"],
-                [
-                  "append",
-                  [
-                    "[]",
-                    "set",
-                    {
-                      rid: { var: "rid" },
-                      aid: { var: "aid" },
-                      date: { var: "data.after.date" },
-                      broadcast: { var: "to" },
-                    },
-                    "timeline",
-                    { var: "data.after.id" },
-                  ],
-                ],
-                ["let", "batches"],
+                "set",
+                {
+                  rid: "$rid",
+                  aid: "$aid",
+                  date: "$data.after.date",
+                  broadcast: "$to",
+                },
+                "timeline",
+                "$data.after.id",
               ],
-              { var: "data" },
             ],
+            "$data",
           ],
-          ["batch", { var: "batches" }],
         ],
       },
       {
@@ -684,27 +600,22 @@ const offchain = {
         on: "create",
         func: [
           [
-            "let",
-            "aid",
+            "=$aid",
             [
               "when",
               ["isEmpty"],
-              ["always", { var: "data.after.repost" }],
-              { var: "data.after.reply_to" },
+              ["always", "$data.after.repost"],
+              "$data.after.reply_to",
             ],
           ],
-          ["if", ["equals", "", { var: "aid" }], ["break"]],
-          ["get", "post", ["posts", { var: "aid" }]],
-          [
-            "let",
-            "docid",
-            ["join", ":", [{ var: "data.after.owner" }, { var: "post.owner" }]],
-          ],
-          ["get", "following", ["follows", { var: "docid" }]],
+          ["if", ["equals", "", "$aid"], ["break"]],
+          ["=$post", ["get()", ["posts", "$aid"]]],
+          ["=$docid", ["join", ":", ["$data.after.owner", "$post.owner"]]],
+          ["=$following", ["get()", ["follows", "$docid"]]],
           [
             "if",
-            [["complement", ["isNil"]], { var: "following" }],
-            ["update", [{ last: db.ts() }, "follows", { var: "docid" }]],
+            [["complement", ["isNil"]], "$following"],
+            ["update()", [{ last: db.ts() }, "follows", "$docid"]],
           ],
         ],
       },
@@ -712,100 +623,65 @@ const offchain = {
         key: "inc_reposts",
         on: "create",
         func: [
-          ["let", "batches", []],
           [
-            "do",
+            "unless",
+            ["pathEq", ["after", "repost"], ""],
             [
-              "unless",
-              ["pathEq", ["after", "repost"], ""],
-              [
-                "pipe",
-                ["var", "batches"],
-                [
-                  "append",
-                  [
-                    "[]",
-                    "update",
-                    { reposts: db.inc(1) },
-                    "posts",
-                    { var: "data.after.repost" },
-                  ],
-                ],
-                ["let", "batches"],
-              ],
-              { var: "data" },
+              "toBatch()",
+              ["update", { reposts: db.inc(1) }, "posts", "$data.after.repost"],
             ],
+            "$data",
           ],
           [
-            "do",
+            "when",
             [
-              "when",
+              "both",
+              [["complement", ["pathEq"]], ["after", "repost"], ""],
               [
-                "both",
-                [["complement", ["pathEq"]], ["after", "repost"], ""],
-                [
-                  ["complement", ["pathSatisfies"]],
-                  ["isNil"],
-                  ["after", "description"],
-                ],
+                ["complement", ["pathSatisfies"]],
+                ["isNil"],
+                ["after", "description"],
               ],
-              [
-                "pipe",
-                ["var", "batches"],
-                [
-                  "append",
-                  [
-                    "[]",
-                    "update",
-                    { quotes: db.inc(1) },
-                    "posts",
-                    { var: "data.after.repost" },
-                  ],
-                ],
-                ["let", "batches"],
-              ],
-              { var: "data" },
             ],
+            [
+              "toBatch()",
+              ["update", { quotes: db.inc(1) }, "posts", "$data.after.repost"],
+            ],
+            "$data",
           ],
-          ["batch", { var: "batches" }],
         ],
       },
       {
         key: "inc_comments",
         on: "create",
         func: [
-          ["let", "batches", []],
           [
-            "do",
+            "when",
             [
-              "when",
+              "both",
+              ["complement", ["isNil"]],
               [
-                "both",
-                ["complement", ["isNil"]],
-                [
-                  "o",
-                  [["complement", ["equals"]], ""],
-                  ["var", "data.after.reply_to"],
-                ],
+                "o",
+                [["complement", ["equals"]], ""],
+                ["var", "data.after.reply_to"],
               ],
+            ],
+            [
+              "pipe",
               [
-                "pipe",
+                "map",
                 [
-                  "map",
                   [
-                    [
-                      "append",
-                      ["__"],
-                      ["[]", "update", { comments: db.inc(1) }, "posts"],
-                    ],
+                    "append",
+                    ["__"],
+                    ["[]", "update", { comments: db.inc(1) }, "posts"],
                   ],
                 ],
-                ["let", "batches"],
               ],
-              { var: "data.after.parents" },
+              ["let", "batch"],
             ],
+            "$data.after.parents",
           ],
-          ["batch", { var: "batches" }],
         ],
       },
     ],
@@ -814,37 +690,20 @@ const offchain = {
         key: "follow",
         on: "create",
         func: [
-          [
-            "update",
-            [{ followers: db.inc(1) }, "users", { var: `data.after.to` }],
-          ],
-          [
-            "update",
-            [{ following: db.inc(1) }, "users", { var: `data.after.from` }],
-          ],
-          [
-            "let",
-            "docid",
-            [
-              "join",
-              ":",
-              [{ var: "data.after.from" }, { var: "data.after.to" }],
-            ],
-          ],
-          ["update", [{ last: db.ts() }, "follows", { var: "docid" }]],
+          ["update()", [{ followers: db.inc(1) }, "users", "$data.after.to"]],
+          ["update()", [{ following: db.inc(1) }, "users", "$data.after.from"]],
+          ["=$docid", ["join", ":", ["$data.after.from", "$data.after.to"]]],
+          ["update()", [{ last: db.ts() }, "follows", "$docid"]],
         ],
       },
       {
         key: "unfollow",
         on: "delete",
         func: [
+          ["update()", [{ followers: db.inc(-1) }, "users", "$data.before.to"]],
           [
-            "update",
-            [{ followers: db.inc(-1) }, "users", { var: `data.before.to` }],
-          ],
-          [
-            "update",
-            [{ following: db.inc(-1) }, "users", { var: `data.before.from` }],
+            "update()",
+            [{ following: db.inc(-1) }, "users", "$data.before.from"],
           ],
         ],
       },
@@ -854,21 +713,16 @@ const offchain = {
         key: "inc_like",
         on: "create",
         func: [
-          ["get", "art", ["posts", { var: "data.after.aid" }]],
+          ["=$art", ["get()", ["posts", "$data.after.aid"]]],
+          ["=$week", ["subtract", "$block.timestamp", 60 * 60 * 24 * 7]],
           [
-            "let",
-            "week",
-            ["subtract", { var: "block.timestamp" }, 60 * 60 * 24 * 7],
-          ],
-          [
-            "let",
-            "new_pt",
+            "=$new_pt",
             [
               "add",
               1,
               [
                 "multiply",
-                ["defaultTo", 0, { var: "art.pt" }],
+                ["defaultTo", 0, "$art.pt"],
                 [
                   "subtract",
                   1,
@@ -876,26 +730,26 @@ const offchain = {
                     "divide",
                     [
                       "subtract",
-                      { var: "block.timestamp" },
-                      ["defaultTo", { var: "week" }, { var: "art.ptts" }],
+                      "$block.timestamp",
+                      ["defaultTo", "$week", "$art.ptts"],
                     ],
-                    { var: "week" },
+                    "$week",
                   ],
                 ],
               ],
             ],
           ],
           [
-            "update",
+            "update()",
             [
               {
                 likes: db.inc(1),
-                pt: { var: "new_pt" },
+                pt: "$new_pt",
                 ptts: db.ts(),
                 last_like: db.ts(),
               },
               "posts",
-              { var: `data.after.aid` },
+              "$data.after.aid",
             ],
           ],
         ],
@@ -907,8 +761,8 @@ const offchain = {
         on: "create",
         func: [
           [
-            "update",
-            [{ invited: db.inc(1) }, "users", { var: "data.after.invited_by" }],
+            "update()",
+            [{ invited: db.inc(1) }, "users", "$data.after.invited_by"],
           ],
         ],
       },
@@ -941,76 +795,44 @@ const notifications = {
         key: "inc_count",
         on: "create",
         func: [
-          ["let", "batches", []],
           [
-            "do",
+            "unless",
+            ["pathEq", ["after", "to"], "$data.after.from"],
             [
-              "unless",
-              ["pathEq", ["after", "to"], { var: "data.after.from" }],
-              [
-                "pipe",
-                ["var", "batches"],
-                [
-                  "append",
-                  [
-                    "[]",
-                    "upsert",
-                    { count: db.inc(1) },
-                    "counts",
-                    { var: "data.after.to" },
-                  ],
-                ],
-                ["let", "batches"],
-              ],
-              { var: "data" },
+              "toBatch()",
+              ["upsert", { count: db.inc(1) }, "counts", "$data.after.to"],
             ],
+            "$data",
           ],
-          ["batch", { var: "batches" }],
         ],
       },
       {
         key: "dec_count",
         on: "update",
         func: [
-          ["let", "batches", []],
           [
-            "do",
+            "when",
             [
-              "when",
               [
+                "allPass",
                 [
-                  "allPass",
+                  "[]",
                   [
-                    "[]",
-                    [
-                      ["complement", ["pathEq"]],
-                      ["after", "to"],
-                      { var: "data.after.from" },
-                    ],
-                    ["pathEq", ["after", "viewed"], true],
-                    ["pathEq", ["before", "viewed"], false],
+                    ["complement", ["pathEq"]],
+                    ["after", "to"],
+                    "$data.after.from",
                   ],
+                  ["pathEq", ["after", "viewed"], true],
+                  ["pathEq", ["before", "viewed"], false],
                 ],
               ],
-              [
-                "pipe",
-                ["var", "batches"],
-                [
-                  "append",
-                  [
-                    "[]",
-                    "upsert",
-                    { count: db.inc(-1) },
-                    "counts",
-                    { var: "data.after.to" },
-                  ],
-                ],
-                ["let", "batches"],
-              ],
-              { var: "data" },
             ],
+            [
+              "toBatch()",
+              ["upsert", { count: db.inc(-1) }, "counts", "$data.after.to"],
+            ],
+            "$data",
           ],
-          ["batch", { var: "batches" }],
         ],
       },
     ],

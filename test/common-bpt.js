@@ -544,15 +544,21 @@ const tests = {
     const rules = {
       "allow create": { "==": [{ var: "request.func" }, "add"] },
     }
-    await db.setRules(rules, "ppl", {
-      ar: arweave_wallet,
-    })
-
+    await db.setRules(rules, "ppl", { ar: arweave_wallet })
     const data = { name: "Bob", age: 20 }
     await db.set(data, "ppl", "Bob")
     expect((await db.get("ppl")).length).to.eql(0)
     await db.add(data, "ppl")
     expect((await db.get("ppl")).length).to.eql(1)
+  },
+
+  "should execute custom queries": async ({ db, arweave_wallet }) => {
+    const rules = { "allow set:reg": true, "allow set": false }
+    await db.setRules(rules, "ppl", { ar: arweave_wallet })
+
+    const data = { name: "Bob", age: 20 }
+    await db.query("set:reg", data, "ppl", "Bob")
+    expect(await db.get("ppl", "Bob")).to.eql(data)
   },
 
   "should set bundlers": async ({ db, walletAddress, arweave_wallet }) => {
@@ -678,15 +684,10 @@ const tests = {
       key: "inc-count",
       on: "create",
       func: [
-        ["get", "art", ["posts", { var: "data.after.aid" }]],
+        ["=$art", ["get()", ["posts", { var: "data.after.aid" }]]],
+        ["=$week", ["subtract", { var: "block.timestamp" }, 60 * 60 * 24 * 7]],
         [
-          "let",
-          "week",
-          ["subtract", { var: "block.timestamp" }, 60 * 60 * 24 * 7],
-        ],
-        [
-          "let",
-          "new_pt",
+          "=$new_pt",
           [
             "add",
             1,
@@ -710,7 +711,7 @@ const tests = {
           ],
         ],
         [
-          "update",
+          "update()",
           [
             {
               likes: db.inc(1),
@@ -740,7 +741,7 @@ const tests = {
         do: true,
         times: 1,
         span: 1,
-        jobs: [["update", [{ age: db.inc(1) }, "ppl", "Bob"]]],
+        jobs: [["update()", [{ age: db.inc(1) }, "ppl", "Bob"]]],
       },
       "inc_age",
       {
@@ -754,7 +755,7 @@ const tests = {
         do: true,
         times: 1,
         span: 1,
-        jobs: [["break"], ["update", [{ age: db.inc(1) }, "ppl", "Bob"]]],
+        jobs: [["break"], ["update()", [{ age: db.inc(1) }, "ppl", "Bob"]]],
       },
       "inc_age",
       {
@@ -768,7 +769,7 @@ const tests = {
         do: true,
         times: 1,
         span: 1,
-        jobs: [["break"], ["update", [{ age: db.inc(1) }, "ppl", "Bob"]]],
+        jobs: [["break"], ["update()", [{ age: db.inc(1) }, "ppl", "Bob"]]],
       },
       "inc_age",
       {
@@ -786,7 +787,7 @@ const tests = {
           [
             "if",
             ["identity", false],
-            ["update", [{ age: db.inc(1) }, "ppl", "Bob"]],
+            ["update()", [{ age: db.inc(1) }, "ppl", "Bob"]],
           ],
         ],
       },
@@ -806,7 +807,7 @@ const tests = {
           [
             "if",
             ["identity", true],
-            ["update", [{ age: db.inc(1) }, "ppl", "Bob"]],
+            ["update()", [{ age: db.inc(1) }, "ppl", "Bob"]],
           ],
         ],
       },
@@ -824,10 +825,11 @@ const tests = {
         span: 1,
         jobs: [
           [
-            "ifelse",
+            "if",
             ["identity", false],
-            ["update", [{ age: db.inc(1) }, "ppl", "Bob"]],
-            ["update", [{ age: db.inc(2) }, "ppl", "Bob"]],
+            ["update()", [{ age: db.inc(1) }, "ppl", "Bob"]],
+            "else",
+            ["update()", [{ age: db.inc(2) }, "ppl", "Bob"]],
           ],
         ],
       },
@@ -862,16 +864,17 @@ const tests = {
   },
   "should get in access control rules": async ({ db, arweave_wallet }) => {
     await db.set({ name: "Bob", age: 20 }, "users", "Bob")
-    const rules = {
-      "let create": {
-        bob: ["get", ["users", { var: "resource.newData.name" }]],
-        "resource.newData.age": { var: "bob.age" },
-      },
-      "allow write": true,
-    }
-    await db.setRules(rules, "ppl", {
-      ar: arweave_wallet,
-    })
+    const rules = [
+      [
+        "create",
+        [
+          ["=$bob", ["get()", ["users", "$new.name"]]],
+          ["=$new.age", "$bob.age"],
+        ],
+      ],
+      ["write", [["allow()", true]]],
+    ]
+    await db.setRules(rules, "ppl", { ar: arweave_wallet })
     await db.set({ name: "Bob" }, "ppl", "Bob")
     expect((await db.get("ppl", "Bob")).age).to.eql(20)
   },

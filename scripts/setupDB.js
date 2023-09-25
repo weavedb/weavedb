@@ -1,7 +1,7 @@
 const { assoc } = require("ramda")
 
 const setupDB = async ({ db, conf, privateKey, relayer }) => {
-  const auth = { privateKey }
+  const auth = typeof privateKey === "object" ? privateKey : { privateKey }
   for (let k in conf) {
     switch (k) {
       case "rules":

@@ -1196,6 +1196,7 @@ for (const v of reads) {
 const writes = [
   "tick",
   "relay",
+  "query",
   "set",
   "delete",
   "add",

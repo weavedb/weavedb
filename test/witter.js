@@ -1,7 +1,6 @@
 const { expect } = require("chai")
 const { mergeLeft, pluck, isNil, compose, map, pick, dissoc } = require("ramda")
-const { providers, Wallet } = require("ethers")
-const { Ed25519KeyIdentity } = require("@dfinity/identity")
+const { fpj, ac_funcs } = require("../sdk/contracts/common/lib/pure")
 const _ii = [
   "302a300506032b6570032100ccd1d1f725fc35a681d8ef5d563a3c347829bf3f0fe822b4a4b004ee0224fc0d",
   "010925abb4cf8ccb7accbcfcbf0a6adf1bbdca12644694bb47afc7182a4ade66ccd1d1f725fc35a681d8ef5d563a3c347829bf3f0fe822b4a4b004ee0224fc0d",
@@ -12,322 +11,145 @@ const EthWallet = require("ethereumjs-wallet").default
 const { readFileSync } = require("fs")
 const { resolve } = require("path")
 
+const user1 = EthCrypto.createIdentity()
+const user2 = EthCrypto.createIdentity()
+const user3 = EthCrypto.createIdentity()
+const users = [user1, user2, user3]
+const a = user => user.address.toLowerCase()
+const p = user => ({
+  privateKey: user.privateKey,
+})
+
 const tests = {
-  "should increment like count": async ({ db, arweave_wallet }) => {
-    const aid = "aaa"
-    const user = "abc"
-    const trg = {
-      key: "inc_like",
-      on: "create",
-      func: [
-        ["update", [{ likes: db.inc(1) }, "posts", { var: `data.after.aid` }]],
-      ],
+  "should set rules for jots": async ({ db, owner, relayer }) => {
+    // add owner
+    await db.query("set:reg_owner", {}, "users", a(owner), p(owner))
+    await db.query(
+      "update:give_invites",
+      { invites: 4 },
+      "users",
+      a(owner),
+      p(owner)
+    )
+    expect((await db.get("users", a(owner))).address).to.eql(a(owner))
+
+    for (const [i, v] of users.entries()) {
+      await db.query("set:invite_user", {}, "users", a(v), p(owner))
+      await db.query(
+        "update:profile",
+        {
+          handle: `handle-${i}`,
+          name: `name-${i}`,
+        },
+        "users",
+        a(v),
+        p(v)
+      )
+      expect((await db.get("users", a(v))).name).to.eql(`name-${i}`)
     }
-    await db.addTrigger(trg, "likes", { ar: arweave_wallet })
-    const like = { date: Date.now(), user, aid }
-    await db.set(
-      { reposts: 0, likes: 0, comments: 0, owner: "a" },
-      "posts",
-      `${aid}`
-    )
-    await db.set(
-      { reposts: 0, likes: 0, comments: 0, owner: "b" },
-      "posts",
-      `aaa2`
-    )
+    expect(pluck("address", await db.get("users")).length).to.eql(4)
 
-    await db.set(like, "likes", `${aid}:${user}`)
-
-    expect((await db.get("posts", `${aid}`)).likes).to.eql(1)
-    const trg2 = {
-      key: "inc_reposts",
-      on: "create",
-      func: [
-        ["let", "batches", []],
-        [
-          "do",
-          [
-            "unless",
-            ["pathEq", ["after", "repost"], ""],
-            [
-              "pipe",
-              ["var", "batches"],
-              [
-                "append",
-                [
-                  "[]",
-                  "update",
-                  { reposts: db.inc(1) },
-                  "posts",
-                  { var: "data.after.repost" },
-                ],
-              ],
-              ["let", "batches"],
-            ],
-            { var: "data" },
-          ],
-        ],
-        ["batch", { var: "batches" }],
-      ],
+    // follow
+    for (const [i, v] of users.entries()) {
+      if (v.address !== user1.address) {
+        await db.query(
+          "set:follow",
+          {},
+          "follows",
+          `${a(user1)}:${a(v)}`,
+          p(user1)
+        )
+      }
     }
-    await db.addTrigger(trg2, "posts", { ar: arweave_wallet })
-    await db.set(
-      { repost: "aaa", likes: 0, reposts: 0, comments: 0 },
-      "posts",
-      `bbb`
-    )
-    expect((await db.get("posts", `${aid}`)).reposts).to.eql(1)
-
-    const trg3 = {
-      key: "inc_comments",
-      on: "create",
-      func: [
-        ["let", "batches", []],
-        [
-          "do",
-          [
-            "unless",
-            ["pathEq", ["after", "reply_to"], ""],
-            [
-              "pipe",
-              ["var", "batches"],
-              [
-                "append",
-                [
-                  "[]",
-                  "update",
-                  { comments: db.inc(1) },
-                  "posts",
-                  { var: "data.after.reply_to" },
-                ],
-              ],
-              ["let", "batches"],
-            ],
-            { var: "data" },
-          ],
-        ],
-        ["batch", { var: "batches" }],
-      ],
+    expect((await db.get("follows")).length).to.eql(2)
+    for (const [i, v] of users.entries()) {
+      if (v.address !== user1.address) {
+        await db.query(
+          "delete:unfollow",
+          "follows",
+          `${a(user1)}:${a(v)}`,
+          p(user1)
+        )
+      }
     }
-    await db.addTrigger(trg3, "posts", { ar: arweave_wallet })
-    await db.set(
-      { repost: "", reply_to: "aaa", likes: 0, reposts: 0, comments: 0 },
-      "posts",
-      `ccc`
-    )
-    expect((await db.get("posts", `${aid}`)).comments).to.eql(1)
+    expect((await db.get("follows")).length).to.eql(0)
 
-    await db.set({ followers: 0, following: 0, name: "a" }, "users", "a")
-    await db.set({ followers: 0, following: 0, name: "b" }, "users", "b")
-    await db.set({ followers: 0, following: 0, name: "c" }, "users", "c")
-
-    const trg4 = {
-      key: "follow",
-      on: "create",
-      func: [
-        [
-          "update",
-          [{ followers: db.inc(1) }, "users", { var: `data.after.to` }],
-        ],
-        [
-          "update",
-          [{ following: db.inc(1) }, "users", { var: `data.after.from` }],
-        ],
-      ],
-    }
-    await db.addTrigger(trg4, "follows", { ar: arweave_wallet })
-    await db.set({ from: "c", to: "a" }, "follows", "c:a")
-    await db.set({ from: "c", to: "b" }, "follows", "c:b")
-    expect((await db.get("users", "a")).followers).to.eql(1)
-    expect((await db.get("users", "c")).following).to.eql(2)
-
-    const trg5 = {
-      key: "last",
-      on: "create",
-      func: [
-        [
-          "let",
-          "aid",
-          [
-            "when",
-            ["isEmpty"],
-            ["always", { var: "data.after.repost" }],
-            { var: "data.after.reply_to" },
-          ],
-        ],
-        ["get", "post", ["posts", { var: "aid" }]],
-        [
-          "let",
-          "docid",
-          ["join", ":", [{ var: "data.after.owner" }, { var: "post.owner" }]],
-        ],
-        ["update", [{ last: db.ts() }, "follows", { var: "docid" }]],
-      ],
-    }
-    await db.addTrigger(trg5, "posts", { ar: arweave_wallet })
-    await db.set(
-      {
-        repost: "",
-        reply_to: "aaa",
-        reposts: 0,
-        likes: 0,
-        comments: 0,
-        owner: "c",
-      },
-      "posts",
-      "eee"
-    )
-    await db.set(
-      {
-        repost: "",
-        reply_to: "aaa2",
-        reposts: 0,
-        likes: 0,
-        comments: 0,
-        owner: "c",
-      },
-      "posts",
-      "fff"
-    )
-
-    const trg6 = {
-      key: "timeline",
-      on: "create",
-      func: [
-        ["let", "batches", []],
-        [
-          "let",
-          "aid",
-          [
-            "when",
-            ["isEmpty"],
-            ["always", { var: "data.after.id" }],
-            { var: "data.after.repost" },
-          ],
-        ],
-        [
-          "let",
-          "rid",
-          ["when", ["isEmpty"], ["always", ""], { var: "data.after.repost" }],
-        ],
-        [
-          "get",
-          "followers",
-          [
-            "follows",
-            ["to", "==", { var: "data.after.owner" }],
-            ["last", "desc"],
-          ],
-        ],
-        ["get", "received", ["timeline", ["aid", "==", { var: "aid" }]]],
-        [
-          "let",
-          "receivers",
-          [
-            ["compose", ["flatten"], ["pluck", "broadcast"]],
-            { var: "received" },
-          ],
-        ],
-        ["let", "new_receivers", ["pluck", "from", { var: "followers" }]],
-        [
-          "let",
-          "to",
-          ["difference", { var: "new_receivers" }, { var: "receivers" }],
-        ],
-        [
-          "do",
-          [
-            "when",
-            [
-              "both",
-              ["pathEq", ["after", "reply_to"], ""],
-              [
-                "compose",
-                ["complement", ["isEmpty"]],
-                ["always", { var: "to" }],
-              ],
-            ],
-            [
-              "pipe",
-              ["var", "batches"],
-              [
-                "append",
-                [
-                  "[]",
-                  "set",
-                  {
-                    rid: { var: "rid" },
-                    aid: { var: "aid" },
-                    date: { var: "data.after.date" },
-                    broadcast: { var: "to" },
-                    receivers: { var: "receivers" },
-                    received: { var: "received" },
-                  },
-                  "timeline",
-                  { var: "data.after.id" },
-                ],
-              ],
-              ["let", "batches"],
-            ],
-            { var: "data" },
-          ],
-        ],
-        ["batch", { var: "batches" }],
-      ],
+    for (const [i, v] of users.entries()) {
+      for (const [i2, v2] of users.entries()) {
+        if (v.address !== v2.address) {
+          await db.query("set:follow", {}, "follows", `${a(v)}:${a(v2)}`, p(v))
+        }
+      }
     }
 
-    await db.addTrigger(trg6, "posts", { ar: arweave_wallet })
-
-    await db.addIndex(
-      [
-        ["to", "asc"],
-        ["from", "asc"],
-      ],
-      "follows",
-      { ar: arweave_wallet }
-    )
-    await db.addIndex(
-      [
-        ["from", "asc"],
-        ["to", "asc"],
-      ],
-      "follows",
-      { ar: arweave_wallet }
+    // posts
+    const tx = await db.query(
+      "add:status",
+      { description: "post-1" },
+      "posts",
+      p(user1)
     )
 
-    await db.set(
-      {
-        repost: "aaa",
-        reply_to: "",
-        reposts: 0,
-        likes: 0,
-        comments: 0,
-        owner: "a",
-        id: "repto",
-        date: db.ts(),
-      },
+    // likes
+    await db.query("set:like", {}, "likes", `${tx.docID}:${a(user2)}`, p(user2))
+    expect((await db.get("likes"))[0].aid).to.eql(tx.docID)
+
+    // post article
+
+    const art = await db.sign(
+      "query",
+      "add:article",
+      { title: "post-1", description: "post-1", body: db.data("body") },
       "posts",
-      `ddd`
+      { ...p(user1), jobID: "article" }
     )
-    await db.set(
-      {
-        repost: "aaa",
-        reply_to: "",
-        reposts: 0,
-        likes: 0,
-        comments: 0,
-        owner: "b",
-        id: "repto2",
-        date: db.ts(),
-      },
+
+    const tx2 = await db.relay(
+      "article",
+      art,
+      { body: "https://body", cover: "https://cover" },
+      a(relayer)
+    )
+    expect((await db.get("posts", tx2.docID)).body).to.eql("https://body")
+
+    // edit
+    const art2 = await db.sign(
+      "query",
+      "update:edit",
+      { title: "edit-6", body: db.data("body") },
       "posts",
-      `ggg`
+      tx2.docID,
+      { ...p(user1), jobID: "article" }
     )
-    const tl = await db.get("timeline")
-    for (let v of tl) {
-      console.log(v)
-      console.log(v.broadcast)
-    }
+    await db.relay("article", art2, { body: "https://body2" }, a(relayer))
+    expect((await db.get("posts", tx2.docID)).title).to.eql("edit-6")
+
+    await db.query("update:del_post", {}, "posts", tx2.docID, p(user1))
+    expect((await db.get("posts", tx2.docID)).date).to.eql(undefined)
+    const tx3 = await db.query(
+      "add:repost",
+      { repost: tx.docID },
+      "posts",
+      p(user1)
+    )
+    expect((await db.get("posts", tx3.docID)).repost).to.eql(tx.docID)
+
+    const tx4 = await db.query(
+      "add:quote",
+      { repost: tx.docID, description: "quote-4" },
+      "posts",
+      p(user1)
+    )
+    expect((await db.get("posts", tx4.docID)).description).to.eql("quote-4")
+
+    const tx5 = await db.query(
+      "add:reply",
+      { reply_to: tx.docID, description: "reply-5" },
+      "posts",
+      p(user1)
+    )
+    expect((await db.get("posts", tx5.docID)).parents).to.eql([tx.docID])
+    console.log(await db.get("users"))
   },
 }
 

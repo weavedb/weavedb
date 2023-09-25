@@ -34,7 +34,7 @@ const remove = async (
   const { data, query, new_data, path, _data, col } = await parse(
     state,
     action,
-    "delete",
+    action.input.function,
     signer,
     0,
     contractErr,
@@ -62,6 +62,7 @@ const remove = async (
       depth,
       {
         data: {
+          path: init(path),
           before: before.val,
           after: after.val,
           id: last(path),

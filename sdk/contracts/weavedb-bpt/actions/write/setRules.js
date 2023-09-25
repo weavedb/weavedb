@@ -41,15 +41,17 @@ const setRules = async (
     kvs
   )
   for (let k in new_data) {
-    const keys = k.split(" ")
-    const permission = keys[0]
-    if (keys.length !== 2 && permission !== "let") err()
-    if (!includes(permission)(["allow", "deny", "let"])) err()
-    if (
-      permission !== "let" &&
-      !is(Boolean)(jsonLogic.apply(new_data[k], {}))
-    ) {
-      err()
+    if (!is(Array, new_data[k])) {
+      const keys = k.split(" ")
+      const permission = keys[0]
+      if (keys.length !== 2 && permission !== "let") err()
+      if (!includes(permission)(["allow", "deny", "let"])) err()
+      if (
+        permission !== "let" &&
+        !is(Boolean)(jsonLogic.apply(new_data[k], {}))
+      ) {
+        err()
+      }
     }
   }
   _data.rules = new_data

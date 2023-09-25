@@ -34,7 +34,7 @@ const upsert = async (
     await parse(
       state,
       action,
-      "upsert",
+      action.input.function,
       signer,
       0,
       contractErr,
@@ -65,6 +65,7 @@ const upsert = async (
       depth,
       {
         data: {
+          path: init(path),
           before: before.val,
           after: after.val,
           id: last(path),

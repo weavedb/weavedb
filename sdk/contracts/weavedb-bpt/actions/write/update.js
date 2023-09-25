@@ -33,7 +33,7 @@ const update = async (
   let { new_data, path, _data, schema, next_data } = await parse(
     state,
     action,
-    "update",
+    action.input.function,
     signer,
     0,
     contractErr,
@@ -64,6 +64,7 @@ const update = async (
       depth,
       {
         data: {
+          path: init(path),
           before: before.val,
           after: after.val,
           id: last(path),
