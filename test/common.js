@@ -545,7 +545,7 @@ const tests = {
         span: 2,
         times: 2,
         do: true,
-        jobs: [["upsert()", [{ age: db.inc(1) }, "ppl", "Bob"]]],
+        jobs: [["upsert", [{ age: db.inc(1) }, "ppl", "Bob"]]],
       },
       "inc age",
       {
@@ -1269,23 +1269,33 @@ const tests = {
       key: "trg",
       on: "create",
       func: [
+        ["let", "batches", []],
         [
-          "when",
-          ["propEq", "id", "Bob"],
-          ["toBatch", ["update", { age: db.inc(2) }, "ppl", "Bob"]],
-          { var: "data" },
+          "do",
+          [
+            "when",
+            ["propEq", "id", "Bob"],
+            [
+              "pipe",
+              ["var", "batches"],
+              ["append", ["[]", "update", { age: db.inc(2) }, "ppl", "Bob"]],
+              ["let", "batches"],
+            ],
+            { var: "data" },
+          ],
         ],
+        ["batch", { var: "batches" }],
       ],
     }
     const data2 = {
       key: "trg2",
       on: "update",
-      func: [["upsert()", [{ name: "Alice", age: db.inc(1) }, "ppl", "Alice"]]],
+      func: [["upsert", [{ name: "Alice", age: db.inc(1) }, "ppl", "Alice"]]],
     }
     const data3 = {
       key: "trg3",
       on: "delete",
-      func: [["update()", [{ age: db.inc(1) }, "ppl", "Bob"]]],
+      func: [["update", [{ age: db.inc(1) }, "ppl", "Bob"]]],
     }
     await db.addTrigger(data1, "ppl", { ar: arweave_wallet })
     await db.addTrigger(data2, "ppl", { ar: arweave_wallet })
@@ -1302,7 +1312,7 @@ const tests = {
       key: "inc-count",
       on: "create",
       func: [
-        ["upsert()", [{ count: db.inc(1) }, "like-count", { var: "data.id" }]],
+        ["upsert", [{ count: db.inc(1) }, "like-count", { var: "data.id" }]],
       ],
     }
     await db.addTrigger(trigger, "likes", { ar: arweave_wallet })

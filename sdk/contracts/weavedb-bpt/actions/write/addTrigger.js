@@ -42,17 +42,17 @@ const addTrigger = async (
   const trigger_key = `trigger.${path.join("/")}`
   state.triggers ??= {}
   state.triggers[trigger_key] ??= []
-  let { index, key, on, func } = action.input.query[0]
+  let { index, key, on, func, version } = action.input.query[0]
   const _index = findIndex(propEq("key", key), state.triggers[trigger_key])
-
+  version ??= 1
   if (_index !== -1) {
-    state.triggers[trigger_key][_index] = { key, on, func }
+    state.triggers[trigger_key][_index] = { key, on, func, version }
   } else if (isNil(index)) {
-    state.triggers[trigger_key].push({ key, on, func })
+    state.triggers[trigger_key].push({ key, on, func, version })
   } else {
     state.triggers[trigger_key] = insert(
       index,
-      { key, on, func },
+      { key, on, func, version },
       state.triggers[trigger_key]
     )
   }

@@ -43,6 +43,7 @@ const {
   replace$,
   clone,
   isValidName,
+  setElm,
 } = require("../../common/lib/pure")
 const { validate: validator } = require("../../common/lib/jsonschema")
 const { get: _get } = require("./index")
@@ -198,13 +199,87 @@ const validateData = async ({
         },
       }
       if (!isNil(rules)) {
-        for (const v of rules || []) {
-          if (isAllowed(v[0], rule_data.request)) {
-            await fpj(v[1], rule_data, { ...fn, ...ac_funcs })
+        if (is(Array, rules)) {
+          for (const v of rules || []) {
+            if (isAllowed(v[0], rule_data.request)) {
+              await fpj(v[1], rule_data, { ...fn, ...ac_funcs })
+            }
+          }
+          allowed = rule_data.request.allow === true
+        } else {
+          for (let k in rules || {}) {
+            const [permission, _ops] = k.split(" ")
+            if (permission !== "let") continue
+            const rule = rules[k]
+            let ok = false
+            if (isNil(_ops)) {
+              ok = true
+            } else {
+              const ops = _ops.split(",")
+              if (
+                intersection(ops)(["write", rule_data.request.method]).length >
+                0
+              ) {
+                ok = true
+              }
+            }
+
+            if (ok) {
+              for (let k2 in rule || {}) {
+                let _op = rule[k2][0]
+                let logic = rule[k2]
+                if (_op === "if") {
+                  if (!fpjson(clone(rule[k2][1]), rule_data)) continue
+                  logic = rule[k2][2]
+                } else if (_op === "ifelse") {
+                  if (fpjson(clone(rule[k2][1]), rule_data)) {
+                    logic = rule[k2][2]
+                  } else {
+                    logic = rule[k2][3]
+                  }
+                }
+                _op = logic[0]
+                if (_op === "get") {
+                  const result =
+                    (
+                      await get(
+                        state,
+                        {
+                          input: {
+                            function: "get",
+                            query: _parse(logic[1], rule_data),
+                          },
+                        },
+                        undefined,
+                        SmartWeave,
+                        kvs
+                      )
+                    )?.result ?? null
+                  setElm(k2, result, rule_data)
+                } else {
+                  setElm(k2, fpjson(clone(logic), rule_data), rule_data)
+                }
+              }
+            }
+          }
+          for (let k in rules || {}) {
+            const spk = k.split(" ")
+            if (spk[0] === "let") continue
+            const rule = rules[k]
+            const [permission, _ops] = k.split(" ")
+            const ops = _ops.split(",")
+            if (
+              intersection(ops)(["write", rule_data.request.method]).length > 0
+            ) {
+              const ok = jsonLogic.apply(rule, rule_data)
+              if (permission === "allow" && ok) {
+                allowed = true
+              } else if (permission === "deny" && ok) err()
+            }
           }
         }
       }
-      if (!rule_data.request.allow) err("operation not allowed")
+      if (!allowed) err("operation not allowed")
       return rule_data.resource.newData
     } else {
       return next_data
@@ -425,7 +500,7 @@ const trigger = async (
       let _state = clone(state)
       let _kvs = clone(kvs)
       await executeCron(
-        { crons: { jobs: t.func } },
+        { crons: { jobs: t.func, version: t.version } },
         _state,
         SmartWeave,
         _kvs,

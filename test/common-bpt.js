@@ -2,6 +2,8 @@ const { expect } = require("chai")
 const { parseQuery } = require("../sdk/contracts/weavedb-bpt/lib/utils")
 const { readFileSync } = require("fs")
 const { resolve } = require("path")
+const { mergeLeft } = require("ramda")
+const EthCrypto = require("eth-crypto")
 const tests = {
   "should get info": async ({
     db,
@@ -553,7 +555,7 @@ const tests = {
   },
 
   "should execute custom queries": async ({ db, arweave_wallet }) => {
-    const rules = { "allow set:reg": true, "allow set": false }
+    const rules = ["set:reg", [["allow()", true]], "set", [["allow()", true]]]
     await db.setRules(rules, "ppl", { ar: arweave_wallet })
 
     const data = { name: "Bob", age: 20 }
@@ -682,6 +684,7 @@ const tests = {
   "should run triggers": async ({ db, arweave_wallet }) => {
     const trigger = {
       key: "inc-count",
+      version: 2,
       on: "create",
       func: [
         ["=$art", ["get()", ["posts", { var: "data.after.aid" }]]],
@@ -739,6 +742,7 @@ const tests = {
     await db.addCron(
       {
         do: true,
+        version: 2,
         times: 1,
         span: 1,
         jobs: [["update()", [{ age: db.inc(1) }, "ppl", "Bob"]]],
@@ -753,6 +757,7 @@ const tests = {
     await db.addCron(
       {
         do: true,
+        version: 2,
         times: 1,
         span: 1,
         jobs: [["break"], ["update()", [{ age: db.inc(1) }, "ppl", "Bob"]]],
@@ -767,6 +772,7 @@ const tests = {
     await db.addCron(
       {
         do: true,
+        version: 2,
         times: 1,
         span: 1,
         jobs: [["break"], ["update()", [{ age: db.inc(1) }, "ppl", "Bob"]]],
@@ -781,6 +787,7 @@ const tests = {
     await db.addCron(
       {
         do: true,
+        version: 2,
         times: 1,
         span: 1,
         jobs: [
@@ -801,6 +808,7 @@ const tests = {
     await db.addCron(
       {
         do: true,
+        version: 2,
         times: 1,
         span: 1,
         jobs: [
@@ -821,6 +829,7 @@ const tests = {
     await db.addCron(
       {
         do: true,
+        version: 2,
         times: 1,
         span: 1,
         jobs: [
@@ -843,6 +852,7 @@ const tests = {
   "should tick": async ({ db, arweave_wallet }) => {
     await db.addCron(
       {
+        version: 2,
         span: 1,
         times: 2,
         jobs: [["get", "ppl", ["ppl"]]],
@@ -918,6 +928,266 @@ const tests = {
     expect((await db.get("ppl", "Bob")).name).to.eql("Bob")
     await db.set({ name: "Alice" }, "ppl", "Alice", { ar: arweave_wallet })
     expect(await db.get("ppl", "Alice")).to.eql(null)
+  },
+
+  "should set rules": async ({ db, arweave_wallet }) => {
+    const data = { name: "Bob", age: 20 }
+    const rules = {
+      "allow create,update": {
+        and: [
+          { "!=": [{ var: "request.auth.signer" }, null] },
+          { "<": [{ var: "resource.newData.age" }, 30] },
+        ],
+      },
+      "deny delete": { "!=": [{ var: "request.auth.signer" }, null] },
+    }
+    await db.setRules(rules, "ppl", {
+      ar: arweave_wallet,
+    })
+    expect(await db.getRules("ppl")).to.eql(rules)
+    await db.set(data, "ppl", "Bob")
+    expect(await db.get("ppl", "Bob")).to.eql(data)
+    await db.delete("ppl", "Bob")
+    expect(await db.get("ppl", "Bob")).to.eql(data)
+    await db.update({ age: db.inc(10) }, "ppl", "Bob")
+    expect(await db.get("ppl", "Bob")).to.eql({ name: "Bob", age: 20 })
+    await db.update({ age: db.inc(5) }, "ppl", "Bob")
+    expect(await db.get("ppl", "Bob")).to.eql({ name: "Bob", age: 25 })
+  },
+
+  "should pre-process the new data with rules": async ({
+    db,
+    arweave_wallet,
+  }) => {
+    const rules = {
+      let: {
+        "resource.newData.age": 30,
+      },
+      "allow create": true,
+    }
+    await db.setRules(rules, "ppl", {
+      ar: arweave_wallet,
+    })
+    await db.upsert({ name: "Bob" }, "ppl", "Bob")
+    expect((await db.get("ppl", "Bob")).age).to.eql(30)
+    await db.upsert({ name: "Bob" }, "ppl", "Bob")
+  },
+
+  "should execute crons": async ({ db, arweave_wallet, type }) => {
+    await db.set({ age: 3 }, "ppl", "Bob")
+    await db.addCron(
+      {
+        span: 2,
+        times: 2,
+        do: true,
+        version: 2,
+        jobs: [["upsert()", [{ age: db.inc(1) }, "ppl", "Bob"]]],
+      },
+      "inc age",
+      {
+        ar: arweave_wallet,
+      }
+    )
+    expect((await db.get("ppl", "Bob")).age).to.eql(4)
+    while (true) {
+      if (type !== "offchain") await db.mineBlock()
+      if ((await db.get("ppl", "Bob")).age > 4) {
+        break
+      }
+    }
+    expect((await db.get("ppl", "Bob")).age).to.be.eql(5)
+    await db.removeCron("inc age", {
+      ar: arweave_wallet,
+    })
+    expect((await db.getCrons()).crons).to.eql({})
+  },
+
+  "should insert contract info into access rules": async ({
+    db,
+    arweave_wallet,
+    contractTxId,
+  }) => {
+    const data = { name: "Bob", age: 20 }
+    const rules = {
+      let: { "resource.newData.contract": { var: "contract" } },
+      "allow write": true,
+    }
+    const arweave_wallet2 = await db.arweave.wallets.generate()
+    let addr2 = await db.arweave.wallets.jwkToAddress(arweave_wallet2)
+    await db.addOwner(addr2, { ar: arweave_wallet })
+    await db.setRules(rules, "ppl", {
+      ar: arweave_wallet,
+    })
+    await db.set(data, "ppl", "Bob")
+    expect(await db.get("ppl", "Bob")).to.eql(
+      mergeLeft(
+        {
+          contract: {
+            id: contractTxId,
+            owners: await db.getOwner(),
+            version: await db.getVersion(),
+          },
+        },
+        data
+      )
+    )
+  },
+
+  "should batch execute admin methods": async ({ db, arweave_wallet }) => {
+    const schema = {
+      type: "object",
+      required: ["name"],
+      properties: {
+        name: {
+          type: "number",
+        },
+      },
+    }
+    const rules = {
+      "allow create,update": {
+        and: [
+          { "!=": [{ var: "request.auth.signer" }, null] },
+          { "<": [{ var: "resource.newData.age" }, 30] },
+        ],
+      },
+      "deny delete": { "!=": [{ var: "request.auth.signer" }, null] },
+    }
+    const algorithms = ["secp256k1", "rsa256"]
+    const index = [
+      ["age", "desc"],
+      ["name", "desc"],
+    ]
+    const arweave_wallet2 = await db.arweave.wallets.generate()
+    const addr = await db.arweave.wallets.jwkToAddress(arweave_wallet)
+    const addr2 = await db.arweave.wallets.jwkToAddress(arweave_wallet2)
+
+    const identity = EthCrypto.createIdentity()
+    const identity2 = EthCrypto.createIdentity()
+    const identity3 = EthCrypto.createIdentity()
+    const jobID = "test-job"
+    const job = {
+      relayers: [identity.address],
+      signers: [identity.address, identity2.address, identity3.address],
+      multisig: 50,
+      multisig_type: "percent",
+      schema: {
+        type: "object",
+        required: ["height"],
+        properties: {
+          height: {
+            type: "number",
+          },
+        },
+      },
+    }
+    const cron = {
+      span: 2,
+      times: 2,
+      start: 10000000000,
+      do: false,
+      version: 2,
+      jobs: [["add", [{ age: db.inc(1) }, "ppl"]]],
+    }
+    const trigger = {
+      key: "inc-count",
+      on: "create",
+      version: 2,
+      func: [["upsert()", [{ count: db.inc(1) }, "like-count", "$data.id"]]],
+    }
+
+    const tx = await db.batch(
+      [
+        ["addCron", cron, "inc age"],
+        ["setSchema", schema, "ppl"],
+        ["setRules", rules, "ppl"],
+        ["setCanEvolve", false],
+        ["setSecure", true],
+        ["setAlgorithms", algorithms],
+        ["addIndex", index, "ppl"],
+        ["addOwner", addr2],
+        ["addRelayerJob", jobID, job],
+        ["addTrigger", trigger, "ppl"],
+      ],
+      {
+        ar: arweave_wallet,
+      }
+    )
+    expect(await db.getSchema("ppl")).to.eql(schema)
+    expect(await db.getRules("ppl")).to.eql(rules)
+    expect((await db.getEvolve()).canEvolve).to.eql(false)
+    expect((await db.getInfo()).secure).to.eql(true)
+    expect(await db.getAlgorithms()).to.eql(algorithms)
+    expect(await db.getIndexes("ppl")).to.eql([index])
+    expect(await db.getOwner()).to.eql([addr, addr2])
+    expect(await db.getRelayerJob(jobID)).to.eql(job)
+    expect((await db.getCrons()).crons).to.eql({ "inc age": cron })
+    expect((await db.getTriggers("ppl"))[0]).to.eql(trigger)
+    await db.batch(
+      [
+        ["removeCron", "inc age"],
+        ["removeOwner", addr2],
+        ["removeIndex", index, "ppl"],
+        ["removeRelayerJob", jobID],
+      ],
+      {
+        ar: arweave_wallet,
+      }
+    )
+    expect((await db.getCrons()).crons).to.eql({})
+    expect(await db.getOwner()).to.eql([addr])
+    expect(await db.getIndexes("ppl")).to.eql([])
+    expect(await db.getRelayerJob(jobID)).to.eql(null)
+  },
+
+  "should add triggers": async ({ db, arweave_wallet }) => {
+    const data1 = {
+      key: "trg",
+      version: 2,
+      on: "create",
+      func: [
+        [
+          "when",
+          ["propEq", "id", "Bob"],
+          ["toBatch()", ["update", { age: db.inc(2) }, "ppl", "Bob"]],
+          { var: "data" },
+        ],
+      ],
+    }
+    const data2 = {
+      key: "trg2",
+      version: 2,
+      on: "update",
+      func: [["upsert()", [{ name: "Alice", age: db.inc(1) }, "ppl", "Alice"]]],
+    }
+    const data3 = {
+      key: "trg3",
+      version: 2,
+      on: "delete",
+      func: [["update()", [{ age: db.inc(1) }, "ppl", "Bob"]]],
+    }
+    await db.addTrigger(data1, "ppl", { ar: arweave_wallet })
+    await db.addTrigger(data2, "ppl", { ar: arweave_wallet })
+    await db.addTrigger(mergeLeft({ index: 0 }, data3), "ppl", {
+      ar: arweave_wallet,
+    })
+    expect(await db.getTriggers("ppl")).to.eql([data3, data1, data2])
+    await db.set({ name: "Bob", age: 20 }, "ppl", "Bob")
+    expect((await db.get("ppl", "Bob")).age).to.eql(22)
+    return
+    await db.removeTrigger("trg2", "ppl", { ar: arweave_wallet })
+    expect(await db.getTriggers("ppl")).to.eql([data3, data1])
+
+    const trigger = {
+      key: "inc-count",
+      on: "create",
+      version: 2,
+      func: [
+        ["upsert()", [{ count: db.inc(1) }, "like-count", { var: "data.id" }]],
+      ],
+    }
+    await db.addTrigger(trigger, "likes", { ar: arweave_wallet })
+    await db.set({ data: Date.now() }, "likes", "abc")
+    expect((await db.get("like-count", "abc")).count).to.equal(1)
   },
 }
 

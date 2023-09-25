@@ -304,4 +304,5 @@ module.exports = {
   replace$,
   fpj,
   ac_funcs,
+  setElm,
 }
