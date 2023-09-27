@@ -50,10 +50,10 @@ asn1js@^3.0.1, asn1js@^3.0.5:
     pvutils "^1.1.3"
     tslib "^2.4.0"
 
-fpjson-lang@^0.1.4:
-  version "0.1.4"
-  resolved "https://registry.yarnpkg.com/fpjson-lang/-/fpjson-lang-0.1.4.tgz#433360b7f6f536fa8eac7f14873275e31dc83a75"
-  integrity sha512-BKFia83fM1lqv1KmSLsgb2lQS2YrfXceESIur7lCHbubnM0z6xU7/QK8tn2uIcfjE2GLHN381wnZr1Yzah5PNw==
+fpjson-lang@^0.1.5:
+  version "0.1.5"
+  resolved "https://registry.yarnpkg.com/fpjson-lang/-/fpjson-lang-0.1.5.tgz#a05cfc52697711af16bd3315b52eb6912ef34eea"
+  integrity sha512-+YvA1HbmUfJxAsFvkPwCRPQbNYU/0sJ9ffORMCykT5rQAj7YDl0ShA3ZWgGxMSmu4JcHDWXao1c2ddWw3IZupQ==
   dependencies:
     ramda "^0.28.0"
 

@@ -40,7 +40,6 @@ const {
 const {
   fpj,
   ac_funcs,
-  replace$,
   clone,
   isValidName,
   setElm,

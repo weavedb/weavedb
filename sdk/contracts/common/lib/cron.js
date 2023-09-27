@@ -2,6 +2,8 @@ let fpjson = require("fpjson-lang")
 fpjson = fpjson.default ?? fpjson
 
 const {
+  concat,
+  append,
   mergeLeft,
   path,
   is,
@@ -16,7 +18,7 @@ const { fpj, clone, replace$ } = require("./pure")
 
 const executeCron =
   ops =>
-  async (cron, state, SmartWeave, kvs, depth = 1, _vars = {}) => {
+  async (cron, state, SmartWeave, kvs, depth = 1, _vars = { batch: [] }) => {
     let vars = mergeLeft(_vars, {
       block: {
         height: SmartWeave.block.height,
@@ -56,7 +58,7 @@ const executeCron =
       return await ops[op](...params)
     }
     if (cron.crons.version === 2) {
-      await fpj(cron.crons.jobs, vars, {
+      await fpj(replace$(cron.crons.jobs), vars, {
         upsert: async query => [await execQuery("upsert", query), false],
         delete: async query => [await execQuery("delete", query), false],
         update: async query => [await execQuery("update", query), false],
@@ -65,6 +67,14 @@ const executeCron =
         batch: async (query, obj) => {
           obj.batchExecuted = true
           return [await execQuery("batch", query), false]
+        },
+        toBatchAll: async (query, obj) => {
+          obj.batch = concat(obj.batch, query)
+          return [null, false]
+        },
+        toBatch: async (query, obj) => {
+          obj.batch.push(query)
+          return [null, false]
         },
         get: async (query, obj) => {
           const val =

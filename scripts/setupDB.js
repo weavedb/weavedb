@@ -60,6 +60,15 @@ const setupDB = async ({ db, conf, privateKey, relayer }) => {
           }
         }
         break
+      case "crons":
+        for (let name in conf[k]) {
+          console.log(
+            "addCron",
+            name,
+            (await db.addTrigger(conf[k][name], name, auth))?.success
+          )
+        }
+        break
     }
   }
 }

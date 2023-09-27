@@ -1,4 +1,7 @@
 const {
+  complement,
+  concat,
+  without,
   split,
   uniq,
   path: _path,
@@ -33,11 +36,22 @@ const replace$ = arrs => {
       ? ["isNil", { var: arrs.slice(2) }]
       : arrs.slice(0, 2) === "!$"
       ? ["not", { var: arrs.slice(2) }]
+      : arrs.slice(0, 2) === "$$"
+      ? tail(arrs)
       : arrs[0] === "$"
       ? { var: tail(arrs) }
       : arrs
   } else if (is(Array, arrs)) {
-    if (arrs[0] === "toBatch()") {
+    if (arrs[0] === "toBatchAll") {
+      return [
+        [
+          "pipe",
+          ["var", "batch"],
+          ["concat", ["__"], arrs[1]],
+          ["let", "batch"],
+        ],
+      ]
+    } else if (arrs[0] === "toBatch") {
       return [
         "pipe",
         ["var", "batch"],
@@ -71,21 +85,39 @@ const replaceVars = _cond => {
   return cond
 }
 
-const setElm = (k, val, rule_data) => {
-  let elm = rule_data
+const setElm = (k, d, rule_data) => {
+  let obj = rule_data
   let elm_path = k.split("#")[0].split(".")
-  for (const [i, v] of elm_path.entries()) {
+  for (const [i, field] of elm_path.entries()) {
     if (i === elm_path.length - 1) {
-      if (is(Object, val) && val._op === "del") {
-        delete elm[v]
+      if (is(Object)(d) && d.__op === "data") {
+        obj[field] = rule_data.request.auth.extra[d.key] ?? null
+      } else if (is(Object)(d) && d.__op === "arrayUnion") {
+        if (complement(is)(Array, d.arr)) throw Error("field is not array")
+        if (complement(is)(Array, obj[field])) obj[field] = []
+        obj[field] = concat(obj[field], d.arr)
+      } else if (is(Object)(d) && d.__op === "arrayRemove") {
+        if (complement(is)(Array, d.arr)) throw Error("field is not array")
+        if (complement(is)(Array, obj[field])) obj[field] = []
+        obj[field] = without(d.arr, obj[field])
+      } else if (is(Object)(d) && d.__op === "inc") {
+        if (isNaN(d.n)) throw Error("field is not number")
+        if (isNil(obj[field])) obj[field] = 0
+        obj[field] += d.n
+      } else if (is(Object)(d) && d.__op === "del") {
+        delete obj[field]
+      } else if (is(Object)(d) && d.__op === "ts") {
+        obj[field] = rule_data.ts
+      } else if (is(Object)(d) && d.__op === "signer") {
+        obj[field] = rule_data.signer
       } else {
-        elm[v] = val
+        obj[field] = d
       }
       break
-    } else if (isNil(elm[v])) elm[v] = {}
-    elm = elm[v]
+    } else if (isNil(obj[field])) obj[field] = {}
+    obj = obj[field]
   }
-  return elm
+  return obj
 }
 const _parse = (query, vars) => {
   if (is(Array, query)) {
@@ -177,7 +209,7 @@ const ac_funcs = {
     }
     return [val, isBreak]
   },
-  update: (v, obj, set) => {
+  mod: (v, obj, set) => {
     let val = null
     let isBreak = false
     for (const k3 in v) {
@@ -258,7 +290,14 @@ const ac_funcs = {
   allow: (v, obj, set) => {
     let val = null
     let isBreak = false
-    obj.request.allow = v
+    obj.request.allow = true
+    isBreak = true
+    return [val, isBreak]
+  },
+  deny: (v, obj, set) => {
+    let val = null
+    let isBreak = false
+    obj.request.allow = false
     isBreak = true
     return [val, isBreak]
   },
