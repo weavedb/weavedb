@@ -1148,7 +1148,7 @@ const tests = {
         [
           "when",
           ["propEq", "id", "Bob"],
-          ["toBatch()", ["update", { age: db.inc(2) }, "ppl", "Bob"]],
+          ["toBatch", ["update", { age: db.inc(2) }, "ppl", "Bob"]],
           { var: "data" },
         ],
       ],

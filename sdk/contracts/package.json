@@ -1,12 +1,12 @@
 {
   "name": "weavedb-contracts",
-  "version": "0.30.0",
+  "version": "0.30.1",
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
     "@noble/curves": "^0.9.0",
     "@peculiar/webcrypto": "^1.4.3",
-    "fpjson-lang": "^0.1.4",
+    "fpjson-lang": "^0.1.5",
     "json-logic-js": "^2.0.2",
     "ramda": "^0.28.0",
     "wasmbuilder": "^0.0.16",

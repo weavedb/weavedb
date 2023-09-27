@@ -22,7 +22,7 @@
     "ethereumjs-wallet": "^1.0.2",
     "fast-text-encoding": "^1.0.6",
     "ffjavascript": "^0.2.56",
-    "fpjson-lang": "^0.1.3",
+    "fpjson-lang": "^0.1.5",
     "inherits": "^2.0.4",
     "intmax": "^0.1.5",
     "js-sha256": "^0.9.0",
@@ -57,7 +57,7 @@
     "node": ">=16.5"
   },
   "scripts": {
-    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet dAmgQfZtgTVoNCpMHgcGlYdb0ab_KvCKwk0hJWD8tbk 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w lry5KMRj6j13sLHsKxs1D2joLjcj6yNHtNQQQoaHRug",
+    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet KDSOccSqQai2znBunj6K4GOYBXBb2tL9Z50N-oUgWoE 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w lry5KMRj6j13sLHsKxs1D2joLjcj6yNHtNQQQoaHRug",
     "test": "yarn build && mocha test/offchain.js; mocha test/offchain-kv.js; mocha test/offchain-bpt.js",
     "mocha": "yarn build && mocha",
     "build": "yarn clean && node build.js && npm run cp",

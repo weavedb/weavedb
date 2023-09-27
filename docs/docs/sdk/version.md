@@ -15,6 +15,16 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.31.1-beta (September 27, 2023)
+
+#### Source Transaction Id
+
+[KDSOccSqQai2znBunj6K4GOYBXBb2tL9Z50N-oUgWoE](https://sonar.warp.cc/#/app/source/KDSOccSqQai2znBunj6K4GOYBXBb2tL9Z50N-oUgWoE)
+
+#### Added Features
+
+- FPJSON v0.1.5
+
 ### v0.30.0-beta (September 26, 2023)
 
 #### Source Transaction Id

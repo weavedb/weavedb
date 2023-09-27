@@ -149,7 +149,6 @@ const tests = {
       p(user1)
     )
     expect((await db.get("posts", tx5.docID)).parents).to.eql([tx.docID])
-    console.log(await db.get("users"))
   },
 }
 

@@ -5,6 +5,9 @@ const db = {
   ts: () => {
     return { __op: "ts" }
   },
+  del: () => {
+    return { __op: "del" }
+  },
 }
 
 const offchain = {
@@ -14,7 +17,7 @@ const offchain = {
         "add:status",
         [
           [
-            "update()",
+            "mod()",
             {
               id: "$id",
               owner: "$signer",
@@ -32,7 +35,7 @@ const offchain = {
             },
           ],
           ["fields()", ["*description", "mentions", "hashes", "image"]],
-          ["allow()", true],
+          ["allow()"],
         ],
       ],
       [
@@ -40,7 +43,7 @@ const offchain = {
         [
           ["=$is_job", ["equals", "article", "$request.auth.jobID"]],
           [
-            "update()",
+            "mod()",
             {
               id: "$id",
               owner: "$signer",
@@ -78,7 +81,7 @@ const offchain = {
           ["fields()", []],
           ["=$isOwner", ["equals", "$signer", "$old.owner"]],
           ["=$post", ["get()", ["posts", "$id"]]],
-          ["update()", { date: { _op: "del" } }],
+          ["mod()", { date: db.del() }],
           ["allowifall()", ["o$post", "o$post.date", "$isOwner"]],
         ],
       ],
@@ -103,7 +106,7 @@ const offchain = {
           ["=$no_repost", ["o", ["equals", 0], ["length"], "$repost"]],
           ["denyifany()", ["!$no_repost"]],
           [
-            "update()",
+            "mod()",
             {
               id: "$id",
               owner: "$signer",
@@ -119,7 +122,7 @@ const offchain = {
               parents: [],
             },
           ],
-          ["allow()", true],
+          ["allow()"],
         ],
       ],
       [
@@ -129,7 +132,7 @@ const offchain = {
           ["=$post", ["get()", ["posts", "$new.repost"]]],
           ["denyifany()", ["x$post", "x$post.date"]],
           [
-            "update()",
+            "mod()",
             {
               id: "$id",
               owner: "$signer",
@@ -145,7 +148,7 @@ const offchain = {
               parents: [],
             },
           ],
-          ["allow()", true],
+          ["allow()"],
         ],
       ],
       [
@@ -155,7 +158,7 @@ const offchain = {
           ["=$post", ["get()", ["posts", "$new.reply_to"]]],
           ["denyifany()", ["x$post", "x$post.date"]],
           [
-            "update()",
+            "mod()",
             {
               id: "$id",
               owner: "$signer",
@@ -171,7 +174,7 @@ const offchain = {
               parents: ["append", "$new.reply_to", "$post.parents"],
             },
           ],
-          ["allow()", true],
+          ["allow()"],
         ],
       ],
       [
@@ -202,7 +205,7 @@ const offchain = {
           ["=$is_user_owner", ["equals", "$signer", "$id"]],
           ["fields()", []],
           [
-            "update()",
+            "mod()",
             {
               address: "$id",
               followers: 0,
@@ -231,7 +234,7 @@ const offchain = {
           ["=$have_invites", ["gt", "$invites", "$invited"]],
           ["=$invited_user", ["get()", ["users", "$id"]]],
           [
-            "update()",
+            "mod()",
             {
               address: "$id",
               followers: 0,
@@ -293,7 +296,7 @@ const offchain = {
         [
           ["fields()", []],
           ["denyifany()", ["x$from", "x$to", "o$follow"]],
-          ["update()", { from: "$from_id", to: "$to_id", date: "$ts" }],
+          ["mod()", { from: "$from_id", to: "$to_id", date: "$ts" }],
           ["allowifall()", ["$is_from_signer"]],
         ],
       ],
@@ -314,8 +317,8 @@ const offchain = {
           ["=$like", ["get()", ["likes", "$id"]]],
           ["=$isOwner", ["equals", "$signer", "$user"]],
           ["denyifany()", ["o$like", "!$isOwner"]],
-          ["update()", { aid: "$aid", user: "$user", date: "$ts" }],
-          ["allow()", true],
+          ["mod()", { aid: "$aid", user: "$user", date: "$ts" }],
+          ["allow()"],
         ],
       ],
     ],
@@ -406,21 +409,13 @@ const offchain = {
   indexes: {
     posts: [
       [["quote"], ["owner"], ["repost"]],
-      [
-        ["repost", "asc"],
-        ["quote", "asc"],
-        ["date", "desc"],
-      ],
-      [
-        ["repost", "asc"],
-        ["quote", "asc"],
-        ["date", "desc"],
-      ],
+      [["repost"], ["quote"], ["date", "desc"]],
+      [["repost"], ["quote"], ["date", "desc"]],
       [["owner"], ["type"], ["date", "desc"]],
       [["owner"], ["reply_to"], ["date", "desc"]],
       [["reply_to"], ["date", "desc"]],
       [["reply_to"], ["repost"], ["date", "desc"]],
-      [["reply_to"], ["date", "asc"]],
+      [["reply_to"], ["date"]],
       [["owner"], ["reply"], ["date", "desc"]],
       [["owner"], ["repost"]],
       [
@@ -431,11 +426,7 @@ const offchain = {
         ["hashes", "array"],
         ["pt", "desc"],
       ],
-      [
-        ["type", "asc"],
-        ["pt", "desc"],
-        ["date", "desc"],
-      ],
+      [["type"], ["pt", "desc"], ["date", "desc"]],
     ],
     users: [
       [
@@ -445,10 +436,7 @@ const offchain = {
     ],
     likes: [
       [["user"], ["aid"]],
-      [
-        ["aid", "asc"],
-        ["date", "desc"],
-      ],
+      [["aid"], ["date", "desc"]],
       [["user"], ["date", "desc"]],
     ],
     follows: [
@@ -456,10 +444,7 @@ const offchain = {
       [["from"], ["to"]],
       [["to"], ["from"]],
       [["to"], ["date", "desc"]],
-      [
-        ["to", "asc"],
-        ["last", "desc"],
-      ],
+      [["to"], ["last", "desc"]],
     ],
     timeline: [
       [
@@ -490,6 +475,79 @@ const offchain = {
       },
     },
   },
+  crons: {
+    calc_pt: {
+      version: 2,
+      span: 60 * 60 * 1,
+      jobs: [
+        ["=$week", ["subtract", "$block.timestamp", 60 * 60 * 24 * 7]],
+        ["=$posts", ["get()", ["posts", ["ptts"], 500]]],
+        [
+          "=$toB",
+          [
+            "map",
+            [
+              "pipe",
+              ["let", "art"],
+              ["prop", "ptts"],
+              ["defaultTo", "$week"],
+              ["subtract", "$block.timestamp"],
+              ["divide", ["__"], "$week"],
+              ["subtract", 1],
+              ["let", "num"],
+              ["var", "art.pt"],
+              ["defaultTo", 0],
+              ["let", "pt"],
+              ["var", ["pt", "num"]],
+              ["apply", ["multiply"]],
+              ["let", "new_pt"],
+              [
+                "var",
+                [
+                  "%update",
+                  { pt: "new_pt", ptts: { __op: "%ts" } },
+                  "%posts",
+                  "art.id",
+                ],
+              ],
+            ],
+            "$posts",
+          ],
+        ],
+        ["toBatchAll()", "$toB"],
+      ],
+    },
+    del_pt: {
+      version: 2,
+      span: 60 * 60 * 1,
+      jobs: [
+        ["=$week", ["subtract", "$block.timestamp", 60 * 60 * 24 * 7]],
+        ["=$posts", ["get()", ["posts", ["last_like", "<", "$week"], 500]]],
+        [
+          "=$toB",
+          [
+            "map",
+            [
+              "pipe",
+              ["prop", "id"],
+              [
+                "append",
+                ["__"],
+                [
+                  "[]",
+                  "update",
+                  { last_like: db.del(), pt: 0, ptts: db.del() },
+                  "posts",
+                ],
+              ],
+            ],
+            "$posts",
+          ],
+        ],
+        ["toBatchAll()", "$toB"],
+      ],
+    },
+  },
   triggers: {
     posts: [
       {
@@ -499,11 +557,10 @@ const offchain = {
         func: [
           ["=$is_delete", ["isNil", "$data.after.date"]],
           ["=$tl", ["get()", "tl", ["timeline", "$data.after.id"]]],
-          ["=$is_timeline", [["complement", ["isNil"]], "$tl"]],
           [
             "when",
-            ["both", ["always", "$is_delete"], ["always", "$is_timeline"]],
-            ["toBatch()", ["delete", "timeline", "$data.after.id"]],
+            ["both", ["always", "$is_delete"], ["always", "o$tl"]],
+            ["toBatch", ["delete", "timeline", "$data.after.id"]],
             "$data",
           ],
         ],
@@ -580,7 +637,7 @@ const offchain = {
             "when",
             ["always", "$set_timeline"],
             [
-              "toBatch()",
+              "toBatch",
               [
                 "set",
                 {
@@ -617,7 +674,7 @@ const offchain = {
           ["=$following", ["get()", ["follows", "$docid"]]],
           [
             "if",
-            [["complement", ["isNil"]], "$following"],
+            "o$following",
             ["update()", [{ last: db.ts() }, "follows", "$docid"]],
           ],
         ],
@@ -631,7 +688,7 @@ const offchain = {
             "unless",
             ["pathEq", ["after", "repost"], ""],
             [
-              "toBatch()",
+              "toBatch",
               ["update", { reposts: db.inc(1) }, "posts", "$data.after.repost"],
             ],
             "$data",
@@ -648,7 +705,7 @@ const offchain = {
               ],
             ],
             [
-              "toBatch()",
+              "toBatch",
               ["update", { quotes: db.inc(1) }, "posts", "$data.after.repost"],
             ],
             "$data",
@@ -782,20 +839,9 @@ const offchain = {
 const notifications = {
   indexes: {
     notifications: [
-      [
-        ["to", "asc"],
-        ["viewed", "asc"],
-        ["date", "desc"],
-      ],
-      [
-        ["to", "asc"],
-        ["date", "desc"],
-      ],
-      [
-        ["to", "asc"],
-        ["viewed", "asc"],
-        ["date", "desc"],
-      ],
+      [["to"], ["viewed"], ["date", "desc"]],
+      [["to"], ["date", "desc"]],
+      [["to"], ["viewed"], ["date", "desc"]],
     ],
   },
   triggers: {
@@ -809,7 +855,7 @@ const notifications = {
             "unless",
             ["pathEq", ["after", "to"], "$data.after.from"],
             [
-              "toBatch()",
+              "toBatch",
               ["upsert", { count: db.inc(1) }, "counts", "$data.after.to"],
             ],
             "$data",
@@ -839,7 +885,7 @@ const notifications = {
               ],
             ],
             [
-              "toBatch()",
+              "toBatch",
               ["upsert", { count: db.inc(-1) }, "counts", "$data.after.to"],
             ],
             "$data",
