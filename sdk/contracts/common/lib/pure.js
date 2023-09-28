@@ -149,11 +149,14 @@ async function fpj(arr = [], obj = {}, fn = {}) {
           obj,
           setElm
         )
+        console.log(val)
       } else {
         throw Error(`unknow function ${arr[0]}`)
       }
     } else if (arr[0] === "break") {
       isBreak = true
+    } else if (arr[0] === "[]") {
+      for (let v of tail(arr)) await cmd(v)
     } else if (arr[0] === "if") {
       if (exec(arr[1])) {
         if (typeof arr[2] === "undefined") {

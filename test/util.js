@@ -70,7 +70,8 @@ async function deployContracts({
     contractTxIdIntmax,
     contractTxIdDfinity,
     contractTxIdEthereum,
-    contractTxIdBundler
+    contractTxIdBundler,
+    contractTxIdNostr
   ) {
     const contractSrc = fs.readFileSync(
       path.join(__dirname, "../dist/weavedb-bpt/contract.js"),
@@ -93,6 +94,7 @@ async function deployContracts({
     initialState.contracts.dfinity = contractTxIdDfinity
     initialState.contracts.ethereum = contractTxIdEthereum
     initialState.contracts.bundler = contractTxIdBundler
+    initialState.contracts.nostr = contractTxIdNostr
     const contract = await warp.createContract.deploy({
       wallet: arweave_wallet,
       initState: JSON.stringify(initialState),
@@ -160,7 +162,9 @@ async function deployContracts({
     secure,
     contractTxIdIntmax,
     contractTxIdDfinity,
-    contractTxIdEthereum
+    contractTxIdEthereum,
+    contractTxIdBundler,
+    contractTxIdNostr
   ) {
     const contractSrc = fs.readFileSync(
       path.join(__dirname, "../dist/weavedb/contract.js"),
@@ -182,6 +186,8 @@ async function deployContracts({
     //initialState.contracts.intmax = contractTxIdIntmax
     initialState.contracts.dfinity = contractTxIdDfinity
     initialState.contracts.ethereum = contractTxIdEthereum
+    initialState.contracts.bundler = contractTxIdBundler
+    initialState.contracts.nostr = contractTxIdNostr
     const contract = await warp.createContract.deploy({
       wallet: arweave_wallet,
       initState: JSON.stringify(initialState),
@@ -269,6 +275,32 @@ async function deployContracts({
     return contractTxId
   }
 
+  async function deployContractNostr() {
+    const contractSrc = fs.readFileSync(
+      path.join(__dirname, "../dist/nostr/nostr.js"),
+      "utf8"
+    )
+    const stateFromFile = JSON.parse(
+      fs.readFileSync(
+        path.join(__dirname, "../dist/nostr/initial-state-nostr.json"),
+        "utf8"
+      )
+    )
+    const initialState = {
+      ...stateFromFile,
+      ...{
+        owner: walletAddress,
+      },
+    }
+    const { contractTxId } = await warp.createContract.deploy({
+      wallet: arweave_wallet,
+      initState: JSON.stringify(initialState),
+      src: contractSrc,
+    })
+    await arweave.api.get("mine")
+    return contractTxId
+  }
+
   async function deployContractIntmax(
     contractTxIdPoseidon1,
     contractTxIdPoseidon2
@@ -334,6 +366,7 @@ async function deployContracts({
     dfinityTxId,
     ethereumTxId,
     bundlerTxId,
+    nostrTxId,
     poseidon1TxId,
     poseidon2TxId,
     intercallTxId
@@ -350,6 +383,7 @@ async function deployContracts({
     dfinityTxId = await deployContractDfinity()
     ethereumTxId = await deployContractEthereum()
     bundlerTxId = await deployContractBundler()
+    nostrTxId = await deployContractNostr()
     intercallTxId = await deployIntercallContract()
     const deployer =
       type === 2
@@ -362,7 +396,8 @@ async function deployContracts({
       intmaxTxId,
       dfinityTxId,
       ethereumTxId,
-      bundlerTxId
+      bundlerTxId,
+      nostrTxId
     )
   } else {
     contract = { contractTxId }
@@ -375,6 +410,7 @@ async function deployContracts({
     dfinityTxId,
     ethereumTxId,
     bundlerTxId,
+    nostrTxId,
     intercallTxId,
     poseidon1TxId,
     poseidon2TxId,
@@ -400,6 +436,7 @@ async function initBeforeEach(
     dfinityTxId,
     ethereumTxId,
     bundlerTxId,
+    nostrTxId,
     intercallTxId,
     poseidon1TxId,
     poseidon2TxId,
@@ -439,6 +476,7 @@ async function initBeforeEach(
     dfinityTxId,
     ethereumTxId,
     bundlerTxId,
+    nostrTxId,
     intercallTxId,
     contractTxId,
   }

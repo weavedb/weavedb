@@ -4,6 +4,13 @@ const { readFileSync } = require("fs")
 const { resolve } = require("path")
 const { mergeLeft } = require("ramda")
 const EthCrypto = require("eth-crypto")
+const {
+  getSignature,
+  getEventHash,
+  generatePrivateKey,
+  getPublicKey,
+} = require("nostr-tools")
+
 const tests = {
   "should get info": async ({
     db,
@@ -1188,6 +1195,117 @@ const tests = {
     await db.addTrigger(trigger, "likes", { ar: arweave_wallet })
     await db.set({ data: Date.now() }, "likes", "abc")
     expect((await db.get("like-count", "abc")).count).to.equal(1)
+  },
+  "should process nostr events.only": async ({ db, arweave_wallet }) => {
+    const rule = [
+      [
+        "set:nostr_events",
+        [
+          ["=$event", ["get()", ["nostr_events", "$id"]]],
+          ["if", "o$event", ["deny()"]],
+          ["allow()"],
+        ],
+      ],
+    ]
+    await db.setRules(rule, "nostr_events", { ar: arweave_wallet })
+    const trigger = {
+      key: "nostr_events",
+      on: "create",
+      version: 2,
+      func: [
+        [
+          "if",
+          ["equals", 1, "$data.after.kind"],
+          [
+            "set()",
+            [
+              {
+                id: "$data.id",
+                owner: "$data.after.pubkey",
+                type: "status",
+                description: "$data.after.content",
+                date: "$data.after.created_at",
+                repost: "",
+                reply_to: "",
+                reply: false,
+                quote: false,
+                parents: [],
+                hashes: [],
+                mentions: [],
+                repost: 0,
+                quotes: 0,
+                comments: 0,
+              },
+              "posts",
+              "$data.id",
+            ],
+          ],
+        ],
+        [
+          "if",
+          ["equals", 0, "$data.after.kind"],
+          [
+            "[]",
+            ["=$profile", ["parse()", "$data.after.content"]],
+            [
+              "set()",
+              [
+                {
+                  name: "$profile.name",
+                  address: "$data.after.pubkey",
+                  followers: 0,
+                  following: 0,
+                },
+                "users",
+                "$data.after.pubkey",
+              ],
+            ],
+          ],
+        ],
+      ],
+    }
+    await db.addTrigger(trigger, "nostr_events", { ar: arweave_wallet })
+
+    let sk = generatePrivateKey()
+    let pubkey = getPublicKey(sk)
+
+    let event = {
+      kind: 1,
+      created_at: Math.floor(Date.now() / 1000),
+      tags: [],
+      content: "hello",
+      pubkey,
+    }
+    event.id = getEventHash(event)
+    event.sig = getSignature(event, sk)
+    await db.nostr(event)
+    await db.nostr(event)
+    let event2 = {
+      kind: 1,
+      created_at: Math.floor(Date.now() / 1000),
+      tags: [],
+      content: "hello2",
+      pubkey,
+    }
+    event2.id = getEventHash(event2)
+    event2.sig = getSignature(event2, sk)
+    await db.nostr(event2)
+    console.log(await db.get("posts"))
+    let event3 = {
+      kind: 0,
+      created_at: Math.floor(Date.now() / 1000),
+      tags: [],
+      content: JSON.stringify({
+        name: "user",
+        about: "test user",
+        picture: "https://example.com/avatar.png",
+      }),
+      pubkey,
+    }
+    event3.id = getEventHash(event3)
+    event3.sig = getSignature(event3, sk)
+    await db.nostr(event3)
+    console.log(await db.get("users"))
   },
 }
 

@@ -9,6 +9,7 @@ const contracts = [
   "/dfinity/ii.js",
   "/ethereum/eth.js",
   "/bundler/bundler.js",
+  "/nostr/nostr.js",
   "/poseidon/poseidonConstants.js",
 ]
 

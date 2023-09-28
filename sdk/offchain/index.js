@@ -60,7 +60,11 @@ class OffChain extends Base {
               lastExecuted: 0,
               crons: {},
             },
-            contracts: { ethereum: "ethereum", dfinity: "dfinity" },
+            contracts: {
+              ethereum: "ethereum",
+              dfinity: "dfinity",
+              nostr: "nostr",
+            },
           }
         : this.type === 2
         ? {
@@ -78,7 +82,11 @@ class OffChain extends Base {
               lastExecuted: 0,
               crons: {},
             },
-            contracts: { ethereum: "ethereum", dfinity: "dfinity" },
+            contracts: {
+              ethereum: "ethereum",
+              dfinity: "dfinity",
+              nostr: "nostr",
+            },
           }
         : {
             version: version_bpt,
@@ -98,6 +106,7 @@ class OffChain extends Base {
             contracts: {
               ethereum: "ethereum",
               dfinity: "dfinity",
+              nostr: "nostr",
               bundler: "bundler",
             },
           }
