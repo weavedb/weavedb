@@ -2,7 +2,7 @@ node_modules/
 package-lock.json
 cache/
 weavedb.config.js
-weavedb.standalone.config.js
+weavedb.*.config.js
 gcs.json
 
 cache

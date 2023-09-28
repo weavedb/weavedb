@@ -1196,7 +1196,7 @@ const tests = {
     await db.set({ data: Date.now() }, "likes", "abc")
     expect((await db.get("like-count", "abc")).count).to.equal(1)
   },
-  "should process nostr events.only": async ({ db, arweave_wallet }) => {
+  "should process nostr events": async ({ db, arweave_wallet }) => {
     const rule = [
       [
         "set:nostr_events",
@@ -1306,6 +1306,160 @@ const tests = {
     event3.sig = getSignature(event3, sk)
     await db.nostr(event3)
     console.log(await db.get("users"))
+  },
+  "should record nostr users": async ({ db, arweave_wallet }) => {
+    const schema = {
+      type: "object",
+      required: ["address"],
+      properties: {
+        address: { type: "string", pattern: "^[0-9a-z]{64,64}$" },
+        invited_by: { type: "string", pattern: "^[0-9a-z]{64,64}$" },
+        name: { type: "string", minLength: 1, maxLength: 50 },
+        handle: { type: "string", minLength: 3, maxLength: 15 },
+        image: { type: "string" },
+        cover: { type: "string" },
+        description: { type: "string", maxLength: 280 },
+        hashes: { type: "array", items: { type: "string" } },
+        mentions: { type: "array", items: { type: "string" } },
+        followers: { type: "number", multipleOf: 1 },
+        following: { type: "number", multipleOf: 1 },
+        invites: { type: "number", multipleOf: 1 },
+        invited: { type: "number", multipleOf: 1 },
+      },
+    }
+    await db.setSchema(schema, "users", { ar: arweave_wallet })
+    const func = [
+      [
+        "if",
+        ["equals", 0, "$data.after.kind"],
+        [
+          "[]",
+          ["=$profile", ["parse()", "$data.after.content"]],
+          ["=$old_profile", ["get()", ["users", "$data.id"]]],
+          ["=$new_profile", { address: "$data.after.pubkey" }],
+          [
+            "if",
+            "x$old_profile",
+            [
+              "[]",
+              ["=$new_profile.followers", 0],
+              ["=$new_profile.following", 0],
+            ],
+          ],
+          ["if", "o$profile.name", ["=$new_profile.name", "$profile.name"]],
+          ["=$new_profile.description", ["defaultTo", "", "$profile.about"]],
+          [
+            "if",
+            "o$profile.picture",
+            ["=$new_profile.image", "$profile.picture"],
+          ],
+          [
+            "if",
+            "o$profile.banner",
+            ["=$new_profile.cover", "$profile.banner"],
+          ],
+          ["upsert()", ["$new_profile", "users", "$data.after.pubkey"]],
+        ],
+      ],
+    ]
+
+    const trigger = { key: "nostr_events", on: "create", version: 2, func }
+    await db.addTrigger(trigger, "nostr_events", { ar: arweave_wallet })
+    let sk = generatePrivateKey()
+    let pubkey = getPublicKey(sk)
+
+    let event = {
+      kind: 0,
+      created_at: Math.floor(Date.now() / 1000),
+      tags: [],
+      content: JSON.stringify({ name: "user", about: "test user" }),
+      pubkey,
+    }
+    event.id = getEventHash(event)
+    event.sig = getSignature(event, sk)
+    await db.nostr(event)
+    console.log(await db.get("users"))
+  },
+  "should record nostr posts.only": async ({ db, arweave_wallet }) => {
+    const schema = {
+      type: "object",
+      required: ["owner", "id"],
+      properties: {
+        id: { type: "string", pattern: "^[0-9a-z]{64,64}$" },
+        owner: { type: "string", pattern: "^[0-9a-z]{64,64}$" },
+        date: { type: "number", multipleOf: 1 },
+        updated: { type: "number", multipleOf: 1 },
+        description: { type: "string", maxLength: 280 },
+        title: { type: "string", minLength: 1, maxLength: 100 },
+        type: { type: "string" },
+        reply_to: { type: "string" },
+        repost: { type: "string" },
+        reply: { type: "boolean" },
+        quote: { type: "boolean" },
+        parents: {
+          type: "array",
+          items: { type: "string", pattern: "^[0-9a-zA-Z]{64,64}$" },
+        },
+        hashes: { type: "array", items: { type: "string" } },
+        mentions: { type: "array", items: { type: "string" } },
+        pt: { type: "number" },
+        ptts: { type: "number", multipleOf: 1 },
+        last_like: { type: "number", multipleOf: 1 },
+        likes: { type: "number", multipleOf: 1 },
+        reposts: { type: "number", multipleOf: 1 },
+        quotes: { type: "number", multipleOf: 1 },
+        comments: { type: "number", multipleOf: 1 },
+      },
+    }
+    await db.setSchema(schema, "posts", { ar: arweave_wallet })
+    const func = [
+      [
+        "if",
+        ["equals", 1, "$data.after.kind"],
+        [
+          "set()",
+          [
+            {
+              id: "$data.id",
+              owner: "$data.after.pubkey",
+              type: "status",
+              description: "$data.after.content",
+              date: "$data.after.created_at",
+              repost: "",
+              reply_to: "",
+              reply: false,
+              quote: false,
+              parents: [],
+              hashes: [],
+              mentions: [],
+              likes: 0,
+              reposts: 0,
+              quotes: 0,
+              comments: 0,
+            },
+            "posts",
+            "$data.id",
+          ],
+        ],
+      ],
+    ]
+
+    const trigger = { key: "nostr_events", on: "create", version: 2, func }
+    await db.addTrigger(trigger, "nostr_events", { ar: arweave_wallet })
+    let sk = generatePrivateKey()
+    let pubkey = getPublicKey(sk)
+
+    let event = {
+      kind: 1,
+      created_at: Math.floor(Date.now() / 1000),
+      tags: [],
+      content: "what the hell",
+      pubkey,
+    }
+    event.id = getEventHash(event)
+    event.sig = getSignature(event, sk)
+    await db.nostr(event)
+    console.log(await db.get("posts"))
   },
 }
 
