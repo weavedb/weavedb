@@ -47,7 +47,8 @@ let submap = {}
 
 let Arweave = require("arweave")
 Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
-const Base = require("weavedb-base")
+//const Base = require("weavedb-base")
+const Base = require("../base")
 const { handle } = require("weavedb-contracts/weavedb/contract")
 const { handle: handle_kv } = require("weavedb-contracts/weavedb-kv/contract")
 const { handle: handle_bpt } = require("weavedb-contracts/weavedb-bpt/contract")

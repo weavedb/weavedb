@@ -12,9 +12,10 @@ const Arweave = require("arweave")
 const { isNil } = require("ramda")
 const wallet_name = process.argv[2]
 const srcTxId = process.argv[3] || process.env.SOURCE_TX_ID
-const contractTxId_II = process.argv[4] || process.env.II_SOURCE_TX_ID
-const contractTxId_ETH = process.argv[5] || process.env.ETH_SOURCE_TX_ID
-const contractTxId_BUNDLER = process.argv[6] || process.env.BUNDLER_SOURCE_TX_ID
+const contractTxId_II = process.argv[4] || process.env.II_TX_ID
+const contractTxId_ETH = process.argv[5] || process.env.ETH_TX_ID
+const contractTxId_BUNDLER = process.argv[6] || process.env.BUNDLER_TX_ID
+const contractTxId_NOSTR = process.argv[7] || process.env.NOSTR_TX_ID
 
 const { Warp, WarpFactory, LoggerFactory } = require("warp-contracts")
 const { DeployPlugin, ArweaveSigner } = require("warp-contracts-plugin-deploy")
@@ -51,12 +52,7 @@ const deploy = async () => {
     )
   )
 
-  const initialState = {
-    ...stateFromFile,
-    ...{
-      owner: walletAddress,
-    },
-  }
+  const initialState = { ...stateFromFile, ...{ owner: walletAddress } }
   if (!isNil(privateKey)) {
     initialState.owner = `0x${privateToAddress(
       Buffer.from(privateKey.replace(/^0x/, ""), "hex")
@@ -68,15 +64,12 @@ const deploy = async () => {
   initialState.contracts.dfinity = contractTxId_II
   initialState.contracts.ethereum = contractTxId_ETH
   initialState.contracts.bundler = contractTxId_BUNDLER
+  initialState.contracts.nostr = contractTxId_NOSTR
   const res = await warp.createContract.deployFromSourceTx({
     wallet: new ArweaveSigner(_wallet),
     initState: JSON.stringify(initialState),
     srcTxId,
-    evaluationManifest: {
-      evaluationOptions: {
-        useKVStorage: true,
-      },
-    },
+    evaluationManifest: { evaluationOptions: { useKVStorage: true } },
   })
   console.log(res)
 

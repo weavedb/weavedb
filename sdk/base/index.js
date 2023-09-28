@@ -238,6 +238,11 @@ class Base {
     const base64 = btoa(String.fromCharCode.apply(null, output))
     return this._write2("bundle", base64, opt)
   }
+
+  async nostr(event, opt) {
+    return this._write2("nostr", event, opt)
+  }
+
   async addOwner(address, opt) {
     return this._write2("addOwner", { address }, opt)
   }
@@ -343,7 +348,11 @@ class Base {
       onDryWrite,
       data,
     ]
-    if ((func === "bundle" && this.type === 3) || noauth || this.noauth) {
+    if (
+      ((func === "nostr" || func === "bundle") && this.type === 3) ||
+      noauth ||
+      this.noauth
+    ) {
       return await this.writeWithoutWallet(
         func,
         query,

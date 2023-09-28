@@ -25,6 +25,7 @@ const { getIndexes } = require("./actions/read/getIndexes")
 const { listCollections } = require("./actions/read/listCollections")
 
 const { query } = require("./actions/write/query")
+const { nostr } = require("./actions/write/nostr")
 const { set } = require("./actions/write/set")
 const { tick } = require("./actions/write/tick")
 const { upsert } = require("./actions/write/upsert")
@@ -64,6 +65,7 @@ const { includes, isNil, keys, filter, compose, match } = require("ramda")
 const writes = [
   "relay",
   "set",
+  "nostr",
   "setSchema",
   "setRules",
   "addIndex",
@@ -206,6 +208,10 @@ async function handle(state, action, _SmartWeave) {
     case "query":
       res = await addHash(_SmartWeave)(await query(...writeParams))
       break
+    case "nostr":
+      res = await addHash(_SmartWeave)(await nostr(...writeParams))
+      break
+
     case "set":
       res = await addHash(_SmartWeave)(await set(...writeParams))
       break

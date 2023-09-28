@@ -2,7 +2,6 @@ let fpjson = require("fpjson-lang")
 fpjson = fpjson.default || fpjson
 const jsonLogic = require("json-logic-js")
 const md5 = require("./md5")
-
 const {
   keys,
   symmetricDifference,
@@ -176,6 +175,8 @@ const validateData = async ({
         return intersection(ops)(methods).length > 0
       }
       const fn = {
+        parse: async str => [JSON.parse(str), false],
+        stringify: async json => [JSON.stringify(json), false],
         get: async query => {
           let val = null
           let isBreak = false
@@ -1022,4 +1023,5 @@ module.exports = {
   parse,
   kv,
   parseQuery,
+  err,
 }

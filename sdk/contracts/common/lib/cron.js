@@ -59,6 +59,8 @@ const executeCron =
     }
     if (cron.crons.version === 2) {
       await fpj(replace$(cron.crons.jobs), vars, {
+        parse: async str => [JSON.parse(str), false],
+        stringify: async json => [JSON.stringify(json), false],
         upsert: async query => [await execQuery("upsert", query), false],
         delete: async query => [await execQuery("delete", query), false],
         update: async query => [await execQuery("update", query), false],

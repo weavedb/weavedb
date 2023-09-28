@@ -30,6 +30,7 @@
     "jsonschema": "^1.4.1",
     "jsrsasign": "^10.5.27",
     "lit-js-sdk": "^1.2.57",
+    "nostr-tools": "^1.16.0",
     "pako": "^2.1.0",
     "ramda": "^0.28.0",
     "readable-stream": "^4.2.0",
@@ -57,7 +58,7 @@
     "node": ">=16.5"
   },
   "scripts": {
-    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet KDSOccSqQai2znBunj6K4GOYBXBb2tL9Z50N-oUgWoE 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w lry5KMRj6j13sLHsKxs1D2joLjcj6yNHtNQQQoaHRug",
+    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet XVGfjnJ21jmmkCSX6ZkphakEqWpCxkC_hp-hIKyr8eI 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w lry5KMRj6j13sLHsKxs1D2joLjcj6yNHtNQQQoaHRug PDuTzRpn99EwiUvT9XrUhg8nyhW20Wcd-XcRXboCpHs",
     "test": "yarn build && mocha test/offchain.js; mocha test/offchain-kv.js; mocha test/offchain-bpt.js",
     "mocha": "yarn build && mocha",
     "build": "yarn clean && node build.js && npm run cp",
