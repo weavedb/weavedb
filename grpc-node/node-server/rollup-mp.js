@@ -27,7 +27,9 @@ class Rollup {
     plugins = {},
     tick = null,
     admin = null,
+    initial_state = {},
   }) {
+    this.initial_state = initial_state
     this.admin = admin
     this.tick = tick
     this.last = 0
@@ -171,7 +173,10 @@ class Rollup {
   }
 
   async initOffchain() {
-    const state = { owner: this.owner, secure: this.secure ?? true }
+    const state = {
+      ...{ owner: this.owner, secure: this.secure ?? true },
+      ...this.initial_state,
+    }
     this.db = new DB({
       contractTxId: this.txid,
       type: 3,
