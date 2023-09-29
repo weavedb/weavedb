@@ -3,7 +3,14 @@ const grpc = require("@grpc/grpc-js")
 const protoLoader = require("@grpc/proto-loader")
 const { addReflection } = require("grpc-server-reflection")
 const PROTO_PATH = __dirname + "/weavedb.proto"
-const { mergeLeft, isNil, includes, mapObjIndexed, is } = require("ramda")
+const {
+  concat,
+  mergeLeft,
+  isNil,
+  includes,
+  mapObjIndexed,
+  is,
+} = require("ramda")
 const { privateToAddress } = require("ethereumjs-util")
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
@@ -268,7 +275,6 @@ class Server {
         err,
       })
     }
-    const func = "nostr"
     const id = "offchain"
     const nocache = true
     let txid, type
@@ -276,14 +282,15 @@ class Server {
       ;[txid, type] = id.split("#")
     }
     type ??= "offchain"
+    console.log(query)
     return {
       type,
       nocache,
       res,
       txid,
-      func,
-      query: JSON.stringify(query),
-      isAdmin: func === "admin",
+      func: query.function,
+      query: JSON.stringify(query.query),
+      isAdmin: query.function === "admin",
     }
   }
 
@@ -352,34 +359,75 @@ class Instance {
   }
   onREQ(subId, ...filters) {
     console.log("REQ", subId, ...filters)
-
     this.addSub(subId, filters)
+    let done = 0
+    for (const f of filters) {
+      let query = ["nostr_events", ["created_at", "desc"]]
+      let equals = []
+      let ins = []
 
+      for (let f2 of [
+        ["id", "id"],
+        ["authors", "pubkey"],
+        ["kinds", "kind"],
+      ]) {
+        const f3 = f[f2[0]]
+        if (!isNil(f3) && is(Array, f3) && f3.length > 0) {
+          if (f3.length === 1) {
+            equals.push([f2[1], "==", f3[0]])
+          } else {
+            ins.push([f2[1], "in", f3])
+          }
+          if (f2[0] === "id") break
+        }
+      }
+      query = concat(query, equals)
+      query = concat(query, ins)
+      if (!isNil(f.since) && is(Number, f.since)) {
+        query.push(["created_at", "<", f.since])
+      }
+      if (!isNil(f.until) && is(Number, f.until)) {
+        query.push(["created_at", ">", f.until])
+      }
+      if (!isNil(f.limit) && is(Number, f.limit)) {
+        query.push(f.limit > 1000 ? 1000 : f.limit)
+      }
+      this.server.query2({ query, function: "get" }, (err, res) => {
+        try {
+          if (isNil(err)) {
+            console.log(JSON.parse(res.result).length)
+            for (const v of JSON.parse(res.result)) {
+              this.send(["EVENT", subId, v])
+            }
+          }
+        } catch (e) {
+          console.log(e)
+        }
+        done++
+        if (filters.length === done) {
+          console.log("EOSE")
+          this.send(["EOSE", subId])
+        }
+      })
+    }
+    /*
     for (const event of events) {
       if (matchFilters(filters, event)) {
         console.log("match", subId, event)
-
-        this.send(["EVENT", subId, event])
+        //this.send(["EVENT", subId, event])
       } else {
         console.log("miss", subId, event)
       }
-    }
-
-    console.log("EOSE")
-
-    this.send(["EOSE", subId])
+    }*/
   }
   onEVENT(event) {
     events.push(event)
     console.log("EVENT", event, true)
     this.server.query2({ query: event, function: "nostr" }, (err, res) => {
-      console.log(err)
-      console.log(JSON.parse(res.result))
       this.send(["OK", event.id])
       for (const [subId, { instance, filters }] of subs.entries()) {
         if (matchFilters(filters, event)) {
           console.log("match", subId, event)
-
           instance.send(["EVENT", subId, event])
         }
       }

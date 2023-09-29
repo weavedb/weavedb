@@ -16,8 +16,8 @@ const offchain = {
       [
         "set:nostr_events",
         [
-          //["=$event", ["get()", ["nostr_events", "$id"]]],
-          //["if", "o$event", ["deny()"]],
+          ["=$event", ["get()", ["nostr_events", "$id"]]],
+          ["if", "o$event", ["deny()"]],
           ["allow()"],
         ],
       ],
@@ -417,6 +417,13 @@ const offchain = {
     },
   },
   indexes: {
+    nostr_events: [
+      [["id"], ["created_at", "desc"]],
+      [["kind"], ["created_at", "desc"]],
+      [["pubkey"], ["created_at", "desc"]],
+      [["pubkey"], ["kind"], ["created_at", "desc"]],
+      [["kind"], ["pubkey"], ["created_at", "desc"]],
+    ],
     posts: [
       [["quote"], ["owner"], ["repost"]],
       [["repost"], ["quote"], ["date", "desc"]],
