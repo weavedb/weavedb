@@ -6,6 +6,7 @@ services:
       dockerfile: standalone.Dockerfile
     ports:
       - "9090:9090"
+      - "4736:4736"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
