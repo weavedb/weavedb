@@ -224,6 +224,13 @@ class Rollup {
       state,
     })
     await this.db.initialize()
+    console.log(
+      "......................................................",
+      this.txid,
+      this.db.state
+    )
+    console.log(state)
+    console.log(this.initial_state)
     if (!isNil(this.tick)) {
       setInterval(() => {
         if (Date.now() - this.last > this.tick) {
@@ -378,6 +385,7 @@ class Rollup {
               cache,
               read: _onDryWrite?.read || null,
             }
+        console.log(this.txid, this.db.state)
         result = await db.write(key.func, _query, true, true, false, onDryWrite)
         //if (!isNil(virtual_txid)) this.results[virtual_txid] = result
       }

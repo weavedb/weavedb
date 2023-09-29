@@ -3,7 +3,14 @@ const grpc = require("@grpc/grpc-js")
 const protoLoader = require("@grpc/proto-loader")
 const { addReflection } = require("grpc-server-reflection")
 const PROTO_PATH = __dirname + "/weavedb.proto"
-const { mergeLeft, isNil, includes, mapObjIndexed, is } = require("ramda")
+const {
+  concat,
+  mergeLeft,
+  isNil,
+  includes,
+  mapObjIndexed,
+  is,
+} = require("ramda")
 const { privateToAddress } = require("ethereumjs-util")
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
@@ -19,7 +26,17 @@ const path = require("path")
 const { fork } = require("child_process")
 
 class Rollup {
-  constructor({ txid, secure, owner, dbname, dir, plugins, tick, admin }) {
+  constructor({
+    txid,
+    secure,
+    owner,
+    dbname,
+    dir,
+    plugins,
+    tick,
+    admin,
+    initial_state = {},
+  }) {
     this.cb = {}
     this.txid = txid
     this.db = fork(path.resolve(__dirname, "rollup-mp"))
@@ -34,7 +51,17 @@ class Rollup {
     })
     this.db.send({
       op: "new",
-      params: { txid, secure, owner, dbname, dir, plugins, tick, admin },
+      params: {
+        txid,
+        secure,
+        owner,
+        dbname,
+        dir,
+        plugins,
+        tick,
+        admin,
+        initial_state,
+      },
     })
   }
   init(afterInit) {
@@ -70,6 +97,7 @@ class Server {
         plugins: v.plugins ?? this.conf.plugins ?? {},
         tick: v.tick ?? this.conf.tick ?? null,
         admin: v.admin ?? this.conf.admin,
+        initial_state: v.initial_state ?? this.conf.initial_state,
       })
     })(rollups)
     for (let k in this.rollups)
@@ -216,6 +244,44 @@ class Server {
       this.rollups[txid].execUser(parsed, ++this.count)
     }
   }
+  parseQueryNostr(query, id = "offchain", callback) {
+    const res = (err, result = null) => {
+      callback(null, {
+        result: isNil(result) ? null : JSON.stringify(result),
+        err,
+      })
+    }
+    const nocache = true
+    let txid, type
+    if (!isNil(id)) {
+      ;[txid, type] = id.split("#")
+    }
+    type ??= "offchain"
+    return {
+      type,
+      nocache,
+      res,
+      txid,
+      func: query.function,
+      query: JSON.stringify(query.query),
+      isAdmin: query.function === "admin",
+    }
+  }
+
+  async queryNostr(call, id = "offchain", callback) {
+    const parsed = this.parseQueryNostr(call, id, callback)
+    const { type, res, nocache, txid, func, query, isAdmin } = parsed
+    if (isNil(this.rollups[txid])) {
+      res(`DB [${txid}] doesn't exist`, null)
+      return
+    }
+    this.rollups[txid].execUser(parsed, ++this.count)
+  }
 }
 
-new Server({ port })
+const server = new Server({ port })
+
+if (!isNil(server.conf.nostr)) {
+  const { nostr } = require("./nostr")
+  nostr({ server, port: server.conf.nostr.port, db: server.conf.nostr.db })
+}
