@@ -15,7 +15,17 @@ await db.getVersion()
 
 ## Change Logs
 
-### v0.31.3-beta (September 28, 2023)
+### v0.31.0-beta (September 29, 2023)
+
+#### Source Transaction Id
+
+[GYLsyTsZK1Iay4EEKDzejddNM-KBVFBkA40lDY3eJx8](https://sonar.warp.cc/#/app/source/GYLsyTsZK1Iay4EEKDzejddNM-KBVFBkA40lDY3eJx8)
+
+#### Added Features
+
+- Fix nexted triggers
+
+### v0.30.3-beta (September 28, 2023)
 
 #### Source Transaction Id
 
@@ -25,7 +35,7 @@ await db.getVersion()
 
 - Nostr integration
 
-### v0.31.1-beta (September 27, 2023)
+### v0.30.1-beta (September 27, 2023)
 
 #### Source Transaction Id
 

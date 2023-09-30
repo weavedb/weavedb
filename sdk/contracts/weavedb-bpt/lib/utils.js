@@ -500,7 +500,7 @@ const trigger = async (
       let _state = clone(state)
       let _kvs = clone(kvs)
       await executeCron(
-        { crons: { jobs: t.func, version: t.version } },
+        { crons: { jobs: t.func, version: t.version, key: t.key } },
         _state,
         SmartWeave,
         _kvs,

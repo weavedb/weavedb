@@ -64,7 +64,7 @@ const Embed = ({
         <Box as="i" className="fas fa-retweet" mr={2} />
         <Box mr={1}>reposted by</Box>
         <Link
-          href={`/u/${users[repost]?.handle}`}
+          href={`/u/${users[repost]?.address}`}
           onClick={e => e.stopPropagation()}
         >
           <Box fontWeight="bold">{users[repost]?.name}</Box>
@@ -90,7 +90,7 @@ const Embed = ({
         <Box as="i" className="far fa-comment" mr={2} />
         <Box mr={1}>replied to</Box>
         <Box fontWeight="bold">
-          @{users[tweets[tweet.reply_to]?.owner]?.handle}
+          @{users[tweets[tweet.reply_to]?.owner]?.address.slice(0, 10)}
         </Box>
       </Flex>
     )
@@ -116,7 +116,7 @@ const Embed = ({
           >
             {isDeleted ? null : (
               <Link
-                href={`/u/${puser.handle}`}
+                href={`/u/${puser.address}`}
                 onClick={e => e.stopPropagation()}
               >
                 <Image
@@ -140,7 +140,7 @@ const Embed = ({
           >
             {isDeleted || !isNil(parent) ? null : (
               <Link
-                href={`/u/${puser.handle}`}
+                href={`/u/${puser.address}`}
                 onClick={e => {
                   e.stopPropagation()
                 }}
@@ -177,7 +177,7 @@ const Embed = ({
                   )}
                   <Flex fontSize="14px" color="#666" align="center">
                     <Link
-                      href={`/u/${puser.handle}`}
+                      href={`/u/${puser.address}`}
                       onClick={e => {
                         e.stopPropagation()
                       }}
@@ -185,7 +185,7 @@ const Embed = ({
                       <Flex align="center">
                         {isNil(parent) ? null : (
                           <Link
-                            href={`/u/${puser.handle}`}
+                            href={`/u/${puser.address}`}
                             onClick={e => {
                               e.stopPropagation()
                             }}
@@ -202,7 +202,7 @@ const Embed = ({
                         <Box color="#333" fontWeight="bold">
                           {puser.name}
                         </Box>
-                        <Box ml={2}>@{puser.handle}</Box>
+                        <Box ml={2}>@{puser.address?.slice(0, 10)}</Box>
                       </Flex>
                     </Link>
                     <Box mx={1}>·</Box>
@@ -240,16 +240,22 @@ const Embed = ({
               </Flex>
             ) : !isNil(body) ? (
               list ? (
-                <Box>{marked(body, { renderer }).slice(0, 140)}</Box>
+                <Box sx={{ wordBreak: "break-all" }}>
+                  {marked(body, { renderer }).slice(0, 140)}
+                </Box>
               ) : (
                 <>
                   <Image src="https://picsum.photos/650/300" mb={4} />
-                  <Box dangerouslySetInnerHTML={{ __html: marked(body) }} />
+                  <Box
+                    sx={{ wordBreak: "break-all" }}
+                    dangerouslySetInnerHTML={{ __html: marked(body) }}
+                  />
                 </>
               )
             ) : (
               <>
                 <Box
+                  sx={{ wordBreak: "break-all" }}
                   dangerouslySetInnerHTML={{
                     __html: linkifyHtml(tweet.description ?? tweet.body, {
                       nl2br: true,

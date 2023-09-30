@@ -9,6 +9,7 @@ const {
   getEventHash,
   generatePrivateKey,
   getPublicKey,
+  finishEvent,
 } = require("nostr-tools")
 
 const tests = {
@@ -1378,7 +1379,6 @@ const tests = {
     event.id = getEventHash(event)
     event.sig = getSignature(event, sk)
     await db.nostr(event)
-    console.log(await db.get("users"))
   },
   "should record nostr posts.only": async ({ db, arweave_wallet }) => {
     const schema = {
@@ -1412,53 +1412,144 @@ const tests = {
       },
     }
     await db.setSchema(schema, "posts", { ar: arweave_wallet })
+    let sk = generatePrivateKey()
+    let pubkey = getPublicKey(sk)
+
     const func = [
       [
         "if",
         ["equals", 1, "$data.after.kind"],
         [
-          "set()",
+          "[]",
+          ["=$tags", ["defaultTo", [], "$data.after.tags"]],
           [
-            {
-              id: "$data.id",
-              owner: "$data.after.pubkey",
-              type: "status",
-              description: "$data.after.content",
-              date: "$data.after.created_at",
-              repost: "",
-              reply_to: "",
-              reply: false,
-              quote: false,
-              parents: [],
-              hashes: [],
-              mentions: [],
-              likes: 0,
-              reposts: 0,
-              quotes: 0,
-              comments: 0,
-            },
-            "posts",
-            "$data.id",
+            "=$mentions",
+            [
+              [
+                "pipe",
+                ["filter", ["propSatisfies", ["equals", "p"], 0]],
+                ["map", ["nth", 1]],
+              ],
+              "$tags",
+            ],
+          ],
+          [
+            "=$etags",
+            [["filter", ["propSatisfies", ["equals", "e"], 0]], "$tags"],
+          ],
+          [
+            "=$quote_tags",
+            [
+              [
+                "pipe",
+                ["filter", ["propSatisfies", ["equals", "mention"], 3]],
+                ["map", ["nth", 1]],
+              ],
+              "$etags",
+            ],
+          ],
+          [
+            "=$repost",
+            [
+              "if",
+              ["isEmpty", "$quote_tags"],
+              "",
+              "else",
+              ["head", "$quote_tags"],
+            ],
+          ],
+          ["=$no_quote", ["isEmpty", "$repost"]],
+          ["=$quote", "!$no_quote"],
+          [
+            "set()",
+            [
+              {
+                id: "$data.id",
+                owner: "$data.after.pubkey",
+                type: "status",
+                description: "$data.after.content",
+                date: "$data.after.created_at",
+                repost: "$repost",
+                reply_to: "",
+                reply: false,
+                quote: "$quote",
+                parents: [],
+                hashes: [],
+                mentions: "$mentions",
+                likes: 0,
+                reposts: 0,
+                quotes: 0,
+                comments: 0,
+              },
+              "posts",
+              "$data.id",
+            ],
           ],
         ],
       ],
     ]
 
-    const trigger = { key: "nostr_events", on: "create", version: 2, func }
-    await db.addTrigger(trigger, "nostr_events", { ar: arweave_wallet })
-    let sk = generatePrivateKey()
-    let pubkey = getPublicKey(sk)
+    const trigger2 = { key: "nostr_events", on: "create", version: 2, func }
+    await db.addTrigger(trigger2, "nostr_events", { ar: arweave_wallet })
 
+    const trigger = {
+      key: "inc_reposts",
+      version: 2,
+      on: "create",
+      func: [
+        [
+          [
+            "unless",
+            ["pathEq", ["after", "repost"], ""],
+            [
+              "toBatch",
+              ["update", { reposts: db.inc(1) }, "posts", "$data.after.repost"],
+            ],
+            "$data",
+          ],
+          [
+            "when",
+            [
+              "both",
+              [["complement", ["pathEq"]], ["after", "repost"], ""],
+              [
+                ["complement", ["pathSatisfies"]],
+                ["isNil"],
+                ["after", "description"],
+              ],
+            ],
+            [
+              "toBatch",
+              ["update", { quotes: db.inc(1) }, "posts", "$data.after.repost"],
+            ],
+            "$data",
+          ],
+        ],
+      ],
+    }
+    await db.addTrigger(trigger, "posts", { ar: arweave_wallet })
     let event = {
       kind: 1,
       created_at: Math.floor(Date.now() / 1000),
-      tags: [],
       content: "what the hell",
       pubkey,
+      tags: [],
     }
-    event.id = getEventHash(event)
-    event.sig = getSignature(event, sk)
+    event = finishEvent(event, sk)
     await db.nostr(event)
+    let event2 = {
+      kind: 1,
+      created_at: Math.floor(Date.now() / 1000),
+      tags: [
+        ["p", sk],
+        ["e", event.id, "", "mention"],
+      ],
+      content: "what the hell #2",
+      pubkey,
+    }
+    event2 = finishEvent(event2, sk)
+    await db.nostr(event)
+    await db.nostr(event2)
     console.log(await db.get("posts"))
   },
 }
