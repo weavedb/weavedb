@@ -329,7 +329,7 @@ function StatusPage() {
 
   const tabs = [
     { key: "posts", name: "Posts" },
-    { key: "articles", name: "Articles" },
+    //{ key: "articles", name: "Articles" },
     { key: "replies", name: "Replies" },
     { key: "likes", name: "Likes" },
   ]
@@ -566,6 +566,7 @@ function StatusPage() {
                       </Box>
                       <Box mx={["20px", "30px"]} mb={2} fontSize="15px">
                         <Box
+                          sx={{ wordBreak: "break-all" }}
                           dangerouslySetInnerHTML={{
                             __html: linkifyHtml(puser.description, {
                               nl2br: true,
@@ -749,7 +750,12 @@ function StatusPage() {
                                     @{u.address.slice(0, 10)}
                                   </Box>
                                 </Box>
-                                <Box fontSize="15px">{u.description}</Box>
+                                <Box
+                                  fontSize="15px"
+                                  sx={{ wordBreak: "break-all" }}
+                                >
+                                  {u.description}
+                                </Box>
                               </Box>
                             </Flex>
                           </Box>
@@ -813,7 +819,7 @@ function StatusPage() {
                             const db = await initDB()
                             const _followers = await db.cget(
                               "follows",
-                              ["from", "==", puser.address],
+                              ["to", "==", puser.address],
                               ["date", "desc"],
                               ["startAfter", last(followers)],
                               limit

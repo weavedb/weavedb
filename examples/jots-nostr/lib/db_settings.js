@@ -16,8 +16,8 @@ const offchain = {
       [
         "set:nostr_events",
         [
-          /*["=$event", ["get()", ["nostr_events", "$id"]]],
-          ["if", "o$event", ["deny()"]],*/
+          ["=$event", ["get()", ["nostr_events", "$id"]]],
+          ["if", "o$event", ["deny()"]],
           ["allow()"],
         ],
       ],
@@ -294,6 +294,7 @@ const offchain = {
       [
         "*",
         [
+          ["=$isOwner", ["includes", "$signer", "$contract.owners"]],
           ["split()", [":", "$id", ["=$from_id", "=$to_id"]]],
           ["=$is_from_signer", ["equals", "$from_id", "$signer"]],
           ["=$from", ["get()", ["users", "$from_id"]]],
@@ -307,7 +308,7 @@ const offchain = {
           ["fields()", []],
           ["denyifany()", ["x$from", "x$to", "o$follow"]],
           ["mod()", { from: "$from_id", to: "$to_id", date: "$ts" }],
-          //["allowifall()", ["$is_from_signer"]],
+          ["allowifany()", ["!$isOwner"]],
           ["allow()"],
         ],
       ],
@@ -818,30 +819,209 @@ const offchain = {
         on: "update",
         func: [
           [
-            "unless",
-            ["pathEq", ["after", "repost"], ""],
+            "if",
+            ["equals", 1, "$data.after.kind"],
             [
-              "toBatch",
-              ["update", { reposts: db.inc(1) }, "posts", "$data.after.repost"],
-            ],
-            "$data",
-          ],
-          [
-            "when",
-            [
-              "both",
-              [["complement", ["pathEq"]], ["after", "repost"], ""],
+              "[]",
+              ["=$tags", ["defaultTo", [], "$data.after.tags"]],
               [
-                ["complement", ["pathSatisfies"]],
-                ["isNil"],
-                ["after", "description"],
+                "=$mentions",
+                [
+                  [
+                    "pipe",
+                    ["filter", ["propSatisfies", ["equals", "p"], 0]],
+                    ["map", ["nth", 1]],
+                  ],
+                  "$tags",
+                ],
+              ],
+              [
+                "=$etags",
+                [["filter", ["propSatisfies", ["equals", "e"], 0]], "$tags"],
+              ],
+              [
+                "=$quote_tags",
+                [
+                  [
+                    "pipe",
+                    ["filter", ["propSatisfies", ["equals", "mention"], 3]],
+                    ["map", ["nth", 1]],
+                  ],
+                  "$etags",
+                ],
+              ],
+              [
+                "=$repost",
+                [
+                  "if",
+                  ["isEmpty", "$quote_tags"],
+                  "",
+                  "else",
+                  ["head", "$quote_tags"],
+                ],
+              ],
+              ["=$no_quote", ["isEmpty", "$repost"]],
+              ["=$quote", "!$no_quote"],
+
+              [
+                "=$reply_tags",
+                [
+                  [
+                    "pipe",
+                    ["filter", ["propSatisfies", ["equals", "reply"], 3]],
+                    ["map", ["nth", 1]],
+                  ],
+                  "$etags",
+                ],
+              ],
+              [
+                "=$reply_to",
+                [
+                  "if",
+                  ["isEmpty", "$reply_tags"],
+                  "",
+                  "else",
+                  ["last", "$reply_tags"],
+                ],
+              ],
+              ["=$no_reply", ["isEmpty", "$reply_to"]],
+              ["=$is_mark", "!$no_reply"],
+              [
+                "if",
+                "$no_reply",
+                [
+                  "[]",
+                  [
+                    "=$reply_tags",
+                    [
+                      [
+                        "pipe",
+                        ["filter", ["propSatisfies", ["equals", "root"], 3]],
+                        ["map", ["nth", 1]],
+                      ],
+                      "$etags",
+                    ],
+                  ],
+                  [
+                    "=$reply_to",
+                    [
+                      "if",
+                      ["isEmpty", "$reply_tags"],
+                      "",
+                      "else",
+                      ["last", "$reply_tags"],
+                    ],
+                  ],
+                ],
+              ],
+              ["=$no_reply", ["isEmpty", "$reply_to"]],
+              ["=$is_mark", "!$no_reply"],
+              [
+                "if",
+                "$no_reply",
+                [
+                  "[]",
+                  [
+                    "=$reply_tags",
+                    [
+                      [
+                        "pipe",
+                        [
+                          "filter",
+                          [
+                            "propSatisfies",
+                            ["either", ["equals", ""], ["isNil"]],
+                            3,
+                          ],
+                        ],
+                        ["map", ["nth", 1]],
+                      ],
+                      "$etags",
+                    ],
+                  ],
+                  [
+                    "=$reply_to",
+                    [
+                      "if",
+                      ["isEmpty", "$reply_tags"],
+                      "",
+                      "else",
+                      ["last", "$reply_tags"],
+                    ],
+                  ],
+                ],
+              ],
+              ["=$no_reply", ["isEmpty", "$reply_to"]],
+              ["=$reply", "!$no_reply"],
+              ["=$parents", []],
+              [
+                "if",
+                "$is_mark",
+                [
+                  "=$parents",
+                  [
+                    [
+                      "pipe",
+                      [
+                        "filter",
+                        [
+                          "propSatisfies",
+                          ["includes", ["__"], ["[]", "root", "reply"]],
+                          3,
+                        ],
+                      ],
+                      ["map", ["nth", 1]],
+                    ],
+                    "$etags",
+                  ],
+                ],
+                "elif",
+                "$reply",
+                [
+                  "=$parents",
+                  [
+                    [
+                      "pipe",
+                      [
+                        "filter",
+                        [
+                          "propSatisfies",
+                          ["either", ["equals", ""], ["isNil"]],
+                          3,
+                        ],
+                      ],
+                      ["map", ["nth", 1]],
+                    ],
+                    "$etags",
+                  ],
+                ],
+              ],
+              [
+                "set()",
+                [
+                  {
+                    id: "$data.id",
+                    owner: "$data.after.pubkey",
+                    type: "status",
+                    description: "$data.after.content",
+                    date: "$data.after.created_at",
+                    repost: "$repost",
+                    reply_to: "$reply_to",
+                    reply: "$reply",
+                    quote: "$quote",
+                    parents: "$parents",
+                    hashes: [],
+                    mentions: "$mentions",
+                    likes: 0,
+                    reposts: 0,
+                    quotes: 0,
+                    comments: 0,
+                  },
+                  "posts",
+                  "$data.id",
+                ],
               ],
             ],
-            [
-              "toBatch",
-              ["update", { quotes: db.inc(1) }, "posts", "$data.after.repost"],
-            ],
-            "$data",
           ],
         ],
       },

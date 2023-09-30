@@ -1460,6 +1460,136 @@ const tests = {
           ],
           ["=$no_quote", ["isEmpty", "$repost"]],
           ["=$quote", "!$no_quote"],
+
+          [
+            "=$reply_tags",
+            [
+              [
+                "pipe",
+                ["filter", ["propSatisfies", ["equals", "reply"], 3]],
+                ["map", ["nth", 1]],
+              ],
+              "$etags",
+            ],
+          ],
+          [
+            "=$reply_to",
+            [
+              "if",
+              ["isEmpty", "$reply_tags"],
+              "",
+              "else",
+              ["last", "$reply_tags"],
+            ],
+          ],
+          ["=$no_reply", ["isEmpty", "$reply_to"]],
+          ["=$is_mark", "!$no_reply"],
+          [
+            "if",
+            "$no_reply",
+            [
+              "[]",
+              [
+                "=$reply_tags",
+                [
+                  [
+                    "pipe",
+                    ["filter", ["propSatisfies", ["equals", "root"], 3]],
+                    ["map", ["nth", 1]],
+                  ],
+                  "$etags",
+                ],
+              ],
+              [
+                "=$reply_to",
+                [
+                  "if",
+                  ["isEmpty", "$reply_tags"],
+                  "",
+                  "else",
+                  ["last", "$reply_tags"],
+                ],
+              ],
+            ],
+          ],
+          ["=$no_reply", ["isEmpty", "$reply_to"]],
+          ["=$is_mark", "!$no_reply"],
+          [
+            "if",
+            "$no_reply",
+            [
+              "[]",
+              [
+                "=$reply_tags",
+                [
+                  [
+                    "pipe",
+                    [
+                      "filter",
+                      [
+                        "propSatisfies",
+                        ["either", ["equals", ""], ["isNil"]],
+                        3,
+                      ],
+                    ],
+                    ["map", ["nth", 1]],
+                  ],
+                  "$etags",
+                ],
+              ],
+              [
+                "=$reply_to",
+                [
+                  "if",
+                  ["isEmpty", "$reply_tags"],
+                  "",
+                  "else",
+                  ["last", "$reply_tags"],
+                ],
+              ],
+            ],
+          ],
+          ["=$no_reply", ["isEmpty", "$reply_to"]],
+          ["=$reply", "!$no_reply"],
+          ["=$parents", []],
+          [
+            "if",
+            "$is_mark",
+            [
+              "=$parents",
+              [
+                [
+                  "pipe",
+                  [
+                    "filter",
+                    [
+                      "propSatisfies",
+                      ["includes", ["__"], ["[]", "root", "reply"]],
+                      3,
+                    ],
+                  ],
+                  ["map", ["nth", 1]],
+                ],
+                "$etags",
+              ],
+            ],
+            "elif",
+            "$reply",
+            [
+              "=$parents",
+              [
+                [
+                  "pipe",
+                  [
+                    "filter",
+                    ["propSatisfies", ["either", ["equals", ""], ["isNil"]], 3],
+                  ],
+                  ["map", ["nth", 1]],
+                ],
+                "$etags",
+              ],
+            ],
+          ],
           [
             "set()",
             [
@@ -1470,10 +1600,10 @@ const tests = {
                 description: "$data.after.content",
                 date: "$data.after.created_at",
                 repost: "$repost",
-                reply_to: "",
-                reply: false,
+                reply_to: "$reply_to",
+                reply: "$reply",
                 quote: "$quote",
-                parents: [],
+                parents: "$parents",
                 hashes: [],
                 mentions: "$mentions",
                 likes: 0,
@@ -1550,6 +1680,21 @@ const tests = {
     event2 = finishEvent(event2, sk)
     await db.nostr(event)
     await db.nostr(event2)
+
+    // one, two, multi, reply, root
+    let event3 = {
+      kind: 1,
+      created_at: Math.floor(Date.now() / 1000),
+      tags: [
+        ["p", sk],
+        ["e", event.id, "root"],
+        ["e", event.id],
+      ],
+      content: "what the hell #2",
+      pubkey,
+    }
+    event3 = finishEvent(event3, sk)
+    await db.nostr(event3)
     console.log(await db.get("posts"))
   },
 }
