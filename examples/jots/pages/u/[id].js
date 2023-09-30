@@ -810,7 +810,7 @@ function StatusPage() {
                             const db = await initDB()
                             const _followers = await db.cget(
                               "follows",
-                              ["from", "==", puser.address],
+                              ["to", "==", puser.address],
                               ["date", "desc"],
                               ["startAfter", last(followers)],
                               limit
