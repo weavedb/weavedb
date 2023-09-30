@@ -193,7 +193,7 @@ function Page() {
           setEditStatus,
         }}
       />
-      {isNil(user?.handle) ? (
+      {isNil(user?.handle) && false ? (
         <Alpha />
       ) : (
         <Flex justify="center" minH="100%" pt="50px" pb={["50px", 0]}>

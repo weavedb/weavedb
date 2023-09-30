@@ -142,7 +142,7 @@ function StatusPage() {
       ;(async () => {
         const db = await initDB()
         const user = (
-          await db.get("users", ["handle", "==", router.query.id])
+          await db.get("users", ["address", "==", router.query.id])
         )[0]
         if (!isNil(user)) {
           setPuser(user)
@@ -366,7 +366,7 @@ function StatusPage() {
           setEditStatus,
         }}
       />
-      {isNil(user?.handle) ? (
+      {isNil(user?.handle) && false ? (
         <Alpha />
       ) : (
         <>
@@ -457,7 +457,7 @@ function StatusPage() {
                         />
                         <Box flex={1} />
                         <Box mx={4} mt={4} mb={[2, 4]}>
-                          {puser.handle === user?.handle ? (
+                          {puser.address === user?.address ? (
                             <Flex
                               onClick={() => setEditUser(true)}
                               px={8}
@@ -474,7 +474,8 @@ function StatusPage() {
                             >
                               Edit Profile
                             </Flex>
-                          ) : puser.handle !== user?.handle && !isNil(user) ? (
+                          ) : puser.address !== user?.address &&
+                            !isNil(user) ? (
                             <Flex
                               onClick={() => setEditUser(true)}
                               p={2}
@@ -561,7 +562,7 @@ function StatusPage() {
                         fontSize="15px"
                         color="#666"
                       >
-                        @{puser.handle}
+                        @{puser.address.slice(0, 10)}
                       </Box>
                       <Box mx={["20px", "30px"]} mb={2} fontSize="15px">
                         <Box
@@ -697,7 +698,7 @@ function StatusPage() {
                     )}
                     {map(v => {
                       const u = users[v]
-                      return isNil(u) ? null : isNil(u.handle) ? (
+                      return isNil(u) ? null : isNil(u.address) ? (
                         <Box
                           p={2}
                           sx={{
@@ -723,7 +724,7 @@ function StatusPage() {
                         </Box>
                       ) : (
                         <Link
-                          href={`/u/${u.handle}`}
+                          href={`/u/${u.address}`}
                           onClick={() => setTab("posts")}
                         >
                           <Box
@@ -744,7 +745,9 @@ function StatusPage() {
                               <Box>
                                 <Box>
                                   <Box fontWeight="bold">{u.name}</Box>
-                                  <Box color="#666">@{u.handle}</Box>
+                                  <Box color="#666">
+                                    @{u.address.slice(0, 10)}
+                                  </Box>
                                 </Box>
                                 <Box fontSize="15px">{u.description}</Box>
                               </Box>

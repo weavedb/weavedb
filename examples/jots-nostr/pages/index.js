@@ -183,11 +183,8 @@ function Page() {
     })()
   }, [timeline])
 
-  const tabs = [
-    { key: "all", name: "Trending" },
-    { key: "following", name: "Following" },
-  ]
-
+  let tabs = [{ key: "all", name: "Trending" }]
+  if (!isNil(user)) tabs.push({ key: "following", name: "Following" })
   return (
     <ChakraProvider>
       <style jsx global>{`
@@ -210,11 +207,11 @@ function Page() {
           setEditStatus,
         }}
       />
-      {isNil(user?.handle) ? (
+      {isNil(user?.handle) && false ? (
         <Alpha />
       ) : (
         <>
-          {isNil(user) ? null : (
+          {isNil(user) && false ? null : (
             <Flex
               bg="white"
               w="100%"

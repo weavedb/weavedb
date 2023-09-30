@@ -51,7 +51,7 @@ const executeCron =
       params.push(false)
       params.push(SmartWeave)
       params.push(kvs)
-      params.push(executeCron)
+      params.push(executeCron(ops))
       params.push(depth + 1)
       params.push("cron")
       params.push(ops.get)
