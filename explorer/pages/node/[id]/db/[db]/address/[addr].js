@@ -202,6 +202,7 @@ export default function Home() {
                     py={2}
                     sx={{ borderRight: "1px solid #ddd" }}
                   ></Box>
+
                   <Box flex={1}>
                     <Box sx={{ color: "#999" }}>App URL</Box>
                     <Box sx={{ fontSize: "14px" }}>
@@ -286,7 +287,7 @@ export default function Home() {
                           ) {
                             path = v.input.query.slice(1, -1).join(" / ")
                           } else if (includes(v.input.function, ["delete"])) {
-                            path = v.input.query.join(" / ")
+                            path = v.input.query.slice(0, -1).join("/")
                           }
                           return (
                             <>

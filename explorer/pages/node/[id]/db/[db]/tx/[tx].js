@@ -187,11 +187,11 @@ export default function Home() {
                       <Box
                         color="#763AAC"
                         as="a"
-                        href="https://jots-alpha.weavedb.dev"
+                        href={db_info?.app}
                         target="_blank"
                         sx={{ ":hover": { opacity: 0.75 } }}
                       >
-                        jots-alpha.weavedb.dev
+                        {(db_info?.app ?? "-").replace(/^http(s)+\:\/\//i, "")}
                       </Box>
                     </Box>
                   </Box>
