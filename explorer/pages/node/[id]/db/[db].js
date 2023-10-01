@@ -181,11 +181,11 @@ export default function Home() {
                       <Box
                         color="#763AAC"
                         as="a"
-                        href="https://jots-alpha.weavedb.dev"
+                        href={db_info?.app}
                         target="_blank"
                         sx={{ ":hover": { opacity: 0.75 } }}
                       >
-                        jots-alpha.weavedb.dev
+                        {(db_info?.app ?? "-").replace(/^http(s)+\:\/\//i, "")}
                       </Box>
                     </Box>
                   </Box>
@@ -259,7 +259,7 @@ export default function Home() {
                           ) {
                             path = v.input.query.slice(1, -1).join(" / ")
                           } else if (includes(v.input.function, ["delete"])) {
-                            path = v.input.query.join(" / ")
+                            path = v.input.query.slice(0, -1).join("/")
                           }
                           return (
                             <>
