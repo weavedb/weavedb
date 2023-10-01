@@ -42,7 +42,7 @@ class Rollup {
     this.db = fork(path.resolve(__dirname, "rollup-mp"))
     this.db.on("message", async ({ err, result, op, id }) => {
       if (!isNil(id)) {
-        await this.cb[id](err, result)
+        await this.cb[id]?.(err, result)
         delete this.cb[id]
       } else if (op === "init") {
         console.log(`initialized: ${txid}`)
@@ -191,6 +191,24 @@ class Server {
       const { op, key, db } = JSON.parse(query).query
       const auth = { privateKey: this.conf.admin }
       switch (op) {
+        case "stats":
+          if (isNil(key)) {
+            callback(null, {
+              result: JSON.stringify({
+                dbs: await this.admin_db.cget("dbs"),
+              }),
+              err: null,
+            })
+          } else {
+            callback(null, {
+              result: JSON.stringify({
+                db: await this.admin_db.cget("dbs", key),
+              }),
+              err: null,
+            })
+          }
+
+          break
         case "add_db":
           if (!isNil(await this.admin_db.get("dbs", key))) {
             callback(null, {
@@ -216,6 +234,21 @@ class Server {
             err: tx.success ? null : "error",
           })
           break
+        case "update_db":
+          if (isNil(await this.admin_db.get("dbs", key))) {
+            callback(null, {
+              result: null,
+              err: `${key} doesn't exist`,
+            })
+            return
+          }
+          const tx_3 = await this.admin_db.update(db, "dbs", key, auth)
+          callback(null, {
+            result: tx_3.success ? JSON.stringify(tx_3) : null,
+            err: tx_3.success ? null : "error",
+          })
+          break
+
         case "remove_db":
           if (isNil(await this.admin_db.get("dbs", key))) {
             callback(null, {
@@ -267,7 +300,10 @@ class Server {
       isAdmin: query.function === "admin",
     }
   }
-
+  async execAdmin({ query, res }) {
+    res(null, await this.admin_db.get("dbs"))
+    return
+  }
   async queryNostr(call, id = "offchain", callback) {
     const parsed = this.parseQueryNostr(call, id, callback)
     const { type, res, nocache, txid, func, query, isAdmin } = parsed

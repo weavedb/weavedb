@@ -45,7 +45,7 @@ export default function Header() {
             ":hover": { opacity: 0.75 },
           }}
           onClick={() => {
-            router.push("/node/private-alpha")
+            router.push("/node/alpha")
           }}
         >
           ALPHA

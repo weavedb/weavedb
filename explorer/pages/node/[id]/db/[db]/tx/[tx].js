@@ -1,45 +1,99 @@
+import { useRouter } from "next/router"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import DB from "weavedb-client"
 import { Box, Flex, Image } from "@chakra-ui/react"
-import { concat, last, isNil, map, includes } from "ramda"
+import { concat, last, isNil, map, includes, indexBy, prop } from "ramda"
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
+import LocalizedFormat from "dayjs/plugin/localizedFormat"
 import Header from "components/Header"
+import Footer from "components/Footer"
+import { nodes } from "lib/nodes"
 dayjs.extend(relativeTime)
+dayjs.extend(LocalizedFormat)
 let db = null
 let to = null
 export default function Home() {
-  const [txs, setTxs] = useState([])
+  const router = useRouter()
+  const [info, setInfo] = useState(null)
+  const [node, setNode] = useState(null)
+  const [err, setErr] = useState(null)
   const [tx, setTx] = useState(null)
-  const [isnext, setIsnext] = useState(false)
-  const [tick, setTick] = useState(0)
+  const [tx_info, setTxInfo] = useState(null)
   useEffect(() => {
     ;(async () => {
-      clearTimeout(to)
-      db = new DB({
-        contractTxId: "offchain#log",
-        rpc: process.env.NEXT_PUBLIC_WEAVEDB_RPC,
-      })
-      const _txs = await db.cget("txs", ["id", "desc"], 20)
-      setTxs(_txs)
-      setIsnext(_txs.length === 20)
-      let i = 0
-      setInterval(async () => setTick(++i), 5000)
-    })()
-  }, [])
-  useEffect(() => {
-    ;(async () => {
-      db = new DB({
-        contractTxId: "offchain#log",
-        rpc: process.env.NEXT_PUBLIC_WEAVEDB_RPC,
-      })
-      if (!isNil(txs[0])) {
-        const _txs = await db.cget("txs", ["id", "desc"], ["endBefore", txs[0]])
-        if (_txs.length > 0) setTxs(concat(_txs, txs))
+      if (!isNil(router.query.id)) {
+        setTx(router.query.tx)
+        const node = indexBy(prop("key"), nodes)[router.query.id]
+        if (!isNil(node)) {
+          setNode(node)
+          const rpc =
+            node.endpoint.split(":")[1] === "443"
+              ? `https://${node.endpoint.split(":")[0]}`
+              : `http://${node.endpoint}`
+          db = new DB({
+            contractTxId: "offchain",
+            rpc,
+          })
+          try {
+            setInfo(await db.node({ op: "stats" }))
+          } catch (e) {
+            setErr(true)
+          }
+        }
       }
     })()
-  }, [tick])
+  }, [router])
+  useEffect(() => {
+    ;(async () => {
+      if (!isNil(info)) {
+        const db_info = indexBy(prop("id"), info.dbs)[router.query.db]
+        if (!isNil(db_info)) {
+          const rpc =
+            node.endpoint.split(":")[1] === "443"
+              ? `https://${node.endpoint.split(":")[0]}`
+              : `http://${node.endpoint}`
+          db = new DB({
+            contractTxId: `${router.query.db}#log`,
+            rpc,
+          })
+          const _tx = await db.get("txs", ["txid", "==", router.query.tx])
+          if (_tx.length > 0) setTxInfo(_tx[0])
+        }
+      }
+    })()
+  }, [info])
+  const db_info = indexBy(prop("id"), info?.dbs ?? [])[router?.query.db]?.data
+  let path = "-"
+  let doc = "-"
+  if (!isNil(tx_info)) {
+    if (
+      includes(tx_info.input.function, [
+        "add",
+        "addIndex",
+        "removeIndex",
+        "setSchema",
+        "removeIndex",
+        "setRules",
+        "addTrigger",
+        "removeTrigger",
+      ])
+    ) {
+      path = tx_info.input.query.slice(1).join(" / ")
+    } else if (includes(tx_info.input.function, ["set", "update", "upsert"])) {
+      path = tx_info.input.query.slice(1, -1).join(" / ")
+    } else if (includes(tx_info.input.function, ["delete"])) {
+      path = tx_info.input.query.join(" / ")
+    }
+  }
+  if (!isNil(tx_info)) {
+    if (
+      includes(tx_info.input.function, ["set", "update", "upsert", "delete"])
+    ) {
+      path = last(tx_info.input.query)
+    }
+  }
   return (
     <>
       <style global jsx>{`
@@ -56,219 +110,359 @@ export default function Home() {
         p={6}
         fontSize="12px"
         w="100%"
-        minH="100%"
+        minH="calc(100% - 50px)"
         bg="#F2F2F2"
         justify="center"
       >
         <Box w="100%" maxW="1400px">
-          <Box
-            w="100%"
-            bg="white"
-            py={2}
-            px={6}
-            sx={{ borderRadius: "10px" }}
-            mb={6}
-          >
-            <Flex>
-              <Box flex={1}>
-                <Box sx={{ color: "#999" }}>Node Endopint</Box>
-                <Box sx={{ fontSize: "14px" }}>
-                  https://rollup-testnet.weavedb.xyz
-                </Box>
+          {isNil(node) ? null : (
+            <>
+              <Box px={2} mb={2} fontWeight="bold" color="#666" fontSize="16px">
+                DB Info
               </Box>
-              <Box mx={4} py={2} sx={{ borderRight: "1px solid #ddd" }}></Box>
-              <Box flex={1}>
-                <Box sx={{ color: "#999" }}>App Instances</Box>
-                <Box sx={{ fontSize: "14px" }}>
-                  <Box>Jots Alpha</Box>
-                </Box>
+              <Box
+                w="100%"
+                bg="white"
+                py={2}
+                px={6}
+                sx={{ borderRadius: "10px" }}
+                mb={6}
+              >
+                <Flex>
+                  <Box flex={1}>
+                    <Box sx={{ color: "#999" }}>Node Endopint</Box>
+                    <Box sx={{ fontSize: "14px" }} color="#763AAC">
+                      <Link href={`/node/${router.query.id}`}>
+                        {node.endpoint}
+                      </Link>
+                    </Box>
+                  </Box>
+                  <Box
+                    mx={4}
+                    py={2}
+                    sx={{ borderRight: "1px solid #ddd" }}
+                  ></Box>
+                  <Box flex={1}>
+                    <Box sx={{ color: "#999" }}>DB Instance</Box>
+                    <Box sx={{ fontSize: "14px" }} color="#763AAC">
+                      <Link
+                        href={`/node/${router.query.id}/db/${router.query.db}`}
+                      >
+                        <Box>{db_info?.name ?? "-"}</Box>
+                      </Link>
+                    </Box>
+                  </Box>
+                  <Box
+                    mx={4}
+                    py={2}
+                    sx={{ borderRight: "1px solid #ddd" }}
+                  ></Box>
+                  <Box flex={1}>
+                    <Box sx={{ color: "#999" }}>Rollup Network</Box>
+                    <Box sx={{ fontSize: "14px" }}>Private Alpha</Box>
+                  </Box>
+                </Flex>
+                <Flex pt={2} mt={2} sx={{ borderTop: "1px solid #ddd" }}>
+                  <Box flex={1}>
+                    <Box sx={{ color: "#999" }}>Contract TxID</Box>
+                    <Box sx={{ fontSize: "14px" }}>{router.query.db}</Box>
+                  </Box>
+                  <Box
+                    mx={4}
+                    py={2}
+                    sx={{ borderRight: "1px solid #ddd" }}
+                  ></Box>
+                  <Box flex={1}>
+                    <Box sx={{ color: "#999" }}>Transaction ID</Box>
+                    <Box sx={{ fontSize: "14px" }}>{tx ?? "-"}</Box>
+                  </Box>
+                  <Box
+                    mx={4}
+                    py={2}
+                    sx={{ borderRight: "1px solid #ddd" }}
+                  ></Box>
+                  <Box flex={1}>
+                    <Box sx={{ color: "#999" }}>App URL</Box>
+                    <Box sx={{ fontSize: "14px" }}>
+                      <Box
+                        color="#763AAC"
+                        as="a"
+                        href="https://jots-alpha.weavedb.dev"
+                        target="_blank"
+                        sx={{ ":hover": { opacity: 0.75 } }}
+                      >
+                        jots-alpha.weavedb.dev
+                      </Box>
+                    </Box>
+                  </Box>
+                </Flex>
               </Box>
-              <Box mx={4} py={2} sx={{ borderRight: "1px solid #ddd" }}></Box>
-              <Box flex={1}>
-                <Box sx={{ color: "#999" }}>Rollup Network</Box>
-                <Box sx={{ fontSize: "14px" }}>Private Alpha</Box>
-              </Box>
-            </Flex>
-          </Box>
-          {txs.length === 0 ? null : (
-            <Box
-              w="100%"
-              bg="white"
-              py={2}
-              px={6}
-              sx={{ borderRadius: "10px" }}
-            >
-              <Box as="table" w="100%">
-                <Box as="thead" fontSize="14px" color="#999">
-                  <Box as="td" p={2} w="50px">
-                    #
+              {isNil(tx_info) ? null : (
+                <>
+                  <Box
+                    px={2}
+                    mb={2}
+                    fontWeight="bold"
+                    color="#666"
+                    fontSize="16px"
+                  >
+                    Transaction Info
                   </Box>
-                  <Box as="td" p={2}>
-                    Query ID
-                  </Box>
-                  <Box as="td" p={2} w="100px">
-                    Function
-                  </Box>
-                  <Box as="td" p={2}>
-                    Path
-                  </Box>
-                  <Box as="td" p={2}>
-                    Signer
-                  </Box>
-                  <Box as="td" p={2} w="70px">
-                    Date
-                  </Box>
-                  <Box as="td" p={2} w="100px">
-                    Rollup
-                  </Box>
-                </Box>
-                <Box as="tbody">
-                  {map(_v => {
-                    let v = _v.data
-                    let path = "-"
-                    if (
-                      includes(v.input.function, [
-                        "add",
-                        "set",
-                        "update",
-                        "upsert",
-                        "addIndex",
-                        "removeIndex",
-                        "setSchema",
-                        "removeIndex",
-                        "setRules",
-                        "addTrigger",
-                        "removeTrigger",
-                      ])
-                    ) {
-                      path = v.input.query.slice(1).join(" / ")
-                    } else if (includes(v.input.function, ["delete"])) {
-                      path = v.input.query.join(" / ")
-                    }
-                    return (
-                      <>
-                        <Box
-                          bg={tx === v.id ? "#F2F2F2" : "white"}
-                          as="tr"
-                          sx={{
-                            borderTop: "1px solid #ddd",
-                            ":hover": { bg: "#F2F2F2", cursor: "pointer" },
-                          }}
-                          onClick={() => setTx(v.id)}
-                        >
-                          <Box as="td" p={2}>
-                            {v.id}
+                  <Box
+                    w="100%"
+                    bg="white"
+                    py={2}
+                    px={6}
+                    sx={{ borderRadius: "10px" }}
+                  >
+                    <Box as="table" w="100%" fontSize="14px">
+                      <Box as="tbody" w="100%">
+                        <Box as="tr">
+                          <Box
+                            as="td"
+                            px={4}
+                            py={2}
+                            w="200px"
+                            align="left"
+                            color="#666"
+                          >
+                            Transaction ID:
                           </Box>
-                          <Box as="td" p={2}>
-                            {v.txid}
-                          </Box>
-                          <Box as="td" p={2}>
-                            {v.input.function}
-                          </Box>
-                          <Box as="td" p={2} sx={{ wordBreak: "break-all" }}>
-                            {path}
-                          </Box>
-                          <Box as="td" p={2}>
-                            {v.input.caller}
-                          </Box>
-                          <Box as="td" p={2}>
-                            {dayjs((v.tx_ts ?? v.blk_ts ?? 0) * 1000).fromNow(
-                              true
-                            )}
-                          </Box>
-                          <Box as="td" p={2}>
-                            {!isNil(v.warp) ? (
-                              <Box
-                                as="a"
-                                target="_blank"
-                                href={`https://sonar.warp.cc/#/app/interaction/${v.warp}?network=mainnet`}
-                                color="#4F49B6"
-                                sx={{ textDecoration: "underline" }}
-                                onClick={e => e.stopPropagation()}
-                              >
-                                {v.warp}
-                              </Box>
-                            ) : (
-                              "not commited"
-                            )}
+                          <Box as="td" px={4} py={2}>
+                            {tx_info.txid}
                           </Box>
                         </Box>
-                        {tx !== v.id ? null : (
-                          <Box as="tr">
-                            <Box px={6} pt={6} pb={4} as="td" colspan={10}>
-                              <Flex pb={2}>
-                                <Flex
-                                  justify="center"
-                                  w="75px"
-                                  px={2}
-                                  bg="#4F49B6"
-                                  color="white"
-                                  mr={2}
-                                  sx={{ borderRadius: "3px" }}
-                                >
-                                  Query
-                                </Flex>
-                                <Box sx={{ wordBreak: "break-all" }}>
-                                  {JSON.stringify(v.input.query)}
-                                </Box>
-                              </Flex>
-                              <Flex pb={2}>
-                                <Flex
-                                  justify="center"
-                                  w="75px"
-                                  px={2}
-                                  bg="#4F49B6"
-                                  color="white"
-                                  mr={2}
-                                  sx={{ borderRadius: "3px" }}
-                                >
-                                  Signature
-                                </Flex>
-                                <Box sx={{ wordBreak: "break-all" }}>
-                                  {v.input.signature}
-                                </Box>
-                              </Flex>
+                        <Box as="tr">
+                          <Box
+                            as="td"
+                            px={4}
+                            py={2}
+                            w="200px"
+                            align="left"
+                            color="#666"
+                          >
+                            Block Height:
+                          </Box>
+                          <Box as="td" px={4} py={2}>
+                            {tx_info.id}
+                          </Box>
+                        </Box>
+                        <Box as="tr">
+                          <Box
+                            as="td"
+                            px={4}
+                            py={2}
+                            w="200px"
+                            align="left"
+                            color="#666"
+                          >
+                            Timestamp:
+                          </Box>
+                          <Box as="td" px={4} py={2}>
+                            {dayjs(
+                              (tx_info.tx_ts ?? tx_info.blk_ts ?? 0) * 1000
+                            ).fromNow()}{" "}
+                            (
+                            {dayjs(
+                              (tx_info.tx_ts ?? tx_info.blk_ts ?? 0) * 1000
+                            ).format("llll")}
+                            )
+                          </Box>
+                        </Box>
+                        <Box as="tr">
+                          <Box
+                            as="td"
+                            px={4}
+                            py={2}
+                            w="200px"
+                            align="left"
+                            color="#666"
+                          >
+                            Function:
+                          </Box>
+                          <Box
+                            as="td"
+                            px={4}
+                            py={2}
+                            sx={{ wordBreak: "break-all" }}
+                          >
+                            {tx_info.input["function"]}
+                          </Box>
+                        </Box>
+                        <Box as="tr">
+                          <Box
+                            as="td"
+                            px={4}
+                            py={2}
+                            w="200px"
+                            align="left"
+                            color="#666"
+                          >
+                            Collection:
+                          </Box>
+                          <Box
+                            as="td"
+                            px={4}
+                            py={2}
+                            sx={{ wordBreak: "break-all" }}
+                          >
+                            {path}
+                          </Box>
+                        </Box>
+                        <Box as="tr">
+                          <Box
+                            as="td"
+                            px={4}
+                            py={2}
+                            w="200px"
+                            align="left"
+                            color="#666"
+                          >
+                            Doc:
+                          </Box>
+                          <Box
+                            as="td"
+                            px={4}
+                            py={2}
+                            sx={{ wordBreak: "break-all" }}
+                          >
+                            {doc}
+                          </Box>
+                        </Box>
+                        <Box as="tr">
+                          <Box
+                            as="td"
+                            px={4}
+                            py={2}
+                            w="200px"
+                            align="left"
+                            color="#666"
+                          >
+                            Signer:
+                          </Box>
+                          <Box
+                            as="td"
+                            px={4}
+                            py={2}
+                            color="#763AAC"
+                            sx={{ wordBreak: "break-all" }}
+                          >
+                            <Link
+                              href={`/node/${router.query.id}/db/${router.query.db}/address/${tx_info.input.caller}`}
+                            >
+                              {tx_info.input.caller}
+                            </Link>
+                          </Box>
+                        </Box>
+                        <Box as="tr">
+                          <Box
+                            as="td"
+                            px={4}
+                            py={2}
+                            w="200px"
+                            align="left"
+                            color="#666"
+                          >
+                            Nonce:
+                          </Box>
+                          <Box
+                            as="td"
+                            px={4}
+                            py={2}
+                            sx={{ wordBreak: "break-all" }}
+                          >
+                            {tx_info.input.nonce}
+                          </Box>
+                        </Box>
+                        <Box as="tr">
+                          <Box
+                            as="td"
+                            px={4}
+                            py={2}
+                            w="200px"
+                            align="left"
+                            color="#666"
+                          >
+                            Query:
+                          </Box>
+                          <Box as="td" px={4} py={2}>
+                            <Box
+                              sx={{
+                                wordBreak: "break-all",
+                                borderRadius: "5px",
+                                border: "1px solid #eee",
+                                fontFamily: "monospace",
+                                fontSize: "12px",
+                              }}
+                              p={4}
+                              bg="#F8F9FA"
+                              color="##6c757d"
+                            >
+                              {JSON.stringify(tx_info.input.query)}
                             </Box>
                           </Box>
-                        )}
-                      </>
-                    )
-                  })(txs)}
-                </Box>
-              </Box>
-            </Box>
+                        </Box>
+                        <Box as="tr">
+                          <Box
+                            as="td"
+                            px={4}
+                            py={2}
+                            w="200px"
+                            align="left"
+                            color="#666"
+                          >
+                            Signature:
+                          </Box>
+                          <Box
+                            as="td"
+                            px={4}
+                            py={2}
+                            sx={{ wordBreak: "break-all" }}
+                          >
+                            <Box
+                              sx={{
+                                wordBreak: "break-all",
+                                borderRadius: "5px",
+                                border: "1px solid #eee",
+                                fontFamily: "monospace",
+                                fontSize: "12px",
+                              }}
+                              p={4}
+                              bg="#F8F9FA"
+                              color="##6c757d"
+                            >
+                              {tx_info.input.signature}
+                            </Box>
+                          </Box>
+                        </Box>
+                        <Box as="tr">
+                          <Box
+                            as="td"
+                            px={4}
+                            py={2}
+                            w="200px"
+                            align="left"
+                            color="#666"
+                          >
+                            Warp Bundle:
+                          </Box>
+                          <Box
+                            as="td"
+                            px={4}
+                            py={2}
+                            sx={{ wordBreak: "break-all" }}
+                          >
+                            {!tx_info.commit ? "Not Commited" : tx_info.commit}
+                          </Box>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Box>
+                </>
+              )}
+            </>
           )}
-          {isnext ? (
-            <Flex justify="center" w="100%" mt={6}>
-              <Flex
-                justify="center"
-                bg="#763AAC"
-                color="white"
-                w="300px"
-                py={2}
-                onClick={async () => {
-                  const _txs = await db.cget(
-                    "txs",
-                    ["id", "desc"],
-                    ["startAfter", last(txs)],
-                    20
-                  )
-                  setTxs(concat(txs, _txs))
-                  setIsnext(_txs.length === 20)
-                }}
-                sx={{
-                  borderRadius: "5px",
-                  ":hover": { opacity: 0.75 },
-                  cursor: "pointer",
-                }}
-              >
-                Load More
-              </Flex>
-            </Flex>
-          ) : null}
-          <Flex px={2} mt={6} pt={4} sx={{ borderTop: "1px solid #ccc" }}>
-            WeaveDB © 2023
-          </Flex>
+          <Footer />
         </Box>
       </Flex>
     </>

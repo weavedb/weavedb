@@ -168,6 +168,7 @@ class Rollup {
     })
     await this.wal.initialize()
     await this.wal.addIndex([["commit"], ["id"]], "txs")
+    await this.wal.addIndex([["input.caller"], ["id", "desc"]], "txs")
     this.tx_count = (await this.wal.get("txs", ["id", "desc"], 1))[0]?.id ?? 0
     console.log(`${this.tx_count} txs has been cached`)
   }
