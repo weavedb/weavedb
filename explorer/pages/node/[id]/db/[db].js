@@ -261,6 +261,7 @@ export default function Home() {
                           } else if (includes(v.input.function, ["delete"])) {
                             path = v.input.query.slice(0, -1).join("/")
                           }
+                          let isNostr = v.input.function === "nostr"
                           return (
                             <>
                               <Box
@@ -291,15 +292,22 @@ export default function Home() {
                                   p={2}
                                   sx={{ wordBreak: "break-all" }}
                                 >
-                                  {path}
+                                  {isNostr ? "nostr_events" : path}
                                 </Box>
                                 <Box as="td" p={2} color="#763AAC">
-                                  <Link
-                                    href={`/node/${router.query.id}/db/${router.query.db}/address/${v.input.caller}`}
-                                    sx={{ ":hover": { opacity: 0.75 } }}
-                                  >
-                                    {v.input.caller}
-                                  </Link>
+                                  {isNostr ? (
+                                    <Box>
+                                      {v.input.query.pubkey.slice(1, 10)}...
+                                      {v.input.query.pubkey.slice(-10)}
+                                    </Box>
+                                  ) : (
+                                    <Link
+                                      href={`/node/${router.query.id}/db/${router.query.db}/address/${v.input.caller}`}
+                                      sx={{ ":hover": { opacity: 0.75 } }}
+                                    >
+                                      {v.input.caller}
+                                    </Link>
+                                  )}
                                 </Box>
                                 <Box as="td" p={2}>
                                   {dayjs(
