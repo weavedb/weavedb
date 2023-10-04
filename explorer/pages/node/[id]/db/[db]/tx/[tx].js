@@ -94,6 +94,7 @@ export default function Home() {
       path = last(tx_info.input.query)
     }
   }
+  let isNostr = tx_info?.input["function"] === "nostr"
   return (
     <>
       <style global jsx>{`
@@ -206,7 +207,7 @@ export default function Home() {
                     color="#666"
                     fontSize="16px"
                   >
-                    Transaction Info
+                    Transaction Info{isNostr ? " | Nostr Event" : null}
                   </Box>
                   <Box
                     w="100%"
@@ -306,7 +307,7 @@ export default function Home() {
                             py={2}
                             sx={{ wordBreak: "break-all" }}
                           >
-                            {path}
+                            {isNostr ? "nostr_events" : path}
                           </Box>
                         </Box>
                         <Box as="tr">
@@ -318,7 +319,7 @@ export default function Home() {
                             align="left"
                             color="#666"
                           >
-                            Doc:
+                            {isNostr ? "Event ID" : "Doc"}:
                           </Box>
                           <Box
                             as="td"
@@ -326,7 +327,7 @@ export default function Home() {
                             py={2}
                             sx={{ wordBreak: "break-all" }}
                           >
-                            {doc}
+                            {isNostr ? tx_info.input.query.id : doc}
                           </Box>
                         </Box>
                         <Box as="tr">
@@ -338,7 +339,7 @@ export default function Home() {
                             align="left"
                             color="#666"
                           >
-                            Signer:
+                            {isNostr ? "Pubkey" : "Signer"}:
                           </Box>
                           <Box
                             as="td"
@@ -347,11 +348,15 @@ export default function Home() {
                             color="#763AAC"
                             sx={{ wordBreak: "break-all" }}
                           >
-                            <Link
-                              href={`/node/${router.query.id}/db/${router.query.db}/address/${tx_info.input.caller}`}
-                            >
-                              {tx_info.input.caller}
-                            </Link>
+                            {isNostr ? (
+                              tx_info.input.query.pubkey
+                            ) : (
+                              <Link
+                                href={`/node/${router.query.id}/db/${router.query.db}/address/${tx_info.input.caller}`}
+                              >
+                                {tx_info.input.caller}
+                              </Link>
+                            )}
                           </Box>
                         </Box>
                         <Box as="tr">
@@ -363,7 +368,7 @@ export default function Home() {
                             align="left"
                             color="#666"
                           >
-                            Nonce:
+                            {isNostr ? "Kind" : "Nonce"}:
                           </Box>
                           <Box
                             as="td"
@@ -371,7 +376,9 @@ export default function Home() {
                             py={2}
                             sx={{ wordBreak: "break-all" }}
                           >
-                            {tx_info.input.nonce}
+                            {isNostr
+                              ? tx_info.input.query.kind
+                              : tx_info.input.nonce}
                           </Box>
                         </Box>
                         <Box as="tr">
@@ -383,7 +390,7 @@ export default function Home() {
                             align="left"
                             color="#666"
                           >
-                            Query:
+                            {isNostr ? "Event" : "Query"}:
                           </Box>
                           <Box as="td" px={4} py={2}>
                             <Box
@@ -431,7 +438,9 @@ export default function Home() {
                               bg="#F8F9FA"
                               color="##6c757d"
                             >
-                              {tx_info.input.signature}
+                              {isNostr
+                                ? tx_info.input.query.sig
+                                : tx_info.input.signature}
                             </Box>
                           </Box>
                         </Box>
