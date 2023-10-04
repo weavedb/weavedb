@@ -291,10 +291,11 @@ class LmdbCache {
     return result
   }
   async rollback() {
-    this.rollbackBatch = () => {
+    const empty = () => {
       return
     }
-    await this.db.transactionSync(this.rollbackBatch)
+    await this.db.transactionSync(this.rollbackBatch ?? empty)
+    this.rollbackBatch = empty
   }
 }
 exports.LmdbCache = LmdbCache

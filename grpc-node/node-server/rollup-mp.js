@@ -28,19 +28,22 @@ class Rollup {
     tick = null,
     admin = null,
     initial_state = {},
+    bundler,
+    contractTxId,
   }) {
+    this.contractTxId = contractTxId
     this.initial_state = initial_state
     this.admin = admin
+    this.bundler = bundler
     this.tick = tick
     this.last = 0
     this.secure = secure
     this.owner = owner
-    this.rollup = false
+    this.rollup = rollup
     this.txid = txid
     this.txs = []
     this.tx_count = 0
     this.bundling = null
-    this.bundler = EthCrypto.createIdentity()
     this.kvs = {}
     this.kvs_wal = {}
     this.dir = path.resolve(
@@ -61,8 +64,8 @@ class Rollup {
     let sizes = 0
     let _bundlers = []
     for (let v of bundles) {
-      if (isNil(v.data?.param)) continue
-      const len = JSON.stringify(v.data.param).length
+      if (isNil(v.data?.input)) continue
+      const len = JSON.stringify(v.data.input).length
       if (sizes + len <= 3900) {
         _bundlers.push(v)
         sizes += len
@@ -88,7 +91,7 @@ class Rollup {
           `commiting to Warp...${map(_path(["data", "id"]))(bundles)}`
         )
         const result = await this.warp.bundle(
-          map(_path(["data", "param"]))(bundles)
+          map(_path(["data", "input"]))(bundles)
         )
         console.log(`bundle tx result: ${result.success}`)
         if (result.success === true) {
@@ -129,7 +132,7 @@ class Rollup {
         txid: this.txid,
       })
       await this.plugins[k].db.pdb.initialize()
-      console.log("plugin initialized")
+      console.log(`plugin initialized: ${k}`)
       const last_wal =
         (await this.plugins[k].db.pdb.get("conf", k))?.last_wal ?? null
       console.log(JSON.stringify(last_wal))
@@ -226,22 +229,21 @@ class Rollup {
     })
     await this.db.initialize()
     if (!isNil(this.tick)) {
-      setInterval(() => {
+      setInterval(async () => {
         if (Date.now() - this.last > this.tick) {
-          this.db.tick({ privateKey: this.admin })
+          await this.db.tick({ privateKey: this.admin })
         }
       }, this.tick)
     }
   }
 
   async initWarp() {
-    const contractTxId = this.txid
-    if (this.rollup) {
-      console.log(`contractTxId: ${contractTxId}`)
+    if (this.rollup && !isNil(this.contractTxId)) {
+      console.log(`contractTxId: ${this.contractTxId}`)
       this.warp = new Warp({
         lmdb: { dir: path.resolve(this.dir, "warp") },
         type: 3,
-        contractTxId: contractTxId,
+        contractTxId: this.contractTxId,
         remoteStateSyncEnabled: false,
         nocache: true,
         progress: async input => {
@@ -250,7 +252,7 @@ class Rollup {
           )
         },
       })
-      await this.warp.init()
+      await this.warp.init({ wallet: this.bundler })
       const _state = await this.warp.readState()
       let len = 0
       try {
@@ -258,7 +260,9 @@ class Rollup {
       } catch (e) {}
       if (this.tx_count === 0 && len > 0) {
         console.log("recovering WAL...")
-        const txs = await this.warp.warp.interactionsLoader.load(contractTxId)
+        const txs = await this.warp.warp.interactionsLoader.load(
+          this.contractTxId
+        )
         for (let v of txs) {
           for (const tag of v.tags || []) {
             if (tag.name === "Input") {
@@ -279,7 +283,9 @@ class Rollup {
                     id: ++this.tx_count,
                     warp: v.id,
                     commit: true,
-                    txid: md5(JSON.stringify({ contractTxId, input })),
+                    txid: md5(
+                      JSON.stringify({ contractTxId: this.contractTxId, input })
+                    ),
                     input,
                     blk_ts: v.block.timestamp,
                     /* add docID and doc */
@@ -396,17 +402,24 @@ class Rollup {
 }
 
 let rollup
-process.on("message", async ({ op, id, params }) => {
+process.on("message", async msg => {
+  const { op, id } = msg
   if (op === "new") {
-    rollup = new Rollup(params)
+    rollup = new Rollup(msg.params)
   } else if (op === "init") {
     await rollup.init()
     process.send({ err: null, result: null, op, id })
   } else if (op === "execUser") {
     rollup.execUser({
-      ...params,
+      ...msg.params,
       res: (err, result) => process.send({ err, result, op, id }),
     })
+  } else if (op === "deploy_contract") {
+    rollup.contractTxId = msg.contractTxId
+    rollup.rollup = true
+    await rollup.initWarp()
+    rollup.bundle()
+    process.send({ op, id })
   } else {
     process.send({ op, id })
   }

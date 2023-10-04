@@ -1,9 +1,12 @@
+const Arweave = require("arweave")
 const SDK = require("weavedb-node-client")
 const grpc = require("@grpc/grpc-js")
 const protoLoader = require("@grpc/proto-loader")
 const { addReflection } = require("grpc-server-reflection")
 const PROTO_PATH = __dirname + "/weavedb.proto"
 const {
+  indexBy,
+  prop,
   concat,
   mergeLeft,
   isNil,
@@ -24,6 +27,8 @@ const { port = 9090, config = "./weavedb.standalone.config.js" } =
 const weavedb = grpc.loadPackageDefinition(packageDefinition).weavedb
 const path = require("path")
 const { fork } = require("child_process")
+const { DeployPlugin, ArweaveSigner } = require("warp-contracts-plugin-deploy")
+const { WarpFactory } = require("warp-contracts")
 
 class Rollup {
   constructor({
@@ -35,6 +40,9 @@ class Rollup {
     plugins,
     tick,
     admin,
+    bundler,
+    contractTxId,
+    rollup,
     initial_state = {},
   }) {
     this.cb = {}
@@ -61,6 +69,9 @@ class Rollup {
         tick,
         admin,
         initial_state,
+        bundler,
+        contractTxId,
+        rollup,
       },
     })
   }
@@ -73,6 +84,10 @@ class Rollup {
     delete parsed.res
     this.db.send({ op: "execUser", params: parsed, id })
   }
+  deployContract(contractTxId, id, res) {
+    this.cb[id] = res
+    this.db.send({ op: "deploy_contract", contractTxId, id })
+  }
   kill() {
     this.db.kill()
   }
@@ -82,67 +97,61 @@ class Server {
   constructor({ port = 9090 }) {
     this.count = 0
     this.conf = require(config)
+
+    // TODO: more prisice validations
+    if (!isNil(this.bundler)) throw Error("bundler is not defined")
+    if (!isNil(this.owner)) throw Error("owner is not defined")
+    if (!isNil(this.admin)) throw Error("admin is not defined")
+    if (!isNil(this.rollups)) throw Error("rollups are not defined")
+    this.rollups = {}
     this.port = port
-    const rollups = mergeLeft(
-      { __admin__: { secure: true, plugins: {} } },
-      this.conf.rollups || { offchain: {} }
-    )
-    this.rollups = mapObjIndexed((v, txid) => {
-      return new Rollup({
-        txid,
-        secure: v.secure ?? this.conf.secure,
-        owner: v.owner ?? this.conf.owner,
-        dbname: v.dbname ?? this.conf.dbname,
-        dir: v.dir ?? this.conf.dir,
-        plugins: v.plugins ?? this.conf.plugins ?? {},
-        tick: v.tick ?? this.conf.tick ?? null,
-        admin: v.admin ?? this.conf.admin,
-        initial_state: v.initial_state ?? this.conf.initial_state,
-      })
-    })(rollups)
-    for (let k in this.rollups)
-      this.rollups[k].init(async () => {
-        if (k === "__admin__") {
-          const auth = { privateKey: this.conf.admin }
-          this.admin_db = new SDK({ rollup: this.rollups[k] })
-          const signer = `0x${privateToAddress(
-            Buffer.from(this.conf.admin.toLowerCase().replace(/^0x/, ""), "hex")
-          ).toString("hex")}`
-          const tx = await this.admin_db.setRules(
-            {
-              "allow write": {
-                "==": [{ var: "request.auth.signer" }, signer],
-              },
-            },
-            "dbs",
-            auth
-          )
-          console.log(`__admin__ rules added: ${tx.success}`)
-          for (let k in rollups) {
-            if (k !== "__admin__") {
-              const tx = await this.admin_db.set(rollups[k], "dbs", k, auth)
-              console.log(`DB ${k} added: ${tx.success}`)
-            }
-          }
-          const dbs = await this.admin_db.cget("dbs")
-          for (let v of dbs) {
-            if (isNil(this.rollups[v.id])) {
-              const key = v.id
-              this.rollups[key] = new Rollup({
-                txid: key,
-                secure: v.secure ?? this.conf.secure,
-                owner: v.owner ?? this.conf.owner,
-                dbname: v.dbname ?? this.conf.dbname,
-                dir: v.dir ?? this.conf.dir,
-                plugins: v.plugins ?? this.conf.plugins ?? {},
-                tick: v.tick ?? this.conf.tick ?? null,
-                admin: v.admin ?? this.conf.admin,
-              })
-              this.rollups[key].init()
-            }
-          }
-        }
-      })
+    this.init()
+  }
+  getRollup(v, txid) {
+    return new Rollup({
+      txid,
+      secure: v.secure ?? this.conf.secure,
+      owner: v.owner ?? this.conf.owner,
+      dbname: v.dbname ?? this.conf.dbname,
+      dir: v.dir ?? this.conf.dir,
+      plugins: v.plugins ?? this.conf.plugins ?? {},
+      tick: v.tick ?? this.conf.tick ?? null,
+      admin: v.admin ?? this.conf.admin,
+      initial_state: v.initial_state ?? this.conf.initial_state,
+      bundler: this.conf.bundler,
+      contractTxId: v.contractTxId ?? null,
+      rollup: v.rollup ?? false,
+    })
+  }
+  async init() {
+    const admin_db = this.getRollup({ secure: true, plugins: {} }, "__admin__")
+    admin_db.init(async () => {
+      const auth = { privateKey: this.conf.admin }
+      this.admin_db = new SDK({ rollup: admin_db })
+      const signer = `0x${privateToAddress(
+        Buffer.from(this.conf.admin.toLowerCase().replace(/^0x/, ""), "hex")
+      ).toString("hex")}`
+      const tx = await this.admin_db.setRules(
+        {
+          "allow write": {
+            "==": [{ var: "request.auth.signer" }, signer],
+          },
+        },
+        "dbs",
+        auth
+      )
+      console.log(`__admin__ rules added: ${tx.success}`)
+      const rollups = this.conf.rollups || { offchain: {} }
+      const dbs = indexBy(prop("id"), await this.admin_db.cget("dbs"))
+      for (let k in rollups) {
+        if (isNil(dbs[k])) await this.admin_db.set(rollups[k], "dbs", k, auth)
+      }
+      for (let k in dbs) rollups[k] = dbs[k].data
+      for (let k in rollups) {
+        this.rollups[k] = this.getRollup(rollups[k], k)
+        this.rollups[k].init()
+      }
+    })
     this.startServer()
   }
 
@@ -181,100 +190,208 @@ class Server {
   }
 
   async query(call, callback) {
-    const parsed = this.parseQuery(call, callback)
-    const { type, res, nocache, txid, func, query, isAdmin } = parsed
-    if (isNil(this.rollups[txid])) {
-      res(`DB [${txid}] doesn't exist`, null)
-      return
-    }
-    if (isAdmin) {
-      const { op, key, db } = JSON.parse(query).query
-      const auth = { privateKey: this.conf.admin }
-      switch (op) {
-        case "stats":
-          if (isNil(key)) {
-            callback(null, {
-              result: JSON.stringify({
-                dbs: await this.admin_db.cget("dbs"),
-              }),
-              err: null,
-            })
-          } else {
-            callback(null, {
-              result: JSON.stringify({
-                db: await this.admin_db.cget("dbs", key),
-              }),
-              err: null,
-            })
-          }
+    try {
+      const parsed = this.parseQuery(call, callback)
+      const { type, res, nocache, txid, func, query, isAdmin } = parsed
+      if (isAdmin) {
+        const { op, key, db } = JSON.parse(query).query
+        const auth = { privateKey: this.conf.admin }
+        switch (op) {
+          case "stats":
+            if (isNil(key)) {
+              callback(null, {
+                result: JSON.stringify({
+                  dbs: await this.admin_db.cget("dbs"),
+                }),
+                err: null,
+              })
+            } else {
+              callback(null, {
+                result: JSON.stringify({
+                  db: await this.admin_db.cget("dbs", key),
+                }),
+                err: null,
+              })
+            }
 
-          break
-        case "add_db":
-          if (!isNil(await this.admin_db.get("dbs", key))) {
+            break
+          case "deploy_contract":
+            if (isNil(key)) {
+              callback(null, { result: null, err: "key is not specified" })
+              return
+            } else if (isNil(await this.admin_db.get("dbs", key))) {
+              callback(null, {
+                result: null,
+                err: `${key} doesn't exists`,
+              })
+              return
+            } else {
+              const tx_deploy = { success: false }
+              const warp = WarpFactory.forMainnet().use(new DeployPlugin())
+              const srcTxId = "GYLsyTsZK1Iay4EEKDzejddNM-KBVFBkA40lDY3eJx8"
+              let res = null
+              let err = null
+              try {
+                let initialState = {
+                  version: "0.31.0",
+                  canEvolve: true,
+                  evolve: null,
+                  secure: true,
+                  auth: {
+                    algorithms: [
+                      "secp256k1",
+                      "secp256k1-2",
+                      "ed25519",
+                      "rsa256",
+                    ],
+                    name: "weavedb",
+                    version: "1",
+                    links: {},
+                  },
+                  crons: {
+                    lastExecuted: 0,
+                    crons: {},
+                  },
+                  contracts: {},
+                  triggers: {},
+                }
+                const arweave = Arweave.init({
+                  host: "arweave.net",
+                  port: 443,
+                  protocol: "https",
+                })
+                initialState.owner = initialState.bundlers = [
+                  await arweave.wallets.jwkToAddress(this.conf.bundler),
+                ]
+                initialState.contracts = {
+                  dfinity: "3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8",
+                  ethereum: "Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w",
+                  bundler: "lry5KMRj6j13sLHsKxs1D2joLjcj6yNHtNQQQoaHRug",
+                  nostr: "PDuTzRpn99EwiUvT9XrUhg8nyhW20Wcd-XcRXboCpHs",
+                }
+                res = await warp.createContract.deployFromSourceTx({
+                  wallet: new ArweaveSigner(this.conf.bundler),
+                  initState: JSON.stringify(initialState),
+                  srcTxId,
+                  evaluationManifest: {
+                    evaluationOptions: { useKVStorage: true },
+                  },
+                })
+              } catch (e) {
+                err = e
+                console.log(e)
+              }
+              if (isNil(res?.contractTxId) || !isNil(err)) {
+                callback(null, {
+                  result: null,
+                  err: err ?? "unknown error",
+                })
+              } else {
+                const tx = await this.admin_db.update(
+                  { contractTxId: res.contractTxId, rollup: true },
+                  "dbs",
+                  key,
+                  auth
+                )
+                console.log(
+                  `contract deployed: ${res.contractTxId} [${key}:${tx.success}]`
+                )
+                callback(null, {
+                  result: JSON.stringify(res),
+                  err,
+                })
+                this.rollups[key].deployContract(
+                  res.contractTxId,
+                  ++this.count,
+                  () => {
+                    console.log(`contract initialized! ${res.contractTxId}`)
+                  }
+                )
+              }
+            }
+            break
+          case "add_db":
+            if (isNil(key)) {
+              callback(null, { result: null, err: "key is not specified" })
+              return
+            } else if (!isNil(await this.admin_db.get("dbs", key))) {
+              callback(null, {
+                result: null,
+                err: `${key} exists`,
+              })
+              return
+            }
+            const tx = await this.admin_db.set(db, "dbs", key, auth)
+            if (tx.success) {
+              this.rollups[key] = new Rollup({
+                txid: key,
+                secure: db.secure ?? this.conf.secure,
+                owner: db.owner ?? this.conf.owner,
+                dbname: db.dbname ?? this.conf.dbname,
+                dir: db.dir ?? this.conf.dir,
+                plugins: db.plugins ?? this.conf.plugins ?? {},
+              })
+              this.rollups[key].init()
+            }
             callback(null, {
-              result: null,
-              err: `${key} exists`,
+              result: tx.success ? JSON.stringify(tx) : null,
+              err: tx.success ? null : "error",
             })
-            return
-          }
-          const tx = await this.admin_db.set(db, "dbs", key, auth)
-          if (tx.success) {
-            this.rollups[key] = new Rollup({
-              txid: key,
-              secure: db.secure ?? this.conf.secure,
-              owner: db.owner ?? this.conf.owner,
-              dbname: db.dbname ?? this.conf.dbname,
-              dir: db.dir ?? this.conf.dir,
-              plugins: db.plugins ?? this.conf.plugins ?? {},
-            })
-            this.rollups[key].init()
-          }
-          callback(null, {
-            result: tx.success ? JSON.stringify(tx) : null,
-            err: tx.success ? null : "error",
-          })
-          break
-        case "update_db":
-          if (isNil(await this.admin_db.get("dbs", key))) {
+            break
+          case "update_db":
+            if (isNil(key)) {
+              callback(null, { result: null, err: "key is not specified" })
+              return
+            } else if (isNil(await this.admin_db.get("dbs", key))) {
+              callback(null, {
+                result: null,
+                err: `${key} doesn't exist`,
+              })
+              return
+            }
+            const tx_3 = await this.admin_db.update(db, "dbs", key, auth)
             callback(null, {
-              result: null,
-              err: `${key} doesn't exist`,
+              result: tx_3.success ? JSON.stringify(tx_3) : null,
+              err: tx_3.success ? null : "error",
             })
-            return
-          }
-          const tx_3 = await this.admin_db.update(db, "dbs", key, auth)
-          callback(null, {
-            result: tx_3.success ? JSON.stringify(tx_3) : null,
-            err: tx_3.success ? null : "error",
-          })
-          break
+            break
 
-        case "remove_db":
-          if (isNil(await this.admin_db.get("dbs", key))) {
+          case "remove_db":
+            if (isNil(key)) {
+              callback(null, { result: null, err: "key is not specified" })
+              return
+            } else if (isNil(await this.admin_db.get("dbs", key))) {
+              callback(null, {
+                result: null,
+                err: `${key} doesn't exist`,
+              })
+              return
+            }
+            const tx2 = await this.admin_db.delete("dbs", key, auth)
+            if (tx2.success) {
+              this.rollups[key].kill()
+              delete this.rollups[key]
+            }
+            callback(null, {
+              result: tx2.success ? JSON.stringify(tx2) : null,
+              err: tx2.success ? null : "error",
+            })
+            break
+          default:
             callback(null, {
               result: null,
-              err: `${key} doesn't exist`,
+              err: "op not found",
             })
-            return
-          }
-          const tx2 = await this.admin_db.delete("dbs", key, auth)
-          if (tx2.success) {
-            this.rollups[key].kill()
-            delete this.rollups[key]
-          }
-          callback(null, {
-            result: tx2.success ? JSON.stringify(tx2) : null,
-            err: tx2.success ? null : "error",
-          })
-          break
-        default:
-          callback(null, {
-            result: null,
-            err: "op not found",
-          })
+        }
+      } else {
+        if (isNil(this.rollups[txid])) {
+          res(`DB [${txid}] doesn't exist`, null)
+          return
+        }
+        this.rollups[txid].execUser(parsed, ++this.count)
       }
-    } else {
-      this.rollups[txid].execUser(parsed, ++this.count)
+    } catch (e) {
+      callback(null, { result: null, err: "unknown error" })
     }
   }
   parseQueryNostr(query, id = "offchain", callback) {

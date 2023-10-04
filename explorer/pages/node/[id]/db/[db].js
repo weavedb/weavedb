@@ -157,7 +157,20 @@ export default function Home() {
                 <Flex pt={2} mt={2} sx={{ borderTop: "1px solid #ddd" }}>
                   <Box flex={1}>
                     <Box sx={{ color: "#999" }}>Contract TxID</Box>
-                    <Box sx={{ fontSize: "14px" }}>{router.query.db}</Box>
+                    <Box sx={{ fontSize: "14px" }}>
+                      {!isNil(db_info?.contractTxId) ? (
+                        <Box
+                          as="a"
+                          color="#763AAC"
+                          href={`https://sonar.warp.cc/#/app/contract/${db_info.contractTxId}`}
+                          target="_blank"
+                        >
+                          {db_info.contractTxId}
+                        </Box>
+                      ) : (
+                        router.query?.db ?? "-"
+                      )}
+                    </Box>
                   </Box>
                   <Box
                     mx={4}
@@ -309,7 +322,7 @@ export default function Home() {
                                     </Link>
                                   )}
                                 </Box>
-                                <Box as="td" p={2}>
+                                <Box as="td" p={2} w="100px">
                                   {dayjs(
                                     (v.tx_ts ?? v.blk_ts ?? 0) * 1000
                                   ).fromNow(true)}
@@ -320,11 +333,11 @@ export default function Home() {
                                       as="a"
                                       target="_blank"
                                       href={`https://sonar.warp.cc/#/app/interaction/${v.warp}?network=mainnet`}
-                                      color="#4F49B6"
-                                      sx={{ textDecoration: "underline" }}
+                                      color="#763AAC"
                                       onClick={e => e.stopPropagation()}
                                     >
-                                      {v.warp}
+                                      {v.warp.slice(0, 5)}...
+                                      {v.warp.slice(-5)}
                                     </Box>
                                   ) : (
                                     "not commited"
