@@ -108,6 +108,8 @@ const setElm = (k, d, rule_data) => {
         delete obj[field]
       } else if (is(Object)(d) && d.__op === "ts") {
         obj[field] = rule_data.ts
+      } else if (is(Object)(d) && d.__op === "ms") {
+        obj[field] = rule_data.ms
       } else if (is(Object)(d) && d.__op === "signer") {
         obj[field] = rule_data.signer
       } else {
@@ -149,7 +151,6 @@ async function fpj(arr = [], obj = {}, fn = {}) {
           obj,
           setElm
         )
-        console.log(val)
       } else {
         throw Error(`unknow function ${arr[0]}`)
       }

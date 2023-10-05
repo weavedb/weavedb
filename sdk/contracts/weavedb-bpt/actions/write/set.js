@@ -68,7 +68,8 @@ const set = async (
           id: last(path),
           setter: after.setter,
         },
-      }
+      },
+      action.timestamp
     )
   }
   return wrapResult(state, original_signer, SmartWeave, {

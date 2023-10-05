@@ -260,7 +260,8 @@ class Server {
                   port: 443,
                   protocol: "https",
                 })
-                initialState.owner = initialState.bundlers = [
+                initialState.owner = this.conf.owner
+                initialState.bundlers = [
                   await arweave.wallets.jwkToAddress(this.conf.bundler),
                 ]
                 initialState.contracts = {
@@ -274,7 +275,11 @@ class Server {
                   initState: JSON.stringify(initialState),
                   srcTxId,
                   evaluationManifest: {
-                    evaluationOptions: { useKVStorage: true },
+                    evaluationOptions: {
+                      useKVStorage: true,
+                      internalWrites: true,
+                      allowBigInt: true,
+                    },
                   },
                 })
               } catch (e) {

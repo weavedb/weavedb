@@ -66,7 +66,14 @@ const relay = async (
     relayer = action.caller
   }
   if (input.jobID !== jobID) err(`jobID mismatch [${input.jobID}|${jobID}]`)
-  let action2 = { caller: action.caller, input, relayer, extra: query, jobID }
+  let action2 = {
+    caller: action.caller,
+    input,
+    relayer,
+    extra: query,
+    jobID,
+    timestamp: action.timestamp,
+  }
   if (!isNil(relayers[jobID].relayers)) {
     const allowed_relayers = map(v => (/^0x.+$/.test(v) ? toLower(v) : v))(
       relayers[jobID].relayers || []

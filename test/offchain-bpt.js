@@ -15,6 +15,7 @@ describe("WeaveDB Offchain BPT", function () {
     dfinityTxId,
     ethereumTxId,
     bundlerTxId,
+    nostrTxId,
     arweave
 
   this.timeout(0)
@@ -23,6 +24,7 @@ describe("WeaveDB Offchain BPT", function () {
     dfinityTxId = "dfinity"
     ethereumTxId = "ethereum"
     bundlerTxId = "bundler"
+    nostrTxId = "nostr"
     wallet = EthWallet.generate()
     arweave = Arweave.init()
     arweave_wallet = await arweave.wallets.generate()
@@ -55,6 +57,7 @@ describe("WeaveDB Offchain BPT", function () {
       ethereumTxId,
       contractTxId,
       bundlerTxId,
+      nostrTxId,
     }),
     local
   )

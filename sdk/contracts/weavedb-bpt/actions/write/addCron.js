@@ -33,18 +33,22 @@ const addCron = async (
   }
   const owner = isOwner(signer, state)
 
+  const timestamp = isNil(action.timestamp)
+    ? SmartWeave.block.timestamp
+    : Math.round(action.timestamp / 1000)
+
   if (isNil(state.crons)) {
-    state.crons = { lastExecuted: SmartWeave.block.timestamp, crons: {} }
+    state.crons = { lastExecuted: timestamp, crons: {} }
   }
   const [cron, key] = action.input.query
   let _cron = clone(cron)
   if (isNil(_cron.start)) {
-    _cron.start = SmartWeave.block.timestamp
+    _cron.start = timestamp
   }
-  if (SmartWeave.block.timestamp > _cron.start) {
+  if (timestamp > _cron.start) {
     err("start cannot be before the block time")
   }
-  if (!isNil(_cron.end) && SmartWeave.block.timestamp > _cron.end) {
+  if (!isNil(_cron.end) && timestamp > _cron.end) {
     err("end cannot be before start")
   }
   if (isNil(_cron.jobs) || _cron.jobs.length === 0) {
@@ -60,7 +64,8 @@ const addCron = async (
         { start: _cron.start, crons: _cron },
         state,
         SmartWeave,
-        kvs
+        kvs,
+        action.timestamp
       )
     } catch (e) {
       console.log(e)

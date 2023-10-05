@@ -16,6 +16,7 @@ const { getTriggers } = require("../common/actions/read/getTriggers")
 const { getBundlers } = require("./actions/read/getBundlers")
 
 const { ids } = require("./actions/read/ids")
+const { validities } = require("./actions/read/validities")
 const { nonce } = require("./actions/read/nonce")
 const { version } = require("./actions/read/version")
 const { get } = require("./actions/read/get")
@@ -105,6 +106,7 @@ const addHash =
       const hash = await _SmartWeave.arweave.crypto.hash(hashes, "SHA-384")
       state.hash = _SmartWeave.arweave.utils.bufferTob64(hash)
     }
+    state.last_block = _SmartWeave.block.timestamp
     return { state, result }
   }
 
@@ -121,6 +123,7 @@ async function handle(state, action, _SmartWeave) {
   let count = 0
   try {
     let _kvs = {}
+    // TODO: rollup cron will have trouble with timestamp
     ;({ state, count } = await cron(state, _SmartWeave, _kvs))
     kvs = _kvs
   } catch (e) {
@@ -171,6 +174,9 @@ async function handle(state, action, _SmartWeave) {
       return await getRules(...readParams)
     case "ids":
       return await ids(...readParams)
+    case "validities":
+      return await validities(...readParams)
+
     case "nonce":
       return await nonce(...readParams)
     case "hash":

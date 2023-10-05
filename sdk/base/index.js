@@ -56,6 +56,7 @@ const is_data = [
 const no_paths = [
   "nonce",
   "ids",
+  "validities",
   "getCrons",
   "getAlgorithms",
   "getLinkedContract",
@@ -148,6 +149,7 @@ class Base {
       "getSchema",
       "getRules",
       "getIds",
+      "getValidities",
       "getOwner",
       "getAddressLink",
       "getAlgorithms",
@@ -173,6 +175,10 @@ class Base {
 
   ts() {
     return { __op: "ts" }
+  }
+
+  ms() {
+    return { __op: "ms" }
   }
 
   del() {
@@ -232,8 +238,26 @@ class Base {
     )
   }
 
+  async getValidities(tx, nocache) {
+    return this.read(
+      {
+        function: "validities",
+        tx,
+      },
+      nocache
+    )
+  }
+
   async bundle(queries, opt) {
-    const input = JSON.stringify(queries)
+    let input = null
+    if (!isNil(opt?.ts)) {
+      if (opt.ts.length !== queries.length) {
+        throw new Error("ts length is different from query length")
+      }
+      input = JSON.stringify({ q: queries, t: opt.ts })
+    } else {
+      input = JSON.stringify(queries)
+    }
     const output = pako.deflate(input)
     const base64 = btoa(String.fromCharCode.apply(null, output))
     return this._write2("bundle", base64, opt)

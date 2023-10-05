@@ -59,13 +59,19 @@ const batch = async (
       ? {
           input: { function: op, query: { address: query[0] } },
           caller: action.caller,
+          timestamp: action.timestamp,
         }
       : includes(op)(["setCanEvolve", "setSecure"])
       ? {
           input: { function: op, query: { value: query[0] } },
           caller: action.caller,
+          timestamp: action.timestamp,
         }
-      : { input: { function: op, query }, caller: action.caller }
+      : {
+          input: { function: op, query },
+          caller: action.caller,
+          timestamp: action.timestamp,
+        }
 
     let res = null
     const params = [
