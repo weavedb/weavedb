@@ -40,6 +40,7 @@ const query = async (
   let action2 = {
     caller: action.caller,
     input: { function: func, query: input, caller: action.input.caller },
+    timestamp: action.timestamp,
   }
   if (!isNil(action.jobID)) action2.jobID = action.jobID
   if (!isNil(action.relayer)) action2.relayer = action.relayer

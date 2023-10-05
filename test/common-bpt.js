@@ -11,6 +11,12 @@ const {
   getPublicKey,
   finishEvent,
 } = require("nostr-tools")
+const sleep = ms =>
+  new Promise(res => {
+    setTimeout(() => {
+      res()
+    }, ms)
+  })
 
 const tests = {
   "should get info": async ({
@@ -19,6 +25,7 @@ const tests = {
     dfinityTxId,
     ethereumTxId,
     bundlerTxId,
+    nostrTxId,
     ver,
     init,
   }) => {
@@ -38,6 +45,7 @@ const tests = {
         dfinity: dfinityTxId,
         ethereum: ethereumTxId,
         bundler: bundlerTxId,
+        nostr: nostrTxId,
       },
       evolve: null,
       isEvolving: false,
@@ -575,7 +583,15 @@ const tests = {
     const bundlers = [walletAddress]
     await db.setBundlers(bundlers, { ar: arweave_wallet })
     expect(await db.getBundlers()).to.eql(bundlers)
-    const tx = await db.bundle([await db.sign("add", {}, "ppl")])
+    await sleep(500)
+    const date = Date.now()
+    await sleep(500)
+    const tx = await db.bundle(
+      [await db.sign("add", {}, "ppl"), await db.sign("add", {}, "ppl")],
+      {
+        ts: [date, date + 1],
+      }
+    )
     expect(tx.success).to.eql(true)
     const tx2 = await db.add({}, "ppl", { ar: arweave_wallet })
     expect(tx2.success).to.eql(false)
@@ -585,6 +601,7 @@ const tests = {
     expect(tx2.success).to.eql(false)
     return
   },
+
   "should add index": async ({ db, arweave_wallet }) => {
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Alice", age: 25 }
@@ -872,6 +889,7 @@ const tests = {
     )
     let success = false
     while (true) {
+      await sleep(1000)
       const tx = await db.tick()
       if (tx.success) {
         success = true
@@ -1291,7 +1309,6 @@ const tests = {
     event2.id = getEventHash(event2)
     event2.sig = getSignature(event2, sk)
     await db.nostr(event2)
-    console.log(await db.get("posts"))
     let event3 = {
       kind: 0,
       created_at: Math.floor(Date.now() / 1000),
@@ -1306,7 +1323,6 @@ const tests = {
     event3.id = getEventHash(event3)
     event3.sig = getSignature(event3, sk)
     await db.nostr(event3)
-    console.log(await db.get("users"))
   },
   "should record nostr users": async ({ db, arweave_wallet }) => {
     const schema = {
@@ -1380,7 +1396,7 @@ const tests = {
     event.sig = getSignature(event, sk)
     await db.nostr(event)
   },
-  "should record nostr posts.only": async ({ db, arweave_wallet }) => {
+  "should record nostr posts": async ({ db, arweave_wallet }) => {
     const schema = {
       type: "object",
       required: ["owner", "id"],
@@ -1412,6 +1428,7 @@ const tests = {
       },
     }
     await db.setSchema(schema, "posts", { ar: arweave_wallet })
+
     let sk = generatePrivateKey()
     let pubkey = getPublicKey(sk)
 
@@ -1667,6 +1684,7 @@ const tests = {
     }
     event = finishEvent(event, sk)
     await db.nostr(event)
+
     let event2 = {
       kind: 1,
       created_at: Math.floor(Date.now() / 1000),
@@ -1695,7 +1713,23 @@ const tests = {
     }
     event3 = finishEvent(event3, sk)
     await db.nostr(event3)
-    console.log(await db.get("posts"))
+  },
+  "should be consistent with bundle queries": async ({
+    db,
+    walletAddress,
+    arweave_wallet,
+  }) => {
+    const bundlers = [walletAddress]
+    await db.setBundlers(bundlers, { ar: arweave_wallet })
+    expect(await db.getBundlers()).to.eql(bundlers)
+    const tx = await db.bundle([
+      await db.sign("add", { test: "a" }, "ppl", { nonce: 1 }),
+      await db.sign("add", { test: "b" }, "ppl", { nonce: 2 }),
+      await db.sign("add", { test: "c" }, "ppl", { nonce: 3 }),
+      await db.sign("add", { test: "d" }, "ppl", { nonce: 4 }),
+      await db.sign("add", { test: "e" }, "ppl", { nonce: 5 }),
+    ])
+    return
   },
 }
 

@@ -31,7 +31,11 @@ const removeCron = async (
   }
   const owner = isOwner(signer, state)
   if (isNil(state.crons)) {
-    state.crons = { lastExecuted: SmartWeave.block.timestamp, crons: {} }
+    const timestamp = isNil(action.timestamp)
+      ? SmartWeave.block.timestamp
+      : Math.round(action.timestamp / 1000)
+
+    state.crons = { lastExecuted: timestamp, crons: {} }
   }
   const [key] = action.input.query
   if (isNil(state.crons.crons[key])) err("cron doesn't exist")

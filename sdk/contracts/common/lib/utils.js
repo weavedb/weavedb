@@ -38,7 +38,8 @@ const mergeData = (
   extra = {},
   overwrite = false,
   signer,
-  SmartWeave
+  SmartWeave,
+  action
 ) => {
   let exists = true
   if (isNil(_data.__data) || overwrite) {
@@ -67,6 +68,8 @@ const mergeData = (
       delete obj[field]
     } else if (is(Object)(d) && d.__op === "ts") {
       obj[field] = SmartWeave.block.timestamp
+    } else if (is(Object)(d) && d.__op === "ms") {
+      obj[field] = action.timestamp ?? SmartWeave.block.timestamp * 1000
     } else if (is(Object)(d) && d.__op === "signer") {
       obj[field] = signer
     } else {
@@ -398,7 +401,9 @@ const auth = async (
     if (/^0x/.test(signer)) signer = signer.toLowerCase()
     if (/^0x/.test(_caller)) _caller = _caller.toLowerCase()
   }
-
+  const timestamp = isNil(action.timestamp)
+    ? SmartWeave.block.timestamp
+    : Math.round(action.timestamp / 1000)
   let original_signer = signer
   let _signer = signer
   if (_signer !== _caller) {
@@ -406,9 +411,7 @@ const auth = async (
     if (!isNil(link)) {
       let _address = is(Object, link) ? link.address : link
       let _expiry = is(Object, link) ? link.expiry || 0 : 0
-      if (_expiry === 0 || SmartWeave.block.timestamp <= _expiry) {
-        _signer = _address
-      }
+      if (_expiry === 0 || timestamp <= _expiry) _signer = _address
     }
   }
   if (_signer !== _caller) err(`signer[${_signer}] is not caller[${_caller}]`)

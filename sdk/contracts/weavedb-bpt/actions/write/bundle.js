@@ -1,4 +1,5 @@
 const { err, wrapResult, read } = require("../../../common/lib/utils")
+const { kv } = require("../../lib/utils")
 const { clone } = require("../../../common/lib/pure")
 const { isNil, includes } = require("ramda")
 const { set } = require("./set")
@@ -7,6 +8,7 @@ const { update } = require("./update")
 const { upsert } = require("./upsert")
 const { remove } = require("./remove")
 const { relay } = require("./relay")
+const { batch } = require("./batch")
 const { query } = require("./query")
 
 const { setRules } = require("./setRules")
@@ -35,7 +37,8 @@ const bundle = async (
   executeCron
 ) => {
   const bundlers = state.bundlers ?? []
-  if (bundlers.length !== 0 && !includes(action.caller, bundlers)) {
+  let isBundler = bundlers.length !== 0
+  if (isBundler && !includes(action.caller, bundlers)) {
     err(`bundler [${action.caller}] is not allowed`)
   }
   const original_signer = action.caller
@@ -47,7 +50,25 @@ const bundle = async (
     },
     SmartWeave
   )
-  const queries = JSON.parse(data)
+  const parsed = JSON.parse(data)
+  let queries = null
+  let ts = null
+  if (isBundler) {
+    queries = parsed.q
+    ts = parsed.t
+    if (isNil(ts) || queries.length !== ts.length) {
+      err(`timestamp length is not equal to query length`)
+    }
+    let last = (state.last_block ?? 0) * 1000
+    for (let v of ts) {
+      if (last > v || SmartWeave.block.timestamp * 1000 < v) {
+        err(`the wrong timestamp`)
+      }
+      last = v
+    }
+  } else {
+    queries = parsed
+  }
   let validity = []
   let errors = []
   let i = 0
@@ -56,7 +77,7 @@ const bundle = async (
     let error = null
     let params = [
       clone(state),
-      { input: q },
+      { input: q, timestamp: isBundler ? ts[i] : null },
       undefined,
       false,
       SmartWeave,
@@ -72,11 +93,14 @@ const bundle = async (
         case "relay":
           res = await relay(...params)
           break
+        case "batch":
+          res = await batch(...params)
+          break
 
         case "add":
           res = await add(
             clone(state),
-            { input: q },
+            { input: q, timestamp: isBundler ? ts[i] : null },
             undefined,
             i,
             false,
@@ -168,6 +192,10 @@ const bundle = async (
     errors.push(error)
     i++
   }
+  await kv(kvs, SmartWeave).put(
+    `tx_validities.${SmartWeave.transaction.id}`,
+    validity
+  )
   return wrapResult(state, original_signer, SmartWeave, { validity, errors })
 }
 

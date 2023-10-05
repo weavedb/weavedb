@@ -70,7 +70,8 @@ const add = async (
           id: last(path),
           setter: _data.setter,
         },
-      }
+      },
+      action.timestamp
     )
   }
   return wrapResult(state, original_signer, SmartWeave, {

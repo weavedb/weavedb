@@ -15,6 +15,17 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.32.0-beta (October 5, 2023)
+
+#### Source Transaction Id
+
+[6z03DkIxmMYtjpSPnXX-6A5f7QsO3gnLsqkQObRiK00](https://sonar.warp.cc/#/app/source/6z03DkIxmMYtjpSPnXX-6A5f7QsO3gnLsqkQObRiK00)
+
+#### Added Features
+
+- getValidities
+- db.ms() for rollup transaction timestamp in millisecond
+
 ### v0.31.0-beta (September 29, 2023)
 
 #### Source Transaction Id

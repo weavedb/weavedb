@@ -140,6 +140,7 @@ const validateData = async ({
           },
           transaction: {
             id: SmartWeave.transaction.id,
+            timestamp: action.timestamp ?? SmartWeave.block.timestamp * 1000,
           },
           resource: { data: new_data },
           id: last(path),
@@ -156,6 +157,7 @@ const validateData = async ({
       rule_data.signer = rule_data.request.auth.signer
       rule_data.id = rule_data.request.id
       rule_data.ts = rule_data.request.block.timestamp
+      rule_data.ms = rule_data.request.transaction.timestamp
       rule_data.new = rule_data.resource.newData
       rule_data.old = rule_data.resource.data
       rule_data.req = rule_data.request.resource.data
@@ -377,7 +379,8 @@ const _getDoc = async (
         extra,
         true,
         _signer,
-        SmartWeave
+        SmartWeave,
+        action
       ).__data
     } else if (includes(func)(["update", "upsert"])) {
       next_data = mergeData(
@@ -386,7 +389,8 @@ const _getDoc = async (
         extra,
         false,
         _signer,
-        SmartWeave
+        SmartWeave,
+        action
       ).__data
     }
   }
@@ -489,7 +493,8 @@ const trigger = async (
   kvs,
   executeCron,
   depth,
-  vars
+  vars,
+  timestamp
 ) => {
   const trigger_key = `trigger.${init(path).join("/")}`
   state.triggers ??= {}
@@ -505,7 +510,8 @@ const trigger = async (
         SmartWeave,
         _kvs,
         depth,
-        { ...vars, batch: [] }
+        { ...vars, batch: [] },
+        timestamp
       )
       state = _state
       for (const k in _kvs) kvs[k] = _kvs[k]

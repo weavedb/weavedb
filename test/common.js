@@ -1222,17 +1222,24 @@ const tests = {
   },
 
   "should bundle mulitple transactions": async ({ db }) => {
-    const arweave_wallet2 = await db.arweave.wallets.generate()
-    const arweave_wallet3 = await db.arweave.wallets.generate()
+    const wallet2 = EthCrypto.createIdentity()
+    const wallet3 = EthCrypto.createIdentity()
+    const wallet4 = EthCrypto.createIdentity()
     const data = { name: "Bob", age: 20 }
     const data2 = { name: "Alice", age: 30 }
     const params = await db.sign("set", data, "ppl", "Bob", {
-      ar: arweave_wallet2,
+      privateKey: wallet2.privateKey,
     })
     const params2 = await db.sign("upsert", data2, "ppl", "Alice", {
-      ar: arweave_wallet3,
+      privateKey: wallet3.privateKey,
     })
-    await db.bundle([params, params2])
+    const params3 = await db.sign("update", {}, "ppl", "Beth", {
+      privateKey: wallet4.privateKey,
+    })
+
+    const tx = await db.bundle([params, params3, params2])
+    console.log(tx)
+    expect(await db.getValidities(tx.originalTxId)).to.eql([true, false, true])
     expect(await db.get("ppl", "Bob")).to.eql(data)
     expect(await db.get("ppl", "Alice")).to.eql(data2)
   },

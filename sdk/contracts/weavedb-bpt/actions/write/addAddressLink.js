@@ -75,15 +75,18 @@ const addAddressLink = async (
   const _signer = signer2.toLowerCase()
   if (_signer !== address.toLowerCase()) err()
   const link = state.auth.links[address.toLowerCase()]
+  const timestamp = isNil(action.timestamp)
+    ? SmartWeave.block.timestamp
+    : Math.round(action.timestamp / 1000)
   if (!isNil(link)) {
     let prev_expiry = is(Object, link) ? link.expiry || 0 : 0
-    if (SmartWeave.block.timestamp < prev_expiry) {
+    if (timestamp < prev_expiry) {
       err("link already exists")
     }
   }
   state.auth.links[address.toLowerCase()] = {
     address: linkTo || signer,
-    expiry: _expiry === 0 ? 0 : SmartWeave.block.timestamp + _expiry,
+    expiry: _expiry === 0 ? 0 : timestamp + _expiry,
   }
   return wrapResult(state, original_signer, SmartWeave)
 }
