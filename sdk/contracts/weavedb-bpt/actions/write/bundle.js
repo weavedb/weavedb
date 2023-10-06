@@ -62,7 +62,7 @@ const bundle = async (
     if (isNil(ts) || queries.length !== ts.length) {
       err(`timestamp length is not equal to query length`)
     }
-    let last = (state.last_block ?? 0) * 1000
+    let last = state.last_block ?? 0
     for (let [i, v] of ts.entries()) {
       if (last > v) {
         err(`the wrong timestamp[${i}]: ${last} <= ${v}`)

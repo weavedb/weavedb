@@ -31,6 +31,7 @@ class Rollup {
     bundler,
     contractTxId,
   }) {
+    this.height = 0
     this.contractTxId = contractTxId
     this.initial_state = initial_state
     this.admin = admin
@@ -63,19 +64,19 @@ class Rollup {
   measureSizes(bundles) {
     let sizes = 0
     let _bundlers = []
-    let ts = []
+    let t = []
     for (let v of bundles) {
       if (isNil(v.data?.input)) continue
       const len = JSON.stringify(v.data.input).length
       if (sizes + len <= 3900) {
         _bundlers.push(v)
-        ts.push(v.data.tx_ts)
+        t.push(v.data.tx_ts)
         sizes += len
       } else {
         break
       }
     }
-    return { bundles: _bundlers, ts }
+    return { bundles: _bundlers, t }
   }
 
   async bundle() {
@@ -87,29 +88,34 @@ class Rollup {
         ["commit", "==", false],
         10
       )
-      const { bundles, ts } = this.measureSizes(bundling)
+      const { bundles, t } = this.measureSizes(bundling)
       if (bundles.length > 0) {
         console.log(
           `commiting to Warp...${map(_path(["data", "id"]))(bundles)}`
         )
-        console.log(ts)
         const result = await this.warp.bundle(
           map(_path(["data", "input"]))(bundles),
-          { ts }
+          { t, h: this.height + 1 }
         )
         console.log(`bundle tx result: ${result.success}`)
         if (result.success === true) {
-          await this.wal.batch(
-            map(
-              v => [
-                "update",
-                { commit: true, warp: result.originalTxId },
-                "txs",
-                v.id,
-              ],
-              bundles
-            )
+          let batch = map(
+            v => [
+              "update",
+              { commit: true, warp: result.originalTxId },
+              "txs",
+              v.id,
+            ],
+            bundles
           )
+          batch.push([
+            "set",
+            { height: this.height, txs: map(_path(["data", "txid"]))(bundles) },
+            "blocks",
+            `${this.height}`,
+          ])
+          await this.wal.batch(batch)
+          this.height++
         }
       }
     } catch (e) {
@@ -177,7 +183,11 @@ class Rollup {
     await this.wal.addIndex([["commit"], ["id"]], "txs")
     await this.wal.addIndex([["input.caller"], ["id", "desc"]], "txs")
     this.tx_count = (await this.wal.get("txs", ["id", "desc"], 1))[0]?.id ?? 0
-    console.log(`${this.tx_count} txs has been cached`)
+    this.height =
+      (await this.wal.get("blocks", ["height", "desc"], 1))[0]?.height ?? 0
+    console.log(
+      `${this.tx_count} txs has been cached: ${this.height} blocks commited`
+    )
   }
 
   async initOffchain() {
