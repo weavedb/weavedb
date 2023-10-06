@@ -18,6 +18,7 @@ export default function Home() {
   const [err, setErr] = useState(null)
 
   const [txs, setTxs] = useState([])
+  const [blks, setBlks] = useState([])
   const [isnext, setIsnext] = useState(false)
   const [tick, setTick] = useState(0)
   useEffect(() => {
@@ -46,7 +47,6 @@ export default function Home() {
   useEffect(() => {
     ;(async () => {
       if (!isNil(info)) {
-        clearTimeout(to)
         const db_info = indexBy(prop("id"), info.dbs)[router.query.db]
         if (!isNil(db_info)) {
           const rpc =
@@ -61,34 +61,13 @@ export default function Home() {
           setTxs(_txs)
           setIsnext(_txs.length === 20)
           let i = 0
-          setInterval(async () => setTick(++i), 5000)
+          const _blks = await db.cget("blocks", ["height", "desc"], 20)
+          setBlks(_blks)
         }
       }
     })()
   }, [info])
-  useEffect(() => {
-    ;(async () => {
-      if (!isNil(info)) {
-        const rpc =
-          node.endpoint.split(":")[1] === "443"
-            ? `https://${node.endpoint.split(":")[0]}`
-            : `http://${node.endpoint}`
 
-        db = new DB({
-          contractTxId: `${router.query.db}#log`,
-          rpc,
-        })
-        if (!isNil(txs[0])) {
-          const _txs = await db.cget(
-            "txs",
-            ["id", "desc"],
-            ["endBefore", txs[0]]
-          )
-          if (_txs.length > 0) setTxs(concat(_txs, txs))
-        }
-      }
-    })()
-  }, [tick])
   const db_info = indexBy(prop("id"), info?.dbs ?? [])[router?.query.db]?.data
   return (
     <>
@@ -178,8 +157,9 @@ export default function Home() {
                     sx={{ borderRight: "1px solid #ddd" }}
                   ></Box>
                   <Box flex={1}>
-                    <Box sx={{ color: "#999" }}>Transactions</Box>
+                    <Box sx={{ color: "#999" }}>Blocks / Transactions</Box>
                     <Box sx={{ fontSize: "14px" }}>
+                      {blks.length === 0 ? 0 : blks[0].id} /{" "}
                       {txs.length === 0 ? 0 : +txs[0].id}
                     </Box>
                   </Box>
@@ -205,181 +185,273 @@ export default function Home() {
                 </Flex>
               </Box>
               {txs.length === 0 ? null : (
-                <>
-                  <Box
-                    px={2}
-                    mb={2}
-                    fontWeight="bold"
-                    color="#666"
-                    fontSize="16px"
-                  >
-                    Latest Transactions
-                  </Box>
-                  <Box
-                    w="100%"
-                    bg="white"
-                    py={2}
-                    px={6}
-                    sx={{ borderRadius: "10px" }}
-                  >
-                    <Box as="table" w="100%">
-                      <Box as="thead" fontSize="14px" color="#999">
-                        <Box as="td" p={2} w="50px">
-                          #
+                <Flex w="100%">
+                  <Box flex={1} mr={4}>
+                    <Box
+                      px={2}
+                      mb={2}
+                      fontWeight="bold"
+                      color="#666"
+                      fontSize="16px"
+                    >
+                      Latest Blocks
+                    </Box>
+                    <Box
+                      w="100%"
+                      bg="white"
+                      py={2}
+                      px={6}
+                      sx={{ borderRadius: "10px" }}
+                    >
+                      <Box as="table" w="100%">
+                        <Box as="thead" fontSize="14px" color="#999">
+                          <Box as="td" p={2} w="50px">
+                            #
+                          </Box>
+                          <Box as="td" p={2} w="50px">
+                            Txn
+                          </Box>
+                          <Box as="td" p={2} w="70px">
+                            Warp TxId
+                          </Box>
+                          <Box as="td" p={2} w="70px">
+                            Date
+                          </Box>
                         </Box>
-                        <Box as="td" p={2}>
-                          Query ID
-                        </Box>
-                        <Box as="td" p={2} w="100px">
-                          Function
-                        </Box>
-                        <Box as="td" p={2}>
-                          Collection
-                        </Box>
-                        <Box as="td" p={2}>
-                          Signer
-                        </Box>
-                        <Box as="td" p={2} w="70px">
-                          Date
-                        </Box>
-                        <Box as="td" p={2} w="100px">
-                          Rollup
-                        </Box>
-                      </Box>
-                      <Box as="tbody">
-                        {map(_v => {
-                          let v = _v.data
-                          let path = "-"
-                          if (
-                            includes(v.input.function, [
-                              "add",
-                              "addIndex",
-                              "removeIndex",
-                              "setSchema",
-                              "removeIndex",
-                              "setRules",
-                              "addTrigger",
-                              "removeTrigger",
-                            ])
-                          ) {
-                            path = v.input.query.slice(1).join(" / ")
-                          } else if (
-                            includes(v.input.function, [
-                              "set",
-                              "update",
-                              "upsert",
-                            ])
-                          ) {
-                            path = v.input.query.slice(1, -1).join(" / ")
-                          } else if (includes(v.input.function, ["delete"])) {
-                            path = v.input.query.slice(0, -1).join("/")
-                          }
-                          let isNostr = v.input.function === "nostr"
-                          return (
-                            <>
-                              <Box
-                                as="tr"
-                                sx={{
-                                  borderTop: "1px solid #ddd",
-                                  ":hover": {
-                                    bg: "#F2F2F2",
-                                  },
-                                }}
-                              >
-                                <Box as="td" p={2}>
-                                  {v.id}
-                                </Box>
-                                <Box as="td" p={2} color="#763AAC">
-                                  <Link
-                                    href={`/node/${router.query.id}/db/${router.query.db}/tx/${v.txid}`}
-                                    sx={{ ":hover": { opacity: 0.75 } }}
-                                  >
-                                    {v.txid}
-                                  </Link>
-                                </Box>
-                                <Box as="td" p={2}>
-                                  {v.input.function}
-                                </Box>
+                        <Box as="tbody">
+                          {map(_v => {
+                            let v = _v.data
+                            return (
+                              <>
                                 <Box
-                                  as="td"
-                                  p={2}
-                                  sx={{ wordBreak: "break-all" }}
+                                  as="tr"
+                                  sx={{
+                                    borderTop: "1px solid #ddd",
+                                    ":hover": {
+                                      bg: "#F2F2F2",
+                                    },
+                                  }}
                                 >
-                                  {isNostr ? "nostr_events" : path}
-                                </Box>
-                                <Box as="td" p={2} color="#763AAC">
-                                  {isNostr ? (
-                                    <Box>
-                                      {v.input.query.pubkey.slice(1, 10)}...
-                                      {v.input.query.pubkey.slice(-10)}
-                                    </Box>
-                                  ) : (
+                                  <Box as="td" p={2}>
+                                    {v.height}
+                                  </Box>
+                                  <Box as="td" p={2} color="#763AAC">
                                     <Link
-                                      href={`/node/${router.query.id}/db/${router.query.db}/address/${v.input.caller}`}
+                                      href={`/node/${router.query.id}/db/${router.query.db}/block/${v.height}`}
                                       sx={{ ":hover": { opacity: 0.75 } }}
                                     >
-                                      {v.input.caller}
+                                      {v.txs.length}
                                     </Link>
-                                  )}
-                                </Box>
-                                <Box as="td" p={2} w="100px">
-                                  {dayjs(
-                                    (v.tx_ts ?? v.blk_ts ?? 0) * 1000
-                                  ).fromNow(true)}
-                                </Box>
-                                <Box as="td" p={2}>
-                                  {!isNil(v.warp) ? (
+                                  </Box>
+                                  <Box as="td" p={2}>
                                     <Box
                                       as="a"
                                       target="_blank"
-                                      href={`https://sonar.warp.cc/#/app/interaction/${v.warp}?network=mainnet`}
+                                      href={`https://sonar.warp.cc/#/app/interaction/${v.txid}?network=mainnet`}
                                       color="#763AAC"
                                       onClick={e => e.stopPropagation()}
                                     >
-                                      {v.warp.slice(0, 5)}...
-                                      {v.warp.slice(-5)}
+                                      {v.txid ?? "-"}
                                     </Box>
-                                  ) : (
-                                    "not commited"
-                                  )}
+                                  </Box>
+                                  <Box as="td" p={2} w="100px">
+                                    {dayjs(v.date).fromNow(true)}
+                                  </Box>
                                 </Box>
-                              </Box>
-                            </>
-                          )
-                        })(txs)}
+                              </>
+                            )
+                          })(blks)}
+                        </Box>
                       </Box>
+                      <Flex justify="center" w="100%" mt={4} mb={2}>
+                        <Flex
+                          justify="center"
+                          bg="#763AAC"
+                          color="white"
+                          w="100%"
+                          py={2}
+                          onClick={() => {
+                            router.push(
+                              `/node/${router.query.id}/db/${router.query.db}/blocks`
+                            )
+                          }}
+                          sx={{
+                            borderRadius: "5px",
+                            ":hover": { opacity: 0.75 },
+                            cursor: "pointer",
+                          }}
+                        >
+                          VIEW ALL Blocks
+                        </Flex>
+                      </Flex>
                     </Box>
                   </Box>
-                </>
-              )}
-              {isnext ? (
-                <Flex justify="center" w="100%" mt={6}>
-                  <Flex
-                    justify="center"
-                    bg="#763AAC"
-                    color="white"
-                    w="300px"
-                    py={2}
-                    onClick={async () => {
-                      const _txs = await db.cget(
-                        "txs",
-                        ["id", "desc"],
-                        ["startAfter", last(txs)],
-                        20
-                      )
-                      setTxs(concat(txs, _txs))
-                      setIsnext(_txs.length === 20)
-                    }}
-                    sx={{
-                      borderRadius: "5px",
-                      ":hover": { opacity: 0.75 },
-                      cursor: "pointer",
-                    }}
-                  >
-                    Load More
-                  </Flex>
+                  <Box flex={1} ml={4}>
+                    <Box
+                      px={2}
+                      mb={2}
+                      fontWeight="bold"
+                      color="#666"
+                      fontSize="16px"
+                    >
+                      Latest Transactions
+                    </Box>
+                    <Box
+                      w="100%"
+                      bg="white"
+                      py={2}
+                      px={6}
+                      sx={{ borderRadius: "10px" }}
+                    >
+                      <Box as="table" w="100%">
+                        <Box as="thead" fontSize="14px" color="#999">
+                          <Box as="td" p={2} w="50px">
+                            #
+                          </Box>
+                          <Box as="td" p={2} w="100px">
+                            ID
+                          </Box>
+                          <Box as="td" p={2} w="100px">
+                            Func
+                          </Box>
+                          <Box as="td" p={2} w="100px">
+                            Coll
+                          </Box>
+                          <Box as="td" p={2}>
+                            Signer
+                          </Box>
+                          <Box as="td" p={2} w="70px">
+                            Block
+                          </Box>
+                          <Box as="td" p={2} w="70px">
+                            Date
+                          </Box>
+                        </Box>
+                        <Box as="tbody">
+                          {map(_v => {
+                            let v = _v.data
+                            let path = "-"
+                            if (
+                              includes(v.input.function, [
+                                "add",
+                                "addIndex",
+                                "removeIndex",
+                                "setSchema",
+                                "removeIndex",
+                                "setRules",
+                                "addTrigger",
+                                "removeTrigger",
+                              ])
+                            ) {
+                              path = v.input.query.slice(1).join(" / ")
+                            } else if (
+                              includes(v.input.function, [
+                                "set",
+                                "update",
+                                "upsert",
+                              ])
+                            ) {
+                              path = v.input.query.slice(1, -1).join(" / ")
+                            } else if (includes(v.input.function, ["delete"])) {
+                              path = v.input.query.slice(0, -1).join("/")
+                            }
+                            let isNostr = v.input.function === "nostr"
+                            return (
+                              <>
+                                <Box
+                                  as="tr"
+                                  sx={{
+                                    borderTop: "1px solid #ddd",
+                                    ":hover": {
+                                      bg: "#F2F2F2",
+                                    },
+                                  }}
+                                >
+                                  <Box as="td" p={2}>
+                                    {v.id}
+                                  </Box>
+                                  <Box as="td" p={2} color="#763AAC">
+                                    <Link
+                                      href={`/node/${router.query.id}/db/${router.query.db}/tx/${v.txid}`}
+                                      sx={{ ":hover": { opacity: 0.75 } }}
+                                    >
+                                      {v.txid.slice(0, 10)}
+                                    </Link>
+                                  </Box>
+                                  <Box as="td" p={2}>
+                                    {v.input.function}
+                                  </Box>
+                                  <Box
+                                    as="td"
+                                    p={2}
+                                    sx={{ wordBreak: "break-all" }}
+                                  >
+                                    {isNostr ? "nostr_events" : path}
+                                  </Box>
+                                  <Box as="td" p={2} color="#763AAC">
+                                    {isNostr ? (
+                                      <Box>
+                                        {v.input.query.pubkey.slice(1, 8)}
+                                      </Box>
+                                    ) : (
+                                      <Link
+                                        href={`/node/${router.query.id}/db/${router.query.db}/address/${v.input.caller}`}
+                                        sx={{ ":hover": { opacity: 0.75 } }}
+                                      >
+                                        {v.input.caller.slice(0, 10)}...
+                                        {v.input.caller.slice(-10)}
+                                      </Link>
+                                    )}
+                                  </Box>
+                                  <Box as="td" p={2} color="#763AAC" w="50px">
+                                    {!isNil(v.warp) ? (
+                                      <Link
+                                        href={`/node/${router.query.id}/db/${router.query.db}/block/${v.block}`}
+                                        sx={{ ":hover": { opacity: 0.75 } }}
+                                      >
+                                        {v.block}
+                                      </Link>
+                                    ) : (
+                                      "-"
+                                    )}
+                                  </Box>
+
+                                  <Box as="td" p={2} w="100px">
+                                    {dayjs(v.tx_ts ?? v.blk_ts ?? 0).fromNow(
+                                      true
+                                    )}
+                                  </Box>
+                                </Box>
+                              </>
+                            )
+                          })(txs)}
+                        </Box>
+                      </Box>
+                      <Flex justify="center" w="100%" mt={4} mb={2}>
+                        <Flex
+                          justify="center"
+                          bg="#763AAC"
+                          color="white"
+                          w="100%"
+                          py={2}
+                          onClick={() => {
+                            router.push(
+                              `/node/${router.query.id}/db/${router.query.db}/txs`
+                            )
+                          }}
+                          sx={{
+                            borderRadius: "5px",
+                            ":hover": { opacity: 0.75 },
+                            cursor: "pointer",
+                          }}
+                        >
+                          VIEW ALL TRANSACTIONS
+                        </Flex>
+                      </Flex>
+                    </Box>
+                  </Box>
                 </Flex>
-              ) : null}
+              )}
             </>
           )}
           <Flex px={2} mt={6} pt={4} sx={{ borderTop: "1px solid #ccc" }}>

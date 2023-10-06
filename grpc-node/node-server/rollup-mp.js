@@ -99,10 +99,15 @@ class Rollup {
         )
         console.log(`bundle tx result: ${result.success}`)
         if (result.success === true) {
+          this.height++
           let batch = map(
             v => [
               "update",
-              { commit: true, warp: result.originalTxId },
+              {
+                commit: true,
+                warp: result.originalTxId,
+                block: this.height,
+              },
               "txs",
               v.id,
             ],
@@ -110,12 +115,16 @@ class Rollup {
           )
           batch.push([
             "set",
-            { height: this.height, txs: map(_path(["data", "txid"]))(bundles) },
+            {
+              height: this.height,
+              txs: map(_path(["data", "txid"]))(bundles),
+              date: result.bundlerResonse?.timestamp ?? Date.now(),
+              txid: result.originalTxId,
+            },
             "blocks",
             `${this.height}`,
           ])
           await this.wal.batch(batch)
-          this.height++
         }
       }
     } catch (e) {
@@ -182,6 +191,7 @@ class Rollup {
     await this.wal.initialize()
     await this.wal.addIndex([["commit"], ["id"]], "txs")
     await this.wal.addIndex([["input.caller"], ["id", "desc"]], "txs")
+    await this.wal.addIndex([["block"], ["id", "desc"]], "txs")
     this.tx_count = (await this.wal.get("txs", ["id", "desc"], 1))[0]?.id ?? 0
     this.height =
       (await this.wal.get("blocks", ["height", "desc"], 1))[0]?.height ?? 0

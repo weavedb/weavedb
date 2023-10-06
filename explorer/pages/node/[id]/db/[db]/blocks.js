@@ -17,14 +17,12 @@ export default function Home() {
   const [node, setNode] = useState(null)
   const [err, setErr] = useState(null)
 
-  const [txs, setTxs] = useState([])
-  const [addr, setAddr] = useState(null)
+  const [blks, setBlks] = useState([])
   const [isnext, setIsnext] = useState(false)
   const [tick, setTick] = useState(0)
   useEffect(() => {
     ;(async () => {
       if (!isNil(router.query.id)) {
-        setAddr(router.query.addr)
         const node = indexBy(prop("key"), nodes)[router.query.id]
         if (!isNil(node)) {
           setNode(node)
@@ -59,20 +57,17 @@ export default function Home() {
             contractTxId: `${router.query.db}#log`,
             rpc,
           })
-          const _txs = await db.cget(
-            "txs",
-            ["id", "desc"],
-            ["input.caller", "==", router.query.addr],
-            20
-          )
-          setTxs(_txs)
-          setIsnext(_txs.length === 20)
+
           let i = 0
-          //setInterval(async () => setTick(++i), 5000)
+          setInterval(async () => setTick(++i), 5000)
+          const _blks = await db.cget("blocks", ["height", "desc"], 20)
+          setIsnext(_blks.length === 20)
+          setBlks(_blks)
         }
       }
     })()
   }, [info])
+  console.log(blks)
   useEffect(() => {
     ;(async () => {
       if (!isNil(info)) {
@@ -85,14 +80,13 @@ export default function Home() {
           contractTxId: `${router.query.db}#log`,
           rpc,
         })
-        if (!isNil(txs[0])) {
-          const _txs = await db.cget(
-            "txs",
-            ["id", "desc"],
-            ["input.caller", "==", router.query.addr],
-            ["endBefore", txs[0]]
+        if (!isNil(blks[0])) {
+          const _blks = await db.cget(
+            "blocks",
+            ["height", "desc"],
+            ["endBefore", blks[0]]
           )
-          if (_txs.length > 0) setTxs(concat(_txs, txs))
+          if (_blks.length > 0) setBlks(concat(_blks, blks))
         }
       }
     })()
@@ -121,19 +115,6 @@ export default function Home() {
         <Box w="100%" maxW="1400px">
           {isNil(node) ? null : (
             <>
-              <Flex
-                flex={1}
-                align="center"
-                mb={6}
-                px={2}
-                pb={6}
-                sx={{ borderBottom: "1px solid #ccc" }}
-              >
-                <Box mr={4} fontSize="18px" fontWeight="bold" color="#763AAC">
-                  Address
-                </Box>
-                <Box sx={{ fontSize: "18px" }}>{addr ?? "-"}</Box>
-              </Flex>
               <Box px={2} mb={2} fontWeight="bold" color="#666" fontSize="16px">
                 DB Info
               </Box>
@@ -161,14 +142,12 @@ export default function Home() {
                   ></Box>
                   <Box flex={1}>
                     <Box sx={{ color: "#999" }}>DB Instance</Box>
-                    <Box sx={{ fontSize: "14px" }}>
-                      <Box sx={{ fontSize: "14px" }} color="#763AAC">
-                        <Link
-                          href={`/node/${router.query.id}/db/${router.query.db}`}
-                        >
-                          <Box>{db_info?.name ?? "-"}</Box>
-                        </Link>
-                      </Box>
+                    <Box sx={{ fontSize: "14px" }} color="#763AAC">
+                      <Link
+                        href={`/node/${router.query.id}/db/${router.query.db}`}
+                      >
+                        <Box>{db_info?.name ?? "-"}</Box>
+                      </Link>
                     </Box>
                   </Box>
                   <Box
@@ -205,9 +184,9 @@ export default function Home() {
                     sx={{ borderRight: "1px solid #ddd" }}
                   ></Box>
                   <Box flex={1}>
-                    <Box sx={{ color: "#999" }}>Transactions</Box>
+                    <Box sx={{ color: "#999" }}>Blocks</Box>
                     <Box sx={{ fontSize: "14px" }}>
-                      {txs.length === 0 ? 0 : +txs[0].id}
+                      {blks.length === 0 ? 0 : +blks[0].id}
                     </Box>
                   </Box>
                   <Box
@@ -215,24 +194,23 @@ export default function Home() {
                     py={2}
                     sx={{ borderRight: "1px solid #ddd" }}
                   ></Box>
-
                   <Box flex={1}>
                     <Box sx={{ color: "#999" }}>App URL</Box>
                     <Box sx={{ fontSize: "14px" }}>
                       <Box
                         color="#763AAC"
                         as="a"
-                        href="https://jots-alpha.weavedb.dev"
+                        href={db_info?.app}
                         target="_blank"
                         sx={{ ":hover": { opacity: 0.75 } }}
                       >
-                        jots-alpha.weavedb.dev
+                        {(db_info?.app ?? "-").replace(/^http(s)+\:\/\//i, "")}
                       </Box>
                     </Box>
                   </Box>
                 </Flex>
               </Box>
-              {txs.length === 0 ? null : (
+              {blks.length === 0 ? null : (
                 <>
                   <Box
                     px={2}
@@ -241,7 +219,7 @@ export default function Home() {
                     color="#666"
                     fontSize="16px"
                   >
-                    Latest Transactions
+                    Blocks
                   </Box>
                   <Box
                     w="100%"
@@ -253,55 +231,22 @@ export default function Home() {
                     <Box as="table" w="100%">
                       <Box as="thead" fontSize="14px" color="#999">
                         <Box as="td" p={2} w="50px">
-                          #
+                          Height
                         </Box>
-                        <Box as="td" p={2}>
-                          Query ID
+                        <Box as="td" p={2} w="50px">
+                          Txn
                         </Box>
-                        <Box as="td" p={2} w="100px">
-                          Function
-                        </Box>
-                        <Box as="td" p={2}>
-                          Collection
-                        </Box>
-                        <Box as="td" p={2}>
-                          Signer
+                        <Box as="td" p={2} w="70px">
+                          Warp TxId
                         </Box>
                         <Box as="td" p={2} w="70px">
                           Date
-                        </Box>
-                        <Box as="td" p={2} w="100px">
-                          Rollup
                         </Box>
                       </Box>
                       <Box as="tbody">
                         {map(_v => {
                           let v = _v.data
-                          let path = "-"
-                          if (
-                            includes(v.input.function, [
-                              "add",
-                              "addIndex",
-                              "removeIndex",
-                              "setSchema",
-                              "removeIndex",
-                              "setRules",
-                              "addTrigger",
-                              "removeTrigger",
-                            ])
-                          ) {
-                            path = v.input.query.slice(1).join(" / ")
-                          } else if (
-                            includes(v.input.function, [
-                              "set",
-                              "update",
-                              "upsert",
-                            ])
-                          ) {
-                            path = v.input.query.slice(1, -1).join(" / ")
-                          } else if (includes(v.input.function, ["delete"])) {
-                            path = v.input.query.slice(0, -1).join("/")
-                          }
+                          console.log(v)
                           return (
                             <>
                               <Box
@@ -314,54 +259,34 @@ export default function Home() {
                                 }}
                               >
                                 <Box as="td" p={2}>
-                                  {v.id}
+                                  {v.height}
                                 </Box>
                                 <Box as="td" p={2} color="#763AAC">
                                   <Link
-                                    href={`/node/${router.query.id}/db/${router.query.db}/tx/${v.txid}`}
+                                    href={`/node/${router.query.id}/db/${router.query.db}/block/${v.height}`}
                                     sx={{ ":hover": { opacity: 0.75 } }}
                                   >
-                                    {v.txid}
+                                    {v.txs.length}
                                   </Link>
                                 </Box>
                                 <Box as="td" p={2}>
-                                  {v.input.function}
-                                </Box>
-                                <Box
-                                  as="td"
-                                  p={2}
-                                  sx={{ wordBreak: "break-all" }}
-                                >
-                                  {path}
-                                </Box>
-                                <Box as="td" p={2}>
-                                  {v.input.caller}
+                                  <Box
+                                    as="a"
+                                    target="_blank"
+                                    href={`https://sonar.warp.cc/#/app/interaction/${v.txid}?network=mainnet`}
+                                    color="#763AAC"
+                                    onClick={e => e.stopPropagation()}
+                                  >
+                                    {v.txid ?? "-"}
+                                  </Box>
                                 </Box>
                                 <Box as="td" p={2} w="100px">
-                                  {dayjs(v.tx_ts ?? v.blk_ts ?? 0).fromNow(
-                                    true
-                                  )}
-                                </Box>
-                                <Box as="td" p={2}>
-                                  {!isNil(v.warp) ? (
-                                    <Box
-                                      as="a"
-                                      target="_blank"
-                                      href={`https://sonar.warp.cc/#/app/interaction/${v.warp}?network=mainnet`}
-                                      color="#763AAC"
-                                      onClick={e => e.stopPropagation()}
-                                    >
-                                      {v.warp.slice(0, 5)}...
-                                      {v.warp.slice(-5)}
-                                    </Box>
-                                  ) : (
-                                    "not commited"
-                                  )}
+                                  {dayjs(v.date).fromNow(true)}
                                 </Box>
                               </Box>
                             </>
                           )
-                        })(txs)}
+                        })(blks)}
                       </Box>
                     </Box>
                   </Box>
@@ -376,15 +301,14 @@ export default function Home() {
                     w="300px"
                     py={2}
                     onClick={async () => {
-                      const _txs = await db.cget(
-                        "txs",
-                        ["id", "desc"],
-                        ["input.caller", "==", router.query.addr],
-                        ["startAfter", last(txs)],
+                      const _blks = await db.cget(
+                        "blocks",
+                        ["height", "desc"],
+                        ["startAfter", last(blks)],
                         20
                       )
-                      setTxs(concat(txs, _txs))
-                      setIsnext(_txs.length === 20)
+                      setBlks(concat(blks, _blks))
+                      setIsnext(_blks.length === 20)
                     }}
                     sx={{
                       borderRadius: "5px",
