@@ -63,17 +63,19 @@ class Rollup {
   measureSizes(bundles) {
     let sizes = 0
     let _bundlers = []
+    let ts = []
     for (let v of bundles) {
       if (isNil(v.data?.input)) continue
       const len = JSON.stringify(v.data.input).length
       if (sizes + len <= 3900) {
         _bundlers.push(v)
+        ts.push(v.data.tx_ts)
         sizes += len
       } else {
         break
       }
     }
-    return _bundlers
+    return { bundles: _bundlers, ts }
   }
 
   async bundle() {
@@ -85,13 +87,15 @@ class Rollup {
         ["commit", "==", false],
         10
       )
-      const bundles = this.measureSizes(bundling)
+      const { bundles, ts } = this.measureSizes(bundling)
       if (bundles.length > 0) {
         console.log(
           `commiting to Warp...${map(_path(["data", "id"]))(bundles)}`
         )
+        console.log(ts)
         const result = await this.warp.bundle(
-          map(_path(["data", "input"]))(bundles)
+          map(_path(["data", "input"]))(bundles),
+          { ts }
         )
         console.log(`bundle tx result: ${result.success}`)
         if (result.success === true) {
@@ -205,7 +209,7 @@ class Rollup {
             id: ++this.tx_count,
             txid: tx.result.transaction.id,
             commit: false,
-            tx_ts: tx.result.block.timestamp,
+            tx_ts: tx.result.transaction.timestamp,
             input: param,
             docID: tx.result.docID,
             doc: tx.result.doc,

@@ -250,11 +250,12 @@ class Base {
 
   async bundle(queries, opt) {
     let input = null
-    if (!isNil(opt?.ts)) {
-      if (opt.ts.length !== queries.length) {
-        throw new Error("ts length is different from query length")
+    if (!isNil(opt?.t)) {
+      if (opt.t.length !== queries.length) {
+        throw new Error("timestamp length is different from query length")
       }
-      input = JSON.stringify({ q: queries, t: opt.ts })
+      if (!is(Number, opt.h)) throw new Error("height not specified")
+      input = JSON.stringify({ q: queries, t: opt.t, h: opt.h })
     } else {
       input = JSON.stringify(queries)
     }

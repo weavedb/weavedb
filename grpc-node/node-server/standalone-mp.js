@@ -218,100 +218,99 @@ class Server {
           case "deploy_contract":
             if (isNil(key)) {
               callback(null, { result: null, err: "key is not specified" })
-              return
-            } else if (isNil(await this.admin_db.get("dbs", key))) {
-              callback(null, {
-                result: null,
-                err: `${key} doesn't exists`,
-              })
-              return
             } else {
-              const tx_deploy = { success: false }
-              const warp = WarpFactory.forMainnet().use(new DeployPlugin())
-              const srcTxId = "GYLsyTsZK1Iay4EEKDzejddNM-KBVFBkA40lDY3eJx8"
-              let res = null
-              let err = null
-              try {
-                let initialState = {
-                  version: "0.31.0",
-                  canEvolve: true,
-                  evolve: null,
-                  secure: true,
-                  auth: {
-                    algorithms: [
-                      "secp256k1",
-                      "secp256k1-2",
-                      "ed25519",
-                      "rsa256",
-                    ],
-                    name: "weavedb",
-                    version: "1",
-                    links: {},
-                  },
-                  crons: {
-                    lastExecuted: 0,
-                    crons: {},
-                  },
-                  contracts: {},
-                  triggers: {},
-                }
-                const arweave = Arweave.init({
-                  host: "arweave.net",
-                  port: 443,
-                  protocol: "https",
-                })
-                initialState.owner = this.conf.owner
-                initialState.bundlers = [
-                  await arweave.wallets.jwkToAddress(this.conf.bundler),
-                ]
-                initialState.contracts = {
-                  dfinity: "3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8",
-                  ethereum: "Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w",
-                  bundler: "lry5KMRj6j13sLHsKxs1D2joLjcj6yNHtNQQQoaHRug",
-                  nostr: "PDuTzRpn99EwiUvT9XrUhg8nyhW20Wcd-XcRXboCpHs",
-                }
-                res = await warp.createContract.deployFromSourceTx({
-                  wallet: new ArweaveSigner(this.conf.bundler),
-                  initState: JSON.stringify(initialState),
-                  srcTxId,
-                  evaluationManifest: {
-                    evaluationOptions: {
-                      useKVStorage: true,
-                      internalWrites: true,
-                      allowBigInt: true,
-                    },
-                  },
-                })
-              } catch (e) {
-                err = e
-                console.log(e)
-              }
-              if (isNil(res?.contractTxId) || !isNil(err)) {
-                callback(null, {
-                  result: null,
-                  err: err ?? "unknown error",
-                })
+              const _db = await this.admin_db.get("dbs", key)
+              if (isNil(_db)) {
+                callback(null, { result: null, err: `${key} doesn't exists` })
               } else {
-                const tx = await this.admin_db.update(
-                  { contractTxId: res.contractTxId, rollup: true },
-                  "dbs",
-                  key,
-                  auth
-                )
-                console.log(
-                  `contract deployed: ${res.contractTxId} [${key}:${tx.success}]`
-                )
-                callback(null, {
-                  result: JSON.stringify(res),
-                  err,
-                })
-                this.rollups[key].deployContract(
-                  res.contractTxId,
-                  ++this.count,
-                  () => {
-                    console.log(`contract initialized! ${res.contractTxId}`)
+                const tx_deploy = { success: false }
+                const warp = WarpFactory.forMainnet().use(new DeployPlugin())
+                //const srcTxId = "6z03DkIxmMYtjpSPnXX-6A5f7QsO3gnLsqkQObRiK00"
+                const srcTxId = "ndt-YqUgq7B8QeAFn6BPT5yOaf2H-gax0cUwtQcKQrs"
+                let res = null
+                let err = null
+                try {
+                  let initialState = {
+                    version: "0.31.0",
+                    canEvolve: true,
+                    evolve: null,
+                    secure: true,
+                    auth: {
+                      algorithms: [
+                        "secp256k1",
+                        "secp256k1-2",
+                        "ed25519",
+                        "rsa256",
+                      ],
+                      name: "weavedb",
+                      version: "1",
+                      links: {},
+                    },
+                    crons: {
+                      lastExecuted: 0,
+                      crons: {},
+                    },
+                    contracts: {},
+                    triggers: {},
                   }
-                )
+                  const arweave = Arweave.init({
+                    host: "arweave.net",
+                    port: 443,
+                    protocol: "https",
+                  })
+                  initialState.owner = this.conf.owner
+                  initialState.bundlers = [
+                    await arweave.wallets.jwkToAddress(this.conf.bundler),
+                  ]
+                  initialState.contracts = {
+                    dfinity: "3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8",
+                    ethereum: "Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w",
+                    bundler: "lry5KMRj6j13sLHsKxs1D2joLjcj6yNHtNQQQoaHRug",
+                    nostr: "PDuTzRpn99EwiUvT9XrUhg8nyhW20Wcd-XcRXboCpHs",
+                  }
+                  res = await warp.createContract.deployFromSourceTx({
+                    wallet: new ArweaveSigner(this.conf.bundler),
+                    initState: JSON.stringify(initialState),
+                    srcTxId,
+                    evaluationManifest: {
+                      evaluationOptions: {
+                        useKVStorage: true,
+                        internalWrites: true,
+                        allowBigInt: true,
+                      },
+                    },
+                  })
+                } catch (e) {
+                  err = e
+                  console.log(e)
+                }
+                if (isNil(res?.contractTxId) || !isNil(err)) {
+                  callback(null, {
+                    result: null,
+                    err: err ?? "unknown error",
+                  })
+                } else {
+                  const tx = await this.admin_db.update(
+                    { contractTxId: res.contractTxId, rollup: true },
+                    "dbs",
+                    key,
+                    auth
+                  )
+                  console.log(
+                    `contract deployed: ${res.contractTxId} [${key}:${tx.success}]`
+                  )
+                  callback(null, {
+                    result: JSON.stringify(res),
+                    err,
+                  })
+                  this.rollups[key].deployContract(
+                    res.contractTxId,
+                    ++this.count,
+                    () => {
+                      console.log(`contract initialized! ${res.contractTxId}`)
+                    }
+                  )
+                }
               }
             }
             break

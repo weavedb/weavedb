@@ -118,6 +118,7 @@ const wrapResult = (state, original_signer, SmartWeave, extra) => ({
       quantity: SmartWeave?.transaction?.quantity || null,
       target: SmartWeave?.transaction?.target || null,
       reward: SmartWeave?.transaction?.reward || null,
+      timestamp: SmartWeave?.transaction?.timestamp || null,
     },
     block: {
       height: SmartWeave?.block?.height || null,
@@ -402,12 +403,14 @@ const auth = async (
     if (/^0x/.test(_caller)) _caller = _caller.toLowerCase()
   }
   const timestamp = isNil(action.timestamp)
-    ? SmartWeave.block.timestamp
+    ? isNil(SmartWeave.transaction.timestamp)
+      ? Math.round(SmartWeave.transaction.timestamp)
+      : SmartWeave.block.timestamp
     : Math.round(action.timestamp / 1000)
   let original_signer = signer
   let _signer = signer
   if (_signer !== _caller) {
-    const link = state.auth.links[_signer]
+    const link = await fn.getAddressLink(_signer, state, kvs, SmartWeave)
     if (!isNil(link)) {
       let _address = is(Object, link) ? link.address : link
       let _expiry = is(Object, link) ? link.expiry || 0 : 0

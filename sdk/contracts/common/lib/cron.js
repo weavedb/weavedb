@@ -34,7 +34,10 @@ const executeCron =
       },
       transaction: {
         id: SmartWeave.transaction.id,
-        timestamp: timestamp ?? SmartWeave.block.timestamp * 1000,
+        timestamp:
+          timestamp ??
+          SmartWeave.transaction.timestamp ??
+          SmartWeave.block.timestamp * 1000,
       },
     })
     const parse = query => {
