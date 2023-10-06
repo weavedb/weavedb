@@ -54,18 +54,22 @@ const bundle = async (
   let queries = null
   let ts = null
   if (isBundler) {
+    let h = (await kv(kvs, SmartWeave).get(`bundle_height`)) ?? 0
+    if (h + 1 !== parsed.h) err(`the wrong bundle height [${h} => ${parsed.h}]`)
+    await kv(kvs, SmartWeave).put(`bundle_height`, parsed.h)
     queries = parsed.q
     ts = parsed.t
     if (isNil(ts) || queries.length !== ts.length) {
       err(`timestamp length is not equal to query length`)
     }
     let last = (state.last_block ?? 0) * 1000
-    for (let v of ts) {
-      if (last > v || SmartWeave.block.timestamp * 1000 < v) {
-        err(`the wrong timestamp`)
+    for (let [i, v] of ts.entries()) {
+      if (last > v) {
+        err(`the wrong timestamp[${i}]: ${last} <= ${v}`)
       }
       last = v
     }
+    state.last_block = last
   } else {
     queries = parsed
   }
@@ -96,7 +100,6 @@ const bundle = async (
         case "batch":
           res = await batch(...params)
           break
-
         case "add":
           res = await add(
             clone(state),

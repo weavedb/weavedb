@@ -15,6 +15,17 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.33.0-beta (October 6, 2023)
+
+#### Source Transaction Id
+
+[hnsbAyRInY149UUDWXDTpukinxeSKB5tYJWJ5ZOz0IM](https://sonar.warp.cc/#/app/source/hnsbAyRInY149UUDWXDTpukinxeSKB5tYJWJ5ZOz0IM)
+
+#### Added Features
+
+- move address links to kvs
+- bundle height
+
 ### v0.32.0-beta (October 5, 2023)
 
 #### Source Transaction Id

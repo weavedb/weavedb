@@ -7,7 +7,6 @@ const {
 } = require("../common/actions/read/getLinkedContract")
 
 const { getOwner } = require("../common/actions/read/getOwner")
-const { getAddressLink } = require("../common/actions/read/getAddressLink")
 const { getRelayerJob } = require("../common/actions/read/getRelayerJob")
 const { listRelayerJobs } = require("../common/actions/read/listRelayerJobs")
 const { getEvolve } = require("../common/actions/read/getEvolve")
@@ -15,6 +14,7 @@ const { getInfo } = require("../common/actions/read/getInfo")
 const { getTriggers } = require("../common/actions/read/getTriggers")
 const { getBundlers } = require("./actions/read/getBundlers")
 
+const { getAddressLink } = require("./actions/read/getAddressLink")
 const { ids } = require("./actions/read/ids")
 const { validities } = require("./actions/read/validities")
 const { nonce } = require("./actions/read/nonce")
@@ -106,7 +106,6 @@ const addHash =
       const hash = await _SmartWeave.arweave.crypto.hash(hashes, "SHA-384")
       state.hash = _SmartWeave.arweave.utils.bufferTob64(hash)
     }
-    state.last_block = _SmartWeave.block.timestamp
     return { state, result }
   }
 

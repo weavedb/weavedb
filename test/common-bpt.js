@@ -583,13 +583,12 @@ const tests = {
     const bundlers = [walletAddress]
     await db.setBundlers(bundlers, { ar: arweave_wallet })
     expect(await db.getBundlers()).to.eql(bundlers)
-    await sleep(500)
     const date = Date.now()
-    await sleep(500)
     const tx = await db.bundle(
       [await db.sign("add", {}, "ppl"), await db.sign("add", {}, "ppl")],
       {
-        ts: [date, date + 1],
+        t: [date, date + 1],
+        h: 1,
       }
     )
     expect(tx.success).to.eql(true)
@@ -1722,13 +1721,18 @@ const tests = {
     const bundlers = [walletAddress]
     await db.setBundlers(bundlers, { ar: arweave_wallet })
     expect(await db.getBundlers()).to.eql(bundlers)
-    const tx = await db.bundle([
-      await db.sign("add", { test: "a" }, "ppl", { nonce: 1 }),
-      await db.sign("add", { test: "b" }, "ppl", { nonce: 2 }),
-      await db.sign("add", { test: "c" }, "ppl", { nonce: 3 }),
-      await db.sign("add", { test: "d" }, "ppl", { nonce: 4 }),
-      await db.sign("add", { test: "e" }, "ppl", { nonce: 5 }),
-    ])
+    const tx = await db.bundle({
+      q: [
+        await db.sign("add", { test: "a" }, "ppl", { nonce: 1 }),
+        await db.sign("add", { test: "b" }, "ppl", { nonce: 2 }),
+        await db.sign("add", { test: "c" }, "ppl", { nonce: 3 }),
+        await db.sign("add", { test: "d" }, "ppl", { nonce: 4 }),
+        await db.sign("add", { test: "e" }, "ppl", { nonce: 5 }),
+      ],
+      h: 1,
+      t: [Date.now(), Date.now(), Date.now(), Date.now(), Date.now()],
+    })
+    expect(tx.success).to.eql(true)
     return
   },
 }

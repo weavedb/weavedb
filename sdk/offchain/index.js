@@ -126,6 +126,7 @@ class OffChain extends Base {
 
   getSW(input) {
     let kvs = {}
+    const date = Date.now()
     return {
       kv: {
         get: async key =>
@@ -139,10 +140,10 @@ class OffChain extends Base {
       contract: { id: this.contractTxId },
       arweave,
       block: {
-        timestamp: Math.round(Date.now() / 1000),
+        timestamp: Math.round(date / 1000),
         height: ++this.height,
       },
-      transaction: { id: this.getTxId(input) },
+      transaction: { id: this.getTxId(input), timestamp: date },
       contracts: {
         viewContractState: async (contract, param, SmartWeave) => {
           const { handle } = require(`weavedb-contracts/${contract}/contract`)
