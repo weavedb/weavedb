@@ -4,7 +4,7 @@ COPY ./ /weavedb
 
 WORKDIR /weavedb
 
-RUN npm install
+RUN yarn
 
 EXPOSE 9090
 
