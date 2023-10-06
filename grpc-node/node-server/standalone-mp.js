@@ -225,8 +225,7 @@ class Server {
               } else {
                 const tx_deploy = { success: false }
                 const warp = WarpFactory.forMainnet().use(new DeployPlugin())
-                //const srcTxId = "6z03DkIxmMYtjpSPnXX-6A5f7QsO3gnLsqkQObRiK00"
-                const srcTxId = "ndt-YqUgq7B8QeAFn6BPT5yOaf2H-gax0cUwtQcKQrs"
+                const srcTxId = "2XvPr6h8i3Tokf6v5vMOeUR_f28RM8bUSI-x5c-Qu4Y"
                 let res = null
                 let err = null
                 try {
