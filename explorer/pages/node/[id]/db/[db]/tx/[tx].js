@@ -244,8 +244,12 @@ export default function Home() {
                           >
                             Block Height:
                           </Box>
-                          <Box as="td" px={4} py={2}>
-                            {tx_info.id}
+                          <Box as="td" px={4} py={2} color="#763AAC">
+                            <Link
+                              href={`/node/${router.query.id}/db/${router.query.db}/block/${tx_info.block}`}
+                            >
+                              {tx_info.block}
+                            </Link>
                           </Box>
                         </Box>
                         <Box as="tr">
@@ -261,12 +265,12 @@ export default function Home() {
                           </Box>
                           <Box as="td" px={4} py={2}>
                             {dayjs(
-                              (tx_info.tx_ts ?? tx_info.blk_ts ?? 0) * 1000
+                              tx_info.tx_ts ?? tx_info.blk_ts ?? 0
                             ).fromNow()}{" "}
                             (
-                            {dayjs(
-                              (tx_info.tx_ts ?? tx_info.blk_ts ?? 0) * 1000
-                            ).format("llll")}
+                            {dayjs(tx_info.tx_ts ?? tx_info.blk_ts ?? 0).format(
+                              "llll"
+                            )}
                             )
                           </Box>
                         </Box>
