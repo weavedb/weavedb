@@ -9,7 +9,6 @@ const version_bpt = require(`${contracts}/weavedb-bpt/lib/version`)
 const Base = require("weavedb-base")
 let arweave = require("arweave")
 if (!isNil(arweave.default)) arweave = arweave.default
-const md5 = require("md5")
 
 class OffChain extends Base {
   constructor({
@@ -120,11 +119,18 @@ class OffChain extends Base {
     if (typeof this.cache === "object") await this.cache.initialize(this)
   }
 
-  getTxId(input) {
-    return md5(JSON.stringify({ contractTxId: this.contractTxId, input }))
+  async getTxId(input, date) {
+    const str = JSON.stringify({
+      contractTxId: this.contractTxId,
+      input,
+      timestamp: date,
+    })
+    return arweave.utils.bufferTob64Url(
+      await arweave.crypto.hash(arweave.utils.stringToBuffer(str))
+    )
   }
 
-  getSW(input) {
+  async getSW(input) {
     let kvs = {}
     const date = Date.now()
     return {
@@ -143,7 +149,7 @@ class OffChain extends Base {
         timestamp: Math.round(date / 1000),
         height: ++this.height,
       },
-      transaction: { id: this.getTxId(input), timestamp: date },
+      transaction: { id: await this.getTxId(input, date), timestamp: date },
       contracts: {
         viewContractState: async (contract, param, SmartWeave) => {
           const { handle } = require(`weavedb-contracts/${contract}/contract`)
@@ -158,8 +164,9 @@ class OffChain extends Base {
   }
 
   async read(input) {
-    return (await this.handle(clone(this.state), { input }, this.getSW(input)))
-      .result
+    return (
+      await this.handle(clone(this.state), { input }, await this.getSW(input))
+    ).result
   }
 
   async dryRead(state, queries) {
@@ -169,7 +176,7 @@ class OffChain extends Base {
       const input = { function: v[0], query: tail(v) }
       try {
         res.result = (
-          await this.handle(clone(state), { input }, this.getSW(input))
+          await this.handle(clone(state), { input }, await this.getSW(input))
         ).result
         res.success = true
       } catch (e) {
@@ -200,7 +207,7 @@ class OffChain extends Base {
     } else {
       let error = null
       let tx = null
-      let sw = this.getSW(param)
+      let sw = await this.getSW(param)
       try {
         tx = await this.handle(
           clone(this.state),
