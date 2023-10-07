@@ -222,6 +222,11 @@ class Server {
               const _db = await this.admin_db.get("dbs", key)
               if (isNil(_db)) {
                 callback(null, { result: null, err: `${key} doesn't exists` })
+              } else if (!isNil(_db.contractTxId)) {
+                callback(null, {
+                  result: null,
+                  err: `${_db.contractTxId} already deployed`,
+                })
               } else {
                 const tx_deploy = { success: false }
                 const warp = WarpFactory.forMainnet().use(new DeployPlugin())

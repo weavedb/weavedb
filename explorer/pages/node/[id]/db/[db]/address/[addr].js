@@ -271,7 +271,7 @@ export default function Home() {
                           Date
                         </Box>
                         <Box as="td" p={2} w="100px">
-                          Rollup
+                          Block
                         </Box>
                       </Box>
                       <Box as="tbody">
@@ -344,18 +344,14 @@ export default function Home() {
                                 </Box>
                                 <Box as="td" p={2}>
                                   {!isNil(v.warp) ? (
-                                    <Box
-                                      as="a"
-                                      target="_blank"
-                                      href={`https://sonar.warp.cc/#/app/interaction/${v.warp}?network=mainnet`}
-                                      color="#763AAC"
-                                      onClick={e => e.stopPropagation()}
+                                    <Link
+                                      href={`/node/${router.query.id}/db/${router.query.db}/block/${v.block}`}
+                                      sx={{ ":hover": { opacity: 0.75 } }}
                                     >
-                                      {v.warp.slice(0, 5)}...
-                                      {v.warp.slice(-5)}
-                                    </Box>
+                                      <Box color="#763AAC">{v.block}</Box>
+                                    </Link>
                                   ) : (
-                                    "not commited"
+                                    "-"
                                   )}
                                 </Box>
                               </Box>

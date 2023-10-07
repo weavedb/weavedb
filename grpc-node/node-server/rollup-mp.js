@@ -47,6 +47,7 @@ class Rollup {
     this.bundling = null
     this.kvs = {}
     this.kvs_wal = {}
+    this.error_count = 0
     this.dir = path.resolve(
       dir ?? path.resolve(__dirname, "cache"),
       dbname,
@@ -63,74 +64,155 @@ class Rollup {
 
   measureSizes(bundles) {
     let sizes = 0
-    let _bundlers = []
-    let t = []
+    let b = [{ bundles: [], t: [], size: 0 }]
+    let i = 0
     for (let v of bundles) {
       if (isNil(v.data?.input)) continue
       const len = JSON.stringify(v.data.input).length
-      if (sizes + len <= 3900) {
-        _bundlers.push(v)
-        t.push(v.data.tx_ts)
-        sizes += len
-      } else {
-        break
+      if (sizes + len > 3000) {
+        i += 1
+        sizes = 0
+        b[i] = { bundles: [], t: [], size: 0 }
       }
+      b[i].bundles.push(v)
+      b[i].t.push(v.data.tx_ts)
+      sizes += len
+      b[i].size += len
     }
-    return { bundles: _bundlers, t }
+    return b
   }
-
-  async bundle() {
-    try {
-      const bundling = await this.wal.cget(
-        "txs",
-        ["commit"],
-        ["id"],
-        ["commit", "==", false],
-        10
+  async commit(bundles, t, height) {
+    console.log(
+      `[${height}],commiting to Warp...${map(_path(["data", "id"]))(
+        bundles
+      )} : ${height}`
+    )
+    const res = await this.warp.bundle(map(_path(["data", "input"]))(bundles), {
+      t,
+      h: height,
+      parallel: true,
+    })
+    console.log(`bundle tx result: ${res.success}: ${res.originalTxId}`)
+    if (res.success === true) {
+      let batch = map(
+        v => [
+          "update",
+          {
+            commit: true,
+            warp: res.originalTxId,
+            block: height,
+          },
+          "txs",
+          v.id,
+        ],
+        bundles
       )
-      const { bundles, t } = this.measureSizes(bundling)
-      if (bundles.length > 0) {
-        console.log(
-          `commiting to Warp...${map(_path(["data", "id"]))(bundles)}`
-        )
-        const result = await this.warp.bundle(
-          map(_path(["data", "input"]))(bundles),
-          { t, h: this.height + 1 }
-        )
-        console.log(`bundle tx result: ${result.success}`)
-        if (result.success === true) {
-          this.height++
-          let batch = map(
-            v => [
-              "update",
-              {
-                commit: true,
-                warp: result.originalTxId,
-                block: this.height,
-              },
-              "txs",
-              v.id,
-            ],
-            bundles
-          )
-          batch.push([
-            "set",
-            {
-              height: this.height,
-              txs: map(_path(["data", "txid"]))(bundles),
-              date: result.bundlerResonse?.timestamp ?? Date.now(),
-              txid: result.originalTxId,
-            },
-            "blocks",
-            `${this.height}`,
-          ])
-          await this.wal.batch(batch)
-        }
-      }
-    } catch (e) {
-      console.log(e)
+      batch.push([
+        "set",
+        {
+          height: height,
+          txs: map(_path(["data", "txid"]))(bundles),
+          date: res.bundlerResonse?.timestamp ?? Date.now(),
+          txid: res.originalTxId,
+        },
+        "blocks",
+        `${height}`,
+      ])
+      await this.wal.batch(batch)
+      return { success: true, height }
+    } else {
+      return { success: false, height }
     }
-    setTimeout(() => this.bundle(), 3000)
+  }
+  async _bundle() {
+    return new Promise(async _res => {
+      try {
+        const bundling = await this.wal.cget(
+          "txs",
+          ["commit"],
+          ["id"],
+          ["commit", "==", false]
+        )
+        const b = this.measureSizes(bundling)
+        let done = 0
+        if (b[0].t.length > 0) {
+          let height = this.height
+          let results = []
+          for (let v of b) {
+            const { bundles, t } = v
+            height++
+            console.log(
+              `[${height}],commiting to Warp...${map(_path(["data", "id"]))(
+                bundles
+              )} : ${height}`
+            )
+            const res = await this.warp.bundle(
+              map(_path(["data", "input"]))(bundles),
+              {
+                t,
+                h: height,
+                parallel: true,
+              }
+            )
+            console.log(`committed`, res?.tx?.originalTxId, res?.duration)
+            if (isNil(res?.tx?.originalTxId)) break
+            results.push({
+              height,
+              tx: res.tx,
+              items: v,
+              duration: res.duration,
+            })
+          }
+          const valids =
+            (await this.warp.db.readState())?.cachedValue?.validity ?? {}
+          for (let v of results) {
+            const valid = valids[v.tx.originalTxId]
+            if (valid !== true) break
+            console.log(`valid [${v.height}] : ${v.tx.originalTxId}`)
+            this.height = v.height
+            let batch = map(
+              v2 => [
+                "update",
+                {
+                  commit: true,
+                  warp: v.tx.originalTxId,
+                  block: v.height,
+                },
+                "txs",
+                v2.id,
+              ],
+              v.items.bundles
+            )
+            batch.push([
+              "set",
+              {
+                height: v.height,
+                txs: map(_path(["data", "txid"]))(v.items.bundles),
+                date: v.tx.bundlerResonse?.timestamp ?? Date.now(),
+                txid: v.tx.originalTxId,
+              },
+              "blocks",
+              `${v.height}`,
+            ])
+            await this.wal.batch(batch)
+          }
+          _res({ success: true, err: null, len: b.length })
+        } else {
+          _res({ err: null, len: 0, success: null })
+        }
+      } catch (e) {
+        console.log(e)
+        _res({ err: true, success: false, len: 0 })
+      }
+    })
+  }
+  async bundle() {
+    const { err, success, len } = await this._bundle()
+    if (success) this.error_count = 0
+    if (err) this.error_count += 1
+    if (this.error_count < 2) {
+      setTimeout(() => this.bundle(), success === true ? 0 : 3000)
+    }
   }
 
   async initDB() {

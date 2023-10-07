@@ -67,7 +67,6 @@ export default function Home() {
       }
     })()
   }, [info])
-  console.log(blks)
   useEffect(() => {
     ;(async () => {
       if (!isNil(info)) {
