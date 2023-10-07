@@ -5,6 +5,7 @@ const contracts = [
   "/weavedb-kv/contract.js",
   "/weavedb/contract.js",
   "/intercall/contract.js",
+  "/intercall/parallel.js",
   "/intmax/intmax.js",
   "/dfinity/ii.js",
   "/ethereum/eth.js",

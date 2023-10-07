@@ -575,10 +575,30 @@ class SDK extends Base {
     }
     return res.result
   }
-
-  async write(func, param, dryWrite, bundle, relay = false, onDryWrite) {
+  async writeParallel(param, parallel) {
+    let tx = null
+    let err = null
+    let start = Date.now()
+    let originalTxId = null
+    try {
+      tx = await this.db["bundleInteraction"](param, {})
+    } catch (e) {
+      err = e
+      console.log(e)
+    }
+    return { tx, err, duration: Date.now() - start }
+  }
+  async write(
+    func,
+    param,
+    dryWrite,
+    bundle,
+    relay = false,
+    onDryWrite,
+    parallel
+  ) {
     delete param.data
-    if (JSON.stringify(param).length > 3900) {
+    if (JSON.stringify(param).length > 3000) {
       return {
         nonce: param.nonce,
         signer: param.caller,
@@ -592,10 +612,11 @@ class SDK extends Base {
         results: [],
       }
     }
-    let cache = !isNil(onDryWrite?.cache)
-      ? onDryWrite.cache
-      : !this.nocache_default
+    if (!isNil(parallel)) return await this.writeParallel(param, parallel)
     return new Promise(async (_res, rej) => {
+      let cache = !isNil(onDryWrite?.cache)
+        ? onDryWrite.cache
+        : !this.nocache_default
       if (relay) {
         _res(param)
       } else {

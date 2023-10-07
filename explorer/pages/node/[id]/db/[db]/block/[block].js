@@ -162,7 +162,7 @@ export default function Home() {
                     sx={{ borderRight: "1px solid #ddd" }}
                   ></Box>
                   <Box flex={1}>
-                    <Box sx={{ color: "#999" }}>Block</Box>
+                    <Box sx={{ color: "#999" }}>Block Height</Box>
                     <Box sx={{ fontSize: "14px" }}>{router?.query?.block}</Box>
                   </Box>
                   <Box
@@ -177,7 +177,7 @@ export default function Home() {
                         <Box
                           as="a"
                           color="#763AAC"
-                          href={`https://sonar.warp.cc/#/app/contract/${block.data.txid}`}
+                          href={`https://sonar.warp.cc/#/app/interaction/${block.data.txid}?network=mainnet`}
                           target="_blank"
                         >
                           {block.data.txid}

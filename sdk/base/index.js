@@ -335,7 +335,8 @@ class Base {
       multisigs,
       linkedAccount,
       noauth,
-      data
+      data,
+      parallel
     if (!isNil(opt)) {
       ;({
         jobID,
@@ -354,6 +355,7 @@ class Base {
         linkedAccount,
         noauth,
         data,
+        parallel,
       } = opt)
     }
     if (!isNil(linkedAccount)) wallet = linkedAccount
@@ -372,6 +374,7 @@ class Base {
       multisigs,
       onDryWrite,
       data,
+      parallel,
     ]
     if (
       ((func === "nostr" || func === "bundle") && this.type === 3) ||
@@ -388,7 +391,8 @@ class Base {
         jobID,
         multisigs,
         onDryWrite,
-        data
+        data,
+        parallel
       )
     } else if (
       isNil(intmax) &&
@@ -432,7 +436,8 @@ class Base {
           jobID,
           multisigs,
           onDryWrite,
-          data
+          data,
+          parallel
         )
   }
 
@@ -807,7 +812,8 @@ class Base {
     jobID,
     multisigs,
     onDryWrite,
-    __data__
+    __data__,
+    parallel
   ) {
     let signer, caller, pkey
     if (!isNil(privateKey)) {
@@ -871,7 +877,15 @@ class Base {
     if (!isNil(jobID)) param.jobID = jobID
     if (!isNil(multisigs)) param.multisigs = multisigs
     bundle ||= this.network === "mainnet"
-    return await this.write(func, param, dryWrite, bundle, relay, onDryWrite)
+    return await this.write(
+      func,
+      param,
+      dryWrite,
+      bundle,
+      relay,
+      onDryWrite,
+      parallel
+    )
   }
 
   async writeWithII(
@@ -886,7 +900,8 @@ class Base {
     jobID,
     multisigs,
     onDryWrite,
-    __data__
+    __data__,
+    parallel
   ) {
     let addr = ii.toJSON()[0]
     const isaddr = !isNil(addr)
@@ -929,7 +944,15 @@ class Base {
     if (!isNil(__data__)) param.data = __data__
     if (!isNil(jobID)) param.jobID = jobID
     if (!isNil(multisigs)) param.multisigs = multisigs
-    return await this.write(func, param, dryWrite, bundle, relay, onDryWrite)
+    return await this.write(
+      func,
+      param,
+      dryWrite,
+      bundle,
+      relay,
+      onDryWrite,
+      parallel
+    )
   }
 
   async writeWithAR(
@@ -944,7 +967,8 @@ class Base {
     jobID,
     multisigs,
     onDryWrite,
-    __data__
+    __data__,
+    parallel
   ) {
     const wallet = is(Object, ar) && ar.walletName === "ArConnect" ? ar : null
     let addr = null
@@ -998,7 +1022,15 @@ class Base {
     if (!isNil(__data__)) param.data = __data__
     if (!isNil(jobID)) param.jobID = jobID
     if (!isNil(multisigs)) param.multisigs = multisigs
-    return await this.write(func, param, dryWrite, bundle, relay, onDryWrite)
+    return await this.write(
+      func,
+      param,
+      dryWrite,
+      bundle,
+      relay,
+      onDryWrite,
+      parallel
+    )
   }
 
   async writeWithIntmax(
@@ -1013,7 +1045,8 @@ class Base {
     jobID,
     multisigs,
     onDryWrite,
-    __data__
+    __data__,
+    parallel
   ) {
     const wallet = is(Object, intmax) ? intmax : null
     let addr = null
@@ -1082,7 +1115,15 @@ class Base {
     if (!isNil(__data__)) param.data = __data__
     if (!isNil(jobID)) param.jobID = jobID
     if (!isNil(multisigs)) param.multisigs = multisigs
-    return await this.write(func, param, dryWrite, bundle, relay, onDryWrite)
+    return await this.write(
+      func,
+      param,
+      dryWrite,
+      bundle,
+      relay,
+      onDryWrite,
+      parallel
+    )
   }
 
   parseQuery(func, query) {
@@ -1187,14 +1228,23 @@ class Base {
     jobID,
     multisigs,
     onDryWrite,
-    __data__
+    __data__,
+    parallel
   ) {
     const param = mergeLeft(extra, { function: func, query })
     if (!isNil(__data__)) param.data = __data__
     if (!isNil(jobID)) param.jobID = jobID
     if (!isNil(multisigs)) param.multisigs = multisigs
     bundle ||= this.network === "mainnet"
-    return await this.write(func, param, dryWrite, bundle, relay, onDryWrite)
+    return await this.write(
+      func,
+      param,
+      dryWrite,
+      bundle,
+      relay,
+      onDryWrite,
+      parallel
+    )
   }
 }
 
