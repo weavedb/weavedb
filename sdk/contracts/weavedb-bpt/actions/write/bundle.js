@@ -1,7 +1,7 @@
 const { err, wrapResult, read } = require("../../../common/lib/utils")
 const { kv } = require("../../lib/utils")
 const { clone } = require("../../../common/lib/pure")
-const { isNil, includes } = require("ramda")
+const { isNil, includes, map } = require("ramda")
 const { set } = require("./set")
 const { add } = require("./add")
 const { update } = require("./update")
@@ -27,6 +27,40 @@ const { addTrigger } = require("./addTrigger")
 const { removeTrigger } = require("./removeTrigger")
 const { setBundlers } = require("./setBundlers")
 
+const getHash = async (p, SmartWeave) => {
+  let ids = []
+  for (let [i, v] of p.q.entries()) {
+    const str = JSON.stringify({
+      contractTxId: SmartWeave.contract.id,
+      input: v,
+      timestamp: p.t[i],
+    })
+    ids.push(
+      SmartWeave.arweave.utils.bufferTob64Url(
+        await SmartWeave.arweave.crypto.hash(
+          SmartWeave.arweave.utils.stringToBuffer(str)
+        )
+      )
+    )
+  }
+  return SmartWeave.arweave.utils.bufferTob64(
+    await SmartWeave.arweave.crypto.hash(
+      SmartWeave.arweave.utils.concatBuffers(
+        map(v2 => SmartWeave.arweave.utils.stringToBuffer(v2))(ids)
+      ),
+      "SHA-384"
+    )
+  )
+}
+const getNewHash = async (last_hash, current_hash, SmartWeave) => {
+  const hashes = SmartWeave.arweave.utils.concatBuffers([
+    SmartWeave.arweave.utils.stringToBuffer(last_hash),
+    SmartWeave.arweave.utils.stringToBuffer(current_hash),
+  ])
+  return SmartWeave.arweave.utils.bufferTob64(
+    await SmartWeave.arweave.crypto.hash(hashes, "SHA-384")
+  )
+}
 const bundle = async (
   state,
   action,
@@ -54,9 +88,26 @@ const bundle = async (
   let queries = null
   let ts = null
   if (isBundler) {
+    let last_hash =
+      (await kv(kvs, SmartWeave).get(`last_hash`)) ?? SmartWeave.contract.id
     let h = (await kv(kvs, SmartWeave).get(`bundle_height`)) ?? 0
-    if (h + 1 !== parsed.h) err(`the wrong bundle height [${h} => ${parsed.h}]`)
-    await kv(kvs, SmartWeave).put(`bundle_height`, parsed.h)
+    if (h + 1 !== parsed.n) {
+      if (h + 1 < parsed.n) {
+        let cached =
+          (await kv(kvs, SmartWeave).get(`bundles.${parsed.n}`)) ?? []
+        cached.unshift({ ...parsed })
+        await kv(kvs, SmartWeave).put(`bundles.${parsed.n}`, cached)
+        return wrapResult(state, original_signer, SmartWeave)
+      } else {
+        err(`the wrong bundle height [${h} => ${parsed.n}]`)
+      }
+    }
+    const current_hash = await getHash(parsed, SmartWeave)
+    const new_hash = await getNewHash(last_hash, current_hash, SmartWeave)
+    if (parsed.h !== new_hash) err(`the wrong hash`)
+    await kv(kvs, SmartWeave).put(`last_hash`, new_hash)
+    last_hash = new_hash
+    await kv(kvs, SmartWeave).put(`bundle_height`, parsed.n)
     queries = parsed.q
     ts = parsed.t
     if (isNil(ts) || queries.length !== ts.length) {
@@ -70,9 +121,32 @@ const bundle = async (
       last = v
     }
     state.last_block = last
+    let height = parsed.n + 1
+    while (true) {
+      let _cached = (await kv(kvs, SmartWeave).get(`bundles.${height}`)) ?? []
+      if (_cached.length === 0) break
+      await kv(kvs, SmartWeave).put(`bundles.${parsed.n}`, null)
+      let next = false
+      for (let [i, v] of _cached.entries()) {
+        const current_hash = await getHash(v, SmartWeave)
+        const new_hash = await getNewHash(last_hash, current_hash, SmartWeave)
+        if (v.h !== new_hash) continue
+        for (let [i2, v2] of v.q.entries()) {
+          ts.push(v.q[i2])
+          queries.push(v2)
+        }
+        next = true
+        await kv(kvs, SmartWeave).put(`last_hash`, new_hash)
+        last_hash = new_hash
+        break
+      }
+      if (!next) break
+      height++
+    }
   } else {
     queries = parsed
   }
+
   let validity = []
   let errors = []
   let i = 0

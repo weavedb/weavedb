@@ -15,6 +15,16 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.34.0-beta (October 8, 2023)
+
+#### Source Transaction Id
+
+[CyItU3obRM_ehbygFYu8I4U_aQ-OWJI7XKFGi7rYEUE](https://sonar.warp.cc/#/app/source/CyItU3obRM_ehbygFYu8I4U_aQ-OWJI7XKFGi7rYEUE)
+
+#### Added Features
+
+- rollup bundles in random order
+
 ### v0.33.0-beta (October 6, 2023)
 
 #### Source Transaction Id

@@ -2,8 +2,9 @@ const { expect } = require("chai")
 const { parseQuery } = require("../sdk/contracts/weavedb-bpt/lib/utils")
 const { readFileSync } = require("fs")
 const { resolve } = require("path")
-const { mergeLeft } = require("ramda")
+const { mergeLeft, pluck, map } = require("ramda")
 const EthCrypto = require("eth-crypto")
+let arweave = require("arweave")
 const {
   getSignature,
   getEventHash,
@@ -17,6 +18,36 @@ const sleep = ms =>
       res()
     }, ms)
   })
+
+const getId = async (contractTxId, input, timestamp) => {
+  const str = JSON.stringify({
+    contractTxId,
+    input,
+    timestamp,
+  })
+
+  return arweave.utils.bufferTob64Url(
+    await arweave.crypto.hash(arweave.utils.stringToBuffer(str))
+  )
+}
+const getHash = async ids => {
+  return arweave.utils.bufferTob64(
+    await arweave.crypto.hash(
+      arweave.utils.concatBuffers(
+        map(v2 => arweave.utils.stringToBuffer(v2))(ids)
+      ),
+      "SHA-384"
+    )
+  )
+}
+
+const getNewHash = async (last_hash, current_hash) => {
+  const hashes = arweave.utils.concatBuffers([
+    arweave.utils.stringToBuffer(last_hash),
+    arweave.utils.stringToBuffer(current_hash),
+  ])
+  return arweave.utils.bufferTob64(await arweave.crypto.hash(hashes, "SHA-384"))
+}
 
 const tests = {
   "should get info": async ({
@@ -579,18 +610,31 @@ const tests = {
     expect(await db.get("ppl", "Bob")).to.eql(data)
   },
 
-  "should set bundlers": async ({ db, walletAddress, arweave_wallet }) => {
+  "should set bundlers": async ({
+    db,
+    walletAddress,
+    arweave_wallet,
+    contractTxId,
+  }) => {
     const bundlers = [walletAddress]
     await db.setBundlers(bundlers, { ar: arweave_wallet })
     expect(await db.getBundlers()).to.eql(bundlers)
     const date = Date.now()
-    const tx = await db.bundle(
-      [await db.sign("add", {}, "ppl"), await db.sign("add", {}, "ppl")],
-      {
-        t: [date, date + 1],
-        h: 1,
-      }
-    )
+    const qs = [
+      await db.sign("add", {}, "ppl"),
+      await db.sign("add", {}, "ppl"),
+    ]
+    let ids = []
+    for (let [i, v] of qs.entries()) {
+      ids.push(await getId(contractTxId, v, date + i))
+    }
+    const hash = await getHash(ids)
+    const new_hash = await getNewHash(contractTxId, hash)
+    const tx = await db.bundle(qs, {
+      t: [date, date + 1],
+      n: 1,
+      h: new_hash,
+    })
     expect(tx.success).to.eql(true)
     const tx2 = await db.add({}, "ppl", { ar: arweave_wallet })
     expect(tx2.success).to.eql(false)
@@ -1713,26 +1757,66 @@ const tests = {
     event3 = finishEvent(event3, sk)
     await db.nostr(event3)
   },
-  "should be consistent with bundle queries": async ({
+  "should accept rollup queries in random order": async ({
     db,
     walletAddress,
     arweave_wallet,
+    contractTxId,
   }) => {
     const bundlers = [walletAddress]
     await db.setBundlers(bundlers, { ar: arweave_wallet })
-    expect(await db.getBundlers()).to.eql(bundlers)
-    const tx = await db.bundle({
-      q: [
-        await db.sign("add", { test: "a" }, "ppl", { nonce: 1 }),
-        await db.sign("add", { test: "b" }, "ppl", { nonce: 2 }),
-        await db.sign("add", { test: "c" }, "ppl", { nonce: 3 }),
-        await db.sign("add", { test: "d" }, "ppl", { nonce: 4 }),
-        await db.sign("add", { test: "e" }, "ppl", { nonce: 5 }),
-      ],
-      h: 1,
-      t: [Date.now(), Date.now(), Date.now(), Date.now(), Date.now()],
+    const qs = [
+      await db.sign("add", { test: "a" }, "ppl", { nonce: 1 }),
+      await db.sign("add", { test: "b" }, "ppl", { nonce: 2 }),
+      await db.sign("add", { test: "c" }, "ppl", { nonce: 3 }),
+      await db.sign("add", { test: "d" }, "ppl", { nonce: 4 }),
+      await db.sign("add", { test: "e" }, "ppl", { nonce: 5 }),
+      await db.sign("add", { test: "f" }, "ppl", { nonce: 6 }),
+    ]
+    const chunks = [[0], [1, 2], [3, 4], [5]]
+    const b = [[qs[0]], [qs[3], qs[4]], [qs[5]], [qs[1], qs[2]]]
+    const date = Date.now()
+    let i = 0
+    let ids = []
+    for (let v of qs) ids.push(await getId(contractTxId, v, date + i++))
+    let hashes = []
+    for (let [i, v] of chunks.entries()) {
+      const prev = i === 0 ? contractTxId : hashes[i - 1]
+      const hash = await getHash(map(v2 => ids[v2])(v))
+      hashes.push(await getNewHash(prev, hash))
+    }
+    const tx = await db.bundle(b[0], {
+      n: 1,
+      t: [date],
+      h: hashes[0],
     })
-    expect(tx.success).to.eql(true)
+
+    await db.bundle(b[1], {
+      h: hashes[2],
+      n: 3,
+      t: [date + 3, date + 4],
+    })
+    await db.bundle(b[2], {
+      h: hashes[3],
+      n: 4,
+      t: [date + 5],
+    })
+    expect(pluck("test", await db.get("ppl", ["test"]))).to.eql(["a"])
+
+    await db.bundle(b[3], {
+      q: b[3],
+      h: hashes[1],
+      n: 2,
+      t: [date + 1, date + 2],
+    })
+    expect(pluck("test", await db.get("ppl", ["test"]))).to.eql([
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "f",
+    ])
     return
   },
 }

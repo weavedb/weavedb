@@ -254,8 +254,9 @@ class Base {
       if (opt.t.length !== queries.length) {
         throw new Error("timestamp length is different from query length")
       }
-      if (!is(Number, opt.h)) throw new Error("height not specified")
-      input = JSON.stringify({ q: queries, t: opt.t, h: opt.h })
+      if (!is(Number, opt.n)) throw new Error("height not specified")
+      if (!is(String, opt.h)) throw new Error("hash not specified")
+      input = JSON.stringify({ q: queries, t: opt.t, h: opt.h, n: opt.n })
     } else {
       input = JSON.stringify(queries)
     }
