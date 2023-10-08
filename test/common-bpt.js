@@ -65,12 +65,16 @@ const tests = {
     const initial_state = JSON.parse(
       readFileSync(resolve(__dirname, init), "utf8")
     )
+    console.log(await db.getInfo())
     expect(await db.getInfo()).to.eql({
       auth: {
         algorithms: ["secp256k1", "secp256k1-2", "ed25519", "rsa256"],
         name: "weavedb",
         version: "1",
       },
+      bundleHash: "offchain",
+      bundleHeight: 0,
+      bundlers: [],
       canEvolve: true,
       contracts: {
         dfinity: dfinityTxId,

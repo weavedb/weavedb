@@ -15,6 +15,16 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.35.0-beta (October 8, 2023)
+
+#### Source Transaction Id
+
+[XSpqDnudnhHkH-B1kyBgWuFYblMquRbhIpVUtHUqwAk](https://sonar.warp.cc/#/app/source/XSpqDnudnhHkH-B1kyBgWuFYblMquRbhIpVUtHUqwAk)
+
+#### Added Features
+
+- return hash, bundleHeight, bundleHash with `getInfo()`
+
 ### v0.34.0-beta (October 8, 2023)
 
 #### Source Transaction Id

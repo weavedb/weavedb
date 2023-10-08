@@ -96,7 +96,6 @@ class OffChain extends Base {
               algorithms: ["secp256k1", "secp256k1-2", "ed25519", "rsa256"],
               name: "weavedb",
               version: "1",
-              links: {},
             },
             crons: {
               lastExecuted: 0,
