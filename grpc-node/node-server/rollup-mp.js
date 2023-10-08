@@ -15,6 +15,38 @@ const Warp = require("weavedb-sdk-node")
 const { open } = require("lmdb")
 const path = require("path")
 const EthCrypto = require("eth-crypto")
+let arweave = require("arweave")
+
+const getId = async (contractTxId, input, timestamp) => {
+  const str = JSON.stringify({
+    contractTxId,
+    input,
+    timestamp,
+  })
+
+  return arweave.utils.bufferTob64Url(
+    await arweave.crypto.hash(arweave.utils.stringToBuffer(str))
+  )
+}
+
+const getHash = async ids => {
+  return arweave.utils.bufferTob64(
+    await arweave.crypto.hash(
+      arweave.utils.concatBuffers(
+        map(v2 => arweave.utils.stringToBuffer(v2))(ids)
+      ),
+      "SHA-384"
+    )
+  )
+}
+
+const getNewHash = async (last_hash, current_hash) => {
+  const hashes = arweave.utils.concatBuffers([
+    arweave.utils.stringToBuffer(last_hash),
+    arweave.utils.stringToBuffer(current_hash),
+  ])
+  return arweave.utils.bufferTob64(await arweave.crypto.hash(hashes, "SHA-384"))
+}
 
 class Rollup {
   constructor({
@@ -33,6 +65,7 @@ class Rollup {
   }) {
     this.height = 0
     this.contractTxId = contractTxId
+    this.last_hash = contractTxId
     this.initial_state = initial_state
     this.admin = admin
     this.bundler = bundler
@@ -62,14 +95,14 @@ class Rollup {
     if (this.rollup) this.bundle()
   }
 
-  measureSizes(bundles) {
+  async measureSizes(bundles, last_hash) {
     let sizes = 0
     let b = [{ bundles: [], t: [], size: 0 }]
     let i = 0
     for (let v of bundles) {
       if (isNil(v.data?.input)) continue
       const len = JSON.stringify(v.data.input).length
-      if (sizes + len > 3000) {
+      if (sizes + len > 2700) {
         i += 1
         sizes = 0
         b[i] = { bundles: [], t: [], size: 0 }
@@ -79,9 +112,17 @@ class Rollup {
       sizes += len
       b[i].size += len
     }
+    for (let v of b) {
+      const ids = map(_path(["data", "txid"]))(v.bundles)
+      const current_hash = await getHash(ids)
+      const new_hash = await getNewHash(last_hash, current_hash)
+      v.hash = new_hash
+      last_hash = new_hash
+    }
     return b
   }
-  async commit(bundles, t, height) {
+  async commitP(v, height) {
+    const { bundles, t, hash } = v
     console.log(
       `[${height}],commiting to Warp...${map(_path(["data", "id"]))(
         bundles
@@ -89,39 +130,40 @@ class Rollup {
     )
     const res = await this.warp.bundle(map(_path(["data", "input"]))(bundles), {
       t,
-      h: height,
+      h: hash,
+      n: height,
       parallel: true,
     })
-    console.log(`bundle tx result: ${res.success}: ${res.originalTxId}`)
-    if (res.success === true) {
-      let batch = map(
-        v => [
-          "update",
-          {
-            commit: true,
-            warp: res.originalTxId,
-            block: height,
-          },
-          "txs",
-          v.id,
-        ],
+    if (isNil(res?.tx?.originalTxId)) return null
+    return {
+      hash,
+      height,
+      tx: res.tx,
+      items: v,
+      duration: res.duration,
+    }
+  }
+  async commit(v, height) {
+    const { bundles, t, hash } = v
+    console.log(
+      `[${height}],commiting to Warp...${map(_path(["data", "id"]))(
         bundles
-      )
-      batch.push([
-        "set",
-        {
-          height: height,
-          txs: map(_path(["data", "txid"]))(bundles),
-          date: res.bundlerResonse?.timestamp ?? Date.now(),
-          txid: res.originalTxId,
-        },
-        "blocks",
-        `${height}`,
-      ])
-      await this.wal.batch(batch)
-      return { success: true, height }
-    } else {
-      return { success: false, height }
+      )} : ${height}`
+    )
+    const res = await this.warp.bundle(map(_path(["data", "input"]))(bundles), {
+      h: hash,
+      t,
+      n: height,
+      parallel: true,
+    })
+    console.log(`committed`, res?.tx?.originalTxId, res?.duration)
+    if (isNil(res?.tx?.originalTxId)) return null
+    return {
+      hash,
+      height,
+      tx: res.tx,
+      items: v,
+      duration: res.duration,
     }
   }
   async _bundle() {
@@ -133,70 +175,37 @@ class Rollup {
           ["id"],
           ["commit", "==", false]
         )
-        const b = this.measureSizes(bundling)
-        let done = 0
-        if (b[0].t.length > 0) {
+        if (bundling.length > 0) {
+          const b = await this.measureSizes(bundling, this.last_hash)
           let height = this.height
           let results = []
+          let done = 0
+          let isErr = false
           for (let v of b) {
-            const { bundles, t } = v
-            height++
-            console.log(
-              `[${height}],commiting to Warp...${map(_path(["data", "id"]))(
-                bundles
-              )} : ${height}`
-            )
-            const res = await this.warp.bundle(
-              map(_path(["data", "input"]))(bundles),
-              {
-                t,
-                h: height,
-                parallel: true,
-              }
-            )
-            console.log(`committed`, res?.tx?.originalTxId, res?.duration)
-            if (isNil(res?.tx?.originalTxId)) break
-            results.push({
-              height,
-              tx: res.tx,
-              items: v,
-              duration: res.duration,
-            })
+            this.commitP(v, ++height)
+              .then(res => {
+                if (!isNil(res)) results.push(res)
+                done++
+                if (done === b.length) {
+                  _res({ success: true, err: isErr, len: b.length, results })
+                }
+              })
+              .catch(e => {
+                done++
+                isErr = true
+                if (done === b.length) {
+                  _res({ success: false, err: isErr, len: b.length, results })
+                }
+              })
           }
-          const valids =
-            (await this.warp.db.readState())?.cachedValue?.validity ?? {}
-          for (let v of results) {
-            const valid = valids[v.tx.originalTxId]
-            if (valid !== true) break
-            console.log(`valid [${v.height}] : ${v.tx.originalTxId}`)
-            this.height = v.height
-            let batch = map(
-              v2 => [
-                "update",
-                {
-                  commit: true,
-                  warp: v.tx.originalTxId,
-                  block: v.height,
-                },
-                "txs",
-                v2.id,
-              ],
-              v.items.bundles
-            )
-            batch.push([
-              "set",
-              {
-                height: v.height,
-                txs: map(_path(["data", "txid"]))(v.items.bundles),
-                date: v.tx.bundlerResonse?.timestamp ?? Date.now(),
-                txid: v.tx.originalTxId,
-              },
-              "blocks",
-              `${v.height}`,
-            ])
-            await this.wal.batch(batch)
-          }
-          _res({ success: true, err: null, len: b.length })
+          /*
+            for (let v of b) {
+            const res = await this.commit(v, ++height)
+            if (isNil(res)) break
+            results.push(res)
+            }
+          _res({ success: true, err: null, len: b.length, results })
+          */
         } else {
           _res({ err: null, len: 0, success: null })
         }
@@ -207,8 +216,47 @@ class Rollup {
     })
   }
   async bundle() {
-    const { err, success, len } = await this._bundle()
-    if (success) this.error_count = 0
+    const { err, success, len, results } = await this._bundle()
+    if (success) {
+      const valids =
+        (await this.warp.db.readState())?.cachedValue?.validity ?? {}
+      for (let v of results) {
+        const valid = valids[v.tx.originalTxId]
+        console.log(`valid: ${valid} : [${v.height}] : ${v.tx.originalTxId}`)
+        //if (valid !== true) break
+        if (v.height > this.height) {
+          this.height = v.height
+          this.last_hash = v.hash
+        }
+        let batch = map(
+          v2 => [
+            "update",
+            {
+              commit: true,
+              warp: v.tx.originalTxId,
+              block: v.height,
+            },
+            "txs",
+            v2.id,
+          ],
+          v.items.bundles
+        )
+        batch.push([
+          "set",
+          {
+            height: v.height,
+            txs: map(_path(["data", "txid"]))(v.items.bundles),
+            date: v.tx.bundlerResonse?.timestamp ?? Date.now(),
+            txid: v.tx.originalTxId,
+            hash: v.hash,
+          },
+          "blocks",
+          `${v.height}`,
+        ])
+        await this.wal.batch(batch)
+      }
+      this.error_count = 0
+    }
     if (err) this.error_count += 1
     if (this.error_count < 2) {
       setTimeout(() => this.bundle(), success === true ? 0 : 3000)
@@ -275,8 +323,9 @@ class Rollup {
     await this.wal.addIndex([["input.caller"], ["id", "desc"]], "txs")
     await this.wal.addIndex([["block"], ["id", "desc"]], "txs")
     this.tx_count = (await this.wal.get("txs", ["id", "desc"], 1))[0]?.id ?? 0
-    this.height =
-      (await this.wal.get("blocks", ["height", "desc"], 1))[0]?.height ?? 0
+    const last_block = await this.wal.get("blocks", ["height", "desc"], 1)
+    this.height = last_block[0]?.height ?? 0
+    this.last_hash = last_block[0]?.hash ?? this.contractTxId
     console.log(
       `${this.tx_count} txs has been cached: ${this.height} blocks commited`
     )
@@ -288,7 +337,7 @@ class Rollup {
       ...this.initial_state,
     }
     this.db = new DB({
-      contractTxId: this.txid,
+      contractTxId: this.contractTxId ?? this.txid,
       type: 3,
       cache: {
         initialize: async obj => {
@@ -347,6 +396,7 @@ class Rollup {
     if (this.rollup && !isNil(this.contractTxId)) {
       console.log(`contractTxId: ${this.contractTxId}`)
       this.warp = new Warp({
+        logLevel: "none",
         lmdb: { dir: path.resolve(this.dir, "warp") },
         type: 3,
         contractTxId: this.contractTxId,
@@ -522,6 +572,8 @@ process.on("message", async msg => {
     })
   } else if (op === "deploy_contract") {
     rollup.contractTxId = msg.contractTxId
+    rollup.last_hash = msg.contractTxId
+    rollup.db.contractTxId = msg.contractTxId
     rollup.rollup = true
     await rollup.initWarp()
     rollup.bundle()

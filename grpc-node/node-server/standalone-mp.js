@@ -105,6 +105,7 @@ class Server {
     if (!isNil(this.rollups)) throw Error("rollups are not defined")
     this.rollups = {}
     this.port = port
+    this.txid_map = {}
     this.init()
   }
   getRollup(v, txid) {
@@ -148,6 +149,9 @@ class Server {
       }
       for (let k in dbs) rollups[k] = dbs[k].data
       for (let k in rollups) {
+        if (!isNil(rollups[k].contractTxId)) {
+          this.txid_map[rollups[k].contractTxId] = k
+        }
         this.rollups[k] = this.getRollup(rollups[k], k)
         this.rollups[k].init()
       }
@@ -230,7 +234,7 @@ class Server {
               } else {
                 const tx_deploy = { success: false }
                 const warp = WarpFactory.forMainnet().use(new DeployPlugin())
-                const srcTxId = "2XvPr6h8i3Tokf6v5vMOeUR_f28RM8bUSI-x5c-Qu4Y"
+                const srcTxId = "CyItU3obRM_ehbygFYu8I4U_aQ-OWJI7XKFGi7rYEUE"
                 let res = null
                 let err = null
                 try {
@@ -307,6 +311,7 @@ class Server {
                     result: JSON.stringify(res),
                     err,
                   })
+                  this.txid_map[res.contractTxId] = key
                   this.rollups[key].deployContract(
                     res.contractTxId,
                     ++this.count,
@@ -392,11 +397,11 @@ class Server {
             })
         }
       } else {
-        if (isNil(this.rollups[txid])) {
+        if (isNil(this.rollups[this.txid_map[txid] ?? txid])) {
           res(`DB [${txid}] doesn't exist`, null)
           return
         }
-        this.rollups[txid].execUser(parsed, ++this.count)
+        this.rollups[this.txid_map[txid] ?? txid].execUser(parsed, ++this.count)
       }
     } catch (e) {
       callback(null, { result: null, err: "unknown error" })
