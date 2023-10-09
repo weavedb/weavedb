@@ -79,12 +79,10 @@ class Syncer {
       }
     }*/
   }
-  async commitP(v, height) {
+  async commit(v, height) {
     const { bundles, t, hash } = v
     console.log(
-      `[${height}],commiting to Warp...${map(_path(["data", "id"]))(
-        bundles
-      )} : ${height}`
+      `[${height}],commiting to Warp...${map(_path(["data", "id"]))(bundles)}`
     )
     const res = await this.warp.bundle(map(_path(["data", "input"]))(bundles), {
       t,
@@ -107,13 +105,13 @@ class Syncer {
     let done = 0
     let isErr = false
     for (let v of b) {
-      this.commitP(v, ++height)
+      this.commit(v, ++height)
         .then(res => {
           if (!isNil(res)) results.push(res)
           done++
           if (done === b.length) {
             this.validate({
-              success: true,
+              success: !isErr,
               err: isErr,
               len: b.length,
               results,
@@ -124,10 +122,10 @@ class Syncer {
         })
         .catch(e => {
           done++
-          isErr = true
+          success = false
           if (done === b.length) {
             this.validate({
-              success: false,
+              success: !isErr,
               err: isErr,
               len: b.length,
               results,
@@ -140,7 +138,6 @@ class Syncer {
   }
   async validate({ success, err, len, results, height, res }) {
     let state = null
-    let last_hash = null
     if (success) {
       state =
         results.length === 0
@@ -155,7 +152,6 @@ class Syncer {
       console.log(`done committing(${len}) : valid height....`, valid_height)
       for (let v of sortBy(prop("height"))(results)) {
         if (v.height > valid_height) {
-          console.log(`commit not valid ${v.height} > ${valid_height}`)
           err = true
           break
         }
@@ -185,7 +181,7 @@ class Syncer {
         }
       }
     }
-    res({ last_hash, state, success, err, len, results, height })
+    res({ state, success, err, len, results })
   }
   async recover() {
     console.log("lets recover...", this.partial_recovery, this.full_recovery)
@@ -251,12 +247,12 @@ process.on("message", async msg => {
   } else if (op === "bundle") {
     syncer.bundle({
       ...opt,
-      res: async ({ err, success, results, state, height, last_hash }) => {
+      res: async ({ err, success, results, state }) => {
         process.send({
           err,
           op,
           id,
-          result: { err, results, success, state, height, last_hash },
+          result: { err, results, success, state },
         })
       },
     })

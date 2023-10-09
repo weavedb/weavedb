@@ -152,7 +152,7 @@ class Rollup {
             )
             this.cb[++this.count] = (
               _err,
-              { err, results, success, state, height, last_hash }
+              { err, results, success, state }
             ) => {
               _res({
                 state,
@@ -160,8 +160,6 @@ class Rollup {
                 err,
                 len: b.length,
                 results,
-                height,
-                last_hash,
               })
             }
             this.syncer.send({
@@ -191,13 +189,10 @@ class Rollup {
         this.bundle()
       }
     }, 20000)
-    let { err, height, last_hash, success, len, results, state } =
-      await this._bundle()
+    let { err, success, len, results, state } = await this._bundle()
     done = true
     if (recovery) console.log("this process is aborted!")
     if (success) {
-      this.height = height
-      if (!isNil(last_hash)) this.last_hash = last_hash
       let valids = {}
       let valid_height = 0
       try {
@@ -206,7 +201,6 @@ class Rollup {
       } catch (e) {
         console.log(e)
       }
-      console.log(`done committing(${len}) : valid height....`, valid_height)
       for (let v of sortBy(prop("height"))(results)) {
         console.log(
           `valid: ${valids[v.tx.originalTxId]} : [${v.height}] : ${
@@ -255,12 +249,13 @@ class Rollup {
     if (this.error_count < 2) {
       setTimeout(() => this.bundle(), success === true ? 0 : 3000)
     } else {
-      console.log("too man errors", this.error_count)
+      console.log("too many errors", this.error_count)
       this.recover()
     }
   }
   async recover() {
     this.init_warp = false
+    this.error_count = 0
     this.cb[++this.count] = (
       err,
       { partial_recovery, full_recovery, full_recovery_failure, success }
@@ -283,50 +278,6 @@ class Rollup {
         full: !this.partial_recovery,
       },
     })
-    /*
-    console.log("lets recover...", this.partial_recovery, this.full_recovery)
-    this.error_count = 0
-    if (this.full_recovery_failure) {
-      console.log("recovery failed....", Date.now())
-      return
-    }
-    if (this.full_recovery) {
-      this.full_recovery_failure = true
-      return
-    }
-    try {
-      rmSync(path.resolve(this.dir, "warp"), { recursive: true, force: true })
-    } catch (e) {
-      console.log(e)
-    }
-    if (!this.partial_recovery) {
-      this.partial_recovery = true
-      console.log("partial recovery")
-      try {
-        cpSync(
-          path.resolve(this.dir_backup, "warp"),
-          path.resolve(this.dir, "warp"),
-
-          {
-            recursive: true,
-          }
-        )
-      } catch (e) {
-        console.log(e)
-      }
-    } else {
-      this.full_recovery = true
-      console.log("partial recovery failed... onto full recovery")
-    }
-    let initErr = false
-    try {
-      await this.initWarp()
-    } catch (e) {}
-    if (initErr) {
-      await this.recover()
-    } else {
-      if (this.rollup) this.bundle()
-    }*/
   }
   async initDB() {
     console.log(`Owner Account: ${this.owner}`)
