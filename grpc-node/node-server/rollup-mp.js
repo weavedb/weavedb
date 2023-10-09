@@ -1,6 +1,4 @@
-const pako = require("pako")
 const { cpSync, rmSync } = require("fs")
-const md5 = require("md5")
 const {
   sortBy,
   prop,
@@ -14,11 +12,11 @@ const {
   path: _path,
 } = require("ramda")
 const DB = require("weavedb-offchain")
-const Warp = require("weavedb-sdk-node")
 const { open } = require("lmdb")
 const path = require("path")
 const EthCrypto = require("eth-crypto")
 let arweave = require("arweave")
+const { fork } = require("child_process")
 
 const getId = async (contractTxId, input, timestamp) => {
   const str = JSON.stringify({
@@ -67,6 +65,8 @@ class Rollup {
     bundler,
     contractTxId,
   }) {
+    this.cb = {}
+    this.count = 0
     this.height = 0
     this.contractTxId = contractTxId
     this.last_hash = contractTxId
@@ -133,96 +133,45 @@ class Rollup {
     }
     return b
   }
-  async commitP(v, height) {
-    const { bundles, t, hash } = v
-    console.log(
-      `[${height}],commiting to Warp...${map(_path(["data", "id"]))(
-        bundles
-      )} : ${height}`
-    )
-    const res = await this.warp.bundle(map(_path(["data", "input"]))(bundles), {
-      t,
-      h: hash,
-      n: height,
-      parallel: true,
-    })
-    if (isNil(res?.tx?.originalTxId)) return null
-    return {
-      hash,
-      height,
-      tx: res.tx,
-      items: v,
-      duration: res.duration,
-    }
-  }
-  async commit(v, height) {
-    const { bundles, t, hash } = v
-    console.log(
-      `[${height}],commiting to Warp...${map(_path(["data", "id"]))(
-        bundles
-      )} : ${height}`
-    )
-    const res = await this.warp.bundle(map(_path(["data", "input"]))(bundles), {
-      h: hash,
-      t,
-      n: height,
-      parallel: true,
-    })
-    console.log(`committed`, res?.tx?.originalTxId, res?.duration)
-    if (isNil(res?.tx?.originalTxId)) return null
-    return {
-      hash,
-      height,
-      tx: res.tx,
-      items: v,
-      duration: res.duration,
-    }
-  }
   async _bundle() {
     return new Promise(async _res => {
       try {
-        const bundling = await this.wal.cget(
-          "txs",
-          ["commit"],
-          ["id"],
-          ["commit", "==", false]
-        )
-        if (bundling.length > 0) {
-          const b = (await this.measureSizes(bundling, this.last_hash)).slice(
-            0,
-            10
-          )
-          let height = this.height
-          let results = []
-          let done = 0
-          let isErr = false
-          for (let v of b) {
-            this.commitP(v, ++height)
-              .then(res => {
-                if (!isNil(res)) results.push(res)
-                done++
-                if (done === b.length) {
-                  _res({ success: true, err: isErr, len: b.length, results })
-                }
-              })
-              .catch(e => {
-                done++
-                isErr = true
-                if (done === b.length) {
-                  _res({ success: false, err: isErr, len: b.length, results })
-                }
-              })
-          }
-          /*
-            for (let v of b) {
-            const res = await this.commit(v, ++height)
-            if (isNil(res)) break
-            results.push(res)
-            }
-          _res({ success: true, err: null, len: b.length, results })
-          */
-        } else {
+        if (this.init_warp !== true) {
           _res({ err: null, len: 0, success: null })
+        } else {
+          const bundling = await this.wal.cget(
+            "txs",
+            ["commit"],
+            ["id"],
+            ["commit", "==", false]
+          )
+          if (bundling.length > 0) {
+            const b = (await this.measureSizes(bundling, this.last_hash)).slice(
+              0,
+              10
+            )
+            this.cb[++this.count] = (
+              _err,
+              { err, results, success, state, height, last_hash }
+            ) => {
+              _res({
+                state,
+                success,
+                err,
+                len: b.length,
+                results,
+                height,
+                last_hash,
+              })
+            }
+            this.syncer.send({
+              id: this.count,
+              op: "bundle",
+              opt: { height: this.height, b },
+            })
+          } else {
+            _res({ err: null, len: 0, success: null })
+          }
         }
       } catch (e) {
         console.log(e)
@@ -236,23 +185,28 @@ class Rollup {
     setTimeout(() => {
       if (!done) {
         recovery = true
-        this.recover()
+        console.log("this must be stuck....")
+        this.init_warp = false
+        this.initSyncer()
+        this.bundle()
       }
-    }, 3000)
-    let { err, success, len, results } = await this._bundle()
+    }, 20000)
+    let { err, height, last_hash, success, len, results, state } =
+      await this._bundle()
     done = true
     if (recovery) console.log("this process is aborted!")
-    if (len > 0) console.log("done committing...", len, success)
     if (success) {
+      this.height = height
+      if (!isNil(last_hash)) this.last_hash = last_hash
       let valids = {}
       let valid_height = 0
       try {
-        const state = (await this.warp.db.readState())?.cachedValue
         valids = state?.validity ?? {}
         valid_height = state?.state?.rollup?.height ?? 0
       } catch (e) {
         console.log(e)
       }
+      console.log(`done committing(${len}) : valid height....`, valid_height)
       for (let v of sortBy(prop("height"))(results)) {
         console.log(
           `valid: ${valids[v.tx.originalTxId]} : [${v.height}] : ${
@@ -295,31 +249,7 @@ class Rollup {
         ])
         await this.wal.batch(batch)
       }
-      if (err !== true) {
-        this.error_count = 0
-        this.partial_recovery = false
-        this.full_recovery = false
-        this.full_recovery_failure = false
-        try {
-          rmSync(path.resolve(this.dir_backup, "warp"), {
-            recursive: true,
-            force: true,
-          })
-        } catch (e) {
-          console.log(e)
-        }
-        try {
-          cpSync(
-            path.resolve(this.dir, "warp"),
-            path.resolve(this.dir_backup, "warp"),
-            {
-              recursive: true,
-            }
-          )
-        } catch (e) {
-          console.log(e)
-        }
-      }
+      if (err !== true) this.error_count = 0
     }
     if (err) this.error_count += 1
     if (this.error_count < 2) {
@@ -330,6 +260,30 @@ class Rollup {
     }
   }
   async recover() {
+    this.init_warp = false
+    this.cb[++this.count] = (
+      err,
+      { partial_recovery, full_recovery, full_recovery_failure, success }
+    ) => {
+      if (err) {
+        console.log(`warp recovery unsuccessful... ${this.contractTxId}`)
+      } else {
+        console.log(`warp successfully recovered! ${this.contractTxId}`)
+        this.init_warp = true
+        this.bundle()
+      }
+      this.partial_recovery = partial_recovery
+      this.full_recovery = full_recovery
+      this.full_recovery_failure = full_recovery_failure
+    }
+    this.syncer.send({
+      id: this.count,
+      op: "recover",
+      opt: {
+        full: !this.partial_recovery,
+      },
+    })
+    /*
     console.log("lets recover...", this.partial_recovery, this.full_recovery)
     this.error_count = 0
     if (this.full_recovery_failure) {
@@ -372,7 +326,7 @@ class Rollup {
       await this.recover()
     } else {
       if (this.rollup) this.bundle()
-    }
+    }*/
   }
   async initDB() {
     console.log(`Owner Account: ${this.owner}`)
@@ -381,7 +335,34 @@ class Rollup {
     await this.initWarp()
     await this.initPlugins()
   }
-
+  async initSyncer() {
+    if (!isNil(this.syncer)) this.syncer.kill()
+    this.syncer = fork(path.resolve(__dirname, "warp-mp"))
+    this.syncer.on("message", async ({ err, result, id }) => {
+      if (!isNil(id)) {
+        await this.cb[id]?.(err, result)
+        delete this.cb[id]
+      }
+    })
+    this.cb[++this.count] = ({ err }) => {
+      if (err) {
+        console.log(`warp unsuccessful... ${this.contractTxId}`)
+      } else {
+        console.log(`warp successfully initialized! ${this.contractTxId}`)
+        this.init_warp = true
+      }
+    }
+    this.syncer.send({
+      id: this.count,
+      op: "init",
+      opt: {
+        contractTxId: this.contractTxId,
+        bundler: this.bundler,
+        dir: this.dir,
+        dir_backup: this.dir_backup,
+      },
+    })
+  }
   async initPlugins() {
     for (let k in this.plugins) {
       const Plugin = require(`./plugins/${k}`)
@@ -504,69 +485,7 @@ class Rollup {
   }
 
   async initWarp() {
-    if (this.rollup && !isNil(this.contractTxId)) {
-      console.log(`contractTxId: ${this.contractTxId}`)
-      this.warp = new Warp({
-        logLevel: "none",
-        lmdb: { dir: path.resolve(this.dir, "warp") },
-        type: 3,
-        contractTxId: this.contractTxId,
-        remoteStateSyncEnabled: false,
-        nocache: true,
-        progress: async input => {
-          console.log(
-            `loading ${this.txid} [${input.currentInteraction}/${input.allInteractions}]`
-          )
-        },
-      })
-      await this.warp.init({ wallet: this.bundler })
-      const _state = await this.warp.readState()
-      let len = 0
-      try {
-        len = keys(_state.cachedValue.validity).length
-      } catch (e) {}
-      if (this.tx_count === 0 && len > 0) {
-        console.log("recovering WAL...")
-        const txs = await this.warp.warp.interactionsLoader.load(
-          this.contractTxId
-        )
-        for (let v of txs) {
-          for (const tag of v.tags || []) {
-            if (tag.name === "Input") {
-              const input = JSON.parse(tag.value)
-              if (input.function === "bundle") {
-                const compressed = new Uint8Array(
-                  Buffer.from(input.query, "base64")
-                    .toString("binary")
-                    .split("")
-                    .map(function (c) {
-                      return c.charCodeAt(0)
-                    })
-                )
-                for (const input of JSON.parse(
-                  pako.inflate(compressed, { to: "string" })
-                )) {
-                  let t = {
-                    id: ++this.tx_count,
-                    warp: v.id,
-                    commit: true,
-                    txid: md5(
-                      JSON.stringify({ contractTxId: this.contractTxId, input })
-                    ),
-                    input,
-                    blk_ts: v.block.timestamp,
-                    /* add docID and doc */
-                  }
-                  console.log(`saving... [${this.tx_count}] ${t.txid}`)
-                  await this.wal.set(t, "txs", `${t.id}`)
-                }
-                break
-              }
-            }
-          }
-        }
-      }
-    }
+    if (this.rollup && !isNil(this.contractTxId)) await this.initSyncer()
   }
 
   async getWAL(next = null, pdb) {
