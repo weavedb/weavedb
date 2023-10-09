@@ -1,6 +1,7 @@
 node_modules/
 package-lock.json
 cache/
+backup/
 weavedb.config.js
 weavedb.*.config.js
 gcs.json

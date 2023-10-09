@@ -88,9 +88,10 @@ const bundle = async (
   let queries = null
   let ts = null
   if (isBundler) {
-    let last_hash =
-      (await kv(kvs, SmartWeave).get(`last_hash`)) ?? SmartWeave.contract.id
-    let h = (await kv(kvs, SmartWeave).get(`bundle_height`)) ?? 0
+    let { hash: last_hash, height: h } = state.rollup ?? {
+      height: 0,
+      hash: SmartWeave.contract.id,
+    }
     if (h + 1 !== parsed.n) {
       if (h + 1 < parsed.n) {
         let cached =
@@ -104,10 +105,9 @@ const bundle = async (
     }
     const current_hash = await getHash(parsed, SmartWeave)
     const new_hash = await getNewHash(last_hash, current_hash, SmartWeave)
-    if (parsed.h !== new_hash) err(`the wrong hash`)
-    await kv(kvs, SmartWeave).put(`last_hash`, new_hash)
+    if (parsed.h !== new_hash) err(`the wrong hash [${parsed.h}, ${new_hash}]`)
     last_hash = new_hash
-    await kv(kvs, SmartWeave).put(`bundle_height`, parsed.n)
+    state.rollup = { height: parsed.n, hash: new_hash }
     queries = parsed.q
     ts = parsed.t
     if (isNil(ts) || queries.length !== ts.length) {
@@ -136,7 +136,7 @@ const bundle = async (
           queries.push(v2)
         }
         next = true
-        await kv(kvs, SmartWeave).put(`last_hash`, new_hash)
+        state.rollup = { height, hash: new_hash }
         last_hash = new_hash
         break
       }

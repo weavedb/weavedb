@@ -2,7 +2,7 @@ const { expect } = require("chai")
 const { parseQuery } = require("../sdk/contracts/weavedb-bpt/lib/utils")
 const { readFileSync } = require("fs")
 const { resolve } = require("path")
-const { mergeLeft, pluck, map } = require("ramda")
+const { range, mergeLeft, pluck, map } = require("ramda")
 const EthCrypto = require("eth-crypto")
 let arweave = require("arweave")
 const {
@@ -65,15 +65,12 @@ const tests = {
     const initial_state = JSON.parse(
       readFileSync(resolve(__dirname, init), "utf8")
     )
-    console.log(await db.getInfo())
     expect(await db.getInfo()).to.eql({
       auth: {
         algorithms: ["secp256k1", "secp256k1-2", "ed25519", "rsa256"],
         name: "weavedb",
         version: "1",
       },
-      bundleHash: "offchain",
-      bundleHeight: 0,
       bundlers: [],
       canEvolve: true,
       contracts: {
@@ -87,6 +84,7 @@ const tests = {
       secure: false,
       version,
       owner: addr,
+      rollup: { height: 0, hash: "offchain" },
       evolveHistory: [],
     })
     return
@@ -1760,6 +1758,59 @@ const tests = {
     }
     event3 = finishEvent(event3, sk)
     await db.nostr(event3)
+  },
+  "should chain hashes": async ({
+    db,
+    walletAddress,
+    arweave_wallet,
+    contractTxId,
+  }) => {
+    const bundlers = [walletAddress]
+    await db.setBundlers(bundlers, { ar: arweave_wallet })
+    let qs2 = []
+    const date = Date.now()
+    for (let v of range(0, 10)) {
+      const sign = await db.sign("add", { test: v + 1 }, "ppl", {
+        nonce: v + 1,
+      })
+      const id = await getId(contractTxId, sign, date + v)
+      qs2.push({ sign, id, date: date + v })
+    }
+    const chunks = [[0], [1, 2], [3, 4], [5, 6, 7], [8, 9]]
+    let prev = contractTxId
+    let hashes = []
+    let signs = []
+    let tss = []
+    for (let v of chunks) {
+      let ids = []
+      let ts = []
+      let q = []
+      for (let v2 of v) {
+        const sign = qs2[v2].sign
+        q.push(sign)
+        const id = await getId(contractTxId, sign, qs2[v2].date)
+        ids.push(id)
+        ts.push(qs2[v2].date)
+      }
+      const hash = await getHash(ids)
+      const newHash = await getNewHash(prev, hash)
+      hashes.push(newHash)
+      prev = newHash
+      signs.push(q)
+      tss.push(ts)
+    }
+
+    const order = [0, 2, 3, 1, 4]
+    for (let v of order) {
+      await db.bundle(signs[v], {
+        n: v + 1,
+        t: tss[v],
+        h: hashes[v],
+      })
+    }
+    expect((await db.getInfo()).rollup.height).to.eql(5)
+    expect(pluck("test", await db.get("ppl", ["test"]))).to.eql(range(1, 11))
+    return
   },
   "should accept rollup queries in random order": async ({
     db,

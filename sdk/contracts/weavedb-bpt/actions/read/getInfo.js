@@ -14,15 +14,14 @@ const getInfo = async (state, action, SmartWeave, kvs) => {
       "contracts",
       "bundlers",
       "hash",
+      "rollup",
     ],
     state
   )
   info.version = state.version || null
   info.evolveHistory = state.evolveHistory || []
   info.isEvolving = isEvolving(state)
-  info.bundleHeight = (await kv(kvs, SmartWeave).get(`bundle_height`)) ?? 0
-  info.bundleHash =
-    (await kv(kvs, SmartWeave).get(`last_hash`)) ?? SmartWeave.contract.id
+  info.rollup ??= { height: 0, hash: SmartWeave.contract.id }
   info.bundlers ??= []
   return { result: info }
 }
