@@ -22,8 +22,11 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   defaults: true,
   oneofs: true,
 })
-const { port = 9090, config = "./weavedb.standalone.config.js" } =
-  require("yargs")(process.argv.slice(2)).argv
+const {
+  dbname = null,
+  port = 9090,
+  config = "./weavedb.standalone.config.js",
+} = require("yargs")(process.argv.slice(2)).argv
 const weavedb = grpc.loadPackageDefinition(packageDefinition).weavedb
 const path = require("path")
 const { fork } = require("child_process")
@@ -97,7 +100,7 @@ class Server {
   constructor({ port = 9090 }) {
     this.count = 0
     this.conf = require(config)
-
+    if (!isNil(dbname)) this.conf.dbname = dbname
     // TODO: more prisice validations
     if (!isNil(this.bundler)) throw Error("bundler is not defined")
     if (!isNil(this.owner)) throw Error("owner is not defined")
@@ -234,7 +237,7 @@ class Server {
               } else {
                 const tx_deploy = { success: false }
                 const warp = WarpFactory.forMainnet().use(new DeployPlugin())
-                const srcTxId = "CyItU3obRM_ehbygFYu8I4U_aQ-OWJI7XKFGi7rYEUE"
+                const srcTxId = "jgciKufvJxAySTfMfG-lTAexMLooU28ROj4XQ_WVEeA"
                 let res = null
                 let err = null
                 try {
