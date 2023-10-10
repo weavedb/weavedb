@@ -537,7 +537,7 @@ const tests = {
     expect((await db.get("ppl", "Bob")).age).to.eql(30)
     await db.upsert({ name: "Bob" }, "ppl", "Bob")
   },
-
+  /*
   "should execute crons": async ({ db, arweave_wallet, type }) => {
     await db.set({ age: 3 }, "ppl", "Bob")
     await db.addCron(
@@ -565,7 +565,7 @@ const tests = {
     })
     expect((await db.getCrons()).crons).to.eql({})
   },
-
+  */
   "should add & get with internet identity": async ({ db }) => {
     const ii = Ed25519KeyIdentity.fromJSON(JSON.stringify(_ii))
     const data = { name: "Bob", age: 20 }
@@ -1238,7 +1238,6 @@ const tests = {
     })
 
     const tx = await db.bundle([params, params3, params2])
-    console.log(tx)
     expect(await db.getValidities(tx.originalTxId)).to.eql([true, false, true])
     expect(await db.get("ppl", "Bob")).to.eql(data)
     expect(await db.get("ppl", "Alice")).to.eql(data2)

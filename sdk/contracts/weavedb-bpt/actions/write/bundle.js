@@ -1,7 +1,7 @@
 const { err, wrapResult, read } = require("../../../common/lib/utils")
 const { kv } = require("../../lib/utils")
 const { clone } = require("../../../common/lib/pure")
-const { isNil, includes, map } = require("ramda")
+const { isNil, includes, map, addIndex: _addIndex } = require("ramda")
 const { set } = require("./set")
 const { add } = require("./add")
 const { update } = require("./update")
@@ -27,22 +27,20 @@ const { addTrigger } = require("./addTrigger")
 const { removeTrigger } = require("./removeTrigger")
 const { setBundlers } = require("./setBundlers")
 
-const getHash = async (p, SmartWeave) => {
-  let ids = []
-  for (let [i, v] of p.q.entries()) {
-    const str = JSON.stringify({
-      contractTxId: SmartWeave.contract.id,
-      input: v,
-      timestamp: p.t[i],
-    })
-    ids.push(
-      SmartWeave.arweave.utils.bufferTob64Url(
-        await SmartWeave.arweave.crypto.hash(
-          SmartWeave.arweave.utils.stringToBuffer(str)
-        )
-      )
+const getId = async (input, timestamp, SmartWeave) => {
+  const str = JSON.stringify({
+    contractTxId: SmartWeave.contract.id,
+    input,
+    timestamp,
+  })
+  return SmartWeave.arweave.utils.bufferTob64Url(
+    await SmartWeave.arweave.crypto.hash(
+      SmartWeave.arweave.utils.stringToBuffer(str)
     )
-  }
+  )
+}
+
+const getHash = async (ids, SmartWeave) => {
   return SmartWeave.arweave.utils.bufferTob64(
     await SmartWeave.arweave.crypto.hash(
       SmartWeave.arweave.utils.concatBuffers(
@@ -86,35 +84,57 @@ const bundle = async (
   )
   const parsed = JSON.parse(data)
   let queries = null
-  let ts = null
   if (isBundler) {
     let { hash: last_hash, height: h } = state.rollup ?? {
       height: 0,
       hash: SmartWeave.contract.id,
     }
+    let ids = []
+    for (let [i, v] of parsed.q.entries()) {
+      ids.push(await getId(v, parsed.t[i], SmartWeave))
+    }
+    const current_hash = await getHash(ids, SmartWeave)
     if (h + 1 !== parsed.n) {
       if (h + 1 < parsed.n) {
         let cached =
           (await kv(kvs, SmartWeave).get(`bundles.${parsed.n}`)) ?? []
+        let validity = []
+        for (let [i, v] of parsed.q.entries()) {
+          validity.push([ids[i], parsed.n, 2])
+        }
+        parsed.i = ids
+        parsed.ch = current_hash
         cached.unshift({ ...parsed })
         await kv(kvs, SmartWeave).put(`bundles.${parsed.n}`, cached)
-        return wrapResult(state, original_signer, SmartWeave)
+        await kv(kvs, SmartWeave).put(
+          `tx_validities.${SmartWeave.transaction.id}`,
+          validity
+        )
+        return wrapResult(state, original_signer, SmartWeave, {
+          validity,
+          errors: [],
+        })
       } else {
         err(`the wrong bundle height [${h} => ${parsed.n}]`)
       }
     }
-    const current_hash = await getHash(parsed, SmartWeave)
     const new_hash = await getNewHash(last_hash, current_hash, SmartWeave)
-    if (parsed.h !== new_hash) err(`the wrong hash [${parsed.h}, ${new_hash}]`)
+    if (parsed.h !== new_hash) {
+      err(`the wrong hash [${parsed.h}, ${new_hash}]`)
+    }
     last_hash = new_hash
     state.rollup = { height: parsed.n, hash: new_hash }
-    queries = parsed.q
-    ts = parsed.t
-    if (isNil(ts) || queries.length !== ts.length) {
+    queries = _addIndex(map)((v, i) => ({
+      q: v,
+      t: parsed.t[i],
+      n: parsed.n,
+      i: ids[i],
+    }))(parsed.q)
+    if (isNil(parsed.t) || parsed.q.length !== parsed.t.length) {
       err(`timestamp length is not equal to query length`)
     }
     let last = state.last_block ?? 0
-    for (let [i, v] of ts.entries()) {
+    for (let [i, v] of parsed.t.entries()) {
       if (last > v) {
         err(`the wrong timestamp[${i}]: ${last} <= ${v}`)
       }
@@ -125,15 +145,14 @@ const bundle = async (
     while (true) {
       let _cached = (await kv(kvs, SmartWeave).get(`bundles.${height}`)) ?? []
       if (_cached.length === 0) break
-      await kv(kvs, SmartWeave).put(`bundles.${parsed.n}`, null)
+
+      await kv(kvs, SmartWeave).put(`bundles.${height}`, null)
       let next = false
       for (let [i, v] of _cached.entries()) {
-        const current_hash = await getHash(v, SmartWeave)
-        const new_hash = await getNewHash(last_hash, current_hash, SmartWeave)
+        const new_hash = await getNewHash(last_hash, v.ch, SmartWeave)
         if (v.h !== new_hash) continue
         for (let [i2, v2] of v.q.entries()) {
-          ts.push(v.q[i2])
-          queries.push(v2)
+          queries.push({ q: v2, t: v.t[i2], n: height, i: v.i[i2] })
         }
         next = true
         state.rollup = { height, hash: new_hash }
@@ -144,18 +163,16 @@ const bundle = async (
       height++
     }
   } else {
-    queries = parsed
+    queries = map(v => ({ q: v }))(parsed)
   }
-
   let validity = []
   let errors = []
-  let i = 0
-  for (const q of queries) {
+  for (const v of queries) {
     let valid = true
     let error = null
     let params = [
       clone(state),
-      { input: q, timestamp: isBundler ? ts[i] : null },
+      { input: v.q, timestamp: isBundler ? v.t : null },
       undefined,
       false,
       SmartWeave,
@@ -165,7 +182,7 @@ const bundle = async (
       "bundle",
     ]
     try {
-      const op = q.function
+      const op = v.q.function
       let res = null
       switch (op) {
         case "relay":
@@ -177,9 +194,9 @@ const bundle = async (
         case "add":
           res = await add(
             clone(state),
-            { input: q, timestamp: isBundler ? ts[i] : null },
+            { input: v.q, timestamp: isBundler ? v.t : null },
             undefined,
-            i,
+            undefined,
             false,
             SmartWeave,
             kvs,
@@ -257,7 +274,7 @@ const bundle = async (
 
         default:
           throw new Error(
-            `No function supplied or function not recognised: "${q}"`
+            `No function supplied or function not recognised: "${op}"`
           )
       }
       if (!isNil(res)) state = res.state
@@ -265,9 +282,8 @@ const bundle = async (
       error = e?.toString?.() || "unknown error"
       valid = false
     }
-    validity.push(valid)
+    validity.push(isBundler ? [v.i, v.n, valid ? 0 : 1] : valid)
     errors.push(error)
-    i++
   }
   await kv(kvs, SmartWeave).put(
     `tx_validities.${SmartWeave.transaction.id}`,

@@ -242,7 +242,7 @@ class Server {
                 let err = null
                 try {
                   let initialState = {
-                    version: "0.31.0",
+                    version: "0.35.0",
                     canEvolve: true,
                     evolve: null,
                     secure: true,
