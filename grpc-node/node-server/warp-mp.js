@@ -230,6 +230,9 @@ class Syncer {
       return true
     }
   }
+  async getTxs() {
+    return await this.warp.warp.interactionsLoader.load(this.contractTxId)
+  }
 }
 let syncer = null
 process.on("message", async msg => {
@@ -268,6 +271,16 @@ process.on("message", async msg => {
         full_recovery_failure: this.full_recovery_failure,
       },
     })
+  } else if (op === "txs") {
+    let txs = null
+    let err = null
+    try {
+      txs = await syncer.getTxs()
+    } catch (e) {
+      console.log(e)
+      err = true
+    }
+    process.send({ err, op, id, result: { txs } })
   } else {
   }
 })

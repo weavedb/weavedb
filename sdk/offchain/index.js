@@ -129,9 +129,9 @@ class OffChain extends Base {
     )
   }
 
-  async getSW(input) {
+  async getSW(input, date) {
     let kvs = {}
-    const date = Date.now()
+    date ??= Date.now()
     return {
       kv: {
         get: async key =>
@@ -162,20 +162,28 @@ class OffChain extends Base {
     }
   }
 
-  async read(input) {
+  async read(input, date) {
     return (
-      await this.handle(clone(this.state), { input }, await this.getSW(input))
+      await this.handle(
+        clone(this.state),
+        { input },
+        await this.getSW(input, date)
+      )
     ).result
   }
 
-  async dryRead(state, queries) {
+  async dryRead(state, queries, date) {
     let results = []
     for (const v of queries || []) {
       let res = { success: false, err: null, result: null }
       const input = { function: v[0], query: tail(v) }
       try {
         res.result = (
-          await this.handle(clone(state), { input }, await this.getSW(input))
+          await this.handle(
+            clone(state),
+            { input },
+            await this.getSW(input, date)
+          )
         ).result
         res.success = true
       } catch (e) {
@@ -186,7 +194,7 @@ class OffChain extends Base {
     return results
   }
 
-  async write(func, param, dryWrite, bundle, relay = false, onDryWrite) {
+  async write(func, param, dryWrite, bundle, relay = false, onDryWrite, date) {
     if (JSON.stringify(param).length > 3900) {
       return {
         nonce: param.nonce,
@@ -206,7 +214,7 @@ class OffChain extends Base {
     } else {
       let error = null
       let tx = null
-      let sw = await this.getSW(param)
+      let sw = await this.getSW(param, date)
       try {
         tx = await this.handle(
           clone(this.state),
@@ -234,7 +242,7 @@ class OffChain extends Base {
       let results = []
       if (error === null) {
         if (!isNil(onDryWrite?.read)) {
-          results = await this.dryRead(this.state, onDryWrite.read || [])
+          results = await this.dryRead(this.state, onDryWrite.read || [], date)
         }
       }
       let res = {

@@ -1062,6 +1062,8 @@ const tests = {
     expect((await db.get("ppl", "Bob")).age).to.eql(4)
     while (true) {
       if (type !== "offchain") await db.mineBlock()
+      await sleep(1000)
+      await db.set({}, "ppl", "Alice")
       if ((await db.get("ppl", "Bob")).age > 4) {
         break
       }
@@ -1845,25 +1847,37 @@ const tests = {
       t: [date],
       h: hashes[0],
     })
-
-    await db.bundle(b[1], {
+    expect(await db.getValidities(tx.originalTxId)).to.eql([[ids[0], 1, 0]])
+    const tx2 = await db.bundle(b[1], {
       h: hashes[2],
       n: 3,
       t: [date + 3, date + 4],
     })
-    await db.bundle(b[2], {
+    expect(await db.getValidities(tx2.originalTxId)).to.eql([
+      [ids[3], 3, 2],
+      [ids[4], 3, 2],
+    ])
+    const tx3 = await db.bundle(b[2], {
       h: hashes[3],
       n: 4,
       t: [date + 5],
     })
-    expect(pluck("test", await db.get("ppl", ["test"]))).to.eql(["a"])
+    expect(await db.getValidities(tx3.originalTxId)).to.eql([[ids[5], 4, 2]])
 
-    await db.bundle(b[3], {
+    expect(pluck("test", await db.get("ppl", ["test"]))).to.eql(["a"])
+    const tx4 = await db.bundle(b[3], {
       q: b[3],
       h: hashes[1],
       n: 2,
       t: [date + 1, date + 2],
     })
+    expect(await db.getValidities(tx4.originalTxId)).to.eql([
+      [ids[1], 2, 0],
+      [ids[2], 2, 0],
+      [ids[3], 3, 0],
+      [ids[4], 3, 0],
+      [ids[5], 4, 0],
+    ])
     expect(pluck("test", await db.get("ppl", ["test"]))).to.eql([
       "a",
       "b",
@@ -1873,6 +1887,27 @@ const tests = {
       "f",
     ])
     return
+  },
+  "should bundle mulitple transactions": async ({ db }) => {
+    const wallet2 = EthCrypto.createIdentity()
+    const wallet3 = EthCrypto.createIdentity()
+    const wallet4 = EthCrypto.createIdentity()
+    const data = { name: "Bob", age: 20 }
+    const data2 = { name: "Alice", age: 30 }
+    const params = await db.sign("set", data, "ppl", "Bob", {
+      privateKey: wallet2.privateKey,
+    })
+    const params2 = await db.sign("upsert", data2, "ppl", "Alice", {
+      privateKey: wallet3.privateKey,
+    })
+    const params3 = await db.sign("update", {}, "ppl", "Beth", {
+      privateKey: wallet4.privateKey,
+    })
+
+    const tx = await db.bundle([params, params3, params2])
+    expect(await db.getValidities(tx.originalTxId)).to.eql([true, false, true])
+    expect(await db.get("ppl", "Bob")).to.eql(data)
+    expect(await db.get("ppl", "Alice")).to.eql(data2)
   },
 }
 

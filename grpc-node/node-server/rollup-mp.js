@@ -1,3 +1,5 @@
+const pako = require("pako")
+const md5 = require("md5")
 const { cpSync, rmSync } = require("fs")
 const {
   sortBy,
@@ -99,7 +101,6 @@ class Rollup {
       this.txid
     )
     this.plugins = plugins
-    console.log(`Bundler: ${this.bundler.address}`)
   }
 
   async init() {
@@ -286,6 +287,123 @@ class Rollup {
     await this.initWarp()
     await this.initPlugins()
   }
+  async recoverWAL() {
+    this.cb[++this.count] = async (err, { txs }) => {
+      if (err) {
+        console.log(`recover WAL unsuccessful... ${this.contractTxId}`)
+      } else {
+        console.log(`WAL successfully recovered! ${this.contractTxId}`)
+        // need L1 copy and L2 copy
+        const _arweave = arweave.init({
+          host: "arweave.net",
+          port: 443,
+          protocol: "https",
+        })
+        const bundler = await _arweave.wallets.jwkToAddress(this.bundler)
+        const state = {
+          ...{
+            owner: this.owner,
+            secure: this.secure ?? true,
+            bundlers: [bundler],
+          },
+        }
+        try {
+          rmSync(path.resolve(this.dir, "__temp__"), {
+            recursive: true,
+            force: true,
+          })
+        } catch (e) {
+          console.log(e)
+        }
+        const l1 = new DB({
+          caller: bundler,
+          contractTxId: this.contractTxId,
+          type: 3,
+          cache: {
+            initialize: async obj => {
+              obj.lmdb = open({
+                path: path.resolve(this.dir, "__temp__"),
+              })
+              let saved_state = await obj.lmdb.get("state")
+              if (!isNil(saved_state)) obj.state = saved_state
+              console.log(`DB initialized!`)
+              console.log(obj.state)
+            },
+            onWrite: async (tx, obj, param) => {
+              let prs = [obj.lmdb.put("state", tx.state)]
+              for (const k in tx.result.kvs) {
+                prs.push(obj.lmdb.put(k, tx.result.kvs[k]))
+              }
+              await Promise.all(prs).then(() => {})
+            },
+            get: async (key, obj) => {
+              let val
+              if (typeof val === "undefined") val = await obj.lmdb.get(key)
+              return val
+            },
+          },
+          state,
+        })
+        await l1.initialize()
+        console.log(await l1.get("test"))
+        for (let v of txs) {
+          const block_time = v.block.timestamp * 1000
+          let input = null
+          for (const tag of v.tags || []) {
+            if (tag.name === "Input") {
+              input = JSON.parse(tag.value)
+              /*
+              if (input.function === "bundle") {
+                const compressed = new Uint8Array(
+                  Buffer.from(input.query, "base64")
+                    .toString("binary")
+                    .split("")
+                    .map(function (c) {
+                      return c.charCodeAt(0)
+                    })
+                )
+                const query = JSON.parse(
+                  pako.inflate(compressed, { to: "string" })
+                )
+                for (const [i, input] of query.q.entries()) {
+                  let t = {
+                    id: ++this.tx_count,
+                    warp: v.id,
+                    commit: true,
+                    txid: await getId(this.contractTxId, input, query.t[i]),
+                    input,
+                    tx_ts: query.t[i],
+                  }
+                  console.log(`saving... [${this.tx_count}] ${t.txid}`)
+                  await this.wal.set(t, "txs", `${t.id}`)
+                }
+                break
+              }*/
+            }
+          }
+          const tx = await l1.write(
+            input.function,
+            input,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            block_time
+          )
+          if (tx?.success) {
+            const validities = await l1.getValidities(tx.originalTxId)
+            console.log(validities)
+          }
+        }
+        console.log(await l1.getInfo())
+      }
+    }
+    this.syncer.send({
+      id: this.count,
+      op: "txs",
+      opt: {},
+    })
+  }
   async initSyncer() {
     if (!isNil(this.syncer)) this.syncer.kill()
     this.syncer = fork(path.resolve(__dirname, "warp-mp"))
@@ -295,11 +413,14 @@ class Rollup {
         delete this.cb[id]
       }
     })
-    this.cb[++this.count] = ({ err }) => {
+    this.cb[++this.count] = err => {
       if (err) {
         console.log(`warp unsuccessful... ${this.contractTxId}`)
       } else {
         console.log(`warp successfully initialized! ${this.contractTxId}`)
+        if (this.tx_count === 0 || true) {
+          this.recoverWAL()
+        }
         this.init_warp = true
       }
     }
@@ -351,7 +472,7 @@ class Rollup {
             this.kvs_wal[k] = tx.result.kvs[k]
             prs.push(obj.lmdb_wal.put(k, tx.result.kvs[k]))
           }
-          Promise.all(prs).then(() => {})
+          await Promise.all(prs).then(() => {})
         },
         get: async (key, obj) => {
           let val = this.kvs_wal[key]
@@ -398,7 +519,7 @@ class Rollup {
             //this.kvs[k] = tx.result.kvs[k]
             prs.push(obj.lmdb.put(k, tx.result.kvs[k]))
           }
-          Promise.all(prs).then(() => {})
+          await Promise.all(prs).then(() => {})
           const t = {
             id: ++this.tx_count,
             txid: tx.result.transaction.id,
