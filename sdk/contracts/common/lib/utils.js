@@ -1,4 +1,5 @@
 const {
+  init,
   mergeLeft,
   includes,
   of,
@@ -166,6 +167,11 @@ const parse = async (
       const id = await genId(action, salt, SmartWeave)
       path.push(id)
       await fn.addNewDoc(id, SmartWeave, state, kvs)
+    } else if (
+      includes(func)(["setRules", "addTrigger"]) &&
+      query.length % 2 === 1
+    ) {
+      path = init(path)
     }
   }
   if (

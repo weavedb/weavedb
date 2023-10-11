@@ -69,6 +69,7 @@ class Rollup {
     contractTxId,
   }) {
     this.cb = {}
+    this.recovering = false
     this.count = 0
     this.height = 0
     this.contractTxId = contractTxId
@@ -116,7 +117,8 @@ class Rollup {
     for (let v of bundles) {
       if (isNil(v.data?.input)) continue
       const len = JSON.stringify(v.data.input).length
-      if (sizes + len > 2700) {
+      console.log(len, v.data.input)
+      if (sizes + len > 2500) {
         i += 1
         sizes = 0
         b[i] = { bundles: [], t: [], size: 0 }
@@ -127,6 +129,10 @@ class Rollup {
       b[i].size += len
     }
     for (let v of b) {
+      if (v.bundle.length === 0) {
+        console.log("the query is too large and stuck")
+        break
+      }
       const ids = map(_path(["data", "txid"]))(v.bundles)
       const current_hash = await getHash(ids)
       const new_hash = await getNewHash(last_hash, current_hash)
@@ -347,7 +353,6 @@ class Rollup {
           state,
         })
         await l1.initialize()
-        console.log(await l1.get("test"))
         let valid_txs = []
         let raw_txs = {}
         let blocks = {}
@@ -438,6 +443,7 @@ class Rollup {
           }
         }
         const info = await l1.getInfo()
+        console.log("rollup fully recovered")
         console.log(info.rollup)
         this.height = info.rollup.height
         this.last_hash = info.rollup.hash
@@ -464,7 +470,7 @@ class Rollup {
         console.log(`warp unsuccessful... ${this.contractTxId}`)
       } else {
         console.log(`warp successfully initialized! ${this.contractTxId}`)
-        if (this.tx_count === 0 || true) {
+        if (this.tx_count === 0) {
           this.recoverWAL()
         }
         this.init_warp = true

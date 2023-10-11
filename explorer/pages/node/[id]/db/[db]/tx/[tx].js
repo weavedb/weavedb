@@ -67,32 +67,45 @@ export default function Home() {
   const db_info = indexBy(prop("id"), info?.dbs ?? [])[router?.query.db]?.data
   let path = "-"
   let doc = "-"
-  if (!isNil(tx_info)) {
-    if (
-      includes(tx_info.input.function, [
-        "add",
-        "addIndex",
-        "removeIndex",
-        "setSchema",
-        "removeIndex",
-        "setRules",
-        "addTrigger",
-        "removeTrigger",
-      ])
-    ) {
-      path = tx_info.input.query.slice(1).join(" / ")
-    } else if (includes(tx_info.input.function, ["set", "update", "upsert"])) {
-      path = tx_info.input.query.slice(1, -1).join(" / ")
-    } else if (includes(tx_info.input.function, ["delete"])) {
-      path = tx_info.input.query.join(" / ")
+  let func = tx_info?.input.function
+  let custom = null
+  if (
+    includes(func, [
+      "add",
+      "addIndex",
+      "removeIndex",
+      "setSchema",
+      "removeIndex",
+      "setRules",
+      "addTrigger",
+      "removeTrigger",
+    ])
+  ) {
+    path = tx_info?.input.query.slice(1).join(" / ")
+  } else if (includes(func, ["set", "update", "upsert"])) {
+    path = tx_info?.input.query.slice(1, -1).join(" / ")
+  } else if (includes(func, ["delete"])) {
+    path = tx_info?.input.query.slice(0, -1).join("/")
+  } else if (func === "query") {
+    func = tx_info?.input.query[0]
+    custom = func
+    const _func = tx_info?.input.query[0].split(":")[0]
+    if (_func === "add") {
+      path = tx_info?.input.query.slice(2).join(" / ")
+    } else if (includes(_func, ["set", "update", "upsert"])) {
+      path = tx_info?.input.query.slice(2, -1).join(" / ")
+    } else {
+      path = tx_info?.input.query.slice(1, -1).join("/")
+    }
+    if (includes(_func)(["set", "update", "upsert", "delete"])) {
+      doc = last(tx_info.input.query)
     }
   }
-  if (!isNil(tx_info)) {
-    if (
-      includes(tx_info.input.function, ["set", "update", "upsert", "delete"])
-    ) {
-      path = last(tx_info.input.query)
-    }
+  if (
+    !isNil(tx_info) &&
+    includes(tx_info.input.function)(["set", "update", "upsert", "delete"])
+  ) {
+    doc = last(tx_info.input.query)
   }
   let isNostr = tx_info?.input["function"] === "nostr"
   return (
@@ -292,6 +305,7 @@ export default function Home() {
                             sx={{ wordBreak: "break-all" }}
                           >
                             {tx_info.input["function"]}
+                            {isNil(custom) ? "" : ` (${custom})`}
                           </Box>
                         </Box>
                         <Box as="tr">

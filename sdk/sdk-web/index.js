@@ -598,7 +598,7 @@ class SDK extends Base {
     parallel
   ) {
     delete param.data
-    if (JSON.stringify(param).length > 3000) {
+    if (JSON.stringify(param).length > 2500) {
       return {
         nonce: param.nonce,
         signer: param.caller,

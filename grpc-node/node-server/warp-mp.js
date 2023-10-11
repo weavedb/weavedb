@@ -37,47 +37,6 @@ class Syncer {
     try {
       len = keys(_state.cachedValue.validity).length
     } catch (e) {}
-    console.log(len)
-    /*if (this.tx_count === 0 && len > 0) {
-      console.log("recovering WAL...")
-      const txs = await this.warp.warp.interactionsLoader.load(
-        this.contractTxId
-      )
-      for (let v of txs) {
-        for (const tag of v.tags || []) {
-          if (tag.name === "Input") {
-            const input = JSON.parse(tag.value)
-            if (input.function === "bundle") {
-              const compressed = new Uint8Array(
-                Buffer.from(input.query, "base64")
-                  .toString("binary")
-                  .split("")
-                  .map(function (c) {
-                    return c.charCodeAt(0)
-                  })
-              )
-              for (const input of JSON.parse(
-                pako.inflate(compressed, { to: "string" })
-              )) {
-                let t = {
-                  id: ++this.tx_count,
-                  warp: v.id,
-                  commit: true,
-                  txid: md5(
-                    JSON.stringify({ contractTxId: this.contractTxId, input })
-                  ),
-                  input,
-                  blk_ts: v.block.timestamp,
-                      }
-                console.log(`saving... [${this.tx_count}] ${t.txid}`)
-                await this.wal.set(t, "txs", `${t.id}`)
-              }
-              break
-            }
-          }
-        }
-      }
-    }*/
   }
   async commit(v, height) {
     const { bundles, t, hash } = v

@@ -15,6 +15,16 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.37.0-beta (October 12, 2023)
+
+#### Source Transaction Id
+
+[t4PARZFDKuAmAOk7dBRmsBoYliPbenhdxhsYDPTk2rw](https://sonar.warp.cc/#/app/source/t4PARZFDKuAmAOk7dBRmsBoYliPbenhdxhsYDPTk2rw)
+
+#### Added Features
+
+- setRules with key
+
 ### v0.36.0-beta (October 11, 2023)
 
 #### Source Transaction Id
