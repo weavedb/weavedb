@@ -247,7 +247,7 @@ export default function Home() {
                                     <Box
                                       as="a"
                                       target="_blank"
-                                      href={`https://sonar.warp.cc/#/app/interaction/${v.txid}?network=mainnet`}
+                                      href={`https://sonar.warp.cc/#/app/interaction/${v.txid}`}
                                       color="#763AAC"
                                       onClick={e => e.stopPropagation()}
                                     >

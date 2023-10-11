@@ -465,7 +465,16 @@ export default function Home() {
                             py={2}
                             sx={{ wordBreak: "break-all" }}
                           >
-                            {!tx_info.commit ? "Not Commited" : tx_info.commit}
+                            {isNil(tx_info.warp) ? (
+                              "-"
+                            ) : (
+                              <Link
+                                href={`https://sonar.warp.cc/#/app/interaction/${tx_info.warp}?network=mainnet`}
+                                target="_blank"
+                              >
+                                <Box color="#763AAC">{tx_info.warp}</Box>
+                              </Link>
+                            )}
                           </Box>
                         </Box>
                       </Box>

@@ -3,6 +3,7 @@ const md5 = require("md5")
 const { cpSync, rmSync } = require("fs")
 const {
   sortBy,
+  mergeLeft,
   prop,
   last,
   keys,
@@ -288,6 +289,7 @@ class Rollup {
     await this.initPlugins()
   }
   async recoverWAL() {
+    this.recovering = true
     this.cb[++this.count] = async (err, { txs }) => {
       if (err) {
         console.log(`recover WAL unsuccessful... ${this.contractTxId}`)
@@ -346,13 +348,16 @@ class Rollup {
         })
         await l1.initialize()
         console.log(await l1.get("test"))
+        let valid_txs = []
+        let raw_txs = {}
+        let blocks = {}
+        this.recovery_map = {}
         for (let v of txs) {
           const block_time = v.block.timestamp * 1000
           let input = null
           for (const tag of v.tags || []) {
             if (tag.name === "Input") {
               input = JSON.parse(tag.value)
-              /*
               if (input.function === "bundle") {
                 const compressed = new Uint8Array(
                   Buffer.from(input.query, "base64")
@@ -365,20 +370,19 @@ class Rollup {
                 const query = JSON.parse(
                   pako.inflate(compressed, { to: "string" })
                 )
+                let ids = []
+                for (let [i, input] of query.q.entries()) {
+                  const id = await getId(this.contractTxId, input, query.t[i])
+                  ids.push(id)
+                }
+                blocks[query.n] = { ids, query, date: block_time, txid: v.id }
                 for (const [i, input] of query.q.entries()) {
-                  let t = {
-                    id: ++this.tx_count,
-                    warp: v.id,
-                    commit: true,
-                    txid: await getId(this.contractTxId, input, query.t[i]),
-                    input,
-                    tx_ts: query.t[i],
-                  }
-                  console.log(`saving... [${this.tx_count}] ${t.txid}`)
-                  await this.wal.set(t, "txs", `${t.id}`)
+                  const id = ids[i]
+                  raw_txs[id] ??= {}
+                  raw_txs[id][query.n] = { q: input, t: query.t[i] }
                 }
                 break
-              }*/
+              }
             }
           }
           const tx = await l1.write(
@@ -393,10 +397,52 @@ class Rollup {
           if (tx?.success) {
             const validities = await l1.getValidities(tx.originalTxId)
             console.log(validities)
+            let _blocks = {}
+            for (const v2 of validities) {
+              if (v2[2] === 0) {
+                _blocks[v2[1]] ??= []
+                _blocks[v2[1]].push(v2[0])
+                valid_txs.push(v2)
+                this.recovery_map[v2[0]] = {
+                  warp: blocks[v2[1]].txid,
+                  block: v2[1],
+                }
+                const input = raw_txs[v2[0]][v2[1]]
+                if (!isNil(input)) {
+                  const _tx = await this.db.write(
+                    input.q.function,
+                    input.q,
+                    undefined,
+                    undefined,
+                    undefined,
+                    undefined,
+                    input.t
+                  )
+                }
+              }
+            }
+            for (const k in _blocks) {
+              const b = blocks[k]
+              await this.wal.set(
+                {
+                  height: +k,
+                  txs: _blocks[k],
+                  date: b.date,
+                  txid: b.txid,
+                  hash: b.h,
+                },
+                "blocks",
+                k
+              )
+            }
           }
         }
-        console.log(await l1.getInfo())
+        const info = await l1.getInfo()
+        console.log(info.rollup)
+        this.height = info.rollup.height
+        this.last_hash = info.rollup.hash
       }
+      this.recovering = false
     }
     this.syncer.send({
       id: this.count,
@@ -520,14 +566,17 @@ class Rollup {
             prs.push(obj.lmdb.put(k, tx.result.kvs[k]))
           }
           await Promise.all(prs).then(() => {})
-          const t = {
+          let t = {
             id: ++this.tx_count,
             txid: tx.result.transaction.id,
-            commit: false,
+            commit: this.recovering,
             tx_ts: tx.result.transaction.timestamp,
             input: param,
             docID: tx.result.docID,
             doc: tx.result.doc,
+          }
+          if (this.recovering && !isNil(this.recovery_map[t.txid])) {
+            t = mergeLeft(this.recovery_map[t.txid], t)
           }
           await this.wal.set(t, "txs", `${t.id}`)
           this.last = Date.now()
