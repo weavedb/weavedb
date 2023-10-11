@@ -1025,6 +1025,25 @@ const tests = {
     await db.update({ age: db.inc(5) }, "ppl", "Bob")
     expect(await db.get("ppl", "Bob")).to.eql({ name: "Bob", age: 25 })
   },
+  "should set rules with key": async ({ db, arweave_wallet }) => {
+    const data = { name: "Bob", age: 20 }
+    const rules = [["allow()"]]
+    await db.setRules(rules, "ppl", "set:test#one", { ar: arweave_wallet })
+    const rules2 = [["deny()"]]
+    await db.setRules(rules2, "ppl", "delete", { ar: arweave_wallet })
+    await db.setRules(rules2, "ppl", "set:test#one", { ar: arweave_wallet })
+    expect(await db.getRules("ppl")).to.eql([
+      ["set:test#one", rules2],
+      ["delete", rules2],
+    ])
+    await db.setRules(rules2, "ppl", "set:test#one@1", { ar: arweave_wallet })
+    expect(await db.getRules("ppl")).to.eql([
+      ["delete", rules2],
+      ["set:test#one", rules2],
+    ])
+    await db.setRules(db.del(), "ppl", "set:test#one@1", { ar: arweave_wallet })
+    expect(await db.getRules("ppl")).to.eql([["delete", rules2]])
+  },
 
   "should pre-process the new data with rules": async ({
     db,

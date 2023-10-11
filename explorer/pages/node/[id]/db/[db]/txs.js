@@ -238,7 +238,7 @@ export default function Home() {
                         <Box as="td" p={2}>
                           Query ID
                         </Box>
-                        <Box as="td" p={2} w="100px">
+                        <Box as="td" p={2} w="150px">
                           Function
                         </Box>
                         <Box as="td" p={2}>
@@ -251,15 +251,16 @@ export default function Home() {
                           Date
                         </Box>
                         <Box as="td" p={2} w="100px">
-                          Rollup
+                          Block
                         </Box>
                       </Box>
                       <Box as="tbody">
                         {map(_v => {
                           let v = _v.data
                           let path = "-"
+                          let func = v.input.function
                           if (
-                            includes(v.input.function, [
+                            includes(func, [
                               "add",
                               "addIndex",
                               "removeIndex",
@@ -272,15 +273,23 @@ export default function Home() {
                           ) {
                             path = v.input.query.slice(1).join(" / ")
                           } else if (
-                            includes(v.input.function, [
-                              "set",
-                              "update",
-                              "upsert",
-                            ])
+                            includes(func, ["set", "update", "upsert"])
                           ) {
                             path = v.input.query.slice(1, -1).join(" / ")
-                          } else if (includes(v.input.function, ["delete"])) {
+                          } else if (includes(func, ["delete"])) {
                             path = v.input.query.slice(0, -1).join("/")
+                          } else if (func === "query") {
+                            func = v.input.query[0]
+                            const _func = v.input.query[0].split(":")[0]
+                            if (_func === "add") {
+                              path = v.input.query.slice(2).join(" / ")
+                            } else if (
+                              includes(_func, ["set", "update", "upsert"])
+                            ) {
+                              path = v.input.query.slice(2, -1).join(" / ")
+                            } else {
+                              path = v.input.query.slice(1, -1).join("/")
+                            }
                           }
                           let isNostr = v.input.function === "nostr"
                           return (
@@ -306,7 +315,7 @@ export default function Home() {
                                   </Link>
                                 </Box>
                                 <Box as="td" p={2}>
-                                  {v.input.function}
+                                  {func}
                                 </Box>
                                 <Box
                                   as="td"

@@ -203,6 +203,7 @@ class Server {
       if (isAdmin) {
         const { op, key, db } = JSON.parse(query).query
         const auth = { privateKey: this.conf.admin }
+        console.log(op, key, db)
         switch (op) {
           case "stats":
             if (isNil(key)) {
@@ -237,12 +238,12 @@ class Server {
               } else {
                 const tx_deploy = { success: false }
                 const warp = WarpFactory.forMainnet().use(new DeployPlugin())
-                const srcTxId = "eGWmP5DgNJJbKYjwfTw3sHjb3kdTyLxD8hc5XWH8gWM"
+                const srcTxId = "t4PARZFDKuAmAOk7dBRmsBoYliPbenhdxhsYDPTk2rw"
                 let res = null
                 let err = null
                 try {
                   let initialState = {
-                    version: "0.35.0",
+                    version: "0.37.0",
                     canEvolve: true,
                     evolve: null,
                     secure: true,
@@ -345,6 +346,7 @@ class Server {
                 owner: db.owner ?? this.conf.owner,
                 dbname: db.dbname ?? this.conf.dbname,
                 dir: db.dir ?? this.conf.dir,
+                tick: db.tick ?? this.conf.tick ?? null,
                 plugins: db.plugins ?? this.conf.plugins ?? {},
               })
               this.rollups[key].init()

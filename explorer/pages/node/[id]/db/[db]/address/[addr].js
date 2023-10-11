@@ -278,8 +278,9 @@ export default function Home() {
                         {map(_v => {
                           let v = _v.data
                           let path = "-"
+                          let func = v.input.function
                           if (
-                            includes(v.input.function, [
+                            includes(func, [
                               "add",
                               "addIndex",
                               "removeIndex",
@@ -292,16 +293,25 @@ export default function Home() {
                           ) {
                             path = v.input.query.slice(1).join(" / ")
                           } else if (
-                            includes(v.input.function, [
-                              "set",
-                              "update",
-                              "upsert",
-                            ])
+                            includes(func, ["set", "update", "upsert"])
                           ) {
                             path = v.input.query.slice(1, -1).join(" / ")
-                          } else if (includes(v.input.function, ["delete"])) {
+                          } else if (includes(func, ["delete"])) {
                             path = v.input.query.slice(0, -1).join("/")
+                          } else if (func === "query") {
+                            func = v.input.query[0]
+                            const _func = v.input.query[0].split(":")[0]
+                            if (_func === "add") {
+                              path = v.input.query.slice(2).join(" / ")
+                            } else if (
+                              includes(_func, ["set", "update", "upsert"])
+                            ) {
+                              path = v.input.query.slice(2, -1).join(" / ")
+                            } else {
+                              path = v.input.query.slice(1, -1).join("/")
+                            }
                           }
+                          let isNostr = v.input.function === "nostr"
                           return (
                             <>
                               <Box
@@ -325,17 +335,29 @@ export default function Home() {
                                   </Link>
                                 </Box>
                                 <Box as="td" p={2}>
-                                  {v.input.function}
+                                  {func}
                                 </Box>
                                 <Box
                                   as="td"
                                   p={2}
                                   sx={{ wordBreak: "break-all" }}
                                 >
-                                  {path}
+                                  {isNostr ? "nostr_events" : path}
                                 </Box>
-                                <Box as="td" p={2}>
-                                  {v.input.caller}
+                                <Box as="td" p={2} color="#763AAC">
+                                  {isNostr ? (
+                                    <Box>
+                                      {v.input.query.pubkey.slice(1, 10)}...
+                                      {v.input.query.pubkey.slice(-10)}
+                                    </Box>
+                                  ) : (
+                                    <Link
+                                      href={`/node/${router.query.id}/db/${router.query.db}/address/${v.input.caller}`}
+                                      sx={{ ":hover": { opacity: 0.75 } }}
+                                    >
+                                      {v.input.caller}
+                                    </Link>
+                                  )}
                                 </Box>
                                 <Box as="td" p={2} w="100px">
                                   {dayjs(v.tx_ts ?? v.blk_ts ?? 0).fromNow(
