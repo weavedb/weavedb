@@ -6,11 +6,21 @@ const setupDB = async ({ db, conf, privateKey, relayer }) => {
     switch (k) {
       case "rules":
         for (let col in conf[k]) {
-          console.log(
-            "setRules",
-            col,
-            (await db.setRules(conf[k][col], col, auth))?.success
-          )
+          for (let key in conf[k][col]) {
+            console.log(
+              "setRules",
+              col,
+              conf[k][col][key][0],
+              (
+                await db.setRules(
+                  conf[k][col][key][1],
+                  col,
+                  conf[k][col][key][0],
+                  auth
+                )
+              )?.success
+            )
+          }
         }
         break
       case "schemas":

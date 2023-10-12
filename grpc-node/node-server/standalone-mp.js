@@ -348,6 +348,7 @@ class Server {
                 dir: db.dir ?? this.conf.dir,
                 tick: db.tick ?? this.conf.tick ?? null,
                 plugins: db.plugins ?? this.conf.plugins ?? {},
+                bundler: this.conf.bundler,
               })
               this.rollups[key].init()
             }

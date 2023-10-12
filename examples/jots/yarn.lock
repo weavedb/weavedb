@@ -6364,10 +6364,10 @@ wcwidth@^1.0.0:
   dependencies:
     defaults "^1.0.3"
 
-weavedb-base@^0.28.5:
-  version "0.28.5"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.28.5.tgz#cae51255a9221de6db1dee5c55d536a75c191d3e"
-  integrity sha512-LIYuATWuLTbASS5W0toVzfF/Uu5IhkWIRbs0HYFIxVBuW6niABYGXNwEWNtZXd7fbVkZarV6hHhnfFGqBefHrA==
+weavedb-base@^0.34.0:
+  version "0.34.0"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.34.0.tgz#d1bb0ee634cd96827b7f558f455445d4119bbeaa"
+  integrity sha512-WQhG9HVEBxesPyodhC75lOXUprWrHvYd66zYRxbXEdY/CnzE7Xly9/jYqw2Gn+oT7S79ctDnK+lxCkT+ueK4Qg==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"
@@ -6379,10 +6379,10 @@ weavedb-base@^0.28.5:
     pako "^2.1.0"
     ramda "^0.28.0"
 
-weavedb-client@^0.28.3:
-  version "0.28.3"
-  resolved "https://registry.yarnpkg.com/weavedb-client/-/weavedb-client-0.28.3.tgz#b82c22c4e5abb62223a1ce61dbee5bed7e92cf0e"
-  integrity sha512-3gDK3L7inWBTnfXYyANA/+C+C+3Wq3xbQb3EZGThTjn0yn5WA8+uYftQ2JZanWzcwIF8DcasAUgQCjhbMXOpTQ==
+weavedb-client@^0.34.0:
+  version "0.34.0"
+  resolved "https://registry.yarnpkg.com/weavedb-client/-/weavedb-client-0.34.0.tgz#ffe6d5ddaa067cbc872ec7a50fd6a0956ee55d35"
+  integrity sha512-0nvwPoVVgPuwN0W8PsnIKsI2l8LhQxgtV/ewNpDl/bZ5p9NMJmAM6z3V6f0MMsvpL458oOxleVynLMqq2R05aw==
   dependencies:
     "@lit-protocol/sdk-browser" "^1.3.3"
     "@metamask/legacy-web3" "^2.0.0"
@@ -6390,18 +6390,18 @@ weavedb-client@^0.28.3:
     google-protobuf "^3.21.0"
     grpc-web "^1.3.1"
     ramda "^0.28.0"
-    weavedb-base "^0.28.5"
+    weavedb-base "^0.34.0"
 
-weavedb-node-client@^0.28.4:
-  version "0.28.4"
-  resolved "https://registry.yarnpkg.com/weavedb-node-client/-/weavedb-node-client-0.28.4.tgz#d7f767d16824a63ffb660a221098e917a759187f"
-  integrity sha512-3it/uq1igOmpXt+yhTsEvjh6ZgLCImpWqFAa7chlg16MJFg1nCsdr7vz5ToKFjQLOKdEYpOGp0xQ+t9HUStFUg==
+weavedb-node-client@^0.34.0:
+  version "0.34.0"
+  resolved "https://registry.yarnpkg.com/weavedb-node-client/-/weavedb-node-client-0.34.0.tgz#fb01a37be805eaba819e6873c22c0e35a596c4ef"
+  integrity sha512-I+7MK3eSi1kaGglYBXSW6mdU6liGIeeklDkC7ZWzuyKXrdH7RhM1Qt+eJsHeO5qDdLZxvTIPYiMFzNhPpE9bDg==
   dependencies:
     "@grpc/grpc-js" "^1.1.0"
     "@grpc/proto-loader" "^0.5.0"
     arweave "^1.12.2"
     ramda "^0.28.0"
-    weavedb-base "^0.28.5"
+    weavedb-base "^0.34.0"
 
 web-streams-polyfill@^3.0.3:
   version "3.2.1"

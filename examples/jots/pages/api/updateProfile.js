@@ -10,8 +10,9 @@ export default async (req, res) => {
       private_key: process.env.GCS_PRIVATE_KEY,
     },
   })
+  const contractTxId = process.env.NEXT_PUBLIC_TXID ?? "offchain"
   const bucket = storage.bucket(process.env.GCS_BUCKET)
-  const db = new SDK({ rpc: process.env.RPC, contractTxId: "offchain" })
+  const db = new SDK({ rpc: process.env.RPC, contractTxId })
   let tx = null
   let image = null
   let cover = null

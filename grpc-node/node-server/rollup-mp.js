@@ -117,7 +117,6 @@ class Rollup {
     for (let v of bundles) {
       if (isNil(v.data?.input)) continue
       const len = JSON.stringify(v.data.input).length
-      console.log(len, v.data.input)
       if (sizes + len > 2500) {
         i += 1
         sizes = 0
@@ -129,7 +128,7 @@ class Rollup {
       b[i].size += len
     }
     for (let v of b) {
-      if (v.bundle.length === 0) {
+      if (v.bundles.length === 0) {
         console.log("the query is too large and stuck")
         break
       }
@@ -401,7 +400,6 @@ class Rollup {
           )
           if (tx?.success) {
             const validities = await l1.getValidities(tx.originalTxId)
-            console.log(validities)
             let _blocks = {}
             for (const v2 of validities) {
               if (v2[2] === 0) {
