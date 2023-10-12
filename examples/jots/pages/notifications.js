@@ -411,7 +411,7 @@ function Page() {
                                   ·
                                 </Box>
                                 <Box as="span" color="#666">
-                                  {dayjs(v2.date * 1000).fromNow(true)}
+                                  {dayjs(v2.date).fromNow(true)}
                                 </Box>
                               </Box>
                             </Flex>
