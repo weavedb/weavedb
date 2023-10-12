@@ -45,6 +45,19 @@ export const login = async () => {
   }
 }
 
+export const inviteUser = async ({ addr }) => {
+  const { identity } = await lf.getItem("user")
+  const _addr = addr.toLowerCase()
+  const _invite = {}
+  const { doc, success } = await db.query(
+    "set:invite_user",
+    _invite,
+    "users",
+    _addr,
+    identity
+  )
+  return { err: !success, doc }
+}
 export const postArticle = async ({
   description,
   title,
@@ -65,13 +78,12 @@ export const postArticle = async ({
   if (!isNil(cover)) post.cover = db.data("cover")
   let sign = null
   if (isNil(editID)) {
-    post.type = "article"
-    sign = await db.sign("add", post, "posts", {
+    sign = await db.sign("query", "add:article", post, "posts", {
       ...identity,
       jobID: "article",
     })
   } else {
-    sign = await db.sign("update", post, "posts", editID, {
+    sign = await db.sign("query", "update:edit", post, "posts", editID, {
       ...identity,
       jobID: "article",
     })
@@ -134,15 +146,21 @@ export const updateProfile = async ({
     if (!isNil(v) && (isNil(_user) || _user[k] !== v)) user[k] = v
   }
   if (isEmpty(user) && isNil(image)) return { err: "nothing to update" }
-  let op = "update"
   let tx, __image, __cover
   if (!isNil(image) || !isNil(cover)) {
     if (!isNil(image)) user.image = db.data("image")
     if (!isNil(cover)) user.cover = db.data("cover")
-    const sign = await db.sign(op, user, "users", address, {
-      ...identity,
-      jobID: "profile",
-    })
+    const sign = await db.sign(
+      "query",
+      "update:profile",
+      user,
+      "users",
+      address,
+      {
+        ...identity,
+        jobID: "profile",
+      }
+    )
     let {
       tx: _tx,
       image: _image,
@@ -158,7 +176,7 @@ export const updateProfile = async ({
     if (!isNil(_image)) __image = _image
     if (!isNil(_cover)) __cover = _cover
   } else {
-    tx = await db[op](user, "users", address, identity)
+    tx = await db.query("update:profile", user, "users", address, identity)
   }
   if (tx.success) {
     if (!isNil(__image)) user.image = __image
@@ -182,14 +200,20 @@ export const logout = async () => {
 export const likePost = async ({ user, tweet }) => {
   const { identity } = await lf.getItem("user")
   const like = {}
-  await db.set(like, "likes", `${tweet.id}:${user.address}`, identity)
+  await db.query(
+    "set:like",
+    like,
+    "likes",
+    `${tweet.id}:${user.address}`,
+    identity
+  )
   return { like }
 }
 
 export const repostPost = async ({ user, tweet }) => {
   const { identity } = await lf.getItem("user")
-  const repost = { repost: tweet.id, type: "status" }
-  const { doc } = await db.add(repost, "posts", identity)
+  const repost = { repost: tweet.id }
+  const { doc } = await db.query("add:repost", repost, "posts", identity)
   return { repost: doc }
 }
 
@@ -197,14 +221,14 @@ export const followUser = async ({ user, puser }) => {
   const { identity } = await lf.getItem("user")
   const follow = {}
   const id = `${user.address}:${puser.address}`
-  await db.set(follow, "follows", id, identity)
+  await db.query("set:follow", follow, "follows", id, identity)
   return { follow: { id, data: follow } }
 }
 
 export const unfollowUser = async ({ user, puser }) => {
   const { identity } = await lf.getItem("user")
   const id = `${user.address}:${puser.address}`
-  await db.delete("follows", id, identity)
+  await db.query("delete:unfollow", "follows", id, identity)
   return { follow: { id, data: null } }
 }
 
@@ -225,16 +249,19 @@ export const postStatus = async ({
     hashes: uniq(hashes),
     mentions: uniq(mentions),
   }
-  if (isNil(replyTo) && !isNil(title)) post.title = title
+  let op = "add:status"
+  if (repost !== "") {
+    op = "add:quote"
+    post.repost = repost
+  } else if (!isNil(replyTo)) {
+    op = "add:reply"
+    post.reply_to = replyTo
+  }
 
-  if (!isNil(replyTo)) post.reply_to = replyTo
-
-  if (repost !== "") post.repost = repost
-  if (!isNil(tweet)) post.parents = append(tweet.id, tweet.parents ?? [])
   let new_post = null
   if (!isNil(cover)) {
     post.cover = db.data("cover")
-    const sign = await db.sign("add", post, "posts", {
+    const sign = await db.sign("query", op, post, "posts", {
       ...identity,
       jobID: "article",
     })
@@ -248,7 +275,7 @@ export const postStatus = async ({
     new_post = _tx.doc
     new_post.cover = _cover
   } else {
-    const _tx = await db.add(post, "posts", identity)
+    const _tx = await db.query(op, post, "posts", identity)
     new_post = _tx.doc
   }
   return { err: null, post: new_post }
@@ -256,7 +283,7 @@ export const postStatus = async ({
 
 export const deletePost = async ({ tweet }) => {
   const { identity } = await lf.getItem("user")
-  await db.update({ date: db.del() }, "posts", tweet.id, identity)
+  await db.query("update:del_post", {}, "posts", tweet.id, identity)
   return { post: dissoc("date", tweet) }
 }
 

@@ -81,7 +81,7 @@ class Syncer {
         })
         .catch(e => {
           done++
-          success = false
+          console.log(e)
           if (done === b.length) {
             this.validate({
               success: !isErr,

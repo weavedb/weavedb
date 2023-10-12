@@ -158,10 +158,23 @@ export default function Home() {
                   ></Box>
                   <Box flex={1}>
                     <Box sx={{ color: "#999" }}>Blocks / Transactions</Box>
-                    <Box sx={{ fontSize: "14px" }}>
-                      {blks.length === 0 ? 0 : blks[0].id} /{" "}
-                      {txs.length === 0 ? 0 : +txs[0].id}
-                    </Box>
+                    <Flex sx={{ fontSize: "14px" }}>
+                      <Link
+                        href={`/node/${router.query.id}/db/${router.query.db}/blocks`}
+                      >
+                        <Box color="#763AAC">
+                          {blks.length === 0 ? 0 : blks[0].id}
+                        </Box>
+                      </Link>
+                      <Box mx={1}>/</Box>
+                      <Link
+                        href={`/node/${router.query.id}/db/${router.query.db}/txs`}
+                      >
+                        <Box color="#763AAC">
+                          {txs.length === 0 ? 0 : +txs[0].id}
+                        </Box>
+                      </Link>
+                    </Flex>
                   </Box>
                   <Box
                     mx={4}
@@ -323,7 +336,7 @@ export default function Home() {
                           <Box as="td" p={2} w="70px">
                             Block
                           </Box>
-                          <Box as="td" p={2} w="70px">
+                          <Box as="td" p={2} w="120px">
                             Date
                           </Box>
                         </Box>
@@ -388,7 +401,7 @@ export default function Home() {
                                     </Link>
                                   </Box>
                                   <Box as="td" p={2}>
-                                    {v.input.function}
+                                    {func}
                                   </Box>
                                   <Box
                                     as="td"
@@ -425,7 +438,7 @@ export default function Home() {
                                     )}
                                   </Box>
 
-                                  <Box as="td" p={2} w="100px">
+                                  <Box as="td" p={2} w="120px">
                                     {dayjs(v.tx_ts ?? v.blk_ts ?? 0).fromNow(
                                       true
                                     )}

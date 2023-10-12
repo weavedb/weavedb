@@ -1,3 +1,4 @@
+import lf from "localforage"
 import * as linkify from "linkifyjs"
 import linkifyHtml from "linkify-html"
 import "linkify-plugin-hashtag"
@@ -45,6 +46,7 @@ import {
   checkUser,
   getTweets,
   getUsers,
+  inviteUser,
 } from "../../lib/db"
 
 import EditUser from "../../components/EditUser"
@@ -338,7 +340,7 @@ function StatusPage() {
     { key: "following", name: "Following" },
     { key: "followers", name: "Followers" },
   ]
-  if ((user?.invites ?? 0) > 0 && user?.address === puser?.address) {
+  if ((puser?.invites ?? 0) > 0 && user?.address === puser?.address) {
     tabs2.push({ key: "invites", name: "Invites" })
   }
   const isFollow = includes(tab, ["following", "followers", "invites"])
@@ -676,18 +678,18 @@ function StatusPage() {
                           }}
                           onClick={async () => {
                             if (isAddress(addr)) {
-                              const db = await initDB()
-                              const _addr = addr.toLowerCase()
-                              const _invite = {}
-                              const { doc } = await db.set(
-                                _invite,
-                                "users",
-                                _addr
-                              )
-                              setInvites(
-                                prepend({ id: _addr, data: doc }, invites)
-                              )
-                              setAddr("")
+                              const { err, doc } = await inviteUser({ addr })
+                              if (!err) {
+                                setInvites(
+                                  prepend(
+                                    { id: addr.toLowerCase(), data: doc },
+                                    invites
+                                  )
+                                )
+                                setAddr("")
+                              } else {
+                                alert("something went wrong")
+                              }
                             }
                           }}
                         >

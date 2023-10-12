@@ -42,8 +42,8 @@
     "sanitize-html": "^2.11.0",
     "showdown": "^2.1.0",
     "strip-tags": "^0.1.1",
-    "weavedb-client": "^0.28.3",
-    "weavedb-node-client": "^0.28.4",
+    "weavedb-client": "^0.34.0",
+    "weavedb-node-client": "^0.34.0",
     "y-websocket": "^1.5.0",
     "yjs": "^13.6.7"
   }

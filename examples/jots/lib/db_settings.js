@@ -25,6 +25,7 @@ const offchain = {
               reposrts: 0,
               quotes: 0,
               comments: 0,
+              reposts: 0,
               date: "$ms",
               reply: false,
               quote: false,
@@ -50,6 +51,7 @@ const offchain = {
               likes: 0,
               reposrts: 0,
               quotes: 0,
+              reposts: 0,
               comments: 0,
               date: "$ms",
               reply: false,
@@ -128,7 +130,10 @@ const offchain = {
       [
         "add:quote",
         [
-          ["fields()", ["*repost", "*description", "cover"]],
+          [
+            "fields()",
+            ["*repost", "*description", "cover", "hashes", "mentions"],
+          ],
           ["=$post", ["get()", ["posts", "$new.repost"]]],
           ["denyifany()", ["x$post", "x$post.date"]],
           [
@@ -140,6 +145,7 @@ const offchain = {
               reposrts: 0,
               quotes: 0,
               comments: 0,
+              reposts: 0,
               date: "$ms",
               reply: false,
               quote: true,
@@ -154,7 +160,10 @@ const offchain = {
       [
         "add:reply",
         [
-          ["fields()", ["*reply_to", "*description", "cover"]],
+          [
+            "fields()",
+            ["*reply_to", "*description", "cover", "hashes", "mentions"],
+          ],
           ["=$post", ["get()", ["posts", "$new.reply_to"]]],
           ["denyifany()", ["x$post", "x$post.date"]],
           [
@@ -166,6 +175,7 @@ const offchain = {
               reposrts: 0,
               quotes: 0,
               comments: 0,
+              reposts: 0,
               date: "$ms",
               reply: true,
               quote: false,
@@ -196,7 +206,7 @@ const offchain = {
         [
           ["=$user", ["get()", ["users", "$signer"]]],
           ["=$isOwner", ["includes", "$signer", "$contract.owners"]],
-          ["=$keys", ["keys", "$old"]],
+          ["=$keys", ["keys", "$request.resource.data"]],
         ],
       ],
       [
