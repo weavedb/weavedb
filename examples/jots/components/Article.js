@@ -164,9 +164,7 @@ export default function Article({
                   )}
                   <Box mx={1}>·</Box>
                   <Box>
-                    {preview
-                      ? "Preview"
-                      : dayjs(post.date * 1000).fromNow(true)}
+                    {preview ? "Preview" : dayjs(post.date).fromNow(true)}
                   </Box>
                 </Flex>
               </Box>

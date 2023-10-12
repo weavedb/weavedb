@@ -206,7 +206,7 @@ const Embed = ({
                       </Flex>
                     </Link>
                     <Box mx={1}>·</Box>
-                    <Box>{dayjs(tweet.date * 1000).fromNow(true)}</Box>
+                    <Box>{dayjs(tweet.date).fromNow(true)}</Box>
                   </Flex>
                 </>
               )}
