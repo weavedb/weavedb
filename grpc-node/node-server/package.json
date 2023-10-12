@@ -32,6 +32,7 @@
     "ramda": "^0.28.0",
     "redis": "^4.6.4",
     "tweetnacl": "^1.0.3",
+    "warp-arbundles": "^1.0.4",
     "warp-contracts": "^1.4.19",
     "warp-contracts-plugin-deploy": "^1.0.9",
     "weavedb-node-client": "^0.34.0",
