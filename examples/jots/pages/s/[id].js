@@ -229,7 +229,7 @@ function StatusPage() {
           setEditStatus,
         }}
       />
-      {isNil(user?.handle) ? (
+      {isNil(user?.handle) && process.env.NEXT_PUBLIC_MODE === "closed" ? (
         <Alpha />
       ) : (
         <>

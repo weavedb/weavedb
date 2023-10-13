@@ -35,7 +35,7 @@ const offchain = {
               parents: [],
             },
           ],
-          ["fields()", ["*description", "mentions", "hashes", "image"]],
+          ["fields()", ["*description", "mentions", "hashes", "cover"]],
           ["allow()"],
         ],
       ],
