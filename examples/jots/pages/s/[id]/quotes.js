@@ -193,7 +193,7 @@ function Page() {
           setEditStatus,
         }}
       />
-      {isNil(user?.handle) ? (
+      {isNil(user?.handle) && process.env.NEXT_PUBLIC_MODE === "closed" ? (
         <Alpha />
       ) : (
         <Flex justify="center" minH="100%" pt="50px" pb={["50px", 0]}>

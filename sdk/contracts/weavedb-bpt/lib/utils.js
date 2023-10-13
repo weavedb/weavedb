@@ -42,6 +42,7 @@ const {
   clone,
   isValidName,
   setElm,
+  parse: __parse,
 } = require("../../common/lib/pure")
 const { validate: validator } = require("../../common/lib/jsonschema")
 const { get: _get } = require("./index")
@@ -252,7 +253,7 @@ const validateData = async ({
                         {
                           input: {
                             function: "get",
-                            query: _parse(logic[1], rule_data),
+                            query: __parse(logic[1], rule_data),
                           },
                         },
                         undefined,

@@ -121,14 +121,14 @@ const setElm = (k, d, rule_data) => {
   }
   return obj
 }
-const _parse = (query, vars) => {
+const parse = (query, vars) => {
   if (is(Array, query)) {
-    query = map(v => (is(Object, v) ? _parse(v, vars) : v))(query)
+    query = map(v => (is(Object, v) ? parse(v, vars) : v))(query)
   } else if (is(Object, query)) {
     if (is(String, query.var)) {
       return _path(query.var.split("."))(vars)
     } else {
-      query = map(v => _parse(v, vars))(query)
+      query = map(v => parse(v, vars))(query)
     }
   }
   return query
@@ -147,7 +147,7 @@ async function fpj(arr = [], obj = {}, fn = {}) {
     } else if (/^.+\(\)$/.test(arr[0])) {
       if (!isNil(fn[arr[0].slice(0, -2)])) {
         ;[val, isBreak] = await fn[arr[0].slice(0, -2)](
-          _parse(replace$(arr[1]), obj),
+          parse(replace$(arr[1]), obj),
           obj,
           setElm
         )
@@ -348,4 +348,5 @@ module.exports = {
   fpj,
   ac_funcs,
   setElm,
+  parse,
 }
