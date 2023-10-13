@@ -4,9 +4,13 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "keygen": "node scripts/keygen.js",
+    "accounts": "node scripts/accounts.js"
   },
   "dependencies": {
+    "arweave": "^1.14.4",
+    "eth-crypto": "^2.6.0",
     "mocha": "^10.2.0"
   }
 }
