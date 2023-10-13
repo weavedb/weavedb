@@ -30,7 +30,10 @@ const {
 const weavedb = grpc.loadPackageDefinition(packageDefinition).weavedb
 const path = require("path")
 const { fork } = require("child_process")
-const { DeployPlugin, ArweaveSigner } = require("warp-contracts-plugin-deploy")
+const {
+  DeployPlugin,
+  ArweaveSigner,
+} = require("weavedb-warp-contracts-plugin-deploy")
 const { WarpFactory } = require("warp-contracts")
 
 class Rollup {
