@@ -1,0 +1,12 @@
+{
+  "name": "weavedb-workspace",
+  "version": "0.0.1",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "test": "mocha"
+  },
+  "dependencies": {
+    "mocha": "^10.2.0"
+  }
+}

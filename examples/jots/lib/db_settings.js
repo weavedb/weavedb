@@ -13,6 +13,7 @@ const db = {
 const offchain = {
   rules: {
     posts: [
+      ["delete", [["allow()"]]],
       [
         "add:status",
         [
