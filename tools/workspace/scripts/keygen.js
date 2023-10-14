@@ -1,7 +1,9 @@
 const EthCrypto = require("eth-crypto")
-const name = process.argv[2]
 const { isNil } = require("ramda")
-const { t = "evm" } = require("yargs")(process.argv.slice(3)).argv
+const {
+  _: [name],
+  t = "evm",
+} = require("yargs")(process.argv.slice(2)).argv
 const Arweave = require("arweave")
 if (isNil(name)) {
   console.error("account name missing")
