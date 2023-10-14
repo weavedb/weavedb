@@ -206,7 +206,6 @@ class Server {
       if (isAdmin) {
         const { op, key, db } = JSON.parse(query).query
         const auth = { privateKey: this.conf.admin }
-        console.log(op, key, db)
         switch (op) {
           case "stats":
             if (isNil(key)) {
@@ -273,7 +272,7 @@ class Server {
                     port: 443,
                     protocol: "https",
                   })
-                  initialState.owner = this.conf.owner
+                  initialState.owner = _db.owner ?? this.conf.owner
                   initialState.bundlers = [
                     await arweave.wallets.jwkToAddress(this.conf.bundler),
                   ]
