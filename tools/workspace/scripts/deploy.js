@@ -35,7 +35,7 @@ if (isNil(rpc)) {
   }
 }
 
-const main = async key => {
+const main = async () => {
   const db = new SDK({ rpc: rpc.url, contractTxId: name })
   try {
     await db.admin(
@@ -46,21 +46,24 @@ const main = async key => {
       },
       { privateKey, nonce: 1 }
     )
+    console.log(`DB [${name}] added!`)
   } catch (e) {
-    console.log(e)
+    console.log(e.message)
   }
-  const tx = await db.admin(
-    {
-      op: "deploy_contract",
-      key: name,
-    },
-    { privateKey, nonce: 1 }
-  )
-  if (!isNil(tx.contractTxId)) {
-    console.log("DB successfully deployed!")
-    console.log(tx)
-  } else {
-    console.log("something went wrong!")
+  if (config.db.rollup) {
+    const tx = await db.admin(
+      {
+        op: "deploy_contract",
+        key: name,
+      },
+      { privateKey, nonce: 1 }
+    )
+    if (!isNil(tx.contractTxId)) {
+      console.log("DB successfully deployed!")
+      console.log(tx)
+    } else {
+      console.log("something went wrong!")
+    }
   }
   process.exit()
 }

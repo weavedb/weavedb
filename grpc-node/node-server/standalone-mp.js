@@ -4,6 +4,8 @@ const grpc = require("@grpc/grpc-js")
 const protoLoader = require("@grpc/proto-loader")
 const { addReflection } = require("grpc-server-reflection")
 const PROTO_PATH = __dirname + "/weavedb.proto"
+const { Wallet, isAddress } = require("ethers")
+const { validate } = require("./lib/validate")
 const {
   indexBy,
   prop,
@@ -109,6 +111,7 @@ class Server {
     if (!isNil(this.owner)) throw Error("owner is not defined")
     if (!isNil(this.admin)) throw Error("admin is not defined")
     if (!isNil(this.rollups)) throw Error("rollups are not defined")
+    this.admin = new Wallet(this.conf.admin)
     this.rollups = {}
     this.port = port
     this.txid_map = {}
@@ -131,13 +134,14 @@ class Server {
     })
   }
   async init() {
-    const admin_db = this.getRollup({ secure: true, plugins: {} }, "__admin__")
+    const admin_db = this.getRollup(
+      { secure: true, plugins: {}, owner: this.admin.address.toLowerCase() },
+      "__admin__"
+    )
     admin_db.init(async () => {
       const auth = { privateKey: this.conf.admin }
       this.admin_db = new SDK({ rollup: admin_db })
-      const signer = `0x${privateToAddress(
-        Buffer.from(this.conf.admin.toLowerCase().replace(/^0x/, ""), "hex")
-      ).toString("hex")}`
+      const signer = this.admin.address.toLowerCase()
       const tx = await this.admin_db.setRules(
         {
           "allow write": {
@@ -206,6 +210,7 @@ class Server {
       if (isAdmin) {
         const { op, key, db } = JSON.parse(query).query
         const auth = { privateKey: this.conf.admin }
+        let err, signer
         switch (op) {
           case "stats":
             if (isNil(key)) {
@@ -226,17 +231,33 @@ class Server {
 
             break
           case "deploy_contract":
-            if (isNil(key)) {
+            ;({ err, signer } = await validate(JSON.parse(query), txid))
+            if (signer !== this.admin.address.toLowerCase()) {
+              callback(null, {
+                result: null,
+                err: `signer [${signer}] is not admin [${this.admin.address.toLowerCase()}]`,
+              })
+              return
+            } else if (isNil(key)) {
               callback(null, { result: null, err: "key is not specified" })
+              return
             } else {
               const _db = await this.admin_db.get("dbs", key)
               if (isNil(_db)) {
                 callback(null, { result: null, err: `${key} doesn't exists` })
+                return
               } else if (!isNil(_db.contractTxId)) {
                 callback(null, {
                   result: null,
                   err: `${_db.contractTxId} already deployed`,
                 })
+                return
+              } else if (_db.rollup !== true) {
+                callback(null, {
+                  result: null,
+                  err: `rollup setting is off, it cannot be changed after deployment`,
+                })
+                return
               } else {
                 const tx_deploy = { success: false }
                 const warp = WarpFactory.forMainnet().use(new DeployPlugin())
@@ -272,7 +293,7 @@ class Server {
                     port: 443,
                     protocol: "https",
                   })
-                  initialState.owner = _db.owner ?? this.conf.owner
+                  initialState.owner = _db.owner
                   initialState.bundlers = [
                     await arweave.wallets.jwkToAddress(this.conf.bundler),
                   ]
@@ -303,6 +324,7 @@ class Server {
                     result: null,
                     err: err ?? "unknown error",
                   })
+                  return
                 } else {
                   const tx = await this.admin_db.update(
                     { contractTxId: res.contractTxId, rollup: true },
@@ -330,7 +352,14 @@ class Server {
             }
             break
           case "add_db":
-            if (isNil(key)) {
+            ;({ err, signer } = await validate(JSON.parse(query), txid))
+            if (signer !== this.admin.address.toLowerCase()) {
+              callback(null, {
+                result: null,
+                err: `signer [${signer}] is not admin [${this.admin.address.toLowerCase()}]`,
+              })
+              return
+            } else if (isNil(key)) {
               callback(null, { result: null, err: "key is not specified" })
               return
             } else if (!isNil(await this.admin_db.get("dbs", key))) {
@@ -339,6 +368,13 @@ class Server {
                 err: `${key} exists`,
               })
               return
+            } else if (isNil(db.owner)) {
+              callback(null, { result: null, err: "owner is missing" })
+            } else if (!isAddress(db.owner)) {
+              callback(null, {
+                result: null,
+                err: "owner is not a valid EVM address",
+              })
             }
             const tx = await this.admin_db.set(db, "dbs", key, auth)
             if (tx.success) {
@@ -360,7 +396,14 @@ class Server {
             })
             break
           case "update_db":
-            if (isNil(key)) {
+            ;({ err, signer } = await validate(JSON.parse(query), txid))
+            if (signer !== this.admin.address.toLowerCase()) {
+              callback(null, {
+                result: null,
+                err: `signer [${signer}] is not admin [${this.admin.address.toLowerCase()}]`,
+              })
+              return
+            } else if (isNil(key)) {
               callback(null, { result: null, err: "key is not specified" })
               return
             } else if (isNil(await this.admin_db.get("dbs", key))) {
@@ -378,7 +421,14 @@ class Server {
             break
 
           case "remove_db":
-            if (isNil(key)) {
+            ;({ err, signer } = await validate(JSON.parse(query), txid))
+            if (signer !== this.admin.address.toLowerCase()) {
+              callback(null, {
+                result: null,
+                err: `signer [${signer}] is not admin [${this.admin.address.toLowerCase()}]`,
+              })
+              return
+            } else if (isNil(key)) {
               callback(null, { result: null, err: "key is not specified" })
               return
             } else if (isNil(await this.admin_db.get("dbs", key))) {
@@ -412,6 +462,7 @@ class Server {
         this.rollups[this.txid_map[txid] ?? txid].execUser(parsed, ++this.count)
       }
     } catch (e) {
+      console.log(e)
       callback(null, { result: null, err: "unknown error" })
     }
   }
