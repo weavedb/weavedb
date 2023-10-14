@@ -4,6 +4,7 @@ cache/
 backup/
 weavedb.config.js
 weavedb.*.config.js
+rollup.*.config.js
 gcs.json
 
 cache

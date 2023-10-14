@@ -20,6 +20,7 @@
     "arweave": "^1.14.4",
     "aws-sdk": "^2.1306.0",
     "chai": "^4.3.7",
+    "ethers": "^6.8.0",
     "extract-zip": "^2.0.1",
     "google-protobuf": "~3.14.0",
     "grpc-server-reflection": "^0.1.5",
