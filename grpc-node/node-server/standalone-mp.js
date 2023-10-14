@@ -112,6 +112,7 @@ class Server {
     if (!isNil(this.admin)) throw Error("admin is not defined")
     if (!isNil(this.rollups)) throw Error("rollups are not defined")
     this.admin = new Wallet(this.conf.admin)
+    console.log(`Rollup Admin: ${this.admin.address}`)
     this.rollups = {}
     this.port = port
     this.txid_map = {}

@@ -1,13 +1,13 @@
 module.exports = {
   db: {
-    plugins: {},
     app: "http://localhost:3000",
     name: "Demo Dapp",
-    rollup: true,
+    rollup: false,
+    plugins: {},
   },
   accounts: { evm: {}, ar: {} },
   defaultNetwork: "localhost",
   networks: {
-    localhost: { url: "localhost:9090", admin: "admin" },
+    localhost: { url: "localhost:8080", admin: "admin" },
   },
 }
