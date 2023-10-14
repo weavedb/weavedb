@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "arweave": "^1.14.4",
+    "chai": "^4.3.10",
     "eth-crypto": "^2.6.0",
-    "mocha": "^10.2.0"
+    "mocha": "^10.2.0",
+    "weavedb-offchain": "^0.37.1"
   }
 }
