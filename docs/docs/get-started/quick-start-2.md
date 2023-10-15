@@ -1,5 +1,5 @@
 ---
-sidebar_position: 3
+sidebar_position: 4
 ---
 
 # Quick Start (old)
@@ -605,7 +605,7 @@ await db.delete(data, "people", "Bob", identity)
 
 #### Using Signer in Access Control Rules
 
-As explained [earlier](/docs/quick-start#set-up-access-control-rules), you can access the signer (`request.auth.signer`) in access control rules.
+As explained [earlier](/docs/get-started/quick-start-2#set-up-access-control-rules), you can access the signer (`request.auth.signer`) in access control rules.
 
 The signer will be the original address(`identity.linkedAccount`) and not the disposal EVM address(`identity.address`).
 
@@ -760,7 +760,7 @@ You can try the working demo at [relayer-lens-lit.vercel.app](https://relayer-le
 
 #### 1. Deploy DB Instance
 
-The first step is [to deploy a WeaveDB contract](/docs/quick-start#deploy-contract) to the mainnet. Set `Secure` to `true` so no one can update by default. Take note of the `contractTxId`.
+The first step is [to deploy a WeaveDB contract](/docs/get-started/quick-start-2#deploy-contract) to the mainnet. Set `Secure` to `true` so no one can update by default. Take note of the `contractTxId`.
 
 #### 2. Set up Schemas
 
@@ -810,7 +810,7 @@ The JSON schema for each collection would be something like the following.
 }
 ```
 
-Set these up using [the Web Console](/docs/quick-start#set-up-schema).
+Set these up using [the Web Console](/docs/get-started/quick-start-2#set-up-schema).
 
 #### 3. Set up Access Control Rules
 
@@ -866,7 +866,7 @@ For posts, we want the docid to be in the format of `[user]:[id]`, and users can
   }
 }
 ```
-Set these up using [the Web Console](/docs/quick-start#set-up-access-control-rules).
+Set these up using [the Web Console](/docs/get-started/quick-start-2#set-up-access-control-rules).
 
 #### 4. Frontend Dapp
 

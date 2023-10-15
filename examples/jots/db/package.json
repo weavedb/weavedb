@@ -1,0 +1,22 @@
+{
+  "name": "weavedb-workspace",
+  "version": "0.0.1",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "test": "mocha",
+    "keygen": "node scripts/keygen.js",
+    "accounts": "node scripts/accounts.js",
+    "deploy": "node scripts/deploy.js",
+    "setup": "node scripts/setup.js"
+  },
+  "dependencies": {
+    "arweave": "^1.14.4",
+    "chai": "^4.3.10",
+    "eth-crypto": "^2.6.0",
+    "ethers": "^6.8.0",
+    "mocha": "^10.2.0",
+    "weavedb-node-client": "^0.34.0",
+    "weavedb-offchain": "^0.37.1"
+  }
+}
