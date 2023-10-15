@@ -29,7 +29,7 @@ const replace$ = arrs => {
     return arrs.slice(0, 2) === "l$"
       ? ["toLower", { var: arrs.slice(2) }]
       : arrs.slice(0, 2) === "u$"
-      ? ["toUpser", { var: arrs.slice(2) }]
+      ? ["toUpper", { var: arrs.slice(2) }]
       : arrs.slice(0, 2) === "o$"
       ? [["complement", ["isNil"]], { var: arrs.slice(2) }]
       : arrs.slice(0, 2) === "x$"

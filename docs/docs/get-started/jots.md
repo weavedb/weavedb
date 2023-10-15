@@ -40,6 +40,7 @@ module.exports = {
     name: "Jots",
     rollup: false, // keep it off for local tests
     plugins: { notifications: {} }, // Jots uses notifications plugin
+	tick: 1000 * 60 * 5 // record cron result every 5 mins
   },
   accounts: {
     evm: {
