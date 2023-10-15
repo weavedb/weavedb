@@ -75,7 +75,7 @@ const setup = async ({ db, conf, privateKey, relayer }) => {
           console.log(
             "addCron",
             name,
-            (await db.addCron(conf[k][name], name, auth))?.success
+            (await db.addTrigger(conf[k][name], name, auth))?.success
           )
         }
         break

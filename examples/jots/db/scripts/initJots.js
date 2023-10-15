@@ -2,14 +2,11 @@ const config = require("../weavedb.config.js")
 const SDK = require("weavedb-node-client")
 const accounts = require("./lib/accounts")
 const { isNil } = require("ramda")
-const setup = require("./lib/setup")
-const settings = require("./lib/settings")
 let {
   _: [name],
   network,
   owner,
-  relayer,
-  plugin,
+  user,
 } = require("yargs")(process.argv.slice(2)).parserConfiguration({
   "parse-numbers": false,
 }).argv
@@ -19,13 +16,13 @@ if (isNil(name)) {
   process.exit()
 }
 
-if (isNil(accounts.evm[owner])) {
-  console.error(`EVM owner not specified or found: ${owner} `)
+if (isNil(user)) {
+  console.error(`user not specified`)
   process.exit()
 }
 
-if (!isNil(relayer) && isNil(accounts.evm[relayer])) {
-  console.error(`EVM relayer not found: ${relayer} `)
+if (isNil(accounts.evm[owner])) {
+  console.error(`EVM owner not specified or found: ${owner} `)
   process.exit()
 }
 
@@ -36,15 +33,10 @@ let privateKey = null
 if (isNil(rpc)) {
   console.error(`network not found: ${network}`)
   process.exit()
-} else {
-  privateKey = accounts.evm[rpc.admin]?.privateKey
-  if (isNil(privateKey)) {
-    console.error(`Rollup admin not specified or not found: ${rpc.admin}`)
-    process.exit()
-  }
 }
 
 const main = async key => {
+  const auth = { privateKey: accounts.evm[owner].privateKey }
   const _db = new SDK({ rpc: rpc.url, contractTxId: name })
   const { dbs } = await _db.node({ op: "stats" })
   let instance = null
@@ -57,18 +49,28 @@ const main = async key => {
     console.error(`DB not found: ${name}`)
     process.exit()
   }
-  let _plugin = ""
-  if (!isNil(plugin)) _plugin = `#${plugin}`
   const db = new SDK({
     rpc: rpc.url,
-    contractTxId: `${instance.contractTxId ?? name}${_plugin}`,
+    contractTxId: `${instance.contractTxId ?? name}`,
   })
-  await setup({
-    db,
-    conf: settings(plugin),
-    privateKey: accounts.evm[owner]?.privateKey,
-    relayer: accounts.evm[relayer]?.address?.toLowerCase() ?? null,
-  })
+  const owner_addr = accounts.evm[owner].address.toLowerCase()
+  await db.query("set:reg_owner", {}, "users", owner_addr, auth)
+  await db.query(
+    "update:give_invites",
+    { invites: 100 },
+    "users",
+    owner_addr,
+    auth
+  )
+  await db.query("set:invite_user", {}, "users", user.toLowerCase(), auth)
+  await db.query(
+    "update:give_invites",
+    { invites: 100 },
+    "users",
+    user.toLowerCase(),
+    auth
+  )
+
   process.exit()
 }
 

@@ -1,9 +1,9 @@
+const DB = require("weavedb-offchain")
 const { expect } = require("chai")
-const { mergeLeft, pluck, isNil, compose, map, pick, dissoc } = require("ramda")
+const setup = require("../scripts/lib/setup")
 const EthCrypto = require("eth-crypto")
-const { readFileSync } = require("fs")
-const { resolve } = require("path")
-
+const settings = require("../scripts/lib/settings")
+const { pluck } = require("ramda")
 const user1 = EthCrypto.createIdentity()
 const user2 = EthCrypto.createIdentity()
 const user3 = EthCrypto.createIdentity()
@@ -11,8 +11,20 @@ const users = [user1, user2, user3]
 const a = user => user.address.toLowerCase()
 const p = user => ({ privateKey: user.privateKey })
 
-const tests = {
-  "should set rules for jots": async ({ db, owner, relayer }) => {
+describe("WeaveDB", () => {
+  let db, owner, relayer, user, ownerAuth, relayerAuth, userAuth
+  beforeEach(async () => {
+    owner = EthCrypto.createIdentity()
+    relayer = EthCrypto.createIdentity()
+    user = EthCrypto.createIdentity()
+    ownerAuth = { privateKey: owner.privateKey }
+    relayerAuth = { privateKey: relayer.privateKey }
+    userAuth = { privateKey: user.privateKey }
+    db = new DB({ type: 3, state: { owner: owner.address.toLowerCase() } })
+    await db.initialize()
+    await setup({ db, conf: settings(), privateKey: owner.privateKey })
+  })
+  it("should execute queries", async () => {
     // add owner
     await db.query("set:reg_owner", {}, "users", a(owner), p(owner))
     await db.query(
@@ -140,13 +152,5 @@ const tests = {
       p(user1)
     )
     expect((await db.get("posts", tx5.docID)).parents).to.eql([tx.docID])
-  },
-}
-
-module.exports = (it, its, local = {}) => {
-  const _tests = mergeLeft(local, tests)
-  for (const k in mergeLeft(local, _tests)) {
-    const [name, type] = k.split(".")
-    ;(isNil(type) ? it : it[type])(name, async () => _tests[k](its()))
-  }
-}
+  })
+})
