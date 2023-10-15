@@ -1928,6 +1928,55 @@ const tests = {
     expect(await db.get("ppl", "Bob")).to.eql(data)
     expect(await db.get("ppl", "Alice")).to.eql(data2)
   },
+  "should auto-execute batch queries with FPJSON": async ({
+    db,
+    arweave_wallet,
+  }) => {
+    const data1 = {
+      key: "trg",
+      version: 2,
+      on: "create",
+      func: [["toBatch()", ["add", {}, "ppl"]]],
+    }
+    await db.addTrigger(data1, "ppl", { ar: arweave_wallet })
+    await db.add({}, "ppl")
+    expect(await db.get("ppl")).to.eql([{}, {}])
+
+    const data2 = {
+      key: "trg2",
+      version: 2,
+      on: "create",
+      func: [
+        [
+          "toBatchAll()",
+          [
+            ["add", { num: 2 }, "ppl3"],
+            ["add", { num: 3 }, "ppl3"],
+          ],
+        ],
+      ],
+    }
+    await db.addTrigger(data2, "ppl2", { ar: arweave_wallet })
+    await db.add({ num: 1 }, "ppl2")
+    expect(await db.get("ppl3")).to.eql([{ num: 2 }, { num: 3 }])
+
+    const data3 = {
+      key: "trg2",
+      version: 2,
+      on: "create",
+      func: [
+        [
+          "when",
+          ["always", true],
+          ["toBatch", ["add", { num: 4 }, "ppl5"]],
+          true,
+        ],
+      ],
+    }
+    await db.addTrigger(data3, "ppl4", { ar: arweave_wallet })
+    await db.add({ num: 1 }, "ppl4")
+    expect(await db.get("ppl5")).to.eql([{ num: 4 }])
+  },
 }
 
 module.exports = { tests }

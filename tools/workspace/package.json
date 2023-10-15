@@ -17,6 +17,6 @@
     "ethers": "^6.8.0",
     "mocha": "^10.2.0",
     "weavedb-node-client": "^0.34.0",
-    "weavedb-offchain": "^0.37.1"
+    "weavedb-offchain": "^0.37.2"
   }
 }

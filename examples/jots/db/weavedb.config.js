@@ -4,6 +4,7 @@ module.exports = {
     name: "Jots",
     rollup: false,
     plugins: { notifications: {} },
+    tick: 1000 * 60 * 5,
   },
   accounts: {
     evm: {
