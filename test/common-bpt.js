@@ -1959,6 +1959,23 @@ const tests = {
     await db.addTrigger(data2, "ppl2", { ar: arweave_wallet })
     await db.add({ num: 1 }, "ppl2")
     expect(await db.get("ppl3")).to.eql([{ num: 2 }, { num: 3 }])
+
+    const data3 = {
+      key: "trg2",
+      version: 2,
+      on: "create",
+      func: [
+        [
+          "when",
+          ["always", true],
+          ["toBatch", ["add", { num: 4 }, "ppl5"]],
+          true,
+        ],
+      ],
+    }
+    await db.addTrigger(data3, "ppl4", { ar: arweave_wallet })
+    await db.add({ num: 1 }, "ppl4")
+    expect(await db.get("ppl5")).to.eql([{ num: 4 }])
   },
 }
 

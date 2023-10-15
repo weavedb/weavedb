@@ -262,12 +262,12 @@ class Server {
               } else {
                 const tx_deploy = { success: false }
                 const warp = WarpFactory.forMainnet().use(new DeployPlugin())
-                const srcTxId = "v7ltiorPqRdU8W5XF5jJNbD4Reh39lF8dPa9fGyrhnc"
+                const srcTxId = "Ohr4AU6jRUCLoNSTTqu3bZ8GulKZ0V8gUm-vwrRbmS4"
                 let res = null
                 let err = null
                 try {
                   let initialState = {
-                    version: "0.37.1",
+                    version: "0.37.2",
                     canEvolve: true,
                     evolve: null,
                     secure: true,

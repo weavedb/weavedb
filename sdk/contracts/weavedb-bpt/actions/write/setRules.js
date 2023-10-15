@@ -50,7 +50,7 @@ const setRules = async (
   if (action.input.query.length % 2 === 1) {
     let __data = _data?.rules ?? []
     let [key, index] = last(action.input.query).split("@")
-    if (is(Object, data) && !is(Array, data)) {
+    if (is(Object, __data) && !is(Array, __data)) {
       err("the current rules is not an array")
     }
     let exists = false

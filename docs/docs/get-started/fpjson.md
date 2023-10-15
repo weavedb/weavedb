@@ -350,5 +350,15 @@ Since batch queries are convenient, `batch()` gets a special treatment. You can 
 ["toBatch()", ["add", {}, "posts"]]
 
 // send multiple query
-["toBatchAll()", [["add", {}, "posts"],["add",{},"posts"]]
+["toBatchAll()", [["add", {}, "posts"], ["add",{},"posts"]]
+```
+You can also use `toBatch` and `toBatchAll` in FPJSON blocks without `()`.
+
+```js
+[
+  "when",
+  ["always", true],
+  ["toBatch", ["add", {}, "posts"]],
+  "$some_data_to_trigger",
+]
 ```
