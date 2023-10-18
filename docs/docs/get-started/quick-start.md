@@ -41,7 +41,7 @@ Let's build the simplest dapp where users can post and delete messages.
 #### Schemas
 
 You would start with the data schemas. WeaveDB uses JSONSchema.  
-We will define only one collection `post` with `id`, `body`, `owner`, and `date` fields. All the fields are required.
+We will define only one collection `posts` with `id`, `body`, `owner`, and `date` fields. All the fields are required.
 
 ```js title="/db/schemas.js"
 module.exports = {
