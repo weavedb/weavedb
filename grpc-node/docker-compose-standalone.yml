@@ -1,6 +1,7 @@
 version: '3'
 services:
   node-server:
+    platform: linux/amd64
     build:
       context: ./node-server
       dockerfile: standalone.Dockerfile
@@ -12,6 +13,7 @@ services:
     volumes:
       - ./node-server/cache:/weavedb/cache
   envoy:
+    platform: linux/amd64
     build: ./envoy
     ports:
       - "8080:8080"
