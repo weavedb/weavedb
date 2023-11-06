@@ -126,3 +126,4 @@ dist
 
 .now
 .vercel
+*.json
