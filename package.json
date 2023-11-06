@@ -65,8 +65,11 @@
     "clean": "rimraf ./dist",
     "cp": "copyfiles -u 2 ./sdk/contracts/**/*.json dist",
     "repl": "yarn build && node scripts/runNode.js",
-    "run-node": "cd grpc-node && sudo docker-compose up --build",
-    "run-rollup": "cd grpc-node && sudo docker-compose -f docker-compose-standalone.yml up --build"
+    "run-node": "cd grpc-node && sudo docker-compose up --build",    
+    "build-rollup": "cd grpc-node && sudo docker-compose -f docker-compose-standalone.yml build",
+    "run-rollup": "cd grpc-node && sudo docker-compose -f docker-compose-standalone.yml up --build",
+    "clean-rollup": "cd grpc-node && sudo docker-compose -f docker-compose-standalone.yml down && rm -rf grpc-node/node-server/cache"
+    
   },
   "devDependencies": {
     "@dfinity/agent": "^0.13.2",
