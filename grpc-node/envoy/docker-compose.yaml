@@ -1,0 +1,9 @@
+version: '3'
+services:
+  envoy:
+    build: ./
+    ports:
+      - "8080:8080"
+    volumes: 
+      - ./envoy.yaml:/etc/envoy/envoy.yaml
+
