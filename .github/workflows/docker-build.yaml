@@ -53,7 +53,7 @@ jobs:
           docker tag weavedb-node-server ${{ secrets.DOCKER_WEAVEDB_NAMESPACE }}/${{ secrets.DOCKER_NODE_SERVER_PROJECT }}:latest
           docker tag weavedb-node-server ${{ secrets.DOCKER_WEAVEDB_NAMESPACE }}/${{ secrets.DOCKER_NODE_SERVER_PROJECT }}:amd64
           docker tag weavedb-node-server ${{ secrets.DOCKER_WEAVEDB_NAMESPACE }}/${{ secrets.DOCKER_NODE_SERVER_PROJECT }}:amd64-${{ env.sha_short }}
-          weavedb-envoy
+          
 
       #  envoy 
 
