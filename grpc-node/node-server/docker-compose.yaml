@@ -1,0 +1,24 @@
+version: '3'
+services:
+  node-server:
+    build:
+      context: .
+      dockerfile: standalone.Dockerfile
+    ports:
+      - "9090:9090"
+      - "4736:4736"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./cache:/weavedb/cache
+      # to sync weavedb settings
+      - ./weavedb.standalone.config.js:/weavedb/grpc-node/node-server/weavedb.standalone.config.js
+      - ./weavedb.config.js:/weavedb/grpc-node/node-server/weavedb.config.js
+
+  envoy:
+    build: ../envoy
+    ports:
+      - "8080:8080"
+    volumes:
+      # to sync envoy settings 
+      - ../envoy/envoy.yaml:/etc/envoy/envoy.yaml

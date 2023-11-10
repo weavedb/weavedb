@@ -1,15 +1,22 @@
+
+DOCKER := $(shell which docker)
+
+
+.PHONY: build
 build:
-	docker build -t local-envoy . 
+	sudo $(DOCKER) build -t local-envoy . 
+.PHONY: run
 run:
-	docker run -it local-envoy /bin/zsh
-	
+	$(DOCKER) run -it local-envoy /bin/zsh	
 .PHONY: compose-run
 compose-run:
-	sudo docker-compose -f docker-compose.yaml up --build
+	sudo $(DOCKER) compose -f docker-compose.yaml up --build
+
 .PHONY: compose-build
 compose-build:
-	sudo docker-compose  -f docker-compose.yaml build
+	sudo $(DOCKER) compose  -f docker-compose.yaml build
 	
 compose-exec:
-	sudo docker-compose exec  envoy /bin/zsh
+	sudo $(DOCKER) compose exec  envoy /bin/zsh
 	
+

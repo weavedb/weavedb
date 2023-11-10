@@ -1,0 +1,81 @@
+name: docker build
+
+# whenever
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+  
+      - name: Declare some variables
+        shell: bash
+        run: |
+          echo "sha_short=$(git rev-parse --short "$GITHUB_SHA")" >> "$GITHUB_ENV"
+          echo "branch=$(echo ${GITHUB_REF#refs/heads/})" >> "$GITHUB_ENV"
+
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+  
+          
+      - name: Log in to Docker Hub
+        # uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+          ### if ghcr 
+          # registry: ghcr.io
+          # username: ${{ github.actor }}
+          # password: ${{ secrets.GITHUB_TOKEN }}
+          ### if gitlab
+
+          # registry: registry.gitlab.com
+          # username: ${{ secrets.GITLAB_USERNAME }}
+          # password: ${{ secrets.GITLAB_PASSWORD }}
+          ### if gcr 
+          # registry: gcr.io
+          # username: oauth2accesstoken
+          # password: ${{ steps.auth.outputs.access_token }}
+
+
+      # node-server 
+
+      - name: docker build (amd64)
+        working-directory: grpc-node/node-server
+        run: docker build  --platform linux/amd64  -t weavedb-node-server  .
+
+      - name: docker tag
+        run: |
+          docker tag weavedb-node-server ${{ secrets.DOCKER_WEAVEDB_NAMESPACE }}/${{ secrets.DOCKER_NODE_SERVER_PROJECT }}:latest
+          docker tag weavedb-node-server ${{ secrets.DOCKER_WEAVEDB_NAMESPACE }}/${{ secrets.DOCKER_NODE_SERVER_PROJECT }}:amd64
+          docker tag weavedb-node-server ${{ secrets.DOCKER_WEAVEDB_NAMESPACE }}/${{ secrets.DOCKER_NODE_SERVER_PROJECT }}:amd64-${{ env.sha_short }}
+          weavedb-envoy
+
+      #  envoy 
+
+      - name: docker build (amd64)
+        working-directory: grpc-node/envoy
+        run: docker build  --platform linux/amd64  -t weavedb-envoy  .
+
+      - name: docker tag
+        run: |
+          docker tag weavedb-envoy ${{ secrets.DOCKER_WEAVEDB_NAMESPACE }}/${{ secrets.DOCKER_ENVOY_PROJECT }}:latest
+          docker tag weavedb-envoy ${{ secrets.DOCKER_WEAVEDB_NAMESPACE }}/${{ secrets.DOCKER_ENVOY_PROJECT }}:amd64
+          docker tag weavedb-envoy ${{ secrets.DOCKER_WEAVEDB_NAMESPACE }}/${{ secrets.DOCKER_ENVOY_PROJECT }}:amd64-${{ env.sha_short }}
+    
+
+
+      - name: docker push
+        run: |
+          docker push ${{ secrets.DOCKER_WEAVEDB_NAMESPACE }}/${{ secrets.DOCKER_ENVOY_PROJECT }}:latest
+          docker push ${{ secrets.DOCKER_WEAVEDB_NAMESPACE }}/${{ secrets.DOCKER_ENVOY_PROJECT }}:amd64
+          docker push ${{ secrets.DOCKER_WEAVEDB_NAMESPACE }}/${{ secrets.DOCKER_ENVOY_PROJECT }}:amd64-${{ env.sha_short }}
+        
+          docker push ${{ secrets.DOCKER_WEAVEDB_NAMESPACE }}/${{ secrets.DOCKER_NODE_SERVER_PROJECT }}:latest
+          docker push ${{ secrets.DOCKER_WEAVEDB_NAMESPACE }}/${{ secrets.DOCKER_NODE_SERVER_PROJECT }}:amd64
+          docker push ${{ secrets.DOCKER_WEAVEDB_NAMESPACE }}/${{ secrets.DOCKER_NODE_SERVER_PROJECT }}:amd64-${{ env.sha_short }}
+        
