@@ -3,10 +3,15 @@ DOCKER := $(shell which docker)
 
 .PHONY: build
 build:
-	sudo $(DOCKER) build . -t weavedb-node-server
+	$(DOCKER) build  --platform linux/amd64  -f standalone.Dockerfile -t weavedb-node-server  .
+	$(DOCKER) tag weavedb-node-server weavedb-node-server:latest
+	$(DOCKER) tag weavedb-node-server rakd/weavedb-node-server
+	$(DOCKER) tag weavedb-node-server rakd/weavedb-node-server:latest
+
 .PHONY: docker-build
 docker-build: 
 	sudo $(DOCKER) compose build 
+
 .PHONY: run
 run:
 	$(DOCKER) run -it local-envoy /bin/zsh	
