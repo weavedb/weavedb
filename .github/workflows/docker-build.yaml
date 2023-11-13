@@ -46,7 +46,7 @@ jobs:
 
       - name: docker build (amd64)
         working-directory: grpc-node/node-server
-        run: docker build  --platform linux/amd64  -t weavedb-node-server  .
+        run: docker build  --platform linux/amd64  -f standalone.Dockerfile -t weavedb-node-server  .
 
       - name: docker tag
         run: |
@@ -78,4 +78,25 @@ jobs:
           docker push ${{ secrets.DOCKER_WEAVEDB_NAMESPACE }}/${{ secrets.DOCKER_NODE_SERVER_PROJECT }}:latest
           docker push ${{ secrets.DOCKER_WEAVEDB_NAMESPACE }}/${{ secrets.DOCKER_NODE_SERVER_PROJECT }}:amd64
           docker push ${{ secrets.DOCKER_WEAVEDB_NAMESPACE }}/${{ secrets.DOCKER_NODE_SERVER_PROJECT }}:amd64-${{ env.sha_short }}
-        
+
+          
+
+      #  exeploer 
+
+      - name: docker build (amd64)
+        working-directory: explorer
+        run: docker build . --platform linux/amd64  -t weavedb-explorer
+
+      - name: docker tag
+        run: |
+          docker tag weavedb-explorer ${{ secrets.DOCKER_WEAVEDB_NAMESPACE }}/weavedb-explorer:latest
+          docker tag weavedb-explorer ${{ secrets.DOCKER_WEAVEDB_NAMESPACE }}/weavedb-explorer:amd64
+          docker tag weavedb-explorer ${{ secrets.DOCKER_WEAVEDB_NAMESPACE }}/weavedb-explorer:amd64-${{ env.sha_short }}
+
+      - name: docker push
+        run: |
+          docker push weavedb-explorer ${{ secrets.DOCKER_WEAVEDB_NAMESPACE }}/weavedb-explorer:latest
+          docker push weavedb-explorer ${{ secrets.DOCKER_WEAVEDB_NAMESPACE }}/weavedb-explorer:amd64
+          docker push weavedb-explorer ${{ secrets.DOCKER_WEAVEDB_NAMESPACE }}/weavedb-explorer:amd64-${{ env.sha_short }}
+  
+

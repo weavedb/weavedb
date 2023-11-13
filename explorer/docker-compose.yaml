@@ -1,0 +1,12 @@
+version: '3'
+services:
+  explorer:
+    image: weavedb-explorer
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      # to sync settings
+      - ./lib/nodes.js:/weavedb-explorer/lib/nodes.js
