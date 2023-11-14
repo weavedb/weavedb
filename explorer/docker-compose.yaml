@@ -8,5 +8,5 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      # to sync settings
-      - ./lib/nodes.js:/weavedb-explorer/lib/nodes.js
+     # to sync settings
+     - ./lib/nodes.js:/weavedb-explorer/lib/nodes.js
