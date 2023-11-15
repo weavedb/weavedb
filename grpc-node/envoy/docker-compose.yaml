@@ -5,5 +5,6 @@ services:
     ports:
       - "8080:8080"
     volumes: 
-      - ./envoy.yaml:/etc/envoy/envoy.yaml
+      # - ./envoy.yaml:/etc/envoy/envoy.yaml
+      - ./conf:/etc/envoy
 

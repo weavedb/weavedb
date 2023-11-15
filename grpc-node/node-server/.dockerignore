@@ -1,5 +1,5 @@
-weavedb.standalone.config.js
-weavedb.config.js
+# weavedb.standalone.config.js
+# weavedb.config.js
 yarn-error.log
 .env 
 node_modules

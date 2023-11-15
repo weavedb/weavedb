@@ -12,8 +12,7 @@ services:
     volumes:
       - ./cache:/weavedb/cache
       # to sync weavedb settings
-      - ./weavedb.standalone.config.js:/weavedb/grpc-node/node-server/weavedb.standalone.config.js
-      - ./weavedb.config.js:/weavedb/grpc-node/node-server/weavedb.config.js
+      - ./conf:/weavedb/grpc-node/node-server/conf
 
   envoy:
     build: ../envoy
@@ -21,4 +20,4 @@ services:
       - "8080:8080"
     volumes:
       # to sync envoy settings 
-      - ../envoy/envoy.yaml:/etc/envoy/envoy.yaml
+      - ../envoy/conf:/etc/envoy

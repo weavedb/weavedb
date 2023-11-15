@@ -1,4 +1,4 @@
-const config = require("../weavedb.config.js")
+const config = require("../conf/weavedb.config.js")
 const SDK = require("weavedb-node-client")
 const accounts = require("./lib/accounts")
 const { isNil } = require("ramda")

@@ -9,3 +9,5 @@ run:
 	docker run -it weavedb-explorer /bin/zsh
 prune:
 	docker system prune
+push:
+	docker push rakd/weavedb-explorer 

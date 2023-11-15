@@ -4,19 +4,23 @@ DOCKER := $(shell which docker)
 
 .PHONY: build
 build:
-	sudo $(DOCKER) build -t local-envoy . 
+	$(DOCKER) build -t local-envoy . 
+	$(DOCKER) tag local-envoy rakd/weavedb-envoy
+.PHONY: push
+push:
+	$(DOCKER) push rakd/weavedb-envoy
 .PHONY: run
 run:
 	$(DOCKER) run -it local-envoy /bin/zsh	
 .PHONY: compose-run
 compose-run:
-	sudo $(DOCKER) compose -f docker-compose.yaml up --build
+	$(DOCKER) compose -f docker-compose.yaml up --build
 
 .PHONY: compose-build
 compose-build:
-	sudo $(DOCKER) compose  -f docker-compose.yaml build
+	$(DOCKER) compose  -f docker-compose.yaml build
 	
 compose-exec:
-	sudo $(DOCKER) compose exec  envoy /bin/zsh
+	$(DOCKER) compose exec  envoy /bin/zsh
 	
 

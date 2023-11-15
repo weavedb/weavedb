@@ -16,7 +16,7 @@ const dir = resolve(__dirname, "../.weavedb/accounts")
 const dir_evm = resolve(__dirname, "../.weavedb/accounts/evm")
 const dir_ar = resolve(__dirname, "../.weavedb/accounts/ar")
 const dirs = [dir_conf, dir, dir_evm, dir_ar]
-const config = require("../weavedb.config.js")
+const config = require("../conf/weavedb.config.js")
 const mkdir = async () => {
   for (let v of dirs) {
     if (!existsSync(v)) mkdirSync(v)

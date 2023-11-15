@@ -5,7 +5,7 @@ const arweave = Arweave.init()
 const dir = resolve(__dirname, "../../.weavedb/accounts")
 const dir_evm = resolve(__dirname, "../../.weavedb/accounts/evm")
 const dir_ar = resolve(__dirname, "../../.weavedb/accounts/ar")
-let config = require("../../weavedb.config.js")
+let config = require("../../conf/weavedb.config.js")
 const accounts = config.accounts
 for (const v of readdirSync(dir_evm)) {
   const acc = JSON.parse(readFileSync(resolve(dir_evm, v), "utf8"))

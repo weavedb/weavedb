@@ -1,9 +1,10 @@
 version: '3'
 services:
   node-server:
-    build:
-      context: ./node-server
-      dockerfile: standalone.Dockerfile
+    image: rakd/weavedb-node-server
+    # build:
+    #   context: ./node-server
+    #   dockerfile: standalone.Dockerfile
     ports:
       - "9090:9090"
       - "4736:4736"
@@ -17,12 +18,11 @@ services:
       - ./node-server/conf:/weavedb/grpc-node/node-server/conf
 
   envoy:
-    build: ./envoy
+    image: rakd/weavedb-envoy
+    # build: ./envoy
     ports:
       - "8080:8080"
     volumes:
       # to sync envoy settings 
-      - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml
-      # - ./node-server/conf:/weavedb/grpc-node/node-server/conf
+      # - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml
       - ./envoy/conf:/etc/envoy
-

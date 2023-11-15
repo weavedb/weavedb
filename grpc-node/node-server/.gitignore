@@ -126,3 +126,6 @@ dist
 
 .now
 .vercel
+
+__weavedb.standalone.config
+weavedb.standalone.config
