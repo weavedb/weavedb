@@ -15,7 +15,7 @@ services:
       # to sync weavedb settings
       # - ./node-server/weavedb.standalone.config.js:/weavedb/grpc-node/node-server/weavedb.standalone.config.js
       # - ./node-server/weavedb.config.js:/weavedb/grpc-node/node-server/weavedb.config.js
-      - ./node-server/conf:/weavedb/grpc-node/node-server/conf
+      - ./node-server/conf:/weavedb/conf
 
   envoy:
     image: rakd/weavedb-envoy
@@ -26,3 +26,4 @@ services:
       # to sync envoy settings 
       # - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml
       - ./envoy/conf:/etc/envoy
+
