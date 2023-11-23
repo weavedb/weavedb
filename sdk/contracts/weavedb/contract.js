@@ -16,6 +16,7 @@ const { ids } = require("./actions/read/ids")
 const { nonce } = require("./actions/read/nonce")
 const { version } = require("./actions/read/version")
 const { get } = require("./actions/read/get")
+const { getCount } = require("./actions/read/getCount")
 const { getSchema } = require("./actions/read/getSchema")
 const { getRules } = require("./actions/read/getRules")
 const { getIndexes } = require("./actions/read/getIndexes")
@@ -85,19 +86,19 @@ const writes = [
 
 const addHash =
   _SmartWeave =>
-  async ({ state, result }) => {
-    if (isNil(state.hash)) {
-      state.hash = _SmartWeave.transaction.id
-    } else {
-      const hashes = _SmartWeave.arweave.utils.concatBuffers([
-        _SmartWeave.arweave.utils.stringToBuffer(state.hash),
-        _SmartWeave.arweave.utils.stringToBuffer(_SmartWeave.transaction.id),
-      ])
-      const hash = await _SmartWeave.arweave.crypto.hash(hashes, "SHA-384")
-      state.hash = _SmartWeave.arweave.utils.bufferTob64(hash)
+    async ({ state, result }) => {
+      if (isNil(state.hash)) {
+        state.hash = _SmartWeave.transaction.id
+      } else {
+        const hashes = _SmartWeave.arweave.utils.concatBuffers([
+          _SmartWeave.arweave.utils.stringToBuffer(state.hash),
+          _SmartWeave.arweave.utils.stringToBuffer(_SmartWeave.transaction.id),
+        ])
+        const hash = await _SmartWeave.arweave.crypto.hash(hashes, "SHA-384")
+        state.hash = _SmartWeave.arweave.utils.bufferTob64(hash)
+      }
+      return { state, result }
     }
-    return { state, result }
-  }
 
 async function handle(state, action, _SmartWeave) {
   if (typeof SmartWeave !== "undefined") _SmartWeave = SmartWeave
@@ -105,7 +106,7 @@ async function handle(state, action, _SmartWeave) {
     err("contract needs migration")
   }
   try {
-    ;({ state } = await cron(state, _SmartWeave))
+    ; ({ state } = await cron(state, _SmartWeave))
   } catch (e) {
     console.log(e)
   }
@@ -124,6 +125,8 @@ async function handle(state, action, _SmartWeave) {
       return await get(state, action, false, _SmartWeave)
     case "cget":
       return await get(state, action, true, _SmartWeave)
+    case "getCount":
+      return await getCount(state, action)
     case "getAddressLink":
       return await getAddressLink(...readParams)
     case "listCollections":
