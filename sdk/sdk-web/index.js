@@ -74,13 +74,13 @@ const _on = async (state, input, handle) => {
               let prev = isNil(subs[txid][hash].prev)
                 ? subs[txid][hash].prev
                 : subs[txid][hash].doc
-                ? subs[txid][hash].prev.data
-                : pluck("data", subs[txid][hash].prev)
+                  ? subs[txid][hash].prev.data
+                  : pluck("data", subs[txid][hash].prev)
               let current = isNil(res.result)
                 ? res.result
                 : subs[txid][hash].doc
-                ? res.result.data
-                : pluck("data", res.result)
+                  ? res.result.data
+                  : pluck("data", res.result)
               if (!equals(current, prev)) {
                 for (const k in subs[txid][hash].subs) {
                   try {
@@ -89,10 +89,10 @@ const _on = async (state, input, handle) => {
                         subs[txid][hash].subs[k].con
                           ? res.result
                           : subs[txid][hash].doc
-                          ? isNil(res.result)
-                            ? null
-                            : res.result.data
-                          : pluck("data", res.result)
+                            ? isNil(res.result)
+                              ? null
+                              : res.result.data
+                            : pluck("data", res.result)
                       )
                   } catch (e) {
                     console.log(e)
@@ -238,7 +238,7 @@ class SDK extends Base {
         let _state = null
         try {
           _state = await this.db.readState()
-        } catch (e) {}
+        } catch (e) { }
         if (!isNil(_state) && this.sortKey !== _state.sortKey) {
           this.state = _state.cachedValue.state
           this.sortKey = _state.sortKey
@@ -256,7 +256,7 @@ class SDK extends Base {
             } else {
               this.handle = handle
             }
-          } catch (e) {}
+          } catch (e) { }
         } else {
           if (attempt > 5) {
             res(_state)
@@ -286,7 +286,7 @@ class SDK extends Base {
       evaluationOptions = (
         await this.warp.definitionLoader.load(this.contractTxId)
       ).manifest.evaluationOptions
-    } catch (e) {}
+    } catch (e) { }
     this.initialize({ wallet, evaluationOptions, ...params })
   }
   initialize({
@@ -315,9 +315,8 @@ class SDK extends Base {
           contractTxId =>
             new this.LmdbCache({
               ...defaultCacheOptions,
-              dbLocation: `${
-                this.lmdb.dir ?? "./cache"
-              }/warp/kv/lmdb/${contractTxId}`,
+              dbLocation: `${this.lmdb.dir ?? "./cache"
+                }/warp/kv/lmdb/${contractTxId}`,
             })
         )
       }
@@ -357,17 +356,15 @@ class SDK extends Base {
           .useStateCache(
             new RedisCache({
               client: this.redis_client,
-              prefix: `${this.redis.prefix || "warp"}.${
-                this.contractTxId
-              }.state`,
+              prefix: `${this.redis.prefix || "warp"}.${this.contractTxId
+                }.state`,
             })
           )
           .useContractCache(
             new RedisCache({
               client: this.redis_client,
-              prefix: `${this.redis.prefix || "warp"}.${
-                this.contractTxId
-              }.contracts`,
+              prefix: `${this.redis.prefix || "warp"}.${this.contractTxId
+                }.contracts`,
             }),
             new RedisCache({
               client: this.redis_client,
@@ -395,8 +392,8 @@ class SDK extends Base {
           useVM2: !isNil(this.useVM2)
             ? this.useVM2
             : typeof window !== "undefined"
-            ? false
-            : !this.old,
+              ? false
+              : !this.old,
           useKVStorage: this.type !== 1,
         })
       )
@@ -416,16 +413,16 @@ class SDK extends Base {
               let data =
                 lastStoredKey?.localeCompare(input.lastSortKey) === 0
                   ? await dbs[self.contractTxId].db.readStateFor(
-                      input.lastSortKey,
-                      [input.interaction]
-                    )
+                    input.lastSortKey,
+                    [input.interaction]
+                  )
                   : await dbs[self.contractTxId].db.readState()
 
               const state = data.cachedValue.state
 
               try {
                 _on(state, input)
-              } catch (e) {}
+              } catch (e) { }
               if (!isNil(self.onUpdate)) {
                 let query = null
                 try {
@@ -434,7 +431,7 @@ class SDK extends Base {
                       query = JSON.parse(v.value)
                     }
                   }
-                } catch (e) {}
+                } catch (e) { }
                 await self.pubsubReceived(state, query, input)
               }
             } catch (e) {
@@ -449,7 +446,7 @@ class SDK extends Base {
       }
       if (is(Function, this.progress)) {
         class EvaluationProgressPlugin {
-          constructor(emitter, notificationFreq) {}
+          constructor(emitter, notificationFreq) { }
           process(input) {
             self.progress(input)
           }
@@ -461,7 +458,7 @@ class SDK extends Base {
       }
       if (is(Function, this.progress)) {
         class EvaluationProgressPlugin {
-          constructor(emitter, notificationFreq) {}
+          constructor(emitter, notificationFreq) { }
           process(input) {
             self.progress(input)
           }
@@ -529,7 +526,23 @@ class SDK extends Base {
             (cachedStates[this.contractTxId] || states[this.contractTxId])
               .contracts
           )[contract]
-          const { handle } = require(`weavedb-contracts/${key}/contract`)
+
+          //Try to get contract dynamic
+          switch (key) {
+            case 'weavedb':
+              const { handle } = require("weavedb-contracts/weavedb/contract")
+              break;
+            case 'weavedb-kv':
+              const { handle } = require("weavedb-contracts/weavedb-kv/contract")
+              break;
+            case 'dfinity':
+              const { handle } = require("weavedb-contracts/dfinity/contract")
+              break;
+            case 'ethereum':
+              const { handle } = require("weavedb-contracts/ethereum/contract")
+              break;
+          }
+
           try {
             return await handle({}, { input: param }, SmartWeave)
           } catch (e) {
@@ -687,10 +700,10 @@ class SDK extends Base {
                 typeof err === "string"
                   ? err
                   : typeof err?.message === "string"
-                  ? err.message
-                  : !isNil(err)
-                  ? "unknown error"
-                  : null,
+                    ? err.message
+                    : !isNil(err)
+                      ? "unknown error"
+                      : null,
               function: param.function,
               state: cacheState?.state || null,
               result: cacheState?.result || null,
@@ -698,14 +711,14 @@ class SDK extends Base {
               getResult: isNil(cacheState?.result?.transaction?.id)
                 ? null
                 : async () =>
-                    new Promise(async res =>
-                      res(
-                        await self.checkResult(
-                          cacheState.result.transaction.id,
-                          self
-                        )
+                  new Promise(async res =>
+                    res(
+                      await self.checkResult(
+                        cacheState.result.transaction.id,
+                        self
                       )
-                    ),
+                    )
+                  ),
             }
             sent = true
             if (success) {
@@ -735,29 +748,29 @@ class SDK extends Base {
           dryResult =
             dryState.type !== "ok"
               ? {
-                  nonce: param.nonce,
-                  signer: param.caller,
-                  cache: false,
-                  success: false,
-                  duration: Date.now() - start,
-                  error: { message: "dryWrite failed", dryWrite: dryState },
-                  function: param.function,
-                  state: null,
-                  result: null,
-                  results: [],
-                }
+                nonce: param.nonce,
+                signer: param.caller,
+                cache: false,
+                success: false,
+                duration: Date.now() - start,
+                error: { message: "dryWrite failed", dryWrite: dryState },
+                function: param.function,
+                state: null,
+                result: null,
+                results: [],
+              }
               : {
-                  nonce: param.nonce,
-                  signer: param.caller,
-                  cache: false,
-                  success: true,
-                  duration: Date.now() - start,
-                  error: null,
-                  function: param.function,
-                  state: dryState.state,
-                  result: dryState?.result || null,
-                  results: [],
-                }
+                nonce: param.nonce,
+                signer: param.caller,
+                cache: false,
+                success: true,
+                duration: Date.now() - start,
+                error: null,
+                function: param.function,
+                state: dryState.state,
+                result: dryState?.result || null,
+                results: [],
+              }
         }
         if (is(Function, onDryWrite?.cb) && cache === false) {
           if (dryResult.success) {
@@ -1042,7 +1055,7 @@ class SDK extends Base {
       try {
         delete subs[this.contractTxId][hash].subs[id]
         delete submap[id]
-      } catch (e) {}
+      } catch (e) { }
     }
   }
 
@@ -1154,12 +1167,12 @@ class SDK extends Base {
     return !isNil(this.virtual_nonces[address])
       ? this.virtual_nonces[address] + 1
       : (await this.read(
-          {
-            function: "nonce",
-            address,
-          },
-          nocache
-        )) + 1
+        {
+          function: "nonce",
+          address,
+        },
+        nocache
+      )) + 1
   }
 }
 
