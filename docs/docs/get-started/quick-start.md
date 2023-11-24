@@ -172,10 +172,10 @@ cd weavedb
 
 ### Write Configuration
 
-Write a rollup configuration file at `/grpc-node/node-server/conf/weavedb.standalone.config.js`.  
+Write a rollup configuration file at `/grpc-node/node-server/weavedb.standalone.config.js`.  
 Copy the entire content of `/your_project/.weavedb/accounts/ar/bundler.json`, and `privateKey` from `/your_project/.weavedb/accounts/evm/admin.json`.
 
-```js title="/grpc-node/node-server/conf/weavedb.standalone.config.js"
+```js title="/grpc-node/node-server/weavedb.standalone.config.js"
 module.exports = {
   admin: "admin_private_key",
   bundler: { /* Arweave bundler account */ },

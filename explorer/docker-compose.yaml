@@ -7,6 +7,7 @@ services:
     #   dockerfile: Dockerfile
     ports:
       - "3000:3000"
-    volumes:
-      # to sync settings
-      - ./lib/nodes.js:/weavedb-explorer/lib/nodes.js
+    environment:
+      - ADDITIONAL_NODE_ENDPOINT="localhost:8080"
+      - ADDITIONAL_NODE_NETWORK="Localhost"
+      - ADDITIONAL_NODE_KEY="localhost"
