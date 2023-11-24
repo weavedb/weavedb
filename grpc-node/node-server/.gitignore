@@ -129,3 +129,6 @@ dist
 
 __weavedb.standalone.config
 weavedb.standalone.config
+_weavedb.standalone.config.js
+_weavedb.config.js
+*.config.js

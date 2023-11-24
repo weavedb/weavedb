@@ -11,18 +11,15 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - ./node-server/cache:/weavedb/cache
-      # to sync weavedb settings
-      # - ./node-server/weavedb.standalone.config.js:/weavedb/grpc-node/node-server/weavedb.standalone.config.js
-      # - ./node-server/weavedb.config.js:/weavedb/grpc-node/node-server/weavedb.config.js
       - ./node-server/conf:/weavedb/conf
 
   envoy:
     build: ./envoy
     ports:
       - "8080:8080"
-    volumes:
-      # to sync envoy settings 
-      # - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml
-      # - ./node-server/conf:/weavedb/grpc-node/node-server/conf
-      - ./envoy/conf:/etc/envoy
-
+      - "9901:9901"
+    environment:
+      - LISTEN_PORT=8080
+      - ADMIN_LISTEN_PORT=9901
+      - SERVICE_DISCOVERY_ADDRESS=node-server
+      - SERVICE_DISCOVERY_PORT=9090

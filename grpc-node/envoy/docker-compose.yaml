@@ -4,7 +4,10 @@ services:
     build: ./
     ports:
       - "8080:8080"
-    volumes: 
-      # - ./envoy.yaml:/etc/envoy/envoy.yaml
-      - ./conf:/etc/envoy
+      - "9901:9901"
+    environment:
+      - LISTEN_PORT=8080
+      - ADMIN_LISTEN_PORT=9901
+      - SERVICE_DISCOVERY_ADDRESS=0.0.0.0
+      - SERVICE_DISCOVERY_PORT=9090
 
