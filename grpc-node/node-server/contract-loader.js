@@ -4,7 +4,7 @@ const SDK = require("weavedb-sdk-node")
 const DB = require("weavedb-offchain")
 const {
   port = 9090,
-  config = "./conf/weavedb.config.js",
+  config = "./weavedb.config.js",
   contractTxId,
 } = require("yargs")(process.argv.slice(2)).argv
 console.log(contractTxId)

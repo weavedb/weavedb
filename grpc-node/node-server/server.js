@@ -1,7 +1,7 @@
 const {
   port = 9090,
   port_manager = 9091,
-  config = "./conf/weavedb.config.js",
+  config = "./weavedb.config.js",
 } = require("yargs")(process.argv.slice(2)).argv
 
 new (require("./lib/Gateway").Gateway)({

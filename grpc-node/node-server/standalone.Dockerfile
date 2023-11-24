@@ -7,4 +7,7 @@ RUN yarn
 
 EXPOSE 9090
 
-CMD ["yarn", "pm2", "start", "standalone-mp.js", "--no-daemon"]
+
+RUN chmod +x /weavedb/start-node-starndalone.sh
+
+ENTRYPOINT ["/root/start-node-starndalone.sh"]

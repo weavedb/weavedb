@@ -18,6 +18,11 @@ services:
     build: ../envoy
     ports:
       - "8080:8080"
+      - "9901:9901"
     volumes:
-      # to sync envoy settings 
-      - ../envoy/conf:/etc/envoy
+    environment:
+      - LISTEN_PORT=8080
+      - ADMIN_LISTEN_PORT=9901
+      - SERVICE_DISCOVERY_ADDRESS=0.0.0.0
+      - SERVICE_DISCOVERY_PORT=9090
+

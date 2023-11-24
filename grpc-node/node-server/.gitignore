@@ -132,3 +132,4 @@ weavedb.standalone.config
 _weavedb.standalone.config.js
 _weavedb.config.js
 *.config.js
+standalone.env

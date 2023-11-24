@@ -11,7 +11,7 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   oneofs: true,
 })
 // const { port = 9090, config = "./weavedb.standalone.config.js" } =
-const { port = 9090, config = "./conf/weavedb.standalone.config.js" } =
+const { port = 9090, config = "./weavedb.standalone.config.js" } =
   require("yargs")(process.argv.slice(2)).argv
 const weavedb = grpc.loadPackageDefinition(packageDefinition).weavedb
 const path = require("path")
