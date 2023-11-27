@@ -9,17 +9,19 @@ services:
       - "4736:4736"
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    volumes:
-      - ./cache:/weavedb/cache
-      # to sync weavedb settings
-      - ./conf:/weavedb/grpc-node/node-server/conf
+    # volumes:
+    #   - ./cache:/weavedb/cache
+    #   # to sync weavedb settings
+    #   - ./conf:/weavedb/grpc-node/node-server/conf
+    env_file:
+      - ./standalone.env
 
   envoy:
     build: ../envoy
     ports:
       - "8080:8080"
       - "9901:9901"
-    volumes:
+    # volumes:
     environment:
       - LISTEN_PORT=8080
       - ADMIN_LISTEN_PORT=9901

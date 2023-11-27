@@ -15,7 +15,9 @@ services:
       # to sync weavedb settings
       # - ./node-server/weavedb.standalone.config.js:/weavedb/grpc-node/node-server/weavedb.standalone.config.js
       # - ./node-server/weavedb.config.js:/weavedb/grpc-node/node-server/weavedb.config.js
-      - ./node-server/conf:/weavedb/conf
+      # - ./node-server/conf:/weavedb/conf
+    env_file:
+      - ./node-server/standalone.env
   envoy:
     image: rakd/weavedb-envoy
     ports:

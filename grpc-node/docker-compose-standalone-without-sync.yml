@@ -15,7 +15,8 @@ services:
       # - ./node-server/weavedb.standalone.config.js:/weavedb/grpc-node/node-server/weavedb.standalone.config.js
       # - ./node-server/weavedb.config.js:/weavedb/grpc-node/node-server/weavedb.config.js
       # - ./node-server/conf:/weavedb/grpc-node/node-server/conf
-
+    env_file:
+      - ./node-server/standalone.env
 
   envoy:
     build: ./envoy

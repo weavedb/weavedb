@@ -11,8 +11,9 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - ./node-server/cache:/weavedb/cache
-      - ./node-server/conf:/weavedb/conf
-
+      # - ./node-server/conf:/weavedb/conf
+    env_file:
+      - ./node-server/standalone.env
   envoy:
     build: ./envoy
     ports:
