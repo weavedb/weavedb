@@ -127,7 +127,7 @@ const data = {
 }
 ```
 :::info
-`request.transaction.timestamp` is only available for L2 rollup queries, and it's in millisecond. Note that `request.block.timestamp` is in second and not reliable as it's the Arweave block timestamp rather than the glanular transaction timestamp. Always use `$ms` over `$ts` for L2 queries.
+`request.transaction.timestamp` is only available for L2 rollup queries, and it's in millisecond. Note that `request.block.timestamp` is in second and not reliable as it's the Arweave block timestamp rather than the granular transaction timestamp. Always use `$ms` over `$ts` for L2 queries.
 :::
 
 #### Shortcuts
