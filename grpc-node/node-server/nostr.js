@@ -133,7 +133,7 @@ class Nostr {
       },
       this.db,
       (err, res) => {
-        this.send(["OK", event.id])
+        this.send(["OK", event.id, isNil(err)])
         for (const [subId, { instance, filters }] of subs.entries()) {
           if (matchFilters(filters, event)) {
             console.log("match", subId, event)

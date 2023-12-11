@@ -7,6 +7,7 @@ const contracts = [
   "/intercall/contract.js",
   "/intercall/parallel.js",
   "/intmax/intmax.js",
+  "/polygon-id/polygon-id.js",
   "/dfinity/ii.js",
   "/ethereum/eth.js",
   "/bundler/bundler.js",
