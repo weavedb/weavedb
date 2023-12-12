@@ -28,13 +28,16 @@ const {
   append,
   difference,
   path: _path,
+  concat,
+  without,
 } = require("ramda")
 const {
+  read,
   parse: _parse,
   err,
   genId,
   getField,
-  mergeData,
+  mergeDataP,
 } = require("../../common/lib/utils")
 const {
   fpj,
@@ -377,24 +380,30 @@ const _getDoc = async (
   let next_data = null
   if (path.length === 2) {
     if (includes(func)(["set", "add"])) {
-      next_data = mergeData(
-        clone(doc),
-        new_data,
-        extra,
-        true,
-        _signer,
-        SmartWeave,
-        action
+      next_data = (
+        await mergeDataP(
+          clone(doc),
+          new_data,
+          extra,
+          true,
+          _signer,
+          SmartWeave,
+          action,
+          state
+        )
       ).__data
     } else if (includes(func)(["update", "upsert"])) {
-      next_data = mergeData(
-        clone(doc),
-        new_data,
-        extra,
-        false,
-        _signer,
-        SmartWeave,
-        action
+      next_data = (
+        await mergeDataP(
+          clone(doc),
+          new_data,
+          extra,
+          false,
+          _signer,
+          SmartWeave,
+          action,
+          state
+        )
       ).__data
     }
   }

@@ -15,6 +15,16 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.38.0-beta (December 11, 2023)
+
+#### Source Transaction Id
+
+[F7Hjt_lTh9GpbNUaMFNAzTtDl5sax0DqzlV6NbqwqLE](https://sonar.warp.cc/#/app/source/F7Hjt_lTh9GpbNUaMFNAzTtDl5sax0DqzlV6NbqwqLE)
+
+#### Added Features
+
+- [PolygonID zkp verification](/docs/sdk/queries#zkp)
+
 ### v0.37.2-beta (October 16, 2023)
 
 #### Source Transaction Id

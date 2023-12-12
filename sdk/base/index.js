@@ -165,6 +165,10 @@ class Base {
       "getBundlers",
     ]
   }
+  zkp(proof, pub_signals) {
+    return { __op: "zkp", proof, pub_signals }
+  }
+
   data(key) {
     return { __op: "data", key }
   }

@@ -63,6 +63,7 @@ class OffChain extends Base {
               ethereum: "ethereum",
               dfinity: "dfinity",
               nostr: "nostr",
+              polygonID: "polygon-id",
             },
           }
         : this.type === 2
@@ -85,6 +86,7 @@ class OffChain extends Base {
               ethereum: "ethereum",
               dfinity: "dfinity",
               nostr: "nostr",
+              polygonID: "polygon-id",
             },
           }
         : {
@@ -106,6 +108,7 @@ class OffChain extends Base {
               dfinity: "dfinity",
               nostr: "nostr",
               bundler: "bundler",
+              polygonID: "polygon-id",
             },
           }
     )
