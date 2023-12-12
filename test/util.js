@@ -132,7 +132,7 @@ async function deployContracts({
     //initialState.contracts.intmax = contractTxIdIntmax
     initialState.contracts.dfinity = contractTxIdDfinity
     initialState.contracts.ethereum = contractTxIdEthereum
-    //initialState.contracts.polygonID = contractTxIdPolygonID
+    initialState.contracts.polygonID = contractTxIdPolygonID
     const contract = await warp.createContract.deploy({
       wallet: arweave_wallet,
       initState: JSON.stringify(initialState),
@@ -193,7 +193,7 @@ async function deployContracts({
     initialState.contracts.ethereum = contractTxIdEthereum
     initialState.contracts.bundler = contractTxIdBundler
     initialState.contracts.nostr = contractTxIdNostr
-    //initialState.contracts.polygonID = contractTxIdPolygonID
+    initialState.contracts.polygonID = contractTxIdPolygonID
     const contract = await warp.createContract.deploy({
       wallet: arweave_wallet,
       initState: JSON.stringify(initialState),

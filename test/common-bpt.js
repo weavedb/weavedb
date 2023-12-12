@@ -1,3 +1,18 @@
+const {
+  AuthV2PubSignals,
+  PROTOCOL_CONSTANTS,
+  CircuitId,
+  CredentialStatusType,
+  core,
+} = require("@0xpolygonid/js-sdk")
+const rhsUrl = "https://rhs-staging.polygonid.me"
+const {
+  initInMemoryDataStorageAndWallets,
+  initCircuitStorage,
+  initProofService,
+  initPackageManager,
+} = require("./walletSetup")
+
 const { expect } = require("chai")
 const { parseQuery } = require("../sdk/contracts/weavedb-bpt/lib/utils")
 const { readFileSync } = require("fs")
@@ -57,6 +72,7 @@ const tests = {
     ethereumTxId,
     bundlerTxId,
     nostrTxId,
+    polygonIDTxId,
     ver,
     init,
   }) => {
@@ -78,6 +94,7 @@ const tests = {
         ethereum: ethereumTxId,
         bundler: bundlerTxId,
         nostr: nostrTxId,
+        polygonID: polygonIDTxId,
       },
       evolve: null,
       isEvolving: false,
@@ -1977,6 +1994,95 @@ const tests = {
     await db.add({ num: 1 }, "ppl4")
     expect(await db.get("ppl5")).to.eql([{ num: 4 }])
   },
+
+  "should verify zkp": async ({ db, arweave_wallet }) => {
+    let dataStorage, credentialWallet, identityWallet
+    ;({ dataStorage, credentialWallet, identityWallet } =
+      await initInMemoryDataStorageAndWallets())
+    const circuitStorage = await initCircuitStorage()
+    const proofService = await initProofService(
+      identityWallet,
+      credentialWallet,
+      dataStorage.states,
+      circuitStorage
+    )
+    const { did: userDID, credential: authBJJCredentialUser } =
+      await createIdentity(identityWallet)
+    const { did: issuerDID, credential: issuerAuthBJJCredential } =
+      await createIdentity(identityWallet)
+    const id = userDID.string()
+    const data = {
+      id,
+      birthday: 19960424,
+      documentType: 5,
+    }
+    const req = {
+      documentType: {
+        $lt: 6,
+      },
+    }
+    const credentialRequest = createCred(data)
+    const credential = await identityWallet.issueCredential(
+      issuerDID,
+      credentialRequest
+    )
+
+    await dataStorage.credential.saveCredential(credential)
+    const proofReqSig = createReq(credentialRequest, req)
+    const { proof, pub_signals } = await proofService.generateProof(
+      proofReqSig,
+      userDID
+    )
+
+    await db.add({ test: db.zkp(proof, pub_signals) }, "ppl")
+    expect((await db.get("ppl"))[0].test.pub_signals.userID).to.eql(id)
+  },
+}
+
+async function createIdentity(identityWallet) {
+  const { did, credential } = await identityWallet.createIdentity({
+    method: core.DidMethod.Iden3,
+    blockchain: core.Blockchain.Polygon,
+    networkId: core.NetworkId.Mumbai,
+    revocationOpts: {
+      type: CredentialStatusType.Iden3ReverseSparseMerkleTreeProof,
+      id: rhsUrl,
+    },
+  })
+
+  return {
+    did,
+    credential,
+  }
+}
+
+function createReq(credentialRequest, subject) {
+  return {
+    id: 1,
+    circuitId: CircuitId.AtomicQuerySigV2,
+    optional: false,
+    query: {
+      allowedIssuers: ["*"],
+      type: credentialRequest.type,
+      context:
+        "https://raw.githubusercontent.com/iden3/claim-schema-vocab/main/schemas/json-ld/kyc-v3.json-ld",
+      credentialSubject: subject,
+    },
+  }
+}
+
+function createCred(subject) {
+  return {
+    credentialSchema:
+      "https://raw.githubusercontent.com/iden3/claim-schema-vocab/main/schemas/json/KYCAgeCredential-v3.json",
+    type: "KYCAgeCredential",
+    credentialSubject: subject,
+    expiration: 12345678888,
+    revocationOpts: {
+      type: CredentialStatusType.Iden3ReverseSparseMerkleTreeProof,
+      id: rhsUrl,
+    },
+  }
 }
 
 module.exports = { tests }

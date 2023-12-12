@@ -65,8 +65,8 @@
     "node": ">=16.5"
   },
   "scripts": {
-    "deploy-contract": "node scripts/deploy.js mainnet 3 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w lry5KMRj6j13sLHsKxs1D2joLjcj6yNHtNQQQoaHRug PDuTzRpn99EwiUvT9XrUhg8nyhW20Wcd-XcRXboCpHs",
-    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet Ohr4AU6jRUCLoNSTTqu3bZ8GulKZ0V8gUm-vwrRbmS4 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w lry5KMRj6j13sLHsKxs1D2joLjcj6yNHtNQQQoaHRug PDuTzRpn99EwiUvT9XrUhg8nyhW20Wcd-XcRXboCpHs",
+    "deploy-contract": "node scripts/deploy.js mainnet 3 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w lry5KMRj6j13sLHsKxs1D2joLjcj6yNHtNQQQoaHRug PDuTzRpn99EwiUvT9XrUhg8nyhW20Wcd-XcRXboCpHs 8ztYcGAGxb2ng22T-iORW0jOajOlY6kLXbPTWeRhTUM",
+    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet F7Hjt_lTh9GpbNUaMFNAzTtDl5sax0DqzlV6NbqwqLE 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w lry5KMRj6j13sLHsKxs1D2joLjcj6yNHtNQQQoaHRug PDuTzRpn99EwiUvT9XrUhg8nyhW20Wcd-XcRXboCpHs 8ztYcGAGxb2ng22T-iORW0jOajOlY6kLXbPTWeRhTUM",
     "test": "yarn build && mocha test/offchain.js; mocha test/offchain-kv.js; mocha test/offchain-bpt.js",
     "mocha": "yarn build && mocha",
     "build": "yarn clean && node build.js && npm run cp",
