@@ -1971,10 +1971,10 @@ util@^0.12.4:
     is-typed-array "^1.1.3"
     which-typed-array "^1.1.2"
 
-weavedb-base@^0.34.0:
-  version "0.34.0"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.34.0.tgz#d1bb0ee634cd96827b7f558f455445d4119bbeaa"
-  integrity sha512-WQhG9HVEBxesPyodhC75lOXUprWrHvYd66zYRxbXEdY/CnzE7Xly9/jYqw2Gn+oT7S79ctDnK+lxCkT+ueK4Qg==
+weavedb-base@^0.38.0:
+  version "0.38.0"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.38.0.tgz#14a925b85ac5af978be206db38dd91a52b763ee8"
+  integrity sha512-6v3Y0UgUV3fAmb09QBtQys9aHd0YPZ8NWBgJXinD9Rya4vmo6+i8yVaEsNF5F7kYXxfSa0IJ5rEcIe+PKHmLFA==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"
