@@ -478,7 +478,7 @@ class SDK extends Base {
         clearInterval(this.interval)
         this.interval = setInterval(() => {
           this.db
-            .readState()
+          .readState()
             .then(async v => {
               const state = v.cachedValue.state
               if (!equals(state, this.state)) {
