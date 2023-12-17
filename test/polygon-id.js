@@ -23,7 +23,7 @@ const rhsUrl = "https://rhs-staging.polygonid.me"
 
 async function createIdentity(identityWallet) {
   const { did, credential } = await identityWallet.createIdentity({
-    method: core.DidMethod.Iden3,
+    method: core.DidMethod.polygonId,
     blockchain: core.Blockchain.Polygon,
     networkId: core.NetworkId.Mumbai,
     revocationOpts: {
@@ -109,8 +109,8 @@ describe("WeaveDB", function () {
       await createIdentity(identityWallet)
     const { did: issuerDID, credential: issuerAuthBJJCredential } =
       await createIdentity(identityWallet)
-
     const prove = async ({ data, req }) => {
+      console.log(data)
       const credentialRequest = createCred(data)
       const credential = await identityWallet.issueCredential(
         issuerDID,

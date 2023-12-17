@@ -38,7 +38,7 @@ function sleep(ms) {
 }
 
 function stringToBase64(str) {
-  if (process.browser) {
+  if (typeof window !== "undefined") {
     return globalThis.btoa(str)
   } else {
     return Buffer.from(str).toString("base64")
