@@ -17,8 +17,11 @@ import {
   IIdentityWallet,
   InMemoryPrivateKeyStore,
   LocalStoragePrivateKeyStore,
+  IndexedDBPrivateKeyStore,
   BrowserDataSource,
+  IndexedDBDataSource,
   MerkleTreeLocalStorage,
+  MerkleTreeIndexedDBStorage,
   KMS,
   KmsKeyType,
   Profile,
@@ -62,13 +65,13 @@ export function initInMemoryDataStorage() {
   // conf.maxFeePerGas = '250000000000' - 250 gwei
   var dataStorage = {
     //credential: new CredentialStorage(new BrowserDataSource("credential")),
-    credential: new CredentialStorage(new BrowserDataSource("credential")),
-    proof: new CredentialStorage(new BrowserDataSource("proof")),
+    credential: new CredentialStorage(new IndexedDBDataSource("credential")),
+    proof: new CredentialStorage(new IndexedDBDataSource("proof")),
     identity: new IdentityStorage(
-      new BrowserDataSource("identity-1"),
-      new BrowserDataSource("identity-2")
+      new IndexedDBDataSource("identity-1"),
+      new IndexedDBDataSource("identity-2")
     ),
-    mt: new MerkleTreeLocalStorage(40),
+    mt: new MerkleTreeIndexedDBStorage(40),
     states: new EthStateStorage(defaultEthConnectionConfig),
   }
 
@@ -90,7 +93,7 @@ export async function initIdentityWallet(
 export async function initInMemoryDataStorageAndWallets() {
   const dataStorage = initInMemoryDataStorage()
   const credentialWallet = await initCredentialWallet(dataStorage)
-  const memoryKeyStore = new LocalStoragePrivateKeyStore()
+  const memoryKeyStore = new IndexedDBPrivateKeyStore()
 
   const identityWallet = await initIdentityWallet(
     dataStorage,
