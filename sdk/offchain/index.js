@@ -1,14 +1,8 @@
 const { tail, isNil, clone, mergeLeft } = require("ramda")
-const contracts = "weavedb-contracts"
-const { handle } = require(`${contracts}/weavedb/contract`)
-const { handle: handle_kv } = require(`${contracts}/weavedb-kv/contract`)
-const { handle: handle_bpt } = require(`${contracts}/weavedb-bpt/contract`)
-const version = require(`${contracts}/weavedb/lib/version`)
-const version_kv = require(`${contracts}/weavedb-kv/lib/version`)
-const version_bpt = require(`${contracts}/weavedb-bpt/lib/version`)
 const Base = require("weavedb-base")
 let arweave = require("arweave")
 if (!isNil(arweave.default)) arweave = arweave.default
+let contracts, handle, handle_kv, handle_bpt, version, version_kv, version_bpt
 
 class OffChain extends Base {
   constructor({
@@ -18,8 +12,17 @@ class OffChain extends Base {
     contractTxId,
     noauth = false,
     caller = null,
+    _contracts = "weavedb-contracts",
   }) {
     super()
+    contracts = "../contracts"
+    ;({ handle } = require(`${contracts}/weavedb/contract`))
+    ;({ handle: handle_kv } = require(`${contracts}/weavedb-kv/contract`))
+    ;({ handle: handle_bpt } = require(`${contracts}/weavedb-bpt/contract`))
+    version = require(`${contracts}/weavedb/lib/version`)
+    version_kv = require(`${contracts}/weavedb-kv/lib/version`)
+    version_bpt = require(`${contracts}/weavedb-bpt/lib/version`)
+
     this.caller = caller
     this.noauth = noauth
     this.kvs = {}

@@ -3,6 +3,7 @@ import buildEngine from "./engine.js"
 import * as Scalar from "./scalar.js"
 import { ModuleBuilder } from "wasmbuilder"
 
+let globalThis = {}
 globalThis.curve_bn128 = null
 
 export default async function buildBn128(

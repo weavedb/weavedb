@@ -59,12 +59,7 @@ export function initInMemoryDataStorage() {
   let conf = defaultEthConnectionConfig
   conf.contractAddress = contractAddress
   conf.url = rpcUrl
-
-  // change here priority fees in case transaction is stuck or processing too long
-  // conf.maxPriorityFeePerGas = '250000000000' - 250 gwei
-  // conf.maxFeePerGas = '250000000000' - 250 gwei
   var dataStorage = {
-    //credential: new CredentialStorage(new BrowserDataSource("credential")),
     credential: new CredentialStorage(new IndexedDBDataSource("credential")),
     proof: new CredentialStorage(new IndexedDBDataSource("proof")),
     identity: new IdentityStorage(

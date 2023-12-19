@@ -1,3 +1,12 @@
+import { createHash } from "sha256-uint8array"
+const { poseidonConstants, buildEddsa } = require("circomlibjs")
+import { EdDSAPoseidon } from "@zk-kit/eddsa-poseidon"
+const Scalar = require("ffjavascript").Scalar
+import {
+  verifySignature,
+  derivePublicKey,
+  signMessage,
+} from "@zk-kit/eddsa-poseidon"
 import { Image, Input, Select, Box, Flex } from "@chakra-ui/react"
 import dayjs from "dayjs"
 import { assoc, last, includes, map, range, trim, append, isNil } from "ramda"
@@ -11,6 +20,7 @@ import {
   core,
 } from "@0xpolygonid/js-sdk"
 import { DID } from "@iden3/js-iden3-core"
+import { PublicKey } from "@iden3/js-crypto"
 import {
   initCircuitStorage,
   initProofService,
@@ -110,16 +120,19 @@ export default function Home() {
         await lf.setItem("issuer", issuerDID.string())
         setIssuer(issuer)
       } else {
-        console.log("issuer", _issuer)
         setIssuer({ did: DID.parse(_issuer) })
       }
       let __users = []
       for (const v of _users) {
-        __users.push({ did: DID.parse(v) })
+        __users.push({
+          credential: { id: v.split("-").slice(1).join("-") },
+          did: DID.parse(v.split("-")[0]),
+        })
       }
       setUsers(__users)
     })()
   }, [])
+
   useEffect(() => {
     ;(async () => {
       if (user) {
@@ -224,7 +237,53 @@ export default function Home() {
                 <Box ml={2} as="i" className="fas fa-chevron-down" />
               </Box>
             </Flex>
-            <Flex flex={1} justify="flex-end" fontSize="20px">
+            <Flex
+              sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
+              flex={1}
+              justify="flex-end"
+              fontSize="20px"
+              onClick={async () => {
+                const eddsa = await buildEddsa(poseidonConstants)
+                const credential = await dataStorage.credential._dataSource.get(
+                  user.credential.id
+                )
+                const keyKMSId =
+                  identityWallet.getKMSIdByAuthCredential(credential)
+                const keyProvider = identityWallet._kms._registry.get(
+                  KmsKeyType.BabyJubJub
+                )
+                console.log((await keyProvider.privateKey(keyKMSId)).hex())
+                return
+                /*
+                const prvKey = (await keyProvider.privateKey(keyKMSId)).sk
+                const pubKey = eddsa.prv2pub(prvKey)
+                const data = { name: "Bob", age: 20 }
+                const msg = JSON.stringify(data)
+                const hash = createHash().update(msg).digest("hex")
+                const msgHashed = Buffer.from(hash, "hex")
+                const signature = eddsa.signPoseidon(prvKey, msgHashed)
+                const valid = eddsa.verifyPoseidon(msgHashed, signature, pubKey)
+                const sig =
+                  "0x" +
+                  Buffer.from(eddsa.packSignature(signature)).toString("hex")
+                const pub =
+                  "0x" +
+                  Buffer.from(eddsa.babyJub.packPoint(pubKey)).toString("hex")
+
+                const warp = WarpFactory.forMainnet()
+                const verifier = warp
+                  .contract("upBOLINNUMYBI8gS8uM5ueshdOzZHaaBTmX46Hew6CY")
+                  .setEvaluationOptions({ allowBigInt: true })
+                const input = console.log(
+                  await verifier.viewState({
+                    function: "verify",
+                    data,
+                    signature: sig,
+                    pubKey: pub,
+                  })
+                )*/
+              }}
+            >
               <Box mr={6} as="i" className="fas fa-ellipsis-v" />
             </Flex>
           </Flex>
@@ -288,8 +347,11 @@ export default function Home() {
                     setUsers(append(user)(users))
                     const { did: userDID, credential: authBJJCredentialUser } =
                       user
+                    console.log(authBJJCredentialUser)
                     let _users = (await lf.getItem("users")) ?? []
-                    _users.push(userDID.string())
+                    _users.push(
+                      `${userDID.string()}-${authBJJCredentialUser.id}`
+                    )
                     await lf.setItem("users", _users)
                     const keyKMSId = identityWallet.getKMSIdByAuthCredential(
                       authBJJCredentialUser
@@ -587,7 +649,9 @@ export default function Home() {
                             cursor: "pointer",
                             ":hover": { bg: "#EBE7FD" },
                           }}
-                          onClick={() => {}}
+                          onClick={() => {
+                            console.log(v, user)
+                          }}
                         >
                           <Box as="i" className="fas fa-ellipsis-v" />
                         </Flex>
