@@ -19,7 +19,10 @@
     "@iden3/js-jsonld-merklization": "^1.1.2",
     "@iden3/js-jwz": "^1.2.0",
     "@iden3/js-merkletree": "^1.1.2",
+    "@zk-kit/eddsa-poseidon": "^0.4.2",
+    "circomlibjs": "^0.1.7",
     "dayjs": "^1.11.10",
+    "ffjavascript": "^0.2.62",
     "framer-motion": "^10.16.16",
     "localforage": "^1.10.0",
     "next": "14.0.4",
@@ -27,6 +30,7 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "rfc4648": "^1.5.3",
+    "sha256-uint8array": "^0.10.7",
     "snarkjs": "^0.7.2",
     "warp-contracts": "^1.4.26"
   }

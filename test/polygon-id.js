@@ -2,7 +2,6 @@ const {
   initInMemoryDataStorageAndWallets,
   initCircuitStorage,
   initProofService,
-  initPackageManager,
 } = require("./walletSetup")
 
 const { providers, Wallet } = require("ethers")

@@ -309,7 +309,13 @@ async function deployContracts({
 
   async function deployContractIntmax(
     contractTxIdPoseidon1,
-    contractTxIdPoseidon2
+    contractTxIdPoseidon2,
+    contractTxIdPoseidon3,
+    contractTxIdPoseidon4,
+    contractTxIdPoseidon5,
+    contractTxIdPoseidon6,
+    contractTxIdPoseidon7,
+    contractTxIdPoseidon8
   ) {
     const contractSrc = fs.readFileSync(
       path.join(__dirname, "../dist/intmax/intmax.js"),
@@ -329,6 +335,13 @@ async function deployContracts({
     }
     initialState.contracts.poseidonConstants1 = contractTxIdPoseidon1
     initialState.contracts.poseidonConstants2 = contractTxIdPoseidon2
+    initialState.contracts.poseidonConstants3 = contractTxIdPoseidon3
+    initialState.contracts.poseidonConstants4 = contractTxIdPoseidon4
+    initialState.contracts.poseidonConstants5 = contractTxIdPoseidon5
+    initialState.contracts.poseidonConstants6 = contractTxIdPoseidon6
+    initialState.contracts.poseidonConstants7 = contractTxIdPoseidon7
+    initialState.contracts.poseidonConstants8 = contractTxIdPoseidon8
+
     const { contractTxId } = await warp.createContract.deploy({
       wallet: arweave_wallet,
       initState: JSON.stringify(initialState),
@@ -403,18 +416,52 @@ async function deployContracts({
     nostrTxId,
     poseidon1TxId,
     poseidon2TxId,
+    poseidon3TxId,
+    poseidon4TxId,
+    poseidon5TxId,
+    poseidon6TxId,
+    poseidon7TxId,
+    poseidon8TxId,
     intercallTxId,
     polygonIDTxId
   if (isNil(contractTxId)) {
     poseidon1TxId = await deployContractPoseidon({
       C: Constants.C,
+    })
+    poseidon2TxId = await deployContractPoseidon({
       M: Constants.M,
       P: Constants.P,
     })
-    poseidon2TxId = await deployContractPoseidon({
-      S: Constants.S,
+    poseidon3TxId = await deployContractPoseidon({
+      S: Constants.S.slice(0, 6),
     })
-    intmaxTxId = await deployContractIntmax(poseidon1TxId, poseidon2TxId)
+    poseidon4TxId = await deployContractPoseidon({
+      S: Constants.S.slice(6, 9),
+    })
+    poseidon5TxId = await deployContractPoseidon({
+      S: Constants.S.slice(9, 11),
+    })
+    poseidon6TxId = await deployContractPoseidon({
+      S: Constants.S.slice(11, 13),
+    })
+    poseidon7TxId = await deployContractPoseidon({
+      S: Constants.S.slice(13, 15),
+    })
+    poseidon8TxId = await deployContractPoseidon({
+      S: Constants.S.slice(15),
+    })
+
+    intmaxTxId = await deployContractIntmax(
+      poseidon1TxId,
+      poseidon2TxId,
+      poseidon3TxId,
+      poseidon4TxId,
+      poseidon5TxId,
+      poseidon6TxId,
+      poseidon7TxId,
+      poseidon8TxId
+    )
+
     dfinityTxId = await deployContractDfinity()
     ethereumTxId = await deployContractEthereum()
     bundlerTxId = await deployContractBundler()
