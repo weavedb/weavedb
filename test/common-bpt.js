@@ -27,6 +27,7 @@ const {
   getPublicKey,
   finishEvent,
 } = require("nostr-tools")
+
 const sleep = ms =>
   new Promise(res => {
     setTimeout(() => {
@@ -2036,6 +2037,55 @@ const tests = {
 
     await db.add({ test: db.zkp(proof, pub_signals) }, "ppl")
     expect((await db.get("ppl"))[0].test.pub_signals.userID).to.eql(id)
+  },
+  "should link did": async ({ db, arweave_wallet, wallet }) => {
+    let dataStorage, credentialWallet, identityWallet
+    ;({ dataStorage, credentialWallet, identityWallet } =
+      await initInMemoryDataStorageAndWallets())
+    const circuitStorage = await initCircuitStorage()
+    const proofService = await initProofService(
+      identityWallet,
+      credentialWallet,
+      dataStorage.states,
+      circuitStorage
+    )
+    const { did: userDID, credential: authBJJCredentialUser } =
+      await createIdentity(identityWallet)
+    const { did: issuerDID, credential: issuerAuthBJJCredential } =
+      await createIdentity(identityWallet)
+    const id = userDID.string()
+    const tempAddr = EthCrypto.createIdentity()
+    const addr = tempAddr.address
+    const num = BigInt(addr).toString().slice(0, 15) * 1
+    const num2 = BigInt(addr).toString().slice(15, 30) * 1
+    const credentialRequest = createCred({
+      id,
+      birthday: num,
+      documentType: num2,
+    })
+    const credential = await identityWallet.issueCredential(
+      issuerDID,
+      credentialRequest
+    )
+    await dataStorage.credential.saveCredential(credential)
+    const proofReqSig = createReq(credentialRequest, {
+      birthday: {
+        $eq: num,
+      },
+    })
+    const { proof, pub_signals } = await proofService.generateProof(
+      proofReqSig,
+      userDID
+    )
+    const { identity } = await db.createTempAddressWithPolygonID(tempAddr, {
+      proof,
+      pub_signals,
+      did: userDID.string(),
+    })
+    expect(await db.getAddressLink(identity.address.toLowerCase())).to.eql({
+      address: userDID.string(),
+      expiry: 0,
+    })
   },
 }
 

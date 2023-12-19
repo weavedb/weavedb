@@ -15,13 +15,12 @@ class OffChain extends Base {
     _contracts = "weavedb-contracts",
   }) {
     super()
-    contracts = "../contracts"
-    ;({ handle } = require(`${contracts}/weavedb/contract`))
-    ;({ handle: handle_kv } = require(`${contracts}/weavedb-kv/contract`))
-    ;({ handle: handle_bpt } = require(`${contracts}/weavedb-bpt/contract`))
-    version = require(`${contracts}/weavedb/lib/version`)
-    version_kv = require(`${contracts}/weavedb-kv/lib/version`)
-    version_bpt = require(`${contracts}/weavedb-bpt/lib/version`)
+    ;({ handle } = require(`${_contracts}/weavedb/contract`))
+    ;({ handle: handle_kv } = require(`${_contracts}/weavedb-kv/contract`))
+    ;({ handle: handle_bpt } = require(`${_contracts}/weavedb-bpt/contract`))
+    version = require(`${_contracts}/weavedb/lib/version`)
+    version_kv = require(`${_contracts}/weavedb-kv/lib/version`)
+    version_bpt = require(`${_contracts}/weavedb-bpt/lib/version`)
 
     this.caller = caller
     this.noauth = noauth

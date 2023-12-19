@@ -5,7 +5,7 @@ sidebar_position: 2
 
 When writing to the DB, Ethereum-based addresses are authenticated with [EIP-712](https://eips.ethereum.org/EIPS/eip-712) signatures. However, this requires dapp users to sign with Metamask for every action, and it's a very poor UX. To solve this, WeaveDB allows internal address linking, so dapp users can use disposal addresses for auto-signing.
 
-WeaveDB has integrated 4 types of cryptography (secp256k1, ed25519, rsa256, poseidon), which enables [MetaMask](https://metamask.io/), [Internet Identity](https://identity.ic0.app/), [ArConnect](https://www.arconnect.io/), [IntmaxWallet](https://www.intmaxwallet.io), and [Lens Profile](https://www.lens.xyz/).
+WeaveDB has integrated 4 types of cryptography (secp256k1, ed25519, rsa256, poseidon), which enables [MetaMask](https://metamask.io/), [Internet Identity](https://identity.ic0.app/), [ArConnect](https://www.arconnect.io/), [IntmaxWallet](https://www.intmaxwallet.io), [Lens Profile](https://www.lens.xyz/), [WebAuthn](https://webauthn.guide/), and [PolygonID](https://polygonid.com).
 
 ![](/img/wallets.png)
 
@@ -125,6 +125,19 @@ const { identity } = db.createTempAddressWithLens(expiry)
 
 // or set no expiry
 const { identity } = db.createTempAddressWithLens()
+```
+
+### PolygonID (DID/VC/ZKP)
+
+[PolygonID](https://lens.xyz) is a SSI (Self Soverign Identity) management tool, which creates DIDs, issues VCs (Verifiable Credential), and generates ZK Proof. WeaveDB can authenticate DID using Zero Knowledge Proof, and also verify VCs with zkp associated with DIDs. Users are able to verify their offchain information without revealing the actual values.
+
+```js
+const identity = EthCrypto.createIdentity()
+await db.createTempAddressWithPolygonID(identity, {
+  proof,
+  pub_signals,
+  did,
+})
 ```
 
 ## Get Address Link

@@ -1,15 +1,15 @@
-const {
-  initInMemoryDataStorageAndWallets,
-  initCircuitStorage,
-  initProofService,
-} = require("./walletSetup")
-
 const { providers, Wallet } = require("ethers")
 const { expect } = require("chai")
 const { isNil, range, pick } = require("ramda")
 const { init, stop, initBeforeEach, addFunds } = require("./util")
 const { readFileSync } = require("fs")
 const { resolve } = require("path")
+
+const {
+  initInMemoryDataStorageAndWallets,
+  initCircuitStorage,
+  initProofService,
+} = require("./walletSetup")
 
 const {
   AuthV2PubSignals,

@@ -40,6 +40,7 @@ describe("WeaveDB Offchain BPT", function () {
       state: { nostr: "nostr_events", secure: false, owner: walletAddress },
       type: 3,
       caller: walletAddress,
+      _contracts: "../contracts",
     })
     db.setDefaultWallet(wallet)
   })
