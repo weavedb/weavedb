@@ -727,6 +727,30 @@ class Base {
     )
   }
 
+  async createTempAddressWithPolygonID(
+    identity,
+    proof,
+    expiry,
+    linkTo,
+    opt = {}
+  ) {
+    opt.privateKey = identity.privateKey
+    const addr = proof.did
+    const nonce = await this.getNonce(addr)
+    let param = {
+      proof: proof.proof,
+      pub_signals: proof.pub_signals,
+      address: addr,
+    }
+    if (!isNil(expiry)) param.expiry = expiry
+    if (!isNil(linkTo)) param.linkTo = linkTo
+    const tx = await this.addAddressLink(param, { nonce, ...opt })
+    identity.signer = tx.signer
+    identity.type = "polygon-id"
+    identity.linkedAccount = linkTo || tx.signer
+    return { tx, identity }
+  }
+
   async createTempAddress(evm, expiry, linkTo, opt = {}) {
     const wallet = is(Object, evm) ? evm : null
     let addr = null

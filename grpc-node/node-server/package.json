@@ -35,9 +35,9 @@
     "tweetnacl": "^1.0.3",
     "warp-arbundles": "^1.0.4",
     "warp-contracts": "^1.4.19",
-    "weavedb-node-client": "^0.38.0",
-    "weavedb-offchain": "^0.38.2",
-    "weavedb-sdk-node": "^0.38.1",
+    "weavedb-node-client": "^0.39.0",
+    "weavedb-offchain": "^0.39.0",
+    "weavedb-sdk-node": "^0.39.0",
     "weavedb-warp-contracts-plugin-deploy": "^1.0.10",
     "ws": "^8.14.2",
     "yargs": "^17.6.2"
