@@ -747,7 +747,7 @@ class Base {
     const tx = await this.addAddressLink(param, { nonce, ...opt })
     identity.signer = tx.signer
     identity.type = "polygon-id"
-    identity.linkedAccount = linkTo || tx.signer
+    identity.linkedAccount = linkTo || proof.did
     return { tx, identity }
   }
 
