@@ -32,6 +32,7 @@
     "rfc4648": "^1.5.3",
     "sha256-uint8array": "^0.10.7",
     "snarkjs": "^0.7.2",
-    "warp-contracts": "^1.4.26"
+    "warp-contracts": "^1.4.26",
+    "weavedb-client": "^0.39.1"
   }
 }

@@ -1,3 +1,5 @@
+const SDK = require("weavedb-client")
+const EthCrypto = require("eth-crypto")
 import { createHash } from "sha256-uint8array"
 const { poseidonConstants, buildEddsa } = require("circomlibjs")
 import { EdDSAPoseidon } from "@zk-kit/eddsa-poseidon"
@@ -9,7 +11,20 @@ import {
 } from "@zk-kit/eddsa-poseidon"
 import { Image, Input, Select, Box, Flex } from "@chakra-ui/react"
 import dayjs from "dayjs"
-import { assoc, last, includes, map, range, trim, append, isNil } from "ramda"
+import {
+  mergeLeft,
+  concat,
+  assoc,
+  last,
+  includes,
+  map,
+  range,
+  trim,
+  append,
+  isNil,
+  indexBy,
+  prop,
+} from "ramda"
 import { useEffect, useState } from "react"
 import lf from "localforage"
 import {
@@ -59,7 +74,7 @@ function createCred(subject) {
     },
   }
 }
-let dataStorage, credentialWallet, identityWallet
+let dataStorage, credentialWallet, identityWallet, proofService, db
 async function createIdentity(identityWallet) {
   const { did, credential } = await identityWallet.createIdentity({
     method: core.DidMethod.polygonId,
@@ -73,20 +88,16 @@ async function createIdentity(identityWallet) {
   return { did, credential }
 }
 export default function Home() {
-  const _points = [
-    {
+  const _points = {
+    WDB: {
       name: "WeaveChain Testnet Token",
       symbol: "WDB",
       logo: "/wdb.png",
-      balance: 10000,
     },
-    {
-      name: "Jots Point",
-      symbol: "JOTS",
-      logo: "/jots.jpg",
-      balance: 123,
-    },
-  ]
+  }
+
+  const [balances, setBalances] = useState([])
+  const [identities, setIdentities] = useState([])
   const [user, setUser] = useState(null)
   const [users, setUsers] = useState([])
   const [allCreds, setAllCreds] = useState({})
@@ -99,17 +110,28 @@ export default function Home() {
   const [docType, setDocType] = useState(1)
   const [birthday, setBirthday] = useState(19900101)
   const [field, setField] = useState("birthday")
+  const [issueP, setIssueP] = useState(false)
+  const [pointName, setPointName] = useState("")
+  const [pointSym, setPointSym] = useState("")
   const [val, setVal] = useState(19900101)
   const [arr, setArr] = useState("1, 2, 3")
   const [op, setOp] = useState("$eq")
   const [res, setRes] = useState(null)
   const [tab, setTab] = useState("DIDs")
+  const [action, setAction] = useState(null)
   const [issue, setIssue] = useState(false)
   const [loading, setLoading] = useState({})
-  const [point, setPoint] = useState(_points[0])
+  const [point, setPoint] = useState({ symbol: "WDB", balance: 0 })
   const [points, setPoints] = useState(_points)
+  const [mint, setMint] = useState(0)
+  const [send, setSend] = useState(0)
+  const [to, setTo] = useState("")
   useEffect(() => {
     ;(async () => {
+      db = new SDK({
+        rpc: "http://localhost:8080",
+        contractTxId: "weave_point",
+      })
       ;({ dataStorage, credentialWallet, identityWallet } =
         await initInMemoryDataStorageAndWallets())
       let _issuer = await lf.getItem("issuer")
@@ -130,6 +152,13 @@ export default function Home() {
         })
       }
       setUsers(__users)
+      const circuitStorage = await initCircuitStorage()
+      proofService = await initProofService(
+        identityWallet,
+        credentialWallet,
+        dataStorage.states,
+        circuitStorage
+      )
     })()
   }, [])
 
@@ -137,6 +166,8 @@ export default function Home() {
     ;(async () => {
       if (user) {
         const did = user.did.string()
+        let _ids = (await lf.getItem(`identities-${did}`)) ?? []
+        setIdentities(_ids)
         let _creds = ((await lf.getItem("creds")) ?? {})[did] ?? []
         let __creds = []
         const store = dataStorage.credential._dataSource
@@ -162,9 +193,42 @@ export default function Home() {
           if (c) __proofs.push(c)
         }
         setProofs(__proofs)
+        setBalances(
+          concat(
+            [{ symbol: "WDB", balance: 0, address: did }],
+            await db.get("balances", ["address", "==", did])
+          )
+        )
       }
     })()
   }, [user])
+
+  useEffect(() => {
+    ;(async () => {
+      let pts = []
+      for (let v of balances) {
+        if (isNil(points[v.symbol])) {
+          pts.push(v.symbol)
+        }
+      }
+      if (pts.length > 0) {
+        setPoints(
+          mergeLeft(
+            points,
+            indexBy(
+              prop("symbol"),
+              await db.get("points", ["symbol", "in", pts])
+            )
+          )
+        )
+      }
+    })()
+  }, [balances])
+
+  let tempID = null
+  for (let v of identities) {
+    if (v.rpc === "http://localhost:3000") tempID = v
+  }
   return (
     <Flex
       style={{ display: "flex" }}
@@ -409,20 +473,48 @@ export default function Home() {
                   </Box>
                 </Flex>
                 <Flex fontSize="12px">
-                  <Flex mx={2}>
-                    <Flex
-                      direction="column"
-                      justify="center"
-                      align="center"
-                      mx={2}
-                    >
+                  {user.did.string() !== points[point.symbol]?.owner ? null : (
+                    <Flex mx={2} w="50px" justify="center" align="center">
+                      <Flex direction="column" justify="center" align="center">
+                        <Flex
+                          onClick={() =>
+                            setAction(action === "mint" ? null : "mint")
+                          }
+                          bg={action === "mint" ? "#5137C5" : "#EBE7FD"}
+                          color={action !== "mint" ? "#5137C5" : "#EBE7FD"}
+                          mb={2}
+                          justify="center"
+                          align="center"
+                          boxSize="35px"
+                          sx={{
+                            borderRadius: "50%",
+                            cursor: "pointer",
+                            ":hover": { opacity: 0.75 },
+                          }}
+                        >
+                          <Box as="i" className="fas fa-money-check" />
+                        </Flex>
+                        <Box>Mint</Box>
+                      </Flex>
+                    </Flex>
+                  )}
+                  <Flex mx={2} w="50px" justify="center" align="center">
+                    <Flex direction="column" justify="center" align="center">
                       <Flex
+                        onClick={() =>
+                          setAction(action === "send" ? null : "send")
+                        }
+                        bg={action === "send" ? "#5137C5" : "#EBE7FD"}
+                        color={action !== "send" ? "#5137C5" : "#EBE7FD"}
                         mb={2}
                         justify="center"
                         align="center"
                         boxSize="35px"
-                        bg="#EBE7FD"
-                        sx={{ borderRadius: "50%" }}
+                        sx={{
+                          borderRadius: "50%",
+                          cursor: "pointer",
+                          ":hover": { opacity: 0.75 },
+                        }}
                       >
                         <Box as="i" className="fas fa-paper-plane" />
                       </Flex>
@@ -430,18 +522,24 @@ export default function Home() {
                     </Flex>
                   </Flex>
                   <Flex
+                    mx={2}
+                    w="50px"
                     direction="column"
                     justify="center"
                     align="center"
-                    mx={2}
                   >
                     <Flex
+                      sx={{
+                        borderRadius: "50%",
+                        cursor: "pointer",
+                        ":hover": { opacity: 0.75 },
+                      }}
                       mb={2}
                       justify="center"
                       align="center"
                       boxSize="35px"
                       bg="#EBE7FD"
-                      sx={{ borderRadius: "50%" }}
+                      onClick={() => alert("coming soon")}
                     >
                       <Box as="i" className="fas fa-flag" />
                     </Flex>
@@ -449,30 +547,219 @@ export default function Home() {
                   </Flex>
                 </Flex>
               </Flex>
-
-              <Flex px={2} pt={2}>
-                {map(v => (
+              {action === "mint" ? (
+                <>
                   <Flex
-                    m={2}
-                    py={3}
-                    justify="center"
-                    flex={1}
-                    color={tab === v ? "#5137C5" : "#666"}
-                    fontWeight="bold"
-                    onClick={() => setTab(v)}
-                    sx={{
-                      borderBottom: tab === v ? "2px solid #5137C5" : "",
-                      cursor: "pointer",
-                      ":hover": { opacity: 0.75 },
-                    }}
+                    mt={4}
+                    pt={4}
+                    px={4}
+                    bg="#EBE7FD"
+                    pb={6}
+                    sx={{ borderRadius: "0 0 5px 5px" }}
                   >
-                    {v}
+                    <Box flex={1} mx={2}>
+                      <Box as="label" fontSize="12px" mb={2}>
+                        Amount
+                      </Box>
+                      <Input
+                        bg="white"
+                        display="block"
+                        value={mint}
+                        onChange={e => {
+                          if (!Number.isNaN(e.target.value * 1))
+                            setMint(e.target.value * 1)
+                        }}
+                      />
+                    </Box>
+                    <Box pt="14px" px={2}>
+                      <Flex
+                        h="40px"
+                        align="center"
+                        justify="center"
+                        sx={{
+                          cursor: "pointer",
+                          ":hover": { opacity: 0.75 },
+                          textAlign: "center",
+                          width: "200px",
+                          borderRadius: "5px",
+                          padding: "10px 40px",
+                          background: "#5137C5",
+                          cursor: "pointer",
+                          color: "white",
+                          marginTop: "10px",
+                        }}
+                        onClick={async () => {
+                          if (mint > 0) {
+                            try {
+                              const tx = await db.query(
+                                "add:mint",
+                                {
+                                  to: user.did.string(),
+                                  symbol: point.symbol,
+                                  amount: mint,
+                                },
+                                "events",
+                                tempID.identity
+                              )
+                              setBalances(
+                                concat(
+                                  [
+                                    {
+                                      symbol: "WDB",
+                                      balance: 0,
+                                      address: tempID.identity.linkedAccount,
+                                    },
+                                  ],
+                                  await db.get("balances", [
+                                    "address",
+                                    "==",
+                                    tempID.identity.linkedAccount,
+                                  ])
+                                )
+                              )
+                              if (tx.success) {
+                                setPoint(assoc("balance", point.balance + mint))
+                              }
+                            } catch (e) {
+                              console.log(e)
+                            }
+                          }
+                        }}
+                      >
+                        Mint
+                      </Flex>
+                    </Box>
                   </Flex>
-                ))(["Points", "VCs", "ZK Proofs", "Activity"])}
-              </Flex>
+                </>
+              ) : null}
+              {action === "send" ? (
+                <>
+                  <Box
+                    mt={4}
+                    pt={4}
+                    px={4}
+                    bg="#EBE7FD"
+                    pb={6}
+                    sx={{ borderRadius: "0 0 5px 5px" }}
+                  >
+                    <Flex w="100%" mb={4}>
+                      <Box flex={1} mx={2}>
+                        <Box as="label" fontSize="12px" mb={2}>
+                          To
+                        </Box>
+                        <Input
+                          bg="white"
+                          display="block"
+                          value={to}
+                          onChange={e => setTo(e.target.value)}
+                        />
+                      </Box>
+                    </Flex>
+                    <Flex w="100%">
+                      <Box flex={1} mx={2}>
+                        <Box as="label" fontSize="12px" mb={2}>
+                          Amount
+                        </Box>
+                        <Input
+                          bg="white"
+                          display="block"
+                          value={send}
+                          onChange={e => {
+                            if (!Number.isNaN(e.target.value * 1))
+                              setSend(e.target.value * 1)
+                          }}
+                        />
+                      </Box>
+                      <Box pt="14px" px={2}>
+                        <Flex
+                          h="40px"
+                          align="center"
+                          justify="center"
+                          sx={{
+                            cursor: "pointer",
+                            ":hover": { opacity: 0.75 },
+                            textAlign: "center",
+                            width: "200px",
+                            borderRadius: "5px",
+                            padding: "10px 40px",
+                            background: "#5137C5",
+                            cursor: "pointer",
+                            color: "white",
+                            marginTop: "10px",
+                          }}
+                          onClick={async () => {
+                            if (send > 0) {
+                              try {
+                                const tx = await db.query(
+                                  "add:transfer",
+                                  {
+                                    to,
+                                    symbol: point.symbol,
+                                    amount: send,
+                                  },
+                                  "events",
+                                  tempID.identity
+                                )
+                                setBalances(
+                                  concat(
+                                    [
+                                      {
+                                        symbol: "WDB",
+                                        balance: 0,
+                                        address: tempID.identity.linkedAccount,
+                                      },
+                                    ],
+                                    await db.get("balances", [
+                                      "address",
+                                      "==",
+                                      tempID.identity.linkedAccount,
+                                    ])
+                                  )
+                                )
+                                if (tx.success) {
+                                  setPoint(
+                                    assoc("balance", point.balance - send)
+                                  )
+                                }
+                              } catch (e) {
+                                console.log(e)
+                              }
+                            }
+                          }}
+                        >
+                          Send
+                        </Flex>
+                      </Box>
+                    </Flex>
+                  </Box>
+                </>
+              ) : null}
+              {action !== null ? null : (
+                <Flex px={2} pt={2}>
+                  {map(v => (
+                    <Flex
+                      m={2}
+                      py={3}
+                      justify="center"
+                      flex={1}
+                      color={tab === v ? "#5137C5" : "#666"}
+                      fontWeight="bold"
+                      onClick={() => setTab(v)}
+                      sx={{
+                        borderBottom: tab === v ? "2px solid #5137C5" : "",
+                        cursor: "pointer",
+                        ":hover": { opacity: 0.75 },
+                      }}
+                    >
+                      {v}
+                    </Flex>
+                  ))(["Points", "VCs", "ZK Proofs", "Activity"])}
+                </Flex>
+              )}
             </>
           )}
-          {tab === "DIDs" ? null : tab === "ZK Proofs" ? (
+
+          {action !== null || tab === "DIDs" ? null : tab === "ZK Proofs" ? (
             map(v => {
               const sub = v.request.query.credentialSubject
               let query = ""
@@ -766,14 +1053,6 @@ export default function Home() {
                               }}
                               onClick={async () => {
                                 setLoading(assoc("proof-gen", true, loading))
-                                const circuitStorage =
-                                  await initCircuitStorage()
-                                const proofService = await initProofService(
-                                  identityWallet,
-                                  credentialWallet,
-                                  dataStorage.states,
-                                  circuitStorage
-                                )
                                 let _val = val
                                 let query = {}
                                 if (op === "select") {
@@ -962,6 +1241,8 @@ export default function Home() {
           ) : tab === "Points" ? (
             <>
               {map(v => {
+                const token = points[v.symbol]
+                if (!token) return null
                 return (
                   <Flex
                     py={4}
@@ -976,14 +1257,28 @@ export default function Home() {
                     }}
                     onClick={() => setPoint(v)}
                   >
-                    <Image
-                      src={v.logo}
-                      boxSize="35px"
-                      mr={4}
-                      sx={{ borderRadius: "50%" }}
-                    />
+                    {token.logo ? (
+                      <Image
+                        src={token.logo}
+                        boxSize="35px"
+                        mr={4}
+                        sx={{ borderRadius: "50%" }}
+                      />
+                    ) : (
+                      <Flex
+                        boxSize="35px"
+                        align="center"
+                        justify="center"
+                        bg="#5137C5"
+                        mr={4}
+                        color="white"
+                        sx={{ borderRadius: "50%" }}
+                      >
+                        <Box fontSize="14px" as="i" className="fas fa-coins" />
+                      </Flex>
+                    )}
                     <Box flex={1} fontSize="16px">
-                      <Box fontWeight="bold">{v.name}</Box>
+                      <Box fontWeight="bold">{token.name}</Box>
                       <Box>
                         {v.balance} {v.symbol}
                       </Box>
@@ -993,36 +1288,206 @@ export default function Home() {
                     </Box>
                   </Flex>
                 )
-              })(points)}
+              })(balances)}
               <Box pb={2}>
-                <Box
-                  fontSize="14px"
-                  fontWeight="bold"
-                  color="#5137C5"
-                  py={2}
-                  px={8}
-                  sx={{
-                    cursor: "pointer",
-                    ":hover": { opacity: 0.75 },
-                  }}
-                >
-                  <Box as="i" className="fas fa-plus" mr={2} />
-                  Import Points
-                </Box>
-                <Box
-                  fontSize="14px"
-                  fontWeight="bold"
-                  color="#5137C5"
-                  py={4}
-                  px={8}
-                  sx={{
-                    cursor: "pointer",
-                    ":hover": { opacity: 0.75 },
-                  }}
-                >
-                  <Box as="i" className="fas fa-coins" mr={2} />
-                  Issue Points
-                </Box>
+                {isNil(tempID) ? (
+                  <Box
+                    fontSize="14px"
+                    fontWeight="bold"
+                    color="#5137C5"
+                    py={3}
+                    px={8}
+                    sx={{
+                      cursor: "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                    onClick={async () => {
+                      setLoading(assoc("login", true, loading))
+                      const id = user.did.string()
+                      const tempAddr = EthCrypto.createIdentity()
+                      const addr = tempAddr.address
+                      const num = BigInt(addr).toString().slice(0, 15) * 1
+                      const num2 = BigInt(addr).toString().slice(15, 30) * 1
+                      const credentialRequest = createCred({
+                        id,
+                        birthday: num,
+                        documentType: num2,
+                      })
+                      console.log("issue proof....")
+                      const credential = await identityWallet.issueCredential(
+                        issuer.did,
+                        credentialRequest
+                      )
+                      await dataStorage.credential.saveCredential(credential)
+                      const proofReqSig = createReq(credentialRequest, {
+                        birthday: {
+                          $eq: num,
+                        },
+                      })
+                      console.log("generate proof....")
+                      const { proof, pub_signals } =
+                        await proofService.generateProof(proofReqSig, user.did)
+                      console.log(proof)
+                      console.log("sign in....")
+                      const { identity } =
+                        await db.createTempAddressWithPolygonID(tempAddr, {
+                          proof,
+                          pub_signals,
+                          did: user.did.string(),
+                        })
+                      if (identity) {
+                        const _newIDs = append(
+                          { identity, rpc: "http://localhost:3000" },
+                          identities
+                        )
+                        setIdentities(_newIDs)
+                        await lf.setItem(`identities-${id}`, _newIDs)
+                      }
+                      setLoading(assoc("login", false, loading))
+                    }}
+                  >
+                    <Box
+                      as="i"
+                      className={
+                        loading.login
+                          ? "fa fa-spin fa-sync"
+                          : "fas fa-sign-in-alt"
+                      }
+                      mr={2}
+                    />
+                    Connect with Exchange
+                  </Box>
+                ) : (
+                  <>
+                    <Box
+                      fontSize="14px"
+                      fontWeight="bold"
+                      color="#5137C5"
+                      py={3}
+                      px={8}
+                      sx={{
+                        cursor: "pointer",
+                        ":hover": { opacity: 0.75 },
+                      }}
+                    >
+                      <Box as="i" className="fas fa-plus" mr={2} />
+                      Import Points
+                    </Box>
+                    <Box
+                      fontSize="14px"
+                      fontWeight="bold"
+                      color="#5137C5"
+                      py={3}
+                      px={8}
+                      sx={{
+                        cursor: "pointer",
+                        ":hover": { opacity: 0.75 },
+                      }}
+                      onClick={() => setIssueP(!issueP)}
+                    >
+                      <Box as="i" className="fas fa-coins" mr={2} />
+                      Issue Points
+                    </Box>
+                    {issueP ? (
+                      <>
+                        <Flex
+                          px={4}
+                          pt={4}
+                          bg="#EBE7FD"
+                          pb={6}
+                          sx={{ borderRadius: "0 0 5px 5px" }}
+                        >
+                          <Box flex={1} mx={2}>
+                            <Box as="label" fontSize="12px" mb={2}>
+                              Point Name
+                            </Box>
+                            <Input
+                              bg="white"
+                              display="block"
+                              value={pointName}
+                              onChange={e => setPointName(e.target.value)}
+                            />
+                          </Box>
+                          <Box flex={1} mx={2}>
+                            <Box as="label" fontSize="12px" mb={2}>
+                              Point Symbol (uppercase)
+                            </Box>
+                            <Input
+                              bg="white"
+                              display="block"
+                              value={pointSym}
+                              onChange={e =>
+                                setPointSym(e.target.value.toUpperCase())
+                              }
+                            />
+                          </Box>
+                          <Box pt="14px" px={2}>
+                            <Flex
+                              h="40px"
+                              align="center"
+                              justify="center"
+                              sx={{
+                                cursor: "pointer",
+                                ":hover": { opacity: 0.75 },
+                                textAlign: "center",
+                                width: "200px",
+                                borderRadius: "5px",
+                                padding: "10px 40px",
+                                background: "#5137C5",
+                                cursor: "pointer",
+                                color: "white",
+                                marginTop: "10px",
+                              }}
+                              onClick={async () => {
+                                if (
+                                  !/^\s*$/.test(pointName) &&
+                                  !/^\s*$/.test(pointSym)
+                                ) {
+                                  try {
+                                    const tx = await db.query(
+                                      "set:issue",
+                                      {
+                                        name: pointName,
+                                      },
+                                      "points",
+                                      pointSym,
+                                      tempID.identity
+                                    )
+                                    setBalances(
+                                      concat(
+                                        [
+                                          {
+                                            symbol: "WDB",
+                                            balance: 0,
+                                            address:
+                                              tempID.identity.linkedAccount,
+                                          },
+                                        ],
+                                        await db.get("balances", [
+                                          "address",
+                                          "==",
+                                          tempID.identity.linkedAccount,
+                                        ])
+                                      )
+                                    )
+                                  } catch (e) {
+                                    console.log(e)
+                                  }
+                                }
+                              }}
+                            >
+                              {loading.cred ? (
+                                <Box as="i" className="fa fa-spin fa-sync" />
+                              ) : (
+                                "Issue"
+                              )}
+                            </Flex>
+                          </Box>
+                        </Flex>
+                      </>
+                    ) : null}
+                  </>
+                )}
               </Box>
             </>
           ) : null}
