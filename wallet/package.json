@@ -19,6 +19,7 @@
     "@iden3/js-jsonld-merklization": "^1.1.2",
     "@iden3/js-jwz": "^1.2.0",
     "@iden3/js-merkletree": "^1.1.2",
+    "@simplewebauthn/browser": "^8.3.4",
     "@zk-kit/eddsa-poseidon": "^0.4.2",
     "circomlibjs": "^0.1.7",
     "dayjs": "^1.11.10",
