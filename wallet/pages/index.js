@@ -113,6 +113,7 @@ export default function Home() {
       logo: "/wdb.png",
     },
   }
+  const [backup, setBackup] = useState(null)
   const [accounts, setAccounts] = useState([])
   const [create, setCreate] = useState(false)
   const [balances, setBalances] = useState([])
@@ -160,22 +161,17 @@ export default function Home() {
   useEffect(() => {
     ;(async () => {
       if (aid) {
-        console.log(".....o0 - 1")
         ;({ dataStorage, credentialWallet, identityWallet } =
           await initDataStorageAndWallets(aid, aes))
-        console.log(".....o0")
         let _issuer = await lf.getItem(`${aid.id}.issuer`)
         if (!_issuer) {
-          console.log("gooooooooooooooooooooooooooooooooooooooooooo")
           const issuer = await createIdentity(identityWallet)
-          console.log(".....o0a")
           const { did: issuerDID, credential: issuerAuthBJJCredential } = issuer
           await lf.setItem(`${aid.id}.issuer`, issuerDID.string())
           setIssuer(issuer)
         } else {
           setIssuer({ did: DID.parse(_issuer) })
         }
-        console.log(".....o")
         const circuitStorage = await initCircuitStorage()
         proofService = await initProofService(
           identityWallet,
@@ -183,7 +179,6 @@ export default function Home() {
           dataStorage.states,
           circuitStorage
         )
-        console.log(".....o2")
         let _users = (await lf.getItem(`${aid.id}.users`)) ?? []
         let __users = []
         for (const v of _users) {
@@ -516,8 +511,7 @@ export default function Home() {
                             })
                             let rawKey = null
                             if (
-                              !reg.getClientExtensionResults().largeBlob
-                                ?.supported
+                              !reg.getClientExtensionResults().largeBlob?.blob
                             ) {
                               rawKey = await lf.getItem(`${reg.id}.device_key`)
                             } else {
@@ -547,7 +541,6 @@ export default function Home() {
                               ["encrypt", "decrypt"]
                             )
                             setAES(master)
-
                             setAID(v)
                           }}
                         >
@@ -804,6 +797,95 @@ export default function Home() {
                       >
                         <Box as="i" className="fas fa-plus" mr={2} />
                         Create DID
+                      </Box>
+                      <Box
+                        fontSize="14px"
+                        fontWeight="bold"
+                        color="#5137C5"
+                        py={2}
+                        px={8}
+                        sx={{
+                          cursor: "pointer",
+                          ":hover": { opacity: 0.75 },
+                        }}
+                        onClick={async () => {
+                          let stores = {
+                            identity: dataStorage.identity._identityDataSource,
+                            profile: dataStorage.identity._profileDataSource,
+                            credential: dataStorage.credential._dataSource,
+                            mt: dataStorage.mt,
+                            proof: dataStorage.proof._dataSource,
+                            privaeKey: identityWallet._kms._registry.get(
+                              KmsKeyType.BabyJubJub
+                            ).keyStore,
+                          }
+                          let backups = {}
+                          for (let k in stores) {
+                            backups[k] = {
+                              list: await stores[k].list(),
+                              data: {},
+                            }
+                            for (let k2 in backups[k].list) {
+                              backups[k].data[k2] = await stores[k].get(k2)
+                            }
+                          }
+                          const msg = enc.encode(JSON.stringify(backups))
+                          const iv = window.crypto.getRandomValues(
+                            new Uint8Array(12)
+                          )
+                          const val = await crypto.subtle.encrypt(
+                            { name: "AES-GCM", iv },
+                            aes,
+                            msg
+                          )
+                          const encrypted = { iv, val, date: Date.now() }
+                          await ICP.set(`${aid.id}.backup`, encrypted)
+                          setBackup(encrypted.date)
+                        }}
+                      >
+                        <Box as="i" className="fas fa-server" mr={2} />
+                        Backup{" "}
+                        {isNil(backup)
+                          ? null
+                          : `(${dayjs(backup).format("YYYY/MM/DD HH:mm")})`}
+                      </Box>
+                      <Box
+                        fontSize="14px"
+                        fontWeight="bold"
+                        color="#5137C5"
+                        py={2}
+                        px={8}
+                        sx={{
+                          cursor: "pointer",
+                          ":hover": { opacity: 0.75 },
+                        }}
+                        onClick={async () => {
+                          const mkey = await ICP.get(`${aid.id}.backup`)
+                          const raw = await crypto.subtle.decrypt(
+                            { name: "AES-GCM", iv: mkey.iv },
+                            aes,
+                            mkey.val
+                          )
+                          let stores = {
+                            identity: dataStorage.identity._identityDataSource,
+                            profile: dataStorage.identity._profileDataSource,
+                            credential: dataStorage.credential._dataSource,
+                            mt: dataStorage.mt,
+                            proof: dataStorage.proof._dataSource,
+                            privaeKey: identityWallet._kms._registry.get(
+                              KmsKeyType.BabyJubJub
+                            ).keyStore,
+                          }
+                          const backup = JSON.parse(dec.decode(raw))
+                          for (let k in backup) {
+                            for (let k2 in backup[k].list) {
+                              await stores[k]._set(k2, backup[k].data[k2])
+                            }
+                          }
+                        }}
+                      >
+                        <Box as="i" className="fas fa-download" mr={2} />
+                        Recover
                       </Box>
                       <Box
                         fontSize="14px"
