@@ -1,3 +1,5 @@
+const { Ed25519KeyIdentity } = require("@dfinity/identity")
+import { AuthClient } from "@dfinity/auth-client"
 const { generateRegistrationOptions } = require("@simplewebauthn/server")
 const enc = new TextEncoder()
 const dec = new TextDecoder()
@@ -45,7 +47,7 @@ import { PublicKey } from "@iden3/js-crypto"
 import {
   initCircuitStorage,
   initProofService,
-  initInMemoryDataStorageAndWallets,
+  initDataStorageAndWallets,
 } from "../lib/walletSetup"
 const rhsUrl = "https://rhs-staging.polygonid.me"
 const { WarpFactory } = require("warp-contracts")
@@ -93,6 +95,16 @@ async function createIdentity(identityWallet) {
   })
   return { did, credential }
 }
+
+class ICP {
+  static async set(key, val) {
+    await lf.setItem(key, val)
+  }
+  static async get(key) {
+    return await lf.getItem(key)
+  }
+}
+
 export default function Home() {
   const _points = {
     WDB: {
@@ -142,29 +154,36 @@ export default function Home() {
         rpc: "http://localhost:8080",
         contractTxId: "weave_point",
       })
-      ;({ dataStorage, credentialWallet, identityWallet } =
-        await initInMemoryDataStorageAndWallets())
-      let _issuer = await lf.getItem("issuer")
-      if (!_issuer) {
-        const issuer = await createIdentity(identityWallet)
-        const { did: issuerDID, credential: issuerAuthBJJCredential } = issuer
-        await lf.setItem("issuer", issuerDID.string())
-        setIssuer(issuer)
-      } else {
-        setIssuer({ did: DID.parse(_issuer) })
-      }
-      const circuitStorage = await initCircuitStorage()
-      proofService = await initProofService(
-        identityWallet,
-        credentialWallet,
-        dataStorage.states,
-        circuitStorage
-      )
+      setAccounts((await lf.getItem("passkeys")) ?? [])
     })()
   }, [])
   useEffect(() => {
     ;(async () => {
       if (aid) {
+        console.log(".....o0 - 1")
+        ;({ dataStorage, credentialWallet, identityWallet } =
+          await initDataStorageAndWallets(aid, aes))
+        console.log(".....o0")
+        let _issuer = await lf.getItem(`${aid.id}.issuer`)
+        if (!_issuer) {
+          console.log("gooooooooooooooooooooooooooooooooooooooooooo")
+          const issuer = await createIdentity(identityWallet)
+          console.log(".....o0a")
+          const { did: issuerDID, credential: issuerAuthBJJCredential } = issuer
+          await lf.setItem(`${aid.id}.issuer`, issuerDID.string())
+          setIssuer(issuer)
+        } else {
+          setIssuer({ did: DID.parse(_issuer) })
+        }
+        console.log(".....o")
+        const circuitStorage = await initCircuitStorage()
+        proofService = await initProofService(
+          identityWallet,
+          credentialWallet,
+          dataStorage.states,
+          circuitStorage
+        )
+        console.log(".....o2")
         let _users = (await lf.getItem(`${aid.id}.users`)) ?? []
         let __users = []
         for (const v of _users) {
@@ -177,6 +196,7 @@ export default function Home() {
       }
     })()
   }, [aid])
+
   useEffect(() => {
     ;(async () => {
       if (user) {
@@ -251,7 +271,6 @@ export default function Home() {
       .join("")
   }
   const genKey = async reg => {
-    console.log(buf2hex(reg.response.signature))
     const keyDerivationKey = await crypto.subtle.importKey(
       "raw",
       reg.response.signature,
@@ -259,7 +278,6 @@ export default function Home() {
       false,
       ["deriveKey"]
     )
-    console.log(keyDerivationKey)
     const label = "encryption key"
     const info = enc.encode(label)
     const salt = new Uint8Array()
@@ -270,14 +288,11 @@ export default function Home() {
       false,
       ["encrypt", "decrypt"]
     )
-    console.log(encryptionKey)
-    console.log(reg.rawId)
     const encrypted = await crypto.subtle.encrypt(
       { name: "AES-GCM", iv: reg.rawId },
       encryptionKey,
       enc.encode("hello readers 🥳")
     )
-    console.log("we here....", buf2hex(encrypted))
   }
   return (
     <Flex
@@ -353,8 +368,6 @@ export default function Home() {
                           alert("Enter Account Name")
                           return
                         }
-                        const firstSalt = new Uint8Array(new Array(32).fill(1))
-                          .buffer
                         const reg = await navigator.credentials.create({
                           publicKey: {
                             challenge: enc.encode("Weave Wallet"),
@@ -374,18 +387,20 @@ export default function Home() {
                             ],
                             extensions: {
                               largeBlob: {
-                                support: "required",
+                                support: "preferred",
                               },
                             },
                           },
                         })
-                        if (
-                          !reg.getClientExtensionResults().largeBlob?.supported
-                        ) {
-                          alert("This device is not compatible.")
-                          return
-                        }
-                        let key = await window.crypto.subtle.generateKey(
+                        const key = await window.crypto.subtle.generateKey(
+                          {
+                            name: "AES-GCM",
+                            length: 256,
+                          },
+                          true,
+                          ["encrypt", "decrypt"]
+                        )
+                        const master = await window.crypto.subtle.generateKey(
                           {
                             name: "AES-GCM",
                             length: 256,
@@ -394,6 +409,25 @@ export default function Home() {
                           ["encrypt", "decrypt"]
                         )
                         const rawKey = await crypto.subtle.exportKey("raw", key)
+                        const rawKeyMaster = await crypto.subtle.exportKey(
+                          "raw",
+                          master
+                        )
+                        const iv = window.crypto.getRandomValues(
+                          new Uint8Array(12)
+                        )
+                        const eMaster = await crypto.subtle.encrypt(
+                          { name: "AES-GCM", iv: iv },
+                          key,
+                          rawKeyMaster
+                        )
+                        const mkey = { nonce: iv, key: eMaster }
+                        await ICP.set(`${reg.id}.master_encrypted`, mkey)
+                        if (
+                          !reg.getClientExtensionResults().largeBlob?.supported
+                        ) {
+                          await lf.setItem(`${reg.id}.device_key`, rawKey)
+                        }
                         const publicKey = {
                           challenge: enc.encode("Weave Wallet"),
                           rpId: location.host,
@@ -419,8 +453,11 @@ export default function Home() {
                         }
                         setAccounts(append(ac, accounts))
                         setCreate(false)
+                        setAES(master)
+
                         setAID(ac)
-                        setAES(key)
+                        let passkeys = (await lf.getItem("passkeys")) ?? []
+                        await lf.setItem("passkeys", append(ac, passkeys))
                       }}
                     >
                       Create Account
@@ -477,9 +514,16 @@ export default function Home() {
                             const reg = await navigator.credentials.get({
                               publicKey,
                             })
-                            const rawKey =
-                              reg.getClientExtensionResults().largeBlob.blob
-
+                            let rawKey = null
+                            if (
+                              !reg.getClientExtensionResults().largeBlob
+                                ?.supported
+                            ) {
+                              rawKey = await lf.getItem(`${reg.id}.device_key`)
+                            } else {
+                              rawKey =
+                                reg.getClientExtensionResults().largeBlob.blob
+                            }
                             const key = await window.crypto.subtle.importKey(
                               "raw",
                               rawKey,
@@ -487,8 +531,24 @@ export default function Home() {
                               true,
                               ["encrypt", "decrypt"]
                             )
+                            const mkey = await ICP.get(
+                              `${reg.id}.master_encrypted`
+                            )
+                            const rawKeyMaster = await crypto.subtle.decrypt(
+                              { name: "AES-GCM", iv: mkey.nonce },
+                              key,
+                              mkey.key
+                            )
+                            const master = await window.crypto.subtle.importKey(
+                              "raw",
+                              rawKeyMaster,
+                              "AES-GCM",
+                              true,
+                              ["encrypt", "decrypt"]
+                            )
+                            setAES(master)
+
                             setAID(v)
-                            setAES(key)
                           }}
                         >
                           Sign in as {v.name}
@@ -508,6 +568,25 @@ export default function Home() {
                         ":hover": { opacity: 0.75 },
                       }}
                       onClick={async () => {
+                        console.log()
+                        const iiUrl = "https://identity.ic0.app/"
+                        const authClient = await AuthClient.create({
+                          keyType: "Ed25519",
+                        })
+                        console.log(authClient)
+                        await new Promise((resolve, reject) => {
+                          authClient.login({
+                            identityProvider: iiUrl,
+                            onSuccess: resolve,
+                            onError: reject,
+                          })
+                        })
+                        const ii = authClient.getIdentity()
+                        console.log(authClient)
+                        console.log(ii)
+                        console.log(ii._inner.toJSON())
+                      }}
+                      onClick2={async () => {
                         const publicKey = {
                           challenge: enc.encode("Weave Wallet"),
                           rpId: location.host,
@@ -553,8 +632,8 @@ export default function Home() {
                           true,
                           ["encrypt", "decrypt"]
                         )
-                        setAID(ac)
                         setAES(key)
+                        setAID(ac)
                       }}
                     >
                       Sign In
@@ -737,8 +816,8 @@ export default function Home() {
                           ":hover": { opacity: 0.75 },
                         }}
                         onClick={async () => {
-                          setAES(null)
                           setAID(null)
+                          setAES(null)
                           setUsers([])
                           setIdentities([])
                           setProofs([])
