@@ -236,23 +236,36 @@ const encrypt = async (key, value) => {
   const val = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, msg)
   return { iv, val }
 }
-class IndexedDBDataSource {
-  constructor(_storageKey, aid, key) {
-    this.key = key
-    this.id = aid
-    this._store = createStore(`${_storageKey}-db`, _storageKey)
-  }
 
-  async save(key, value, keyName = "id") {
-    return this._set(key, value)
-  }
+class EStorage {
   async _get(key) {
     return await decrypt(this.key, await get(key, this._store))
   }
   async _set(key, val) {
-    return await set(key, await encrypt(this.key, val), this._store)
+    await set(key, await encrypt(this.key, val), this._store)
+    await this.add(key)
+  }
+  async add(key) {
+    let list = await this.list()
+    list[key] = Date.now()
+    await set("__list__", await encrypt(this.key, list), this._store)
+  }
+  async list() {
+    return (await this._get("__list__")) ?? {}
+  }
+}
+
+class IndexedDBDataSource extends EStorage {
+  constructor(_storageKey, aid, key) {
+    super()
+    this.key = key
+    this.id = aid
+    this._store = createStore(`${_storageKey}-${aid.id}-db`, _storageKey)
   }
 
+  async save(key, value, keyName = "id") {
+    this._set(key, value)
+  }
   async get(key, keyName = "id") {
     return await this._get(key)
   }
@@ -265,23 +278,25 @@ class IndexedDBDataSource {
     return vals
   }
   async delete(key, keyName = "id") {
-    return del(key, this._store)
+    await del(key, this._store)
+    await this.add(key)
   }
 }
 
-class MerkleTreeIndexedDBStorage {
+class MerkleTreeIndexedDBStorage extends EStorage {
   static storageKeyMeta = "merkle-tree-meta"
   static storageBindingKeyMeta = "binding-did"
   constructor(_mtDepth, aid, key) {
+    super()
     this._mtDepth = _mtDepth
     this.key = key
     this.id = aid
     this._merkleTreeMetaStore = createStore(
-      `${MerkleTreeIndexedDBStorage.storageKeyMeta}-db`,
+      `${MerkleTreeIndexedDBStorage.storageKeyMeta}-${aid.id}-db`,
       MerkleTreeIndexedDBStorage.storageKeyMeta
     )
     this._bindingStore = createStore(
-      `${MerkleTreeIndexedDBStorage.storageBindingKeyMeta}-db`,
+      `${MerkleTreeIndexedDBStorage.storageBindingKeyMeta}-${aid.id}-db`,
       MerkleTreeIndexedDBStorage.storageBindingKeyMeta
     )
   }
@@ -376,13 +391,14 @@ class MerkleTreeIndexedDBStorage {
   }
 }
 
-class IndexedDBPrivateKeyStore {
+class IndexedDBPrivateKeyStore extends EStorage {
   static storageKey = "keystore"
   constructor(aid, key) {
+    super()
     this.key = key
     this.id = aid
     this._store = createStore(
-      `${IndexedDBPrivateKeyStore.storageKey}-db`,
+      `${IndexedDBPrivateKeyStore.storageKey}-${aid.id}-db`,
       IndexedDBPrivateKeyStore.storageKey
     )
   }
@@ -390,7 +406,7 @@ class IndexedDBPrivateKeyStore {
     return await decrypt(this.key, await get(key, this._store))
   }
   async _set(key, val) {
-    return await set(key, await encrypt(this.key, val), this._store)
+    await set(key, await encrypt(this.key, val), this._store)
   }
   async get(args) {
     const key = await this._get(args.alias)
