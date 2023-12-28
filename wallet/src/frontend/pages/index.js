@@ -105,7 +105,37 @@ class ICP {
   }
 }
 
+// vetkeys
+import { Principal } from "@dfinity/principal"
+import { makeBackendActor } from "../ui/service/actor-locator"
+import * as vetkd from "ic-vetkd-utils"
+import { HttpAgent, Actor } from "@dfinity/agent"
+import Head from "next/head"
+import { GreetingSection } from "../ui/components/GreetingSection"
+import { ImageSection } from "../ui/components/ImageSection"
+
+const hex_decode = hexString =>
+  Uint8Array.from(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)))
+
+const hex_encode = bytes =>
+  bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, "0"), "")
+
+let _principal = null
+
 export default function Home() {
+  const [principal, setPrincipal] = useState(null)
+  useEffect(() => {
+    ;(async () => {
+      const authClient = await AuthClient.create()
+      const identity = authClient.getIdentity()
+      const pr = identity.getPrincipal()
+      const pr_str = pr.toString()
+      if (pr_str.length > 20) {
+        setPrincipal(pr_str)
+        _principal = pr
+      }
+    })()
+  }, [])
   const _points = {
     WDB: {
       name: "WeaveChain Testnet Token",
@@ -149,6 +179,7 @@ export default function Home() {
   const [to, setTo] = useState("")
   const [aes, setAES] = useState(null)
   const [aid, setAID] = useState(null)
+  const [logging, setLogging] = useState(false)
   useEffect(() => {
     ;(async () => {
       db = new SDK({
@@ -307,24 +338,45 @@ export default function Home() {
       `}</style>
       <>
         <Flex
-          direction="column"
           justify="center"
           align="center"
           fontSize="25px"
           color="#5137C5"
-          p={6}
+          p={4}
+          style={{ maxWidth: "750px", width: "100%" }}
         >
           <Flex align="center">
             <Image src="/logo.png" h="25px" mr={4} />
             <Box>Weave Wallet</Box>
           </Flex>
-          <Box ml={4} fontSize="10px">
-            powered by PolygonID & WeaveDB
-          </Box>
+          {!principal ? null : (
+            <>
+              <Flex flex={1} />
+              <Flex
+                sx={{
+                  cursor: "pointer",
+                  ":hover": { opacity: 0.75 },
+                }}
+                fontSize="14px"
+                onClick={async () => {
+                  const authClient = await AuthClient.create()
+                  await authClient.logout()
+                  setAID(null)
+                  setAES(null)
+                  setPrincipal(null)
+                  _principal = null
+                }}
+              >
+                Sign Out ({principal.split("-")[0]})
+              </Flex>
+            </>
+          )}
         </Flex>
         <Box flex={1} style={{ maxWidth: "750px", width: "100%" }}>
           <Box
-            m={2}
+            mx={2}
+            mb={2}
+            mmmmmmm
             bg="white"
             sx={{
               borderRadius: "5px",
@@ -332,11 +384,133 @@ export default function Home() {
             }}
           >
             {!aes ? (
-              create ? (
+              !principal ? (
+                <Flex minH="250px" justify="center" align="center">
+                  <Flex
+                    p={3}
+                    w="300px"
+                    bg="#5137C5"
+                    color="white"
+                    justify="center"
+                    sx={{
+                      borderRadius: "5px",
+                      cursor: logging ? "default" : "pointer",
+                      ":hover": { opacity: 0.75 },
+                    }}
+                    onClick={async () => {
+                      if (logging) return
+                      setLogging(true)
+                      try {
+                        let authClient = await AuthClient.create()
+                        await new Promise(resolve => {
+                          authClient.login({
+                            identityProvider: `http://127.0.0.1:4943/?canisterId=${process.env.NEXT_PUBLIC_INTERNET_IDENTITY_CANISTER_ID}`,
+                            onSuccess: resolve,
+                          })
+                        })
+                        const identity = authClient.getIdentity()
+                        const agent = new HttpAgent({ identity })
+                        const app_backend_principal = identity.getPrincipal()
+                        _principal = app_backend_principal
+
+                        // get AES key from canister
+                        const backendActor = makeBackendActor(identity)
+                        const seed = window.crypto.getRandomValues(
+                          new Uint8Array(32)
+                        )
+                        const tsk = new vetkd.TransportSecretKey(seed)
+                        const ek_bytes_hex =
+                          await backendActor.encrypted_symmetric_key_for_caller(
+                            tsk.public_key()
+                          )
+                        const pk_bytes_hex =
+                          await backendActor.symmetric_key_verification_key()
+                        const rawKey = tsk.decrypt_and_hash(
+                          hex_decode(ek_bytes_hex),
+                          hex_decode(pk_bytes_hex),
+                          _principal.toUint8Array(),
+                          32,
+                          new TextEncoder().encode("aes-256-gcm")
+                        )
+                        const key = await window.crypto.subtle.importKey(
+                          "raw",
+                          rawKey,
+                          "AES-GCM",
+                          true,
+                          ["encrypt", "decrypt"]
+                        )
+                        let mkey = await ICP.get(
+                          `${_principal.toString()}.master_encrypted`
+                        )
+                        let master = null
+                        if (mkey) {
+                          const _master = await crypto.subtle.decrypt(
+                            { name: "AES-GCM", iv: mkey.nonce },
+                            key,
+                            mkey.key
+                          )
+                          master = await window.crypto.subtle.importKey(
+                            "raw",
+                            _master,
+                            "AES-GCM",
+                            true,
+                            ["encrypt", "decrypt"]
+                          )
+                        } else {
+                          master = await window.crypto.subtle.generateKey(
+                            {
+                              name: "AES-GCM",
+                              length: 256,
+                            },
+                            true,
+                            ["encrypt", "decrypt"]
+                          )
+                          const rawKeyMaster = await crypto.subtle.exportKey(
+                            "raw",
+                            master
+                          )
+                          const iv = window.crypto.getRandomValues(
+                            new Uint8Array(12)
+                          )
+                          const eMaster = await crypto.subtle.encrypt(
+                            { name: "AES-GCM", iv: iv },
+                            key,
+                            rawKeyMaster
+                          )
+                          mkey = { nonce: iv, key: eMaster }
+                          await ICP.set(
+                            `${_principal.toString()}.master_encrypted`,
+                            mkey
+                          )
+                        }
+                        const ac = {
+                          id: _principal.toString(),
+                        }
+                        setPrincipal(_principal.toString())
+                        setCreate(false)
+                        setAES(master)
+                        setAID(ac)
+                      } catch (e) {
+                        console.log(e)
+                      }
+                      setLogging(false)
+                    }}
+                  >
+                    {logging ? (
+                      <Flex align="center">
+                        <Box as="i" className="fa fa-spin fa-sync" mr={3} />
+                        Signing In...
+                      </Flex>
+                    ) : (
+                      "Sign In"
+                    )}
+                  </Flex>
+                </Flex>
+              ) : create ? (
                 <Flex minH="250px" justify="center" align="center">
                   <Box>
                     <Box fontSize="12px" mb={2} as="label">
-                      Account Name
+                      Device Name
                     </Box>
                     <Input
                       display="block"
@@ -395,6 +569,7 @@ export default function Home() {
                           true,
                           ["encrypt", "decrypt"]
                         )
+                        const rawKey = await crypto.subtle.exportKey("raw", key)
                         const master = await window.crypto.subtle.generateKey(
                           {
                             name: "AES-GCM",
@@ -403,7 +578,6 @@ export default function Home() {
                           true,
                           ["encrypt", "decrypt"]
                         )
-                        const rawKey = await crypto.subtle.exportKey("raw", key)
                         const rawKeyMaster = await crypto.subtle.exportKey(
                           "raw",
                           master
@@ -449,13 +623,12 @@ export default function Home() {
                         setAccounts(append(ac, accounts))
                         setCreate(false)
                         setAES(master)
-
                         setAID(ac)
                         let passkeys = (await lf.getItem("passkeys")) ?? []
                         await lf.setItem("passkeys", append(ac, passkeys))
                       }}
                     >
-                      Create Account
+                      Add Device
                     </Flex>
                     <Flex
                       mt={2}
@@ -469,7 +642,7 @@ export default function Home() {
                       }}
                       onClick={() => setCreate(false)}
                     >
-                      Sign In
+                      Use Existing Passkey
                     </Flex>
                   </Box>
                 </Flex>
@@ -544,12 +717,59 @@ export default function Home() {
                             setAID(v)
                           }}
                         >
-                          Sign in as {v.name}
+                          Decrypt with {v.name}
                         </Flex>
                       )
                     })(accounts)}
                     {accounts.length === 0 ? null : <Box as="hr" my={4} />}
                     <Flex
+                      p={3}
+                      w="300px"
+                      bg="#28292D"
+                      color="white"
+                      justify="center"
+                      sx={{
+                        borderRadius: "5px",
+                        cursor: "pointer",
+                        ":hover": { opacity: 0.75 },
+                      }}
+                      onClick={async () => {
+                        let authClient = await AuthClient.create()
+                        const identity = authClient.getIdentity()
+                        const backendActor = makeBackendActor(identity)
+                        const seed = window.crypto.getRandomValues(
+                          new Uint8Array(32)
+                        )
+                        const tsk = new vetkd.TransportSecretKey(seed)
+                        const ek_bytes_hex =
+                          await backendActor.encrypted_symmetric_key_for_caller(
+                            tsk.public_key()
+                          )
+                        const pk_bytes_hex =
+                          await backendActor.symmetric_key_verification_key()
+                        const rawKey = tsk.decrypt_and_hash(
+                          hex_decode(ek_bytes_hex),
+                          hex_decode(pk_bytes_hex),
+                          _principal.toUint8Array(),
+                          32,
+                          new TextEncoder().encode("aes-256-gcm")
+                        )
+                        console.log(pk_bytes_hex)
+                        const key = await window.crypto.subtle.importKey(
+                          "raw",
+                          rawKey,
+                          "AES-GCM",
+                          true,
+                          ["encrypt", "decrypt"]
+                        )
+                        console.log(key)
+                      }}
+                    >
+                      <Image src="/dfinity.png" boxSize="24px" mr={3} />
+                      <Box>Use ICP VETKey</Box>
+                    </Flex>
+                    <Flex
+                      mt={3}
                       p={3}
                       w="300px"
                       bg="#5137C5"
@@ -561,25 +781,6 @@ export default function Home() {
                         ":hover": { opacity: 0.75 },
                       }}
                       onClick={async () => {
-                        console.log()
-                        const iiUrl = "https://identity.ic0.app/"
-                        const authClient = await AuthClient.create({
-                          keyType: "Ed25519",
-                        })
-                        console.log(authClient)
-                        await new Promise((resolve, reject) => {
-                          authClient.login({
-                            identityProvider: iiUrl,
-                            onSuccess: resolve,
-                            onError: reject,
-                          })
-                        })
-                        const ii = authClient.getIdentity()
-                        console.log(authClient)
-                        console.log(ii)
-                        console.log(ii._inner.toJSON())
-                      }}
-                      onClick2={async () => {
                         const publicKey = {
                           challenge: enc.encode("Weave Wallet"),
                           rpId: location.host,
@@ -629,7 +830,7 @@ export default function Home() {
                         setAID(ac)
                       }}
                     >
-                      Sign In
+                      Use Existing Passkey
                     </Flex>
                     <Flex
                       mt={2}
@@ -643,7 +844,7 @@ export default function Home() {
                       }}
                       onClick={() => setCreate(true)}
                     >
-                      Create Account
+                      Add Passkey
                     </Flex>
                   </Box>
                 </Flex>
@@ -2047,8 +2248,117 @@ export default function Home() {
               </>
             )}
           </Box>
+          <Flex justify="center" fontSize="12px" my={4} color="#5137C5">
+            powered by PolygonID, Internet Computer, and WeaveDB
+          </Flex>
         </Box>
       </>
+      <div>
+        <Head>
+          <title>Internet Computer</title>
+        </Head>
+        <main>
+          <GreetingSection />
+          <button
+            onClick={async () => {
+              let authClient = await AuthClient.create()
+              await new Promise(resolve => {
+                authClient.login({
+                  identityProvider: `http://127.0.0.1:4943/?canisterId=${process.env.NEXT_PUBLIC_INTERNET_IDENTITY_CANISTER_ID}`,
+                  onSuccess: resolve,
+                })
+              })
+              const identity = authClient.getIdentity()
+              const app_backend_principal = identity.getPrincipal()
+              setPrincipal(app_backend_principal.toString())
+              _principal = app_backend_principal
+            }}
+          >
+            Login
+          </button>
+          <div>{principal}</div>
+          <button
+            onClick={async () => {
+              const seed = window.crypto.getRandomValues(new Uint8Array(32))
+              const tsk = new vetkd.TransportSecretKey(seed)
+              const backendActor = makeBackendActor()
+              const ek_bytes_hex =
+                await backendActor.encrypted_symmetric_key_for_caller(
+                  tsk.public_key()
+                )
+              const pk_bytes_hex =
+                await backendActor.symmetric_key_verification_key()
+              const key = tsk.decrypt_and_hash(
+                hex_decode(ek_bytes_hex),
+                hex_decode(pk_bytes_hex),
+                _principal.toUint8Array(),
+                32,
+                new TextEncoder().encode("aes-256-gcm")
+              )
+              console.log(key)
+            }}
+          >
+            AES
+          </button>
+          <button
+            onClick={async () => {
+              let authClient = await AuthClient.create()
+              const identity = authClient.getIdentity()
+              const ibe_principal = identity.getPrincipal()
+              console.log(ibe_principal)
+
+              const backendActor = makeBackendActor()
+              const message = "what the hell"
+              const pk_bytes_hex = await backendActor.ibe_encryption_key()
+              console.log(pk_bytes_hex)
+              return
+              /*
+              const message_encoded = new TextEncoder().encode(message)
+              const seed = window.crypto.getRandomValues(new Uint8Array(32))
+              //let ibe_principal = Principal.fromText(principal)
+              const ibe_ciphertext = vetkd.IBECiphertext.encrypt(
+                hex_decode(pk_bytes_hex),
+                ibe_principal.toUint8Array(),
+                message_encoded,
+                seed
+              )
+              const enc = hex_encode(ibe_ciphertext.serialize())
+              console.log(enc)
+              */
+              const tsk_seed = window.crypto.getRandomValues(new Uint8Array(32))
+              const tsk = new vetkd.TransportSecretKey(tsk_seed)
+              console.log("lets go2...")
+              const ek_bytes_hex =
+                await backendActor.encrypted_ibe_decryption_key_for_caller(
+                  tsk.public_key()
+                )
+              console.log("lets go...")
+              const pk_bytes_hex2 = await backendActor.ibe_encryption_key()
+              console.log(pk_bytes_hex2)
+              console.log(
+                "we are here...",
+                ek_bytes_hex,
+                pk_bytes_hex2,
+                ibe_principal.toString() //_principal.toString()
+              )
+              const k_bytes = tsk.decrypt(
+                hex_decode(ek_bytes_hex),
+                hex_decode(pk_bytes_hex2),
+                ibe_principal.toUint8Array()
+              )
+              console.log("why not even here??")
+              const ibe_ciphertext2 = vetkd.IBECiphertext.deserialize(
+                hex_decode(enc)
+              )
+              const ibe_plaintext = ibe_ciphertext2.decrypt(k_bytes)
+              const msg = new TextDecoder().decode(ibe_plaintext)
+              console.log(msg)
+            }}
+          >
+            encrypt
+          </button>
+        </main>
+      </div>
     </Flex>
   )
 }
