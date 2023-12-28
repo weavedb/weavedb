@@ -1,36 +1,22 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-/public/circuits/*
+target/
+.nvmrc
+# Various IDEs and Editors
+.vscode/
+.idea/
+**/*~
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
+# Mac OSX temporary files
 .DS_Store
-*.pem
+**/.DS_Store
 
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# dfx temporary files
+.dfx/
+canister_ids.json
 
-# local env files
-.env*.local
+# frontend code
+node_modules/
+out/
 
-# vercel
-.vercel
+# Next.js
+.next/
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts

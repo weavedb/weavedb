@@ -1,0 +1,23 @@
+.container {
+    min-height: 100vh;
+    padding: 0 0.5rem;
+}
+
+.main {
+    padding: 5rem 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.title {
+    margin: 0;
+    line-height: 1.15;
+    font-size: 2rem;
+    text-align: center;
+}
+
+.logo {
+    width: 140px;
+}
