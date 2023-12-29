@@ -1,3 +1,7 @@
 service : {
-  greet: (text) -> (text) query;
+  get: (text) -> (opt blob) query;
+  getKey: (text, text) -> (opt blob) query;
+  listKeys: (text) -> (vec text) query;
+  save: (blob) -> ();
+  setKey: (text, blob) -> ();
 }

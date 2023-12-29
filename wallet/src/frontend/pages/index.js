@@ -96,18 +96,8 @@ async function createIdentity(identityWallet) {
   return { did, credential }
 }
 
-class ICP {
-  static async set(key, val) {
-    await lf.setItem(key, val)
-  }
-  static async get(key) {
-    return await lf.getItem(key)
-  }
-}
-
-// vetkeys
 import { Principal } from "@dfinity/principal"
-import { makeBackendActor } from "../ui/service/actor-locator"
+import { makeBackendActor, makeHelloActor } from "../ui/service/actor-locator"
 import * as vetkd from "ic-vetkd-utils"
 import { HttpAgent, Actor } from "@dfinity/agent"
 import Head from "next/head"
@@ -133,6 +123,8 @@ export default function Home() {
       if (pr_str.length > 20) {
         setPrincipal(pr_str)
         _principal = pr
+        const hello = makeHelloActor(identity)
+        setKeylist(await hello.listKeys(_principal.toString()))
       }
     })()
   }, [])
@@ -180,6 +172,7 @@ export default function Home() {
   const [aes, setAES] = useState(null)
   const [aid, setAID] = useState(null)
   const [logging, setLogging] = useState(false)
+  const [keylist, setKeylist] = useState([])
   useEffect(() => {
     ;(async () => {
       db = new SDK({
@@ -409,87 +402,10 @@ export default function Home() {
                           })
                         })
                         const identity = authClient.getIdentity()
-                        const agent = new HttpAgent({ identity })
-                        const app_backend_principal = identity.getPrincipal()
-                        _principal = app_backend_principal
-
-                        // get AES key from canister
-                        const backendActor = makeBackendActor(identity)
-                        const seed = window.crypto.getRandomValues(
-                          new Uint8Array(32)
-                        )
-                        const tsk = new vetkd.TransportSecretKey(seed)
-                        const ek_bytes_hex =
-                          await backendActor.encrypted_symmetric_key_for_caller(
-                            tsk.public_key()
-                          )
-                        const pk_bytes_hex =
-                          await backendActor.symmetric_key_verification_key()
-                        const rawKey = tsk.decrypt_and_hash(
-                          hex_decode(ek_bytes_hex),
-                          hex_decode(pk_bytes_hex),
-                          _principal.toUint8Array(),
-                          32,
-                          new TextEncoder().encode("aes-256-gcm")
-                        )
-                        const key = await window.crypto.subtle.importKey(
-                          "raw",
-                          rawKey,
-                          "AES-GCM",
-                          true,
-                          ["encrypt", "decrypt"]
-                        )
-                        let mkey = await ICP.get(
-                          `${_principal.toString()}.master_encrypted`
-                        )
-                        let master = null
-                        if (mkey) {
-                          const _master = await crypto.subtle.decrypt(
-                            { name: "AES-GCM", iv: mkey.nonce },
-                            key,
-                            mkey.key
-                          )
-                          master = await window.crypto.subtle.importKey(
-                            "raw",
-                            _master,
-                            "AES-GCM",
-                            true,
-                            ["encrypt", "decrypt"]
-                          )
-                        } else {
-                          master = await window.crypto.subtle.generateKey(
-                            {
-                              name: "AES-GCM",
-                              length: 256,
-                            },
-                            true,
-                            ["encrypt", "decrypt"]
-                          )
-                          const rawKeyMaster = await crypto.subtle.exportKey(
-                            "raw",
-                            master
-                          )
-                          const iv = window.crypto.getRandomValues(
-                            new Uint8Array(12)
-                          )
-                          const eMaster = await crypto.subtle.encrypt(
-                            { name: "AES-GCM", iv: iv },
-                            key,
-                            rawKeyMaster
-                          )
-                          mkey = { nonce: iv, key: eMaster }
-                          await ICP.set(
-                            `${_principal.toString()}.master_encrypted`,
-                            mkey
-                          )
-                        }
-                        const ac = {
-                          id: _principal.toString(),
-                        }
+                        _principal = identity.getPrincipal()
                         setPrincipal(_principal.toString())
-                        setCreate(false)
-                        setAES(master)
-                        setAID(ac)
+                        const hello = makeHelloActor(identity)
+                        setKeylist(await hello.listKeys(_principal.toString()))
                       } catch (e) {
                         console.log(e)
                       }
@@ -542,7 +458,7 @@ export default function Home() {
                             challenge: enc.encode("Weave Wallet"),
                             rp: {
                               name: "Weave Wallet",
-                              id: location.host,
+                              id: location.host.split(":")[0],
                             },
                             user: {
                               id: enc.encode(createName),
@@ -570,14 +486,102 @@ export default function Home() {
                           ["encrypt", "decrypt"]
                         )
                         const rawKey = await crypto.subtle.exportKey("raw", key)
-                        const master = await window.crypto.subtle.generateKey(
-                          {
-                            name: "AES-GCM",
-                            length: 256,
-                          },
-                          true,
-                          ["encrypt", "decrypt"]
-                        )
+
+                        // get master from ICP
+                        let authClient = await AuthClient.create()
+                        const identity = authClient.getIdentity()
+                        const backendActor = makeBackendActor(identity)
+                        const helloActor = makeHelloActor(identity)
+                        let mkey = null
+                        let master = null
+                        if (keylist === 0) {
+                          master = await window.crypto.subtle.generateKey(
+                            {
+                              name: "AES-GCM",
+                              length: 256,
+                            },
+                            true,
+                            ["encrypt", "decrypt"]
+                          )
+                        } else {
+                          const exKey = await helloActor.getKey(
+                            principal,
+                            keylist[0]
+                          )
+                          if (exKey.length === 0) {
+                            alert("master key cannot be recovered")
+                            return
+                          } else {
+                            const mkey_encoded = JSON.parse(
+                              dec.decode(exKey[0])
+                            )
+                            mkey = {
+                              nonce: new Uint8Array(mkey_encoded.nonce),
+                              key: new Uint8Array(mkey_encoded.key).buffer,
+                            }
+                            const seed = window.crypto.getRandomValues(
+                              new Uint8Array(32)
+                            )
+                            const tsk = new vetkd.TransportSecretKey(seed)
+                            const ek_bytes_hex =
+                              await backendActor.encrypted_symmetric_key_for_caller(
+                                tsk.public_key()
+                              )
+                            const pk_bytes_hex =
+                              await backendActor.symmetric_key_verification_key()
+                            const rawKey = tsk.decrypt_and_hash(
+                              hex_decode(ek_bytes_hex),
+                              hex_decode(pk_bytes_hex),
+                              _principal.toUint8Array(),
+                              32,
+                              new TextEncoder().encode("aes-256-gcm")
+                            )
+                            const key = await window.crypto.subtle.importKey(
+                              "raw",
+                              rawKey,
+                              "AES-GCM",
+                              true,
+                              ["encrypt", "decrypt"]
+                            )
+                            const _master = await crypto.subtle.decrypt(
+                              { name: "AES-GCM", iv: mkey.nonce },
+                              key,
+                              mkey.key
+                            )
+                            master = await window.crypto.subtle.importKey(
+                              "raw",
+                              _master,
+                              "AES-GCM",
+                              true,
+                              ["encrypt", "decrypt"]
+                            )
+                          }
+                        }
+                        if (
+                          !reg.getClientExtensionResults().largeBlob?.supported
+                        ) {
+                          //alert("This device is not compatible")
+                          await lf.setItem(`${reg.id}.device_key`, rawKey)
+                        } else {
+                          const publicKey = {
+                            challenge: enc.encode("Weave Wallet"),
+                            rpId: location.host.split(":")[0],
+                            allowCredentials: [
+                              {
+                                id: reg.rawId,
+                                type: "public-key",
+                              },
+                            ],
+                            extensions: {
+                              largeBlob: {
+                                write: rawKey,
+                              },
+                            },
+                          }
+                          await navigator.credentials.get({
+                            publicKey,
+                          })
+                        }
                         const rawKeyMaster = await crypto.subtle.exportKey(
                           "raw",
                           master
@@ -590,31 +594,16 @@ export default function Home() {
                           key,
                           rawKeyMaster
                         )
-                        const mkey = { nonce: iv, key: eMaster }
-                        await ICP.set(`${reg.id}.master_encrypted`, mkey)
-                        if (
-                          !reg.getClientExtensionResults().largeBlob?.supported
-                        ) {
-                          await lf.setItem(`${reg.id}.device_key`, rawKey)
+                        mkey = { nonce: iv, key: eMaster }
+                        const mkey_icp = {
+                          nonce: Array.from(iv),
+                          key: Array.from(new Uint8Array(eMaster)),
                         }
-                        const publicKey = {
-                          challenge: enc.encode("Weave Wallet"),
-                          rpId: location.host,
-                          allowCredentials: [
-                            {
-                              id: reg.rawId,
-                              type: "public-key",
-                            },
-                          ],
-                          extensions: {
-                            largeBlob: {
-                              write: rawKey,
-                            },
-                          },
-                        }
-                        await navigator.credentials.get({
-                          publicKey,
-                        })
+                        const mkey_encoded = Array.from(
+                          enc.encode(JSON.stringify(mkey_icp))
+                        )
+                        await helloActor.setKey(reg.id, mkey_encoded)
+
                         const ac = {
                           name: createName,
                           rawId: reg.rawId,
@@ -664,9 +653,13 @@ export default function Home() {
                             ":hover": { opacity: 0.75 },
                           }}
                           onClick={async () => {
+                            let authClient = await AuthClient.create()
+                            const identity = authClient.getIdentity()
+                            const backendActor = makeBackendActor(identity)
+                            const helloActor = makeHelloActor(identity)
                             const publicKey = {
                               challenge: enc.encode("Weave Wallet"),
-                              rpId: location.host,
+                              rpId: location.host.split(":")[0],
                               allowCredentials: [
                                 {
                                   id: v.rawId,
@@ -687,6 +680,8 @@ export default function Home() {
                               !reg.getClientExtensionResults().largeBlob?.blob
                             ) {
                               rawKey = await lf.getItem(`${reg.id}.device_key`)
+                              //alert("This device is not compatible.")
+                              //return
                             } else {
                               rawKey =
                                 reg.getClientExtensionResults().largeBlob.blob
@@ -698,9 +693,23 @@ export default function Home() {
                               true,
                               ["encrypt", "decrypt"]
                             )
-                            const mkey = await ICP.get(
-                              `${reg.id}.master_encrypted`
+                            const exKey = await helloActor.getKey(
+                              principal,
+                              v.id
                             )
+                            let mkey = null
+                            if (exKey.length === 0) {
+                              alert("device key cannot be recovered")
+                              return
+                            } else {
+                              const mkey_encoded = JSON.parse(
+                                dec.decode(exKey[0])
+                              )
+                              mkey = {
+                                nonce: new Uint8Array(mkey_encoded.nonce),
+                                key: new Uint8Array(mkey_encoded.key).buffer,
+                              }
+                            }
                             const rawKeyMaster = await crypto.subtle.decrypt(
                               { name: "AES-GCM", iv: mkey.nonce },
                               key,
@@ -734,39 +743,119 @@ export default function Home() {
                         ":hover": { opacity: 0.75 },
                       }}
                       onClick={async () => {
-                        let authClient = await AuthClient.create()
-                        const identity = authClient.getIdentity()
-                        const backendActor = makeBackendActor(identity)
-                        const seed = window.crypto.getRandomValues(
-                          new Uint8Array(32)
-                        )
-                        const tsk = new vetkd.TransportSecretKey(seed)
-                        const ek_bytes_hex =
-                          await backendActor.encrypted_symmetric_key_for_caller(
-                            tsk.public_key()
+                        if (logging) return
+                        setLogging(true)
+                        try {
+                          let authClient = await AuthClient.create()
+                          const identity = authClient.getIdentity()
+                          const backendActor = makeBackendActor(identity)
+                          const helloActor = makeHelloActor(identity)
+                          const seed = window.crypto.getRandomValues(
+                            new Uint8Array(32)
                           )
-                        const pk_bytes_hex =
-                          await backendActor.symmetric_key_verification_key()
-                        const rawKey = tsk.decrypt_and_hash(
-                          hex_decode(ek_bytes_hex),
-                          hex_decode(pk_bytes_hex),
-                          _principal.toUint8Array(),
-                          32,
-                          new TextEncoder().encode("aes-256-gcm")
-                        )
-                        console.log(pk_bytes_hex)
-                        const key = await window.crypto.subtle.importKey(
-                          "raw",
-                          rawKey,
-                          "AES-GCM",
-                          true,
-                          ["encrypt", "decrypt"]
-                        )
-                        console.log(key)
+                          const tsk = new vetkd.TransportSecretKey(seed)
+                          const ek_bytes_hex =
+                            await backendActor.encrypted_symmetric_key_for_caller(
+                              tsk.public_key()
+                            )
+                          const pk_bytes_hex =
+                            await backendActor.symmetric_key_verification_key()
+                          const rawKey = tsk.decrypt_and_hash(
+                            hex_decode(ek_bytes_hex),
+                            hex_decode(pk_bytes_hex),
+                            _principal.toUint8Array(),
+                            32,
+                            new TextEncoder().encode("aes-256-gcm")
+                          )
+                          const key = await window.crypto.subtle.importKey(
+                            "raw",
+                            rawKey,
+                            "AES-GCM",
+                            true,
+                            ["encrypt", "decrypt"]
+                          )
+                          setCreate(false)
+                          // get AES key from canister
+                          const exKey = await helloActor.getKey(
+                            principal,
+                            principal
+                          )
+                          let mkey = null
+                          let master = null
+                          if (exKey.length !== 0) {
+                            const mkey_encoded = JSON.parse(
+                              dec.decode(exKey[0])
+                            )
+                            mkey = {
+                              nonce: new Uint8Array(mkey_encoded.nonce),
+                              key: new Uint8Array(mkey_encoded.key).buffer,
+                            }
+                            const _master = await crypto.subtle.decrypt(
+                              { name: "AES-GCM", iv: mkey.nonce },
+                              key,
+                              mkey.key
+                            )
+                            master = await window.crypto.subtle.importKey(
+                              "raw",
+                              _master,
+                              "AES-GCM",
+                              true,
+                              ["encrypt", "decrypt"]
+                            )
+                          } else {
+                            master = await window.crypto.subtle.generateKey(
+                              {
+                                name: "AES-GCM",
+                                length: 256,
+                              },
+                              true,
+                              ["encrypt", "decrypt"]
+                            )
+                            const rawKeyMaster = await crypto.subtle.exportKey(
+                              "raw",
+                              master
+                            )
+                            const iv = window.crypto.getRandomValues(
+                              new Uint8Array(12)
+                            )
+                            const eMaster = await crypto.subtle.encrypt(
+                              { name: "AES-GCM", iv: iv },
+                              key,
+                              rawKeyMaster
+                            )
+                            mkey = { nonce: iv, key: eMaster }
+                            const mkey_icp = {
+                              nonce: Array.from(iv),
+                              key: Array.from(new Uint8Array(eMaster)),
+                            }
+                            const mkey_encoded = Array.from(
+                              enc.encode(JSON.stringify(mkey_icp))
+                            )
+                            await helloActor.setKey(principal, mkey_encoded)
+                          }
+                          const ac = {
+                            id: _principal.toString(),
+                            name: "Internet Computer",
+                          }
+                          setAES(master)
+                          setAID(ac)
+                        } catch (e) {
+                          console.log(e)
+                        }
+                        setLogging(false)
                       }}
                     >
-                      <Image src="/dfinity.png" boxSize="24px" mr={3} />
-                      <Box>Use ICP VETKey</Box>
+                      {logging ? (
+                        <Flex align="center">
+                          <Box as="i" className="fa fa-spin fa-sync" mr={5} />
+                          <Box>Use ICP VETKey</Box>
+                        </Flex>
+                      ) : (
+                        <>
+                          <Image src="/dfinity.png" boxSize="24px" mr={3} />
+                          <Box>Use ICP VETKey</Box>
+                        </>
+                      )}
                     </Flex>
                     <Flex
                       mt={3}
@@ -783,7 +872,7 @@ export default function Home() {
                       onClick={async () => {
                         const publicKey = {
                           challenge: enc.encode("Weave Wallet"),
-                          rpId: location.host,
+                          rpId: location.host.split(":")[0],
                         }
                         const reg = await navigator.credentials.get({
                           publicKey,
@@ -801,7 +890,7 @@ export default function Home() {
 
                         const publicKey2 = {
                           challenge: enc.encode("Weave Wallet"),
-                          rpId: location.host,
+                          rpId: location.host.split(":")[0],
                           allowCredentials: [
                             {
                               id: reg.rawId,
@@ -1039,9 +1128,20 @@ export default function Home() {
                             aes,
                             msg
                           )
-                          const encrypted = { iv, val, date: Date.now() }
-                          await ICP.set(`${aid.id}.backup`, encrypted)
-                          setBackup(encrypted.date)
+                          const mkey_icp = {
+                            iv: Array.from(iv),
+                            val: Array.from(new Uint8Array(val)),
+                            date: Date.now(),
+                          }
+                          const mkey_encoded = Array.from(
+                            enc.encode(JSON.stringify(mkey_icp))
+                          )
+                          let authClient = await AuthClient.create()
+                          const identity = authClient.getIdentity()
+                          const backendActor = makeBackendActor(identity)
+                          const helloActor = makeHelloActor(identity)
+                          await helloActor.save(mkey_encoded)
+                          setBackup(mkey_icp.date)
                         }}
                       >
                         <Box as="i" className="fas fa-server" mr={2} />
@@ -1061,26 +1161,40 @@ export default function Home() {
                           ":hover": { opacity: 0.75 },
                         }}
                         onClick={async () => {
-                          const mkey = await ICP.get(`${aid.id}.backup`)
-                          const raw = await crypto.subtle.decrypt(
-                            { name: "AES-GCM", iv: mkey.iv },
-                            aes,
-                            mkey.val
-                          )
-                          let stores = {
-                            identity: dataStorage.identity._identityDataSource,
-                            profile: dataStorage.identity._profileDataSource,
-                            credential: dataStorage.credential._dataSource,
-                            mt: dataStorage.mt,
-                            proof: dataStorage.proof._dataSource,
-                            privaeKey: identityWallet._kms._registry.get(
-                              KmsKeyType.BabyJubJub
-                            ).keyStore,
-                          }
-                          const backup = JSON.parse(dec.decode(raw))
-                          for (let k in backup) {
-                            for (let k2 in backup[k].list) {
-                              await stores[k]._set(k2, backup[k].data[k2])
+                          let authClient = await AuthClient.create()
+                          const identity = authClient.getIdentity()
+                          const helloActor = makeHelloActor(identity)
+                          const exKey = await helloActor.get(principal)
+                          if (exKey.length !== 0) {
+                            const mkey_encoded = JSON.parse(
+                              dec.decode(exKey[0])
+                            )
+                            const mkey = {
+                              iv: new Uint8Array(mkey_encoded.iv),
+                              val: new Uint8Array(mkey_encoded.val).buffer,
+                              date: mkey_encoded.date,
+                            }
+                            const raw = await crypto.subtle.decrypt(
+                              { name: "AES-GCM", iv: mkey.iv },
+                              aes,
+                              mkey.val
+                            )
+                            let stores = {
+                              identity:
+                                dataStorage.identity._identityDataSource,
+                              profile: dataStorage.identity._profileDataSource,
+                              credential: dataStorage.credential._dataSource,
+                              mt: dataStorage.mt,
+                              proof: dataStorage.proof._dataSource,
+                              privaeKey: identityWallet._kms._registry.get(
+                                KmsKeyType.BabyJubJub
+                              ).keyStore,
+                            }
+                            const backup = JSON.parse(dec.decode(raw))
+                            for (let k in backup) {
+                              for (let k2 in backup[k].list) {
+                                await stores[k]._set(k2, backup[k].data[k2])
+                              }
                             }
                           }
                         }}
@@ -1108,8 +1222,8 @@ export default function Home() {
                           setPoints([])
                         }}
                       >
-                        <Box as="i" className="fas fa-sign-out-alt" mr={2} />
-                        Sign Out ({aid.name})
+                        <Box as="i" className="fas fa-retweet" mr={2} />
+                        Change Device ({aid.name})
                       </Box>
                     </Box>
                   </>
@@ -2253,112 +2367,6 @@ export default function Home() {
           </Flex>
         </Box>
       </>
-      <div>
-        <Head>
-          <title>Internet Computer</title>
-        </Head>
-        <main>
-          <GreetingSection />
-          <button
-            onClick={async () => {
-              let authClient = await AuthClient.create()
-              await new Promise(resolve => {
-                authClient.login({
-                  identityProvider: `http://127.0.0.1:4943/?canisterId=${process.env.NEXT_PUBLIC_INTERNET_IDENTITY_CANISTER_ID}`,
-                  onSuccess: resolve,
-                })
-              })
-              const identity = authClient.getIdentity()
-              const app_backend_principal = identity.getPrincipal()
-              setPrincipal(app_backend_principal.toString())
-              _principal = app_backend_principal
-            }}
-          >
-            Login
-          </button>
-          <div>{principal}</div>
-          <button
-            onClick={async () => {
-              const seed = window.crypto.getRandomValues(new Uint8Array(32))
-              const tsk = new vetkd.TransportSecretKey(seed)
-              const backendActor = makeBackendActor()
-              const ek_bytes_hex =
-                await backendActor.encrypted_symmetric_key_for_caller(
-                  tsk.public_key()
-                )
-              const pk_bytes_hex =
-                await backendActor.symmetric_key_verification_key()
-              const key = tsk.decrypt_and_hash(
-                hex_decode(ek_bytes_hex),
-                hex_decode(pk_bytes_hex),
-                _principal.toUint8Array(),
-                32,
-                new TextEncoder().encode("aes-256-gcm")
-              )
-              console.log(key)
-            }}
-          >
-            AES
-          </button>
-          <button
-            onClick={async () => {
-              let authClient = await AuthClient.create()
-              const identity = authClient.getIdentity()
-              const ibe_principal = identity.getPrincipal()
-              console.log(ibe_principal)
-
-              const backendActor = makeBackendActor()
-              const message = "what the hell"
-              const pk_bytes_hex = await backendActor.ibe_encryption_key()
-              console.log(pk_bytes_hex)
-              return
-              /*
-              const message_encoded = new TextEncoder().encode(message)
-              const seed = window.crypto.getRandomValues(new Uint8Array(32))
-              //let ibe_principal = Principal.fromText(principal)
-              const ibe_ciphertext = vetkd.IBECiphertext.encrypt(
-                hex_decode(pk_bytes_hex),
-                ibe_principal.toUint8Array(),
-                message_encoded,
-                seed
-              )
-              const enc = hex_encode(ibe_ciphertext.serialize())
-              console.log(enc)
-              */
-              const tsk_seed = window.crypto.getRandomValues(new Uint8Array(32))
-              const tsk = new vetkd.TransportSecretKey(tsk_seed)
-              console.log("lets go2...")
-              const ek_bytes_hex =
-                await backendActor.encrypted_ibe_decryption_key_for_caller(
-                  tsk.public_key()
-                )
-              console.log("lets go...")
-              const pk_bytes_hex2 = await backendActor.ibe_encryption_key()
-              console.log(pk_bytes_hex2)
-              console.log(
-                "we are here...",
-                ek_bytes_hex,
-                pk_bytes_hex2,
-                ibe_principal.toString() //_principal.toString()
-              )
-              const k_bytes = tsk.decrypt(
-                hex_decode(ek_bytes_hex),
-                hex_decode(pk_bytes_hex2),
-                ibe_principal.toUint8Array()
-              )
-              console.log("why not even here??")
-              const ibe_ciphertext2 = vetkd.IBECiphertext.deserialize(
-                hex_decode(enc)
-              )
-              const ibe_plaintext = ibe_ciphertext2.decrypt(k_bytes)
-              const msg = new TextDecoder().decode(ibe_plaintext)
-              console.log(msg)
-            }}
-          >
-            encrypt
-          </button>
-        </main>
-      </div>
     </Flex>
   )
 }

@@ -1,8 +1,6 @@
 import type { Principal } from '@dfinity/principal';
 import type { ActorMethod } from '@dfinity/agent';
 
-export type AssetCanisterArgs = { 'Upgrade' : UpgradeArgs } |
-  { 'Init' : InitArgs };
 export type BatchId = bigint;
 export type BatchOperationKind = {
     'SetAssetProperties' : SetAssetPropertiesArguments
@@ -64,7 +62,6 @@ export interface HttpResponse {
   'streaming_strategy' : [] | [StreamingStrategy],
   'status_code' : number,
 }
-export type InitArgs = {};
 export type Key = string;
 export interface ListPermitted { 'permission' : Permission }
 export type Permission = { 'Prepare' : null } |
@@ -87,11 +84,6 @@ export interface SetAssetPropertiesArguments {
   'allow_raw_access' : [] | [[] | [boolean]],
   'max_age' : [] | [[] | [bigint]],
 }
-export interface SetPermissions {
-  'prepare' : Array<Principal>,
-  'commit' : Array<Principal>,
-  'manage_permissions' : Array<Principal>,
-}
 export interface StreamingCallbackHttpResponse {
   'token' : [] | [StreamingCallbackToken],
   'body' : Uint8Array | number[],
@@ -113,7 +105,6 @@ export interface UnsetAssetContentArguments {
   'key' : Key,
   'content_encoding' : string,
 }
-export interface UpgradeArgs { 'set_permissions' : [] | [SetPermissions] }
 export type ValidationResult = { 'Ok' : string } |
   { 'Err' : string };
 export interface _SERVICE {
