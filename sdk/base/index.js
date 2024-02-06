@@ -165,6 +165,10 @@ class Base {
       "getBundlers",
     ]
   }
+  zkp(proof, pub_signals) {
+    return { __op: "zkp", proof, pub_signals }
+  }
+
   data(key) {
     return { __op: "data", key }
   }
@@ -721,6 +725,30 @@ class Base {
       opt,
       "intmax"
     )
+  }
+
+  async createTempAddressWithPolygonID(
+    identity,
+    proof,
+    expiry,
+    linkTo,
+    opt = {}
+  ) {
+    opt.privateKey = identity.privateKey
+    const addr = proof.did
+    const nonce = await this.getNonce(addr)
+    let param = {
+      proof: proof.proof,
+      pub_signals: proof.pub_signals,
+      address: addr,
+    }
+    if (!isNil(expiry)) param.expiry = expiry
+    if (!isNil(linkTo)) param.linkTo = linkTo
+    const tx = await this.addAddressLink(param, { nonce, ...opt })
+    identity.signer = tx.signer
+    identity.type = "polygon-id"
+    identity.linkedAccount = linkTo || proof.did
+    return { tx, identity }
   }
 
   async createTempAddress(evm, expiry, linkTo, opt = {}) {

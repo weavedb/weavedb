@@ -322,7 +322,7 @@ export default function Home() {
             </>
           )}
           <Flex px={2} mt={6} pt={4} sx={{ borderTop: "1px solid #ccc" }}>
-            WeaveDB © 2023
+            WeaveDB © {new Date().getFullYear()}
           </Flex>
         </Box>
       </Flex>

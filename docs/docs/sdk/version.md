@@ -15,6 +15,26 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.39.0-beta (December 19, 2023)
+
+#### Source Transaction Id
+
+[8G82irw3pG6GQh-rvhZspii8L7XRBr6dE6I-GsNm52E](https://sonar.warp.cc/#/app/source/8G82irw3pG6GQh-rvhZspii8L7XRBr6dE6I-GsNm52E)
+
+#### Added Features
+
+- [addAddressLink with PolygonID](/docs/sdk/auth#polygonid-didvczkp)
+
+### v0.38.0-beta (December 11, 2023)
+
+#### Source Transaction Id
+
+[F7Hjt_lTh9GpbNUaMFNAzTtDl5sax0DqzlV6NbqwqLE](https://sonar.warp.cc/#/app/source/F7Hjt_lTh9GpbNUaMFNAzTtDl5sax0DqzlV6NbqwqLE)
+
+#### Added Features
+
+- [PolygonID zkp verification](/docs/sdk/queries#zkp)
+
 ### v0.37.2-beta (October 16, 2023)
 
 #### Source Transaction Id

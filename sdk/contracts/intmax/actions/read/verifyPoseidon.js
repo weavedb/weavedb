@@ -1,7 +1,6 @@
 const { buildEddsa } = require("../../lib/circomlibjs")
 const Scalar = require("../../lib/ffjavascript").Scalar
 const sha256 = new (require("../../lib/sha.js/sha256"))()
-const { mergeLeft } = require("ramda")
 
 const toArrayBuffer = buf => {
   const ab = new ArrayBuffer(buf.length)
@@ -12,37 +11,45 @@ const toArrayBuffer = buf => {
   return ab
 }
 
-export default async (state, action) => {
-  const poseidonConstants1 = (
-    await SmartWeave.contracts.viewContractState(
-      state.contracts.poseidonConstants1,
-      {
-        function: "get",
-      }
-    )
-  ).result
-  const poseidonConstants2 = (
-    await SmartWeave.contracts.viewContractState(
-      state.contracts.poseidonConstants2,
-      {
-        function: "get",
-      }
-    )
-  ).result
-  const poseidonConstants = mergeLeft(poseidonConstants1, poseidonConstants2)
+const getEddsa = async state => {
+  let constants = {}
+  for (let i = 1; i < 9; i++) {
+    constants[i] = (
+      await SmartWeave.contracts.viewContractState(
+        state.contracts[`poseidonConstants${i}`],
+        {
+          function: "get",
+        }
+      )
+    ).result
+  }
+  let S = []
+  for (let i = 3; i < 9; i++) S = S.concat(constants[i].S)
+  return await buildEddsa({
+    C: constants["1"].C,
+    M: constants["2"].M,
+    P: constants["2"].P,
+    S,
+  })
+}
+
+const parse = (action, eddsa) => {
   const { data, signature, pubKey } = action.input
-  const eddsa = await buildEddsa(poseidonConstants)
-  let msg = JSON.stringify(data)
-  const msgHashed = Buffer.from(toArrayBuffer(sha256.update(msg).digest()))
-  const msg2 = eddsa.babyJub.F.e(Scalar.fromRprLE(msgHashed, 0))
-  const packedSig = Uint8Array.from(
-    Buffer.from(signature.replace(/^0x/, ""), "hex")
+  const msg = Buffer.from(
+    toArrayBuffer(sha256.update(JSON.stringify(data)).digest())
   )
-  const sig = eddsa.unpackSignature(packedSig)
-  const packedPublicKey = Uint8Array.from(
-    Buffer.from(pubKey.replace(/^0x/, ""), "hex")
+  const sig = eddsa.unpackSignature(
+    Uint8Array.from(Buffer.from(signature.replace(/^0x/, ""), "hex"))
   )
-  const publicKey = eddsa.babyJub.unpackPoint(packedPublicKey)
-  const isValid = eddsa.verifyPoseidon(msg2, sig, publicKey)
+  const pub = eddsa.babyJub.unpackPoint(
+    Uint8Array.from(Buffer.from(pubKey.replace(/^0x/, ""), "hex"))
+  )
+  return { msg, sig, pub }
+}
+module.exports.verifyPoseidon = async (state, action) => {
+  const eddsa = await getEddsa(state)
+  const { msg, sig, pub } = parse(action, eddsa)
+  const isValid = eddsa.verifyPoseidon(msg, sig, pub)
+
   return { result: { isValid } }
 }

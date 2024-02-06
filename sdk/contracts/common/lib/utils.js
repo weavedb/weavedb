@@ -32,6 +32,64 @@ const getField = (data, path) => {
     return getField(data[path[0]], tail(path))
   }
 }
+const mergeDataP = async (
+  _data,
+  new_data,
+  extra = {},
+  overwrite = false,
+  signer,
+  SmartWeave,
+  action,
+  state
+) => {
+  let exists = true
+  if (isNil(_data.__data) || overwrite) {
+    _data.__data = {}
+    exists = false
+  }
+  for (let k in new_data) {
+    const path = exists ? k.split(".") : [k]
+    const [field, obj] = getField(_data.__data, path)
+    const d = new_data[k]
+    if (is(Object)(d) && d.__op === "zkp") {
+      const res = await read(
+        state.contracts.polygonID,
+        {
+          function: "verify",
+          proof: d.proof,
+          pub_signals: d.pub_signals,
+        },
+        SmartWeave
+      )
+      obj[field] = res
+    } else if (is(Object)(d) && d.__op === "data") {
+      obj[field] = extra[d.key] ?? null
+    } else if (is(Object)(d) && d.__op === "arrayUnion") {
+      if (complement(is)(Array, d.arr)) err()
+      if (complement(is)(Array, obj[field])) obj[field] = []
+      obj[field] = concat(obj[field], d.arr)
+    } else if (is(Object)(d) && d.__op === "arrayRemove") {
+      if (complement(is)(Array, d.arr)) err()
+      if (complement(is)(Array, obj[field])) obj[field] = []
+      obj[field] = without(d.arr, obj[field])
+    } else if (is(Object)(d) && d.__op === "inc") {
+      if (isNaN(d.n)) err()
+      if (isNil(obj[field])) obj[field] = 0
+      obj[field] += d.n
+    } else if (is(Object)(d) && d.__op === "del") {
+      delete obj[field]
+    } else if (is(Object)(d) && d.__op === "ts") {
+      obj[field] = SmartWeave.block.timestamp
+    } else if (is(Object)(d) && d.__op === "ms") {
+      obj[field] = action.timestamp ?? SmartWeave.block.timestamp * 1000
+    } else if (is(Object)(d) && d.__op === "signer") {
+      obj[field] = signer
+    } else {
+      obj[field] = d
+    }
+  }
+  return _data
+}
 
 const mergeData = (
   _data,
@@ -79,7 +137,6 @@ const mergeData = (
   }
   return _data
 }
-
 const isEvolving = state =>
   !isNil(state.evolveHistory) &&
   !isNil(last(state.evolveHistory)) &&
@@ -433,6 +490,7 @@ module.exports = {
   err,
   getField,
   mergeData,
+  mergeDataP,
   isEvolving,
   genId,
   isOwner,

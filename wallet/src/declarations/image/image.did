@@ -1,0 +1,7 @@
+type ImageObject = vec nat8;
+type ImageId = text;
+service : {
+  create: (ImageObject) -> (ImageId);
+  delete: (ImageId) -> ();
+  getImageById: (ImageId) -> (opt ImageObject) query;
+}

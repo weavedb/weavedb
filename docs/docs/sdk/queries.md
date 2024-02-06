@@ -270,6 +270,39 @@ const query = await db.sign(
 await db.relay("jobID", query, { extra_data_key: "image.png" }, { evm: relayer_wallet })
 ```
 
+#### zkp()
+
+Verify Zero Knowledge Proof with [PolygonID](https://polygonid.com/)
+
+```js
+await db.update({ userID: db.zkp(proof, pub_signals) }, collection_name, doc_id)
+
+/*
+userID will be replaced with the following
+you should modify it further in access control rules
+
+{
+  valid,
+  pub_signals: {
+    value,
+    merklizedn,
+    userID,
+    issuerAuthState,
+    requestID,
+    issuerID,
+    isRevocationChecked,
+    issuerClaimNonRevState,
+    timestamp,
+    claimSchema,
+    claimPathNotExists,
+    claimPathKey,
+    slotIndex,
+    operator,
+  },
+}
+*/
+```
+
 ### delete
 
 Delete a doc

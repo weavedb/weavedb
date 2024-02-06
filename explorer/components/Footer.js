@@ -6,7 +6,7 @@ export default function Header() {
   return (
     <Flex px={2} mt={6} pt={4} sx={{ borderTop: "1px solid #ccc" }}>
       <Link target="_blank" href="https://weavedb.dev">
-        WeaveDB © 2023
+        WeaveDB © {new Date().getFullYear()}
       </Link>
     </Flex>
   )
