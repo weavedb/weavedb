@@ -19,7 +19,9 @@ Many have attempted to build a decentralized social network but failed to build 
 
 This is obviously a huge issue for decentralized applications because if you lose the centralized database, the services relying on the APIs for data extraction will cease their operations. And as long as a centralized entity is managing the database layer, it's bound to stop sooner or later. The database layer is what cpsts the most when running a scalable service and the dev team cannot keep paying for the infrastructure forever. There have been many such examples where the provider arbitrarily changes the API pricing or stops APIs altogether and closes down the service itself.
 
-You could build a fully decentralized application without a centralized database, but then all the logic has to be run on smart contracts, and it would be super feature-limited without effective data indexing.
+<div align="center"><img src="./assets/spof.png" /></div>
+
+You could build a fully decentralized application without a centralized database, but then all the logic has to run on smart contracts, and it would be super feature-limited without effective data indexing.
 
 WeaveDB aims to solve these issues by building a fully decentralized database with the performance and scalability of web2 cloud databases.
 
@@ -57,29 +59,35 @@ Once it's a smart contract protocol and managed by a decentralized network, it w
 
 All these features will be unlocked with the blockchain standard protocols only if the database itself is a smart contract on a blockchain.
 
-We define smart contracts as an immutable script verifiable by anyone on a blockchain with decentralized networks. In this sense, Solidity is not the only smart contract implementation; smart contracts can be written in any language on any VM.
+We define smart contracts as an immutable script verifiable by anyone on a blockchain with decentralized networks. In this sense, Solidity on EVM is not the only smart contract implementation; smart contracts can be written in any language on any VM.
 
 ## How Do We Solve This Problem
 
 ### Arweave Storage-based Consensus Paradigm (Cost)
 
-Areave is a blockchain-like protocol (Blockweave) specializing in permanent storage. You need to pay a small one-time fee when uploading, and your data will be stored virtually forever (at least 200 years in the most pessimistic estimation). It costs around $5 per GB, which is 400 tausand times cheaper than Ethereum, and it even gets cheaper as the storage hardware cost decreases every year.
+Areave is a blockchain-like protocol (Blockweave) specializing in permanent storage. You need to pay a small one-time fee when uploading, and your data will be stored virtually forever (at least 200 years in the most pessimistic estimation). It costs [around $5 per GB](https://ar-fees.arweave.dev/), which is 400 tausand times cheaper than Ethereum, and it even gets cheaper as the storage hardware cost decreases every year.
 
-There is a novel way to build a smart contract layer on permanent storage, and this methodology is called Storage-based Consensus Paradigm (SCP). SCP is an idea to use the storage consensus with off-chain computation to drastically lower the cost of the smart contract layer. In essence, all the data required for smart contract evaluations are stored permanently on Arweave, and state evaluations can be lazy-executed on the client side and off-chain, which costs nothing. So it's a combination of cheap permanent storage and free off-chain computations that enable the smart contract layer. It's called SmartWeave.
+There is a novel way to build a smart contract layer on permanent storage, and this methodology is called [Storage-based Consensus Paradigm (SCP)](https://medium.com/@perma_dao/storage-consensus-paradigm-non-blockchain-for-the-next-generation-of-blockchain-f635980c6510). SCP is an idea to use the storage consensus with off-chain computation to drastically lower the cost of the smart contract layer. In essence, all the data required for smart contract evaluations are stored permanently on Arweave, and state evaluations can be lazy-executed on the client side and off-chain, which costs nothing. So it's a combination of cheap permanent storage and free off-chain computations that enable the smart contract layer. It's called [SmartWeave](https://github.com/ArweaveTeam/SmartWeave).
+
+<div align="center"><img src="./assets/scp.png" /></div>
 
 ### Warp SmartWeave Sequencer (Performance)
 
-Arweave does not adopt absolute finality, so the safe block time is something around 10 minutes. This, of course, is too slow for a smart contract execution layer, so Warp took it further with an efficient sequencer to immediately order and finalize transactions without any evaluation. It bundles up smart contract transactions and uploads to Arweave via bundle protocols such as Irys and ArIO. This decreases time to finality (TTF) to just 10ms.
+Arweave does not adopt absolute finality, so the safe block time is something around 20 minutes. This, of course, is too slow for a smart contract execution layer, so Warp took it further with an efficient sequencer to immediately order and finalize transactions without any evaluation. It bundles up smart contract transactions and uploads to Arweave via bundle protocols such as Irys and ArIO. This decreases time to finality (TTF) to just 10ms.
 
-As mentioned earlier, the Warp sequencer doesn't evaluate the contract states and it's a lazy evaluation on the client side, which enables even faster performance and lower latency than web2 cloud databases. This, however, opens up a different set of issues that led us to the WeaveDB Rollup development, addressed at the end of this paper.
+As mentioned earlier, [the Warp sequencer](https://warp.cc/) doesn't evaluate the contract states and it's a lazy evaluation on the client side, which enables even faster performance and lower latency than web2 cloud databases. This, however, opens up a different set of issues that led us to the WeaveDB Rollup development, addressed at the end of this paper.
+
+<div align="center"><img src="./assets/warp.png" /></div>
 
 ### KV Storage Adaptors (Scalability)
 
 The entire database is implemented as a smart contract, but storing all the data as a smart contract state is not scalable and portable at all. Every time the database needs to evaluate something, it needs to load the entire database to memory, which is impossible if you have, for instance,  100 million datasets.
 
-Warp SmartWeave, fortunately, has implemented a protocol to enable underlying KV storage with only interface (get/put/del). This works as a KVS adaptor, and how you store the data via the KV interface is up to the node implementation. A node can use any existing database technology to deterministically store data  via the interface, and how much the database can scale will be up to the KV implementation of the node, and not up to the smart contract constraints. This is more future-proof since the hardware and database technology will improve in the future. In this way, we make the database indefinitely scalable. This is equivalent to Ethereum client diversity.
+Warp SmartWeave, fortunately, has implemented a protocol to enable underlying [KV storage with only interface (get/put/del)](https://docs.warp.cc/docs/sdk/advanced/kv-storage). This works as a KVS adaptor, and how you store the data via the KV interface is up to the node implementation. A node can use any existing database technology to deterministically store data  via the interface, and how much the database can scale will be up to the KV implementation of the node, and not up to the smart contract constraints. This is more future-proof since the hardware and database technology will improve in the future. In this way, we make the database indefinitely scalable. This is equivalent to Ethereum client diversity.
 
 WeaveDB only stores minimum database configurations as the contract state. The actual data and indexes are stored in the underlying KV storage set up by the node in the way the node adaptor script defines.
+
+<div align="center"><img src="./assets/kvs.png" /></div>
 
 Besides this, the Arweave network itself is supposed to be indefinitely scalable. The upper bound is only constrained by the storage cost. So, if a database needs to store a huge amount of data, in theory, someone just has to pay for it. Then, how to handle the data via the smart contract KVS interface is up to the node KVS.
 
@@ -87,7 +95,7 @@ Besides this, the Arweave network itself is supposed to be indefinitely scalable
 
 Simple data ownership logic can be implemented with the simple signature verification flow, but that's not how web2 databases work. Web2 database is indeed a combination of application logic on the server/client side and data access rules set to the database. Since you cannot control where users access the database from, to fully cover such web2 use cases, a web3 database should contain highly advanced application logic on the database side as well as advanced access control rules. In other words, data ownership should be programmable within the database logic. How do we achieve all these with an immutable smart contract?
 
-The answer is FPJSON, a domain-specific language (DSL) we developed to enable functional programming in the form of JSON arrays. FPJSON comes with more than 250 composable functions and you can express any level of advanced logic as a JSON array.
+The answer is [FPJSON](https://fpjson.weavedb.dev/), a domain-specific language (DSL) we developed to enable functional programming in the form of JSON arrays. FPJSON comes with more than 250 composable functions and you can express any level of advanced logic as a JSON array.
 
 ```javascript
 ["add", 1, 2] // = 3
@@ -260,6 +268,7 @@ Evaluate API queries and articulate which indexers to use to extract the request
 - **Public APIs**  
 The public interfacing contract to define APIs to access the database.
 
+<div align="center"><img src="./assets/modular.png" /></div>
 
 This modular architecture introduces a new paradigm to decentralized databases. The same data sources are shared with multiple applications with permissionless indexers, and we can even build different database types (RDB/NoSQL/GraphDB) on top of the same data sources. The public APIs are permanently available, and dapps relying on the APIs can function forever without ever losing access to the data.
 
@@ -352,7 +361,7 @@ WeaveDB also comes with an adaptor interface to connect with zkp verifiers. You 
 
 ### zkDB / zkRollup
 
-In a separate litepaper, we wrote about zero knowledge provable JSON (zkJSON) which makes any JSON data verifiable directly from Ethereum smart contracts. WeaveDB is a NoSQL database, and each document is indeed zkJSON, which forms a zkDB as a whole. So whatever the data you store on WeaveDB will be directly queriable on other blockchain smart contracts if you turn on the zkRollup feature. We will talk about zkRollup in yet another litepaper.
+In [a separate litepaper](https://github.com/weavedb/zkjson), we wrote about zero knowledge provable JSON (zkJSON) which makes any JSON data verifiable directly from Ethereum smart contracts. WeaveDB is a NoSQL database, and each document is indeed zkJSON, which forms a zkDB as a whole. So whatever the data you store on WeaveDB will be directly queriable on other blockchain smart contracts if you turn on the zkRollup feature. We will talk about zkRollup in yet another litepaper.
 
 WeaveDB smart contract stores merkle trees for zkDB and anyone can verify the latest merkle hash with a simple call. The Warp SmartWeave has plug-in extensions (equivalent to EVM precompiles), and WeaveDB comes with a precompiled zk prover, so anyone can generate proofs for any data on the client-side hain and make a query from Ethereum or other EVM blockchains. This is kind of equivalent to an on-chain zk prover.
 
@@ -381,3 +390,6 @@ But to replace web2 use cases of high-performance applications with data consist
 ## Resources
 
 - [WeaveDB Docs](./docs)
+- [zkJSON Litepaper](https://github.com/weavedb/zkjson)
+- [WeaveDB Rollup Litepaper](https://github.com/weavedb/rollup)
+
