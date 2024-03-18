@@ -13,7 +13,7 @@
 
 ## Decentralized NoSQL Database as a Smart Contract
 
-Blockchains are revolutionizing fintech with censorship-resistant and unstoppable networks with decentralization. But so far, their primary use cases are token transfers and their scalability is not even enough for mass financial adoption. However, the internet and the web are composed of data and web3 is an antithesis to centralized data, silos beyond financial sectors. Blockchains, as of today, can never scale to the web level.
+Blockchains are revolutionizing fintech with censorship-resistant and unstoppable networks with decentralization. But so far, their primary use cases are token transfers and their scalability is not even enough for mass financial adoption. However, the internet and the web are composed of data and web3 is an antithesis to centralized data silos beyond financial sectors. Blockchains, as of today, can never scale to the web level.
 
 Many have attempted to build a decentralized social network but failed to build fully decentralized ones. This is primarily due to the fact that a practical alternative to web2 cloud databases has not been possible by now. There have been many decentralized database projects, but all of them are domain-specific, such as blockchain indexers, p2p graph DBs, and zkp-based privacy DBs, and not a general-purpose database to replace web2 databases. As a result, most web3 social networks call themselves sufficiently decentralized and use centralized servers and databases for data indexing and complex service logic and APIs.
 
@@ -391,5 +391,5 @@ But to replace web2 use cases of high-performance applications with data consist
 
 - [WeaveDB Docs](./docs)
 - [zkJSON Litepaper](https://github.com/weavedb/zkjson)
-- [WeaveDB Rollup Litepaper](https://github.com/weavedb/rollup)
+- [WeaveDB Rollup Litepaper](https://github.com/weavedb/rdk)
 
