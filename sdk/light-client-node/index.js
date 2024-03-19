@@ -72,7 +72,7 @@ class SDK extends Base {
         rpc,
         this.secure
           ? grpc.ChannelCredentials.createSsl()
-          : grpc.credentials.createInsecure()
+          : grpc.credentials.createInsecure(),
       )
     }
     if (typeof window === "object") {
@@ -124,7 +124,7 @@ class SDK extends Base {
               query: JSON.stringify(query),
               res: (err, res) => ret({ err, result: res }),
             },
-            "__admin__"
+            "__admin__",
           )
         } else {
           this.client.query(request, (err, response) => {
@@ -184,7 +184,8 @@ class SDK extends Base {
     return this.readQuery("getAddressLink", address, nocache)
   }
 
-  async admin(op, opt) {
+  async admin(op, opt = {}) {
+    opt.nonce ??= 1
     return this._write2("admin", op, opt)
   }
   async node(op, opt) {

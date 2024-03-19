@@ -120,7 +120,8 @@ class SDK extends Base {
   async getAddressLink(address, nocache) {
     return this.readQuery("getAddressLink", address, nocache)
   }
-  async admin(op, opt) {
+  async admin(op, opt = {}) {
+    opt.nonce ??= 1
     return this._write2("admin", op, opt)
   }
   async node(op, opt) {
