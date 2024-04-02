@@ -17,7 +17,7 @@ Blockchains are revolutionizing fintech with censorship-resistant and unstoppabl
 
 Many have attempted to build a decentralized social network but failed to build fully decentralized ones. This is primarily due to the fact that a practical alternative to web2 cloud databases has not been possible by now. There have been many decentralized database projects, but all of them are domain-specific, such as blockchain indexers, p2p graph DBs, and zkp-based privacy DBs, and not a general-purpose database to replace web2 databases. As a result, most web3 social networks call themselves sufficiently decentralized and use centralized servers and databases for data indexing and complex service logic and APIs.
 
-This is obviously a huge issue for decentralized applications because if you lose the centralized database, the services relying on the APIs for data extraction will cease their operations. And as long as a centralized entity is managing the database layer, it's bound to stop sooner or later. The database layer is what cpsts the most when running a scalable service and the dev team cannot keep paying for the infrastructure forever. There have been many such examples where the provider arbitrarily changes the API pricing or stops APIs altogether and closes down the service itself.
+This is obviously a huge issue for decentralized applications because if you lose the centralized database, the services relying on the APIs for data extraction will cease their operations. And as long as a centralized entity is managing the database layer, it's bound to stop sooner or later. The database layer is what costs the most when running a scalable service and the dev team cannot keep paying for the infrastructure forever. There have been many such examples where the provider arbitrarily changes the API pricing or stops APIs altogether and closes down the service itself.
 
 <div align="center"><img src="./assets/spof.png" /></div>
 
@@ -27,7 +27,7 @@ WeaveDB aims to solve these issues by building a fully decentralized database wi
 
 ### 4 Bottlenecks
 
-A general-purpose fully decentralized database has not been realized so far due to 4 big bottlenecks.
+A general-purpose fully decentralized database has not been realized so far due to 4 big bottlenecks:
 
 - **Cost**  
 Blockchain computation and storage are prohibitively expensive, including L2 rollups. Ethereum requires $10M to store 1GB of data.
@@ -45,12 +45,12 @@ So, building a practical decentralized database as a smart contract seems imposs
 
 ### Why Smart Contract Database?
 
-Before getting into the solution, I'd like to put an emphasis on smart contract database. You could build a decentralized database using existing technology and decentralize the network of nodes running the database. However, this approach limits the usability of the database to a great extent since the core components of web3 databases and web2 databases should be totally different. Instead, we build a brand new database from scratch, all as smart contract components, which unlocks the key features within the context of decentralized networks.
+Before getting into the solution, I'd like to put an emphasis on the smart contract database. You could build a decentralized database using existing technology and decentralize the network of nodes running the database. However, this approach limits the usability of the database to a great extent since the core components of web3 databases and web2 databases should be totally different. Instead, we built a brand new database from scratch, all as smart contract components, which unlocks the key features within the context of decentralized networks.
 
 - **Verifiability of Computations and States**  
 All the access logic and computation for data manipulations should be recorded on-chain and verifiable by anyone. Only smart contracts and their storage-based states can enable such public verifiability.
 - **Composability with Other Smart Contracts**  
-Smart contracts are building blocks of decentralized applications and composable with other smart contracts. WeaveDB can be a part of other smart contract protocols, such as DeFi, SocialFi, NFT, DAO, blockchain games, etc.
+Smart contracts are the building blocks of decentralized applications and are composable with other smart contracts. WeaveDB can be a part of other smart contract protocols, such as DeFi, SocialFi, NFT, DAO, blockchain games, etc.
 - **Interoperability with Other Blockchains**  
 Once it's a smart contract protocol and managed by a decentralized network, it will open up interoperability with other blockchains. We implement 3 types of interoperability, explained in detail in the later sections.
   - Zero Knowledge Proof (ZKP)
@@ -65,7 +65,7 @@ We define smart contracts as an immutable script verifiable by anyone on a block
 
 ### Arweave Storage-based Consensus Paradigm (Cost)
 
-Areave is a blockchain-like protocol (Blockweave) specializing in permanent storage. You need to pay a small one-time fee when uploading, and your data will be stored virtually forever (at least 200 years in the most pessimistic estimation). It costs [around $5 per GB](https://ar-fees.arweave.dev/), which is 400 tausand times cheaper than Ethereum, and it even gets cheaper as the storage hardware cost decreases every year.
+Arweave is a blockchain-like protocol (Blockweave) specializing in permanent storage. You need to pay a small one-time fee when uploading, and your data will be stored virtually forever (at least 200 years in the most pessimistic estimation). It costs [around $5 per GB](https://ar-fees.arweave.dev/), which is 400 thousand times cheaper than Ethereum, and it even gets cheaper as the storage hardware cost decreases every year.
 
 There is a novel way to build a smart contract layer on permanent storage, and this methodology is called [Storage-based Consensus Paradigm (SCP)](https://medium.com/@perma_dao/storage-consensus-paradigm-non-blockchain-for-the-next-generation-of-blockchain-f635980c6510). SCP is an idea to use the storage consensus with off-chain computation to drastically lower the cost of the smart contract layer. In essence, all the data required for smart contract evaluations are stored permanently on Arweave, and state evaluations can be lazy-executed on the client side and off-chain, which costs nothing. So it's a combination of cheap permanent storage and free off-chain computations that enable the smart contract layer. It's called [SmartWeave](https://github.com/ArweaveTeam/SmartWeave).
 
