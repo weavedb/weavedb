@@ -66,7 +66,7 @@ const _on = async (state, input, handle) => {
             {
               input: { function: "cget", query },
             },
-            this.getSW()
+            this.getSW(),
           )
           if (!isNil(res)) {
             if (subs[txid][hash].height < block.height) {
@@ -74,13 +74,13 @@ const _on = async (state, input, handle) => {
               let prev = isNil(subs[txid][hash].prev)
                 ? subs[txid][hash].prev
                 : subs[txid][hash].doc
-                ? subs[txid][hash].prev.data
-                : pluck("data", subs[txid][hash].prev)
+                  ? subs[txid][hash].prev.data
+                  : pluck("data", subs[txid][hash].prev)
               let current = isNil(res.result)
                 ? res.result
                 : subs[txid][hash].doc
-                ? res.result.data
-                : pluck("data", res.result)
+                  ? res.result.data
+                  : pluck("data", res.result)
               if (!equals(current, prev)) {
                 for (const k in subs[txid][hash].subs) {
                   try {
@@ -89,10 +89,10 @@ const _on = async (state, input, handle) => {
                         subs[txid][hash].subs[k].con
                           ? res.result
                           : subs[txid][hash].doc
-                          ? isNil(res.result)
-                            ? null
-                            : res.result.data
-                          : pluck("data", res.result)
+                            ? isNil(res.result)
+                              ? null
+                              : res.result.data
+                            : pluck("data", res.result),
                       )
                   } catch (e) {
                     console.log(e)
@@ -209,7 +209,7 @@ class SDK extends Base {
         .build()
     } else if (this.network === "localhost") {
       this.warp = this.Warp.WarpFactory.forLocal(
-        isNil(arweave) || isNil(arweave.port) ? 1820 : arweave.port
+        isNil(arweave) || isNil(arweave.port) ? 1820 : arweave.port,
       )
     } else if (this.network === "testnet") {
       this.warp = this.Warp.WarpFactory.forTestnet()
@@ -217,7 +217,7 @@ class SDK extends Base {
       this.warp = this.Warp.WarpFactory.forMainnet(
         undefined,
         undefined,
-        this.arweave
+        this.arweave,
       )
     }
     this.contractTxId = contractTxId
@@ -318,7 +318,7 @@ class SDK extends Base {
               dbLocation: `${
                 this.lmdb.dir ?? "./cache"
               }/warp/kv/lmdb/${contractTxId}`,
-            })
+            }),
         )
       }
       if (this.cache === "lmdb") {
@@ -328,7 +328,7 @@ class SDK extends Base {
               ...this.Warp.defaultCacheOptions,
               dbLocation: `${this.lmdb.dir ?? "./cache"}/warp/state`,
               ...(this.lmdb.state || {}),
-            })
+            }),
           )
           .useContractCache(
             new this.LmdbCache({
@@ -340,7 +340,7 @@ class SDK extends Base {
               ...this.Warp.defaultCacheOptions,
               dbLocation: `${this.lmdb.dir ?? "./cache"}/warp/src`,
               ...(this.lmdb.src || {}),
-            })
+            }),
           )
       } else if (this.cache === "redis") {
         const { RedisCache } = require("./RedisCache")
@@ -360,7 +360,7 @@ class SDK extends Base {
               prefix: `${this.redis.prefix || "warp"}.${
                 this.contractTxId
               }.state`,
-            })
+            }),
           )
           .useContractCache(
             new RedisCache({
@@ -372,7 +372,7 @@ class SDK extends Base {
             new RedisCache({
               client: this.redis_client,
               prefix: `${this.redis.prefix || "warp"}.${this.contractTxId}.src`,
-            })
+            }),
           )
       }
     }
@@ -395,10 +395,10 @@ class SDK extends Base {
           useVM2: !isNil(this.useVM2)
             ? this.useVM2
             : typeof window !== "undefined"
-            ? false
-            : !this.old,
+              ? false
+              : !this.old,
           useKVStorage: this.type !== 1,
-        })
+        }),
       )
     dbs[this.contractTxId] = this
     this.domain = { name, version, verifyingContract: this.contractTxId }
@@ -410,14 +410,14 @@ class SDK extends Base {
             try {
               const lastStoredKey = (
                 await self.warp.stateEvaluator.latestAvailableState(
-                  self.contractTxId
+                  self.contractTxId,
                 )
               )?.sortKey
               let data =
                 lastStoredKey?.localeCompare(input.lastSortKey) === 0
                   ? await dbs[self.contractTxId].db.readStateFor(
                       input.lastSortKey,
-                      [input.interaction]
+                      [input.interaction],
                     )
                   : await dbs[self.contractTxId].db.readState()
 
@@ -444,7 +444,7 @@ class SDK extends Base {
         }
 
         this.warp.use(
-          new CustomSubscriptionPlugin(this.contractTxId, this.warp)
+          new CustomSubscriptionPlugin(this.contractTxId, this.warp),
         )
       }
       if (is(Function, this.progress)) {
@@ -527,7 +527,7 @@ class SDK extends Base {
         viewContractState: async (contract, param, SmartWeave) => {
           const key = invertObj(
             (cachedStates[this.contractTxId] || states[this.contractTxId])
-              .contracts
+              .contracts,
           )[contract]
           const { handle } = require(`weavedb-contracts/${key}/contract`)
           try {
@@ -559,7 +559,7 @@ class SDK extends Base {
           await this.handle(
             cachedStates[this.contractTxId] || states[this.contractTxId],
             { input: params },
-            this.getSW()
+            this.getSW(),
           )
         ).result
       } catch (e) {
@@ -581,7 +581,9 @@ class SDK extends Base {
     let start = Date.now()
     let originalTxId = null
     try {
-      tx = await this.db["bundleInteraction"](param, {})
+      tx = await this.db[
+        this.network === "localhost" ? "writeInteraction" : "bundleInteraction"
+      ](param, {})
     } catch (e) {
       err = e
       console.log(e)
@@ -595,7 +597,7 @@ class SDK extends Base {
     bundle,
     relay = false,
     onDryWrite,
-    parallel
+    parallel,
   ) {
     delete param.data
     if (JSON.stringify(param).length > 2500) {
@@ -664,12 +666,12 @@ class SDK extends Base {
             try {
               cacheState = await this.handle(
                 clone(
-                  cachedStates[this.contractTxId] || states[this.contractTxId]
+                  cachedStates[this.contractTxId] || states[this.contractTxId],
                 ),
                 {
                   input: param,
                 },
-                this.getSW()
+                this.getSW(),
               )
             } catch (e) {
               err = e
@@ -687,10 +689,10 @@ class SDK extends Base {
                 typeof err === "string"
                   ? err
                   : typeof err?.message === "string"
-                  ? err.message
-                  : !isNil(err)
-                  ? "unknown error"
-                  : null,
+                    ? err.message
+                    : !isNil(err)
+                      ? "unknown error"
+                      : null,
               function: param.function,
               state: cacheState?.state || null,
               result: cacheState?.result || null,
@@ -702,9 +704,9 @@ class SDK extends Base {
                       res(
                         await self.checkResult(
                           cacheState.result.transaction.id,
-                          self
-                        )
-                      )
+                          self,
+                        ),
+                      ),
                     ),
             }
             sent = true
@@ -720,7 +722,7 @@ class SDK extends Base {
               if (!isNil(onDryWrite?.read)) {
                 cacheResult.results = await this.dryRead(
                   cacheResult.state,
-                  onDryWrite.read
+                  onDryWrite.read,
                 )
               }
             }
@@ -763,7 +765,7 @@ class SDK extends Base {
           if (dryResult.success) {
             dryResult.results = await this.dryRead(
               dryResult.state,
-              onDryWrite.read
+              onDryWrite.read,
             )
             if (dryResult.success) {
               clearTimeout(timeouts[this.contractTxId])
@@ -809,7 +811,7 @@ class SDK extends Base {
           param,
           this.network === "mainnet",
           Date.now(),
-          []
+          [],
         )
         let i = 0
         for (let v of queue) {
@@ -866,7 +868,7 @@ class SDK extends Base {
             {
               input: { function: v[0], query: tail(v) },
             },
-            this.getSW()
+            this.getSW(),
           )
         ).result
         res.success = true
@@ -957,7 +959,7 @@ class SDK extends Base {
               {
                 input: { function: "ids", tx: tx.originalTxId },
               },
-              this.getSW()
+              this.getSW(),
             )
           ).result[0]
           res.path = o(append(res.docID), tail)(query)
@@ -971,7 +973,7 @@ class SDK extends Base {
             {
               input: { function: "get", query: res.path },
             },
-            this.getSW()
+            this.getSW(),
           )
         ).result
       } catch (e) {
@@ -1005,7 +1007,7 @@ class SDK extends Base {
             },
           },
         },
-        this.handle
+        this.handle,
       )
     }
     return res
@@ -1054,7 +1056,7 @@ class SDK extends Base {
         {
           input: { function: "get", query },
         },
-        this.getSW()
+        this.getSW(),
       )
     ).result
   }
@@ -1067,7 +1069,7 @@ class SDK extends Base {
         {
           input: { function: "cget", query },
         },
-        this.getSW()
+        this.getSW(),
       )
     ).result
   }
@@ -1094,7 +1096,7 @@ class SDK extends Base {
               function: "ids",
               input: { tx: input.interaction.id },
             },
-            this.getSW()
+            this.getSW(),
           )
         ).result[0]
         _query = append(docID, v.path)
@@ -1108,7 +1110,7 @@ class SDK extends Base {
             {
               input: { function: "cget", query: _query },
             },
-            this.getSW()
+            this.getSW(),
           )
         ).result
         if (!isNil(val)) delete val.block
@@ -1116,7 +1118,7 @@ class SDK extends Base {
           this.contractTxId,
           "cget",
           _query,
-          this.cache_prefix
+          this.cache_prefix,
         )
         updates[key] = val
       }
@@ -1126,7 +1128,7 @@ class SDK extends Base {
           this.contractTxId,
           "cget",
           _query,
-          this.cache_prefix
+          this.cache_prefix,
         )
         updates[key] = null
       }
@@ -1146,7 +1148,7 @@ class SDK extends Base {
         updates,
         deletes: uniq(deletes),
       },
-      input
+      input,
     )
   }
 
@@ -1158,7 +1160,7 @@ class SDK extends Base {
             function: "nonce",
             address,
           },
-          nocache
+          nocache,
         )) + 1
   }
 }
