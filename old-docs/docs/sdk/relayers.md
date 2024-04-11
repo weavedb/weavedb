@@ -401,7 +401,7 @@ const warp = WarpFactory.forMainnet()
 const contract = warp
   .contract(relayerContractTxId)
   .connect(any_arweave_wallet)
-  .setEvaluationOptions({ internalWrites: true, allowBigInt: true })
+  .setEvaluationOptions({ internalWrites: true, allowBigInt: true, sequencerUrl: 'https://gw.warp.cc/'})
   
 const data = { name: "Bob", age: 20 }
 const params = await db.sign("set", data, "ppl", "Bob", { jobID: "add-height" })

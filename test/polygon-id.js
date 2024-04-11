@@ -127,6 +127,7 @@ describe("WeaveDB", function () {
         .connect(arweave_wallet)
         .setEvaluationOptions({
           allowBigInt: true,
+          sequencerUrl: 'https://gw.warp.cc/',
         })
       expect(
         (

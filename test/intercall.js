@@ -45,7 +45,7 @@ describe("Intercall", function () {
     const db = warp
       .contract(contract.contractTxId)
       .connect(wallet)
-      .setEvaluationOptions({ allowBigInt: true, internalWrites: true })
+      .setEvaluationOptions({ allowBigInt: true, internalWrites: true, sequencerUrl: 'https://gw.warp.cc/'})
     const contractSrc2 = fs.readFileSync(
       path.join(__dirname, "../dist/intercall/writer.js"),
       "utf8"
@@ -59,7 +59,7 @@ describe("Intercall", function () {
     const db2 = warp
       .contract(contract2.contractTxId)
       .connect(wallet)
-      .setEvaluationOptions({ allowBigInt: true, internalWrites: true })
+      .setEvaluationOptions({ allowBigInt: true, internalWrites: true, sequencerUrl: 'https://gw.warp.cc/'})
     console.log(contract)
     console.log(
       await db.writeInteraction({

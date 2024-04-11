@@ -381,9 +381,11 @@ class SDK extends Base {
     this.wallet = wallet
     this.db = this.warp
       .contract(this.contractTxId)
+      
       .connect(wallet)
       .setEvaluationOptions(
         mergeLeft(evaluationOptions, {
+          sequencerUrl: 'https://gw.warp.cc/',
           internalWrites: true,
           remoteStateSyncEnabled:
             this.isNode || this.network === "localhost"

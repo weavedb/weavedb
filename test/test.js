@@ -73,7 +73,7 @@ describe("WeaveDB", function () {
     const ic = warp
       .contract(intercallTxId)
       .connect(arweave_wallet)
-      .setEvaluationOptions({ internalWrites: true, allowBigInt: true })
+      .setEvaluationOptions({ internalWrites: true, allowBigInt: true, sequencerUrl: 'https://gw.warp.cc/'})
     await ic.writeInteraction({ function: "write", to: contractTxId, params })
     await ic.readState()
     expect(await db.get("ppl", "Bob")).to.eql({
@@ -110,7 +110,7 @@ describe("WeaveDB", function () {
     const ic = warp
       .contract(intercallTxId)
       .connect(arweave_wallet)
-      .setEvaluationOptions({ internalWrites: true, allowBigInt: true })
+      .setEvaluationOptions({ internalWrites: true, allowBigInt: true, sequencerUrl: 'https://gw.warp.cc/'})
     await ic.writeInteraction({ function: "relay", to: contractTxId, params })
     await ic.readState()
     expect(await db.get("ppl", "Bob")).to.eql({

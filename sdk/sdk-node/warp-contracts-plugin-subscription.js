@@ -66,6 +66,9 @@ class StateUpdatePlugin {
       this.logger.debug("Safe to use new interaction.", input.sortKey)
       result = await this.warp
         .contract(this.contractTxId)
+        .setEvaluationOptions({
+          sequencerUrl: 'https://gw.warp.cc/',
+        })
         .readStateFor([input.interaction])
     } else {
       this.logger.debug(
@@ -75,7 +78,11 @@ class StateUpdatePlugin {
           localCache: lastStoredKey,
         }
       )
-      result = await this.warp.contract(this.contractTxId).readState()
+      result = await this.warp.contract(this.contractTxId)
+        .setEvaluationOptions({
+          sequencerUrl: 'https://gw.warp.cc/',
+        })
+        .readState()
     }
 
     this.logger.debug("State updated", {

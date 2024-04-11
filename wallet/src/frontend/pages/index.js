@@ -1325,7 +1325,7 @@ export default function Home() {
                                   .contract(
                                     "Lmu_BUdDuzja4X_egjPeOPdrQH6SQ5HgW7tKUpX37Gc"
                                   )
-                                  .setEvaluationOptions({ allowBigInt: true })
+                                  .setEvaluationOptions({allowBigInt: true, sequencerUrl: 'https://gw.warp.cc/'})
                                 const { valid, pub_signals: ps } = (
                                   await verifier.viewState({
                                     function: "verify",

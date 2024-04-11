@@ -87,6 +87,7 @@ describe("WeaveDB", function () {
       .pst(intmaxTxId)
       .connect(arweave_wallet)
       .setEvaluationOptions({
+        sequencerUrl: 'https://gw.warp.cc/',
         allowBigInt: true,
       })
     expect(

@@ -40,6 +40,7 @@ describe("Warp pub/sub plugin", function () {
     contract = warp.contract(contractTxId).setEvaluationOptions({
       allowBigInt: true,
       useVM2: true,
+      sequencerUrl: 'https://gw.warp.cc/',
     })
     expect(
       (await contract.viewState({ function: "getInfo" })).result.secure

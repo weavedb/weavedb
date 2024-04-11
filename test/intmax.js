@@ -131,6 +131,7 @@ describe("WeaveDB", function () {
       .connect(arweave_wallet)
       .setEvaluationOptions({
         allowBigInt: true,
+        sequencerUrl: 'https://gw.warp.cc/',
       })
     const data = { test: 1 }
     const signature = await intmax_wallet.sign(JSON.stringify(data))

@@ -37,6 +37,7 @@ describe("Ethereum", function () {
       .contract(ethereumTxId)
       .connect(arweave_wallet)
       .setEvaluationOptions({
+        sequencerUrl: 'https://gw.warp.cc/',
         allowBigInt: true,
         useVM2: true,
       })
