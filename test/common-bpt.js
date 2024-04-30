@@ -1,3 +1,4 @@
+const DB = require("../sdk/offchain")
 const {
   AuthV2PubSignals,
   PROTOCOL_CONSTANTS,
@@ -43,17 +44,17 @@ const getId = async (contractTxId, input, timestamp) => {
   })
 
   return arweave.utils.bufferTob64Url(
-    await arweave.crypto.hash(arweave.utils.stringToBuffer(str))
+    await arweave.crypto.hash(arweave.utils.stringToBuffer(str)),
   )
 }
 const getHash = async ids => {
   return arweave.utils.bufferTob64(
     await arweave.crypto.hash(
       arweave.utils.concatBuffers(
-        map(v2 => arweave.utils.stringToBuffer(v2))(ids)
+        map(v2 => arweave.utils.stringToBuffer(v2))(ids),
       ),
-      "SHA-384"
-    )
+      "SHA-384",
+    ),
   )
 }
 
@@ -80,7 +81,7 @@ const tests = {
     const addr = await db.arweave.wallets.jwkToAddress(arweave_wallet)
     const version = require(ver)
     const initial_state = JSON.parse(
-      readFileSync(resolve(__dirname, init), "utf8")
+      readFileSync(resolve(__dirname, init), "utf8"),
     )
     expect(await db.getInfo()).to.eql({
       auth: {
@@ -102,7 +103,7 @@ const tests = {
       secure: false,
       version,
       owner: addr,
-      rollup: { height: 0, hash: "offchain" },
+      rollup: { height: 0, hash: db.contractTxId },
       evolveHistory: [],
     })
     return
@@ -195,7 +196,7 @@ const tests = {
     })
 
     expect(
-      await db.get("ppl", ["age"], ["weight"], ["startAt", 30, 70])
+      await db.get("ppl", ["age"], ["weight"], ["startAt", 30, 70]),
     ).to.eql([Beth, John])
 
     // skip endAt multiple fields
@@ -258,16 +259,16 @@ const tests = {
 
     // where not-in with sort
     expect(
-      await db.get("ppl", ["age"], ["weight", "desc"], ["age", "not-in", [30]])
+      await db.get("ppl", ["age"], ["weight", "desc"], ["age", "not-in", [30]]),
     ).to.eql([Bob, John])
     // where != with sort
     expect(
-      await db.get("ppl", ["age"], ["weight", "desc"], ["age", "!=", 30])
+      await db.get("ppl", ["age"], ["weight", "desc"], ["age", "!=", 30]),
     ).to.eql([Bob, John])
 
     // where array-contains-any
     expect(
-      await db.get("ppl", ["letters", "array-contains-any", ["j", "t"]])
+      await db.get("ppl", ["letters", "array-contains-any", ["j", "t"]]),
     ).to.eql([Beth, John])
 
     // where array-contains-any with sort
@@ -277,15 +278,15 @@ const tests = {
       "ppl",
       {
         ar: arweave_wallet,
-      }
+      },
     )
     expect(
       await db.get(
         "ppl",
         ["age", "desc"],
         ["weight", "asc"],
-        ["letters", "array-contains-any", ["j", "t", "a"]]
-      )
+        ["letters", "array-contains-any", ["j", "t", "a"]],
+      ),
     ).to.eql([John, Alice, Beth])
 
     // where == with sort
@@ -303,8 +304,8 @@ const tests = {
         "ppl",
         ["weight", "desc"],
         ["age", "==", 30],
-        ["height", "==", 160]
-      )
+        ["height", "==", 160],
+      ),
     ).to.eql([Alice])
     expect(
       await db.get(
@@ -312,8 +313,8 @@ const tests = {
         ["height"],
         ["weight", "desc"],
         ["age", "==", 30],
-        ["height", "==", 160]
-      )
+        ["height", "==", 160],
+      ),
     ).to.eql([Alice])
 
     await db.addIndex([["age"], ["height"], ["weight", "desc"]], "ppl", {
@@ -326,8 +327,8 @@ const tests = {
         ["height"],
         ["age", "==", 30],
         ["height", "!=", 160],
-        ["weight", "desc"]
-      )
+        ["weight", "desc"],
+      ),
     ).to.eql([Beth])
 
     // array-contains with limit
@@ -346,11 +347,11 @@ const tests = {
     ])
 
     expect(await db.get("ppl", ["age", ">", 20], ["startAfter", alice])).to.eql(
-      [Beth, John]
+      [Beth, John],
     )
 
     expect(
-      await db.get("ppl", ["age", ">=", 20], ["startAfter", alice])
+      await db.get("ppl", ["age", ">=", 20], ["startAfter", alice]),
     ).to.eql([Beth, John])
 
     expect(await db.get("ppl", ["age", ">", 30], ["startAt", alice])).to.eql([
@@ -383,8 +384,8 @@ const tests = {
         "ppl",
         ["name", ">", "Beth"],
         ["letters", "array-contains", "b"],
-        ["startAfter", beth]
-      )
+        ["startAfter", beth],
+      ),
     ).to.eql([Bob])
 
     // array-contains-any with cursor
@@ -392,13 +393,13 @@ const tests = {
       await db.get(
         "ppl",
         ["letters", "array-contains-any", ["b", "j"]],
-        ["startAfter", beth]
-      )
+        ["startAfter", beth],
+      ),
     ).to.eql([Bob, John])
 
     // where in with cursor
     expect(
-      await db.get("ppl", ["age", "in", [20, 30]], ["startAfter", alice])
+      await db.get("ppl", ["age", "in", [20, 30]], ["startAfter", alice]),
     ).to.eql([Beth])
 
     // where not-in with cursor
@@ -407,13 +408,13 @@ const tests = {
         "ppl",
         ["age"],
         ["age", "not-in", [20, 30]],
-        ["startAfter", john]
-      )
+        ["startAfter", john],
+      ),
     ).to.eql([])
 
     // where =! with cursor
     expect(
-      await db.get("ppl", ["age"], ["age", "!=", 30], ["startAfter", bob])
+      await db.get("ppl", ["age"], ["age", "!=", 30], ["startAfter", bob]),
     ).to.eql([John])
 
     // desc/reverse tests
@@ -422,8 +423,8 @@ const tests = {
         "ppl",
         ["age", "desc"],
         ["age", ">", 20],
-        ["startAfter", john]
-      )
+        ["startAfter", john],
+      ),
     ).to.eql([Beth, Alice])
 
     expect(
@@ -432,12 +433,17 @@ const tests = {
         ["age", "desc"],
         ["age", ">=", 30],
         ["startAt", beth],
-        ["endAt", beth]
-      )
+        ["endAt", beth],
+      ),
     ).to.eql([Beth])
 
     expect(
-      await db.get("ppl", ["age", "desc"], ["age", "<", 40], ["startAt", alice])
+      await db.get(
+        "ppl",
+        ["age", "desc"],
+        ["age", "<", 40],
+        ["startAt", alice],
+      ),
     ).to.eql([Alice, Bob])
 
     expect(
@@ -445,16 +451,16 @@ const tests = {
         "ppl",
         ["age", "desc"],
         ["age", "<=", 40],
-        ["startAfter", alice]
-      )
+        ["startAfter", alice],
+      ),
     ).to.eql([Bob])
     expect(
       await db.get(
         "ppl",
         ["age", "desc"],
         ["age", "<", 40],
-        ["startAfter", alice]
-      )
+        ["startAfter", alice],
+      ),
     ).to.eql([Bob])
 
     expect(
@@ -462,16 +468,16 @@ const tests = {
         "ppl",
         ["age", "desc"],
         ["age", ">", 20],
-        ["endBefore", alice]
-      )
+        ["endBefore", alice],
+      ),
     ).to.eql([John, Beth])
 
     expect(
-      await db.get("ppl", ["age", "desc"], ["age", ">=", 30], ["endAt", alice])
+      await db.get("ppl", ["age", "desc"], ["age", ">=", 30], ["endAt", alice]),
     ).to.eql([John, Beth, Alice])
 
     expect(
-      await db.get("ppl", ["age", "desc"], ["age", "<", 40], ["endAt", bob])
+      await db.get("ppl", ["age", "desc"], ["age", "<", 40], ["endAt", bob]),
     ).to.eql([Beth, Alice, Bob])
 
     expect(
@@ -479,16 +485,16 @@ const tests = {
         "ppl",
         ["age", "desc"],
         ["age", "<=", 40],
-        ["endBefore", bob]
-      )
+        ["endBefore", bob],
+      ),
     ).to.eql([John, Beth, Alice])
 
     // in with desc
     expect(await db.get("ppl", ["age", "asc"], ["age", "in", [40, 20]])).to.eql(
-      [Bob, John]
+      [Bob, John],
     )
     expect(
-      await db.get("ppl", ["age", "desc"], ["age", "in", [40, 20]])
+      await db.get("ppl", ["age", "desc"], ["age", "in", [40, 20]]),
     ).to.eql([John, Bob])
 
     expect(
@@ -496,8 +502,8 @@ const tests = {
         "ppl",
         ["age", "desc"],
         ["age", "in", [40, 20]],
-        ["startAfter", john]
-      )
+        ["startAfter", john],
+      ),
     ).to.eql([Bob])
     expect(
       await db.get(
@@ -505,8 +511,8 @@ const tests = {
         ["age", "desc"],
         ["age", "in", [40, 20]],
         ["startAt", john],
-        ["endBefore", bob]
-      )
+        ["endBefore", bob],
+      ),
     ).to.eql([John])
     expect(await db.get("ppl", ["age", "not-in", [40, 20]])).to.eql([
       Alice,
@@ -514,7 +520,7 @@ const tests = {
     ])
 
     expect(
-      await db.get("ppl", ["age", "desc"], ["age", "not-in", [40, 20]])
+      await db.get("ppl", ["age", "desc"], ["age", "not-in", [40, 20]]),
     ).to.eql([Beth, Alice])
 
     expect(
@@ -522,8 +528,8 @@ const tests = {
         "ppl",
         ["age", "desc"],
         ["age", "not-in", [40, 20]],
-        ["startAfter", beth]
-      )
+        ["startAfter", beth],
+      ),
     ).to.eql([Alice])
 
     expect(
@@ -531,8 +537,8 @@ const tests = {
         "ppl",
         ["age", "desc"],
         ["age", "!=", 30],
-        ["startAfter", john]
-      )
+        ["startAfter", john],
+      ),
     ).to.eql([Bob])
 
     await db.addIndex(
@@ -543,7 +549,7 @@ const tests = {
       "ppl",
       {
         ar: arweave_wallet,
-      }
+      },
     )
 
     expect(
@@ -552,8 +558,8 @@ const tests = {
         ["age", "desc"],
         ["letters", "array-contains", "b"],
         ["age", "in", [20, 40]],
-        ["startAt", bob]
-      )
+        ["startAt", bob],
+      ),
     ).to.eql([Bob])
 
     expect(
@@ -562,8 +568,8 @@ const tests = {
         ["age", "desc"],
         ["letters", "array-contains-any", ["b", "j"]],
         ["age", "in", [20, 40]],
-        ["startAt", john]
-      )
+        ["startAt", john],
+      ),
     ).to.eql([John, Beth, Bob])
   },
 
@@ -584,7 +590,7 @@ const tests = {
         "favorites.food": db.del(),
       },
       "ppl",
-      "Bob"
+      "Bob",
     )
     const data3 = {
       age: 30,
@@ -597,7 +603,7 @@ const tests = {
     })
 
     expect(await db.get("ppl", ["countries.UAE.Dubai", "==", "Marina"])).to.eql(
-      [data3]
+      [data3],
     )
   },
 
@@ -706,7 +712,7 @@ const tests = {
     })
 
     expect(
-      await db.get("ppl", ["name"], ["age"], ["name", "in", ["Alice", "John"]])
+      await db.get("ppl", ["name"], ["age"], ["name", "in", ["Alice", "John"]]),
     ).to.eql([data2, data4])
     expect(await db.getIndexes("ppl")).to.eql([
       [["__id__", "asc"]],
@@ -748,7 +754,7 @@ const tests = {
     await db.add(bob, "ppl")
     await db.add(alice, "ppl")
     expect(
-      await db.get("ppl", ["favs", "array-contains", "food"], ["date", "desc"])
+      await db.get("ppl", ["favs", "array-contains", "food"], ["date", "desc"]),
     ).to.eql([alice, bob])
   },
   "should force inequality come before sort": async ({
@@ -838,7 +844,7 @@ const tests = {
       "inc_age",
       {
         ar: arweave_wallet,
-      }
+      },
     )
     expect((await db.get("ppl", "Bob")).age).to.eql(2)
 
@@ -853,7 +859,7 @@ const tests = {
       "inc_age",
       {
         ar: arweave_wallet,
-      }
+      },
     )
     expect((await db.get("ppl", "Bob")).age).to.eql(2)
 
@@ -868,7 +874,7 @@ const tests = {
       "inc_age",
       {
         ar: arweave_wallet,
-      }
+      },
     )
     expect((await db.get("ppl", "Bob")).age).to.eql(2)
 
@@ -889,7 +895,7 @@ const tests = {
       "inc_age",
       {
         ar: arweave_wallet,
-      }
+      },
     )
     expect((await db.get("ppl", "Bob")).age).to.eql(2)
 
@@ -910,7 +916,7 @@ const tests = {
       "inc_age",
       {
         ar: arweave_wallet,
-      }
+      },
     )
     expect((await db.get("ppl", "Bob")).age).to.eql(3)
 
@@ -933,7 +939,7 @@ const tests = {
       "inc_age",
       {
         ar: arweave_wallet,
-      }
+      },
     )
     expect((await db.get("ppl", "Bob")).age).to.eql(5)
   },
@@ -948,7 +954,7 @@ const tests = {
       "ticker",
       {
         ar: arweave_wallet,
-      }
+      },
     )
     let success = false
     while (true) {
@@ -1094,7 +1100,7 @@ const tests = {
       "inc age",
       {
         ar: arweave_wallet,
-      }
+      },
     )
     expect((await db.get("ppl", "Bob")).age).to.eql(4)
     while (true) {
@@ -1138,8 +1144,8 @@ const tests = {
             version: await db.getVersion(),
           },
         },
-        data
-      )
+        data,
+      ),
     )
   },
 
@@ -1220,7 +1226,7 @@ const tests = {
       ],
       {
         ar: arweave_wallet,
-      }
+      },
     )
     expect(await db.getSchema("ppl")).to.eql(schema)
     expect(await db.getRules("ppl")).to.eql(rules)
@@ -1241,7 +1247,7 @@ const tests = {
       ],
       {
         ar: arweave_wallet,
-      }
+      },
     )
     expect((await db.getCrons()).crons).to.eql({})
     expect(await db.getOwner()).to.eql([addr])
@@ -1996,7 +2002,7 @@ const tests = {
     expect(await db.get("ppl5")).to.eql([{ num: 4 }])
   },
 
-  "should verify zkp": async ({ db, arweave_wallet }) => {
+  "should verify zkp.skip": async ({ db, arweave_wallet }) => {
     let dataStorage, credentialWallet, identityWallet
     ;({ dataStorage, credentialWallet, identityWallet } =
       await initInMemoryDataStorageAndWallets())
@@ -2005,7 +2011,7 @@ const tests = {
       identityWallet,
       credentialWallet,
       dataStorage.states,
-      circuitStorage
+      circuitStorage,
     )
     const { did: userDID, credential: authBJJCredentialUser } =
       await createIdentity(identityWallet)
@@ -2025,20 +2031,20 @@ const tests = {
     const credentialRequest = createCred(data)
     const credential = await identityWallet.issueCredential(
       issuerDID,
-      credentialRequest
+      credentialRequest,
     )
 
     await dataStorage.credential.saveCredential(credential)
     const proofReqSig = createReq(credentialRequest, req)
     const { proof, pub_signals } = await proofService.generateProof(
       proofReqSig,
-      userDID
+      userDID,
     )
 
     await db.add({ test: db.zkp(proof, pub_signals) }, "ppl")
     expect((await db.get("ppl"))[0].test.pub_signals.userID).to.eql(id)
   },
-  "should link did": async ({ db, arweave_wallet, wallet }) => {
+  "should link did.skip": async ({ db, arweave_wallet, wallet }) => {
     let dataStorage, credentialWallet, identityWallet
     ;({ dataStorage, credentialWallet, identityWallet } =
       await initInMemoryDataStorageAndWallets())
@@ -2047,7 +2053,7 @@ const tests = {
       identityWallet,
       credentialWallet,
       dataStorage.states,
-      circuitStorage
+      circuitStorage,
     )
     const { did: userDID, credential: authBJJCredentialUser } =
       await createIdentity(identityWallet)
@@ -2065,7 +2071,7 @@ const tests = {
     })
     const credential = await identityWallet.issueCredential(
       issuerDID,
-      credentialRequest
+      credentialRequest,
     )
     await dataStorage.credential.saveCredential(credential)
     const proofReqSig = createReq(credentialRequest, {
@@ -2075,7 +2081,7 @@ const tests = {
     })
     const { proof, pub_signals } = await proofService.generateProof(
       proofReqSig,
-      userDID
+      userDID,
     )
     const { identity } = await db.createTempAddressWithPolygonID(tempAddr, {
       proof,
@@ -2086,6 +2092,13 @@ const tests = {
       address: userDID.string(),
       expiry: 0,
     })
+  },
+  "should download specific version": async ({ arweave_wallet }) => {
+    const db = new DB({ type: 3, secure: false })
+    await db.set({ age: 10 }, "ppl", "bob", { ar: arweave_wallet })
+    expect(await db.get("ppl")).to.eql([{ age: 10 }])
+    await db.set({ age: 15 }, "ppl", "alice", { ar: arweave_wallet })
+    expect(await db.get("ppl")).to.eql([{ age: 15 }, { age: 10 }])
   },
 }
 

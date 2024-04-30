@@ -201,7 +201,7 @@ const tests = {
       ar: arweave_wallet,
     })
     expect(
-      await db.get("ppl", ["age"], ["weight"], ["startAt", 30, 70])
+      await db.get("ppl", ["age"], ["weight"], ["startAt", 30, 70]),
     ).to.eql([Beth, John])
 
     // skip endAt multiple fields
@@ -256,7 +256,7 @@ const tests = {
 
     // where array-contains-any
     expect(
-      await db.get("ppl", ["letters", "array-contains-any", ["j", "t"]])
+      await db.get("ppl", ["letters", "array-contains-any", ["j", "t"]]),
     ).to.eql([Beth, John])
   },
 
@@ -380,7 +380,7 @@ const tests = {
     })
 
     expect(
-      await db.get("ppl", ["name"], ["age"], ["name", "in", ["Alice", "John"]])
+      await db.get("ppl", ["name"], ["age"], ["name", "in", ["Alice", "John"]]),
     ).to.eql([data2, data4])
 
     expect(await db.getIndexes("ppl")).to.eql([
@@ -426,13 +426,13 @@ const tests = {
       {
         address: identity.address,
       },
-      { wallet }
+      { wallet },
     )
     await db.set({ name: "Bob", age: 20 }, "ppl", "Bob", {
       privateKey: identity.privateKey,
     })
     expect((await db.cget("ppl", "Bob")).setter).to.eql(
-      identity.address.toLowerCase()
+      identity.address.toLowerCase(),
     )
   },
 
@@ -449,7 +449,7 @@ const tests = {
         evm: wallet,
         relay: true,
         jobID: "auth:lens",
-      }
+      },
     )
     const pkp = Wallet.createRandom()
     pkp._account = { address: pkp.address }
@@ -472,11 +472,11 @@ const tests = {
       "auth:lens",
       param,
       { linkTo: "lens:123" },
-      { intmax: pkp, relay: true }
+      { intmax: pkp, relay: true },
     )
     await db.write("relay", sig)
     expect((await db.getAddressLink(identity.address)).address).to.eql(
-      "lens:123"
+      "lens:123",
     )
   },
 
@@ -489,7 +489,7 @@ const tests = {
         evm: wallet,
         relay: true,
         jobID: "auth:lens",
-      }
+      },
     )
     const pkp = Wallet.createRandom()
     pkp._account = { address: pkp.address }
@@ -512,11 +512,11 @@ const tests = {
       "auth:lens",
       param,
       { linkTo: "lens:123" },
-      { intmax: pkp, relay: true }
+      { intmax: pkp, relay: true },
     )
     await db.write("relay", sig)
     expect((await db.getAddressLink(identity.address)).address).to.eql(
-      "lens:123"
+      "lens:123",
     )
   },
 
@@ -571,7 +571,7 @@ const tests = {
     const data = { name: "Bob", age: 20 }
     const tx = (await db.add(data, "ppl", { ii })).originalTxId
     expect((await db.cget("ppl", (await db.getIds(tx))[0])).setter).to.eql(
-      ii.toJSON()[0]
+      ii.toJSON()[0],
     )
   },
 
@@ -599,13 +599,13 @@ const tests = {
       {
         address: identity.address,
       },
-      { ii }
+      { ii },
     )
     await db.set({ name: "Bob", age: 20 }, "ppl", "Bob", {
       privateKey: identity.privateKey,
     })
     expect((await db.cget("ppl", "Bob")).setter).to.eql(
-      identity.address.toLowerCase()
+      identity.address.toLowerCase(),
     )
   },
 
@@ -624,13 +624,13 @@ const tests = {
       {
         address: identity.address,
       },
-      { ar: arweave_wallet }
+      { ar: arweave_wallet },
     )
     await db.set({ name: "Bob", age: 20 }, "ppl", "Bob", {
       privateKey: identity.privateKey,
     })
     expect((await db.cget("ppl", "Bob")).setter).to.eql(
-      identity.address.toLowerCase()
+      identity.address.toLowerCase(),
     )
   },
 
@@ -706,7 +706,7 @@ const tests = {
       isEvolving: false,
     })
     expect(
-      compose(map(pick(["signer", "srcTxId", "oldVersion"])))(evo.history)
+      compose(map(pick(["signer", "srcTxId", "oldVersion"])))(evo.history),
     ).to.eql([history1])
     await db.setCanEvolve(false, { ar: arweave_wallet })
     const evo2 = await db.getEvolve()
@@ -716,7 +716,7 @@ const tests = {
       isEvolving: false,
     })
     expect(
-      compose(map(pick(["signer", "srcTxId", "oldVersion"])))(evo2.history)
+      compose(map(pick(["signer", "srcTxId", "oldVersion"])))(evo2.history),
     ).to.eql([history1])
 
     await db.evolve(evolve2, { ar: arweave_wallet })
@@ -727,7 +727,7 @@ const tests = {
       isEvolving: false,
     })
     expect(
-      compose(map(pick(["signer", "srcTxId", "oldVersion"])))(evo3.history)
+      compose(map(pick(["signer", "srcTxId", "oldVersion"])))(evo3.history),
     ).to.eql([history1])
 
     await db.setCanEvolve(true, { ar: arweave_wallet })
@@ -743,7 +743,7 @@ const tests = {
 
     await db.migrate(version, { ar: arweave_wallet })
     expect(
-      compose(map(pick(["signer", "srcTxId", "oldVersion"])))(evo4.history)
+      compose(map(pick(["signer", "srcTxId", "oldVersion"])))(evo4.history),
     ).to.eql([history1, history2])
 
     await db.set(data, "ppl", "Bob")
@@ -805,7 +805,7 @@ const tests = {
       {
         privateKey: identity.privateKey,
         wallet: identity.address,
-      }
+      },
     )
     const addr = wallet.getAddressString()
     const doc = await db.cget("ppl", "Bob")
@@ -862,7 +862,7 @@ const tests = {
       { height: 182 },
       {
         intmax: intmax_wallet,
-      }
+      },
     )
     const addr = wallet.getAddressString()
     const doc = await db.cget("ppl", "Bob")
@@ -944,9 +944,8 @@ const tests = {
 
   "should match signers": async ({ db, dfinityTxId, ethereumTxId, wallet }) => {
     const original_account = EthWallet.generate()
-    const { identity: temp_account } = await db.createTempAddress(
-      original_account
-    )
+    const { identity: temp_account } =
+      await db.createTempAddress(original_account)
     const preset_addr = wallet.getAddressString() // this was set when initializing SDK with EthWallet
     const original_addr = original_account.getAddressString()
     const temp_addr = temp_account.address.toLowerCase()
@@ -995,7 +994,7 @@ const tests = {
     const addr = await db.arweave.wallets.jwkToAddress(arweave_wallet)
     const version = require(ver)
     const initial_state = JSON.parse(
-      readFileSync(resolve(__dirname, init), "utf8")
+      readFileSync(resolve(__dirname, init), "utf8"),
     )
     expect(await db.getInfo()).to.eql({
       auth: {
@@ -1092,8 +1091,8 @@ const tests = {
             version: await db.getVersion(),
           },
         },
-        data
-      )
+        data,
+      ),
     )
   },
 
@@ -1174,7 +1173,7 @@ const tests = {
       ],
       {
         ar: arweave_wallet,
-      }
+      },
     )
     expect(await db.getSchema("ppl")).to.eql(schema)
     expect(await db.getRules("ppl")).to.eql(rules)
@@ -1195,7 +1194,7 @@ const tests = {
       ],
       {
         ar: arweave_wallet,
-      }
+      },
     )
     expect((await db.getCrons()).crons).to.eql({})
     expect(await db.getOwner()).to.eql([addr])
@@ -1257,7 +1256,7 @@ const tests = {
         "favorites.food": db.del(),
       },
       "ppl",
-      "Bob"
+      "Bob",
     )
     const data3 = {
       age: 30,
@@ -1266,7 +1265,7 @@ const tests = {
     }
     expect(await db.get("ppl", "Bob")).to.eql(data3)
     expect(await db.get("ppl", ["countries.UAE.Dubai", "==", "Marina"])).to.eql(
-      [data3]
+      [data3],
     )
   },
 
