@@ -138,6 +138,7 @@ class SDK extends Base {
     remoteStateSyncEnabled = true,
     useVM2,
     type = 1,
+    sequencerUrl,
   }) {
     super()
     this.remoteStateSyncSource = remoteStateSyncSource
@@ -151,6 +152,7 @@ class SDK extends Base {
     this.handle =
       this.type === 1 ? handle : this.type === 2 ? handle_kv : handle_bpt
     if (!isNil(useVM2)) this.useVM2 = useVM2
+    if (!isNil(sequencerUrl)) this.sequencerUrl = sequencerUrl
     this.LmdbCache = LmdbCache
     this.createClient = createClient
     this.WarpSubscriptionPlugin = WarpSubscriptionPlugin
@@ -379,27 +381,27 @@ class SDK extends Base {
     if (isNil(wallet)) throw Error("wallet missing")
     if (isNil(this.contractTxId)) throw Error("contractTxId missing")
     this.wallet = wallet
+    let evalOpt = {
+      internalWrites: true,
+      remoteStateSyncEnabled:
+        this.isNode || this.network === "localhost"
+          ? false
+          : this.remoteStateSyncSource,
+      remoteStateSyncSource:
+        this.remoteStateSyncSource ?? "https://dre-3.warp.cc/contract",
+      allowBigInt: true,
+      useVM2: !isNil(this.useVM2)
+        ? this.useVM2
+        : typeof window !== "undefined"
+          ? false
+          : !this.old,
+      useKVStorage: this.type !== 1,
+    }
+    if (isNil(this.sequencerUrl)) evalOpt.sequencerUrl = this.sequencerUrl
     this.db = this.warp
       .contract(this.contractTxId)
       .connect(wallet)
-      .setEvaluationOptions(
-        mergeLeft(evaluationOptions, {
-          internalWrites: true,
-          remoteStateSyncEnabled:
-            this.isNode || this.network === "localhost"
-              ? false
-              : this.remoteStateSyncSource,
-          remoteStateSyncSource:
-            this.remoteStateSyncSource ?? "https://dre-3.warp.cc/contract",
-          allowBigInt: true,
-          useVM2: !isNil(this.useVM2)
-            ? this.useVM2
-            : typeof window !== "undefined"
-              ? false
-              : !this.old,
-          useKVStorage: this.type !== 1,
-        }),
-      )
+      .setEvaluationOptions(mergeLeft(evaluationOptions, evalOpt))
     dbs[this.contractTxId] = this
     this.domain = { name, version, verifyingContract: this.contractTxId }
     const self = this
@@ -581,9 +583,7 @@ class SDK extends Base {
     let start = Date.now()
     let originalTxId = null
     try {
-      tx = await this.db[
-        this.network === "localhost" ? "writeInteraction" : "bundleInteraction"
-      ](param, {})
+      tx = await this.db["bundleInteraction"](param, {})
     } catch (e) {
       err = e
       console.log(e)
@@ -600,7 +600,7 @@ class SDK extends Base {
     parallel,
   ) {
     delete param.data
-    if (JSON.stringify(param).length > 15000) {
+    if (JSON.stringify(param).length > 2500) {
       return {
         nonce: param.nonce,
         signer: param.caller,
