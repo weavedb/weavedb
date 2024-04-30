@@ -44,7 +44,6 @@ describe("WeaveDB Offchain BPT", function () {
     })
     db.setDefaultWallet(wallet)
   })
-
   tests(
     it,
     () => ({
@@ -63,6 +62,6 @@ describe("WeaveDB Offchain BPT", function () {
       nostrTxId,
       polygonIDTxId,
     }),
-    local
+    local,
   )
 })

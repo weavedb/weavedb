@@ -13,7 +13,10 @@ describe("WeaveDB", function () {
     dfinityTxId,
     ethereumTxId,
     bundlerTxId,
-    intercallTxId
+    intercallTxId,
+    nostrTxId,
+    polygonIDTxId
+
   const Arweave = require("arweave")
 
   this.timeout(0)
@@ -34,6 +37,8 @@ describe("WeaveDB", function () {
       bundlerTxId,
       intercallTxId,
       contractTxId,
+      nostrTxId,
+      polygonIDTxId,
     } = await initBeforeEach(false, false, "evm", 3, false))
   })
 
@@ -57,7 +62,9 @@ describe("WeaveDB", function () {
       ethereumTxId,
       bundlerTxId,
       contractTxId,
+      nostrTxId,
+      polygonIDTxId,
     }),
-    local
+    local,
   )
 })
