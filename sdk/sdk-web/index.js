@@ -397,7 +397,7 @@ class SDK extends Base {
           : !this.old,
       useKVStorage: this.type !== 1,
     }
-    if (isNil(this.sequencerUrl)) evalOpt.sequencerUrl = this.sequencerUrl
+    if (!isNil(this.sequencerUrl)) evalOpt.sequencerUrl = this.sequencerUrl
     this.db = this.warp
       .contract(this.contractTxId)
       .connect(wallet)
