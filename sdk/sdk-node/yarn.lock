@@ -5259,10 +5259,10 @@ weavedb-contracts@^0.39.0:
     wasmbuilder "^0.0.16"
     wasmcurves "^0.2.1"
 
-weavedb-sdk@^0.39.6:
-  version "0.39.6"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.39.6.tgz#a6bf72a63fe6fc6a361891410d8e45cebba5d9f3"
-  integrity sha512-6mlyTi7urBzW5OJWdMKPfj0MZPlEHqDVx2Lt/mAXYN18/4RR6hyZxUMFoNW/8RiaPkaimyUHnaYOXVz6mBIvIg==
+weavedb-sdk@^0.39.7:
+  version "0.39.7"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.39.7.tgz#9166a9d4cc1d917348895400ba43bb76e15bc189"
+  integrity sha512-c6WG/Io3mVM205GYh07YJJ/qMaN1G88Hhw3rBNtd8s60RSY8DlbUL1sgWe/ESj+CrJ0/KajzwhmGDC+dfzOAXA==
   dependencies:
     "@lit-protocol/sdk-browser" "^1.3.3"
     "@metamask/legacy-web3" "^2.0.0"

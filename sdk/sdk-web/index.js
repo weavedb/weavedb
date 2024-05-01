@@ -583,7 +583,9 @@ class SDK extends Base {
     let start = Date.now()
     let originalTxId = null
     try {
-      tx = await this.db["bundleInteraction"](param, {})
+      tx = await this.db[
+        this.network === "localhost" ? "writeInteraction" : "bundleInteraction"
+      ](param, {})
     } catch (e) {
       err = e
       console.log(e)
