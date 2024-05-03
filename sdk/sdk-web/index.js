@@ -154,7 +154,19 @@ class SDK extends Base {
       this.type === 1 ? handle : this.type === 2 ? handle_kv : handle_bpt
     if (!isNil(useVM2)) this.useVM2 = useVM2
     if (!isNil(sequencerUrl)) this.sequencerUrl = sequencerUrl
-    if (!isNil(apiKey)) this.apiKey = apiKey
+    if (!isNil(apiKey)) {
+      this.apiKey = apiKey
+      const _fetch = fetch
+      fetch = (...params) => {
+        if (
+          typeof params[0] === "string" &&
+          /^https\:\/\/gw\.warp\.cc\//.test(params[0])
+        ) {
+          if (!params[1]) params.push({ headers: { "x-api-key": this.apiKey } })
+        }
+        return _fetch(...params)
+      }
+    }
     this.LmdbCache = LmdbCache
     this.createClient = createClient
     this.WarpSubscriptionPlugin = WarpSubscriptionPlugin
