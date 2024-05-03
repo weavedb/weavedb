@@ -6,10 +6,9 @@ const {
   SortKeyCacheResult,
   Warp,
 } = require("warp-contracts")
-const { WarpPlugin, WarpPluginType } = require("warp-contracts")
 
 const isNode = new Function(
-  "try {return this===global;}catch(e){return false;}"
+  "try {return this===global;}catch(e){return false;}",
 )
 if (isNode) {
   global.WebSocket = require("ws")
@@ -36,7 +35,7 @@ class WarpSubscriptionPlugin {
             connect(date - 1000 * 60 > last_attempt ? 1 : ++attempt)
             last_attempt = date
           }, 1000 * attempt)
-        }
+        },
       )
         .then(() => {
           this.logger.debug("Subscribed to interactions for", this.contractTxId)
@@ -73,7 +72,7 @@ class StateUpdatePlugin {
         {
           lastSortKey: input.lastSortKey,
           localCache: lastStoredKey,
-        }
+        },
       )
       result = await this.warp.contract(this.contractTxId).readState()
     }

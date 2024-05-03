@@ -1,5 +1,5 @@
 const { compareVersions } = require("compare-versions")
-
+const FetchOptionsPlugin = require("./warp-contracts-plugin-fetch-options")
 const {
   mergeLeft,
   reject,
@@ -138,6 +138,7 @@ class SDK extends Base {
     remoteStateSyncEnabled = true,
     useVM2,
     type = 1,
+    apiKey,
     sequencerUrl,
   }) {
     super()
@@ -153,6 +154,7 @@ class SDK extends Base {
       this.type === 1 ? handle : this.type === 2 ? handle_kv : handle_bpt
     if (!isNil(useVM2)) this.useVM2 = useVM2
     if (!isNil(sequencerUrl)) this.sequencerUrl = sequencerUrl
+    if (!isNil(apiKey)) this.apiKey = apiKey
     this.LmdbCache = LmdbCache
     this.createClient = createClient
     this.WarpSubscriptionPlugin = WarpSubscriptionPlugin
@@ -221,6 +223,9 @@ class SDK extends Base {
         undefined,
         this.arweave,
       )
+      if (!isNil(this.apiKey)) {
+        this.warp = this.warp.use(new FetchOptionsPlugin(this.apiKey))
+      }
     }
     this.contractTxId = contractTxId
     if (all(complement(isNil))([contractTxId, wallet, name, version])) {
