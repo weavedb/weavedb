@@ -75,6 +75,9 @@ class OffChain extends Base {
     version = require(`${_contracts}/weavedb/lib/version`)
     version_kv = require(`${_contracts}/weavedb-kv/lib/version`)
     version_bpt = require(`${_contracts}/weavedb-bpt/lib/version`)
+    this.queue = []
+    this.ongoing = false
+
     this.versions = versions
     this.caller = caller
     this.noauth = noauth
@@ -264,8 +267,32 @@ class OffChain extends Base {
     }
     return results
   }
-
-  async write(func, param, dryWrite, bundle, relay = false, onDryWrite, date) {
+  async next() {
+    if (!this.ongoing) {
+      if (this.queue.length > 0) {
+        this.ongoing = true
+        const q = this.queue.shift()
+        await q[0](await this._writeContract(...q[1]))
+        this.ongoing = false
+        if (this.queue.length > 0) this.next()
+      }
+    }
+  }
+  async write(...params) {
+    return await new Promise(res => {
+      this.queue.push([res, params])
+      this.next()
+    })
+  }
+  async _writeContract(
+    func,
+    param,
+    dryWrite,
+    bundle,
+    relay = false,
+    onDryWrite,
+    date,
+  ) {
     if (JSON.stringify(param).length > 3900) {
       return {
         nonce: param.nonce,
