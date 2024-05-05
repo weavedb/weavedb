@@ -1,17 +1,17 @@
 {
-  "version": "0.39.0",
+  "version": "0.39.1",
   "canEvolve": true,
   "evolve": null,
   "secure": true,
-  "auth":{
+  "auth": {
     "algorithms": ["secp256k1", "secp256k1-2", "ed25519", "rsa256"],
     "name": "weavedb",
     "version": "1"
   },
   "crons": {
     "lastExecuted": 0,
-    "crons":{}
+    "crons": {}
   },
-  "contracts":{},
-  "triggers":{}
+  "contracts": {},
+  "triggers": {}
 }

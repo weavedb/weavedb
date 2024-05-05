@@ -2,7 +2,7 @@ const { tail, isNil, clone, mergeLeft } = require("ramda")
 const Base = require("weavedb-base")
 let arweave = require("arweave")
 if (!isNil(arweave.default)) arweave = arweave.default
-let contracts, handle, handle_kv, handle_bpt, version, version_kv, version_bpt
+let contracts, handle_bpt, version, version_bpt
 const versions = require("./versions")
 
 const isBrowser = new Function(
@@ -69,11 +69,10 @@ class OffChain extends Base {
     noauth = false,
     caller = null,
     secure = true,
+    local = false,
     _contracts = "weavedb-contracts",
   } = {}) {
     super()
-    version = require(`${_contracts}/weavedb/lib/version`)
-    version_kv = require(`${_contracts}/weavedb-kv/lib/version`)
     version_bpt = require(`${_contracts}/weavedb-bpt/lib/version`)
     this.queue = []
     this.ongoing = false
@@ -87,12 +86,9 @@ class OffChain extends Base {
     this.type = type
 
     this.handles = {}
-    ;({ handle } = require(`${_contracts}/weavedb/contract`))
-    ;({ handle: handle_kv } = require(`${_contracts}/weavedb-kv/contract`))
     ;({ handle: handle_bpt } = require(`${_contracts}/weavedb-bpt/contract`))
-    this.handle =
-      this.type === 1 ? handle : this.type === 2 ? handle_kv : handle_bpt
-
+    this.handle = this.type === 3 ? handle_bpt : handle_bpt
+    this.local = local
     this.validity = {}
     this.txs = []
     this.arweave = arweave.init()
@@ -102,81 +98,28 @@ class OffChain extends Base {
       version: "1",
       verifyingContract: this.contractTxId,
     }
-    this.state = mergeLeft(
-      state,
-      this.type === 1
-        ? {
-            version,
-            canEvolve: true,
-            evolve: null,
-            secure,
-            data: {},
-            nonces: {},
-            ids: {},
-            indexes: {},
-            auth: {
-              algorithms: ["secp256k1", "secp256k1-2", "ed25519", "rsa256"],
-              name: "weavedb",
-              version: "1",
-              links: {},
-            },
-            crons: {
-              lastExecuted: 0,
-              crons: {},
-            },
-            contracts: {
-              ethereum: "ethereum",
-              dfinity: "dfinity",
-              nostr: "nostr",
-              polygonID: "polygon-id",
-            },
-          }
-        : this.type === 2
-          ? {
-              version: version_kv,
-              canEvolve: true,
-              evolve: null,
-              secure,
-              auth: {
-                algorithms: ["secp256k1", "secp256k1-2", "ed25519", "rsa256"],
-                name: "weavedb",
-                version: "1",
-                links: {},
-              },
-              crons: {
-                lastExecuted: 0,
-                crons: {},
-              },
-              contracts: {
-                ethereum: "ethereum",
-                dfinity: "dfinity",
-                nostr: "nostr",
-                polygonID: "polygon-id",
-              },
-            }
-          : {
-              version: version_bpt,
-              canEvolve: true,
-              evolve: null,
-              secure,
-              auth: {
-                algorithms: ["secp256k1", "secp256k1-2", "ed25519", "rsa256"],
-                name: "weavedb",
-                version: "1",
-              },
-              crons: {
-                lastExecuted: 0,
-                crons: {},
-              },
-              contracts: {
-                ethereum: "ethereum",
-                dfinity: "dfinity",
-                nostr: "nostr",
-                bundler: "bundler",
-                polygonID: "polygon-id",
-              },
-            },
-    )
+    this.state = mergeLeft(state, {
+      version: version_bpt,
+      canEvolve: true,
+      evolve: null,
+      secure,
+      auth: {
+        algorithms: ["secp256k1", "secp256k1-2", "ed25519", "rsa256"],
+        name: "weavedb",
+        version: "1",
+      },
+      crons: {
+        lastExecuted: 0,
+        crons: {},
+      },
+      contracts: {
+        ethereum: "ethereum",
+        dfinity: "dfinity",
+        nostr: "nostr",
+        bundler: "bundler",
+        polygonID: "polygon-id",
+      },
+    })
     if (noauth) delete this.state.auth
     this.initialState = clone(this.state)
     this.height = 0
@@ -230,6 +173,7 @@ class OffChain extends Base {
     }
   }
   async getHandle(ver, sw) {
+    if (this.local) return this.handle
     try {
       const src = await dlContract(ver, sw)
       const normalizedSource = normalizeContractSource(src)

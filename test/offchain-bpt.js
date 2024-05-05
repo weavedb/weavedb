@@ -41,6 +41,7 @@ describe("WeaveDB Offchain BPT", function () {
       type: 3,
       caller: walletAddress,
       _contracts: "../contracts",
+      local: true,
     })
     db.setDefaultWallet(wallet)
   })
