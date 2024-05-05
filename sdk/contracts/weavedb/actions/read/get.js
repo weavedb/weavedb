@@ -1,4 +1,5 @@
 const {
+  path: __path,
   hasPath,
   uniq,
   pluck,
@@ -32,7 +33,8 @@ const {
   map,
 } = require("ramda")
 
-const { getDoc, getCol, err } = require("../../lib/utils")
+const { getDoc, getCol } = require("../../lib/utils")
+const { err } = require("../../../common/lib/utils")
 const { getIndex } = require("../../lib/index")
 
 const parseQuery = query => {
@@ -143,7 +145,7 @@ const parseQuery = query => {
   }
 }
 
-const getColIndex = (state, data, path, _sort) => {
+const getColIndex = async (state, data, path, _sort) => {
   let index = []
   let ind = getIndex(state, path)
   if (!isNil(_sort)) {
@@ -163,7 +165,7 @@ const getColIndex = (state, data, path, _sort) => {
   } else {
     index = !isNil(ind.__id__)
       ? ind.__id__.asc._
-      : keys(getCol(data, path).__docs)
+      : keys(await getCol(data, path).__docs)
   }
   return index
 }
@@ -254,9 +256,10 @@ const get = async (state, action, cursor = false, SmartWeave) => {
   const { data } = state
   if (path.length % 2 === 0) {
     if (any(complement(isNil))([_limit, _sort, _filter])) err()
-    const { doc: _data } = getDoc(
+    const { doc: _data } = await getDoc(
       data,
       path,
+      null,
       null,
       null,
       null,
@@ -279,14 +282,15 @@ const get = async (state, action, cursor = false, SmartWeave) => {
         : _data.__data || null,
     }
   } else {
-    let index = getColIndex(state, data, path, _sort)
+    let index = await getColIndex(state, data, path, _sort)
     if (isNil(index)) err("index doesn't exist")
     const { doc: _data } =
       path.length === 1
         ? { doc: data }
-        : getDoc(
+        : await getDoc(
             data,
             slice(0, -1, path),
+            null,
             null,
             null,
             null,
@@ -389,6 +393,7 @@ const get = async (state, action, cursor = false, SmartWeave) => {
       ) {
         err()
       }
+      const getField = (_path, data) => __path(_path.split("."), data)
       for (let _v of index) {
         const v = docs[_v].__data
         let ok = true
@@ -396,38 +401,38 @@ const get = async (state, action, cursor = false, SmartWeave) => {
           if (isNil(v[v2[0]]) && v[v2[0]] !== null) {
             ok = false
           }
+          const field = getField(v2[0], v)
           switch (v2[1]) {
             case ">":
-              ok = v[v2[0]] > v2[2]
+              ok = field > v2[2]
               break
             case "<":
-              ok = v[v2[0]] < v2[2]
+              ok = field < v2[2]
               break
             case ">=":
-              ok = v[v2[0]] >= v2[2]
+              ok = field >= v2[2]
               break
             case "<=":
-              ok = v[v2[0]] <= v2[2]
+              ok = field <= v2[2]
               break
             case "=": // deprecated at v0.23
             case "==":
-              ok = v[v2[0]] === v2[2]
+              ok = field === v2[2]
               break
             case "!=":
-              ok = v[v2[0]] !== v2[2]
+              ok = field !== v2[2]
               break
             case "in":
-              ok = includes(v[v2[0]])(v2[2])
+              ok = includes(field)(v2[2])
               break
             case "not-in":
-              ok = !includes(v[v2[0]])(v2[2])
+              ok = !includes(field)(v2[2])
               break
             case "array-contains":
-              ok = is(Array, v[v2[0]]) && includes(v2[2])(v[v2[0]])
+              ok = is(Array, field) && includes(v2[2])(field)
               break
             case "array-contains-any":
-              ok =
-                is(Array, v[v2[0]]) && intersection(v2[2])(v[v2[0]]).length > 0
+              ok = is(Array, field) && intersection(v2[2])(field).length > 0
               break
           }
           if (!ok) break

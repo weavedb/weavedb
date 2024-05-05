@@ -76,7 +76,7 @@ export default inject(
             px={2}
             w="100px"
             onClick={async () => {
-              if (!/^\s*.$/.test(newRelayer)) {
+              if (!/^\s*$/.test(newRelayer)) {
                 setNewRelayers(o(uniq, append(newRelayer))(newRelayers))
                 setNewRelayer("")
               }
@@ -161,7 +161,7 @@ export default inject(
             px={2}
             w="100px"
             onClick={async () => {
-              if (!/^\s*.$/.test(newSigner)) {
+              if (!/^\s*$/.test(newSigner)) {
                 setNewSigners(o(uniq, append(newSigner))(newSigners))
                 setNewSigner("")
               }
@@ -209,15 +209,17 @@ export default inject(
           onClick={async () => {
             if (isNil($.loading)) {
               try {
-                if (/^\s.*$/.test(newJobName)) {
+                if (/^\s*$/.test(newJobName)) {
                   alert("Enter job name")
                   return
                 }
                 let _schema = null
-                if (!/^\s.*$/.test(newJobSchema)) {
+                if (!/^\s*$/.test(newJobSchema)) {
                   if (checkJSON(newJobSchema)) return alert("Wrong JSON format")
+                  eval(`_schema = ${newJobSchema}`)
                 }
                 set("add_relayer", "loading")
+                console.log(_schema)
                 const res = JSON.parse(
                   await fn(addRelayerJob)({
                     relayers: newRelayers,

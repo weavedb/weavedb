@@ -2,6 +2,7 @@ const pako = require("pako")
 const elliptic = require("elliptic")
 const EthCrypto = require("eth-crypto")
 const { providers, Contract, utils } = require("ethers")
+const md5 = require("md5")
 
 const {
   startAuthentication,
@@ -26,6 +27,10 @@ const {
   last,
   isNil,
   mergeLeft,
+  clone,
+  tail,
+  map,
+  splitWhen,
 } = require("ramda")
 const ethSigUtil = require("@metamask/eth-sig-util")
 const { privateToAddress } = require("ethereumjs-util")
@@ -35,11 +40,54 @@ const EIP712Domain = [
   { name: "verifyingContract", type: "string" },
 ]
 
+const is_data = [
+  "set",
+  "setSchema",
+  "setRules",
+  "addIndex",
+  "removeIndex",
+  "add",
+  "update",
+  "upsert",
+  "addTrigger",
+  "removeTrigger",
+]
+
+const no_paths = [
+  "nonce",
+  "ids",
+  "validities",
+  "getCrons",
+  "getAlgorithms",
+  "getLinkedContract",
+  "getOwner",
+  "getAddressLink",
+  "getRelayerJob",
+  "listRelayerJobs",
+  "getEvolve",
+  "getInfo",
+  "getBundlers",
+  "addCron",
+  "removeCron",
+  "setAlgorithms",
+  "addRelayerJob",
+  "removeRelayerJob",
+  "linkContract",
+  "evolve",
+  "migrate",
+  "setCanEvolve",
+  "setSecure",
+  "addOwner",
+  "removeOwner",
+  "addAddressLink",
+  "removeAddressLink",
+]
+
 const lens = {
   contract: "0xDb46d1Dc155634FbC732f92E853b10B288AD5a1d",
-  pkp_address: "0xF810D4a6F0118E6a6a86A9FBa0dd9EA669e1CC2E".toLowerCase(),
+  pkp_address: "0xcdfaD4e9729f878d6334ae72Fcc6B45Ac3C70425".toLowerCase(),
   pkp_publicKey:
-    "0x04e1d2e8be025a1b8bb10b9c9a5ae9f11c02dbde892fee28e5060e146ae0df58182bdba7c7e801b75b80185c9e20a06944556a81355f117fcc5bd9a4851ac243e7",
+    "0x0443bab1da3778e77aff775ecbbc3a46512160f67ffc063c960501446d51e416445b16d74a61d7edb7eb1d599d73d3044ea2a48b7eae8fba6d6a0f5e40327ac8f6",
   ipfsId: "QmYq1RhS5A1LaEFZqN5rCBGnggYC9orEgHc9qEwnPfJci8",
   abi: [
     {
@@ -101,6 +149,7 @@ class Base {
       "getSchema",
       "getRules",
       "getIds",
+      "getValidities",
       "getOwner",
       "getAddressLink",
       "getAlgorithms",
@@ -113,14 +162,27 @@ class Base {
       "listCollections",
       "getInfo",
       "getNonce",
+      "getBundlers",
     ]
   }
+  zkp(proof, pub_signals) {
+    return { __op: "zkp", proof, pub_signals }
+  }
+
+  data(key) {
+    return { __op: "data", key }
+  }
+
   signer() {
     return { __op: "signer" }
   }
 
   ts() {
     return { __op: "ts" }
+  }
+
+  ms() {
+    return { __op: "ms" }
   }
 
   del() {
@@ -180,14 +242,43 @@ class Base {
     )
   }
 
+  async getValidities(tx, nocache) {
+    return this.read(
+      {
+        function: "validities",
+        tx,
+      },
+      nocache
+    )
+  }
+
   async bundle(queries, opt) {
-    const input = JSON.stringify(queries)
+    let input = null
+    if (!isNil(opt?.t)) {
+      if (opt.t.length !== queries.length) {
+        throw new Error("timestamp length is different from query length")
+      }
+      if (!is(Number, opt.n)) throw new Error("height not specified")
+      if (!is(String, opt.h)) throw new Error("hash not specified")
+      input = JSON.stringify({ q: queries, t: opt.t, h: opt.h, n: opt.n })
+    } else {
+      input = JSON.stringify(queries)
+    }
     const output = pako.deflate(input)
     const base64 = btoa(String.fromCharCode.apply(null, output))
     return this._write2("bundle", base64, opt)
   }
+
+  async nostr(event, opt) {
+    return this._write2("nostr", event, opt)
+  }
+
   async addOwner(address, opt) {
     return this._write2("addOwner", { address }, opt)
+  }
+
+  async setBundlers(bundlers, opt) {
+    return this._write2("setBundlers", { bundlers }, opt)
   }
 
   async migrate(version, opt) {
@@ -247,7 +338,10 @@ class Base {
       relay,
       jobID,
       multisigs,
-      linkedAccount
+      linkedAccount,
+      noauth,
+      data,
+      parallel
     if (!isNil(opt)) {
       ;({
         jobID,
@@ -264,6 +358,9 @@ class Base {
         extra,
         multisigs,
         linkedAccount,
+        noauth,
+        data,
+        parallel,
       } = opt)
     }
     if (!isNil(linkedAccount)) wallet = linkedAccount
@@ -281,8 +378,28 @@ class Base {
       jobID,
       multisigs,
       onDryWrite,
+      data,
+      parallel,
     ]
     if (
+      ((func === "nostr" || func === "bundle") && this.type === 3) ||
+      noauth ||
+      this.noauth
+    ) {
+      return await this.writeWithoutWallet(
+        func,
+        query,
+        dryWrite,
+        bundle,
+        extra,
+        relay,
+        jobID,
+        multisigs,
+        onDryWrite,
+        data,
+        parallel
+      )
+    } else if (
       isNil(intmax) &&
       isNil(ii) &&
       isNil(ar) &&
@@ -323,13 +440,16 @@ class Base {
           relay,
           jobID,
           multisigs,
-          onDryWrite
+          onDryWrite,
+          data,
+          parallel
         )
   }
 
   setDefaultWallet(wallet, type = "evm") {
     this.defaultWallet = { wallet, type }
   }
+
   _repeatQuery(func, query, attempt = 1) {
     return new Promise((req, rej) => {
       setTimeout(async () => {
@@ -346,6 +466,7 @@ class Base {
       }, 1000)
     })
   }
+
   async repeatQuery(func, query, attempt = 1) {
     try {
       return await func(...query)
@@ -354,6 +475,7 @@ class Base {
       return this._repeatQuery(func, query)
     }
   }
+
   async createTempAddressWithWebAuthn(_identity, expiry, linkTo, opt = {}) {
     if (typeof window === "undefined") {
       throw new Error("WebAuthn is only compaitble with browser")
@@ -454,6 +576,7 @@ class Base {
     identity.webauthn = _identity
     return { identity, tx: await this.write("relay", relay_params) }
   }
+
   async createTempAddressWithLens(expiry, linkTo, opt = {}) {
     try {
       if (typeof window === "undefined") {
@@ -604,6 +727,30 @@ class Base {
     )
   }
 
+  async createTempAddressWithPolygonID(
+    identity,
+    proof,
+    expiry,
+    linkTo,
+    opt = {}
+  ) {
+    opt.privateKey = identity.privateKey
+    const addr = proof.did
+    const nonce = await this.getNonce(addr)
+    let param = {
+      proof: proof.proof,
+      pub_signals: proof.pub_signals,
+      address: addr,
+    }
+    if (!isNil(expiry)) param.expiry = expiry
+    if (!isNil(linkTo)) param.linkTo = linkTo
+    const tx = await this.addAddressLink(param, { nonce, ...opt })
+    identity.signer = tx.signer
+    identity.type = "polygon-id"
+    identity.linkedAccount = linkTo || proof.did
+    return { tx, identity }
+  }
+
   async createTempAddress(evm, expiry, linkTo, opt = {}) {
     const wallet = is(Object, evm) ? evm : null
     let addr = null
@@ -621,7 +768,7 @@ class Base {
       addr = evm
     }
     if (isNil(addr) && !isNil(this.web3)) {
-      const accounts = await ethereum.request({ method: "eth_accounts" })
+      const accounts = await ethereum.request({ method: "eth_requestAccounts" })
       addr = accounts[0]
     }
     opt.wallet = wallet
@@ -667,14 +814,10 @@ class Base {
     if (!isNil(expiry)) param.expiry = expiry
     if (!isNil(linkTo)) param.linkTo = linkTo
     const tx = await this.addAddressLink(param, { nonce, ...opt })
-    if (isNil(tx.err)) {
-      identity.signer = tx.signer
-      identity.type = type
-      identity.linkedAccount = linkTo || tx.signer
-      return { tx, identity }
-    } else {
-      return null
-    }
+    identity.signer = tx.signer
+    identity.type = type
+    identity.linkedAccount = linkTo || tx.signer
+    return { tx, identity }
   }
 
   async addAddressLink(query, opt) {
@@ -697,7 +840,9 @@ class Base {
     relay,
     jobID,
     multisigs,
-    onDryWrite
+    onDryWrite,
+    __data__,
+    parallel
   ) {
     let signer, caller, pkey
     if (!isNil(privateKey)) {
@@ -709,7 +854,7 @@ class Base {
       signer = wallet.getAddressString()
       pkey = wallet.getPrivateKey()
     } else if (!isNil(this.web3)) {
-      const accounts = await ethereum.request({ method: "eth_accounts" })
+      const accounts = await ethereum.request({ method: "eth_requestAccounts" })
       signer = accounts[0]
     }
     if (isNil(signer)) throw Error("No wallet to sign")
@@ -750,18 +895,26 @@ class Base {
           version: "V4",
         })
 
-    const param = mergeLeft(extra, {
+    let param = mergeLeft(extra, {
       function: func,
       query,
       signature,
       nonce,
       caller,
     })
-
+    if (!isNil(__data__)) param.data = __data__
     if (!isNil(jobID)) param.jobID = jobID
     if (!isNil(multisigs)) param.multisigs = multisigs
     bundle ||= this.network === "mainnet"
-    return await this.write(func, param, dryWrite, bundle, relay, onDryWrite)
+    return await this.write(
+      func,
+      param,
+      dryWrite,
+      bundle,
+      relay,
+      onDryWrite,
+      parallel
+    )
   }
 
   async writeWithII(
@@ -775,7 +928,9 @@ class Base {
     relay,
     jobID,
     multisigs,
-    onDryWrite
+    onDryWrite,
+    __data__,
+    parallel
   ) {
     let addr = ii.toJSON()[0]
     const isaddr = !isNil(addr)
@@ -815,9 +970,18 @@ class Base {
       caller: addr,
       type: "ed25519",
     })
+    if (!isNil(__data__)) param.data = __data__
     if (!isNil(jobID)) param.jobID = jobID
     if (!isNil(multisigs)) param.multisigs = multisigs
-    return await this.write(func, param, dryWrite, bundle, relay, onDryWrite)
+    return await this.write(
+      func,
+      param,
+      dryWrite,
+      bundle,
+      relay,
+      onDryWrite,
+      parallel
+    )
   }
 
   async writeWithAR(
@@ -831,7 +995,9 @@ class Base {
     relay,
     jobID,
     multisigs,
-    onDryWrite
+    onDryWrite,
+    __data__,
+    parallel
   ) {
     const wallet = is(Object, ar) && ar.walletName === "ArConnect" ? ar : null
     let addr = null
@@ -882,9 +1048,18 @@ class Base {
       pubKey,
       type: "rsa256",
     })
+    if (!isNil(__data__)) param.data = __data__
     if (!isNil(jobID)) param.jobID = jobID
     if (!isNil(multisigs)) param.multisigs = multisigs
-    return await this.write(func, param, dryWrite, bundle, relay, onDryWrite)
+    return await this.write(
+      func,
+      param,
+      dryWrite,
+      bundle,
+      relay,
+      onDryWrite,
+      parallel
+    )
   }
 
   async writeWithIntmax(
@@ -898,7 +1073,9 @@ class Base {
     relay,
     jobID,
     multisigs,
-    onDryWrite
+    onDryWrite,
+    __data__,
+    parallel
   ) {
     const wallet = is(Object, intmax) ? intmax : null
     let addr = null
@@ -964,9 +1141,18 @@ class Base {
             type: "secp256k1-2",
           }
     )
+    if (!isNil(__data__)) param.data = __data__
     if (!isNil(jobID)) param.jobID = jobID
     if (!isNil(multisigs)) param.multisigs = multisigs
-    return await this.write(func, param, dryWrite, bundle, relay, onDryWrite)
+    return await this.write(
+      func,
+      param,
+      dryWrite,
+      bundle,
+      relay,
+      onDryWrite,
+      parallel
+    )
   }
 
   parseQuery(func, query) {
@@ -982,6 +1168,112 @@ class Base {
     let nocache = this.nocache_default || false
     ;({ nocache, query } = this.parseQuery(func, query))
     return await this.read({ function: func, query }, nocache)
+  }
+
+  static getPath(func, query) {
+    if (includes(func, no_paths)) return []
+    let _path = clone(query)
+    if (includes(func, is_data)) _path = tail(_path)
+    return splitWhen(complement(is)(String), _path)[0]
+  }
+
+  static getCollectionPath(func, query) {
+    let _query = Base.getPath(func, query)
+    const len = _query.length
+    return len === 0
+      ? "__root__"
+      : (len % 2 === 0 ? init(_query) : _query).join("/")
+  }
+
+  static getDocPath(func, query) {
+    let _query = Base.getPath(func, query)
+    const len = _query.length
+    return len === 0 ? "__root__" : len % 2 === 1 ? "__col__" : _query.join("/")
+  }
+
+  static getKey(contractTxId, func, query, prefix) {
+    let colPath = Base.getCollectionPath(func, query)
+    let docPath = Base.getDocPath(func, query)
+    let key = [
+      contractTxId,
+      /^__.*__$/.test(colPath) ? colPath : md5(colPath),
+      /^__.*__$/.test(docPath) ? docPath : md5(docPath),
+      func === "get" ? "cget" : func,
+      md5(query),
+    ]
+    if (!isNil(prefix)) key.unshift(prefix)
+    return key.join(".")
+  }
+
+  static getKeyInfo(contractTxId, query, prefix = null) {
+    const path = Base.getPath(query.function, query.query)
+    const len = path.length
+    return {
+      type: len === 0 ? "root" : len % 2 === 0 ? "doc" : "collection",
+      path,
+      collectionPath: Base.getCollectionPath(query.function, query.query),
+      docPath: Base.getDocPath(query.function, query.query),
+      contractTxId,
+      prefix,
+      func: query.function === "get" ? "cget" : query.function,
+      query: query.query,
+      key: Base.getKey(contractTxId, query.function, query.query, prefix),
+    }
+  }
+
+  static getKeys(contractTxId, query, prefix = null) {
+    let keys = []
+    try {
+      if (query.function === "batch") {
+        keys = map(
+          v =>
+            Base.getKeyInfo(
+              contractTxId,
+              { function: v[0], query: tail(v) },
+              prefix
+            ),
+          query.query
+        )
+      } else {
+        const q =
+          query.function === "relay"
+            ? Base.getKeyInfo(contractTxId, query.query[1], prefix)
+            : Base.getKeyInfo(contractTxId, query, prefix)
+        keys.push(q)
+      }
+    } catch (e) {
+      console.log(e)
+    }
+    return keys
+  }
+
+  async writeWithoutWallet(
+    func,
+    query,
+    dryWrite = true,
+    bundle,
+    extra = {},
+    relay,
+    jobID,
+    multisigs,
+    onDryWrite,
+    __data__,
+    parallel
+  ) {
+    const param = mergeLeft(extra, { function: func, query })
+    if (!isNil(__data__)) param.data = __data__
+    if (!isNil(jobID)) param.jobID = jobID
+    if (!isNil(multisigs)) param.multisigs = multisigs
+    bundle ||= this.network === "mainnet"
+    return await this.write(
+      func,
+      param,
+      dryWrite,
+      bundle,
+      relay,
+      onDryWrite,
+      parallel
+    )
   }
 }
 
@@ -1006,7 +1298,7 @@ for (const v of readQueries) {
   }
 }
 
-const reads = ["getOwner", "getEvolve", "getInfo"]
+const reads = ["getOwner", "getEvolve", "getInfo", "getBundlers"]
 
 for (const v of reads) {
   Base.prototype[v] = async function (nocache) {
@@ -1015,7 +1307,9 @@ for (const v of reads) {
 }
 
 const writes = [
+  "tick",
   "relay",
+  "query",
   "set",
   "delete",
   "add",

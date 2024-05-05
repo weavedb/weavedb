@@ -205,7 +205,9 @@ export default inject(
                   if (newFieldType === "sub collection") {
                     setSubCollections(append(newField, subCollections))
                   } else {
-                    setDocdata(assocPath(["data", newField], val)(docdata))
+                    setDocdata(
+                      assocPath(["data", newField], JSON.parse(val))(docdata)
+                    )
                   }
                 }
               } catch (e) {

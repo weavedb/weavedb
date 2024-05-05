@@ -59,7 +59,7 @@ describe("WeaveDB", function () {
   })
 
   it("should get version", async () => {
-    const version = require("../contracts/warp/lib/version")
+    const version = require("../contracts/weavedb/lib/version")
     expect(await db.getVersion()).to.equal(version)
   })
 
@@ -598,7 +598,7 @@ describe("WeaveDB", function () {
     const data = { name: "Bob", age: 20 }
     const evolve = "contract-1"
     const evolve2 = "contract-2"
-    const version = require("../contracts/warp/lib/version")
+    const version = require("../contracts/weavedb/lib/version")
 
     const history1 = {
       signer: walletAddress,
@@ -848,10 +848,10 @@ describe("WeaveDB", function () {
 
   it("should get info", async () => {
     const addr = await db.arweave.wallets.jwkToAddress(arweave_wallet)
-    const version = require("../contracts/warp/lib/version")
+    const version = require("../contracts/weavedb/lib/version")
     const initial_state = JSON.parse(
       readFileSync(
-        resolve(__dirname, "../dist/warp/initial-state.json"),
+        resolve(__dirname, "../dist/weavedb/initial-state.json"),
         "utf8"
       )
     )

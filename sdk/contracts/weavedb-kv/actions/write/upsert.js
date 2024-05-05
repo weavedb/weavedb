@@ -1,12 +1,7 @@
 const { equals, isNil, init, last } = require("ramda")
-const {
-  kv,
-  wrapResult,
-  parse,
-  clone,
-  validateSchema,
-  trigger,
-} = require("../../lib/utils")
+const { kv, parse, trigger } = require("../../lib/utils")
+const { validateSchema, wrapResult } = require("../../../common/lib/utils")
+const { clone } = require("../../../common/lib/pure")
 const { validate } = require("../../lib/validate")
 const { updateData, addData } = require("../../lib/index")
 
@@ -18,7 +13,7 @@ const upsert = async (
   SmartWeave,
   kvs,
   executeCron,
-  depth
+  depth = 1
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -70,7 +65,7 @@ const upsert = async (
   await kv(kvs, SmartWeave).put(`data.${path.join("/")}`, _data)
 
   if (updated && depth < 10) {
-    await trigger(
+    state = await trigger(
       [isNil(before) ? "craete" : "update"],
       state,
       path,

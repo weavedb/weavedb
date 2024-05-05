@@ -1,0 +1,17 @@
+version: '3'
+services:
+  node-server:
+    build:
+      context: ./node-server
+      dockerfile: standalone.Dockerfile
+    ports:
+      - "9090:9090"
+      - "4736:4736"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./node-server/cache:/weavedb/cache
+  envoy:
+    build: ./envoy
+    ports:
+      - "8080:8080"

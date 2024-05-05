@@ -1,12 +1,9 @@
-const { Ed25519KeyIdentity } = require("@dfinity/identity")
 const { providers, Wallet } = require("ethers")
 const { expect } = require("chai")
 const { isNil, range, pick } = require("ramda")
 const { init, stop, initBeforeEach, addFunds } = require("./util")
 const buildEddsa = require("circomlibjs").buildEddsa
 const Account = require("intmax").Account
-const { readFileSync } = require("fs")
-const { resolve } = require("path")
 
 describe("WeaveDB", function () {
   let wallet, walletAddress, wallet2, db, intmaxTxId, arweave_wallet

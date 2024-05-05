@@ -7,6 +7,7 @@ import AddData from "./Modals/AddData"
 import AddSchema from "./Modals/AddSchema"
 import AddCron from "./Modals/AddCron"
 import AddRelayer from "./Modals/AddRelayer"
+import AddTrigger from "./Modals/AddTrigger"
 import AddNode from "./Modals/AddNode"
 import AddContract from "./Modals/AddContract"
 import AddInstance from "./Modals/AddInstance"
@@ -33,6 +34,9 @@ export default inject(
     "temp_current_all",
   ],
   ({
+    lockTrigger,
+    newTriggerKey,
+    setNewTriggerKey,
     setEditRules,
     editRules,
     deployMode,
@@ -51,6 +55,8 @@ export default inject(
     nodes,
     presetRPC,
     setPresetRPC,
+    presetDRE,
+    setPresetDRE,
     newRPCType,
     setNewRPCType,
     newStart,
@@ -127,7 +133,10 @@ export default inject(
     setCrons,
     addRelayer,
     setAddRelayer,
+    addTrigger,
+    setAddTrigger,
     setRelayers,
+    setTriggers,
     setDocdata,
     setAddSchema,
     addSchema,
@@ -225,6 +234,21 @@ export default inject(
         />
       ) : addCron !== false ? (
         <AddCron {...{ db, contractTxId, setCrons, setAddCron }} />
+      ) : addTrigger !== false ? (
+        <AddTrigger
+          {...{
+            lockTrigger,
+            newTriggerKey,
+            setNewTriggerKey,
+            setTriggers,
+            contractTxId,
+            db,
+            setAddTrigger,
+            col,
+            base_path,
+            doc_path,
+          }}
+        />
       ) : addRelayer !== false ? (
         <AddRelayer {...{ setRelayers, contractTxId, db, setAddRelayer }} />
       ) : addNode !== false ? (
@@ -311,8 +335,10 @@ export default inject(
             setCurrentDB,
             setNewRPCType,
             presetRPC,
+            presetDRE,
             newRPCType,
             setPresetRPC,
+            setPresetDRE,
             nodes,
             setNewHttp,
             newHttp,
@@ -353,6 +379,8 @@ export default inject(
             newRPCType,
             presetRPC,
             setPresetRPC,
+            presetDRE,
+            setPresetDRE,
             setState,
             updateDB,
             setCurrentDB,

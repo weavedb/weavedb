@@ -46,6 +46,7 @@ export default inject(
                 try {
                   let res
                   if (state.isEvolving) {
+                    console.log(latest)
                     res = await fn(_migrate)({
                       version: latest,
                       contractTxId,

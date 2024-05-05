@@ -1,9 +1,20 @@
-const { init, last, isNil, clone } = require("ramda")
-const { err, wrapResult, parse, validateSchema } = require("../../lib/utils")
+const { init, last, isNil } = require("ramda")
+const { parse, trigger } = require("../../lib/utils")
+const { err, validateSchema, wrapResult } = require("../../../common/lib/utils")
+const { clone } = require("../../../common/lib/pure")
 const { validate } = require("../../lib/validate")
 const { updateData, addData, getIndex } = require("../../lib/index")
 
-const set = async (state, action, signer, contractErr = true, SmartWeave) => {
+const set = async (
+  state,
+  action,
+  signer,
+  contractErr = true,
+  SmartWeave,
+  kvs,
+  executeCron,
+  depth = 1
+) => {
   let original_signer = null
   if (isNil(signer)) {
     ;({ signer, original_signer } = await validate(
@@ -23,7 +34,23 @@ const set = async (state, action, signer, contractErr = true, SmartWeave) => {
   } else {
     updateData(last(path), next_data, prev, ind, col.__docs)
   }
+  let before = clone(_data.__data)
+  let after = clone(next_data)
   _data.__data = next_data
+  if (depth < 10) {
+    state = await trigger(
+      "create",
+      state,
+      path,
+      SmartWeave,
+      kvs,
+      executeCron,
+      depth,
+      {
+        data: { before, after, id: last(path), setter: _data.setter },
+      }
+    )
+  }
   return wrapResult(state, original_signer, SmartWeave)
 }
 

@@ -1,15 +1,14 @@
 {
   "name": "weavedb-offchain",
-  "version": "0.25.2",
+  "version": "0.39.4",
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
     "@metamask/legacy-web3": "^2.0.0",
-    "@paralleldrive/cuid2": "^2.2.0",
     "arweave": "^1.11.4",
+    "md5": "^2.3.0",
     "ramda": "^0.28.0",
-    "redis": "^4.6.5",
-    "weavedb-base": "^0.26.10",
-    "weavedb-contracts": "^0.27.0"
+    "weavedb-base": "^0.39.1",
+    "weavedb-contracts": "^0.39.0"
   }
 }

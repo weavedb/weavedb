@@ -1,0 +1,24 @@
+{
+  "name": "explorer",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@chakra-ui/next-js": "^2.1.5",
+    "@chakra-ui/react": "^2.8.0",
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "dayjs": "^1.11.9",
+    "framer-motion": "^10.13.0",
+    "next": "13.4.11",
+    "ramda": "^0.29.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "weavedb-client": "^0.34.0"
+  }
+}

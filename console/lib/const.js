@@ -6,6 +6,7 @@ export const tabs = [
   "Indexes",
   "Crons",
   "Relayers",
+  "Triggers",
   "Nodes",
 ]
 export const methods = [
@@ -50,6 +51,7 @@ export const methods = [
       "getRelayerJob",
       "getLinkedContract",
       "listRelayerJobs",
+      "getTriggers",
     ],
   },
   {
@@ -70,6 +72,8 @@ export const methods = [
       "removeOwner",
       "linkContract",
       "removeContract",
+      "addTrigger",
+      "removeTrigger",
     ],
   },
 ]
@@ -81,6 +85,7 @@ export const tabmap = {
   Indexes: { name: "Indexes" },
   Crons: { name: "Crons" },
   Relayers: { name: "Relayers" },
+  Triggers: { name: "Triggers" },
   Nodes: { name: "gRPC Nodes" },
 }
 
@@ -103,8 +108,9 @@ export const default_nodes = [
 export const per_page = 20
 
 export const rpc_types = [
-  { key: "sdk", name: "None" },
-  { key: "preset", name: "Preset" },
+  { key: "none", name: "Local Cache" },
+  { key: "sdk", name: "Warp DRE" },
+  { key: "preset", name: "WeaveDB Node" },
   { key: "custom", name: "Custom" },
 ]
 export const preset_rpcs = [
@@ -112,8 +118,25 @@ export const preset_rpcs = [
   "http://localhost:8080",
 ]
 
-export const latest = "0.27.0"
-export const weavedbSrcTxId = "jsZqVEOGdMFAvVlof_WXi6DO5vWxhteiG91xVPiIwqQ"
+export const preset_dres = [
+  "https://dre-1.warp.cc/contract",
+  "https://dre-2.warp.cc/contract",
+  "https://dre-3.warp.cc/contract",
+  "https://dre-4.warp.cc/contract",
+  "https://dre-5.warp.cc/contract",
+  "https://dre-6.warp.cc/contract",
+]
+
+export const latest = "0.26.5"
+export const weavedbSrcTxId = {
+  "0.27.0": "jsZqVEOGdMFAvVlof_WXi6DO5vWxhteiG91xVPiIwqQ",
+  "0.26.0": "zdP_QTSZ2zO9Nxa1sPAKhyR4geua1_a621_fZm2XPKU",
+  "0.26.1": "OSYm83qQFF5gf4m3BbdZtrHMHjVAMPJcBhfZiJVYjYE",
+  "0.26.2": "-TBbRLWsP8wAlj8y5bh7RHRdwGJ7kT9urFvEbn1UomQ",
+  "0.26.3": "rTp2E6oipzJODmAGbqWbo2wzagoV7tt3JRyBsyVgo6A",
+  "0.26.4": "QhbIPso1lx8wbHx4c7225L9PkNYh-Djp6N_YCjqdr_E",
+  "0.26.5": "1pFdmXngB5A4TXvD1cHEGNVpqdEJBYjXSmSyvy6MQiQ",
+}
 //export const intmaxSrcTxId = "OTfBnNttwsi8b_95peWJ53eJJRqPrVh0s_0V-e5-s94"
 export const dfinitySrcTxId = "3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8"
 export const ethereumSrcTxId = "Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w"

@@ -1,0 +1,30 @@
+{
+  "name": "nextjs_ic_template",
+  "version": "0.5.0",
+  "author": "Henry Chan",
+  "description": "Next.js Internet Computer Starter Template",
+  "keywords": [
+    "nextjs",
+    "internet computer",
+    "icp",
+    "starter",
+    "dfinity"
+  ],
+  "scripts": {
+    "build": "cd src/frontend && yarn build",
+    "declaration:generate": "dfx generate",
+    "sync:hello": "DFX_NETWORK=local && rsync -avr .dfx/$(echo ${DFX_NETWORK:-'**'})/canisters/hello --exclude='idl/' --exclude='*.wasm' --delete ui/declarations",
+    "sync:image": "DFX_NETWORK=local && rsync -avr .dfx/$(echo ${DFX_NETWORK:-'**'})/canisters/image --exclude='idl/' --exclude='*.wasm' --delete ui/declarations"
+  },
+  "dependencies": {
+    "@dfinity/agent": "^0.19.2",
+    "@dfinity/candid": "^0.19.2",
+    "@dfinity/principal": "^0.19.2",
+    "assert": "^2.1.0",
+    "buffer": "^6.0.3",
+    "compressorjs": "^1.2.1",
+    "events": "^3.3.0",
+    "stream-browserify": "^3.0.0",
+    "util": "^0.12.5"
+  }
+}

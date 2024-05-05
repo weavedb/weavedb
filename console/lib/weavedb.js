@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid"
+import Offchain from "weavedb-offchain"
 const { Ed25519KeyIdentity } = require("@dfinity/identity")
 import Arweave from "arweave"
 import lf from "localforage"
@@ -8,6 +9,8 @@ import { ethers } from "ethers"
 import { AuthClient } from "@dfinity/auth-client"
 import { WarpFactory } from "warp-contracts"
 const { DeployPlugin, ArweaveSigner } = require("warp-contracts-plugin-deploy")
+const { createId } = require("@paralleldrive/cuid2")
+
 import {
   trim,
   clone,
@@ -22,7 +25,13 @@ import {
   isEmpty,
 } from "ramda"
 import { Buffer } from "buffer"
-import { weavedbSrcTxId, dfinitySrcTxId, ethereumSrcTxId, lens } from "./const"
+import {
+  latest,
+  weavedbSrcTxId,
+  dfinitySrcTxId,
+  ethereumSrcTxId,
+  lens,
+} from "./const"
 let arweave_wallet, sdk, nodesdk
 const a = addr =>
   /^0x.+$/.test(trim(addr)) ? trim(addr).toLowerCase() : trim(addr)
@@ -44,11 +53,13 @@ class Log {
     this.signer = signer
     this.id = id || nanoid()
   }
+
   async rec(array = false) {
     let res = {},
       err,
       _res
     try {
+      console.log(this.opt)
       res = isNil(this.opt)
         ? array
           ? await this.sdk[this.method](...this.query)
@@ -83,7 +94,7 @@ class Log {
       virtual_txid: _res?.result?.transaction?.id || null,
       txid:
         !isNil(_res) && !isNil(_res.originalTxId) ? _res.originalTxId : null,
-      node: this.node,
+      node: this.sdk.network === "offchain" ? "Offchain" : this.node,
       date,
       duration: date - this.start,
       method: this.method,
@@ -139,11 +150,11 @@ export const getOpt = async ({ val: { contractTxId, read = [] }, get }) => {
     ? { ii, onDryWrite: { cache: true, read } }
     : !isNil(identity) && !isNil(identity.tx)
     ? {
+        privateKey: identity.privateKey,
+        onDryWrite: { cache: true, read },
         wallet: /^lens:/.test(current)
           ? current.split(":").slice(0, -1).join(":")
           : current,
-        privateKey: identity.privateKey,
-        onDryWrite: { cache: true, read },
       }
     : null
   if (isNil(opt)) err = "not logged in"
@@ -217,11 +228,31 @@ export const connectLocalhost = async ({ val: { port } }) => {
 }
 
 export const setupWeaveDB = async ({
-  val: { network, contractTxId, port, rpc, temp = false },
+  val: { network, contractTxId, port, rpc, temp = false, dre },
 }) => {
   let _sdk
   let isRPC = !isNil(rpc) && !/^\s*$/.test(rpc)
-  if (isRPC) {
+  if (network === "Offchain") {
+    const [, ver] = contractTxId
+    _sdk = new Offchain({
+      type: ver === "0.28.0" ? 3 : 1,
+      contractTxId,
+      cache: {
+        initialize: async db => {
+          const state = await lf.getItem(`offchain-${contractTxId}`)
+          if (!isNil(state)) db.state = state
+        },
+        onWrite: async (tx, obj) => {
+          let prs = [lf.setItem(`offchain-${contractTxId}`, obj.state)]
+          for (const k in tx.result.kvs)
+            prs.push(lf.setItem(k, tx.result.kvs[k]))
+          await Promise.all(prs)
+        },
+        get: async (key, obj) => await lf.getItem(key),
+      },
+    })
+    await _sdk.initialize()
+  } else if (isRPC) {
     try {
       _sdk = new Client({
         rpc,
@@ -232,6 +263,8 @@ export const setupWeaveDB = async ({
     }
   } else {
     _sdk = new SDK({
+      remoteStateSyncEnabled: !isNil(dre),
+      remoteStateSyncSource: dre,
       network: network.toLowerCase(),
       port,
       contractTxId,
@@ -248,7 +281,7 @@ export const setupWeaveDB = async ({
       await addFunds(arweave, arweave_wallet)
     } catch (e) {}
   }
-  if (!isRPC && !isNil(contractTxId)) {
+  if (!isRPC && !isNil(contractTxId) && network !== "Offchain") {
     await _sdk.init({
       contractTxId: contractTxId,
       wallet: arweave_wallet,
@@ -596,7 +629,7 @@ async function deploy({ src, warp, init, extra, arweave }) {
   return contractTxId
 }
 
-async function deployFromSrc({ src, warp, init, extra, algorithms }) {
+async function deployFromSrc({ src, warp, init, extra, algorithms }, version) {
   const stateFromFile = JSON.parse(
     await fetch(`/static/${init}.json`).then(v => v.text())
   )
@@ -617,16 +650,19 @@ async function deployFromSrc({ src, warp, init, extra, algorithms }) {
     initState: JSON.stringify(initialState),
     srcTxId: src,
     evaluationManifest: {
-      evaluationOptions: {
-        useKVStorage: true,
-      },
+      evaluationOptions:
+        version.split(".")[1] === "26"
+          ? {}
+          : {
+              useKVStorage: true,
+            },
     },
   })
   return contractTxId
 }
 
 export const deployDB = async ({
-  val: { owner, network, port, secure, canEvolve, auths },
+  val: { owner, network, port, secure, canEvolve, auths, version },
 }) => {
   let algorithms = []
   for (let v of auths) {
@@ -656,11 +692,37 @@ export const deployDB = async ({
   if (owner.length === 42 && owner.slice(0, 2) == "0x") {
     owner = owner.toLowerCase()
   }
-  if (network === "Mainnet") {
+  if (network === "Offchain") {
+    const contractTxId = `${createId()}-0.28.0`
+    const state = {
+      version: "0.28.0",
+      canEvolve,
+      evolve: null,
+      secure,
+      data: {},
+      nonces: {},
+      ids: {},
+      indexes: {},
+      auth: {
+        algorithms: ["secp256k1", "secp256k1-2", "ed25519", "rsa256"],
+        name: "weavedb",
+        version: "1",
+        links: {},
+      },
+      crons: {
+        lastExecuted: 0,
+        crons: {},
+      },
+      contracts: { ethereum: "ethereum", dfinity: "dfinity" },
+      owner,
+    }
+    await lf.setItem(`offchain-${contractTxId}`, state)
+    return { contractTxId, network, port }
+  } else if (network === "Mainnet") {
     const warp = WarpFactory.forMainnet().use(new DeployPlugin())
     let initial_state = {
-      src: weavedbSrcTxId,
-      init: "initial-state",
+      src: weavedbSrcTxId[version],
+      init: `initial-state-${version}`,
       warp,
       algorithms: uniq(algorithms),
       extra: {
@@ -678,7 +740,7 @@ export const deployDB = async ({
     initial_state.extra.relayers = {}
     if (includes("Lens", auths)) {
       initial_state.extra.relayers["auth:lens"] = {
-        relayers: ["0xF810D4a6F0118E6a6a86A9FBa0dd9EA669e1CC2E".toLowerCase()],
+        relayers: ["0xcdfaD4e9729f878d6334ae72Fcc6B45Ac3C70425".toLowerCase()],
         schema: {
           type: "object",
           required: ["linkTo"],
@@ -704,7 +766,7 @@ export const deployDB = async ({
         },
       }
     }
-    const contractTxId = await deployFromSrc(initial_state)
+    const contractTxId = await deployFromSrc(initial_state, version)
     return { contractTxId, network, port }
   } else {
     const warp = WarpFactory.forLocal(port).use(new DeployPlugin())
@@ -855,7 +917,14 @@ export const _evolve = async ({ val: { contractTxId }, fn }) => {
     })
     if (!isNil(err)) return alert(err)
     return ret(
-      await new Log(sdk, "evolve", weavedbSrcTxId, opt, fn, signer).rec()
+      await new Log(
+        sdk,
+        "evolve",
+        weavedbSrcTxId[latest],
+        opt,
+        fn,
+        signer
+      ).rec()
     )
   } catch (e) {
     console.log(e)
@@ -1013,6 +1082,36 @@ export const addRelayerJob = async ({
       await new Log(sdk, "addRelayerJob", [name, job], opt, fn, signer).rec(
         true
       )
+    )
+  } catch (e) {
+    console.log(e)
+    return `Error: Something went wrong`
+  }
+}
+
+export const addTrigger = async ({
+  val: { name, on, contractTxId, func, col_path },
+  fn,
+}) => {
+  try {
+    const { err, opt, signer } = await fn(getOpt)({
+      contractTxId,
+    })
+    if (!isNil(err)) return alert(err)
+    let trigger = {
+      on,
+      key: name,
+      func,
+    }
+    return ret(
+      await new Log(
+        sdk,
+        "addTrigger",
+        [trigger, ...col_path],
+        opt,
+        fn,
+        signer
+      ).rec(true)
     )
   } catch (e) {
     console.log(e)

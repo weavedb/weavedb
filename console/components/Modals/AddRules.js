@@ -166,13 +166,11 @@ export default inject(
                         contractTxId,
                       })
                     )
-                    console.log("are we here???", res)
                     if (!res.success) {
                       alert("Something went wrong")
                     } else {
                       setNewRules(`{"allow write": true}`)
                       setAddRules(false)
-
                       if (isNil(editRules)) {
                         setCollections(res.results[0].result)
                       } else {
@@ -180,6 +178,7 @@ export default inject(
                       }
                     }
                   } catch (e) {
+                    console.log(e)
                     alert("Something went wrong")
                   }
                   set(null, "loading")
@@ -486,7 +485,6 @@ export default inject(
                       op = "create"
                     }
                   }
-                  console.log(op)
                   const setElm = (k, val) => {
                     let elm = rule_data
                     let elm_path = k.split(".")
@@ -522,7 +520,6 @@ export default inject(
                       }
                     }
                   }
-                  console.log(rule_data)
                   for (let k in rules || {}) {
                     const spk = k.split(" ")
                     if (spk[0] === "let") continue

@@ -1,0 +1,14 @@
+{
+  "name": "cwao-tools",
+  "version": "0.0.1",
+  "main": "index.js",
+  "node": "^18",
+  "bin": {
+    "weavedb": "index.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "ramda": "^0.29.1",
+    "yargs": "^17.7.2"
+  }
+}

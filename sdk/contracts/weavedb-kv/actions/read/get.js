@@ -1,4 +1,5 @@
 const {
+  path: __path,
   then,
   hasPath,
   uniq,
@@ -33,7 +34,8 @@ const {
   map,
 } = require("ramda")
 
-const { kv, getDoc, err } = require("../../lib/utils")
+const { kv, getDoc } = require("../../lib/utils")
+const { err } = require("../../../common/lib/utils")
 const { getKey } = require("../../lib/index")
 
 const parseQuery = query => {
@@ -265,6 +267,7 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
       null,
       null,
       null,
+      null,
       SmartWeave,
       undefined,
       kvs
@@ -295,6 +298,7 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
         : await getDoc(
             null,
             slice(0, -1, path),
+            null,
             null,
             null,
             null,
@@ -420,6 +424,7 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
       ) {
         err()
       }
+      const getField = (_path, data) => __path(_path.split("."), data)
       for (let _v of index) {
         const v = (await docs(_v)).__data
         let ok = true
@@ -427,38 +432,38 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
           if (isNil(v[v2[0]]) && v[v2[0]] !== null) {
             ok = false
           }
+          const field = getField(v2[0], v)
           switch (v2[1]) {
             case ">":
-              ok = v[v2[0]] > v2[2]
+              ok = field > v2[2]
               break
             case "<":
-              ok = v[v2[0]] < v2[2]
+              ok = field < v2[2]
               break
             case ">=":
-              ok = v[v2[0]] >= v2[2]
+              ok = field >= v2[2]
               break
             case "<=":
-              ok = v[v2[0]] <= v2[2]
+              ok = field <= v2[2]
               break
             case "=": // deprecated at v0.23
             case "==":
-              ok = v[v2[0]] === v2[2]
+              ok = field === v2[2]
               break
             case "!=":
-              ok = v[v2[0]] !== v2[2]
+              ok = field !== v2[2]
               break
             case "in":
-              ok = includes(v[v2[0]])(v2[2])
+              ok = includes(field)(v2[2])
               break
             case "not-in":
-              ok = !includes(v[v2[0]])(v2[2])
+              ok = !includes(field)(v2[2])
               break
             case "array-contains":
-              ok = is(Array, v[v2[0]]) && includes(v2[2])(v[v2[0]])
+              ok = is(Array, field) && includes(v2[2])(field)
               break
             case "array-contains-any":
-              ok =
-                is(Array, v[v2[0]]) && intersection(v2[2])(v[v2[0]]).length > 0
+              ok = is(Array, field) && intersection(v2[2])(field).length > 0
               break
           }
           if (!ok) break

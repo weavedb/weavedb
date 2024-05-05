@@ -1,9 +1,11 @@
+.weavedb
+test/circuits
 cache
 scripts/.wallets
 scripts/.db
 packages
 !node/packages
-
+\*shell\*
 # Logs
 logs
 *.log

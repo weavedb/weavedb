@@ -1,0 +1,9 @@
+{
+  "label": "Advanced",
+  "position": 7,
+  "link": {
+    "type": "generated-index",
+    "description": "Setup and run Light Client and grpc node."
+
+  }
+}

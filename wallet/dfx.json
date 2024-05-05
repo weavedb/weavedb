@@ -1,0 +1,57 @@
+{
+  "canisters": {
+    "system_api": {
+      "candid": "src/system_api/vetkd_system_api.did",
+      "package": "vetkd_system_api",
+      "type": "rust"
+    },
+    "app_backend": {
+      "dependencies": [
+        "system_api"
+      ],
+      "main": "src/app_backend/Main.mo",
+      "type": "motoko"
+    },
+    "hello": {
+      "main": "src/backend/service/Hello.mo",
+      "type": "motoko",
+      "declarations": {
+        "node_compatibility": true
+      }
+    },
+    "image": {
+      "main": "src/backend/service/Image.mo",
+      "type": "motoko",
+      "declarations": {
+        "node_compatibility": true
+      }
+    },
+    "hello_assets": {
+      "dependencies": ["hello"],
+      "frontend": {
+        "entrypoint": "src/frontend/out/index.html"
+      },
+      "source": ["src/frontend/out"],
+      "type": "assets"
+    },
+    "internet_identity": {
+      "type": "custom",
+      "candid": "https://github.com/dfinity/internet-identity/releases/download/release-2023-11-17/internet_identity.did",
+      "wasm": "https://github.com/dfinity/internet-identity/releases/download/release-2023-11-17/internet_identity_dev.wasm.gz",
+      "remote": {
+        "id": {
+          "ic": "rdmx6-jaaaa-aaaaa-aaadq-cai"
+        }
+      },
+      "frontend": {}
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}

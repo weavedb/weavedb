@@ -22,6 +22,7 @@ export default inject(
     setEditGRPC,
     editGRPC,
     setPresetRPC,
+    setPresetDRE,
     setNewRPCType,
     nodes,
     setNewHttp,
@@ -95,6 +96,7 @@ export default inject(
                             contractTxId: v.contractTxId,
                             port: port || 1820,
                             rpc: v.rpc,
+                            dre: v.dre,
                           })
                           let state = await fn(read)({
                             db,
@@ -117,7 +119,8 @@ export default inject(
                               v.network,
                               v.rpc,
                               null,
-                              state
+                              state,
+                              v.dre
                             )
                           } else {
                             isErr = true
@@ -276,48 +279,70 @@ export default inject(
                       gRPC Node
                     </Box>
                     <Box flex={1}>
-                      {(currentDB.rpc || "") === ""
-                        ? "None (Browser SDK)"
-                        : currentDB.rpc}
-                    </Box>
-                    <Box
-                      color="#999"
-                      sx={{
-                        cursor: "pointer",
-                        ":hover": {
-                          opacity: 0.75,
-                          color: "#6441AF",
-                        },
-                      }}
-                      onClick={async e => {
-                        e.stopPropagation()
-                        const rpcs = compose(
-                          uniq,
-                          concat(preset_rpcs),
-                          pluck("rpc")
-                        )(nodes)
-                        if (
-                          !isNil(currentDB.rpc) &&
-                          includes(currentDB.rpc)(rpcs)
-                        ) {
-                          setNewRPCType("preset")
-                          setPresetRPC(currentDB.rpc)
-                        }
-                        setNewRPC2(
-                          isNil(currentDB.rpc)
-                            ? ""
-                            : currentDB.rpc.replace(/^http[s]{0,1}:\/\//i, "")
+                      {(currentDB.rpc || "") === "" ? (
+                        currentDB.network === "Offchain" ? (
+                          "Offchain"
+                        ) : isNil(currentDB.dre) ? (
+                          "None (Local Cache)"
+                        ) : (
+                          <Flex>
+                            DRE (
+                            <Box
+                              mx={1}
+                              as="a"
+                              target="_blank"
+                              href={`${currentDB.dre}?id=${contractTxId}&events=false`}
+                            >
+                              {currentDB.dre}
+                            </Box>
+                            )
+                          </Flex>
                         )
-                        setNewHttp(
-                          /^http:\/\//.test(currentDB.rpc || "")
-                            ? "http://"
-                            : "https://"
-                        )
-                        setAddGRPC()
-                      }}
-                    >
-                      <Box as="i" className="fas fa-edit" />
+                      ) : (
+                        currentDB.rpc
+                      )}
                     </Box>
+                    {currentDB.network === "Offchain" ? null : (
+                      <Box
+                        color="#999"
+                        sx={{
+                          cursor: "pointer",
+                          ":hover": {
+                            opacity: 0.75,
+                            color: "#6441AF",
+                          },
+                        }}
+                        onClick={async e => {
+                          e.stopPropagation()
+                          const rpcs = compose(
+                            uniq,
+                            concat(preset_rpcs),
+                            pluck("rpc")
+                          )(nodes)
+                          if (
+                            !isNil(currentDB.rpc) &&
+                            includes(currentDB.rpc)(rpcs)
+                          ) {
+                            setNewRPCType("preset")
+                            setPresetRPC(currentDB.rpc)
+                          }
+                          setPresetDRE(currentDB.dre || null)
+                          setNewRPC2(
+                            isNil(currentDB.rpc)
+                              ? ""
+                              : currentDB.rpc.replace(/^http[s]{0,1}:\/\//i, "")
+                          )
+                          setNewHttp(
+                            /^http:\/\//.test(currentDB.rpc || "")
+                              ? "http://"
+                              : "https://"
+                          )
+                          setAddGRPC()
+                        }}
+                      >
+                        <Box as="i" className="fas fa-edit" />
+                      </Box>
+                    )}
                   </Flex>
                   <Flex align="center" p={2} px={3}>
                     <Box mr={2} px={3} bg="#ddd" sx={{ borderRadius: "3px" }}>
@@ -333,7 +358,7 @@ export default inject(
                       }}
                       href={
                         network === "Mainnet"
-                          ? `https://sonar.warp.cc/?#/app/contract/${contractTxId}`
+                          ? `https://sonar.warp.cc/?#/app/contract/${contractTxId}?network=mainnet`
                           : null
                       }
                     >

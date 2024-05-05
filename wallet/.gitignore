@@ -1,0 +1,22 @@
+target/
+.nvmrc
+# Various IDEs and Editors
+.vscode/
+.idea/
+**/*~
+
+# Mac OSX temporary files
+.DS_Store
+**/.DS_Store
+
+# dfx temporary files
+.dfx/
+canister_ids.json
+
+# frontend code
+node_modules/
+out/
+
+# Next.js
+.next/
+

@@ -1,4 +1,4 @@
-const { err } = require("../weavedb/lib/utils")
+const { err } = require("../common/lib/utils")
 const verifyInternetIdentity = require("./actions/read/verifyInternetIdentity")
 
 async function handle(state, action, _SmartWeave) {
