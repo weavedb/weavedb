@@ -25,7 +25,7 @@ const executeCron =
     kvs,
     depth = 1,
     _vars = { batch: [] },
-    timestamp = null
+    timestamp = null,
   ) => {
     let vars = mergeLeft(_vars, {
       block: {
@@ -105,7 +105,7 @@ const executeCron =
                 },
                 undefined,
                 SmartWeave,
-                kvs
+                kvs,
               )
             ).result || null
           return [val, false]
@@ -155,7 +155,7 @@ const executeCron =
                 },
                 undefined,
                 SmartWeave,
-                kvs
+                kvs,
               )
             ).result || _default
         } else if (
