@@ -72,9 +72,7 @@
     "build": "yarn clean && node build.js && npm run cp",
     "clean": "rimraf ./dist",
     "cp": "copyfiles -u 2 ./sdk/contracts/**/*.json dist",
-    "repl": "yarn build && node scripts/runNode.js",
-    "run-node": "cd grpc-node && sudo docker-compose up --build",
-    "run-rollup": "cd grpc-node && sudo docker-compose -f docker-compose-standalone.yml up --build"
+    "repl": "yarn build && node scripts/runNode.js"
   },
   "devDependencies": {
     "@dfinity/agent": "^0.13.2",
