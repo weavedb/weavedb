@@ -3,62 +3,6 @@ const Base = require("weavedb-base")
 let arweave = require("arweave")
 if (!isNil(arweave.default)) arweave = arweave.default
 let contracts, handle_bpt, version, version_bpt
-const versions = require("./versions")
-
-const isBrowser = new Function(
-  "try {return this===window;}catch(e){ return false;}",
-)
-
-function normalizeContractSource(contractSrc, useVM2) {
-  const lines = contractSrc.trim().split("\n")
-  const first = lines[0]
-  const last = lines[lines.length - 1]
-
-  if (
-    (/\(\s*\(\)\s*=>\s*{/g.test(first) ||
-      /\s*\(\s*function\s*\(\)\s*{/g.test(first)) &&
-    /}\s*\)\s*\(\)\s*;/g.test(last)
-  ) {
-    lines.shift()
-    lines.pop()
-    contractSrc = lines.join("\n")
-  }
-
-  contractSrc = contractSrc
-    .replace(/export\s+async\s+function\s+handle/gmu, "async function handle")
-    .replace(/export\s+function\s+handle/gmu, "function handle")
-
-  if (useVM2) {
-    return `
-    ${contractSrc}
-    module.exports = handle;`
-  } else {
-    return `
-    const window=void 0,document=void 0,Function=void 0,eval=void 0,globalThis=void 0;
-    const [SmartWeave, BigNumber, logger${isBrowser() ? ", Buffer, atob, btoa" : ""}] = arguments;
-    class ContractError extends Error { constructor(message) { super(message); this.name = 'ContractError' } };
-    function ContractAssert(cond, message) { if (!cond) throw new ContractError(message) };
-    ${contractSrc};
-    return handle;
-  `
-  }
-}
-
-let srcs = {}
-
-const dlContract = async (version, sw) => {
-  if (srcs[version]) return srcs[version]
-  try {
-    const src = await fetch(
-      `https://arweave.net/${versions[version].txid}`,
-    ).then(v => v.text())
-    srcs[version] = src
-    return src
-  } catch (e) {
-    console.log(e)
-    return null
-  }
-}
 
 class OffChain extends Base {
   constructor({
@@ -77,7 +21,6 @@ class OffChain extends Base {
     this.queue = []
     this.ongoing = false
 
-    this.versions = versions
     this.caller = caller
     this.noauth = noauth
     this.kvs = {}
@@ -172,22 +115,7 @@ class OffChain extends Base {
       },
     }
   }
-  async getHandle(ver, sw) {
-    if (this.local) return this.handle
-    try {
-      const src = await dlContract(ver, sw)
-      const normalizedSource = normalizeContractSource(src)
-      const contractFunction = new Function(normalizedSource)
-      const swGlobal = sw
-      const BigNumber = require("bignumber.js")
-      const handler = isBrowser()
-        ? contractFunction(swGlobal, BigNumber, null, Buffer, atob, btoa)
-        : contractFunction(swGlobal, BigNumber, null)
-      return handler ?? this.handle
-    } catch (e) {
-      return this.handle
-    }
-  }
+
   async read(input, date) {
     const sw = await this.getSW(input, date)
     const handle = await this.getHandle(this.state.version, sw)
@@ -237,7 +165,7 @@ class OffChain extends Base {
     onDryWrite,
     date,
   ) {
-    if (JSON.stringify(param).length > 3900) {
+    if (JSON.stringify(param).length > 15000) {
       return {
         nonce: param.nonce,
         signer: param.caller,

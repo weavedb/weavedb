@@ -36,6 +36,7 @@ async function init(sdk_type = "web", db_type = 1, useVM2, nocache = true) {
   }
   const _SDK = sdk_type === "node" ? SDKNODE : SDK
   sdk = new _SDK({
+    local: true,
     network: "localhost",
     nocache,
     type: db_type,
@@ -72,17 +73,17 @@ async function deployContracts({
     contractTxIdEthereum,
     contractTxIdBundler,
     contractTxIdNostr,
-    contractTxIdPolygonID
+    contractTxIdPolygonID,
   ) {
     const contractSrc = fs.readFileSync(
       path.join(__dirname, "../dist/weavedb-bpt/contract.js"),
-      "utf8"
+      "utf8",
     )
     const stateFromFile = JSON.parse(
       fs.readFileSync(
         path.join(__dirname, "../dist/weavedb-bpt/initial-state.json"),
-        "utf8"
-      )
+        "utf8",
+      ),
     )
     let initialState = {
       ...stateFromFile,
@@ -110,17 +111,17 @@ async function deployContracts({
     contractTxIdIntmax,
     contractTxIdDfinity,
     contractTxIdEthereum,
-    contractTxIdPolygonID
+    contractTxIdPolygonID,
   ) {
     const contractSrc = fs.readFileSync(
       path.join(__dirname, "../dist/weavedb-kv/contract.js"),
-      "utf8"
+      "utf8",
     )
     const stateFromFile = JSON.parse(
       fs.readFileSync(
         path.join(__dirname, "../dist/weavedb-kv/initial-state.json"),
-        "utf8"
-      )
+        "utf8",
+      ),
     )
     let initialState = {
       ...stateFromFile,
@@ -145,7 +146,7 @@ async function deployContracts({
   async function deployIntercallContract() {
     const contractSrc = fs.readFileSync(
       path.join(__dirname, "../dist/intercall/contract.js"),
-      "utf8"
+      "utf8",
     )
     const stateFromFile = {}
     let initialState = {
@@ -169,17 +170,17 @@ async function deployContracts({
     contractTxIdEthereum,
     contractTxIdBundler,
     contractTxIdNostr,
-    contractTxIdPolygonID
+    contractTxIdPolygonID,
   ) {
     const contractSrc = fs.readFileSync(
       path.join(__dirname, "../dist/weavedb/contract.js"),
-      "utf8"
+      "utf8",
     )
     const stateFromFile = JSON.parse(
       fs.readFileSync(
         path.join(__dirname, "../dist/weavedb/initial-state.json"),
-        "utf8"
-      )
+        "utf8",
+      ),
     )
     let initialState = {
       ...stateFromFile,
@@ -206,13 +207,13 @@ async function deployContracts({
   async function deployContractDfinity() {
     const contractSrc = fs.readFileSync(
       path.join(__dirname, "../dist/dfinity/ii.js"),
-      "utf8"
+      "utf8",
     )
     const stateFromFile = JSON.parse(
       fs.readFileSync(
         path.join(__dirname, "../dist/dfinity/initial-state-ii.json"),
-        "utf8"
-      )
+        "utf8",
+      ),
     )
     const initialState = {
       ...stateFromFile,
@@ -232,13 +233,13 @@ async function deployContracts({
   async function deployContractEthereum() {
     const contractSrc = fs.readFileSync(
       path.join(__dirname, "../dist/ethereum/eth.js"),
-      "utf8"
+      "utf8",
     )
     const stateFromFile = JSON.parse(
       fs.readFileSync(
         path.join(__dirname, "../dist/ethereum/initial-state-eth.json"),
-        "utf8"
-      )
+        "utf8",
+      ),
     )
     const initialState = {
       ...stateFromFile,
@@ -258,13 +259,13 @@ async function deployContracts({
   async function deployContractBundler() {
     const contractSrc = fs.readFileSync(
       path.join(__dirname, "../dist/bundler/bundler.js"),
-      "utf8"
+      "utf8",
     )
     const stateFromFile = JSON.parse(
       fs.readFileSync(
         path.join(__dirname, "../dist/bundler/initial-state-bundler.json"),
-        "utf8"
-      )
+        "utf8",
+      ),
     )
     const initialState = {
       ...stateFromFile,
@@ -284,13 +285,13 @@ async function deployContracts({
   async function deployContractNostr() {
     const contractSrc = fs.readFileSync(
       path.join(__dirname, "../dist/nostr/nostr.js"),
-      "utf8"
+      "utf8",
     )
     const stateFromFile = JSON.parse(
       fs.readFileSync(
         path.join(__dirname, "../dist/nostr/initial-state-nostr.json"),
-        "utf8"
-      )
+        "utf8",
+      ),
     )
     const initialState = {
       ...stateFromFile,
@@ -315,17 +316,17 @@ async function deployContracts({
     contractTxIdPoseidon5,
     contractTxIdPoseidon6,
     contractTxIdPoseidon7,
-    contractTxIdPoseidon8
+    contractTxIdPoseidon8,
   ) {
     const contractSrc = fs.readFileSync(
       path.join(__dirname, "../dist/intmax/intmax.js"),
-      "utf8"
+      "utf8",
     )
     const stateFromFile = JSON.parse(
       fs.readFileSync(
         path.join(__dirname, "../dist/intmax/initial-state-intmax.json"),
-        "utf8"
-      )
+        "utf8",
+      ),
     )
     const initialState = {
       ...stateFromFile,
@@ -353,16 +354,16 @@ async function deployContracts({
   async function deployContractPolygonID() {
     const contractSrc = fs.readFileSync(
       path.join(__dirname, "../dist/polygon-id/polygon-id.js"),
-      "utf8"
+      "utf8",
     )
     const stateFromFile = JSON.parse(
       fs.readFileSync(
         path.join(
           __dirname,
-          "../dist/polygon-id/initial-state-polygon-id.json"
+          "../dist/polygon-id/initial-state-polygon-id.json",
         ),
-        "utf8"
-      )
+        "utf8",
+      ),
     )
     const initialState = {
       ...stateFromFile,
@@ -382,16 +383,16 @@ async function deployContracts({
   async function deployContractPoseidon(poseidonConstants) {
     const contractSrc = fs.readFileSync(
       path.join(__dirname, "../dist/poseidon/poseidonConstants.js"),
-      "utf8"
+      "utf8",
     )
     const stateFromFile = JSON.parse(
       fs.readFileSync(
         path.join(
           __dirname,
-          "../dist/poseidon/initial-state-poseidon-constants.json"
+          "../dist/poseidon/initial-state-poseidon-constants.json",
         ),
-        "utf8"
-      )
+        "utf8",
+      ),
     )
     const initialState = {
       ...stateFromFile,
@@ -459,7 +460,7 @@ async function deployContracts({
       poseidon5TxId,
       poseidon6TxId,
       poseidon7TxId,
-      poseidon8TxId
+      poseidon8TxId,
     )
 
     dfinityTxId = await deployContractDfinity()
@@ -472,8 +473,8 @@ async function deployContracts({
       type === 2
         ? deployContractKV
         : type === 3
-        ? deployContractBPT
-        : deployContract
+          ? deployContractBPT
+          : deployContract
     contract = await deployer(
       secure,
       intmaxTxId,
@@ -481,7 +482,7 @@ async function deployContracts({
       ethereumTxId,
       bundlerTxId,
       nostrTxId,
-      polygonIDTxId
+      polygonIDTxId,
     )
   } else {
     contract = { contractTxId }
@@ -508,7 +509,7 @@ async function initBeforeEach(
   secure = false,
   subscribe = false,
   wallet_type = "evm",
-  type = 1
+  type = 1,
 ) {
   wallet = Wallet.generate()
   wallet2 = Wallet.generate()
@@ -546,7 +547,7 @@ async function initBeforeEach(
   })
   sdk.setDefaultWallet(
     wallet_type === "ar" ? arweave_wallet : wallet,
-    wallet_type
+    wallet_type,
   )
   await sdk.mineBlock()
 

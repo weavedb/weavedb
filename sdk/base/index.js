@@ -3,7 +3,7 @@ const elliptic = require("elliptic")
 const EthCrypto = require("eth-crypto")
 const { providers, Contract, utils } = require("ethers")
 const md5 = require("md5")
-
+const versions = require("./versions")
 const {
   startAuthentication,
   startRegistration,
@@ -138,6 +138,61 @@ function to8(base64) {
   return bytes
 }
 
+const isBrowser = new Function(
+  "try {return this===window;}catch(e){ return false;}",
+)
+
+function normalizeContractSource(contractSrc, useVM2) {
+  const lines = contractSrc.trim().split("\n")
+  const first = lines[0]
+  const last = lines[lines.length - 1]
+
+  if (
+    (/\(\s*\(\)\s*=>\s*{/g.test(first) ||
+      /\s*\(\s*function\s*\(\)\s*{/g.test(first)) &&
+    /}\s*\)\s*\(\)\s*;/g.test(last)
+  ) {
+    lines.shift()
+    lines.pop()
+    contractSrc = lines.join("\n")
+  }
+
+  contractSrc = contractSrc
+    .replace(/export\s+async\s+function\s+handle/gmu, "async function handle")
+    .replace(/export\s+function\s+handle/gmu, "function handle")
+
+  if (useVM2) {
+    return `
+    ${contractSrc}
+    module.exports = handle;`
+  } else {
+    return `
+    const window=void 0,document=void 0,Function=void 0,eval=void 0,globalThis=void 0;
+    const [SmartWeave, BigNumber, logger${isBrowser() ? ", Buffer, atob, btoa" : ""}] = arguments;
+    class ContractError extends Error { constructor(message) { super(message); this.name = 'ContractError' } };
+    function ContractAssert(cond, message) { if (!cond) throw new ContractError(message) };
+    ${contractSrc};
+    return handle;
+  `
+  }
+}
+
+let srcs = {}
+
+const dlContract = async (version, sw) => {
+  if (srcs[version]) return srcs[version]
+  try {
+    const src = await fetch(
+      `https://arweave.net/${versions[version].txid}`,
+    ).then(v => v.text())
+    srcs[version] = src
+    return src
+  } catch (e) {
+    console.log(e)
+    return null
+  }
+}
+
 class Base {
   constructor() {
     this.reads = [
@@ -165,6 +220,24 @@ class Base {
       "getBundlers",
     ]
   }
+
+  async getHandle(ver, sw) {
+    if (this.local) return this.handle
+    try {
+      const src = await dlContract(ver, sw)
+      const normalizedSource = normalizeContractSource(src)
+      const contractFunction = new Function(normalizedSource)
+      const swGlobal = sw
+      const BigNumber = require("bignumber.js")
+      const handler = isBrowser()
+        ? contractFunction(swGlobal, BigNumber, null, Buffer, atob, btoa)
+        : contractFunction(swGlobal, BigNumber, null)
+      return handler ?? this.handle
+    } catch (e) {
+      return this.handle
+    }
+  }
+
   zkp(proof, pub_signals) {
     return { __op: "zkp", proof, pub_signals }
   }
