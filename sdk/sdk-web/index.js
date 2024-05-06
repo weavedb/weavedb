@@ -35,8 +35,7 @@ const {
   LoggerFactory: LoggerFactory_old,
   defaultCacheOptions: defaultCacheOptions_old,
 } = require("warp-contracts-old")
-
-const { parseQuery } = require("weavedb-contracts/weavedb/lib/utils")
+const { parseQuery } = require("weavedb-contracts/weavedb-bpt/lib/utils")
 const md5 = require("md5")
 const { createId } = require("@paralleldrive/cuid2")
 let states = {}
@@ -49,8 +48,6 @@ let submap = {}
 let Arweave = require("arweave")
 Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
 const Base = require("weavedb-base")
-const { handle } = require("weavedb-contracts/weavedb/contract")
-const { handle: handle_kv } = require("weavedb-contracts/weavedb-kv/contract")
 const { handle: handle_bpt } = require("weavedb-contracts/weavedb-bpt/contract")
 
 const _on = async (state, input, handle) => {
@@ -140,6 +137,7 @@ class SDK extends Base {
     type = 1,
     apiKey,
     sequencerUrl,
+    local = false,
   }) {
     super()
     this.remoteStateSyncSource = remoteStateSyncSource
@@ -150,8 +148,8 @@ class SDK extends Base {
     this.LitJsSdk = require("@lit-protocol/sdk-browser")
     this.kvs = {}
     this.type = type
-    this.handle =
-      this.type === 1 ? handle : this.type === 2 ? handle_kv : handle_bpt
+    this.local = local
+    this.handle = handle_bpt
     if (!isNil(useVM2)) this.useVM2 = useVM2
     if (!isNil(sequencerUrl)) this.sequencerUrl = sequencerUrl
     if (!isNil(apiKey)) {
@@ -251,6 +249,23 @@ class SDK extends Base {
     }
   }
 
+  async getHandle(ver, sw) {
+    if (this.local) return this.handle
+    try {
+      const src = await dlContract(ver, sw)
+      const normalizedSource = normalizeContractSource(src)
+      const contractFunction = new Function(normalizedSource)
+      const swGlobal = sw
+      const BigNumber = require("bignumber.js")
+      const handler = isBrowser()
+        ? contractFunction(swGlobal, BigNumber, null, Buffer, atob, btoa)
+        : contractFunction(swGlobal, BigNumber, null)
+      return handler ?? this.handle
+    } catch (e) {
+      return this.handle
+    }
+  }
+
   async readState(attempt = 1) {
     return new Promise(async res => {
       setTimeout(async () => {
@@ -263,19 +278,7 @@ class SDK extends Base {
           this.sortKey = _state.sortKey
           states[this.contractTxId] = this.state
           res(_state)
-          try {
-            if (
-              compareVersions(this.state?.version || "0.26.0", "0.27.0") >= 0
-            ) {
-              this.handle = handle_bpt
-            } else if (
-              compareVersions(this.state?.version || "0.26.0", "0.27.0") >= 0
-            ) {
-              this.handle = handle_kv
-            } else {
-              this.handle = handle
-            }
-          } catch (e) {}
+          const ver = this.state?.version || "0.26.0"
         } else {
           if (attempt > 5) {
             res(_state)
@@ -574,11 +577,13 @@ class SDK extends Base {
   async read(params, nocache = this.nocache_default) {
     if (!nocache && !isNil(this.state)) {
       try {
+        const sw = this.getSW()
+        const handle = await this.getHandle(this.state.version, sw)
         return (
-          await this.handle(
+          await handle(
             cachedStates[this.contractTxId] || states[this.contractTxId],
             { input: params },
-            this.getSW(),
+            sw,
           )
         ).result
       } catch (e) {
@@ -683,14 +688,16 @@ class SDK extends Base {
             let err = null
             let success = true
             try {
-              cacheState = await this.handle(
+              const sw = this.getSW()
+              const handle = await this.getHandle(this.state.version, sw)
+              cacheState = await handle(
                 clone(
                   cachedStates[this.contractTxId] || states[this.contractTxId],
                 ),
                 {
                   input: param,
                 },
-                this.getSW(),
+                sw,
               )
             } catch (e) {
               err = e
@@ -881,13 +888,15 @@ class SDK extends Base {
     for (const v of queries || []) {
       let res = { success: false, err: null, result: null }
       try {
+        const sw = this.getSW()
+        const handle = await this.getHandle(state.version, sw)
         res.result = (
-          await this.handle(
+          await handle(
             clone(state),
             {
               input: { function: v[0], query: tail(v) },
             },
-            this.getSW(),
+            sw,
           )
         ).result
         res.success = true
@@ -972,13 +981,18 @@ class SDK extends Base {
     if (includes(func, ["add", "update", "upsert", "set"])) {
       try {
         if (func === "add") {
+          const sw = this.getSW()
+          const handle = await this.getHandle(
+            state.cachedValue.state.version,
+            sw,
+          )
           res.docID = (
-            await this.handle(
+            await handle(
               state.cachedValue.state,
               {
                 input: { function: "ids", tx: tx.originalTxId },
               },
-              this.getSW(),
+              sw,
             )
           ).result[0]
           res.path = o(append(res.docID), tail)(query)
@@ -986,13 +1000,15 @@ class SDK extends Base {
           res.path = tail(query)
           res.docID = last(res.path)
         }
+        const sw = this.getSW()
+        const handle = await this.getHandle(state.cachedValue.state.version, sw)
         res.doc = (
-          await this.handle(
+          await handle(
             clone(state.cachedValue.state),
             {
               input: { function: "get", query: res.path },
             },
-            this.getSW(),
+            sw,
           )
         ).result
       } catch (e) {
@@ -1014,6 +1030,8 @@ class SDK extends Base {
           interaction: { id: res.originalTxId },
         })
       }, 0)
+      const sw = this.getSW()
+      const handle = await this.getHandle(state.cachedValue.state.version, sw)
       await _on(
         state,
         {
@@ -1026,7 +1044,7 @@ class SDK extends Base {
             },
           },
         },
-        this.handle,
+        handle,
       )
     }
     return res
@@ -1069,26 +1087,32 @@ class SDK extends Base {
 
   async getCache(...query) {
     if (isNil(states[this.contractTxId])) return null
+    const state = states[this.contractTxId]
+    const sw = this.getSW()
+    const handle = await this.getHandle(state.version, sw)
     return (
-      await this.handle(
+      await handle(
         clone(states[this.contractTxId]),
         {
           input: { function: "get", query },
         },
-        this.getSW(),
+        sw,
       )
     ).result
   }
 
   async cgetCache(...query) {
     if (isNil(states[this.contractTxId])) return null
+    const state = states[this.contractTxId]
+    const sw = this.getSW()
+    const handle = await this.getHandle(state.version, sw)
     return (
-      await this.handle(
+      await handle(
         clone(states[this.contractTxId]),
         {
           input: { function: "cget", query },
         },
-        this.getSW(),
+        sw,
       )
     ).result
   }
@@ -1108,14 +1132,16 @@ class SDK extends Base {
     for (let v of keys) {
       let _query = null
       if (v.func === "add") {
+        const sw = this.getSW()
+        const handle = await this.getHandle(state.version, sw)
         const docID = (
-          await this.handle(
+          await handle(
             clone(state),
             {
               function: "ids",
               input: { tx: input.interaction.id },
             },
-            this.getSW(),
+            sw,
           )
         ).result[0]
         _query = append(docID, v.path)
@@ -1123,13 +1149,15 @@ class SDK extends Base {
         _query = v.path
       }
       if (!isNil(_query)) {
+        const sw = this.getSW()
+        const handle = await this.getHandle(state.version, sw)
         let val = (
-          await this.handle(
+          await handle(
             clone(state),
             {
               input: { function: "cget", query: _query },
             },
-            this.getSW(),
+            sw,
           )
         ).result
         if (!isNil(val)) delete val.block
