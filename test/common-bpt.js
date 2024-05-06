@@ -2094,11 +2094,67 @@ const tests = {
     })
   },
   "should download specific version": async ({ arweave_wallet }) => {
-    const db = new DB({ type: 3, secure: false })
+    const db = new DB({ type: 3, secure: false, local: true })
     await db.set({ age: 10 }, "ppl", "bob", { ar: arweave_wallet })
     expect(await db.get("ppl")).to.eql([{ age: 10 }])
     await db.set({ age: 15 }, "ppl", "alice", { ar: arweave_wallet })
     expect(await db.get("ppl")).to.eql([{ age: 15 }, { age: 10 }])
+  },
+  "should skip signature verification": async ({ arweave_wallet, wallet }) => {
+    const db = new DB({
+      type: 3,
+      secure: false,
+      local: true,
+      _contracts: "../contracts",
+      state: {
+        auth: {
+          algorithms: ["secp256k1", "secp256k1-2", "ed25519", "rsa256"],
+          name: "weavedb",
+          version: "1",
+          skip_validation: true,
+        },
+      },
+    })
+    const identity0 = EthCrypto.createIdentity()
+    const identity = EthCrypto.createIdentity()
+
+    let queries = []
+    for (let i = 0; i < 10000; i++) {
+      const sig = await db.sign("upsert", { age: db.inc(1) }, "ppl", "bob", {
+        privateKey: identity.privateKey,
+        nonce: i + 1,
+      })
+      queries.push(sig)
+    }
+    let txs = 0
+    const start = Date.now()
+    for (let i = 0; i < queries.length; i++) {
+      await db.write(queries[i].function, queries[i], true, true, false)
+      txs += 1
+      const duration = Date.now() - start
+      if (duration > 1000) break
+    }
+    expect(txs).to.be.gt(4000)
+    expect(await db.get("ppl", "bob")).to.eql({ age: txs })
+
+    const { identity: identity2 } = await db.createTempAddress(
+      identity0.address,
+      null,
+      null,
+      {
+        privateKey: identity0.privateKey,
+      },
+    )
+    expect(await db.getAddressLink(identity2.address.toLowerCase())).to.eql({
+      address: identity0.address.toLowerCase(),
+      expiry: 0,
+    })
+    await db.upsert({ age: 20 }, "ppl", "bob", {
+      privateKey: identity2.privateKey,
+      wallet: identity0.address.toLowerCase(),
+    })
+    expect(await db.get("ppl", "bob")).to.eql({ age: 20 })
+    return
   },
 }
 

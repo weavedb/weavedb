@@ -1,6 +1,6 @@
 {
-  "name": "cwao-tools",
-  "version": "0.0.1",
+  "name": "weavedb-tools",
+  "version": "0.40.0",
   "main": "index.js",
   "node": "^18",
   "bin": {
