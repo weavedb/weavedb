@@ -15,6 +15,16 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.40.0-beta (May 6, 2024)
+
+#### Source Transaction Id
+
+[E14TapQNshyUIyN_DNhI0-YdUs8OP4-KXSgZnSxnROM](https://sonar.warp.cc/#/app/source/E14TapQNshyUIyN_DNhI0-YdUs8OP4-KXSgZnSxnROM)
+
+#### Added Features
+
+- skip authentication
+
 ### v0.39.1-beta (May 5, 2024)
 
 #### Source Transaction Id

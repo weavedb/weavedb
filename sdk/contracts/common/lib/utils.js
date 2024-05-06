@@ -40,7 +40,7 @@ const mergeDataP = async (
   signer,
   SmartWeave,
   action,
-  state
+  state,
 ) => {
   let exists = true
   if (isNil(_data.__data) || overwrite) {
@@ -59,7 +59,7 @@ const mergeDataP = async (
           proof: d.proof,
           pub_signals: d.pub_signals,
         },
-        SmartWeave
+        SmartWeave,
       )
       obj[field] = res
     } else if (is(Object)(d) && d.__op === "data") {
@@ -98,7 +98,7 @@ const mergeData = (
   overwrite = false,
   signer,
   SmartWeave,
-  action
+  action,
 ) => {
   let exists = true
   if (isNil(_data.__data) || overwrite) {
@@ -196,7 +196,7 @@ const parse = async (
   SmartWeave,
   kvs,
   type,
-  fn
+  fn,
 ) => {
   let func
   if (!isNil(_func)) func = _func.split(":")[0]
@@ -311,7 +311,7 @@ const parse = async (
       kvs,
       fn.get,
       type,
-      _func
+      _func,
     )
     _data = doc.doc
     ;({ next_data, schema, rules, col } = doc)
@@ -338,7 +338,7 @@ const parse = async (
   ) {
     err(
       `caller[${signer}] is not contract owner[${owner.join(", ")}]`,
-      contractErr
+      contractErr,
     )
   }
   return { data, query, new_data, path, _data, schema, col, next_data }
@@ -351,7 +351,7 @@ const auth = async (
   SmartWeave,
   use_nonce = true,
   kvs,
-  fn
+  fn,
 ) => {
   if (isNil(state.auth)) return { signer: null, original_signer: null }
   const {
@@ -364,12 +364,18 @@ const auth = async (
   } = action.input
   if (
     !includes(type)(
-      state.auth.algorithms || ["secp256k1", "secp256k1-2", "ed25519", "rsa256"]
+      state.auth.algorithms || [
+        "secp256k1",
+        "secp256k1-2",
+        "ed25519",
+        "rsa256",
+      ],
     )
   ) {
     err(`The wrong algorithm`)
   }
   let _caller = caller
+  let original_signer = null
   const EIP712Domain = [
     { name: "name", type: "string" },
     { name: "version", type: "string" },
@@ -401,7 +407,10 @@ const auth = async (
     message,
   }
   let signer = null
-  if (type === "ed25519") {
+  if (state.auth.skip_validation) {
+    if (!isNil(action.input.signer)) original_signer = action.input.signer
+    signer = caller
+  } else if (type === "ed25519") {
     const { isValid } = await read(
       state.contracts.dfinity,
       {
@@ -410,7 +419,7 @@ const auth = async (
         signature,
         signer: caller,
       },
-      SmartWeave
+      SmartWeave,
     )
     if (isValid) {
       signer = caller
@@ -428,7 +437,7 @@ const auth = async (
     const isValid = await _crypto.verify(
       pubKey,
       encoded_data,
-      Buffer.from(signature, "hex")
+      Buffer.from(signature, "hex"),
     )
     if (isValid) {
       signer = caller
@@ -444,7 +453,7 @@ const auth = async (
           data: _data,
           signature,
         },
-        SmartWeave
+        SmartWeave,
       )
     ).signer
   } else if (type == "secp256k1-2") {
@@ -456,7 +465,7 @@ const auth = async (
           data: _data,
           signature,
         },
-        SmartWeave
+        SmartWeave,
       )
     ).signer
   }
@@ -470,7 +479,7 @@ const auth = async (
       ? Math.round(SmartWeave.transaction.timestamp)
       : SmartWeave.block.timestamp
     : Math.round(action.timestamp / 1000)
-  let original_signer = signer
+  original_signer ??= signer
   let _signer = signer
   if (_signer !== _caller) {
     const link = await fn.getAddressLink(_signer, state, kvs, SmartWeave)
@@ -481,6 +490,9 @@ const auth = async (
     }
   }
   if (_signer !== _caller) err(`signer[${_signer}] is not caller[${_caller}]`)
+  if (!isNil(action.input.signer) && action.input.signer !== original_signer) {
+    err(`signer[${_signer}] is not caller[${_caller}]`)
+  }
   if (use_nonce !== false)
     await fn.useNonce(nonce, original_signer, state, kvs, SmartWeave)
   return { signer: _signer, original_signer }

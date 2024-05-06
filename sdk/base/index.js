@@ -216,7 +216,7 @@ class Base {
   async getAddressLink(address, nocache) {
     return this.read(
       { function: "getAddressLink", query: { address } },
-      nocache
+      nocache,
     )
   }
 
@@ -227,7 +227,7 @@ class Base {
           function: "nonce",
           address,
         },
-        nocache
+        nocache,
       )) + 1
     )
   }
@@ -238,7 +238,7 @@ class Base {
         function: "ids",
         tx,
       },
-      nocache
+      nocache,
     )
   }
 
@@ -248,7 +248,7 @@ class Base {
         function: "validities",
         tx,
       },
-      nocache
+      nocache,
     )
   }
 
@@ -397,7 +397,7 @@ class Base {
         multisigs,
         onDryWrite,
         data,
-        parallel
+        parallel,
       )
     } else if (
       isNil(intmax) &&
@@ -425,25 +425,25 @@ class Base {
     return !isNil(intmax)
       ? await this.writeWithIntmax(intmax, ...params)
       : !isNil(ii)
-      ? await this.writeWithII(ii, ...params)
-      : !isNil(ar)
-      ? await this.writeWithAR(ar, ...params)
-      : await this.writeWithEVM(
-          wallet,
-          func,
-          query,
-          nonce,
-          privateKey,
-          dryWrite,
-          bundle,
-          extra,
-          relay,
-          jobID,
-          multisigs,
-          onDryWrite,
-          data,
-          parallel
-        )
+        ? await this.writeWithII(ii, ...params)
+        : !isNil(ar)
+          ? await this.writeWithAR(ar, ...params)
+          : await this.writeWithEVM(
+              wallet,
+              func,
+              query,
+              nonce,
+              privateKey,
+              dryWrite,
+              bundle,
+              extra,
+              relay,
+              jobID,
+              multisigs,
+              onDryWrite,
+              data,
+              parallel,
+            )
   }
 
   setDefaultWallet(wallet, type = "evm") {
@@ -513,7 +513,7 @@ class Base {
         expectedRPID: location.hostname,
       })
       _identity.credentialID = Buffer.from(
-        verification.registrationInfo.credentialID
+        verification.registrationInfo.credentialID,
       ).toString("base64")
     }
     let response = null
@@ -539,7 +539,7 @@ class Base {
         jobID: "auth:webauthn",
       },
       "webauthn",
-      _identity
+      _identity,
     )
     const nonce = 1
     const data = {
@@ -624,7 +624,7 @@ class Base {
           relay: true,
           jobID: "auth:lens",
         },
-        "lens"
+        "lens",
       )
       const profile = await this.repeatQuery(contract.getProfile, [tokenID])
       identity.profile = pick(
@@ -636,7 +636,7 @@ class Base {
           "imageURI",
           "pubCount",
         ],
-        profile
+        profile,
       )
       identity.profile.pubCount = identity.profile.pubCount.toNumber()
       if (isNil(this.litNodeClient)) {
@@ -723,7 +723,7 @@ class Base {
       expiry,
       linkTo,
       opt,
-      "intmax"
+      "intmax",
     )
   }
 
@@ -732,7 +732,7 @@ class Base {
     proof,
     expiry,
     linkTo,
-    opt = {}
+    opt = {},
   ) {
     opt.privateKey = identity.privateKey
     const addr = proof.did
@@ -758,8 +758,8 @@ class Base {
       addr = is(String, evm)
         ? evm
         : is(Object, wallet)
-        ? wallet.getAddressString()
-        : null
+          ? wallet.getAddressString()
+          : null
       if (isNil(addr)) {
         throw Error("No address specified")
         return
@@ -777,7 +777,7 @@ class Base {
       expiry,
       linkTo,
       opt,
-      "evm"
+      "evm",
     )
   }
 
@@ -842,12 +842,12 @@ class Base {
     multisigs,
     onDryWrite,
     __data__,
-    parallel
+    parallel,
   ) {
     let signer, caller, pkey
     if (!isNil(privateKey)) {
       signer = `0x${privateToAddress(
-        Buffer.from(privateKey.replace(/^0x/, ""), "hex")
+        Buffer.from(privateKey.replace(/^0x/, ""), "hex"),
       ).toString("hex")}`
       pkey = Buffer.from(privateKey.replace(/^0x/, ""), "hex")
     } else if (is(Object, wallet)) {
@@ -866,7 +866,6 @@ class Base {
         ? wallet.toLowerCase()
         : wallet
       : signer
-
     const message = {
       nonce,
       query: JSON.stringify({ func, query }),
@@ -894,7 +893,6 @@ class Base {
           data,
           version: "V4",
         })
-
     let param = mergeLeft(extra, {
       function: func,
       query,
@@ -902,6 +900,7 @@ class Base {
       nonce,
       caller,
     })
+    if (caller !== signer) param.signer = signer
     if (!isNil(__data__)) param.data = __data__
     if (!isNil(jobID)) param.jobID = jobID
     if (!isNil(multisigs)) param.multisigs = multisigs
@@ -913,7 +912,7 @@ class Base {
       bundle,
       relay,
       onDryWrite,
-      parallel
+      parallel,
     )
   }
 
@@ -930,7 +929,7 @@ class Base {
     multisigs,
     onDryWrite,
     __data__,
-    parallel
+    parallel,
   ) {
     let addr = ii.toJSON()[0]
     const isaddr = !isNil(addr)
@@ -957,7 +956,7 @@ class Base {
     function toHexString(bytes) {
       return new Uint8Array(bytes).reduce(
         (str, byte) => str + byte.toString(16).padStart(2, "0"),
-        ""
+        "",
       )
     }
     const _data = Buffer.from(JSON.stringify(data))
@@ -980,7 +979,7 @@ class Base {
       bundle,
       relay,
       onDryWrite,
-      parallel
+      parallel,
     )
   }
 
@@ -997,7 +996,7 @@ class Base {
     multisigs,
     onDryWrite,
     __data__,
-    parallel
+    parallel,
   ) {
     const wallet = is(Object, ar) && ar.walletName === "ArConnect" ? ar : null
     let addr = null
@@ -1037,7 +1036,7 @@ class Base {
           await wallet.signature(encoded, {
             name: "RSA-PSS",
             saltLength: 32,
-          })
+          }),
         ).toString("hex")
     let param = mergeLeft(extra, {
       function: func,
@@ -1058,7 +1057,7 @@ class Base {
       bundle,
       relay,
       onDryWrite,
-      parallel
+      parallel,
     )
   }
 
@@ -1075,7 +1074,7 @@ class Base {
     multisigs,
     onDryWrite,
     __data__,
-    parallel
+    parallel,
   ) {
     const wallet = is(Object, intmax) ? intmax : null
     let addr = null
@@ -1139,7 +1138,7 @@ class Base {
             nonce,
             caller: addr,
             type: "secp256k1-2",
-          }
+          },
     )
     if (!isNil(__data__)) param.data = __data__
     if (!isNil(jobID)) param.jobID = jobID
@@ -1151,7 +1150,7 @@ class Base {
       bundle,
       relay,
       onDryWrite,
-      parallel
+      parallel,
     )
   }
 
@@ -1230,9 +1229,9 @@ class Base {
             Base.getKeyInfo(
               contractTxId,
               { function: v[0], query: tail(v) },
-              prefix
+              prefix,
             ),
-          query.query
+          query.query,
         )
       } else {
         const q =
@@ -1258,7 +1257,7 @@ class Base {
     multisigs,
     onDryWrite,
     __data__,
-    parallel
+    parallel,
   ) {
     const param = mergeLeft(extra, { function: func, query })
     if (!isNil(__data__)) param.data = __data__
@@ -1272,7 +1271,7 @@ class Base {
       bundle,
       relay,
       onDryWrite,
-      parallel
+      parallel,
     )
   }
 }
