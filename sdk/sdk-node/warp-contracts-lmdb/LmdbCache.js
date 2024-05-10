@@ -12,7 +12,7 @@ class LmdbCache {
     this.subLevelSeparator = "|"
     if (!cacheOptions.dbLocation) {
       throw new Error(
-        "LmdbCache cache configuration error - no db location specified"
+        "LmdbCache cache configuration error - no db location specified",
       )
     }
     if (!lmdbOptions) {
@@ -79,7 +79,7 @@ class LmdbCache {
     ) {
       return new warp_contracts_1.SortKeyCacheResult(
         joinedKeyResult.key.split(this.subLevelSeparator)[1],
-        wrappedValue
+        wrappedValue,
       )
     }
     if (
@@ -89,7 +89,7 @@ class LmdbCache {
     ) {
       return new warp_contracts_1.SortKeyCacheResult(
         joinedKeyResult.key.split(this.subLevelSeparator)[1],
-        wrappedValue.value
+        wrappedValue.value,
       )
     }
     return null
@@ -238,7 +238,7 @@ class LmdbCache {
     const transactionMarkValue = await this.db.get(this.ongoingTransactionMark)
     if (transactionMarkValue == "ongoing") {
       throw new Error(
-        `Database seems to be in inconsistent state. The previous transaction has not finished.`
+        `Database seems to be in inconsistent state. The previous transaction has not finished.`,
       )
     }
   }
@@ -255,15 +255,15 @@ class LmdbCache {
           ? void 0
           : options.lt
         : options === null || options === void 0
-        ? void 0
-        : options.gte,
+          ? void 0
+          : options.gte,
       end: (options === null || options === void 0 ? void 0 : options.reverse)
         ? options === null || options === void 0
           ? void 0
           : options.gte
         : options === null || options === void 0
-        ? void 0
-        : options.lt,
+          ? void 0
+          : options.lt,
       reverse:
         options === null || options === void 0 ? void 0 : options.reverse,
     }
@@ -277,7 +277,7 @@ class LmdbCache {
       if (wrappedValue) {
         result.set(
           clientKey,
-          (await this.getLessOrEqual(clientKey, sortKey)).cachedValue
+          (await this.getLessOrEqual(clientKey, sortKey)).cachedValue,
         )
       }
     }
