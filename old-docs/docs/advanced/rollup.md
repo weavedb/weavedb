@@ -63,6 +63,8 @@ With everything included,
 module.exports = {
   dir: "/home/xyz/cache",
   dbname: "mydb",
+  sequencerUrl: "https://gw.warp.cc/",
+  apiKey: "xxxxx",
   admin: "privateky...",
   bundler: {
     kty: "RSA",

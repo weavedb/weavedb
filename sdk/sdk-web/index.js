@@ -216,7 +216,6 @@ class SDK extends Base {
         ? "localhost"
         : "mainnet")
 
-    if (this.network === "localhost") this.cache = "leveldb"
     if (arweave.host === "host.docker.internal") {
       this.warp = this.Warp.WarpFactory.custom(this.arweave, {}, "local")
         .useArweaveGateway()
@@ -246,23 +245,6 @@ class SDK extends Base {
         version,
         subscribe,
       })
-    }
-  }
-
-  async getHandle(ver, sw) {
-    if (this.local) return this.handle
-    try {
-      const src = await dlContract(ver, sw)
-      const normalizedSource = normalizeContractSource(src)
-      const contractFunction = new Function(normalizedSource)
-      const swGlobal = sw
-      const BigNumber = require("bignumber.js")
-      const handler = isBrowser()
-        ? contractFunction(swGlobal, BigNumber, null, Buffer, atob, btoa)
-        : contractFunction(swGlobal, BigNumber, null)
-      return handler ?? this.handle
-    } catch (e) {
-      return this.handle
     }
   }
 
@@ -332,14 +314,14 @@ class SDK extends Base {
       throw new Error(". and | are not allowed in prefix")
     }
     if (typeof window === "undefined") {
-      if (this.cache !== "leveldb") {
+      if (this.cache !== "leveldb" && this.network === "mainnet") {
         this.warp.useKVStorageFactory(
           contractTxId =>
             new this.LmdbCache({
               ...defaultCacheOptions,
               dbLocation: `${
                 this.lmdb.dir ?? "./cache"
-              }/warp/kv/lmdb/${contractTxId}`,
+              }/warp/kv/lmdb/${this.contractTxId}`,
             }),
         )
       }
