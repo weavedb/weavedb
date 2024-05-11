@@ -179,7 +179,7 @@ function normalizeContractSource(contractSrc, useVM2) {
 
 let srcs = {}
 
-const dlContract = async (version, sw) => {
+const dlContract = async version => {
   if (srcs[version]) return srcs[version]
   try {
     const src = await fetch(
@@ -221,18 +221,36 @@ class Base {
     ]
   }
 
-  async getHandle(ver, sw) {
-    if (this.local) return this.handle
+  _getHandle(sw, func) {
     try {
-      const src = await dlContract(ver, sw)
-      const normalizedSource = normalizeContractSource(src)
-      const contractFunction = new Function(normalizedSource)
       const swGlobal = sw
       const BigNumber = require("bignumber.js")
       const handler = isBrowser()
-        ? contractFunction(swGlobal, BigNumber, null, Buffer, atob, btoa)
-        : contractFunction(swGlobal, BigNumber, null)
+        ? func(swGlobal, BigNumber, null, Buffer, atob, btoa)
+        : func(swGlobal, BigNumber, null)
       return handler ?? this.handle
+    } catch (e) {
+      return this.handle
+    }
+  }
+  setSrc(src) {
+    this.contractFunction = this.normalizeSrc(src)
+  }
+  normalizeSrc(src) {
+    const normalizedSource = normalizeContractSource(src)
+    return new Function(normalizedSource)
+  }
+  async getHandle(ver, sw) {
+    if (this.local) {
+      if (this.contractFunction) {
+        return this._getHandle(sw, this.contractFunction)
+      } else {
+        return this.handle
+      }
+    }
+    try {
+      const src = await dlContract(ver)
+      return this._getHandle(sw, this.normalizeSrc(src))
     } catch (e) {
       return this.handle
     }
