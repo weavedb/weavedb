@@ -164,6 +164,7 @@ class OffChain extends Base {
     relay = false,
     onDryWrite,
     date,
+    caller,
   ) {
     if (JSON.stringify(param).length > 15000) {
       return {
@@ -190,7 +191,7 @@ class OffChain extends Base {
       try {
         tx = await handle(
           clone(this.state),
-          { caller: this.caller, input: param },
+          { caller: caller ?? this.caller, input: param },
           sw,
         )
         this.state = tx.state
