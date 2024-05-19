@@ -17,10 +17,11 @@ let fpjson = require("fpjson-lang")
 fpjson = fpjson.default || fpjson
 
 const isValidName = str =>
-  /^[^\/]+$/.test(str) &&
-  !/^__.*__+$/.test(str) &&
-  !/^\.{1,2}$/.test(str) &&
-  Buffer.byteLength(str, "utf8") <= 1500
+  str === "__tokens__" ||
+  (/^[^\/]+$/.test(str) &&
+    !/^__.*__+$/.test(str) &&
+    !/^\.{1,2}$/.test(str) &&
+    Buffer.byteLength(str, "utf8") <= 1500)
 
 const clone = state => JSON.parse(JSON.stringify(state))
 
@@ -29,18 +30,18 @@ const replace$ = arrs => {
     return arrs.slice(0, 2) === "l$"
       ? ["toLower", { var: arrs.slice(2) }]
       : arrs.slice(0, 2) === "u$"
-      ? ["toUpper", { var: arrs.slice(2) }]
-      : arrs.slice(0, 2) === "o$"
-      ? [["complement", ["isNil"]], { var: arrs.slice(2) }]
-      : arrs.slice(0, 2) === "x$"
-      ? ["isNil", { var: arrs.slice(2) }]
-      : arrs.slice(0, 2) === "!$"
-      ? ["not", { var: arrs.slice(2) }]
-      : arrs.slice(0, 2) === "$$"
-      ? tail(arrs)
-      : arrs[0] === "$"
-      ? { var: tail(arrs) }
-      : arrs
+        ? ["toUpper", { var: arrs.slice(2) }]
+        : arrs.slice(0, 2) === "o$"
+          ? [["complement", ["isNil"]], { var: arrs.slice(2) }]
+          : arrs.slice(0, 2) === "x$"
+            ? ["isNil", { var: arrs.slice(2) }]
+            : arrs.slice(0, 2) === "!$"
+              ? ["not", { var: arrs.slice(2) }]
+              : arrs.slice(0, 2) === "$$"
+                ? tail(arrs)
+                : arrs[0] === "$"
+                  ? { var: tail(arrs) }
+                  : arrs
   } else if (is(Array, arrs)) {
     if (arrs[0] === "toBatchAll") {
       return [
@@ -149,7 +150,7 @@ async function fpj(arr = [], obj = {}, fn = {}) {
         ;[val, isBreak] = await fn[arr[0].slice(0, -2)](
           parse(replace$(arr[1]), obj),
           obj,
-          setElm
+          setElm,
         )
       } else {
         throw Error(`unknow function ${arr[0]}`)

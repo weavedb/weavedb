@@ -14,6 +14,7 @@ const { getTriggers } = require("../common/actions/read/getTriggers")
 const { getBundlers } = require("./actions/read/getBundlers")
 
 const { getInfo } = require("./actions/read/getInfo")
+const { getTokens } = require("./actions/read/getTokens")
 const { getAddressLink } = require("./actions/read/getAddressLink")
 const { ids } = require("./actions/read/ids")
 const { validities } = require("./actions/read/validities")
@@ -32,6 +33,8 @@ const { tick } = require("./actions/write/tick")
 const { upsert } = require("./actions/write/upsert")
 const { update } = require("./actions/write/update")
 const { remove } = require("./actions/write/remove")
+const { creditNotice } = require("./actions/write/creditNotice")
+const { withdrawToken } = require("./actions/write/withdrawToken")
 const { addOwner } = require("./actions/write/addOwner")
 const { removeOwner } = require("./actions/write/removeOwner")
 const { setAlgorithms } = require("./actions/write/setAlgorithms")
@@ -91,6 +94,8 @@ const writes = [
   "addTrigger",
   "removeTrigger",
   "setBundlers",
+  "creditNotice",
+  "withdrawToken",
 ]
 
 const addHash =
@@ -153,6 +158,8 @@ async function handle(state, action, _SmartWeave) {
       return await listCollections(...readParams)
     case "getInfo":
       return await getInfo(...readParams)
+    case "getTokens":
+      return await getTokens(...readParams)
     case "getCrons":
       return await getCrons(...readParams)
     case "getAlgorithms":
@@ -205,8 +212,8 @@ async function handle(state, action, _SmartWeave) {
           executeCron,
           undefined,
           undefined,
-          get
-        )
+          get,
+        ),
       )
       break
 
@@ -295,7 +302,12 @@ async function handle(state, action, _SmartWeave) {
     case "removeTrigger":
       res = await addHash(_SmartWeave)(await removeTrigger(...writeParams))
       break
-
+    case "Credit-Notice":
+      res = await addHash(_SmartWeave)(await creditNotice(...writeParams))
+      break
+    case "withdrawToken":
+      res = await addHash(_SmartWeave)(await withdrawToken(...writeParams))
+      break
     case "addAddressLink":
       res = await addHash(_SmartWeave)(
         await addAddressLink(
@@ -306,8 +318,8 @@ async function handle(state, action, _SmartWeave) {
           _SmartWeave,
           undefined,
           kvs,
-          get
-        )
+          get,
+        ),
       )
       break
     case "evolve":
@@ -318,7 +330,7 @@ async function handle(state, action, _SmartWeave) {
       break
     default:
       err(
-        `No function supplied or function not recognised: "${action.input.function}"`
+        `No function supplied or function not recognised: "${action.input.function}"`,
       )
   }
   if (!isNil(res)) {

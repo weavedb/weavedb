@@ -15,6 +15,18 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.41.0-beta (May 19, 2024)
+
+#### Source Transaction Id
+
+[307ur2pssGdt7KkMpu2RLha33K5qlskQDYGfJPCKUuI](https://sonar.warp.cc/#/app/source/307ur2pssGdt7KkMpu2RLha33K5qlskQDYGfJPCKUuI)
+
+#### Added Features
+
+- L1/L2 tokens (creditNotice, lockTokens, withdrawToken)
+- FPJSON token commands (mint, transfer, withdraw)
+- fix triggers
+
 ### v0.40.0-beta (May 6, 2024)
 
 #### Source Transaction Id

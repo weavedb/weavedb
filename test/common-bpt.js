@@ -1,4 +1,5 @@
 const DB = require("../sdk/offchain")
+const { Wallet } = require("ethers")
 const {
   AuthV2PubSignals,
   PROTOCOL_CONSTANTS,
@@ -18,7 +19,7 @@ const { expect } = require("chai")
 const { parseQuery } = require("../sdk/contracts/weavedb-bpt/lib/utils")
 const { readFileSync } = require("fs")
 const { resolve } = require("path")
-const { range, mergeLeft, pluck, map } = require("ramda")
+const { range, mergeLeft, pluck, map, last } = require("ramda")
 const EthCrypto = require("eth-crypto")
 let arweave = require("arweave")
 const {
@@ -2155,6 +2156,216 @@ const tests = {
     })
     expect(await db.get("ppl", "bob")).to.eql({ age: 20 })
     return
+  },
+  "should deposit tokens": async ({ arweave_wallet, walletAddress }) => {
+    // create identities
+    const wallet = EthCrypto.createIdentity()
+    const wallet2 = EthCrypto.createIdentity()
+    const wallet3 = EthCrypto.createIdentity()
+    const wallet4 = EthCrypto.createIdentity()
+    const owner = EthCrypto.createIdentity()
+    const owner2 = EthCrypto.createIdentity()
+    const owner3 = EthCrypto.createIdentity()
+    const cu = EthCrypto.createIdentity()
+    const cu2 = EthCrypto.createIdentity()
+    const ath = wallet => ({ privateKey: wallet.privateKey })
+
+    let pool = []
+    let hashes = []
+    let b = []
+    const bundlers = [walletAddress]
+    const auth = { privateKey: owner.privateKey }
+
+    // l1 owner and l2 owner must be different, otherwise nonce won't match
+    const l1 = new DB({
+      type: 3,
+      secure: false,
+      local: true,
+      _contracts: "../contracts",
+      state: {
+        owner: [owner2.address.toLowerCase(), owner.address.toLowerCase()],
+      },
+      caller: walletAddress,
+    })
+    await l1.setBundlers(bundlers, ath(owner2))
+    const l2 = new DB({
+      type: 3,
+      secure: false,
+      local: true,
+      _contracts: "../contracts",
+      state: { owner: owner.address.toLowerCase() },
+      caller: walletAddress,
+    })
+    const date = Date.now()
+    const add = async (...params) => {
+      const sig = await l2.sign(...params)
+      await l2._writeContract(sig.function, sig)
+      pool.push(sig)
+      return sig
+    }
+    const commit = async () => {
+      let txs = []
+      let ids = []
+      let dates = []
+      let i = 0
+      const prev = hashes.length === 0 ? l2.contractTxId : last(hashes)
+      do {
+        const q = pool.shift()
+        txs.push(q)
+        const d = date + hashes.length + ++i
+        ids.push(await getId(l2.contractTxId, q, d))
+        dates.push(d)
+      } while (pool.length > 0)
+      const hash = await getHash(ids)
+      hashes.push(await getNewHash(prev, hash))
+      return await l1.bundle(txs, {
+        n: hashes.length,
+        t: dates,
+        h: last(hashes),
+      })
+    }
+    const data = { name: "Bob", age: 20 }
+    const data2 = { name: "Alice", age: 30 }
+    await add("set", data, "ppl", "Bob", ath(wallet2))
+    await commit()
+    await add("upsert", data2, "ppl", "Alice", ath(wallet3))
+    await add("update", {}, "ppl", "Beth", ath(wallet4))
+    await commit()
+
+    await l1._writeContract(
+      "Credit-Notice",
+      { function: "Credit-Notice", Quantity: "100" },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      "WDB",
+    )
+    const tokens = await l1.getTokens()
+    expect(tokens.rollup.height).to.eql(2)
+    expect(tokens.tokens.available).to.eql({ WDB: "100" })
+
+    // set up relayers
+    const cuw = new Wallet(cu.privateKey)
+    const cuw2 = new Wallet(cu2.privateKey)
+
+    const jobID = "tokens"
+    const job = {
+      relayers: [owner3.address],
+      signers: [cu.address, cu2.address],
+      multisig: 100,
+      multisig_type: "percent",
+      schema: {
+        type: "object",
+        required: ["tokens", "height", "last_token_lock_date"],
+        properties: {
+          tokens: { type: "object" },
+          height: { type: "number" },
+          last_token_lock_date: { type: "number" },
+        },
+      },
+    }
+
+    await add("addRelayerJob", "tokens", job, auth)
+    expect(await l2.getRelayerJob("tokens")).to.eql(job)
+    const signed = await l2.sign("lockTokens", {
+      jobID,
+      ...ath(wallet),
+    })
+    const extra = {
+      tokens: tokens.tokens.available,
+      height: tokens.rollup.height,
+      last_token_lock_date: tokens.last_token_lock_date,
+    }
+    const multisig_data = { extra, jobID, params: signed }
+    const sig2 = await cuw.signMessage(JSON.stringify(multisig_data))
+    const sig3 = await cuw2.signMessage(JSON.stringify(multisig_data))
+    const p = await add("relay", "tokens", signed, extra, {
+      ...ath(owner3),
+      multisigs: [sig2, sig3],
+    })
+
+    expect(l2.state.tokens.available_l2.WDB).to.eql("100")
+    await commit()
+    expect((await l1.getInfo()).rollup.height).to.eql(3)
+    expect(l1.state.tokens.available.WDB).to.eql("0")
+    expect(l1.state.tokens.locked.WDB).to.eql("100")
+    const rules = [
+      ["set:mint", [["allow()", true]]],
+      ["update:withdraw", [["allow()", true]]],
+    ]
+    await add("setRules", rules, "ppl", auth)
+    const trigger_mint = {
+      key: "mint",
+      on: "create",
+      version: 2,
+      func: [
+        [
+          "mint()",
+          [
+            {
+              token: "WDB",
+              amount: 10,
+              to: { var: "data.setter" },
+            },
+          ],
+        ],
+        [
+          "transfer()",
+          [
+            {
+              token: "WDB",
+              amount: 5,
+              from: { var: "data.setter" },
+              to: wallet2.address.toLowerCase(),
+            },
+          ],
+        ],
+      ],
+    }
+    await add("addTrigger", trigger_mint, "ppl", auth)
+    const trigger_withdraw = {
+      key: "withdraw",
+      on: "update",
+      version: 2,
+      func: [
+        [
+          "withdraw()",
+          [
+            {
+              token: "WDB",
+              amount: 5,
+              from: { var: "data.setter" },
+            },
+          ],
+        ],
+      ],
+    }
+    await add("addTrigger", trigger_withdraw, "ppl", auth)
+    const bob = { name: "Bob", age: 20 }
+    const wallet_token = EthCrypto.createIdentity()
+    const auth2 = { privateKey: wallet_token.privateKey }
+    await add("query", "set:mint", data, "ppl", "Bob", auth2)
+    expect((await l2.get("__tokens__"))[0].amount).to.eql(5)
+    expect((await l2.get("__tokens__"))[1].amount).to.eql(5)
+    await add("query", "update:withdraw", { age: 21 }, "ppl", "Bob", auth2)
+    expect((await l2.get("__tokens__"))[0].withdraw).to.eql(5)
+
+    // withdraw token to L1
+    await add("withdrawToken", { token: "WDB", to: walletAddress }, auth2)
+    expect((await l2.get("__tokens__"))[0].withdraw).to.eql(0)
+    const res = await commit()
+    expect((await l1.getInfo()).rollup.height).to.eql(4)
+    expect(res.events[0]).to.eql({
+      type: "ao_message",
+      attributes: [
+        { key: "Target", value: "WDB" },
+        { key: "Action", value: "Transfer" },
+        { key: "Quantity", value: "5" },
+        { key: "Recipient", value: walletAddress },
+      ],
+    })
   },
 }
 

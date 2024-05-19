@@ -1,5 +1,5 @@
 {
-  "version": "0.40.0",
+  "version": "0.41.0",
   "canEvolve": true,
   "evolve": null,
   "secure": true,
@@ -13,5 +13,11 @@
     "crons": {}
   },
   "contracts": {},
-  "triggers": {}
+  "triggers": {},
+  "tokens": {
+    "available": {},
+    "available_l2": {},
+    "allocated": {},
+    "locked": {}
+  }
 }

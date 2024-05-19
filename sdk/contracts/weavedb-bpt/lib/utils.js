@@ -56,7 +56,7 @@ const getCol = async (
   _signer,
   SmartWeave,
   current_path = [],
-  kvs
+  kvs,
 ) => await _getCol(path, _signer, SmartWeave, (current_path = []), kvs)
 
 const _getCol = async (path, _signer, SmartWeave, current_path = [], kvs) => {
@@ -85,7 +85,7 @@ const _getCol = async (path, _signer, SmartWeave, current_path = [], kvs) => {
       _signer,
       SmartWeave,
       current_path,
-      kvs
+      kvs,
     )
   }
 }
@@ -201,7 +201,7 @@ const validateData = async ({
                 },
                 undefined,
                 SmartWeave,
-                kvs
+                kvs,
               )
             )?.result ?? null
           return [val, isBreak]
@@ -261,7 +261,7 @@ const validateData = async ({
                         },
                         undefined,
                         SmartWeave,
-                        kvs
+                        kvs,
                       )
                     )?.result ?? null
                   setElm(k2, result, rule_data)
@@ -313,7 +313,7 @@ const getDoc = async (
   kvs,
   get,
   type,
-  _func
+  _func,
 ) =>
   await _getDoc(
     null,
@@ -333,7 +333,7 @@ const getDoc = async (
     undefined,
     get,
     type,
-    _func
+    _func,
   )
 
 const _getDoc = async (
@@ -354,7 +354,7 @@ const _getDoc = async (
   doc,
   get,
   type,
-  _func
+  _func,
 ) => {
   data = (await kv(kvs, SmartWeave).get(`data.${current_path.join("/")}`)) || {}
   const [_col, id] = path
@@ -389,7 +389,7 @@ const _getDoc = async (
           _signer,
           SmartWeave,
           action,
-          state
+          state,
         )
       ).__data
     } else if (includes(func)(["update", "upsert"])) {
@@ -402,7 +402,7 @@ const _getDoc = async (
           _signer,
           SmartWeave,
           action,
-          state
+          state,
         )
       ).__data
     }
@@ -446,7 +446,7 @@ const _getDoc = async (
         doc,
         get,
         type,
-        _func
+        _func,
       )
     : {
         doc,
@@ -474,7 +474,7 @@ const parse = async (
   SmartWeave,
   kvs,
   get,
-  type
+  type,
 ) => {
   return await _parse(
     state,
@@ -486,7 +486,7 @@ const parse = async (
     SmartWeave,
     kvs,
     type,
-    { getDoc, getCol, addNewDoc, get }
+    { getDoc, getCol, addNewDoc, get },
   )
 }
 
@@ -507,7 +507,7 @@ const trigger = async (
   executeCron,
   depth,
   vars,
-  timestamp
+  timestamp,
 ) => {
   const trigger_key = `trigger.${init(path).join("/")}`
   state.triggers ??= {}
@@ -524,7 +524,7 @@ const trigger = async (
         _kvs,
         depth,
         { ...vars, batch: [] },
-        timestamp
+        timestamp,
       )
       state = _state
       for (const k in _kvs) kvs[k] = _kvs[k]
@@ -685,7 +685,7 @@ const _parser = query => {
               }
               if (!isNil(_range_field) && _range_field !== v[0]) {
                 err(
-                  `inequity has to be on the same field [${JSON.stringify(v)}]`
+                  `inequity has to be on the same field [${JSON.stringify(v)}]`,
                 )
               } else if (
                 _ranges[v[1]] ||
@@ -766,10 +766,10 @@ const _parser = query => {
     (!isNil(_filter.in)
       ? [_filter.in]
       : !isNil(_filter["not-in"])
-      ? [_filter["not-in"]]
-      : !isNil(_filter["!="])
-      ? [_filter["!="]]
-      : null)
+        ? [_filter["not-in"]]
+        : !isNil(_filter["!="])
+          ? [_filter["!="]]
+          : null)
   q.sortByTail = false
   return q
 }
@@ -786,8 +786,8 @@ const checkStartEnd = q => {
   ) {
     err(
       `range [${JSON.stringify(
-        q.start ?? q.end
-      )}] cannot be used with ==/inequity`
+        q.start ?? q.end,
+      )}] cannot be used with ==/inequity`,
     )
   }
   let start = null
@@ -1042,7 +1042,7 @@ const auth = async (
   SmartWeave,
   use_nonce = true,
   kvs,
-  fn
+  fn,
 ) => {
   if (isNil(state.auth)) return { signer: null, original_signer: null }
   const {
@@ -1055,7 +1055,12 @@ const auth = async (
   } = action.input
   if (
     !includes(type)(
-      state.auth.algorithms || ["secp256k1", "secp256k1-2", "ed25519", "rsa256"]
+      state.auth.algorithms || [
+        "secp256k1",
+        "secp256k1-2",
+        "ed25519",
+        "rsa256",
+      ],
     )
   ) {
     err(`The wrong algorithm`)
@@ -1101,7 +1106,7 @@ const auth = async (
         signature,
         signer: caller,
       },
-      SmartWeave
+      SmartWeave,
     )
     if (isValid) {
       signer = caller
@@ -1119,7 +1124,7 @@ const auth = async (
     const isValid = await _crypto.verify(
       pubKey,
       encoded_data,
-      Buffer.from(signature, "hex")
+      Buffer.from(signature, "hex"),
     )
     if (isValid) {
       signer = caller
@@ -1135,7 +1140,7 @@ const auth = async (
           data: _data,
           signature,
         },
-        SmartWeave
+        SmartWeave,
       )
     ).signer
   } else if (type == "secp256k1-2") {
@@ -1147,7 +1152,7 @@ const auth = async (
           data: _data,
           signature,
         },
-        SmartWeave
+        SmartWeave,
       )
     ).signer
   }

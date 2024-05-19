@@ -14,7 +14,7 @@ const upsert = async (
   executeCron,
   depth = 1,
   type = "direct",
-  get
+  get,
 ) => {
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
     err("only bundle queries are allowed")
@@ -27,7 +27,7 @@ const upsert = async (
       "upsert",
       SmartWeave,
       true,
-      kvs
+      kvs,
     ))
   }
   let { data, query, _signer, new_data, path, schema, _data, col, next_data } =
@@ -41,8 +41,11 @@ const upsert = async (
       SmartWeave,
       kvs,
       get,
-      type
+      type,
     )
+  if (type !== "cron" && path[0] === "__tokens__") {
+    err("__tokens__ cannot be updated directly")
+  }
   validateSchema(schema, next_data, contractErr)
   _data.__data = next_data
   let { before, after } = await put(
@@ -51,7 +54,7 @@ const upsert = async (
     init(path),
     kvs,
     SmartWeave,
-    signer
+    signer,
   )
   const updated = !equals(before.val, after.val)
   if (updated && depth < 10) {
@@ -72,7 +75,7 @@ const upsert = async (
           setter: _data.setter,
         },
       },
-      action.timestamp
+      action.timestamp,
     )
   }
   return wrapResult(state, original_signer, SmartWeave, {

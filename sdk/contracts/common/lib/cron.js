@@ -76,6 +76,169 @@ const executeCron =
     if (cron.crons.version === 2) {
       await fpj(replace$(cron.crons.jobs), vars, {
         parse: async str => [JSON.parse(str), false],
+        transfer: async _query => {
+          const query = _query[0]
+          const token =
+            (
+              await ops.get(
+                state,
+                {
+                  caller: state.owner,
+                  input: {
+                    function: "get",
+                    query: [
+                      "__tokens__",
+                      ["key", "==", `${query.token}:${query.from}`],
+                    ],
+                  },
+                },
+                true,
+                SmartWeave,
+                kvs,
+              )
+            ).result[0] || null
+          const amount = token?.data?.amount ?? 0
+          if (query.amount > amount) return [null, false]
+          await execQuery("update", [
+            {
+              amount: { __op: "inc", n: -query.amount },
+            },
+            "__tokens__",
+            token.id,
+          ])
+          const token2 =
+            (
+              await ops.get(
+                state,
+                {
+                  caller: state.owner,
+                  input: {
+                    function: "get",
+                    query: [
+                      "__tokens__",
+                      ["key", "==", `${query.token}:${query.to}`],
+                    ],
+                  },
+                },
+                true,
+                SmartWeave,
+                kvs,
+              )
+            ).result[0] || null
+          if (isNil(token2)) {
+            await execQuery("add", [
+              {
+                key: `${query.token}:${query.to}`,
+                amount: query.amount,
+                address: query.to,
+                token: query.token,
+              },
+              "__tokens__",
+            ])
+          } else {
+            await execQuery("update", [
+              {
+                amount: { __op: "inc", n: query.amount },
+              },
+              "__tokens__",
+              token2.id,
+            ])
+          }
+          return [null, false]
+        },
+        withdraw: async _query => {
+          const query = _query[0]
+          const token =
+            (
+              await ops.get(
+                state,
+                {
+                  caller: state.owner,
+                  input: {
+                    function: "get",
+                    query: [
+                      "__tokens__",
+                      ["key", "==", `${query.token}:${query.from}`],
+                    ],
+                  },
+                },
+                true,
+                SmartWeave,
+                kvs,
+              )
+            ).result[0] || null
+          const amount = token?.data?.amount ?? 0
+          if (query.amount > amount) return [null, false]
+          await execQuery("update", [
+            {
+              amount: { __op: "inc", n: -query.amount },
+              withdraw: { __op: "inc", n: query.amount },
+            },
+            "__tokens__",
+            token.id,
+          ])
+          return [null, false]
+        },
+        mint: async _query => {
+          const query = _query[0]
+          state.tokens.available_l2 ??= {}
+          state.tokens.allocated ??= {}
+          state.tokens.available_l2[query.token] ??= "0"
+          state.tokens.allocated[query.token] ??= "0"
+          if (
+            BigInt(state.tokens.available_l2[query.token]) -
+              BigInt(query.amount) <
+            0
+          ) {
+            return [null, false]
+          }
+          state.tokens.available_l2[query.token] = (
+            BigInt(state.tokens.available_l2[query.token]) -
+            BigInt(query.amount)
+          ).toString()
+          state.tokens.allocated[query.token] = (
+            BigInt(state.tokens.allocated[query.token]) + BigInt(query.amount)
+          ).toString()
+          const token =
+            (
+              await ops.get(
+                state,
+                {
+                  caller: state.owner,
+                  input: {
+                    function: "get",
+                    query: [
+                      "__tokens__",
+                      ["key", "==", `${query.token}:${query.to}`],
+                    ],
+                  },
+                },
+                true,
+                SmartWeave,
+                kvs,
+              )
+            ).result[0] || null
+          if (token === null) {
+            await execQuery("add", [
+              {
+                key: `${query.token}:${query.to}`,
+                amount: query.amount,
+                address: query.to,
+                token: query.token,
+              },
+              "__tokens__",
+            ])
+          } else {
+            await execQuery("update", [
+              {
+                amount: { __op: "inc", n: query.amount },
+              },
+              "__tokens__",
+              token.id,
+            ])
+          }
+          return [null, false]
+        },
         stringify: async json => [JSON.stringify(json), false],
         upsert: async query => [await execQuery("upsert", query), false],
         delete: async query => [await execQuery("delete", query), false],
