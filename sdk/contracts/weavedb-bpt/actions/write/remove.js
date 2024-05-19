@@ -15,7 +15,7 @@ const remove = async (
   executeCron,
   depth = 1,
   type = "direct",
-  get
+  get,
 ) => {
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
     err("only bundle queries are allowed")
@@ -28,7 +28,7 @@ const remove = async (
       "delete",
       SmartWeave,
       true,
-      kvs
+      kvs,
     ))
   }
   const { data, query, new_data, path, _data, col } = await parse(
@@ -41,18 +41,21 @@ const remove = async (
     SmartWeave,
     kvs,
     get,
-    type
+    type,
   )
+  if (type !== "cron" && path[0] === "__tokens__") {
+    err("__tokens__ cannot be updated directly")
+  }
   if (isNil(_data.__data)) err(`Data doesn't exist`)
   let { before, after } = await del(
     last(path),
     init(path),
     kvs,
     SmartWeave,
-    signer
+    signer,
   )
   if (depth < 10) {
-    await trigger(
+    state = await trigger(
       ["delete"],
       state,
       path,
@@ -69,7 +72,7 @@ const remove = async (
           setter: _data.setter,
         },
       },
-      action.timestamp
+      action.timestamp,
     )
   }
 

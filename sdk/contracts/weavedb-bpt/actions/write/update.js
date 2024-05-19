@@ -13,7 +13,7 @@ const update = async (
   executeCron,
   depth = 1,
   type = "direct",
-  get
+  get,
 ) => {
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
     err("only bundle queries are allowed")
@@ -27,7 +27,7 @@ const update = async (
       "update",
       SmartWeave,
       true,
-      kvs
+      kvs,
     ))
   }
   let { new_data, path, _data, schema, next_data } = await parse(
@@ -40,8 +40,11 @@ const update = async (
     SmartWeave,
     kvs,
     get,
-    type
+    type,
   )
+  if (type !== "cron" && path[0] === "__tokens__") {
+    err("__tokens__ cannot be updated directly")
+  }
   if (isNil(_data.__data)) err(`Data doesn't exist`)
   validateSchema(schema, next_data, contractErr)
   let { before, after } = await put(
@@ -50,11 +53,11 @@ const update = async (
     init(path),
     kvs,
     SmartWeave,
-    signer
+    signer,
   )
   const updated = !equals(before.val, after.val)
   if (updated && depth < 10) {
-    await trigger(
+    state = await trigger(
       ["update"],
       state,
       path,
@@ -71,7 +74,7 @@ const update = async (
           setter: _data.setter,
         },
       },
-      action.timestamp
+      action.timestamp,
     )
   }
   return wrapResult(state, original_signer, SmartWeave, {

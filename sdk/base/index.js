@@ -66,6 +66,7 @@ const no_paths = [
   "listRelayerJobs",
   "getEvolve",
   "getInfo",
+  "getTokens",
   "getBundlers",
   "addCron",
   "removeCron",
@@ -78,6 +79,8 @@ const no_paths = [
   "setCanEvolve",
   "setSecure",
   "addOwner",
+  "withdrawToken",
+  "lockTokens",
   "removeOwner",
   "addAddressLink",
   "removeAddressLink",
@@ -216,6 +219,7 @@ class Base {
       "listRelayerJobs",
       "listCollections",
       "getInfo",
+      "getTokens",
       "getNonce",
       "getBundlers",
     ]
@@ -368,6 +372,13 @@ class Base {
     return this._write2("addOwner", { address }, opt)
   }
 
+  async lockTokens(opt) {
+    return this._write2("lockTokens", {}, opt)
+  }
+
+  async withdrawToken(input, opt) {
+    return this._write2("withdrawToken", input, opt)
+  }
   async setBundlers(bundlers, opt) {
     return this._write2("setBundlers", { bundlers }, opt)
   }
@@ -1388,7 +1399,7 @@ for (const v of readQueries) {
   }
 }
 
-const reads = ["getOwner", "getEvolve", "getInfo", "getBundlers"]
+const reads = ["getOwner", "getEvolve", "getInfo", "getTokens", "getBundlers"]
 
 for (const v of reads) {
   Base.prototype[v] = async function (nocache) {

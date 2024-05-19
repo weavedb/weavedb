@@ -232,6 +232,9 @@ class OffChain extends Base {
         duration: Date.now() - start,
         error,
         function: param.function,
+        messages: tx?.result?.messages ?? [],
+        events: tx?.result?.events ?? [],
+        attributes: tx?.result?.attributes ?? [],
       }
       let _func = param.function
       let _query = param.query

@@ -15,7 +15,7 @@ const add = async (
   executeCron,
   depth = 1,
   type = "direct",
-  get
+  get,
 ) => {
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
     err("only bundle queries are allowed")
@@ -28,7 +28,7 @@ const add = async (
       "add",
       SmartWeave,
       true,
-      kvs
+      kvs,
     ))
   }
   let { _data, path, schema, next_data } = await parse(
@@ -41,8 +41,11 @@ const add = async (
     SmartWeave,
     kvs,
     get,
-    type
+    type,
   )
+  if (type !== "cron" && path[0] === "__tokens__") {
+    err("__tokens__ cannot be updated directly")
+  }
   if (!isNil(_data.__data)) err("doc already exists")
   validateSchema(schema, next_data, contractErr)
   let { before, after } = await put(
@@ -51,7 +54,7 @@ const add = async (
     init(path),
     kvs,
     SmartWeave,
-    signer
+    signer,
   )
   if (depth < 10) {
     state = await trigger(
@@ -71,7 +74,7 @@ const add = async (
           setter: _data.setter,
         },
       },
-      action.timestamp
+      action.timestamp,
     )
   }
   return wrapResult(state, original_signer, SmartWeave, {

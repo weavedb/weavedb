@@ -374,6 +374,7 @@ const auth = async (
   ) {
     err(`The wrong algorithm`)
   }
+
   let _caller = caller
   let original_signer = null
   const EIP712Domain = [
