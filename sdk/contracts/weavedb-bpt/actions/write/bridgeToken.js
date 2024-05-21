@@ -93,7 +93,6 @@ const bridgeToken = async (
             to,
             token,
             destination,
-            date: SmartWeave.transaction.timestamp,
           },
           "__bridge__",
         ],
