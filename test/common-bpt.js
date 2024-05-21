@@ -2390,7 +2390,6 @@ const tests = {
       to: from,
       token: "WDB",
       destination: "ethereum",
-      date: bridge.date,
     })
   },
 }
