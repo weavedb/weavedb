@@ -80,6 +80,7 @@ const no_paths = [
   "setSecure",
   "addOwner",
   "withdrawToken",
+  "bridgeToken",
   "lockTokens",
   "removeOwner",
   "addAddressLink",
@@ -379,6 +380,11 @@ class Base {
   async withdrawToken(input, opt) {
     return this._write2("withdrawToken", input, opt)
   }
+
+  async bridgeToken(input, opt) {
+    return this._write2("bridgeToken", input, opt)
+  }
+
   async setBundlers(bundlers, opt) {
     return this._write2("setBundlers", { bundlers }, opt)
   }

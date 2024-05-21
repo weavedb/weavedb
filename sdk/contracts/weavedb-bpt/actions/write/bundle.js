@@ -19,6 +19,7 @@ const { setAlgorithms } = require("./setAlgorithms")
 const { addIndex } = require("./addIndex")
 const { addOwner } = require("./addOwner")
 const { withdrawToken } = require("./withdrawToken")
+const { bridgeToken } = require("./bridgeToken")
 const { addRelayerJob } = require("./addRelayerJob")
 const { removeCron } = require("./removeCron")
 const { removeIndex } = require("./removeIndex")
@@ -282,6 +283,10 @@ const bundle = async (
 
         case "withdrawToken":
           res = await withdrawToken(...params)
+          break
+
+        case "bridgeToken":
+          res = await bridgeToken(...params)
           break
 
         default:

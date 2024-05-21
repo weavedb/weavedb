@@ -1,4 +1,4 @@
-const { isNil, last, init } = require("ramda")
+const { includes, isNil, last, init } = require("ramda")
 const { parse, trigger } = require("../../lib/utils")
 const { clone } = require("../../../common/lib/pure")
 const { err, wrapResult } = require("../../../common/lib/utils")
@@ -43,8 +43,8 @@ const remove = async (
     get,
     type,
   )
-  if (type !== "cron" && path[0] === "__tokens__") {
-    err("__tokens__ cannot be updated directly")
+  if (type !== "cron" && includes(path[0])(["__tokens__", "__bridge__"])) {
+    err(`${path[0]} cannot be updated directly`)
   }
   if (isNil(_data.__data)) err(`Data doesn't exist`)
   let { before, after } = await del(

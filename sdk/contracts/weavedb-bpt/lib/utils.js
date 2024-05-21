@@ -1182,6 +1182,44 @@ const auth = async (
   return { signer: _signer, original_signer }
 }
 
+function uint8ArrayToHexString(uint8Array) {
+  let hexString = "0x"
+  for (const e of uint8Array) {
+    const hex = e.toString(16)
+    hexString += hex.length === 1 ? `0${hex}` : hex
+  }
+  return hexString
+}
+
+const isHexStrict = hex =>
+  typeof hex === "string" && /^((-)?0x[0-9a-f]+|(0x))$/i.test(hex)
+
+const isUint8Array = data =>
+  data instanceof Uint8Array ||
+  data?.constructor?.name === "Uint8Array" ||
+  data?.constructor?.name === "Buffer"
+
+const isEVMAddress = (value, checkChecksum = true) => {
+  if (typeof value !== "string" && !isUint8Array(value)) return false
+  let valueToCheck
+  if (isUint8Array(value)) {
+    valueToCheck = uint8ArrayToHexString(value)
+  } else if (typeof value === "string" && !isHexStrict(value)) {
+    valueToCheck = value.toLowerCase().startsWith("0x") ? value : `0x${value}`
+  } else {
+    valueToCheck = value
+  }
+  if (!/^(0x)?[0-9a-f]{40}$/i.test(valueToCheck)) return false
+
+  if (
+    /^(0x|0X)?[0-9a-f]{40}$/.test(valueToCheck) ||
+    /^(0x|0X)?[0-9A-F]{40}$/.test(valueToCheck)
+  ) {
+    return true
+  }
+  return true
+}
+
 module.exports = {
   trigger,
   getDoc: _getDoc,
@@ -1191,4 +1229,5 @@ module.exports = {
   parseQuery,
   err,
   auth,
+  isEVMAddress,
 }

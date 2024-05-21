@@ -2184,6 +2184,7 @@ const tests = {
       _contracts: "../contracts",
       state: {
         owner: [owner2.address.toLowerCase(), owner.address.toLowerCase()],
+        bridges: ["ethereum"],
       },
       caller: walletAddress,
     })
@@ -2193,7 +2194,7 @@ const tests = {
       secure: false,
       local: true,
       _contracts: "../contracts",
-      state: { owner: owner.address.toLowerCase() },
+      state: { owner: owner.address.toLowerCase(), bridges: ["ethereum"] },
       caller: walletAddress,
     })
     const date = Date.now()
@@ -2288,6 +2289,7 @@ const tests = {
 
     expect(l2.state.tokens.available_l2.WDB).to.eql("100")
     await commit()
+    await sleep(1000)
     expect((await l1.getInfo()).rollup.height).to.eql(3)
     expect(l1.state.tokens.available.WDB).to.eql("0")
     expect(l1.state.tokens.locked.WDB).to.eql("100")
@@ -2351,20 +2353,44 @@ const tests = {
     expect((await l2.get("__tokens__"))[1].amount).to.eql(5)
     await add("query", "update:withdraw", { age: 21 }, "ppl", "Bob", auth2)
     expect((await l2.get("__tokens__"))[0].withdraw).to.eql(5)
+    await sleep(1000)
+
+    // bridge token to Ethereum
+    const from = wallet_token.address.toLowerCase()
+    await add(
+      "bridgeToken",
+      {
+        token: "WDB",
+        to: from,
+        destination: "ethereum",
+        amount: 2,
+      },
+      auth2,
+    )
 
     // withdraw token to L1
     await add("withdrawToken", { token: "WDB", to: walletAddress }, auth2)
     expect((await l2.get("__tokens__"))[0].withdraw).to.eql(0)
     const res = await commit()
+    await sleep(1000)
     expect((await l1.getInfo()).rollup.height).to.eql(4)
     expect(res.events[0]).to.eql({
       type: "ao_message",
       attributes: [
         { key: "Target", value: "WDB" },
         { key: "Action", value: "Transfer" },
-        { key: "Quantity", value: "5" },
+        { key: "Quantity", value: "3" },
         { key: "Recipient", value: walletAddress },
       ],
+    })
+    const bridge = (await l1.get("__bridge__"))[0]
+    expect(bridge).to.eql({
+      from,
+      amount: 2,
+      to: from,
+      token: "WDB",
+      destination: "ethereum",
+      date: bridge.date,
     })
   },
 }

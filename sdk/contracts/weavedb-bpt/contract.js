@@ -35,6 +35,7 @@ const { update } = require("./actions/write/update")
 const { remove } = require("./actions/write/remove")
 const { creditNotice } = require("./actions/write/creditNotice")
 const { withdrawToken } = require("./actions/write/withdrawToken")
+const { bridgeToken } = require("./actions/write/bridgeToken")
 const { addOwner } = require("./actions/write/addOwner")
 const { removeOwner } = require("./actions/write/removeOwner")
 const { setAlgorithms } = require("./actions/write/setAlgorithms")
@@ -96,6 +97,7 @@ const writes = [
   "setBundlers",
   "creditNotice",
   "withdrawToken",
+  "bridgeToken",
 ]
 
 const addHash =
@@ -307,6 +309,9 @@ async function handle(state, action, _SmartWeave) {
       break
     case "withdrawToken":
       res = await addHash(_SmartWeave)(await withdrawToken(...writeParams))
+      break
+    case "bridgeToken":
+      res = await addHash(_SmartWeave)(await bridgeToken(...writeParams))
       break
     case "addAddressLink":
       res = await addHash(_SmartWeave)(

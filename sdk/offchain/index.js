@@ -62,6 +62,7 @@ class OffChain extends Base {
         bundler: "bundler",
         polygonID: "polygon-id",
       },
+      bridges: [],
     })
     if (noauth) delete this.state.auth
     this.initialState = clone(this.state)
