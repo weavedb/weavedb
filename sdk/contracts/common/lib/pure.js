@@ -18,6 +18,7 @@ fpjson = fpjson.default || fpjson
 
 const isValidName = str =>
   str === "__tokens__" ||
+  str === "__bridge__" ||
   (/^[^\/]+$/.test(str) &&
     !/^__.*__+$/.test(str) &&
     !/^\.{1,2}$/.test(str) &&

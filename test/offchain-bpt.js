@@ -37,7 +37,12 @@ describe("WeaveDB Offchain BPT", function () {
     contractTxId = "offchain"
     walletAddress = await arweave.wallets.jwkToAddress(arweave_wallet)
     db = new DB({
-      state: { nostr: "nostr_events", secure: false, owner: walletAddress },
+      state: {
+        nostr: "nostr_events",
+        secure: false,
+        owner: walletAddress,
+        bridges: ["ethereum"],
+      },
       type: 3,
       caller: walletAddress,
       _contracts: "../contracts",

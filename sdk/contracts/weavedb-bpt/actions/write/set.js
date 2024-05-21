@@ -1,4 +1,4 @@
-const { init, last, isNil } = require("ramda")
+const { includes, init, last, isNil } = require("ramda")
 const { err, parse, trigger } = require("../../lib/utils")
 const { validateSchema, wrapResult } = require("../../../common/lib/utils")
 const { validate } = require("../../lib/validate")
@@ -41,8 +41,8 @@ const set = async (
     get,
     type,
   )
-  if (type !== "cron" && path[0] === "__tokens__") {
-    err("__tokens__ cannot be updated directly")
+  if (type !== "cron" && includes(path[0])(["__tokens__", "__bridge__"])) {
+    err(`${path[0]} cannot be updated directly`)
   }
   validateSchema(schema, next_data, contractErr)
   let { before, after } = await put(

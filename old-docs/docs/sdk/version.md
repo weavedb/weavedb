@@ -15,6 +15,16 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.42.0-beta (May 21, 2024)
+
+#### Source Transaction Id
+
+[NbEFECH4EiS3mXtDZnZNPvmt3xTIH057RUhVi74SM5c](https://sonar.warp.cc/#/app/source/NbEFECH4EiS3mXtDZnZNPvmt3xTIH057RUhVi74SM5c)
+
+#### Added Features
+
+- bridgeToken
+
 ### v0.41.0-beta (May 19, 2024)
 
 #### Source Transaction Id

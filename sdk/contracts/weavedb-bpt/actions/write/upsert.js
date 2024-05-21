@@ -1,4 +1,4 @@
-const { equals, isNil, init, last } = require("ramda")
+const { includes, equals, isNil, init, last } = require("ramda")
 const { parse, trigger } = require("../../lib/utils")
 const { err, validateSchema, wrapResult } = require("../../../common/lib/utils")
 const { validate } = require("../../lib/validate")
@@ -43,8 +43,8 @@ const upsert = async (
       get,
       type,
     )
-  if (type !== "cron" && path[0] === "__tokens__") {
-    err("__tokens__ cannot be updated directly")
+  if (type !== "cron" && includes(path[0])(["__tokens__", "__bridge__"])) {
+    err(`${path[0]} cannot be updated directly`)
   }
   validateSchema(schema, next_data, contractErr)
   _data.__data = next_data

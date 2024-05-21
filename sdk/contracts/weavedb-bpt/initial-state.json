@@ -1,5 +1,5 @@
 {
-  "version": "0.41.0",
+  "version": "0.42.0",
   "canEvolve": true,
   "evolve": null,
   "secure": true,
@@ -19,5 +19,6 @@
     "available_l2": {},
     "allocated": {},
     "locked": {}
-  }
+  },
+  "bridges": []
 }

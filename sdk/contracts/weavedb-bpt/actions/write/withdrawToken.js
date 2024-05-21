@@ -1,8 +1,8 @@
 const { err, wrapResult } = require("../../../common/lib/utils")
-const { includes, is, of, append, isNil } = require("ramda")
-
+const { isNil } = require("ramda")
 const { update } = require("./update")
 const { validate } = require("../../lib/validate")
+
 const withdrawToken = async (
   state,
   action,
@@ -23,8 +23,6 @@ const withdrawToken = async (
     locked: {},
     allocated: {},
   }
-  state.tokens.available[token] ??= "0"
-  state.tokens.available_l2[token] ??= "0"
   let original_signer = null
   if (isNil(signer)) {
     ;({ signer, original_signer } = await validate(
@@ -72,6 +70,7 @@ const withdrawToken = async (
     "cron",
     get,
   )
+
   state.tokens.allocated[token] = (
     BigInt(state.tokens.allocated[token]) - BigInt(withdraw)
   ).toString()
@@ -81,6 +80,7 @@ const withdrawToken = async (
       BigInt(state.tokens.locked[token]) - BigInt(withdraw)
     ).toString()
   }
+
   return wrapResult(state, original_signer, SmartWeave, {
     events: [
       {
