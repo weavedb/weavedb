@@ -178,12 +178,17 @@ const bundle = async (
   for (const v of queries) {
     let valid = true
     let error = null
+    const sw = {
+      ...SmartWeave,
+      ...(isBundler ? { transaction: { id: v.i, timestamp: v.t } } : {}),
+    }
+
     let params = [
       clone(state),
       { input: v.q, timestamp: isBundler ? v.t : null },
       undefined,
       false,
-      SmartWeave,
+      sw,
       kvs,
       executeCron,
       undefined,
@@ -207,7 +212,7 @@ const bundle = async (
             undefined,
             undefined,
             false,
-            SmartWeave,
+            sw,
             kvs,
             executeCron,
             undefined,
