@@ -15,6 +15,16 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.42.2-beta (May 24, 2024)
+
+#### Source Transaction Id
+
+[eeltHRBzmfGIBx70plCuhoiJwLKwC_cSVGzZoDrCKnk](https://sonar.warp.cc/#/app/source/eeltHRBzmfGIBx70plCuhoiJwLKwC_cSVGzZoDrCKnk)
+
+#### Added Features
+
+- rewrite transaction id & timestamp on bundle queries
+
 ### v0.42.1-beta (May 21, 2024)
 
 #### Source Transaction Id

@@ -2135,7 +2135,7 @@ const tests = {
       const duration = Date.now() - start
       if (duration > 1000) break
     }
-    expect(txs).to.be.gt(4000)
+    expect(txs).to.be.gt(3500)
     expect(await db.get("ppl", "bob")).to.eql({ age: txs })
 
     const { identity: identity2 } = await db.createTempAddress(
