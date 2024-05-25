@@ -15,7 +15,7 @@ module.exports = class FetchOptionsPlugin {
       fetchOptions = { keepalive: true }
     }
     if (this.apiKey) {
-      fetchOptions.headers = request.init.headers
+      fetchOptions.headers = request.init.headers ?? {}
       fetchOptions.headers["x-api-key"] = this.apiKey
     }
     return fetchOptions
