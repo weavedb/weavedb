@@ -1983,7 +1983,10 @@ const tests = {
     }
     await db.addTrigger(data2, "ppl2", { ar: arweave_wallet })
     await db.add({ num: 1 }, "ppl2")
-    expect(await db.get("ppl3")).to.eql([{ num: 2 }, { num: 3 }])
+    expect(await db.get("ppl3", ["num", "asc"])).to.eql([
+      { num: 2 },
+      { num: 3 },
+    ])
 
     const data3 = {
       key: "trg2",

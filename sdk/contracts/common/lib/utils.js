@@ -142,8 +142,17 @@ const isEvolving = state =>
   !isNil(last(state.evolveHistory)) &&
   isNil(last(state.evolveHistory).newVersion)
 
-const genId = async (action, salt, SmartWeave) =>
-  md5(JSON.stringify(action.input))
+const genId = async (action, salt, SmartWeave) => {
+  const id = md5(
+    JSON.stringify({
+      input: action.input,
+      txid: SmartWeave.transaction?.id ?? SmartWeave.block?.height,
+      timestamp:
+        SmartWeave.transaction?.timestamp ?? SmartWeave.block?.timestamp,
+    }),
+  )
+  return Buffer.from(id, "hex").toString("base64").replace(/\//g, "_")
+}
 
 const isOwner = (signer, state) => {
   let owner = state.owner || []
