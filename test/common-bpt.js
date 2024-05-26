@@ -2200,7 +2200,7 @@ const tests = {
     const date = Date.now()
     const add = async (...params) => {
       const sig = await l2.sign(...params)
-      await l2._writeContract(sig.function, sig)
+      const res = await l2._writeContract(sig.function, sig)
       pool.push(sig)
       return sig
     }
@@ -2230,7 +2230,7 @@ const tests = {
     await add("set", data, "ppl", "Bob", ath(wallet2))
     await commit()
     await add("upsert", data2, "ppl", "Alice", ath(wallet3))
-    await add("update", {}, "ppl", "Beth", ath(wallet4))
+    await add("upsert", {}, "ppl", "Beth", ath(wallet4))
     await commit()
 
     await l1._writeContract(
@@ -2352,7 +2352,9 @@ const tests = {
     expect((await l2.get("__tokens__"))[0].amount).to.eql(5)
     expect((await l2.get("__tokens__"))[1].amount).to.eql(5)
     await add("query", "update:withdraw", { age: 21 }, "ppl", "Bob", auth2)
-    expect((await l2.get("__tokens__"))[0].withdraw).to.eql(5)
+    expect(
+      (await l2.get("__tokens__", ["withdraw", "desc"]))[0].withdraw,
+    ).to.eql(5)
     await sleep(1000)
 
     // bridge token to Ethereum
@@ -2370,7 +2372,9 @@ const tests = {
 
     // withdraw token to L1
     await add("withdrawToken", { token: "WDB", to: walletAddress }, auth2)
-    expect((await l2.get("__tokens__"))[0].withdraw).to.eql(0)
+    expect(
+      (await l2.get("__tokens__", ["withdraw", "asc"]))[0].withdraw,
+    ).to.eql(0)
     const res = await commit()
     await sleep(1000)
     expect((await l1.getInfo()).rollup.height).to.eql(4)
