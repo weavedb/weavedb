@@ -5198,6 +5198,26 @@ warp-contracts@^1.4.41:
     warp-isomorphic "^1.0.7"
     warp-wasm-metering "1.0.1"
 
+warp-contracts@^1.4.45:
+  version "1.4.45"
+  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.4.45.tgz#918ede8cdc272bb6c0e9d9334a31107071b8b894"
+  integrity sha512-v4asbKIofCmQjH+1Q+yTyJmGUFwaL11zNnfaipRsxQ488MB7lGfQGNeadMfYhhc2yvUDhcVok1UcSfvfgugPaQ==
+  dependencies:
+    archiver "^5.3.0"
+    arweave "1.14.4"
+    async-mutex "^0.4.0"
+    bignumber.js "9.1.1"
+    events "3.3.0"
+    fast-copy "^3.0.0"
+    level "^8.0.0"
+    memory-level "^1.0.0"
+    safe-stable-stringify "2.4.1"
+    stream-buffers "^3.0.2"
+    unzipit "^1.4.0"
+    warp-arbundles "^1.0.4"
+    warp-isomorphic "^1.0.7"
+    warp-wasm-metering "1.0.1"
+
 warp-isomorphic@1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/warp-isomorphic/-/warp-isomorphic-1.0.0.tgz#dccccfc046bc6ac77919f8be1024ced1385c70ea"
@@ -5277,10 +5297,10 @@ weavedb-contracts@^0.42.2:
     wasmbuilder "^0.0.16"
     wasmcurves "^0.2.1"
 
-weavedb-sdk@^0.42.3:
-  version "0.42.3"
-  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.42.3.tgz#96854448ee1bb07dacbba2fc9a961e7275ff368c"
-  integrity sha512-MMieoL6MXEY2SSoPdDnEIaFPYDfkeLUIC984MWUOLohFnbGf3PAE1ZV6FOnKw9Lr6AwAiq8UBJ9XEoWCGHtzMg==
+weavedb-sdk@^0.42.5:
+  version "0.42.5"
+  resolved "https://registry.yarnpkg.com/weavedb-sdk/-/weavedb-sdk-0.42.5.tgz#df845e36362d9f806e397e95d719da6c82e1a862"
+  integrity sha512-WuMd42DguvMRcQ+CZZR8s2c4wkMew8f4rj0whhrISyrT8cHXF1hBBNTUknIKUFVmD6aiIAxU8WZGE1ZXci8Mrg==
   dependencies:
     "@lit-protocol/sdk-browser" "^1.3.3"
     "@metamask/legacy-web3" "^2.0.0"
@@ -5290,7 +5310,7 @@ weavedb-sdk@^0.42.3:
     compare-versions "^6.0.0-rc.1"
     md5 "^2.3.0"
     ramda "^0.28.0"
-    warp-contracts "^1.4.41"
+    warp-contracts "^1.4.45"
     warp-contracts-old "npm:warp-contracts@1.2.26"
     weavedb-base "^0.42.3"
     weavedb-contracts "^0.42.2"

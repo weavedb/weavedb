@@ -135,8 +135,8 @@ class SDK extends Base {
     remoteStateSyncEnabled = true,
     useVM2,
     type = 1,
-    apiKey,
-    sequencerUrl,
+    apiKey = "793d13df-2183-46a9",
+    sequencerUrl = "https://gw.warp.cc",
     local = false,
   }) {
     super()
@@ -152,19 +152,7 @@ class SDK extends Base {
     this.handle = handle_bpt
     if (!isNil(useVM2)) this.useVM2 = useVM2
     if (!isNil(sequencerUrl)) this.sequencerUrl = sequencerUrl
-    if (!isNil(apiKey)) {
-      this.apiKey = apiKey
-      const _fetch = fetch
-      fetch = (...params) => {
-        if (
-          typeof params[0] === "string" &&
-          /^https\:\/\/gw\.warp\.cc\//.test(params[0])
-        ) {
-          if (!params[1]) params.push({ headers: { "x-api-key": this.apiKey } })
-        }
-        return _fetch(...params)
-      }
-    }
+    if (!isNil(apiKey)) this.apiKey = apiKey
     this.LmdbCache = LmdbCache
     this.createClient = createClient
     this.WarpSubscriptionPlugin = WarpSubscriptionPlugin

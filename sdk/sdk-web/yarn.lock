@@ -4151,10 +4151,10 @@ warp-arbundles@^1.0.4:
     unzipit "^1.4.0"
     vm2 "3.9.11"
 
-warp-contracts@^1.4.41:
-  version "1.4.41"
-  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.4.41.tgz#49d9678002acef546a8350ed81e505178f84cefe"
-  integrity sha512-nrdLGGBzxujiWkZCDxSOfIvdnKmL+XCoF+amNdFLo22RVmYbsmIW4D0BQPDK9I/wZtlZLGZHFne9xa7bl2whJg==
+warp-contracts@^1.4.45:
+  version "1.4.45"
+  resolved "https://registry.yarnpkg.com/warp-contracts/-/warp-contracts-1.4.45.tgz#918ede8cdc272bb6c0e9d9334a31107071b8b894"
+  integrity sha512-v4asbKIofCmQjH+1Q+yTyJmGUFwaL11zNnfaipRsxQ488MB7lGfQGNeadMfYhhc2yvUDhcVok1UcSfvfgugPaQ==
   dependencies:
     archiver "^5.3.0"
     arweave "1.14.4"
