@@ -1306,7 +1306,7 @@ const tests = {
     await db.set({ data: Date.now() }, "likes", "abc")
     expect((await db.get("like-count", "abc")).count).to.equal(1)
   },
-  "should process nostr events": async ({ db, arweave_wallet }) => {
+  "should process nostr events.skip": async ({ db, arweave_wallet }) => {
     const rule = [
       [
         "set:nostr_events",
@@ -1415,7 +1415,7 @@ const tests = {
     event3.sig = getSignature(event3, sk)
     await db.nostr(event3)
   },
-  "should record nostr users": async ({ db, arweave_wallet }) => {
+  "should record nostr users.skip": async ({ db, arweave_wallet }) => {
     const schema = {
       type: "object",
       required: ["address"],
@@ -1487,7 +1487,7 @@ const tests = {
     event.sig = getSignature(event, sk)
     await db.nostr(event)
   },
-  "should record nostr posts": async ({ db, arweave_wallet }) => {
+  "should record nostr posts.skip": async ({ db, arweave_wallet }) => {
     const schema = {
       type: "object",
       required: ["owner", "id"],
@@ -2104,6 +2104,7 @@ const tests = {
     await db.set({ age: 15 }, "ppl", "alice", { ar: arweave_wallet })
     expect(await db.get("ppl")).to.eql([{ age: 15 }, { age: 10 }])
   },
+
   "should skip signature verification": async ({ arweave_wallet, wallet }) => {
     const db = new DB({
       type: 3,

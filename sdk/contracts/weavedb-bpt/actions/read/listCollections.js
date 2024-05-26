@@ -10,11 +10,11 @@ const listCollections = async (state, action, SmartWeave, kvs) => {
     undefined,
     undefined,
     SmartWeave,
-    kvs
+    kvs,
   )
   return {
     result: keys(
-      (await kv(kvs, SmartWeave).get(`data.${path.join("/")}`)) || {}
+      (await kv(kvs, SmartWeave).get(`data.${path.join("/")}`)) || {},
     ),
   }
 }

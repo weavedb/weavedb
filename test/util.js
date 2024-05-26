@@ -90,6 +90,8 @@ async function deployContracts({
       ...{
         secure,
         owner: walletAddress,
+        bridges: ["ethereum"],
+        max_doc_id_length: 28,
       },
     }
     //initialState.contracts.intmax = contractTxIdIntmax

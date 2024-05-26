@@ -290,7 +290,15 @@ const parse = async (
       "getRules",
     ])
   ) {
-    _data = await fn.getCol(data, path, signer, SmartWeave, undefined, kvs)
+    _data = await fn.getCol(
+      data,
+      path,
+      signer,
+      SmartWeave,
+      undefined,
+      kvs,
+      state,
+    )
     col = _data
   } else if (
     !includes(func)([
