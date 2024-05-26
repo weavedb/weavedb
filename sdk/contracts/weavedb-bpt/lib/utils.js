@@ -44,6 +44,7 @@ const {
   ac_funcs,
   clone,
   isValidName,
+  isValidDocName,
   setElm,
   parse: __parse,
 } = require("../../common/lib/pure")
@@ -57,17 +58,25 @@ const getCol = async (
   SmartWeave,
   current_path = [],
   kvs,
-) => await _getCol(path, _signer, SmartWeave, (current_path = []), kvs)
+  state,
+) => await _getCol(path, _signer, SmartWeave, (current_path = []), kvs, state)
 
-const _getCol = async (path, _signer, SmartWeave, current_path = [], kvs) => {
+const _getCol = async (
+  path,
+  _signer,
+  SmartWeave,
+  current_path = [],
+  kvs,
+  state,
+) => {
   const [col, id] = path
-  if (!isValidName(col)) err(`collection id is not valid: ${col}`)
+  if (!isValidName(col, state)) err(`collection id is not valid: ${col}`)
   let key = `data.${append(col)(current_path).join("/")}`
   let data =
     (await kv(kvs, SmartWeave).get(`data.${current_path.join("/")}`)) ?? {}
+
   if (isNil(data[col])) {
-    data[col] = true
-    await kv(kvs, SmartWeave).put(`data.${current_path.join("/")}`, data)
+    await addNewCol(col, current_path, data, kvs, state, SmartWeave)
   }
   let _data = await kv(kvs, SmartWeave).get(key)
   if (isNil(_data)) {
@@ -77,7 +86,7 @@ const _getCol = async (path, _signer, SmartWeave, current_path = [], kvs) => {
   if (isNil(id)) {
     return _data
   } else {
-    if (!isValidName(id)) err(`doc id is not valid: ${id}`)
+    if (!isValidDocName(id, state)) err(`doc id is not valid: ${id}`)
     current_path.push(col)
     current_path.push(id)
     return await _getCol(
@@ -86,6 +95,7 @@ const _getCol = async (path, _signer, SmartWeave, current_path = [], kvs) => {
       SmartWeave,
       current_path,
       kvs,
+      state,
     )
   }
 }
@@ -336,6 +346,14 @@ const getDoc = async (
     _func,
   )
 
+const addNewCol = async (_col, current_path, data, kvs, state, SmartWeave) => {
+  const full_path = append(_col, current_path).join("/")
+  state.collections ??= {}
+  state.collection_count ??= 0
+  state.collections[full_path] = { id: state.collection_count++, count: 0 }
+  data[_col] = true
+  await kv(kvs, SmartWeave).put(`data.${current_path.join("/")}`, data)
+}
 const _getDoc = async (
   data,
   path,
@@ -358,11 +376,10 @@ const _getDoc = async (
 ) => {
   data = (await kv(kvs, SmartWeave).get(`data.${current_path.join("/")}`)) || {}
   const [_col, id] = path
-  if (!isValidName(_col)) err(`collection id is not valid: ${_col}`)
-  if (!isValidName(id)) err(`doc id is not valid: ${id}`)
+  if (!isValidName(_col, state)) err(`collection id is not valid: ${_col}`)
+  if (!isValidDocName(id, state)) err(`doc id is not valid: ${id}`)
   if (isNil(data[_col])) {
-    data[_col] = true
-    await kv(kvs, SmartWeave).put(`data.${current_path.join("/")}`, data)
+    await addNewCol(_col, current_path, data, kvs, state, SmartWeave)
   }
   current_path.push(_col)
   current_path.push(id)

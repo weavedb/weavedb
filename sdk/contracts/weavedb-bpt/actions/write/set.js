@@ -54,6 +54,7 @@ const set = async (
     signer,
     true,
   )
+  if (isNil(before.val)) state.collections[init(path).join("/")].count += 1
   if (depth < 10) {
     state = await trigger(
       ["create"],

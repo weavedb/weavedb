@@ -66,4 +66,5 @@ module.exports = {
   "0.42.1": { txid: "upbiZGX-qq2SiLOD9E8odSkvd91E0FCPhlpcqCrEt78" },
   "0.42.2": { txid: "eeltHRBzmfGIBx70plCuhoiJwLKwC_cSVGzZoDrCKnk" },
   "0.42.3": { txid: "-zlBgW-aO44bxbfOdCqCGOvscDutTmGHIuXD9ZxVja8" },
+  "0.43.0": { txid: "VbbJaPOhfC_muOtWmAaLMErgNiR5nuA8AskkwAG5i-8" },
 }

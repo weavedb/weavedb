@@ -33,23 +33,23 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
       null,
       null,
       null,
-      null,
+      state,
       null,
       SmartWeave,
       undefined,
-      kvs
+      kvs,
     )
     return {
       result: isNil(_data.__data)
         ? null
         : cursor
-        ? {
-            id: last(parsed.path),
-            setter: _data.setter,
-            data: _data.__data || null,
-            __cursor__: true,
-          }
-        : _data.__data || null,
+          ? {
+              id: last(parsed.path),
+              setter: _data.setter,
+              data: _data.__data || null,
+              __cursor__: true,
+            }
+          : _data.__data || null,
     }
   } else {
     let res = null
@@ -67,7 +67,7 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
           start: parsed.startCursor,
           end: parsed.endCursor,
           reverse: parsed.reverse,
-        }
+        },
       )
     } else if (parsed.type === "ranges") {
       res = await _ranges(
@@ -84,7 +84,7 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
           end: parsed.endCursor,
           reverse: parsed.reverse,
           sortRange: parsed.sortRange,
-        }
+        },
       )
     } else if (parsed.type === "pranges") {
       res = await _pranges(
@@ -101,7 +101,7 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
           start: parsed.startCursor,
           end: parsed.endCursor,
           reverse: parsed.reverse,
-        }
+        },
       )
     }
     return {
@@ -113,7 +113,7 @@ const get = async (state, action, cursor = false, SmartWeave, kvs) => {
               data: v.val,
               __cursor__: true,
             }
-          : v.val
+          : v.val,
       )(res),
     }
   }

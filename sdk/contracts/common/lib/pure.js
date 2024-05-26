@@ -15,14 +15,22 @@ const {
 } = require("ramda")
 let fpjson = require("fpjson-lang")
 fpjson = fpjson.default || fpjson
+const isValidID = str =>
+  /^[^\/]+$/.test(str) && !/^__.*__+$/.test(str) && !/^\.{1,2}$/.test(str)
+const isValidLen = (str, len) =>
+  len ? len >= str.length : Buffer.byteLength(str, "utf8") <= 1500
+const isReserved = str => str === "__tokens__" || str === "__bridge__"
 
-const isValidName = str =>
-  str === "__tokens__" ||
-  str === "__bridge__" ||
-  (/^[^\/]+$/.test(str) &&
-    !/^__.*__+$/.test(str) &&
-    !/^\.{1,2}$/.test(str) &&
-    Buffer.byteLength(str, "utf8") <= 1500)
+const isValidDocName = (str, state) => {
+  return isValidID(str) && isValidLen(str, state.max_doc_id_length)
+}
+
+const isValidName = (str, state) => {
+  return (
+    isReserved(str) ||
+    (isValidID(str) && isValidLen(str, state.max_collection_id_length))
+  )
+}
 
 const clone = state => JSON.parse(JSON.stringify(state))
 
@@ -344,6 +352,7 @@ const ac_funcs = {
 
 module.exports = {
   isValidName,
+  isValidDocName,
   clone,
   bigIntFromBytes,
   replace$,

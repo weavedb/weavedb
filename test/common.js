@@ -1057,11 +1057,16 @@ const tests = {
     return
   },
 
-  "should reject invalid col/doc ids": async ({ db }) => {
+  "should reject invalid col/doc ids.only": async ({ db }) => {
     await db.set({}, "__ppl__", "Bob")
     await db.set({}, "ppl", "Bob/Alice")
-    expect(await db.get("ppl")).to.eql([])
-    expect(await db.listCollections()).to.eql([])
+    await db.set({ name: "Bob" }, "ppl", "Bob")
+    await db.set({ name: "30" }, "ppl", "abcdefjhijklmnopqrstuvwxyz_Bob")
+    await db.set({ name: "26" }, "ppl", "abcdefjhijklmnopqrstuvwxyz")
+    await db.set({ name: "Alice" }, "ppl2", "Alice")
+    expect(await db.get("ppl")).to.eql([{ name: "Bob" }, { name: "26" }])
+    expect(await db.listCollections()).to.eql(["ppl", "ppl2"])
+    expect(await db.getCollection("ppl")).to.eql({ id: 0, count: 2 })
     return
   },
 

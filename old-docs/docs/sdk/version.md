@@ -15,6 +15,20 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.43.0-beta (May 27, 2024)
+
+#### Source Transaction Id
+
+[VbbJaPOhfC_muOtWmAaLMErgNiR5nuA8AskkwAG5i-8](https://sonar.warp.cc/#/app/source/VbbJaPOhfC_muOtWmAaLMErgNiR5nuA8AskkwAG5i-8)
+
+#### Added Features
+
+- assign auto-increment collection ID
+- record doc count
+- getCollection
+- max_doc_id_length
+- max_collection_id_length
+
 ### v0.42.3-beta (May 26, 2024)
 
 #### Source Transaction Id

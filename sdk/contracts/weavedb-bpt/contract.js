@@ -25,7 +25,7 @@ const { getSchema } = require("./actions/read/getSchema")
 const { getRules } = require("./actions/read/getRules")
 const { getIndexes } = require("./actions/read/getIndexes")
 const { listCollections } = require("./actions/read/listCollections")
-
+const { getCollection } = require("./actions/read/getCollection")
 const { query } = require("./actions/write/query")
 const { nostr } = require("./actions/write/nostr")
 const { set } = require("./actions/write/set")
@@ -158,6 +158,8 @@ async function handle(state, action, _SmartWeave) {
       return await getAddressLink(...readParams)
     case "listCollections":
       return await listCollections(...readParams)
+    case "getCollection":
+      return await getCollection(...readParams)
     case "getInfo":
       return await getInfo(...readParams)
     case "getTokens":

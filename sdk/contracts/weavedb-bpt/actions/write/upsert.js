@@ -56,10 +56,11 @@ const upsert = async (
     SmartWeave,
     signer,
   )
+  if (isNil(before.val)) state.collections[init(path).join("/")].count += 1
   const updated = !equals(before.val, after.val)
   if (updated && depth < 10) {
     state = await trigger(
-      [isNil(before) ? "craete" : "update"],
+      [isNil(before.val) ? "craete" : "update"],
       state,
       path,
       SmartWeave,
