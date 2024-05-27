@@ -1,6 +1,5 @@
 const { isNil, is, intersection } = require("ramda")
-const { parse } = require("../../lib/utils")
-const { err, wrapResult } = require("../../../common/lib/utils")
+const { err, wrapResult, parse } = require("../..//lib/utils")
 const { validate } = require("../../lib/validate")
 
 const setAlgorithms = async (
@@ -12,7 +11,7 @@ const setAlgorithms = async (
   kvs,
   executeCron,
   depth = 1,
-  type = "direct"
+  type = "direct",
 ) => {
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
     err("only bundle queries are allowed")
@@ -26,7 +25,7 @@ const setAlgorithms = async (
       "setAlgorithms",
       SmartWeave,
       true,
-      kvs
+      kvs,
     ))
   }
 
@@ -38,7 +37,7 @@ const setAlgorithms = async (
     null,
     contractErr,
     SmartWeave,
-    kvs
+    kvs,
   )
   if (
     !is(Array)(new_data) ||

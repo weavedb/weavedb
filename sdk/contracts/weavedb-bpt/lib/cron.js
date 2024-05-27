@@ -1,4 +1,4 @@
-const { cron, executeCron } = require("../../common/lib/cron")
+const { cron, executeCron } = require("./cron2")
 
 const { get } = require("../actions/read/get")
 const { upsert } = require("../actions/write/upsert")

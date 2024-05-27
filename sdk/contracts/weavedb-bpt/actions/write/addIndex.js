@@ -1,6 +1,5 @@
 const { o, flatten, isNil, mergeLeft, includes } = require("ramda")
-const { parse } = require("../../lib/utils")
-const { err, wrapResult } = require("../../../common/lib/utils")
+const { err, wrapResult, parse } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { addIndex: __addIndex } = require("../../lib/index")
 
@@ -13,7 +12,7 @@ const addIndex = async (
   kvs,
   executeCron,
   depth = 1,
-  type = "direct"
+  type = "direct",
 ) => {
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
     err("only bundle queries are allowed")
@@ -27,7 +26,7 @@ const addIndex = async (
       "addIndex",
       SmartWeave,
       true,
-      kvs
+      kvs,
     ))
   }
   let { new_data, path } = await parse(
@@ -38,7 +37,7 @@ const addIndex = async (
     null,
     contractErr,
     SmartWeave,
-    kvs
+    kvs,
   )
   if (o(includes("__id__"), flatten)(new_data)) {
     err("index cannot contain __id__")

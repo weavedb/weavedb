@@ -1,7 +1,6 @@
 const {
-  init,
-  mergeLeft,
   includes,
+  init,
   of,
   isNil,
   tail,
@@ -9,20 +8,10 @@ const {
   complement,
   concat,
   without,
-  last,
 } = require("ramda")
-const md5 = require("../../weavedb-bpt/lib/md5")
+const md5 = require("./md5")
 const { clone, bigIntFromBytes } = require("./pure")
-const { validate } = require("../../common/lib/jsonschema")
-
-const err = (msg = `The wrong query`, contractErr = false) => {
-  if (contractErr) {
-    const error = typeof ContractError === "undefined" ? Error : ContractError
-    throw new error(msg)
-  } else {
-    throw msg
-  }
-}
+const { err, read } = require("./utils")
 
 const getField = (data, path) => {
   if (path.length === 1) {
@@ -137,10 +126,6 @@ const mergeData = (
   }
   return _data
 }
-const isEvolving = state =>
-  !isNil(state.evolveHistory) &&
-  !isNil(last(state.evolveHistory)) &&
-  isNil(last(state.evolveHistory).newVersion)
 
 const genId = async (action, salt, SmartWeave) => {
   const id = md5(
@@ -153,47 +138,6 @@ const genId = async (action, salt, SmartWeave) => {
   )
   return Buffer.from(id, "hex").toString("base64").replace(/\//g, "_")
 }
-
-const isOwner = (signer, state) => {
-  let owner = state.owner || []
-  if (is(String)(owner)) owner = of(owner)
-  if (!includes(signer)(owner)) {
-    err(`Signer[${signer}] is not the owner[${owner.join(", ")}].`)
-  }
-  return owner
-}
-
-const read = async (contract, param, SmartWeave) => {
-  return (await SmartWeave.contracts.viewContractState(contract, param)).result
-}
-
-const validateSchema = (schema, data, contractErr) => {
-  if (!isNil(schema)) {
-    const valid = validate(data, clone(schema)).valid
-    if (!valid) err("invalid schema", contractErr)
-  }
-}
-
-const wrapResult = (state, original_signer, SmartWeave, extra) => ({
-  state,
-  result: mergeLeft(extra, {
-    original_signer,
-    transaction: {
-      id: SmartWeave?.transaction?.id || null,
-      owner: SmartWeave?.transaction?.owner || null,
-      tags: SmartWeave?.transaction?.tags || null,
-      quantity: SmartWeave?.transaction?.quantity || null,
-      target: SmartWeave?.transaction?.target || null,
-      reward: SmartWeave?.transaction?.reward || null,
-      timestamp: SmartWeave?.transaction?.timestamp || null,
-    },
-    block: {
-      height: SmartWeave?.block?.height || null,
-      timestamp: SmartWeave?.block?.timestamp || null,
-      indep_hash: SmartWeave?.block?.indep_hash || null,
-    },
-  }),
-})
 
 const parse = async (
   state,
@@ -361,172 +305,11 @@ const parse = async (
   return { data, query, new_data, path, _data, schema, col, next_data }
 }
 
-const auth = async (
-  state,
-  action,
-  func,
-  SmartWeave,
-  use_nonce = true,
-  kvs,
-  fn,
-) => {
-  if (isNil(state.auth)) return { signer: null, original_signer: null }
-  const {
-    query,
-    nonce,
-    signature,
-    caller,
-    type = "secp256k1",
-    pubKey,
-  } = action.input
-  if (
-    !includes(type)(
-      state.auth.algorithms || [
-        "secp256k1",
-        "secp256k1-2",
-        "ed25519",
-        "rsa256",
-      ],
-    )
-  ) {
-    err(`The wrong algorithm`)
-  }
-
-  let _caller = caller
-  let original_signer = null
-  const EIP712Domain = [
-    { name: "name", type: "string" },
-    { name: "version", type: "string" },
-    { name: "verifyingContract", type: "string" },
-  ]
-  const domain = {
-    name: state.auth.name,
-    version: state.auth.version,
-    verifyingContract: isNil(SmartWeave.contract)
-      ? "exm"
-      : SmartWeave.contract.id,
-  }
-
-  const message = {
-    nonce,
-    query: JSON.stringify({ func, query }),
-  }
-
-  const _data = {
-    types: {
-      EIP712Domain,
-      Query: [
-        { name: "query", type: "string" },
-        { name: "nonce", type: "uint256" },
-      ],
-    },
-    domain,
-    primaryType: "Query",
-    message,
-  }
-  let signer = null
-  if (state.auth.skip_validation) {
-    if (!isNil(action.input.signer)) original_signer = action.input.signer
-    signer = caller
-  } else if (type === "ed25519") {
-    const { isValid } = await read(
-      state.contracts.dfinity,
-      {
-        function: "verify",
-        data: _data,
-        signature,
-        signer: caller,
-      },
-      SmartWeave,
-    )
-    if (isValid) {
-      signer = caller
-    } else {
-      err(`The wrong signature`)
-    }
-  } else if (type === "rsa256") {
-    let encoded_data = JSON.stringify(_data)
-    if (typeof TextEncoder !== "undefined") {
-      const enc = new TextEncoder()
-      encoded_data = enc.encode(encoded_data)
-    }
-    const _crypto =
-      SmartWeave.arweave.crypto || SmartWeave.arweave.wallets.crypto
-    const isValid = await _crypto.verify(
-      pubKey,
-      encoded_data,
-      Buffer.from(signature, "hex"),
-    )
-    if (isValid) {
-      signer = caller
-    } else {
-      err(`The wrong signature`)
-    }
-  } else if (type == "secp256k1") {
-    signer = (
-      await read(
-        state.contracts.ethereum,
-        {
-          function: "verify712",
-          data: _data,
-          signature,
-        },
-        SmartWeave,
-      )
-    ).signer
-  } else if (type == "secp256k1-2") {
-    signer = (
-      await read(
-        state.contracts.ethereum,
-        {
-          function: "verify",
-          data: _data,
-          signature,
-        },
-        SmartWeave,
-      )
-    ).signer
-  }
-
-  if (includes(type)(["secp256k1", "secp256k1-2"])) {
-    if (/^0x/.test(signer)) signer = signer.toLowerCase()
-    if (/^0x/.test(_caller)) _caller = _caller.toLowerCase()
-  }
-  const timestamp = isNil(action.timestamp)
-    ? isNil(SmartWeave.transaction.timestamp)
-      ? Math.round(SmartWeave.transaction.timestamp)
-      : SmartWeave.block.timestamp
-    : Math.round(action.timestamp / 1000)
-  original_signer ??= signer
-  let _signer = signer
-  if (_signer !== _caller) {
-    const link = await fn.getAddressLink(_signer, state, kvs, SmartWeave)
-    if (!isNil(link)) {
-      let _address = is(Object, link) ? link.address : link
-      let _expiry = is(Object, link) ? link.expiry || 0 : 0
-      if (_expiry === 0 || timestamp <= _expiry) _signer = _address
-    }
-  }
-  if (_signer !== _caller) err(`signer[${_signer}] is not caller[${_caller}]`)
-  if (!isNil(action.input.signer) && action.input.signer !== original_signer) {
-    err(`signer[${_signer}] is not caller[${_caller}]`)
-  }
-  if (use_nonce !== false)
-    await fn.useNonce(nonce, original_signer, state, kvs, SmartWeave)
-  return { signer: _signer, original_signer }
-}
-
 module.exports = {
   err,
   getField,
   mergeData,
   mergeDataP,
-  isEvolving,
   genId,
-  isOwner,
-  read,
-  validateSchema,
-  wrapResult,
   parse,
-  auth,
 }

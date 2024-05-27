@@ -10,8 +10,7 @@ const {
   clone,
 } = require("ramda")
 
-const { kv, getDoc, parseQuery } = require("../../lib/utils")
-const { err } = require("../../../common/lib/utils")
+const { kv, getDoc, parseQuery, err } = require("../../lib/utils")
 const {
   ranges: _ranges,
   pranges: _pranges,

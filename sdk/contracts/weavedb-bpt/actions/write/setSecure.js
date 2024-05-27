@@ -1,5 +1,4 @@
-const { wrapResult } = require("../../../common/lib/utils")
-const { err, isOwner } = require("../../../common/lib/utils")
+const { err, isOwner, wrapResult } = require("../../lib/utils")
 const { isNil, is } = require("ramda")
 const { validate } = require("../../lib/validate")
 
@@ -12,7 +11,7 @@ const setSecure = async (
   kvs,
   executeCron,
   depth = 1,
-  type = "direct"
+  type = "direct",
 ) => {
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
     err("only bundle queries are allowed")
@@ -26,7 +25,7 @@ const setSecure = async (
       "setSecure",
       SmartWeave,
       true,
-      kvs
+      kvs,
     ))
   }
   const owner = isOwner(signer, state)

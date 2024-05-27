@@ -1,6 +1,5 @@
 const { includes, isNil, clone } = require("ramda")
-const { parse } = require("../../lib/utils")
-const { err, wrapResult } = require("../../../common/lib/utils")
+const { err, wrapResult, parse } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { set } = require("./set")
 const { add } = require("./add")
@@ -35,7 +34,7 @@ const batch = async (
   executeCron,
   depth = 1,
   type = "direct",
-  get
+  get,
 ) => {
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
     err("only bundle queries are allowed")
@@ -48,7 +47,7 @@ const batch = async (
       "batch",
       SmartWeave,
       true,
-      kvs
+      kvs,
     ))
   }
   let _state = state
@@ -62,16 +61,16 @@ const batch = async (
           timestamp: action.timestamp,
         }
       : includes(op)(["setCanEvolve", "setSecure"])
-      ? {
-          input: { function: op, query: { value: query[0] } },
-          caller: action.caller,
-          timestamp: action.timestamp,
-        }
-      : {
-          input: { function: op, query },
-          caller: action.caller,
-          timestamp: action.timestamp,
-        }
+        ? {
+            input: { function: op, query: { value: query[0] } },
+            caller: action.caller,
+            timestamp: action.timestamp,
+          }
+        : {
+            input: { function: op, query },
+            caller: action.caller,
+            timestamp: action.timestamp,
+          }
 
     let res = null
     const params = [
@@ -99,7 +98,7 @@ const batch = async (
           executeCron,
           depth,
           type,
-          get
+          get,
         )
         break
       case "set":

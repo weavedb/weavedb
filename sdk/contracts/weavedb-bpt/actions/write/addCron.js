@@ -1,9 +1,7 @@
 const { isNil } = require("ramda")
-const { clone } = require("../../../common/lib/pure")
-const { err, isOwner, wrapResult } = require("../../../common/lib/utils")
+const { clone } = require("../../lib/pure")
+const { err, isOwner, wrapResult } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
-const { executeCron } = require("../../lib/cron")
-const c = require("../../lib/cron")
 
 const addCron = async (
   state,
@@ -14,7 +12,7 @@ const addCron = async (
   kvs,
   executeCron,
   depth = 1,
-  type = "direct"
+  type = "direct",
 ) => {
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
     err("only bundle queries are allowed")
@@ -28,7 +26,7 @@ const addCron = async (
       "addCron",
       SmartWeave,
       true,
-      kvs
+      kvs,
     ))
   }
   const owner = isOwner(signer, state)
@@ -65,7 +63,7 @@ const addCron = async (
         state,
         SmartWeave,
         kvs,
-        action.timestamp
+        action.timestamp,
       )
     } catch (e) {
       console.log(e)

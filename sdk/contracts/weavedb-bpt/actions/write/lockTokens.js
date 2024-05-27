@@ -1,4 +1,4 @@
-const { err, wrapResult } = require("../../../common/lib/utils")
+const { err, wrapResult } = require("../../lib/utils")
 const { includes, is, of, append, isNil } = require("ramda")
 
 const lockTokens = async (

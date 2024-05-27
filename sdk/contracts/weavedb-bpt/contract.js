@@ -1,16 +1,14 @@
-const { hash } = require("../common/actions/read/hash")
-const { getCrons } = require("../common/actions/read/getCrons")
-const { getAlgorithms } = require("../common/actions/read/getAlgorithms")
+const { hash } = require("./actions/read/hash")
+const { getCrons } = require("./actions/read/getCrons")
+const { getAlgorithms } = require("./actions/read/getAlgorithms")
 
-const {
-  getLinkedContract,
-} = require("../common/actions/read/getLinkedContract")
+const { getLinkedContract } = require("./actions/read/getLinkedContract")
 
-const { getOwner } = require("../common/actions/read/getOwner")
-const { getRelayerJob } = require("../common/actions/read/getRelayerJob")
-const { listRelayerJobs } = require("../common/actions/read/listRelayerJobs")
-const { getEvolve } = require("../common/actions/read/getEvolve")
-const { getTriggers } = require("../common/actions/read/getTriggers")
+const { getOwner } = require("./actions/read/getOwner")
+const { getRelayerJob } = require("./actions/read/getRelayerJob")
+const { listRelayerJobs } = require("./actions/read/listRelayerJobs")
+const { getEvolve } = require("./actions/read/getEvolve")
+const { getTriggers } = require("./actions/read/getTriggers")
 const { getBundlers } = require("./actions/read/getBundlers")
 
 const { getInfo } = require("./actions/read/getInfo")
@@ -64,7 +62,7 @@ const { removeTrigger } = require("./actions/write/removeTrigger")
 const { setBundlers } = require("./actions/write/setBundlers")
 
 const { cron, executeCron } = require("./lib/cron")
-const { err, isEvolving } = require("../common/lib/utils")
+const { err, isEvolving } = require("./lib/utils")
 const { includes, isNil, keys, filter, compose, match } = require("ramda")
 
 const writes = [

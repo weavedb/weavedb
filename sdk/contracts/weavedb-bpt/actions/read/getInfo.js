@@ -1,6 +1,5 @@
 const { pick } = require("ramda")
-const { isEvolving } = require("../../../common/lib/utils")
-const { kv } = require("../../lib/utils")
+const { isEvolving, kv } = require("../../lib/utils")
 
 const getInfo = async (state, action, SmartWeave, kvs) => {
   let info = pick(
@@ -16,7 +15,7 @@ const getInfo = async (state, action, SmartWeave, kvs) => {
       "hash",
       "rollup",
     ],
-    state
+    state,
   )
   info.version = state.version || null
   info.evolveHistory = state.evolveHistory || []

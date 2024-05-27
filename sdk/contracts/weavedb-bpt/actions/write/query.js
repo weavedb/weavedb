@@ -1,6 +1,11 @@
 const { includes, init, last, isNil, tail } = require("ramda")
-const { err, parse, trigger } = require("../../lib/utils")
-const { validateSchema, wrapResult } = require("../../../common/lib/utils")
+const {
+  validateSchema,
+  wrapResult,
+  err,
+  parse,
+  trigger,
+} = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { put } = require("../../lib/index")
 
@@ -20,7 +25,7 @@ const query = async (
   executeCron,
   depth = 1,
   type = "direct",
-  get
+  get,
 ) => {
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
     err("only bundle queries are allowed")
@@ -33,7 +38,7 @@ const query = async (
       "query",
       SmartWeave,
       true,
-      kvs
+      kvs,
     ))
   }
   const [func, ...input] = action.input.query
@@ -75,7 +80,7 @@ const query = async (
     ])
   ) {
     err(
-      `method name cannot be add | set | update | upsert | delete | write | create | get`
+      `method name cannot be add | set | update | upsert | delete | write | create | get`,
     )
   }
   switch (_func) {
@@ -91,7 +96,7 @@ const query = async (
         executeCron,
         undefined,
         type,
-        get
+        get,
       )
     case "set":
       return await set(...params)
@@ -104,7 +109,7 @@ const query = async (
 
     default:
       err(
-        `No function supplied or function not recognised: "${action2.input.function}"`
+        `No function supplied or function not recognised: "${action2.input.function}"`,
       )
   }
   return wrapResult(state, original_signer, SmartWeave)

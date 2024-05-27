@@ -1,9 +1,9 @@
 const { isNil, is, intersection } = require("ramda")
-const { parse } = require("../../lib/utils")
-const { clone } = require("../../../common/lib/pure")
-const { err, wrapResult } = require("../../../common/lib/utils")
+
+const { clone } = require("../../lib/pure")
+const { err, wrapResult, parse } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
-const { validate: validator } = require("../../../common/lib/jsonschema")
+const { validate: validator } = require("../../lib/jsonschema")
 
 const addRelayerJob = async (
   state,
@@ -14,7 +14,7 @@ const addRelayerJob = async (
   kvs,
   executeCron,
   depth = 1,
-  type = "direct"
+  type = "direct",
 ) => {
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
     err("only bundle queries are allowed")
@@ -28,7 +28,7 @@ const addRelayerJob = async (
       "addRelayerJob",
       SmartWeave,
       true,
-      kvs
+      kvs,
     ))
   }
 
@@ -40,7 +40,7 @@ const addRelayerJob = async (
     null,
     contractErr,
     SmartWeave,
-    kvs
+    kvs,
   )
   const [jobID, job] = query
   if (!isNil(job.relayers) && !is(Array, job.relayers)) {

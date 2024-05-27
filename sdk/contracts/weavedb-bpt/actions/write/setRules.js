@@ -7,10 +7,8 @@ const {
   difference,
   is,
 } = require("ramda")
-const { kv, parse } = require("../../lib/utils")
-const { err, wrapResult } = require("../../../common/lib/utils")
+const { kv, parse, err, wrapResult } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
-const jsonLogic = require("json-logic-js")
 
 const setRules = async (
   state,
@@ -21,7 +19,7 @@ const setRules = async (
   kvs,
   executeCron,
   depth = 1,
-  type = "direct"
+  type = "direct",
 ) => {
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
     err("only bundle queries are allowed")
@@ -34,7 +32,7 @@ const setRules = async (
       "setRules",
       SmartWeave,
       true,
-      kvs
+      kvs,
     ))
   }
   let { _data, data, query, new_data, path } = await parse(
@@ -45,8 +43,11 @@ const setRules = async (
     null,
     contractErr,
     SmartWeave,
-    kvs
+    kvs,
   )
+  if (new_data.__op !== "del" && !is(Array, new_data)) {
+    err("rules are not an array")
+  }
   if (action.input.query.length % 2 === 1) {
     let __data = _data?.rules ?? []
     let [key, index] = last(action.input.query).split("@")
@@ -65,25 +66,11 @@ const setRules = async (
     }
     if (!exists) index ??= __data.length
     if (!is(Number, +index)) err("index is not a number")
-    if (new_data.__op !== "del" && !is(Array, new_data)) {
-      err("rules are not an array")
-    }
     _data.rules =
       new_data.__op === "del" ? left : insert(index, [key, new_data], left)
   } else {
     for (let k in new_data) {
-      if (!is(Array, new_data[k])) {
-        const keys = k.split(" ")
-        const permission = keys[0]
-        if (keys.length !== 2 && permission !== "let") err()
-        if (!includes(permission)(["allow", "deny", "let"])) err()
-        if (
-          permission !== "let" &&
-          !is(Boolean)(jsonLogic.apply(new_data[k], {}))
-        ) {
-          err()
-        }
-      }
+      if (!is(Array, new_data[k])) err("rules are not an array")
     }
     _data.rules = new_data
   }

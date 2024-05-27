@@ -1,8 +1,9 @@
 let fpjson = require("fpjson-lang")
 fpjson = fpjson.default || fpjson
-const jsonLogic = require("json-logic-js")
 const md5 = require("./md5")
 const {
+  of,
+  mergeLeft,
   keys,
   symmetricDifference,
   uniq,
@@ -31,14 +32,7 @@ const {
   concat,
   without,
 } = require("ramda")
-const {
-  read,
-  parse: _parse,
-  err,
-  genId,
-  getField,
-  mergeDataP,
-} = require("../../common/lib/utils")
+const { parse: _parse, genId, getField, mergeDataP } = require("./utils-common")
 const {
   fpj,
   ac_funcs,
@@ -47,9 +41,22 @@ const {
   isValidDocName,
   setElm,
   parse: __parse,
-} = require("../../common/lib/pure")
-const { validate: validator } = require("../../common/lib/jsonschema")
+} = require("./pure")
 const { get: _get } = require("./index")
+const { validate } = require("./jsonschema")
+const err = (msg = `The wrong query`, contractErr = false) => {
+  if (contractErr) {
+    const error = typeof ContractError === "undefined" ? Error : ContractError
+    throw new error(msg)
+  } else {
+    throw msg
+  }
+}
+
+const isEvolving = state =>
+  !isNil(state.evolveHistory) &&
+  !isNil(last(state.evolveHistory)) &&
+  isNil(last(state.evolveHistory).newVersion)
 
 const getCol = async (
   data,
@@ -218,85 +225,12 @@ const validateData = async ({
         },
       }
       if (!isNil(rules)) {
-        if (is(Array, rules)) {
-          for (const v of rules || []) {
-            if (isAllowed(v[0], rule_data.request)) {
-              await fpj(v[1], rule_data, { ...fn, ...ac_funcs })
-            }
-          }
-          allowed = rule_data.request.allow === true
-        } else {
-          for (let k in rules || {}) {
-            const [permission, _ops] = k.split(" ")
-            if (permission !== "let") continue
-            const rule = rules[k]
-            let ok = false
-            if (isNil(_ops)) {
-              ok = true
-            } else {
-              const ops = _ops.split(",")
-              if (
-                intersection(ops)(["write", rule_data.request.method]).length >
-                0
-              ) {
-                ok = true
-              }
-            }
-
-            if (ok) {
-              for (let k2 in rule || {}) {
-                let _op = rule[k2][0]
-                let logic = rule[k2]
-                if (_op === "if") {
-                  if (!fpjson(clone(rule[k2][1]), rule_data)) continue
-                  logic = rule[k2][2]
-                } else if (_op === "ifelse") {
-                  if (fpjson(clone(rule[k2][1]), rule_data)) {
-                    logic = rule[k2][2]
-                  } else {
-                    logic = rule[k2][3]
-                  }
-                }
-                _op = logic[0]
-                if (_op === "get") {
-                  const result =
-                    (
-                      await get(
-                        state,
-                        {
-                          input: {
-                            function: "get",
-                            query: __parse(logic[1], rule_data),
-                          },
-                        },
-                        undefined,
-                        SmartWeave,
-                        kvs,
-                      )
-                    )?.result ?? null
-                  setElm(k2, result, rule_data)
-                } else {
-                  setElm(k2, fpjson(clone(logic), rule_data), rule_data)
-                }
-              }
-            }
-          }
-          for (let k in rules || {}) {
-            const spk = k.split(" ")
-            if (spk[0] === "let") continue
-            const rule = rules[k]
-            const [permission, _ops] = k.split(" ")
-            const ops = _ops.split(",")
-            if (
-              intersection(ops)(["write", rule_data.request.method]).length > 0
-            ) {
-              const ok = jsonLogic.apply(rule, rule_data)
-              if (permission === "allow" && ok) {
-                allowed = true
-              } else if (permission === "deny" && ok) err()
-            }
+        for (const v of rules || []) {
+          if (isAllowed(v[0], rule_data.request)) {
+            await fpj(v[1], rule_data, { ...fn, ...ac_funcs })
           }
         }
+        allowed = rule_data.request.allow === true
       }
       if (!allowed) err("operation not allowed")
       return rule_data.resource.newData
@@ -1052,6 +986,85 @@ const parseQuery = query => {
   return parsed
 }
 
+function uint8ArrayToHexString(uint8Array) {
+  let hexString = "0x"
+  for (const e of uint8Array) {
+    const hex = e.toString(16)
+    hexString += hex.length === 1 ? `0${hex}` : hex
+  }
+  return hexString
+}
+
+const isHexStrict = hex =>
+  typeof hex === "string" && /^((-)?0x[0-9a-f]+|(0x))$/i.test(hex)
+
+const isUint8Array = data =>
+  data instanceof Uint8Array ||
+  data?.constructor?.name === "Uint8Array" ||
+  data?.constructor?.name === "Buffer"
+
+const isEVMAddress = (value, checkChecksum = true) => {
+  if (typeof value !== "string" && !isUint8Array(value)) return false
+  let valueToCheck
+  if (isUint8Array(value)) {
+    valueToCheck = uint8ArrayToHexString(value)
+  } else if (typeof value === "string" && !isHexStrict(value)) {
+    valueToCheck = value.toLowerCase().startsWith("0x") ? value : `0x${value}`
+  } else {
+    valueToCheck = value
+  }
+  if (!/^(0x)?[0-9a-f]{40}$/i.test(valueToCheck)) return false
+
+  if (
+    /^(0x|0X)?[0-9a-f]{40}$/.test(valueToCheck) ||
+    /^(0x|0X)?[0-9A-F]{40}$/.test(valueToCheck)
+  ) {
+    return true
+  }
+  return true
+}
+
+const wrapResult = (state, original_signer, SmartWeave, extra) => ({
+  state,
+  result: mergeLeft(extra, {
+    original_signer,
+    transaction: {
+      id: SmartWeave?.transaction?.id || null,
+      owner: SmartWeave?.transaction?.owner || null,
+      tags: SmartWeave?.transaction?.tags || null,
+      quantity: SmartWeave?.transaction?.quantity || null,
+      target: SmartWeave?.transaction?.target || null,
+      reward: SmartWeave?.transaction?.reward || null,
+      timestamp: SmartWeave?.transaction?.timestamp || null,
+    },
+    block: {
+      height: SmartWeave?.block?.height || null,
+      timestamp: SmartWeave?.block?.timestamp || null,
+      indep_hash: SmartWeave?.block?.indep_hash || null,
+    },
+  }),
+})
+
+const isOwner = (signer, state) => {
+  let owner = state.owner || []
+  if (is(String)(owner)) owner = of(owner)
+  if (!includes(signer)(owner)) {
+    err(`Signer[${signer}] is not the owner[${owner.join(", ")}].`)
+  }
+  return owner
+}
+
+const validateSchema = (schema, data, contractErr) => {
+  if (!isNil(schema)) {
+    const valid = validate(data, clone(schema)).valid
+    if (!valid) err("invalid schema", contractErr)
+  }
+}
+
+const read = async (contract, param, SmartWeave) => {
+  return (await SmartWeave.contracts.viewContractState(contract, param)).result
+}
+
 const auth = async (
   state,
   action,
@@ -1082,7 +1095,9 @@ const auth = async (
   ) {
     err(`The wrong algorithm`)
   }
+
   let _caller = caller
+  let original_signer = null
   const EIP712Domain = [
     { name: "name", type: "string" },
     { name: "version", type: "string" },
@@ -1114,7 +1129,10 @@ const auth = async (
     message,
   }
   let signer = null
-  if (type === "ed25519") {
+  if (state.auth.skip_validation) {
+    if (!isNil(action.input.signer)) original_signer = action.input.signer
+    signer = caller
+  } else if (type === "ed25519") {
     const { isValid } = await read(
       state.contracts.dfinity,
       {
@@ -1183,10 +1201,10 @@ const auth = async (
       ? Math.round(SmartWeave.transaction.timestamp)
       : SmartWeave.block.timestamp
     : Math.round(action.timestamp / 1000)
-  let original_signer = signer
+  original_signer ??= signer
   let _signer = signer
   if (_signer !== _caller) {
-    const link = state.auth.links[_signer]
+    const link = await fn.getAddressLink(_signer, state, kvs, SmartWeave)
     if (!isNil(link)) {
       let _address = is(Object, link) ? link.address : link
       let _expiry = is(Object, link) ? link.expiry || 0 : 0
@@ -1194,57 +1212,27 @@ const auth = async (
     }
   }
   if (_signer !== _caller) err(`signer[${_signer}] is not caller[${_caller}]`)
+  if (!isNil(action.input.signer) && action.input.signer !== original_signer) {
+    err(`signer[${_signer}] is not caller[${_caller}]`)
+  }
   if (use_nonce !== false)
     await fn.useNonce(nonce, original_signer, state, kvs, SmartWeave)
   return { signer: _signer, original_signer }
 }
 
-function uint8ArrayToHexString(uint8Array) {
-  let hexString = "0x"
-  for (const e of uint8Array) {
-    const hex = e.toString(16)
-    hexString += hex.length === 1 ? `0${hex}` : hex
-  }
-  return hexString
-}
-
-const isHexStrict = hex =>
-  typeof hex === "string" && /^((-)?0x[0-9a-f]+|(0x))$/i.test(hex)
-
-const isUint8Array = data =>
-  data instanceof Uint8Array ||
-  data?.constructor?.name === "Uint8Array" ||
-  data?.constructor?.name === "Buffer"
-
-const isEVMAddress = (value, checkChecksum = true) => {
-  if (typeof value !== "string" && !isUint8Array(value)) return false
-  let valueToCheck
-  if (isUint8Array(value)) {
-    valueToCheck = uint8ArrayToHexString(value)
-  } else if (typeof value === "string" && !isHexStrict(value)) {
-    valueToCheck = value.toLowerCase().startsWith("0x") ? value : `0x${value}`
-  } else {
-    valueToCheck = value
-  }
-  if (!/^(0x)?[0-9a-f]{40}$/i.test(valueToCheck)) return false
-
-  if (
-    /^(0x|0X)?[0-9a-f]{40}$/.test(valueToCheck) ||
-    /^(0x|0X)?[0-9A-F]{40}$/.test(valueToCheck)
-  ) {
-    return true
-  }
-  return true
-}
-
 module.exports = {
+  validateSchema,
   trigger,
   getDoc: _getDoc,
   getCol: _getCol,
   parse,
   kv,
   parseQuery,
-  err,
   auth,
   isEVMAddress,
+  err,
+  isEvolving,
+  wrapResult,
+  isOwner,
+  read,
 }

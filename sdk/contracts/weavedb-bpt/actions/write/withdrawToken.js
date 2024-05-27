@@ -1,4 +1,4 @@
-const { err, wrapResult } = require("../../../common/lib/utils")
+const { err, wrapResult } = require("../../lib/utils")
 const { isNil } = require("ramda")
 const { update } = require("./update")
 const { validate } = require("../../lib/validate")

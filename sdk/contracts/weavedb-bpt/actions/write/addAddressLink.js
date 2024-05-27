@@ -1,7 +1,6 @@
 const { is, isNil } = require("ramda")
-const { read, err, wrapResult } = require("../../../common/lib/utils")
+const { read, err, wrapResult, kv } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
-const { kv } = require("../../lib/utils")
 
 const addAddressLink = async (
   state,
@@ -10,7 +9,7 @@ const addAddressLink = async (
   contractErr = true,
   SmartWeave,
   _linkTo,
-  kvs
+  kvs,
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -20,7 +19,7 @@ const addAddressLink = async (
       "addAddressLink",
       SmartWeave,
       true,
-      kvs
+      kvs,
     ))
   }
   let _expiry = 0
@@ -36,7 +35,7 @@ const addAddressLink = async (
         proof: q.proof,
         pub_signals: q.pub_signals,
       },
-      SmartWeave
+      SmartWeave,
     )
     if (!res.valid) err("invalid proof")
     if (res.pub_signals.userID !== action.input.query.address) {

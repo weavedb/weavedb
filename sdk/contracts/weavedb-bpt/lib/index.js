@@ -25,7 +25,7 @@ const {
   splitEvery,
   equals,
 } = require("ramda")
-const { err } = require("../../common/lib/utils")
+const { err } = require("./utils")
 const BPT = require("./BPT")
 const md5 = require("./md5")
 
@@ -108,7 +108,7 @@ const addIndex = async (sort_fields, path, kvs, SW) => {
   let docs = await idtree.range()
   const i_fields = compose(
     without(["__id__"]),
-    map(v => v[0])
+    map(v => v[0]),
   )(sort_fields)
   if (sort_fields[0][1] === "array") {
     let array_indexes = {}
@@ -128,7 +128,7 @@ const addIndex = async (sort_fields, path, kvs, SW) => {
           const key = `${_prefix}/${prefix}`
           let _tree = null
           const akey = `${sort_fields[0][0]}/array:${_md5}/${map(v =>
-            v.join("/")
+            v.join("/"),
           )(tail(sort_fields)).join("/")}`
           if (isNil(kvs[_md5])) {
             array_indexes[_md5] = { order, key: akey }
@@ -172,7 +172,7 @@ const removeIndex = async (sort_fields, path, kvs, SW) => {
   let docs = await idtree.range()
   const i_fields = compose(
     without(["__id__"]),
-    map(v => v[0])
+    map(v => v[0]),
   )(sort_fields)
   if (sort_fields[0][1] === "array") {
     let array_indexes = {}
@@ -192,7 +192,7 @@ const removeIndex = async (sort_fields, path, kvs, SW) => {
           const key = `${_prefix}/${prefix}`
           let _tree = null
           const akey = `${sort_fields[0][0]}/array:${_md5}/${map(v =>
-            v.join(":")
+            v.join(":"),
           )(tail(sort_fields)).join("/")}`
           if (isNil(kvs[_md5])) {
             array_indexes[_md5] = { order, key: akey }
@@ -234,7 +234,7 @@ const del = async (id, path, kvs, SW) => {
     const i_fields = compose(
       without(["__id__"]),
       map(v => v[0]),
-      splitEvery(2)
+      splitEvery(2),
     )(k.split("/"))
     const diff = difference(i_fields, fields)
     if (i_fields.length > 0 && diff.length === 0) {
@@ -377,7 +377,7 @@ const _update = async (data, id, old_data, idtree, kv, SW, signer) => {
       const i_fields = compose(
         without(["__id__"]),
         map(v => v[0]),
-        splitEvery(2)
+        splitEvery(2),
       )(k.split("/"))
       if (i_fields.length > 0) {
         if (sort_fields[0][1] === "array") {
@@ -385,13 +385,13 @@ const _update = async (data, id, old_data, idtree, kv, SW, signer) => {
           const new_arr_vals = is(Array, data[arr_name])
             ? compose(
                 uniq,
-                map(v => md5(JSON.stringify(v)))
+                map(v => md5(JSON.stringify(v))),
               )(data[arr_name])
             : []
           const old_arr_vals = is(Array, old_data.val[arr_name])
             ? compose(
                 uniq,
-                map(v => md5(JSON.stringify(v)))
+                map(v => md5(JSON.stringify(v))),
               )(old_data.val[arr_name])
             : []
           const val_added = difference(new_arr_vals, old_arr_vals)
@@ -435,7 +435,7 @@ const _update = async (data, id, old_data, idtree, kv, SW, signer) => {
             const getPrefix = v =>
               `${arr_name}/array:${v}/${compose(
                 join("/"),
-                flatten
+                flatten,
               )(tail(sort_fields))}`
             const ins = async tree => await tree.insert(id, data, true)
             const del = async tree => await tree.delete(id, true)
@@ -540,7 +540,7 @@ const put = async (_data, id, path, kvs, SW, signer, create = false) => {
           [idsorter],
           kv,
           `${k}/array:${md5(JSON.stringify(v))}`,
-          function (stats) {}
+          function (stats) {},
         )
         await _tree.insert(id, _data, true)
       }
@@ -553,7 +553,7 @@ const put = async (_data, id, path, kvs, SW, signer, create = false) => {
     const i_fields = compose(
       without(["__id__"]),
       map(v => v[0]),
-      splitEvery(2)
+      splitEvery(2),
     )(k.split("/"))
     const diff = difference(i_fields, fields)
     const isValid =
@@ -569,13 +569,13 @@ const put = async (_data, id, path, kvs, SW, signer, create = false) => {
           const _prefix = `${sort_fields[0][0]}/array:${_md5}`
           const key = `${_prefix}/${prefix}`
           const akey = `${sort_fields[0][0]}/array:${_md5}/${map(v =>
-            v.join("/")
+            v.join("/"),
           )(tail(sort_fields)).join("/")}`
           const _tree = new BPT(
             order,
             [...tail(sort_fields), idsorter],
             kv,
-            key
+            key,
           )
           if (isNil(_indexes[k].items[_md5])) {
             _indexes[k].items[_md5] = { order, key: akey }
@@ -599,7 +599,7 @@ const pranges = async (
   kvs,
   SW,
   sortByTail = false,
-  cur = {}
+  cur = {},
 ) => {
   let curs = []
   let res = []
@@ -619,7 +619,7 @@ const pranges = async (
     let prefix = v.prefix ?? ""
     let suffix = `${compose(
       join("/"),
-      flatten
+      flatten,
     )(v.sort.length === 0 && prefix === "" ? [idsorter] : v.sort)}`
     if (prefix !== "" && suffix !== "") suffix = `/${suffix}`
     prefix += suffix
@@ -722,7 +722,7 @@ const checkIndex = async (prefix, path, kvs, SW) => {
     map(v => {
       return [v[0], (v[1] || "asc").split(":")[0]]
     }),
-    splitEvery(2)
+    splitEvery(2),
   )(prefix.split("/"))
   const key = compose(join("/"), flatten)(sort_fields)
   if (
@@ -768,7 +768,7 @@ const modOpt = (opt, cur = {}, tree) => {
         { key: cur.start[1].id, val: cur.start[1].data },
         { val: opt.startAt },
         opt.reverse,
-        init(tree.sort_fields)
+        init(tree.sort_fields),
       )
       if ((reversed.end && comp >= 0) || (reversed.end !== true && comp <= 0)) {
         delete opt.startAt
@@ -779,7 +779,7 @@ const modOpt = (opt, cur = {}, tree) => {
         { key: cur.start[1].id, val: cur.start[1].data },
         { val: opt.startAfter },
         opt.reverse,
-        init(tree.sort_fields)
+        init(tree.sort_fields),
       )
       if (cur.start[0] === "startAt") {
         if ((reversed.end && comp > 0) || (reversed.end !== true && comp < 0)) {
@@ -805,7 +805,7 @@ const modOpt = (opt, cur = {}, tree) => {
         { key: cur.end[1].id, val: cur.end[1].data },
         { val: opt.endAt },
         opt.reverse,
-        init(tree.sort_fields)
+        init(tree.sort_fields),
       )
       if (
         (reversed.start && comp <= 0) ||
@@ -819,7 +819,7 @@ const modOpt = (opt, cur = {}, tree) => {
         { key: cur.end[1].id, val: cur.end[1].data },
         { val: opt.endBefore },
         opt.reverse,
-        init(tree.sort_fields)
+        init(tree.sort_fields),
       )
       if (cur.end[0] === "endAt") {
         if (
@@ -853,7 +853,7 @@ const range = async (
   SW,
   cursor = false,
   _prefix = "",
-  cur = {}
+  cur = {},
 ) => {
   const kv = new KV(`${path.join("/")}/`, _KV(kvs, SW))
   if (
@@ -868,7 +868,7 @@ const range = async (
     _prefix === "" || sort_fields.length === 0 ? "" : "/"
   }${compose(
     join("/"),
-    flatten
+    flatten,
   )(sort_fields.length === 0 && _prefix === "" ? [idsorter] : sort_fields)}`
   await checkIndex(prefix, path, kvs, SW)
   const tree = new BPT(order, [...sort_fields, idsorter], kv, prefix)

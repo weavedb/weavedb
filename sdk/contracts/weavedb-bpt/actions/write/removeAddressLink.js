@@ -1,7 +1,6 @@
 const { is, isNil } = require("ramda")
 const { validate } = require("../../lib/validate")
-const { err, wrapResult } = require("../../../common/lib/utils")
-const { kv } = require("../../lib/utils")
+const { err, wrapResult, kv } = require("../../lib/utils")
 
 const removeAddressLink = async (
   state,
@@ -9,7 +8,7 @@ const removeAddressLink = async (
   signer,
   contractErr = true,
   SmartWeave,
-  kvs
+  kvs,
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -19,7 +18,7 @@ const removeAddressLink = async (
       "removeAddressLink",
       SmartWeave,
       true,
-      kvs
+      kvs,
     ))
   }
   const { address } = action.input.query

@@ -1,4 +1,4 @@
-const { err, isOwner, wrapResult } = require("../../../common/lib/utils")
+const { err, isOwner, wrapResult } = require("../../lib/utils")
 const { includes, is, of, append, isNil } = require("ramda")
 const { validate } = require("../../lib/validate")
 
@@ -11,7 +11,7 @@ const setBundlers = async (
   kvs,
   executeCron,
   depth = 1,
-  type = "direct"
+  type = "direct",
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -21,7 +21,7 @@ const setBundlers = async (
       "setBundlers",
       SmartWeave,
       true,
-      kvs
+      kvs,
     ))
   }
 

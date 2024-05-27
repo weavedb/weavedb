@@ -1,6 +1,5 @@
 const { insert, findIndex, propEq, isNil } = require("ramda")
-const { parse } = require("../../lib/utils")
-const { err, wrapResult } = require("../../../common/lib/utils")
+const { parse, err, wrapResult } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 
 const removeTrigger = async (
@@ -12,7 +11,7 @@ const removeTrigger = async (
   kvs,
   executeCron,
   depth = 1,
-  type = "direct"
+  type = "direct",
 ) => {
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
     err("only bundle queries are allowed")
@@ -26,7 +25,7 @@ const removeTrigger = async (
       "removeTrigger",
       SmartWeave,
       true,
-      kvs
+      kvs,
     ))
   }
   let { col, _data, data, query, new_data, path } = await parse(
@@ -37,7 +36,7 @@ const removeTrigger = async (
     null,
     contractErr,
     SmartWeave,
-    kvs
+    kvs,
   )
   const trigger_key = `trigger.${path.join("/")}`
   state.triggers ??= {}
