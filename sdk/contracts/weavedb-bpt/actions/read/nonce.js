@@ -1,6 +1,5 @@
 const { isNil } = require("ramda")
-const { kv } = require("../../lib/utils")
-const { err } = require("../../../common/lib/utils")
+const { kv, err } = require("../../lib/utils")
 
 const nonce = async (state, action, SmartWeave, kvs) => {
   let { address } = action.input

@@ -1,5 +1,4 @@
-const { err, wrapResult } = require("../../../common/lib/utils")
-const { isEVMAddress } = require("../../lib/utils")
+const { err, wrapResult, isEVMAddress } = require("../../lib/utils")
 const { isNil, includes } = require("ramda")
 const { update } = require("./update")
 const { add } = require("./add")

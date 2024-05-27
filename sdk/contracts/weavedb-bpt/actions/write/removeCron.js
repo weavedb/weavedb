@@ -1,6 +1,5 @@
 const { isNil } = require("ramda")
-const { parse } = require("../../lib/utils")
-const { err, isOwner, wrapResult } = require("../../../common/lib/utils")
+const { err, isOwner, wrapResult, parse } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 
 const removeCron = async (
@@ -12,7 +11,7 @@ const removeCron = async (
   kvs,
   executeCron,
   depth = 1,
-  type = "direct"
+  type = "direct",
 ) => {
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
     err("only bundle queries are allowed")
@@ -26,7 +25,7 @@ const removeCron = async (
       "removeCron",
       SmartWeave,
       true,
-      kvs
+      kvs,
     ))
   }
   const owner = isOwner(signer, state)

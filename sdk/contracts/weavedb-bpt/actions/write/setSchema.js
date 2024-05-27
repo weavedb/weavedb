@@ -1,9 +1,8 @@
 const { isNil, mergeLeft } = require("ramda")
-const { kv, err, parse } = require("../../lib/utils")
-const { clone } = require("../../../common/lib/pure")
-const { wrapResult } = require("../../../common/lib/utils")
+const { kv, err, parse, wrapResult } = require("../../lib/utils")
+const { clone } = require("../../lib/pure")
 const { validate } = require("../../lib/validate")
-const { validate: validator } = require("../../../common/lib/jsonschema")
+const { validate: validator } = require("../../lib/jsonschema")
 
 const setSchema = async (
   state,
@@ -14,7 +13,7 @@ const setSchema = async (
   kvs,
   executeCron,
   depth = 1,
-  type = "direct"
+  type = "direct",
 ) => {
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
     err("only bundle queries are allowed")
@@ -28,7 +27,7 @@ const setSchema = async (
       "setSchema",
       SmartWeave,
       true,
-      kvs
+      kvs,
     ))
   }
   let { _data, data, query, new_data, path } = await parse(
@@ -39,7 +38,7 @@ const setSchema = async (
     null,
     contractErr,
     SmartWeave,
-    kvs
+    kvs,
   )
   _data.schema = new_data
   try {

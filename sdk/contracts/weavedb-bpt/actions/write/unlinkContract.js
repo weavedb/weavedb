@@ -1,7 +1,6 @@
 const { isNil, is } = require("ramda")
 const { validate } = require("../../lib/validate")
-const { parse } = require("../../lib/utils")
-const { err, wrapResult } = require("../../../common/lib/utils")
+const { err, wrapResult, parse } = require("../../lib/utils")
 
 const unlinkContract = async (
   state,
@@ -9,7 +8,7 @@ const unlinkContract = async (
   signer,
   contractErr = true,
   SmartWeave,
-  kvs
+  kvs,
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -19,7 +18,7 @@ const unlinkContract = async (
       "unlinkContract",
       SmartWeave,
       true,
-      kvs
+      kvs,
     ))
   }
   let { _data, data, query, new_data, path } = await parse(
@@ -30,7 +29,7 @@ const unlinkContract = async (
     null,
     contractErr,
     SmartWeave,
-    kvs
+    kvs,
   )
   const [key] = action.input.query
   if (isNil(key)) {

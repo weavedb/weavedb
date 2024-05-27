@@ -1,5 +1,5 @@
 const { keys, isNil, mergeLeft } = require("ramda")
-const { err } = require("../../../common/lib/utils")
+const { err } = require("../../lib/utils")
 const getCollection = async (state, action, SmartWeave, kvs) => {
   if (isNil(action.input?.query?.[0])) err("collection ID not specified")
   return {

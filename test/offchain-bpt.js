@@ -43,6 +43,7 @@ describe("WeaveDB Offchain BPT", function () {
         owner: walletAddress,
         bridges: ["ethereum"],
         max_doc_id_length: 28,
+        max_doc_size: 256,
       },
       type: 3,
       caller: walletAddress,

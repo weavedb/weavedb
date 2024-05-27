@@ -1,5 +1,5 @@
 const { isNil } = require("ramda")
-const { err, read } = require("../../../common/lib/utils")
+const { err, read } = require("../../lib/utils")
 const { set } = require("./set")
 const nostr = async (
   state,
@@ -11,7 +11,7 @@ const nostr = async (
   executeCron,
   depth = 1,
   type = "direct",
-  get
+  get,
 ) => {
   if (isNil(state.nostr)) err("nostr is disabled")
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
@@ -21,7 +21,7 @@ const nostr = async (
   const { isValid } = await read(
     state.contracts.nostr,
     { function: "verify", event },
-    SmartWeave
+    SmartWeave,
   )
   if (!isValid) err(`The wrong signature`)
   let params = [

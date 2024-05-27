@@ -1,5 +1,5 @@
 const { isNil, init, last } = require("ramda")
-const { err, wrapResult } = require("../../../common/lib/utils")
+const { err, wrapResult } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 
 const tick = async (
@@ -13,7 +13,7 @@ const tick = async (
   depth = 1,
   type = "direct",
   get,
-  count = 0
+  count = 0,
 ) => {
   if (count === 0) err("no crons executed")
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
@@ -28,7 +28,7 @@ const tick = async (
       "tick",
       SmartWeave,
       true,
-      kvs
+      kvs,
     ))
   }
 

@@ -1020,11 +1020,6 @@ js-sha3@0.8.0:
   resolved "https://registry.yarnpkg.com/js-sha3/-/js-sha3-0.8.0.tgz#b9b7a5da73afad7dedd0f8c463954cbde6818840"
   integrity sha512-gF1cRrHhIzNfToc802P800N8PpXS+evLLXfsVpowqmAFR9uwbi89WvXg2QspOmXL8QL86J4T1EpFu+yUkwJY3Q==
 
-json-logic-js@^2.0.2:
-  version "2.0.2"
-  resolved "https://registry.yarnpkg.com/json-logic-js/-/json-logic-js-2.0.2.tgz#b613e095f5e598cb78f7b9a2bbf638e74cf98158"
-  integrity sha512-ZBtBdMJieqQcH7IX/LaBsr5pX+Y5JIW+EhejtM3Ffg2jdN9Iwf+Ht6TbHnvAZ/YtwyuhPaCBlnvzrwVeWdvGDQ==
-
 keccak@^3.0.0:
   version "3.0.3"
   resolved "https://registry.yarnpkg.com/keccak/-/keccak-3.0.3.tgz#4bc35ad917be1ef54ff246f904c2bbbf9ac61276"
@@ -1284,10 +1279,10 @@ wasmcurves@^0.2.1:
   dependencies:
     wasmbuilder "0.0.16"
 
-weavedb-base@^0.43.1:
-  version "0.43.1"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.43.1.tgz#54dbbeb506351c34cadd18569f9fa5f0c8a2e5d6"
-  integrity sha512-/fBifb5+7EUF2qdpirTNjc2yiZxVns64qRUOFuFFBUmg9z3BnYeuFWnfDxkCuaMKNTD9XDj+I3c5MALH4RDguQ==
+weavedb-base@^0.43.2:
+  version "0.43.2"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.43.2.tgz#3da2ecfda00cecbd578a310bf90ff34a5d1932b8"
+  integrity sha512-x9nHOos/0HJ7WoeO57ZJmk6jA9bW8Fe4ulgyWGeMvqH/KlvDkd+V/v0E5pTgjYC8RvXf+EVYJuUuy9cI0tpkfA==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"
@@ -1300,15 +1295,14 @@ weavedb-base@^0.43.1:
     pako "^2.1.0"
     ramda "^0.28.0"
 
-weavedb-contracts@^0.43.0:
-  version "0.43.0"
-  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.43.0.tgz#4f0e795f6eac1483c28e4844b30a0163e774ca35"
-  integrity sha512-zOeP+RJlCfS7JSvsMaS/IQdgn6Z0OircNRvZrnUIX5p/szpy4AANTI5IEVfZ22c/qwKzxYiCuhwL5ETBFv7y+Q==
+weavedb-contracts@^0.43.2:
+  version "0.43.2"
+  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.43.2.tgz#3a2dd540e1714d034501e6b0dfb8fba066f4b608"
+  integrity sha512-n5z0Ninp2zau+GRXrsSezONVlPFZR2IJKjsLXylUjxHapWAQh2nX++rJGkjBd5jYw0JOK834PdiZxexLWGvfPg==
   dependencies:
     "@noble/curves" "^0.9.0"
     "@peculiar/webcrypto" "^1.4.3"
     fpjson-lang "^0.1.5"
-    json-logic-js "^2.0.2"
     ramda "^0.28.0"
     wasmbuilder "^0.0.16"
     wasmcurves "^0.2.1"

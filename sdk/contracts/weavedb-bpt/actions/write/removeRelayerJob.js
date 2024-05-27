@@ -1,6 +1,5 @@
 const { isNil, is, intersection } = require("ramda")
-const { parse, clone } = require("../../lib/utils")
-const { err, wrapResult } = require("../../../common/lib/utils")
+const { parse, clone, err, wrapResult } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 
 const removeRelayerJob = async (
@@ -12,7 +11,7 @@ const removeRelayerJob = async (
   kvs,
   executeCron,
   depth = 1,
-  type = "direct"
+  type = "direct",
 ) => {
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
     err("only bundle queries are allowed")
@@ -26,7 +25,7 @@ const removeRelayerJob = async (
       "removeRelayerJob",
       SmartWeave,
       true,
-      kvs
+      kvs,
     ))
   }
   let { _data, data, query, new_data, path } = await parse(
@@ -37,7 +36,7 @@ const removeRelayerJob = async (
     null,
     contractErr,
     SmartWeave,
-    kvs
+    kvs,
   )
   const [jobID] = query
   if (isNil(state.relayers[jobID])) err("relayer job doesn't exist")

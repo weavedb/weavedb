@@ -1,5 +1,5 @@
 const { isNil, is, of, includes, mergeLeft } = require("ramda")
-const { err, isOwner, wrapResult } = require("../../../common/lib/utils")
+const { err, isOwner, wrapResult } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 
 const evolve = async (
@@ -8,7 +8,7 @@ const evolve = async (
   signer,
   contractErr = true,
   SmartWeave,
-  kvs
+  kvs,
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -18,7 +18,7 @@ const evolve = async (
       "evolve",
       SmartWeave,
       true,
-      kvs
+      kvs,
     ))
   }
   const owner = isOwner(signer, state)

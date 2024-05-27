@@ -15,6 +15,17 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.43.1-beta (May 27, 2024)
+
+#### Source Transaction Id
+
+[0b0iRjS2ez-9xhWo-RKR4eLIjR2333l-JdlJSleRzbY](https://sonar.warp.cc/#/app/source/0b0iRjS2ez-9xhWo-RKR4eLIjR2333l-JdlJSleRzbY)
+
+#### Added Features
+
+- remove FPJSON1.0 with JSONLogic
+- `max_doc_size`
+
 ### v0.43.0-beta (May 27, 2024)
 
 #### Source Transaction Id
@@ -25,9 +36,9 @@ await db.getVersion()
 
 - assign auto-increment collection ID
 - record doc count
-- getCollection
-- max_doc_id_length
-- max_collection_id_length
+- `getCollection`
+- `max_doc_id_length`
+- `max_collection_id_length`
 
 ### v0.42.3-beta (May 26, 2024)
 

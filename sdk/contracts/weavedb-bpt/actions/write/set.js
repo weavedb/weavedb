@@ -1,6 +1,12 @@
 const { includes, init, last, isNil } = require("ramda")
-const { err, parse, trigger } = require("../../lib/utils")
-const { validateSchema, wrapResult } = require("../../../common/lib/utils")
+const { encode, toSignal } = require("../../lib/zkjson")
+const {
+  validateSchema,
+  wrapResult,
+  err,
+  parse,
+  trigger,
+} = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { put } = require("../../lib/index")
 const set = async (
@@ -54,6 +60,18 @@ const set = async (
     signer,
     true,
   )
+
+  if (!isNil(state.max_doc_size)) {
+    let doc_size = null
+    try {
+      const zkjson = toSignal(encode(after.val))
+      doc_size = zkjson.length
+    } catch (e) {
+      err("doc cannot be encoded")
+    }
+    if (doc_size !== null && doc_size > state.max_doc_size) err("doc too large")
+  }
+
   if (isNil(before.val)) state.collections[init(path).join("/")].count += 1
   if (depth < 10) {
     state = await trigger(

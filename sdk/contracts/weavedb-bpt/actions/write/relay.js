@@ -11,12 +11,7 @@ const {
   head,
   nth,
 } = require("ramda")
-const {
-  err,
-  read,
-  validateSchema,
-  wrapResult,
-} = require("../../../common/lib/utils")
+const { err, read, validateSchema, wrapResult } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 
 const { lockTokens } = require("./lockTokens")

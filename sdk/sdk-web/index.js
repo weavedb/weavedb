@@ -173,6 +173,7 @@ class SDK extends Base {
       }
     }
     this.cache = cache
+    if (this.cache === "lmdb" && isNil(this.LmdbCache)) this.cache = "leveldb"
     this.lmdb = lmdb
     this.redis = redis
     this.arweave_wallet = arweave_wallet

@@ -1,6 +1,5 @@
-const { err, wrapResult, read } = require("../../../common/lib/utils")
-const { kv } = require("../../lib/utils")
-const { clone } = require("../../../common/lib/pure")
+const { err, wrapResult, read, kv } = require("../../lib/utils")
+const { clone } = require("../../lib/pure")
 const { isNil, includes, map, addIndex: _addIndex, concat } = require("ramda")
 const { set } = require("./set")
 const { add } = require("./add")

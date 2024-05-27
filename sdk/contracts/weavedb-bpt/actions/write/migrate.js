@@ -1,10 +1,5 @@
 const { isNil, is, of, includes, mergeLeft, last } = require("ramda")
-const {
-  err,
-  isEvolving,
-  isOwner,
-  wrapResult,
-} = require("../../../common/lib/utils")
+const { err, isEvolving, isOwner, wrapResult } = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const version = require("../../lib/version")
 
@@ -14,7 +9,7 @@ const migrate = async (
   signer,
   contractErr = true,
   SmartWeave,
-  kvs
+  kvs,
 ) => {
   let original_signer = null
   if (isNil(signer)) {
@@ -24,7 +19,7 @@ const migrate = async (
       "migrate",
       SmartWeave,
       true,
-      kvs
+      kvs,
     ))
   }
   const owner = isOwner(signer, state)

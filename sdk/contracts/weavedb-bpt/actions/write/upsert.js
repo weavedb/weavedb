@@ -1,8 +1,14 @@
 const { includes, equals, isNil, init, last } = require("ramda")
-const { parse, trigger } = require("../../lib/utils")
-const { err, validateSchema, wrapResult } = require("../../../common/lib/utils")
+const {
+  err,
+  validateSchema,
+  wrapResult,
+  parse,
+  trigger,
+} = require("../../lib/utils")
 const { validate } = require("../../lib/validate")
 const { put } = require("../../lib/index")
+const { encode, toSignal } = require("../../lib/zkjson")
 
 const upsert = async (
   state,
@@ -56,6 +62,16 @@ const upsert = async (
     SmartWeave,
     signer,
   )
+  if (!isNil(state.max_doc_size)) {
+    let doc_size = null
+    try {
+      const zkjson = toSignal(encode(after.val))
+      doc_size = zkjson.length
+    } catch (e) {
+      err("doc cannot be encoded")
+    }
+    if (doc_size !== null && doc_size > state.max_doc_size) err("doc too large")
+  }
   if (isNil(before.val)) state.collections[init(path).join("/")].count += 1
   const updated = !equals(before.val, after.val)
   if (updated && depth < 10) {
