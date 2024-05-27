@@ -32,7 +32,14 @@ const {
   concat,
   without,
 } = require("ramda")
-const { parse: _parse, genId, getField, mergeDataP } = require("./utils-common")
+const {
+  err,
+  read,
+  parse: _parse,
+  genId,
+  getField,
+  mergeDataP,
+} = require("./utils-common")
 const {
   fpj,
   ac_funcs,
@@ -44,14 +51,6 @@ const {
 } = require("./pure")
 const { get: _get } = require("./index")
 const { validate } = require("./jsonschema")
-const err = (msg = `The wrong query`, contractErr = false) => {
-  if (contractErr) {
-    const error = typeof ContractError === "undefined" ? Error : ContractError
-    throw new error(msg)
-  } else {
-    throw msg
-  }
-}
 
 const isEvolving = state =>
   !isNil(state.evolveHistory) &&
@@ -1059,10 +1058,6 @@ const validateSchema = (schema, data, contractErr) => {
     const valid = validate(data, clone(schema)).valid
     if (!valid) err("invalid schema", contractErr)
   }
-}
-
-const read = async (contract, param, SmartWeave) => {
-  return (await SmartWeave.contracts.viewContractState(contract, param)).result
 }
 
 const auth = async (

@@ -15,6 +15,16 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.43.2-beta (May 27, 2024)
+
+#### Source Transaction Id
+
+[LO8BaKIsFyOtkbbuQ03516eBXp1ycRkuKavsCOEcCD8](https://sonar.warp.cc/#/app/source/LO8BaKIsFyOtkbbuQ03516eBXp1ycRkuKavsCOEcCD8)
+
+#### Added Features
+
+- use URL safe base64 for auto-generated IDs
+
 ### v0.43.1-beta (May 27, 2024)
 
 #### Source Transaction Id

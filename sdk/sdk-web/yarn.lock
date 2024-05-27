@@ -4211,10 +4211,10 @@ wasmcurves@^0.2.1:
   dependencies:
     wasmbuilder "0.0.16"
 
-weavedb-base@^0.43.2:
-  version "0.43.2"
-  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.43.2.tgz#3da2ecfda00cecbd578a310bf90ff34a5d1932b8"
-  integrity sha512-x9nHOos/0HJ7WoeO57ZJmk6jA9bW8Fe4ulgyWGeMvqH/KlvDkd+V/v0E5pTgjYC8RvXf+EVYJuUuy9cI0tpkfA==
+weavedb-base@^0.43.3:
+  version "0.43.3"
+  resolved "https://registry.yarnpkg.com/weavedb-base/-/weavedb-base-0.43.3.tgz#071d573f46952f21ea796b99952697381c436468"
+  integrity sha512-FPYDMgxNXXqohtJrjT4ngBvceP7pMXGoRDH30gM1X1Q7lHEJUCFfoCC0ZdPvAfS/uln2V7E7yNqZ0BCJc8xtqg==
   dependencies:
     "@metamask/eth-sig-util" "^4.0.1"
     "@metamask/legacy-web3" "^2.0.0"
@@ -4227,10 +4227,10 @@ weavedb-base@^0.43.2:
     pako "^2.1.0"
     ramda "^0.28.0"
 
-weavedb-contracts@^0.43.2:
-  version "0.43.2"
-  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.43.2.tgz#3a2dd540e1714d034501e6b0dfb8fba066f4b608"
-  integrity sha512-n5z0Ninp2zau+GRXrsSezONVlPFZR2IJKjsLXylUjxHapWAQh2nX++rJGkjBd5jYw0JOK834PdiZxexLWGvfPg==
+weavedb-contracts@^0.43.3:
+  version "0.43.3"
+  resolved "https://registry.yarnpkg.com/weavedb-contracts/-/weavedb-contracts-0.43.3.tgz#523e16421cb21ba359aa65328c29c74116144b8d"
+  integrity sha512-i107z3IfQpnH9/7WqKQuk0HNaqQ+APx2h0qTYy6wgLtuzhQkIl4tJ4gvS4DlalZke/lwX68nzFCaq0720dOdPg==
   dependencies:
     "@noble/curves" "^0.9.0"
     "@peculiar/webcrypto" "^1.4.3"

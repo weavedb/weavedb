@@ -245,7 +245,7 @@ async function handle(state, action, _SmartWeave) {
       res = await addHash(_SmartWeave)(await bundle(...writeParams))
       break
     case "relay":
-      res = await addHash(_SmartWeave)(await relay(...writeParams))
+      res = await addHash(_SmartWeave)(await relay(...writeParams, batch))
       break
     case "addOwner":
       res = await addHash(_SmartWeave)(await addOwner(...writeParams))

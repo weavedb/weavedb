@@ -21,7 +21,6 @@ const { update } = require("./update")
 const { upsert } = require("./upsert")
 const { remove } = require("./remove")
 const { addAddressLink } = require("./addAddressLink")
-const { batch } = require("./batch")
 const { query: _query } = require("./query")
 
 const relay = async (
@@ -35,6 +34,7 @@ const relay = async (
   depth = 1,
   type = "direct",
   get,
+  batch,
 ) => {
   if ((state.bundlers ?? []).length !== 0 && type === "direct") {
     err("only bundle queries are allowed")
