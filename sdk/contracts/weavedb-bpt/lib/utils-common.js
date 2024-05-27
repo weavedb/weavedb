@@ -11,7 +11,19 @@ const {
 } = require("ramda")
 const md5 = require("./md5")
 const { clone, bigIntFromBytes } = require("./pure")
-const { err, read } = require("./utils")
+
+const read = async (contract, param, SmartWeave) => {
+  return (await SmartWeave.contracts.viewContractState(contract, param)).result
+}
+
+const err = (msg = `The wrong query`, contractErr = false) => {
+  if (contractErr) {
+    const error = typeof ContractError === "undefined" ? Error : ContractError
+    throw new error(msg)
+  } else {
+    throw msg
+  }
+}
 
 const getField = (data, path) => {
   if (path.length === 1) {
@@ -136,7 +148,10 @@ const genId = async (action, salt, SmartWeave) => {
         SmartWeave.transaction?.timestamp ?? SmartWeave.block?.timestamp,
     }),
   )
-  return Buffer.from(id, "hex").toString("base64").replace(/\//g, "_")
+  return Buffer.from(id, "hex")
+    .toString("base64")
+    .replace(/\//g, "_")
+    .replace(/\+/g, "-")
 }
 
 const parse = async (
@@ -307,6 +322,7 @@ const parse = async (
 
 module.exports = {
   err,
+  read,
   getField,
   mergeData,
   mergeDataP,

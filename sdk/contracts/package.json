@@ -1,6 +1,6 @@
 {
   "name": "weavedb-contracts",
-  "version": "0.43.2",
+  "version": "0.43.3",
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
