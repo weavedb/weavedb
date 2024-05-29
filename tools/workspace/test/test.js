@@ -13,7 +13,11 @@ describe("WeaveDB", () => {
     ownerAuth = { privateKey: owner.privateKey }
     relayerAuth = { privateKey: relayer.privateKey }
     userAuth = { privateKey: user.privateKey }
-    db = new DB({ type: 3, state: { owner: owner.address.toLowerCase() } })
+    db = new DB({
+      type: 3,
+      local: true,
+      state: { owner: owner.address.toLowerCase() },
+    })
     await db.initialize()
     await setup({ db, conf: settings, privateKey: owner.privateKey })
   })
