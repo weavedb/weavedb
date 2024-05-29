@@ -6,9 +6,25 @@ let {
   _: [name],
   network,
   owner,
+  type,
+  module,
+  scheduler,
 } = require("yargs")(process.argv.slice(2)).parserConfiguration({
   "parse-numbers": false,
 }).argv
+
+if (isNil(type)) type = "warp"
+
+if (type === "ao") {
+  if (isNil(module)) {
+    console.error(`module not specified`)
+    process.exit()
+  }
+  if (isNil(scheduler)) {
+    console.error(`scheduler not specified`)
+    process.exit()
+  }
+}
 
 if (isNil(name)) {
   console.error(`DB name not specified`)
@@ -44,7 +60,7 @@ const main = async () => {
         key: name,
         db: { ...config.db, owner: accounts.evm[owner].address.toLowerCase() },
       },
-      { privateKey, nonce: 1 }
+      { privateKey, nonce: 1 },
     )
     console.log(`DB [${name}] added!`)
   } catch (e) {
@@ -55,8 +71,11 @@ const main = async () => {
       {
         op: "deploy_contract",
         key: name,
+        type: "ao",
+        module,
+        scheduler,
       },
-      { privateKey, nonce: 1 }
+      { privateKey, nonce: 1 },
     )
     if (!isNil(tx.contractTxId)) {
       console.log("DB successfully deployed!")
