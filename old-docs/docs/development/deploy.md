@@ -13,6 +13,7 @@ For production, leave `secure` `true` and set [access control rules](/docs/sdk/r
 
 ```json
 {
+  "version": "0.43.2",
   "canEvolve": true,
   "evolve": null,
   "secure": true,
@@ -21,10 +22,27 @@ For production, leave `secure` `true` and set [access control rules](/docs/sdk/r
   "ids": {},
   "indexes":{},
   "auth":{
+    "algorithms: ["secp256k1", "secp256k1-2", "ed25519", "rsa256"],
     "name": "weavedb",
-    "version": "1",
-    "links": {}
-  }
+    "version": "1"
+  },
+  "crons": {
+    "lastExecuted": 0,
+	"crons": {}
+  },
+  "contracts": {},
+  "trigger": {},
+  "tokens": {
+    "available": {},
+    "available_l2": {},
+    "allocated": {},
+    "locked": {}
+  },
+  "bridges": []
+  max_doc_size: 256,
+  max_collection_id_length: 50,
+  max_doc_id_length: 28,
+  ao.collections: {}
 }
 ```
 
