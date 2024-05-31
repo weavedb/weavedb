@@ -1,5 +1,5 @@
 const { tail, isNil, clone, mergeLeft } = require("ramda")
-const Base = require("../base")
+const Base = require("weavedb-base")
 let arweave = require("arweave")
 if (!isNil(arweave.default)) arweave = arweave.default
 let contracts, handle_bpt, version, version_bpt
