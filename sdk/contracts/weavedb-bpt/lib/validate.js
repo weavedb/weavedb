@@ -1,5 +1,4 @@
-const { kv } = require("./utils")
-const { err, auth } = require("./utils")
+const { err, auth, kv } = require("./utils")
 
 const getAddressLink = async (_signer, state, kvs, SmartWeave) => {
   return await kv(kvs, SmartWeave).get(`auth.${_signer}`)
@@ -24,7 +23,7 @@ const validate = async (
   use_nonce = true,
   kvs,
 ) =>
-  await auth(state, action, func, SmartWeave, (use_nonce = true), kvs, {
+  await auth(state, action, func, SmartWeave, use_nonce, kvs, {
     useNonce,
     getAddressLink,
   })

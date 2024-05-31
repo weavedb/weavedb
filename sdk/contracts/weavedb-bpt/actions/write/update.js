@@ -51,7 +51,7 @@ const update = async (
     err(`${path[0]} cannot be updated directly`)
   }
   if (isNil(_data.__data)) err(`Data doesn't exist`)
-  validateSchema(schema, next_data, contractErr)
+  await validateSchema(schema, next_data, contractErr, state, SmartWeave)
   let { before, after } = await put(
     next_data,
     last(path),

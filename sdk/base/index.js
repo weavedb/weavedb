@@ -3,6 +3,7 @@ const elliptic = require("elliptic")
 const EthCrypto = require("eth-crypto")
 const { providers, Contract, utils } = require("ethers")
 const md5 = require("md5")
+const { keccak256 } = require("./keccak")
 const versions = require("./versions")
 const {
   startAuthentication,
@@ -226,7 +227,30 @@ class Base {
       "getBundlers",
     ]
   }
-
+  hash([bufs, bytes = 20]) {
+    let _bufs = map(v => {
+      let type = "utf8"
+      let val = v
+      if (is(Array, v)) {
+        val = v[0]
+        type = v[1] ?? "utf8"
+      }
+      if (type === "hex" && val.startsWith("0x")) val = val.slice(2)
+      return Buffer.from(val, type)
+    })(bufs)
+    return this.to64(keccak256(Buffer.concat(_bufs)))
+  }
+  to64(from, type, bytes = 20) {
+    return Buffer.from(from, type)
+      .slice(0, bytes)
+      .toString("base64")
+      .replace(/\//g, "_")
+      .replace(/\+/g, "-")
+  }
+  toBase64([str, type = "hex", bytes = 20]) {
+    if (str.startsWith("0x")) str = str.slice(2)
+    return this.to64(str, type, bytes)
+  }
   _getHandle(sw, func) {
     try {
       const swGlobal = sw

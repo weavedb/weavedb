@@ -162,7 +162,7 @@ async function fpj(arr = [], obj = {}, fn = {}) {
           setElm,
         )
       } else {
-        throw Error(`unknow function ${arr[0]}`)
+        throw Error(`unknown function ${arr[0]}`)
       }
     } else if (arr[0] === "break") {
       isBreak = true

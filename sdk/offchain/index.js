@@ -1,5 +1,5 @@
 const { tail, isNil, clone, mergeLeft } = require("ramda")
-const Base = require("weavedb-base")
+const Base = require("../base")
 let arweave = require("arweave")
 if (!isNil(arweave.default)) arweave = arweave.default
 let contracts, handle_bpt, version, version_bpt
@@ -17,7 +17,8 @@ class OffChain extends Base {
     _contracts = "weavedb-contracts",
   } = {}) {
     super()
-    version_bpt = require(`${_contracts}/weavedb-bpt/lib/version`)
+    this._contracts = _contracts
+    version_bpt = require(`${this._contracts}/weavedb-bpt/lib/version`)
     this.queue = []
     this.ongoing = false
 
@@ -29,7 +30,9 @@ class OffChain extends Base {
     this.type = type
 
     this.handles = {}
-    ;({ handle: handle_bpt } = require(`${_contracts}/weavedb-bpt/contract`))
+    ;({ handle: handle_bpt } = require(
+      `${this._contracts}/weavedb-bpt/contract`,
+    ))
     this.handle = this.type === 3 ? handle_bpt : handle_bpt
     this.local = local
     this.validity = {}
@@ -61,6 +64,7 @@ class OffChain extends Base {
         nostr: "nostr",
         bundler: "bundler",
         polygonID: "polygon-id",
+        jsonschema: "jsonschema",
       },
       bridges: [],
     })
@@ -106,7 +110,7 @@ class OffChain extends Base {
       transaction: { id: await this.getTxId(input, date), timestamp: date },
       contracts: {
         viewContractState: async (contract, param, SmartWeave) => {
-          const { handle } = require(`weavedb-contracts/${contract}/contract`)
+          const { handle } = require(`${this._contracts}/${contract}/contract`)
           try {
             return await handle({}, { input: param }, SmartWeave)
           } catch (e) {

@@ -42,7 +42,13 @@ const setSchema = async (
   )
   _data.schema = new_data
   try {
-    validator(undefined, clone(_data.schema))
+    const { error } = await validator(
+      undefined,
+      clone(_data.schema),
+      state,
+      SmartWeave,
+    )
+    if (error) err("schema error")
   } catch (e) {
     err("schema error")
   }

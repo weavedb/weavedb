@@ -49,6 +49,7 @@ const {
   setElm,
   parse: __parse,
 } = require("./pure")
+const fn = require("./fn")
 const { get: _get } = require("./index")
 const { validate } = require("./jsonschema")
 
@@ -199,13 +200,13 @@ const validateData = async ({
         ])
         return intersection(ops)(methods).length > 0
       }
-      const fn = {
-        parse: async str => [JSON.parse(str), false],
-        stringify: async json => [JSON.stringify(json), false],
+      const _fn = {
+        hash: fn.hash,
+        toBase64: fn.toBase64,
+        parse: fn.parse,
+        stringify: fn.stringify,
         get: async query => {
-          let val = null
-          let isBreak = false
-          val =
+          const val =
             (
               await get(
                 state,
@@ -220,13 +221,13 @@ const validateData = async ({
                 kvs,
               )
             )?.result ?? null
-          return [val, isBreak]
+          return [val, false]
         },
       }
       if (!isNil(rules)) {
         for (const v of rules || []) {
           if (isAllowed(v[0], rule_data.request)) {
-            await fpj(v[1], rule_data, { ...fn, ...ac_funcs })
+            await fpj(v[1], rule_data, { ..._fn, ...ac_funcs })
           }
         }
         allowed = rule_data.request.allow === true
@@ -257,8 +258,8 @@ const getDoc = async (
   get,
   type,
   _func,
-) =>
-  await _getDoc(
+) => {
+  return await _getDoc(
     null,
     path,
     _signer,
@@ -278,7 +279,7 @@ const getDoc = async (
     type,
     _func,
   )
-
+}
 const addNewCol = async (_col, current_path, data, kvs, state, SmartWeave) => {
   const full_path = append(_col, current_path).join("/")
   state.collections ??= {}
@@ -1053,9 +1054,14 @@ const isOwner = (signer, state) => {
   return owner
 }
 
-const validateSchema = (schema, data, contractErr) => {
+const validateSchema = async (schema, data, contractErr, state, SmartWeave) => {
   if (!isNil(schema)) {
-    const valid = validate(data, clone(schema)).valid
+    const { error, valid } = await validate(
+      data,
+      clone(schema),
+      state,
+      SmartWeave,
+    )
     if (!valid) err("invalid schema", contractErr)
   }
 }

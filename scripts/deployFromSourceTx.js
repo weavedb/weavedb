@@ -16,6 +16,8 @@ const contractTxId_II = process.argv[4] || process.env.II_TX_ID
 const contractTxId_ETH = process.argv[5] || process.env.ETH_TX_ID
 const contractTxId_BUNDLER = process.argv[6] || process.env.BUNDLER_TX_ID
 const contractTxId_NOSTR = process.argv[7] || process.env.NOSTR_TX_ID
+const contractTxId_POLYGONID = process.argv[8] || process.env.POLYGONID_TX_ID
+const contractTxId_JSONSCHEMA = process.argv[8] || process.env.JSONSCHEMA_TX_ID
 
 const { Warp, WarpFactory, LoggerFactory } = require("warp-contracts")
 const { DeployPlugin, ArweaveSigner } = require("warp-contracts-plugin-deploy")
@@ -37,7 +39,7 @@ const deploy = async () => {
   warp = WarpFactory.forMainnet().use(new DeployPlugin())
   const wallet_path = path.resolve(
     __dirname,
-    `.wallets/wallet-${wallet || wallet_name}.json`
+    `.wallets/wallet-${wallet || wallet_name}.json`,
   )
   if (!fs.existsSync(wallet_path)) {
     console.log("wallet doesn't exist: " + wallet_path)
@@ -48,14 +50,14 @@ const deploy = async () => {
   const stateFromFile = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "../dist/weavedb-bpt/initial-state.json"),
-      "utf8"
-    )
+      "utf8",
+    ),
   )
 
   const initialState = { ...stateFromFile, ...{ owner: walletAddress } }
   if (!isNil(privateKey)) {
     initialState.owner = `0x${privateToAddress(
-      Buffer.from(privateKey.replace(/^0x/, ""), "hex")
+      Buffer.from(privateKey.replace(/^0x/, ""), "hex"),
     ).toString("hex")}`.toLowerCase()
   }
 
@@ -65,6 +67,8 @@ const deploy = async () => {
   initialState.contracts.ethereum = contractTxId_ETH
   initialState.contracts.bundler = contractTxId_BUNDLER
   initialState.contracts.nostr = contractTxId_NOSTR
+  initialState.contracts.polygonID = contractTxId_POLYGONID
+  initialState.contracts.jsonschema = contractTxId_JSONSCHEMA
   const res = await warp.createContract.deployFromSourceTx({
     wallet: new ArweaveSigner(_wallet),
     initState: JSON.stringify(initialState),

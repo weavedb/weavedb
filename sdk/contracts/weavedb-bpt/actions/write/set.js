@@ -50,7 +50,7 @@ const set = async (
   if (type !== "cron" && includes(path[0])(["__tokens__", "__bridge__"])) {
     err(`${path[0]} cannot be updated directly`)
   }
-  validateSchema(schema, next_data, contractErr)
+  await validateSchema(schema, next_data, contractErr, state, SmartWeave)
   let { before, after } = await put(
     next_data,
     last(path),
@@ -73,6 +73,7 @@ const set = async (
   }
 
   if (isNil(before.val)) state.collections[init(path).join("/")].count += 1
+
   if (depth < 10) {
     state = await trigger(
       ["create"],

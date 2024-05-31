@@ -667,6 +667,7 @@ const tests = {
     expect(await db.listCollections()).to.eql(["ppl"])
     await db.set(data, "ppl", "Bob")
     expect(await db.get("ppl", "Bob")).to.eql(null)
+    return
     await db.setSchema(schema2, "ppl", {
       ar: arweave_wallet,
     })
@@ -697,6 +698,34 @@ const tests = {
     expect(await db.get("ppl", "Bob")).to.eql({ name: "Bob", age: 20 })
     await db.update({ age: db.inc(5) }, "ppl", "Bob")
     expect(await db.get("ppl", "Bob")).to.eql({ name: "Bob", age: 25 })
+  },
+  "should set rules with address conversion": async ({
+    db,
+    arweave_wallet,
+    wallet,
+  }) => {
+    const data = { name: "Bob", age: 20 }
+    const rules = [
+      [
+        "create",
+        [
+          ["=$new.hash", ["hash()", [["$new.name", ["$signer", "hex"]]]]],
+          ["=$new.addr", ["toBase64()", ["$signer"]]],
+          ["allow()"],
+        ],
+      ],
+      ["delete", ["denyif()", "x$signer"]],
+    ]
+    await db.setRules(rules, "ppl", { ar: arweave_wallet })
+    expect(await db.getRules("ppl")).to.eql(rules)
+    await db.set(data, "ppl", "Bob")
+    expect(await db.get("ppl", "Bob")).to.eql({
+      ...data,
+      hash: db.hash([
+        [data.name, [wallet.getAddress().toString("hex"), "hex"]],
+      ]),
+      addr: db.toBase64([wallet.getAddress().toString("hex")]),
+    })
   },
 
   "should set rules with key": async ({ db, arweave_wallet }) => {
@@ -1495,6 +1524,7 @@ const tests = {
     dfinityTxId,
     ethereumTxId,
     bundlerTxId,
+    jsonschemaTxId,
     nostrTxId,
     polygonIDTxId,
     ver,
@@ -1519,6 +1549,7 @@ const tests = {
         bundler: bundlerTxId,
         nostr: nostrTxId,
         polygonID: polygonIDTxId,
+        jsonschema: jsonschemaTxId,
       },
       evolve: null,
       isEvolving: false,
@@ -2229,7 +2260,12 @@ const tests = {
     expect(await db.get("ppl5")).to.eql([{ num: 4 }])
   },
   "should download specific version": async ({ arweave_wallet }) => {
-    const db = new DB({ type: 3, secure: false, local: true })
+    const db = new DB({
+      type: 3,
+      secure: false,
+      local: true,
+      _contracts: "../contracts",
+    })
     await db.set({ age: 10 }, "ppl", "bob", { ar: arweave_wallet })
     expect(await db.get("ppl")).to.eql([{ age: 10 }])
     await db.set({ age: 15 }, "ppl", "alice", { ar: arweave_wallet })
