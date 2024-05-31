@@ -15,6 +15,18 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.44.0-beta (May 31, 2024)
+
+#### Source Transaction Id
+
+[M2p2efsWlYEUAEjqNsGI844r_GAi0oTJcklEsGjtbvw](https://sonar.warp.cc/#/app/source/M2p2efsWlYEUAEjqNsGI844r_GAi0oTJcklEsGjtbvw)
+
+#### Added Features
+
+- `hash()`
+- `toBase64()`
+- extract `JSONLogic` to a separate contract
+
 ### v0.43.2-beta (May 27, 2024)
 
 #### Source Transaction Id

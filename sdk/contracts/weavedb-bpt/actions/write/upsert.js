@@ -52,7 +52,7 @@ const upsert = async (
   if (type !== "cron" && includes(path[0])(["__tokens__", "__bridge__"])) {
     err(`${path[0]} cannot be updated directly`)
   }
-  validateSchema(schema, next_data, contractErr)
+  await validateSchema(schema, next_data, contractErr, state, SmartWeave)
   _data.__data = next_data
   let { before, after } = await put(
     next_data,

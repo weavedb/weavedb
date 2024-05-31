@@ -9,6 +9,7 @@ const contractTxIdEthereum = process.argv[5]
 const contractTxIdBundler = process.argv[6]
 const contractTxIdNostr = process.argv[7]
 const contractTxIdPolygonID = process.argv[8]
+const contractTxIdJsonschema = process.argv[9]
 const { isNil } = require("ramda")
 const { WarpFactory, LoggerFactory } = require("warp-contracts")
 const { DeployPlugin, ArweaveSigner } = require("warp-contracts-plugin-deploy")
@@ -28,11 +29,11 @@ async function deployContract(secure) {
         contractType === 1
           ? "weavedb"
           : contractType === 2
-          ? "weavedb-kv"
-          : "weavedb-bpt"
-      }/contract.js`
+            ? "weavedb-kv"
+            : "weavedb-bpt"
+      }/contract.js`,
     ),
-    "utf8"
+    "utf8",
   )
   const stateFromFile = JSON.parse(
     fs.readFileSync(
@@ -42,12 +43,12 @@ async function deployContract(secure) {
           contractType === 1
             ? "weavedb"
             : contractType === 2
-            ? "weavedb-kv"
-            : "weavedb-bpt"
-        }/initial-state.json`
+              ? "weavedb-kv"
+              : "weavedb-bpt"
+        }/initial-state.json`,
       ),
-      "utf8"
-    )
+      "utf8",
+    ),
   )
   let opt = {}
   if (contractType > 1) opt.useKVStorage = true
@@ -64,6 +65,7 @@ async function deployContract(secure) {
     initialState.contracts.bundler = contractTxIdBundler
     initialState.contracts.nostr = contractTxIdNostr
     initialState.contracts.polygonID = contractTxIdPolygonID
+    initialState.contracts.jsonschema = contractTxIdJsonschema
   }
   const res = await warp.createContract.deploy({
     wallet: new ArweaveSigner(wallet),
@@ -87,7 +89,7 @@ const deploy = async () => {
   const wallet_path = path.resolve(
     __dirname,
     ".wallets",
-    `wallet-${wallet_name}.json`
+    `wallet-${wallet_name}.json`,
   )
 
   if (!fs.existsSync(wallet_path)) {

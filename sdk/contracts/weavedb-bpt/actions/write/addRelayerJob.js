@@ -51,7 +51,13 @@ const addRelayerJob = async (
   }
   if (!isNil(job.schema)) {
     try {
-      validator(undefined, clone(job.schema))
+      const { error } = await validator(
+        undefined,
+        clone(job.schema),
+        state,
+        SmartWeave,
+      )
+      if (error) err("schema error")
     } catch (e) {
       err("schema error")
     }
