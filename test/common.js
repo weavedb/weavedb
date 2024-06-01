@@ -2186,7 +2186,7 @@ const tests = {
     ])
     return
   },
-  "should bundle mulitple transactions": async ({ db }) => {
+  "should bundle mulitple transactions": async ({ db, wallet }) => {
     const wallet2 = EthCrypto.createIdentity()
     const wallet3 = EthCrypto.createIdentity()
     const wallet4 = EthCrypto.createIdentity()
@@ -2206,6 +2206,22 @@ const tests = {
     expect(await db.getValidities(tx.originalTxId)).to.eql([true, false, true])
     expect(await db.get("ppl", "Bob")).to.eql(data)
     expect(await db.get("ppl", "Alice")).to.eql(data2)
+
+    const addr = wallet.getAddressString()
+    const { tx: params4, identity } = await db.createTempAddress(
+      addr,
+      undefined,
+      undefined,
+      {
+        relay: true,
+      },
+    )
+    const tx3 = await db.bundle([params4])
+    expect(await db.getValidities(tx3.originalTxId)).to.eql([true])
+    expect(await db.getAddressLink(identity.address.toLowerCase())).to.eql({
+      address: addr,
+      expiry: 0,
+    })
   },
   "should auto-execute batch queries with FPJSON": async ({
     db,

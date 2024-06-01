@@ -27,6 +27,8 @@ const { removeRelayerJob } = require("./removeRelayerJob")
 const { addTrigger } = require("./addTrigger")
 const { removeTrigger } = require("./removeTrigger")
 const { setBundlers } = require("./setBundlers")
+const { addAddressLink } = require("./addAddressLink")
+const { removeAddressLink } = require("./removeAddressLink")
 
 const getId = async (input, timestamp, SmartWeave) => {
   const str = JSON.stringify({
@@ -291,6 +293,21 @@ const bundle = async (
 
         case "bridgeToken":
           res = await bridgeToken(...params)
+          break
+        case "removeAddressLink":
+          res = await removeAddressLink(...params)
+          break
+        case "addAddressLink":
+          res = await addAddressLink(
+            clone(state),
+            { input: v.q, timestamp: isBundler ? v.t : null },
+            undefined,
+            false,
+            sw,
+            undefined,
+            kvs,
+            get,
+          )
           break
 
         default:

@@ -15,6 +15,16 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.44.1-beta (June 1, 2024)
+
+#### Source Transaction Id
+
+[jmXS3lR9XrE9VJ_dtf_arICUmWTp7ZCkNQrKAIpJCMU](https://sonar.warp.cc/#/app/source/jmXS3lR9XrE9VJ_dtf_arICUmWTp7ZCkNQrKAIpJCMU)
+
+#### Added Features
+
+- add `addAddressLink` & `removeAddressLink` to `bundle`
+
 ### v0.44.0-beta (May 31, 2024)
 
 #### Source Transaction Id

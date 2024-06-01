@@ -67,7 +67,7 @@
   },
   "scripts": {
     "deploy-contract": "node scripts/deploy.js mainnet 3 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w lry5KMRj6j13sLHsKxs1D2joLjcj6yNHtNQQQoaHRug PDuTzRpn99EwiUvT9XrUhg8nyhW20Wcd-XcRXboCpHs Lmu_BUdDuzja4X_egjPeOPdrQH6SQ5HgW7tKUpX37Gc Mu5RtB1v_N6vW2cf0zRhOsIrrpcvSaEW8zeFlHMuVNI",
-    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet 6aGRFlJnRC3heWXB1K2OFwSfHQgk6b9p9aHzNlBVTcg 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w lry5KMRj6j13sLHsKxs1D2joLjcj6yNHtNQQQoaHRug PDuTzRpn99EwiUvT9XrUhg8nyhW20Wcd-XcRXboCpHs Lmu_BUdDuzja4X_egjPeOPdrQH6SQ5HgW7tKUpX37Gc Mu5RtB1v_N6vW2cf0zRhOsIrrpcvSaEW8zeFlHMuVNI",
+    "deploy": "yarn build && node scripts/deployFromSourceTx.js mainnet jmXS3lR9XrE9VJ_dtf_arICUmWTp7ZCkNQrKAIpJCMU 3OnjOPuWzB138LOiNxqq2cKby2yANw6RWcQVEkztXX8 Awwzwvw7qfc58cKS8cG3NsPdDet957-Bf-S1RcHry0w lry5KMRj6j13sLHsKxs1D2joLjcj6yNHtNQQQoaHRug PDuTzRpn99EwiUvT9XrUhg8nyhW20Wcd-XcRXboCpHs Lmu_BUdDuzja4X_egjPeOPdrQH6SQ5HgW7tKUpX37Gc Mu5RtB1v_N6vW2cf0zRhOsIrrpcvSaEW8zeFlHMuVNI",
     "test": "yarn build && mocha",
     "build": "yarn clean && node build.js && npm run cp",
     "clean": "rimraf ./dist",
