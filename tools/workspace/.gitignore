@@ -1,4 +1,5 @@
 .weavedb
+weavedb.config.js
 cache
 scripts/.wallets
 scripts/.db
