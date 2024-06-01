@@ -21,6 +21,7 @@ const { update } = require("./update")
 const { upsert } = require("./upsert")
 const { remove } = require("./remove")
 const { addAddressLink } = require("./addAddressLink")
+const { removeAddressLink } = require("./removeAddressLink")
 const { query: _query } = require("./query")
 
 const relay = async (
@@ -166,6 +167,8 @@ const relay = async (
       return await upsert(...params)
     case "delete":
       return await remove(...params)
+    case "removeAddressLink":
+      return await removeAddressLink(...params)
     case "batch":
       return await batch(...params)
     case "addAddressLink":

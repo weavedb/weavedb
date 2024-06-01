@@ -9,6 +9,8 @@ const { remove } = require("./remove")
 const { query } = require("./query")
 const { relay } = require("./relay")
 
+const { addAddressLink } = require("./addAddressLink")
+const { removeAddressLink } = require("./removeAddressLink")
 const { setRules } = require("./setRules")
 const { setSchema } = require("./setSchema")
 const { setCanEvolve } = require("./setCanEvolve")
@@ -166,7 +168,22 @@ const batch = async (
       case "removeTrigger":
         res = await removeTrigger(...params)
         break
+      case "removeAddressLink":
+        res = await removeAddressLink(...params)
+        break
 
+      case "addAddressLink":
+        res = await addAddressLink(
+          _state,
+          _action,
+          signer,
+          contractErr,
+          SmartWeave,
+          undefined,
+          kvs,
+          get,
+        )
+        break
       default:
         const msg = `No function supplied or function not recognised: "${op}"`
         if (contractErr) {
