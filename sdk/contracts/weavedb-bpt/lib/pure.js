@@ -13,6 +13,7 @@ const {
   is,
   tail,
 } = require("ramda")
+
 let fpjson = require("fpjson-lang")
 fpjson = fpjson.default || fpjson
 const isValidID = str =>

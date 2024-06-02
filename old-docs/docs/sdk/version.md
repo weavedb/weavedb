@@ -15,6 +15,16 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.44.2-beta (June 2, 2024)
+
+#### Source Transaction Id
+
+[Rs3A_X4dpTGsM5m0IoK-CHrq-D5NlRUYXHXMT_ZE8fQ](https://sonar.warp.cc/#/app/source/Rs3A_X4dpTGsM5m0IoK-CHrq-D5NlRUYXHXMT_ZE8fQ)
+
+#### Added Features
+
+- fix circular error
+
 ### v0.44.1-beta (June 1, 2024)
 
 #### Source Transaction Id

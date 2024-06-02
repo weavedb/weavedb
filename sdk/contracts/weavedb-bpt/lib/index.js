@@ -25,7 +25,7 @@ const {
   splitEvery,
   equals,
 } = require("ramda")
-const { err } = require("./utils")
+const { err } = require("./base")
 const BPT = require("./BPT")
 const md5 = require("./md5")
 
