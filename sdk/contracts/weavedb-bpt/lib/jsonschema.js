@@ -1,5 +1,4 @@
-const { read } = require("./utils-common")
-
+const { read, err } = require("./base")
 module.exports = {
   validate: async (data, schema, state, SmartWeave) => {
     let valid = false
