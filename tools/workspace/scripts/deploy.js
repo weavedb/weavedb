@@ -7,7 +7,7 @@ let {
   network,
   owner,
   type,
-  module,
+  dbModule,
   scheduler,
 } = require("yargs")(process.argv.slice(2)).parserConfiguration({
   "parse-numbers": false,
@@ -16,8 +16,8 @@ let {
 if (isNil(type)) type = "warp"
 
 if (type === "ao") {
-  if (isNil(module)) {
-    console.error(`module not specified`)
+  if (isNil(dbModule)) {
+    console.error(`dbModule not specified`)
     process.exit()
   }
   if (isNil(scheduler)) {
@@ -72,7 +72,7 @@ const main = async () => {
         op: "deploy_contract",
         key: name,
         type: "ao",
-        module,
+        module: dbModule,
         scheduler,
       },
       { privateKey, nonce: 1 },
