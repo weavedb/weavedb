@@ -1254,8 +1254,7 @@ class Base {
     const encoded = enc.encode(JSON.stringify(data))
     let signature = null
     if (isNil(wallet)) {
-      const dataToSign = new Uint8Array(JSON.stringify(data))
-      const hash = await crypto.subtle.digest("SHA-256", dataToSign)
+      const hash = await crypto.subtle.digest("SHA-256", encoded)
       const cryptoKey = await crypto.subtle.importKey(
         "jwk",
         ar,
@@ -1272,9 +1271,7 @@ class Base {
         .map(byte => byte.toString(16).padStart(2, "0"))
         .join("")
     } else {
-      signature = Buffer.from(await wallet.sign_message(encoded)).toString(
-        "hex",
-      )
+      signature = Buffer.from(await wallet.signMessage(encoded)).toString("hex")
     }
     let param = mergeLeft(extra, {
       function: func,
