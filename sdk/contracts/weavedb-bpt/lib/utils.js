@@ -1439,12 +1439,13 @@ const auth = async (
       err(`The wrong signature`)
     }
   } else if (type === "rsa-pss") {
-    const dataToVerify = new Uint8Array(JSON.stringify(_data))
+    const enc = new TextEncoder()
+    const encoded = enc.encode(JSON.stringify(_data))
     const binarySignature = new Uint8Array(signature.length / 2)
     for (let i = 0; i < signature.length; i += 2) {
       binarySignature[i / 2] = parseInt(signature.substr(i, 2), 16)
     }
-    const hash = await crypto.subtle.digest("SHA-256", dataToVerify)
+    const hash = await crypto.subtle.digest("SHA-256", encoded)
     const publicJWK = { e: "AQAB", ext: true, kty: "RSA", n: pubKey }
     const cryptoKey = await crypto.subtle.importKey(
       "jwk",
