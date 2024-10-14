@@ -1,10 +1,10 @@
 {
-  "version": "0.44.2",
+  "version": "0.45.0",
   "canEvolve": true,
   "evolve": null,
   "secure": true,
   "auth": {
-    "algorithms": ["secp256k1", "secp256k1-2", "ed25519", "rsa256"],
+    "algorithms": ["secp256k1", "secp256k1-2", "ed25519", "rsa256", "rsa-pss"],
     "name": "weavedb",
     "version": "1"
   },

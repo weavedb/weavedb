@@ -15,6 +15,16 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.45.0-beta (October 14, 2024)
+
+#### Source Transaction Id
+
+[WCu8xsBJa8E7dtdJbQQTlI09jODTgfJ9tBZwHf_wXqU](https://sonar.warp.cc/#/app/source/WCu8xsBJa8E7dtdJbQQTlI09jODTgfJ9tBZwHf_wXqU)
+
+#### Added Features
+
+- RSA-PSS signature with Arweave Wallet
+
 ### v0.44.2-beta (June 2, 2024)
 
 #### Source Transaction Id

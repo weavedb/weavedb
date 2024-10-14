@@ -49,7 +49,6 @@ let Arweave = require("arweave")
 Arweave = isNil(Arweave.default) ? Arweave : Arweave.default
 const Base = require("weavedb-base")
 const { handle: handle_bpt } = require("weavedb-contracts/weavedb-bpt/contract")
-
 const _on = async (state, input, handle) => {
   const block = input.interaction.block
   if (!isNil(state)) {
