@@ -1041,6 +1041,15 @@ const tests = {
     return
   },
 
+  "should add & get with Arweave wallet with rsa-pss": async ({ db }) => {
+    const arweave_wallet = await db.arweave.wallets.generate()
+    const data = { name: "Bob", age: 20 }
+    const tx = (await db.add(data, "ppl", { ar2: arweave_wallet })).originalTxId
+    const addr = await db.arweave.wallets.jwkToAddress(arweave_wallet)
+    expect((await db.cget("ppl", (await db.getIds(tx))[0])).setter).to.eql(addr)
+    return
+  },
+
   "should link temporarily generated address with internet identity": async ({
     db,
   }) => {
@@ -1537,7 +1546,13 @@ const tests = {
     )
     expect(await db.getInfo()).to.eql({
       auth: {
-        algorithms: ["secp256k1", "secp256k1-2", "ed25519", "rsa256"],
+        algorithms: [
+          "secp256k1",
+          "secp256k1-2",
+          "ed25519",
+          "rsa256",
+          "rsa-pss",
+        ],
         name: "weavedb",
         version: "1",
       },

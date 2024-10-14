@@ -1379,6 +1379,7 @@ const auth = async (
         "secp256k1-2",
         "ed25519",
         "rsa256",
+        "rsa-pss",
       ],
     )
   ) {
@@ -1431,6 +1432,32 @@ const auth = async (
         signer: caller,
       },
       SmartWeave,
+    )
+    if (isValid) {
+      signer = caller
+    } else {
+      err(`The wrong signature`)
+    }
+  } else if (type === "rsa-pss") {
+    const dataToVerify = new Uint8Array(JSON.stringify(_data))
+    const binarySignature = new Uint8Array(signature.length / 2)
+    for (let i = 0; i < signature.length; i += 2) {
+      binarySignature[i / 2] = parseInt(signature.substr(i, 2), 16)
+    }
+    const hash = await crypto.subtle.digest("SHA-256", dataToVerify)
+    const publicJWK = { e: "AQAB", ext: true, kty: "RSA", n: pubKey }
+    const cryptoKey = await crypto.subtle.importKey(
+      "jwk",
+      publicJWK,
+      { name: "RSA-PSS", hash: "SHA-256" },
+      false,
+      ["verify"],
+    )
+    const isValid = await crypto.subtle.verify(
+      { name: "RSA-PSS", saltLength: 32 },
+      cryptoKey,
+      binarySignature,
+      hash,
     )
     if (isValid) {
       signer = caller

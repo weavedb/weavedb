@@ -50,7 +50,13 @@ class OffChain extends Base {
       evolve: null,
       secure,
       auth: {
-        algorithms: ["secp256k1", "secp256k1-2", "ed25519", "rsa256"],
+        algorithms: [
+          "secp256k1",
+          "secp256k1-2",
+          "ed25519",
+          "rsa256",
+          "rsa-pss",
+        ],
         name: "weavedb",
         version: "1",
       },
@@ -98,7 +104,7 @@ class OffChain extends Base {
             ? clone(kvs[key])
             : typeof this.cache === "object"
               ? await this.cache.get(key, this)
-              : this.kvs[key] ?? null,
+              : (this.kvs[key] ?? null),
         put: async (key, val) => (kvs[key] = val),
       },
       contract: { id: this.contractTxId },

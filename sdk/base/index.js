@@ -466,6 +466,7 @@ class Base {
       bundle,
       ii,
       ar,
+      ar2,
       intmax,
       extra,
       relay,
@@ -487,6 +488,7 @@ class Base {
         bundle,
         ii,
         ar,
+        ar2,
         intmax,
         extra,
         multisigs,
@@ -497,7 +499,10 @@ class Base {
       } = opt)
     }
     if (!isNil(linkedAccount)) wallet = linkedAccount
-    if (all(isNil)([wallet, ii, intmax, ar]) && !isNil(this.arweave_wallet)) {
+    if (
+      all(isNil)([wallet, ii, intmax, ar, ar2]) &&
+      !isNil(this.arweave_wallet)
+    ) {
       ar = this.arweave_wallet
     }
     const params = [
@@ -536,11 +541,15 @@ class Base {
       isNil(intmax) &&
       isNil(ii) &&
       isNil(ar) &&
+      isNil(ar2) &&
       isNil(wallet) &&
       isNil(privateKey) &&
       !isNil(this.defaultWallet)
     ) {
       switch (this.defaultWallet.type) {
+        case "ar2":
+          ar2 = this.defaultWallet.wallet
+          break
         case "ar":
           ar = this.defaultWallet.wallet
           break
@@ -559,24 +568,26 @@ class Base {
       ? await this.writeWithIntmax(intmax, ...params)
       : !isNil(ii)
         ? await this.writeWithII(ii, ...params)
-        : !isNil(ar)
-          ? await this.writeWithAR(ar, ...params)
-          : await this.writeWithEVM(
-              wallet,
-              func,
-              query,
-              nonce,
-              privateKey,
-              dryWrite,
-              bundle,
-              extra,
-              relay,
-              jobID,
-              multisigs,
-              onDryWrite,
-              data,
-              parallel,
-            )
+        : !isNil(ar2)
+          ? await this.writeWithAR2(ar2, ...params)
+          : !isNil(ar)
+            ? await this.writeWithAR(ar, ...params)
+            : await this.writeWithEVM(
+                wallet,
+                func,
+                query,
+                nonce,
+                privateKey,
+                dryWrite,
+                bundle,
+                extra,
+                relay,
+                jobID,
+                multisigs,
+                onDryWrite,
+                data,
+                parallel,
+              )
   }
 
   setDefaultWallet(wallet, type = "evm") {
@@ -1179,6 +1190,100 @@ class Base {
       caller: addr,
       pubKey,
       type: "rsa256",
+    })
+    if (!isNil(__data__)) param.data = __data__
+    if (!isNil(jobID)) param.jobID = jobID
+    if (!isNil(multisigs)) param.multisigs = multisigs
+    return await this.write(
+      func,
+      param,
+      dryWrite,
+      bundle,
+      relay,
+      onDryWrite,
+      parallel,
+    )
+  }
+
+  async writeWithAR2(
+    ar,
+    func,
+    query,
+    nonce,
+    dryWrite = true,
+    bundle,
+    extra,
+    relay,
+    jobID,
+    multisigs,
+    onDryWrite,
+    __data__,
+    parallel,
+  ) {
+    const wallet = is(Object, ar) && ar.walletName === "ArConnect" ? ar : null
+    let addr = null
+    let pubKey = null
+    if (!isNil(wallet)) {
+      await wallet.connect(["SIGNATURE", "ACCESS_PUBLIC_KEY", "ACCESS_ADDRESS"])
+      addr = await wallet.getActiveAddress()
+      pubKey = await wallet.getActivePublicKey()
+    } else {
+      addr = await this.arweave.wallets.jwkToAddress(ar)
+      pubKey = ar.n
+    }
+    const isaddr = !isNil(addr)
+    nonce ||= await this.getNonce(addr)
+    bundle ||= this.network === "mainnet"
+    const message = {
+      nonce,
+      query: JSON.stringify({ func, query }),
+    }
+    const data = {
+      types: {
+        EIP712Domain,
+        Query: [
+          { name: "query", type: "string" },
+          { name: "nonce", type: "uint256" },
+        ],
+      },
+      domain: this.domain,
+      primaryType: "Query",
+      message,
+    }
+    const enc = new TextEncoder()
+    const encoded = enc.encode(JSON.stringify(data))
+    let signature = null
+    if (isNil(wallet)) {
+      const dataToSign = new Uint8Array(JSON.stringify(data))
+      const hash = await crypto.subtle.digest("SHA-256", dataToSign)
+      const cryptoKey = await crypto.subtle.importKey(
+        "jwk",
+        ar,
+        { name: "RSA-PSS", hash: "SHA-256" },
+        false,
+        ["sign"],
+      )
+      const signature2 = await crypto.subtle.sign(
+        { name: "RSA-PSS", saltLength: 32 },
+        cryptoKey,
+        hash,
+      )
+      signature = Array.from(new Uint8Array(signature2))
+        .map(byte => byte.toString(16).padStart(2, "0"))
+        .join("")
+    } else {
+      signature = Buffer.from(await wallet.sign_message(encoded)).toString(
+        "hex",
+      )
+    }
+    let param = mergeLeft(extra, {
+      function: func,
+      query,
+      signature,
+      nonce,
+      caller: addr,
+      pubKey,
+      type: "rsa-pss",
     })
     if (!isNil(__data__)) param.data = __data__
     if (!isNil(jobID)) param.jobID = jobID

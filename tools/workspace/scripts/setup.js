@@ -65,7 +65,7 @@ const main = async key => {
   })
   await setup({
     db,
-    conf: settings(plugin),
+    conf: settings,
     privateKey: accounts.evm[owner]?.privateKey,
     relayer: accounts.evm[relayer]?.address?.toLowerCase() ?? null,
   })
