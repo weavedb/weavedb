@@ -44,66 +44,79 @@ await db.getNonce("address")
 
 The metadata returned with `cget` functions as a cursor for pagination.
 
-Get a doc
+#### Get a doc
 
 ```js
-await db.get("collection_name", "doc_id")
-await db.cget("collection_name", "doc_id")
+await db.get(collection_name, doc_id)
+await db.cget(collection_name, doc_id)
 ```
 
-Get a collection
+#### Get a collection
 
 ```js
-await db.get("collection_name")
-await db.cget("collection_name")
+await db.get(collection_name)
+await db.cget(collection_name)
 ```
+
+#### Get a sub collection
 
 Arbitrary length of document nesting is possible.
 
 ```js
-await db.get("collection_name", "doc_id", "sub_collection_name_1", "sub_doc_id_1", "sub_collection_name_2", "sub_doc_id_2")
+await db.get(collection_name, doc_id, sub_collection_name_1, sub_doc_id_1, sub_collection_name_2)
 ```
 
-Limit the number of docs
+#### Limit
 
 ```js
-await db.get("collection_name", 5)
+await db.get(collection_name, 5)
 ```
 
-Sort
+#### Sort
 
 ```js
-await db.get("collection_name", [ "age" ])
-await db.get("collection_name", [ "age", "desc" ])
-await db.get("collection_name", [ "age", "desc" ], [ "name", "asc" ])
+await db.get(collection_name, [ "age" ])
+await db.get(collection_name, [ "age", "desc" ])
+await db.get(collection_name, [ "age", "desc" ], [ "name", "asc" ])
 ```
 
-Where
+#### Where
 
 ```js
-await db.get("collection_name", ["age"], [ "age", ">", 20 ])
+await db.get(collection_name, ["age"], [ "age", ">", 20 ])
 ```
 
 `==` `>` `>=` `<` `<=` `!=` `in` `not-in` `array-contains` `array-contains-any` are supported.
+
+:::info
+ Dot notation can be used to specify nested object fields. (e.g. `[ "favorites.food", "==", "apple" ]`)
+ 
+ Note that dot notation only works with `where` for now.
+:::
 
 :::caution deprecated
 `=` is deprecated and replaced by `==` at `v0.23.0`. You can still use it for backward compatibility.
 :::
 
-Skip
+#### Skip
 
 ```js
-await db.get("collection_name", [ "age" ], [ "startAfter", 20 ], [ "endAt", 60 ])
-await db.get("collection_name", [ "age" ], [ "name", "desc" ], [ "startAfter", 20, "Bob" ])
+await db.get(collection_name, [ "age" ], [ "startAfter", 20 ], [ "endAt", 60 ])
+await db.get(collection_name, [ "age" ], [ "name", "desc" ], [ "startAfter", 20, "Bob" ])
 ```
 
 `startAt` `startAfter` `endAt` `endAfter` are supported.
 
-Pagination
+#### Pagination
 
 ```js
-const docs_page1 = db.cget("collection_name", [ "age" ])
-const docs_page2 = db.cget("collection_name", [ "age" ], ["startAfter", docs_page1[docs_page1.length - 1]])
+const docs_page1 = db.cget(collection_name, [ "age" ])
+
+const docs_page2 = db.cget(
+  collection_name,
+  ["age"],
+  ["startAfter", docs_page1[docs_page1.length - 1]]
+)
 ```
 
 ### on / con
@@ -113,7 +126,7 @@ You can subscribe to state changes with `on` and `con`. They are the counterpart
 These only work with `weavedb-sdk-node` for now.
 
 ```js
-const unsubscribe = await on.("collection_name", "doc_id", (data) => {
+const unsubscribe = await on.(collection_name, doc_id, (data) => {
   console.log(data)
   unsubscribe()
 })
@@ -126,8 +139,8 @@ They are the same as `get` / `cget`, but get values from the cached state, which
 These only work with `weavedb-sdk-node` for now.
 
 ```js
-await db.getCache("collection_name", "doc_id")
-await db.cgetCache("collection_name", "doc_id")
+await db.getCache(collection_name, doc_id)
+await db.cgetCache(collection_name, doc_id)
 ```
 
 ### listCollections
@@ -136,7 +149,7 @@ List collection names
 
 ```js
 await db.listCollections() // list root collections
-await db.listCollections("collection_name", "doc_id") // list sub collections
+await db.listCollections(collection_name, doc_id) // list sub collections
 ```
 
 ### nocache
@@ -148,8 +161,8 @@ gRPC nodes use `getCache` / `cgetCache` to get data by default, but the up-to-da
 You would use `nocache` after updating data to get the latest values.
 
 ```js
-await db.set({ field : "value"}, "collection_name", "doc_id")
-await db.get("collection_name", "doc_id", true) // without true, the data might be old
+await db.set({ field : "value"}, collection_name, doc_id)
+await db.get(collection_name, doc_id, true) // without true, the data might be old
 ```
 
 ### add
@@ -157,7 +170,7 @@ await db.get("collection_name", "doc_id", true) // without true, the data might 
 Add a doc
 
 ```js
-await db.add({ "age": 20, "name": "Bob" }, "collection_name")
+await db.add({ age: 20, name: "Bob" }, collection_name)
 ```
 The doc id will be randomly yet deterministically assigned.
 
@@ -166,7 +179,7 @@ The doc id will be randomly yet deterministically assigned.
 To get the last added doc id, use `getIds`.
 
 ```js
-const tx = await db.add({ "age": 20, "name": "Bob" }, "collection_name")
+const tx = await db.add({ age: 20, name: "Bob" }, collection_name)
 const doc_id = (await db.getIds(tx))[0]
 ```
 
@@ -175,7 +188,7 @@ const doc_id = (await db.getIds(tx))[0]
 Set a doc
 
 ```js
-await db.set({ "age": 20, "name": "Bob" }, "collection_name", "doc_id")
+await db.set({ age: 20, name: "Bob" }, collection_name, doc_id)
 ```
 
 ### upsert
@@ -183,7 +196,7 @@ await db.set({ "age": 20, "name": "Bob" }, "collection_name", "doc_id")
 Upsert a doc
 
 ```js
-await db.upsert({ "age": 20, "name": "Bob" }, "collection_name", "doc_id")
+await db.upsert({ age: 20, name: "Bob" }, collection_name, doc_id)
 ```
 
 ### update
@@ -191,41 +204,103 @@ await db.upsert({ "age": 20, "name": "Bob" }, "collection_name", "doc_id")
 Update a doc
 
 ```js
-await db.update({ "age": 25 }, "collection_name", "doc_id")
+await db.update({ age: 25 }, collection_name, doc_id)
 ```
+
+#### del()
+
 Delete a field
 
 ```js
-await db.update({ "age": db.del() }, "collection_name", "doc_id")
+await db.update({ age: db.del() }, collection_name, doc_id)
 ```
+
+#### inc()
 
 Increase/Decrease a field
 
 ```js
-await db.update({ "age": db.inc(5) }, "collection_name", "doc_id")
-await db.update({ "age": db.inc(-5) }, "collection_name", "doc_id")
+await db.update({ age: db.inc(5) }, collection_name, doc_id)
+await db.update({ age: db.inc(-5) }, collection_name, doc_id)
 ```
+
+#### union()
 
 Array union
 
 ```js
-await db.update({ "chars": db.union([ "a", "b", "c", "d" ]) }, "collection_name", "doc_id")
+await db.update({ chars: db.union([ "a", "b", "c", "d" ]) }, collection_name, doc_id)
 ```
+
+#### remove()
 
 Array remove
 
 ```js
-await db.update({ "chars": db.union([ "b", "c" ]) }, "collection_name", "doc_id")
+await db.update({ chars: db.remove([ "b", "c" ]) }, collection_name, doc_id)
 ```
+
+#### ts()
 
 Set block timestamp
 ```js
-await db.update({ "date": db.ts() }, "collection_name", "doc_id")
+await db.update({ date: db.ts() }, collection_name, doc_id)
 ```
+
+#### signer()
 
 Set signer Ethereum address
 ```js
-await db.update({ "address": db.signer() }, "collection_name", "doc_id")
+await db.update({ address: db.signer() }, collection_name, doc_id)
+```
+
+#### data()
+
+Replace a field with relayer's extra data
+```js
+// icon field will be automatically replaced with `image.png` from the relayer
+const query = await db.sign(
+  "update",
+  { icon: db.data("extra_data_key") },
+  collection_name,
+  doc_id,
+  { jobID: "jobID", evm: signer_wallet },
+)
+
+await db.relay("jobID", query, { extra_data_key: "image.png" }, { evm: relayer_wallet })
+```
+
+#### zkp()
+
+Verify Zero Knowledge Proof with [PolygonID](https://polygonid.com/)
+
+```js
+await db.update({ userID: db.zkp(proof, pub_signals) }, collection_name, doc_id)
+
+/*
+userID will be replaced with the following
+you should modify it further in access control rules
+
+{
+  valid,
+  pub_signals: {
+    value,
+    merklizedn,
+    userID,
+    issuerAuthState,
+    requestID,
+    issuerID,
+    isRevocationChecked,
+    issuerClaimNonRevState,
+    timestamp,
+    claimSchema,
+    claimPathNotExists,
+    claimPathKey,
+    slotIndex,
+    operator,
+  },
+}
+*/
 ```
 
 ### delete
@@ -233,7 +308,7 @@ await db.update({ "address": db.signer() }, "collection_name", "doc_id")
 Delete a doc
 
 ```js
-await db.delete("collection_name", "doc_id")
+await db.delete(collection_name, doc_id)
 ```
 
 ### batch
@@ -262,7 +337,7 @@ await db.batch([
 Sign a query without sending a transaction
 
 ```js
-await db.sign("set", {name: "Bob", age: 20}, "collection_name", "doc_id")
+await db.sign("set", {name: "Bob", age: 20}, collection_name, doc_id)
 ```
 
 ### relay
@@ -270,7 +345,7 @@ await db.sign("set", {name: "Bob", age: 20}, "collection_name", "doc_id")
 Relay a query
 
 ```js
-const param = await db.sign("set", {name: "Bob"}, "collection_name", "doc_id")
+const param = await db.sign("set", {name: "Bob"}, collection_name, doc_id)
 const extra = { age: 20 }
 await db.relay("jobID", param, extra, {evm: relayer_wallet})
 ```
@@ -284,7 +359,23 @@ const query1 = await db.sign("set", {name: "Bob"}, "people", "Bob", {evm: wallet
 const query2 = await db.sign("set", {name: "Alice"}, "people", "Alice", {ii: wallet2})
 const query3 = await db.sign("set", {name: "Beth"}, "people", "Beth", {ar: wallet3})
 
-await db.bundle([query1, query2, query3], {ar: bundler_wallet})
+// bundle query needs no signer wallet
+await db.bundle([query1, query2, query3])
 ```
+
+### setBundlers / getBundlers
+
+Restrict bundlers, if bundlers are set, no one else but bundlers can write to the DB
+
+```js
+await db.setBundlers([ BUNDLER_ADDRESS_1, BUNDLER_ADDRESS_2 ], {evm : admin_wallet})
+// now only bundle queries can be accepted
+
+await db.getBundlers()
+// return bundlers, if empty, anyone can execute bundle queries
+```
+:::info
+Restricting bundlers is useful to make queries consistent with low latencies via a rollup node.
+:::
 
 

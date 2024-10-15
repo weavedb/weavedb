@@ -197,14 +197,16 @@ go()
 
 #### Mint-Grant-Burn PKP
 
-Now, you need to manually call the `mintGrantAndBurnNext` function at [the PKPNFT contract](https://mumbai.polygonscan.com/token/0x86062b7a01b8b2e22619dbe0c15cbe3f7ebd0e92) on Mumbai Polygon testnet.
+Now, you need to manually call the `mintGrantAndBurnNext` function at [the PKPNFT contract](https://lit-protocol.calderaexplorer.xyz/address/0x8F75a53F65e31DD0D2e40d0827becAaE2299D111) on Chronicle Lit testnet.
 
-This function mints a PKP and assigns it to an ipfsCid then burn it in a single transaction, which is [the only way to verify the PKP signatures come from only single Lit Action](https://developer.litprotocol.com/coreconcepts/litactionsandpkps/intro/#how-can-i-know-that-a-given-pkp-wasnt-used-to-sign-a-bunch-of-stuff-before-it-was-granted-approval-to-use-a-lit-action-what-is-mintgrantburn). If PKPNFT is burnt after being assigned to an ipfsCid, no one else but the code at the ipfsCid can sign with the PKP.
+This function mints a PKP and assigns it to an ipfsCid then burn it in a single transaction, which is [the only way to verify the PKP signatures come from only single Lit Action](https://developer.litprotocol.com/pkp/pkpsAndActions#using-mintgrantburn). If PKPNFT is burnt after being assigned to an ipfsCid, no one else but the code at the ipfsCid can sign with the PKP.
+
+Get some testnet LIT token from [the official Chronicle faucet](https://faucet.litprotocol.com/).
 
 ```js
 const bs58 = require("bs58")
 const LitJsSdk = require("lit-js-sdk/build/index.node.js")
-const { providers, Wallet, Contract, utils } = require("ethers")
+const { JsonRpcProvider, Wallet, Contract, utils } = require("ethers")
 const privatekey = "xyz..." // this could be any account since the NFT will be immediately burnt
 
 const abi = [
@@ -240,19 +242,19 @@ function getBytesFromMultihash(multihash) {
 }
 
 const go = async () => {
-  const provider = new providers.JsonRpcProvider(
-    "https://polygon-mumbai.infura.io/v3/yourinfurakey"
+  const provider = new JsonRpcProvider(
+    "https://chain-rpc.litprotocol.com/http"
   )
   const wallet = new Wallet(key, provider)
   const contract = new Contract(
-    "0x86062B7a01B8b2e22619dBE0C15cbe3F7EBd0E92",
+    "0x8F75a53F65e31DD0D2e40d0827becAaE2299D111",
     abi,
     wallet
   )
   const tx = await contract.mintGrantAndBurnNext(
     2,
     getBytesFromMultihash("YourIpfsCid"),
-    { value: "100000000000000" }
+    { value: "1" }
   )
   console.log(await tx.wait())
 }
@@ -260,7 +262,7 @@ const go = async () => {
 go()
 ```
 
-Go check the latest transaction at [the PKPNFT contract](https://mumbai.polygonscan.com/token/0x86062b7a01b8b2e22619dbe0c15cbe3f7ebd0e92), and get the `tokenID` which has just been burnt.
+Go check the latest transaction at [the PKPNFT contract](https://lit-protocol.calderaexplorer.xyz/address/0x8F75a53F65e31DD0D2e40d0827becAaE2299D111), and get the `tokenID` which has just been burnt.
 
 Now go to the PKP page on the Lit Explorer [https://explorer.litprotocol.com/pkps/[tokenID]](https://explorer.litprotocol.com/pkps/tokenID), and get the `PKP Public Key` and the `ETH Address`.
 
@@ -271,7 +273,7 @@ Even though, the PKP doesn't require your `authSig` to sign, you still need to p
 
 ```js
 const LitJsSdk = require("lit-js-sdk")
-const authSig = await LitJsSdk.checkAndSignAuthMessage({ chain: "mumbai" });
+const authSig = await LitJsSdk.checkAndSignAuthMessage({ chain: "polygon" });
 ```
 
 Relayers can be a simple serverless function. The following is a serverless function using the NestJS `pages/api` directory.
@@ -353,8 +355,62 @@ const rules = {
 await db.setRules(rules, "ppl") // only the contract owners can set rules
 ```
 
-## EVM Oracles
+## Internal Writes
 
-Using the relayer mechanism, you can set up an oracle to get any data from the Ethereum blockchain.
+You can let other Warp contracts write to your WeaveDB instance. In this case, the other contract works as a relayer and you can control the behavior through access control rules.
 
-Coming Soon...
+For example, let's set up a simple contract to write to a WeaveDB contract. Deploy it and get the `contractTxId`.
+
+```js
+export async function handle(state, action) {
+  await SmartWeave.contracts.write(action.input.to, {
+    function: "relay",
+    query: [action.input.params.jobID, action.input.params, { height: 180 }],
+  })
+  return { state }
+}
+```
+Then, set up a relayer job named `add-height` to allow internal writes. `relayerContractTxId` is the intermediary contract writing to your WeaveDB contract (the one above). Contracts cannot sign to pass the relayer signature validation, to circumvent this, set `internalWrites` to `true`.
+
+```js
+const jobID = "add-height"
+const job = {
+  relayers: [relayerContractTxId],
+  internalWrites: true
+}
+await db.addRelayerJob(jobID, job)
+```
+
+You can also set up access control rules to add `height` to the uploaded doc. Note this is overly simplified.
+
+```js
+const rules = {
+  "let create": {
+    "resource.newData.height": { var: "request.auth.extra.height" },
+  },
+  "allow create": true,
+}
+await db.setRules(rules, "ppl")
+```
+
+Now, you can try setting a new person through the outer contract.
+
+```js
+const { WarpFactory } = require("warp-contracts")
+const warp = WarpFactory.forMainnet()
+const contract = warp
+  .contract(relayerContractTxId)
+  .connect(any_arweave_wallet)
+  .setEvaluationOptions({ internalWrites: true, allowBigInt: true })
+  
+const data = { name: "Bob", age: 20 }
+const params = await db.sign("set", data, "ppl", "Bob", { jobID: "add-height" })
+await contract.bundleInteraction({ function: "relay", to: contractTxId, params })
+```
+
+Finally, you get Bob with `height` field added.
+
+```js
+await db.get("ppl", "Bob")
+// { name: "Bob", age: 20, height: 180 }
+```

@@ -107,7 +107,7 @@ await db.setRules(rules, "tasks")
 
 To set up the schemas and the rules, you can simply run the pre-defined script in the repo.
 
-Replace `CONTRACT_TX_ID` with the `contractTxId` returned when deplying the WeaveDB contract.
+Replace `CONTRACT_TX_ID` with the `contractTxId` returned when deploying the WeaveDB contract.
 
 ```bash
 node scripts/todo-setup.js mainnet CONTRACT_TX_ID
@@ -166,7 +166,7 @@ For simplicity, we will write everything in one file at `/page/index.js`.
 
 ### Install Dependencies
 
-Open a new terminal and move to the root directry to continue depelopment.
+Open a new terminal and move to the root directory to continue development.
 
 We use these minimum dependencies.
 
@@ -233,7 +233,7 @@ export default function App() {
     db = new SDK({
       contractTxId
     })
-	await db.initializeWithoutWallet()
+	await db.init()
     setInitDB(true)
   }
 ```
@@ -598,7 +598,7 @@ export default function App() {
     db = new SDK({
       contractTxId
     })
-	await db.initializeWithoutWallet()
+	await db.init()
     setInitDB(true)
   }
 

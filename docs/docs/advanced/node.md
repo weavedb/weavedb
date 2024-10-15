@@ -1,7 +1,13 @@
 ---
-sidebar_position: 1
+sidebar_position: 3
 ---
 # gRPC Node
+
+:::danger
+gRPC node is not up to date with the latest contract versions. Please try the [local SDK](/docs/sdk/setup) for now.  
+We are currently developing a managed node service so you won't need to set up your own node.  
+The managed node service will be decentralized in the future.
+:::
 
 SmartWeave moves computations off chain onto the client-side for unlimited scalability. But this is not all good news. Even with the lazy execution model, end users need to cache the transactions and compute the current contract states as they need. This makes queries very slow at times.
 
@@ -226,7 +232,7 @@ module.exports = {
 
 ##### 3. Install Docker and Docker Compose according to your environment
 
-##### 4. Run Docker Conompose
+##### 4. Run Docker Compose
 
 ```bash
 yarn run-node
@@ -270,17 +276,24 @@ export default function Home() {
 
 This is how you would deploy a WeaveDB node using Compute Engine on Google Cloud Platform.
 
-##### 1. Go to [Google Cloud Console for Compute Engine](https://console.cloud.google.com/compute/instances) and create a new instance.
+##### 1. Go to [VPC network > Firewall](https://console.cloud.google.com/net-security/firewall-manager/firewall-policies/list) and create a rule for grpc with.
 
-- Change the Boot Disk to Ubuntu 18.04 LTS, x86/64, amd64 bionic image 
+- Taret tags: `grpc`
+- Source filters: `0.0.0.0/0`
+- Protocols and ports: `tcp:8080`
+
+##### 2. Go to [Google Cloud Console for Compute Engine](https://console.cloud.google.com/compute/instances) and create a new instance.
+
+- Change the Boot Disk to Ubuntu 20.04 LTS 
 - Allow HTTP traffic
 - Allow HTTPS traffic
+- Assign the `grpc` firewall rule
 
-##### 2. Go to [VPC network > IP addresses](https://console.cloud.google.com/networking/addresses/list) and RESERVE the external IP address assigned to the instance.
+##### 3. Go to [VPC network > IP addresses](https://console.cloud.google.com/networking/addresses/list) and RESERVE the external IP address assigned to the instance.
 
-##### 3. Go to your name server provider such as [Cloudflare](https://cloudflare.com), and create an A record directed to the IP address of the instance in the DNS records of your domain.
+##### 4. Go to your name server provider such as [Cloudflare](https://cloudflare.com), and create an A record directed to the IP address of the instance in the DNS records of your domain.
 
-##### 4. SSH into the instance
+##### 5. SSH into the instance
 
 - Install Docker
 
