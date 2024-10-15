@@ -64,6 +64,31 @@ Then convert it to `[["name", "Bob"], ["age", 21]]` with `toPairs`.
 
 Then `map` the pairs and `apply` each pair to `let`, which results in defining two global variables `name` and `age` with respective values.
 
+### Conditional Statements
+
+`if` can create a conditional statement. If the second item evaluates `true` it executes the third item.
+
+```js
+["if", ["identity", true], ["update", [{age: 30}, "people", "Bob"]]]
+```
+
+Likewise, `ifelse` can have the forth item to execute in case the second item evaluates `false`.
+
+```js
+[
+  "ifelse",
+  ["identity", true], // condition
+  ["update", [{age: 30}, "people", "Bob"]], // execute if true
+  ["update", [{age: 40}, "people", "Bob"]] // execute if false
+]
+```
+
+`break` will break out of the current cron execution. You can combine it with `if` in practice.
+
+```js
+["if", ["identity", true], ["break"]]
+```
+
 ## Get Crons
 
 ```js
@@ -74,6 +99,14 @@ await db.getCrons()
 
 ```js
 await db.removeCrons("count-crons")
+```
+
+## Tick
+
+Cron executions are recorded to contract when someone executes a write query, which means if no one executes anything for a long time, cron jobs can pile up and slow down every read query. In such cases, you could execute `tick()` query, which does nothing but record cron executions.
+
+```js
+await db.tick()
 ```
 
 ## JSON-based Functional Programming

@@ -1,5 +1,5 @@
 ---
-sidebar_position: 11
+sidebar_position: 12
 ---
 # Version
 
@@ -15,6 +15,560 @@ await db.getVersion()
 
 ## Change Logs
 
+### v0.45.0-beta (October 14, 2024)
+
+#### Source Transaction Id
+
+[EFzzFroXT7rY6alS0XFZAt7jUXhkPgeMOITbj5IqkFg_wXqU](https://sonar.warp.cc/#/app/source/EFzzFroXT7rY6alS0XFZAt7jUXhkPgeMOITbj5IqkFg)
+
+#### Added Features
+
+- RSA-PSS signature with Arweave Wallet
+
+### v0.44.2-beta (June 2, 2024)
+
+#### Source Transaction Id
+
+[Rs3A_X4dpTGsM5m0IoK-CHrq-D5NlRUYXHXMT_ZE8fQ](https://sonar.warp.cc/#/app/source/Rs3A_X4dpTGsM5m0IoK-CHrq-D5NlRUYXHXMT_ZE8fQ)
+
+#### Added Features
+
+- fix circular error
+
+### v0.44.1-beta (June 1, 2024)
+
+#### Source Transaction Id
+
+[jmXS3lR9XrE9VJ_dtf_arICUmWTp7ZCkNQrKAIpJCMU](https://sonar.warp.cc/#/app/source/jmXS3lR9XrE9VJ_dtf_arICUmWTp7ZCkNQrKAIpJCMU)
+
+#### Added Features
+
+- add `addAddressLink` & `removeAddressLink` to `bundle`
+
+### v0.44.0-beta (May 31, 2024)
+
+#### Source Transaction Id
+
+[6aGRFlJnRC3heWXB1K2OFwSfHQgk6b9p9aHzNlBVTcg](https://sonar.warp.cc/#/app/source/6aGRFlJnRC3heWXB1K2OFwSfHQgk6b9p9aHzNlBVTcg)
+
+#### Added Features
+
+- `hash()`
+- `toBase64()`
+- extract `JSONLogic` to a separate contract
+
+### v0.43.2-beta (May 27, 2024)
+
+#### Source Transaction Id
+
+[LO8BaKIsFyOtkbbuQ03516eBXp1ycRkuKavsCOEcCD8](https://sonar.warp.cc/#/app/source/LO8BaKIsFyOtkbbuQ03516eBXp1ycRkuKavsCOEcCD8)
+
+#### Added Features
+
+- use URL safe base64 for auto-generated IDs
+
+### v0.43.1-beta (May 27, 2024)
+
+#### Source Transaction Id
+
+[0b0iRjS2ez-9xhWo-RKR4eLIjR2333l-JdlJSleRzbY](https://sonar.warp.cc/#/app/source/0b0iRjS2ez-9xhWo-RKR4eLIjR2333l-JdlJSleRzbY)
+
+#### Added Features
+
+- remove FPJSON1.0 with JSONLogic
+- `max_doc_size`
+
+### v0.43.0-beta (May 27, 2024)
+
+#### Source Transaction Id
+
+[VbbJaPOhfC_muOtWmAaLMErgNiR5nuA8AskkwAG5i-8](https://sonar.warp.cc/#/app/source/VbbJaPOhfC_muOtWmAaLMErgNiR5nuA8AskkwAG5i-8)
+
+#### Added Features
+
+- assign auto-increment collection ID
+- record doc count
+- `getCollection`
+- `max_doc_id_length`
+- `max_collection_id_length`
+
+### v0.42.3-beta (May 26, 2024)
+
+#### Source Transaction Id
+
+[-zlBgW-aO44bxbfOdCqCGOvscDutTmGHIuXD9ZxVja8](https://sonar.warp.cc/#/app/source/-zlBgW-aO44bxbfOdCqCGOvscDutTmGHIuXD9ZxVja8)
+
+#### Added Features
+
+- use base64 format for auto-generated docIDs
+
+### v0.42.2-beta (May 24, 2024)
+
+#### Source Transaction Id
+
+[eeltHRBzmfGIBx70plCuhoiJwLKwC_cSVGzZoDrCKnk](https://sonar.warp.cc/#/app/source/eeltHRBzmfGIBx70plCuhoiJwLKwC_cSVGzZoDrCKnk)
+
+#### Added Features
+
+- rewrite transaction id & timestamp on bundle queries
+
+### v0.42.1-beta (May 21, 2024)
+
+#### Source Transaction Id
+
+[upbiZGX-qq2SiLOD9E8odSkvd91E0FCPhlpcqCrEt78](https://sonar.warp.cc/#/app/source/upbiZGX-qq2SiLOD9E8odSkvd91E0FCPhlpcqCrEt78)
+
+#### Added Features
+
+- remove date from bridgeToken
+
+### v0.42.0-beta (May 21, 2024)
+
+#### Source Transaction Id
+
+[NbEFECH4EiS3mXtDZnZNPvmt3xTIH057RUhVi74SM5c](https://sonar.warp.cc/#/app/source/NbEFECH4EiS3mXtDZnZNPvmt3xTIH057RUhVi74SM5c)
+
+#### Added Features
+
+- bridgeToken
+
+### v0.41.0-beta (May 19, 2024)
+
+#### Source Transaction Id
+
+[307ur2pssGdt7KkMpu2RLha33K5qlskQDYGfJPCKUuI](https://sonar.warp.cc/#/app/source/307ur2pssGdt7KkMpu2RLha33K5qlskQDYGfJPCKUuI)
+
+#### Added Features
+
+- L1/L2 tokens (creditNotice, lockTokens, withdrawToken)
+- FPJSON token commands (mint, transfer, withdraw)
+- fix triggers
+
+### v0.40.0-beta (May 6, 2024)
+
+#### Source Transaction Id
+
+[E14TapQNshyUIyN_DNhI0-YdUs8OP4-KXSgZnSxnROM](https://sonar.warp.cc/#/app/source/E14TapQNshyUIyN_DNhI0-YdUs8OP4-KXSgZnSxnROM)
+
+#### Added Features
+
+- skip authentication
+
+### v0.39.1-beta (May 5, 2024)
+
+#### Source Transaction Id
+
+[NwEV3yZjlKGlQ_7sPO16vX_R4QaRWeYmmo_ELLErwpM](https://sonar.warp.cc/#/app/source/NwEV3yZjlKGlQ_7sPO16vX_R4QaRWeYmmo_ELLErwpM)
+
+#### Added Features
+
+- refactor
+
+### v0.39.0-beta (December 19, 2023)
+
+#### Source Transaction Id
+
+[8G82irw3pG6GQh-rvhZspii8L7XRBr6dE6I-GsNm52E](https://sonar.warp.cc/#/app/source/8G82irw3pG6GQh-rvhZspii8L7XRBr6dE6I-GsNm52E)
+
+#### Added Features
+
+- [addAddressLink with PolygonID](/docs/sdk/auth#polygonid-didvczkp)
+
+### v0.38.0-beta (December 11, 2023)
+
+#### Source Transaction Id
+
+[F7Hjt_lTh9GpbNUaMFNAzTtDl5sax0DqzlV6NbqwqLE](https://sonar.warp.cc/#/app/source/F7Hjt_lTh9GpbNUaMFNAzTtDl5sax0DqzlV6NbqwqLE)
+
+#### Added Features
+
+- [PolygonID zkp verification](/docs/sdk/queries#zkp)
+
+### v0.37.2-beta (October 16, 2023)
+
+#### Source Transaction Id
+
+[Ohr4AU6jRUCLoNSTTqu3bZ8GulKZ0V8gUm-vwrRbmS4](https://sonar.warp.cc/#/app/source/Ohr4AU6jRUCLoNSTTqu3bZ8GulKZ0V8gUm-vwrRbmS4)
+
+#### Added Features
+
+- fix minor issues
+
+### v0.37.1-beta (October 13, 2023)
+
+#### Source Transaction Id
+
+[v7ltiorPqRdU8W5XF5jJNbD4Reh39lF8dPa9fGyrhnc](https://sonar.warp.cc/#/app/source/v7ltiorPqRdU8W5XF5jJNbD4Reh39lF8dPa9fGyrhnc)
+
+#### Added Features
+
+- fix rule validation
+
+### v0.37.0-beta (October 12, 2023)
+
+#### Source Transaction Id
+
+[t4PARZFDKuAmAOk7dBRmsBoYliPbenhdxhsYDPTk2rw](https://sonar.warp.cc/#/app/source/t4PARZFDKuAmAOk7dBRmsBoYliPbenhdxhsYDPTk2rw)
+
+#### Added Features
+
+- setRules with key
+
+### v0.36.0-beta (October 11, 2023)
+
+#### Source Transaction Id
+
+[eGWmP5DgNJJbKYjwfTw3sHjb3kdTyLxD8hc5XWH8gWM](https://sonar.warp.cc/#/app/source/eGWmP5DgNJJbKYjwfTw3sHjb3kdTyLxD8hc5XWH8gWM)
+
+#### Added Features
+
+- better validities
+
+### v0.35.0-beta (October 8, 2023)
+
+#### Source Transaction Id
+
+[jgciKufvJxAySTfMfG-lTAexMLooU28ROj4XQ_WVEeA](https://sonar.warp.cc/#/app/source/jgciKufvJxAySTfMfG-lTAexMLooU28ROj4XQ_WVEeA)
+
+#### Added Features
+
+- return hash, bundleHeight, bundleHash with `getInfo()`
+
+### v0.34.0-beta (October 8, 2023)
+
+#### Source Transaction Id
+
+[CyItU3obRM_ehbygFYu8I4U_aQ-OWJI7XKFGi7rYEUE](https://sonar.warp.cc/#/app/source/CyItU3obRM_ehbygFYu8I4U_aQ-OWJI7XKFGi7rYEUE)
+
+#### Added Features
+
+- rollup bundles in random order
+
+### v0.33.0-beta (October 6, 2023)
+
+#### Source Transaction Id
+
+[2XvPr6h8i3Tokf6v5vMOeUR_f28RM8bUSI-x5c-Qu4Y](https://sonar.warp.cc/#/app/source/2XvPr6h8i3Tokf6v5vMOeUR_f28RM8bUSI-x5c-Qu4Y)
+
+#### Added Features
+
+- move address links to kvs
+- bundle height
+
+### v0.32.0-beta (October 5, 2023)
+
+#### Source Transaction Id
+
+[6z03DkIxmMYtjpSPnXX-6A5f7QsO3gnLsqkQObRiK00](https://sonar.warp.cc/#/app/source/6z03DkIxmMYtjpSPnXX-6A5f7QsO3gnLsqkQObRiK00)
+
+#### Added Features
+
+- getValidities
+- db.ms() for rollup transaction timestamp in millisecond
+
+### v0.31.0-beta (September 29, 2023)
+
+#### Source Transaction Id
+
+[GYLsyTsZK1Iay4EEKDzejddNM-KBVFBkA40lDY3eJx8](https://sonar.warp.cc/#/app/source/GYLsyTsZK1Iay4EEKDzejddNM-KBVFBkA40lDY3eJx8)
+
+#### Added Features
+
+- Fix nexted triggers
+
+### v0.30.3-beta (September 28, 2023)
+
+#### Source Transaction Id
+
+[XVGfjnJ21jmmkCSX6ZkphakEqWpCxkC_hp-hIKyr8eI](https://sonar.warp.cc/#/app/source/XVGfjnJ21jmmkCSX6ZkphakEqWpCxkC_hp-hIKyr8eI)
+
+#### Added Features
+
+- Nostr integration
+
+### v0.30.1-beta (September 27, 2023)
+
+#### Source Transaction Id
+
+[KDSOccSqQai2znBunj6K4GOYBXBb2tL9Z50N-oUgWoE](https://sonar.warp.cc/#/app/source/KDSOccSqQai2znBunj6K4GOYBXBb2tL9Z50N-oUgWoE)
+
+#### Added Features
+
+- FPJSON v0.1.5
+
+### v0.30.0-beta (September 26, 2023)
+
+#### Source Transaction Id
+
+[dAmgQfZtgTVoNCpMHgcGlYdb0ab_KvCKwk0hJWD8tbk](https://sonar.warp.cc/#/app/source/dAmgQfZtgTVoNCpMHgcGlYdb0ab_KvCKwk0hJWD8tbk)
+
+#### Added Features
+
+- access control rule 2.0
+
+### v0.29.2-beta (September 4, 2023)
+
+#### Source Transaction Id
+
+[909e5jfe_bOf4q1HE0cRRXlxcmhENzmUI8nbCUhaoRY](https://sonar.warp.cc/#/app/source/909e5jfe_bOf4q1HE0cRRXlxcmhENzmUI8nbCUhaoRY)
+
+#### Added Features
+
+- fix temp address error
+
+### v0.29.1-beta (September 4, 2023)
+
+#### Source Transaction Id
+
+[l2Qub_LSlynUUD7cCIBf3_ElN0uQ8gzUKqkFlq1XHvo](https://sonar.warp.cc/#/app/source/l2Qub_LSlynUUD7cCIBf3_ElN0uQ8gzUKqkFlq1XHvo)
+
+#### Added Features
+
+- fix [trigger](/docs/sdk/triggers) bugs
+
+### v0.29.0-beta (August 31, 2023)
+
+#### Source Transaction Id
+
+[9fz_LO8j7FqVsJyTlbEB2ECh5kPt6k9y8lUEX2zY2q4](https://sonar.warp.cc/#/app/source/9fz_LO8j7FqVsJyTlbEB2ECh5kPt6k9y8lUEX2zY2q4)
+
+#### Added Features
+
+- deterministic ID generation with input values for [add queries](/docs/sdk/queries#add)
+
+### v0.28.16-alpha (August 28, 2023)
+
+#### Source Transaction Id
+
+[WdyOy81fNMhvlHokheoiQry73Ra5ODtVQVCdI1fHbjc](https://sonar.warp.cc/#/app/source/WdyOy81fNMhvlHokheoiQry73Ra5ODtVQVCdI1fHbjc)
+
+#### Added Features
+
+- [conditional statements in access control rules](/docs/sdk/rules#conditional-statements)
+- [renaming method in access control rules](/docs/sdk/rules#renaming-method)
+
+### v0.28.15-alpha (August 27, 2023)
+
+#### Source Transaction Id
+
+[rZmICMmGJjbjv8yl5PbMsOJ3OV-_WBfYdK8qOWa572E](https://sonar.warp.cc/#/app/source/rZmICMmGJjbjv8yl5PbMsOJ3OV-_WBfYdK8qOWa572E)
+
+#### Added Features
+
+- [get query in access control](/docs/sdk/rules#get-other-data)
+
+### v0.28.14-alpha (August 25, 2023)
+
+#### Source Transaction Id
+
+[9VvyP3R36CAsF9MqeRVwmadvYAsrnh4JwlvZqSIBPVA](https://sonar.warp.cc/#/app/source/9VvyP3R36CAsF9MqeRVwmadvYAsrnh4JwlvZqSIBPVA)
+
+#### Added Features
+
+- [tick](/docs/sdk/crons/#tick)
+- [conditional statements](/docs/sdk/crons#conditional-statements) for FPJSON
+
+### v0.28.13-alpha (August 14, 2023)
+
+#### Source Transaction Id
+
+[P6CfhDCAdDDmdKrsERX-MR6ZRp_aGpa3jEhqIytworE](https://sonar.warp.cc/#/app/source/P6CfhDCAdDDmdKrsERX-MR6ZRp_aGpa3jEhqIytworE)
+
+#### Added Features
+
+- fix inequality indexes
+
+### v0.28.12-alpha (August 1, 2023)
+
+#### Source Transaction Id
+
+[Pn8N5kerhwi6U9mYk4JQ6mVPoFGdMVzQDZiWzNtInqM](https://sonar.warp.cc/#/app/source/Pn8N5kerhwi6U9mYk4JQ6mVPoFGdMVzQDZiWzNtInqM)
+
+#### Added Features
+
+- [data()](/docs/sdk/queries#data)
+
+### v0.28.11-alpha (July 30, 2023)
+
+#### Source Transaction Id
+
+[F_n-VWv3zYS8sxmKHaURqTJ_Y6uRvQTy70nEm-DVSns](https://sonar.warp.cc/#/app/source/F_n-VWv3zYS8sxmKHaURqTJ_Y6uRvQTy70nEm-DVSns)
+
+#### Added Features
+
+- fix index pagination with cursor
+
+### v0.28.10-alpha (July 28, 2023)
+
+#### Source Transaction Id
+
+[vz1nYmMjPxQEviw5P20fcAb8WxRfe3APWt1w3Fcatlg](https://sonar.warp.cc/#/app/source/vz1nYmMjPxQEviw5P20fcAb8WxRfe3APWt1w3Fcatlg)
+
+#### Added Features
+
+- fix cron/trigger executions
+
+### v0.28.9-alpha (July 26, 2023)
+
+#### Source Transaction Id
+
+[QWsm7NaS1MCC_p4nS3XUSH-6tkQSKPADxrmRCxTDWrg](https://sonar.warp.cc/#/app/source/QWsm7NaS1MCC_p4nS3XUSH-6tkQSKPADxrmRCxTDWrg)
+
+#### Added Features
+
+- == with !=
+
+### v0.28.8-alpha (July 26, 2023)
+
+#### Source Transaction Id
+
+[W1L9vOPCnVMTzBTZhpBXp3GhxstotKGaa5C62pVj2kI](https://sonar.warp.cc/#/app/source/W1L9vOPCnVMTzBTZhpBXp3GhxstotKGaa5C62pVj2kI)
+
+#### Added Features
+
+- multiple == with sort
+
+### v0.28.7-alpha (July 25, 2023)
+
+#### Source Transaction Id
+
+[EkkqClraVei8pndca4T2YyYKenQ9Tt6tfxJ0OkIxoXQ](https://sonar.warp.cc/#/app/source/EkkqClraVei8pndca4T2YyYKenQ9Tt6tfxJ0OkIxoXQ)
+
+#### Added Features
+
+- == with sort
+
+### v0.28.6-alpha (July 25, 2023)
+
+#### Source Transaction Id
+
+[POv0j2x0e1ZZ_3_0CU8ZpihMTSXipjn5Yi3iLY-WP40](https://sonar.warp.cc/#/app/source/POv0j2x0e1ZZ_3_0CU8ZpihMTSXipjn5Yi3iLY-WP40)
+
+#### Added Features
+
+- in/not-in/!=/array-contains-any with sort
+
+### v0.28.5-alpha (July 25, 2023)
+
+#### Source Transaction Id
+
+[ZF4f7cHYwNMdERuRF6nx-dQrMB65rOz4nqlpZlg3HWQ](https://sonar.warp.cc/#/app/source/ZF4f7cHYwNMdERuRF6nx-dQrMB65rOz4nqlpZlg3HWQ)
+
+#### Added Features
+
+- fix relay query with bundle
+
+### v0.28.4-alpha (July 23, 2023)
+
+#### Source Transaction Id
+
+[sFIFcvpaDOrZ4TYrvd_OOrO-z-mN8ZD19LIMxQOk0ng](https://sonar.warp.cc/#/app/source/sFIFcvpaDOrZ4TYrvd_OOrO-z-mN8ZD19LIMxQOk0ng)
+
+#### Added Features
+
+- fix B+ indexer #2
+
+### v0.28.3-alpha (July 22, 2023)
+
+#### Source Transaction Id
+
+[knG74NwwNXSHrVhI4UE2f6tOMilS8WF-63xBCYcYG_s](https://sonar.warp.cc/#/app/source/knG74NwwNXSHrVhI4UE2f6tOMilS8WF-63xBCYcYG_s)
+
+#### Added Features
+
+- fix B+ tree indexer
+
+### v0.28.2-alpha (July 22, 2023)
+
+#### Source Transaction Id
+
+[f5Ic20jedVx_H_mr5K60mEWE-c4N0ht0Au_NzKnp8yo](https://sonar.warp.cc/#/app/source/f5Ic20jedVx_H_mr5K60mEWE-c4N0ht0Au_NzKnp8yo)
+
+#### Added Features
+
+- [setBundlers / getBundlers](/docs/sdk/queries#setbundlers--getbundlers)
+
+### v0.28.1-alpha (July 20, 2023)
+
+#### Source Transaction Id
+
+[u2HMJGl5AOAnIB4S_Fsot9h6WajPgMEJBXg5OqKmvX0](https://sonar.warp.cc/#/app/source/u2HMJGl5AOAnIB4S_Fsot9h6WajPgMEJBXg5OqKmvX0)
+
+#### Added Features
+
+- remove signature from [bundle query](/docs/sdk/queries#bundle)
+
+### v0.28.0-alpha (July 20, 2023)
+
+#### Source Transaction Id
+
+[SSq5Al8qOvfkfz-1nL1P_MsGlt9tj1gT7LTakuDsCdc](https://sonar.warp.cc/#/app/source/SSq5Al8qOvfkfz-1nL1P_MsGlt9tj1gT7LTakuDsCdc)
+
+#### Added Features
+
+- new B+ tree indexer
+
+### v0.27.0-alpha (May 20, 2023)
+
+#### Source Transaction Id
+
+[jsZqVEOGdMFAvVlof_WXi6DO5vWxhteiG91xVPiIwqQ](https://sonar.warp.cc/#/app/source/jsZqVEOGdMFAvVlof_WXi6DO5vWxhteiG91xVPiIwqQ)
+
+#### Added Features
+
+- use [kv storage](https://academy.warp.cc/docs/sdk/advanced/kv-storage) for data and indexes
+- [triggers](/docs/sdk/triggers)
+
+### v0.26.5 (September 4, 2023)
+
+#### Source Transaction Id
+
+[1pFdmXngB5A4TXvD1cHEGNVpqdEJBYjXSmSyvy6MQiQ](https://sonar.warp.cc/#/app/source/1pFdmXngB5A4TXvD1cHEGNVpqdEJBYjXSmSyvy6MQiQ)
+
+#### Added Features
+
+- fix temp address bug
+
+### v0.26.4 (July 3, 2023)
+
+#### Source Transaction Id
+
+[QhbIPso1lx8wbHx4c7225L9PkNYh-Djp6N_YCjqdr_E](https://sonar.warp.cc/#/app/source/QhbIPso1lx8wbHx4c7225L9PkNYh-Djp6N_YCjqdr_E)
+
+#### Added Features
+
+- [triggers](/docs/sdk/triggers)
+
+### v0.26.3 (June 19, 2023)
+
+#### Source Transaction Id
+
+[rTp2E6oipzJODmAGbqWbo2wzagoV7tt3JRyBsyVgo6A](https://sonar.warp.cc/#/app/source/rTp2E6oipzJODmAGbqWbo2wzagoV7tt3JRyBsyVgo6A)
+
+#### Added Features
+
+- [dot notation](/docs/sdk/queries#where)
+
+### v0.26.2 (June 12, 2023)
+
+#### Source Transaction Id
+
+[-TBbRLWsP8wAlj8y5bh7RHRdwGJ7kT9urFvEbn1UomQ](https://sonar.warp.cc/#/app/source/-TBbRLWsP8wAlj8y5bh7RHRdwGJ7kT9urFvEbn1UomQ)
+
+#### Added Features
+
+- [internal writes](/docs/sdk/relayers#internal-writes)
+
+### v0.26.1 (June 9, 2023)
+
+#### Source Transaction Id
+
+[OSYm83qQFF5gf4m3BbdZtrHMHjVAMPJcBhfZiJVYjYE](https://sonar.warp.cc/#/app/source/OSYm83qQFF5gf4m3BbdZtrHMHjVAMPJcBhfZiJVYjYE)
+
+#### Added Features
+
+- fix a minor index bug
+
 ### v0.26.0 (Mar 21, 2023)
 
 #### Source Transaction Id
@@ -23,7 +577,7 @@ await db.getVersion()
 
 #### Added Features
 
--  [bundle query](/docs/sdk/queries#bundle)
+- [bundle query](/docs/sdk/queries#bundle)
 
 ### v0.25.0 (Mar 10, 2023)
 
@@ -33,7 +587,7 @@ await db.getVersion()
 
 #### Added Features
 
--  built-in Lens Profile authentication
+- built-in Lens Profile authentication
 
 ### v0.24.0 (Mar 09, 2023)
 
@@ -234,4 +788,3 @@ await db.getVersion()
 - contract versioning
 - link plugin contracts
 - getAddressLink
-

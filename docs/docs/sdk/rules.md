@@ -62,6 +62,8 @@ You can access various data within the validation blocks.
 const data = {
   contract: { id, owners },
   request: {
+    method,
+	func,
     auth: { signer, relayer, jobID, extra },
     block: { height, timestamp },
     transaction: { id },
@@ -114,6 +116,55 @@ If you set `{ name : "Bob"}` with wallet `0xABC`, the stored data will be `{ nam
 ```js
 await db.set({ name : "Bob" }, "people", "Bob")
 expect(await db.get("people", "Bob")).to.eql({name : "Bob", address: "0xABC" }) // true
+```
+
+### Get Other Data
+
+You can also execute `get` query in `let` variable assignments. Use the syntax `["get", [QUERY]]`.
+
+The following will first get `Bob` from `ppl` collection and assign it to `user`, then set `age` field with the user's age.
+
+```js
+const rules = {
+  "let create" : { "user" : ["get", ["ppl", "Bob"]], "resource.newData.age": {var: "user.age"} },
+  "allow create" : true
+}
+```
+
+### Conditional Statements
+
+`if` and `ifelse` can be used for conditional statements in access control rules.
+
+```js
+// assigning age=20 if the name is Bob
+const rules = {
+  "let create" : { 
+    "resource.newData.age" : ["if", ["equals", "Bob", {var: "resource.newData.name"}], 20] 
+  },
+  "allow create" : true
+}
+
+// assigning age=20 if the name is Bob, and age=30 otherwise
+const rules = {
+  "let create" : { 
+    "resource.newData.age" : ["ifelse", ["equals", "Bob", {var: "resource.newData.name"}], 20, 30] 
+  },
+  "allow create" : true
+}
+```
+
+### Renaming Method
+
+You can rename `request.method` to something other than `create` / `update` / `delete` and assign rules to the renamed method for beter branching.
+
+```js
+// rename method to create_bob if the name is Bob, and only allow create_bob
+const rules = {
+  "let create" : { 
+    "request.method" : ["if", ["equals", "Bob", {var: "resource.newData.name"}], "create_bob"] 
+  },
+  "allow create_bob" : true
+}
 ```
 
 ## Add-on: JSON-based Functional Programming

@@ -3,9 +3,10 @@ sidebar_position: 2
 ---
 # Light Client
 
+
 With the light client, browser users don't have to hold a full cache from the Warp SDK, which makes read queries extremely fast.
 
-A remote gRPC node must exists for the DB instance and the endpoint URL must be specified as `rpc`.
+A remote rollup node must exist for the DB instance and the endpoint URL must be specified as `rpc`.
 
 ## For Web Browsers
 
@@ -22,7 +23,7 @@ import WeaveDB from "weavedb-client"
 
 const db = new WeaveDB({
   contractTxId: WEAVEDB_CONTRACT_TX_ID,
-  rpc: "http://xxx.yyy.zzz.aaa:8080" // gRPC node URL
+  rpc: "http://xxx.yyy.zzz.aaa:8080" // rollup node URL
 })
 ```
 
@@ -43,7 +44,7 @@ const WeaveDB = require("weavedb-node-client")
 
 const db = new WeaveDB({
   contractTxId: WEAVEDB_CONTRACT_TX_ID,
-  rpc: "0.0.0.0:8080" // gRPC node IP:port
+  rpc: "0.0.0.0:8080" // rollup node IP:port
 })
 ```
 
