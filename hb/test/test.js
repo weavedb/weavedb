@@ -35,3 +35,60 @@ describe("Monade", () => {
     assert.equal(await wdb.get(9, 10), 32)
   })
 })
+
+describe("WeaveDB", () => {
+  const msg = i => {
+    return {
+      from: "me",
+      q: ["set", { name: "users-" + i }, 2, i.toString()],
+    }
+  }
+
+  it("bare tps", async () => {
+    let start = Date.now()
+    let i = 0
+    let obj = { env: {}, state: {} }
+    const set = msg => obj => {
+      const [op, ...rest] = msg.q
+      const [data, dir, doc] = rest
+      switch (op) {
+        case "set":
+          obj.state[dir] ??= {}
+          obj.state[dir][doc] = data
+          break
+      }
+    }
+    while (Date.now() - start < 1000) set(msg(i++))(obj)
+    console.log(i, "tps without monad")
+  })
+
+  it.only("bare monad", async () => {
+    let start = Date.now()
+    let i = 0
+    const db2 = of({ env: {}, state: {} })
+    while (Date.now() - start < 1000) {
+      db2.map(obj => {
+        const [op, ...rest] = msg(i++).q
+        const [data, dir, doc] = rest
+        switch (op) {
+          case "set":
+            obj.state[dir] ??= {}
+            obj.state[dir][doc] = data
+            break
+        }
+        return obj
+      })
+    }
+    console.log(i, "tps with bare monad")
+  })
+
+  it.only("weavedb monad", async () => {
+    let start = Date.now()
+    let i = 0
+    const db = weavedb()
+      .init({ from: "me", id: "db" })
+      .set({ from: "me", q: ["set", { name: "users" }, 0, "2"] })
+    while (Date.now() - start < 1000) db.set(msg(i++))
+    console.log(i, "tps with weavedb monad")
+  })
+})
