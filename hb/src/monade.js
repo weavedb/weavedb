@@ -1,17 +1,6 @@
 const addMethods = (fns, m) => {
-  for (const k in fns) {
-    for (const k2 in fns[k]) {
-      const fn =
-        k === "map"
-          ? m.map
-          : k === "to"
-            ? m.to
-            : k === "chain"
-              ? m.chain
-              : m.tap
-      m[k2] = (...args) => fn(fns[k][k2](...args))
-    }
-  }
+  for (const k in fns)
+    for (const k2 in fns[k]) m[k2] = (...args) => m[k](fns[k][k2](...args))
   return m
 }
 
