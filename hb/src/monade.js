@@ -15,38 +15,41 @@ const addMethods = (fns, m) => {
   return m
 }
 
-const of = (ctx, fns = {}) => {
-  const map = fn => of(fn(ctx), fns)
-  const tap = fn => (fn(ctx), of(ctx, fns))
-  const chain = fn => {
+const of = (ctx, fns = {}, copy = false) => {
+  let m = copy ? fns : { __monad__: true }
+  m.map = fn => of(fn(ctx), m, true)
+  m.tap = fn => (fn(ctx), of(ctx, m, true))
+  m.chain = fn => {
     const res = fn(ctx)
     if (!res || res.__monad__ !== true) {
       throw new Error("chain: fn must return monad")
     }
     return res
   }
-  const to = fn => fn(ctx)
-  const val = () => ctx
-
-  return addMethods(fns, { map, tap, chain, val, __monad__: true, to })
+  m.to = fn => fn(ctx)
+  m.val = () => ctx
+  return copy ? m : addMethods(fns, m)
 }
 
-const pof = (ctx, fns) => {
+const pof = (ctx, fns = {}, copy = false) => {
+  let m = copy ? fns : { __monad__: true }
   const run = Promise.resolve(ctx, fns)
-  const map = fn =>
+  m.map = fn =>
     pof(
       run.then(async v => await fn(v)),
-      fns,
+      m,
+      true,
     )
-  const tap = fn =>
+  m.tap = fn =>
     pof(
       run.then(async v => {
         await fn(v)
         return v
       }),
-      fns,
+      m,
+      true,
     )
-  const chain = fn =>
+  m.chain = fn =>
     pof(
       run.then(async x => {
         const res = await fn(x)
@@ -54,15 +57,16 @@ const pof = (ctx, fns) => {
           throw new Error("chain: fn must return monad")
         return res.run
       }),
-      fns,
+      m,
+      true,
     )
-  const to = fn =>
+  m.to = fn =>
     run.then(async x => {
       const res = await fn(x)
       return res.run ?? res
     })
-  const val = () => run
-  return addMethods(fns, { run, map, tap, chain, val, __monad__: true, to })
+  m.val = () => run
+  return copy ? m : addMethods(fns, m)
 }
 
 export { pof, of }
