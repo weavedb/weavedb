@@ -1,7 +1,7 @@
 import assert from "assert"
 import { afterEach, after, describe, it, before, beforeEach } from "node:test"
 import { of, pof } from "../src/monade.js"
-import weavedb from "../src/index.js"
+import wdb from "../src/index.js"
 
 describe("Monade", () => {
   it("should create a monad", async () => {
@@ -69,7 +69,7 @@ describe("WeaveDB TPS", () => {
       obj ??= { env: {}, state: {} }
       return of(obj, { map: { set } })
     }
-    const db = weavedb()
+    const db = wdb()
     let start = Date.now()
     let i = 0
     while (Date.now() - start < 1000) db.set(msg(i++))
@@ -87,7 +87,7 @@ describe("WeaveDB TPS", () => {
 
 describe("WeaveDB Core", () => {
   it.only("should init", async () => {
-    const db = weavedb().init({ from: "me", id: "db-1" })
+    const db = wdb().init({ from: "me", id: "db-1" })
     assert.equal(db.get(0, "0").name, "__dirs__")
   })
 
@@ -98,8 +98,17 @@ describe("WeaveDB Core", () => {
     const beth = { name: "Beth" }
     const john = { name: "John" }
 
-    const db = weavedb()
+    const db = wdb()
       .init({ from: "me", id: "db-1" })
+      .set(
+        "set",
+        {
+          name: "users",
+          schema: { type: "object", required: ["name"] },
+        },
+        0,
+        "2",
+      )
       .set("set", bob, 2, "bob")
       .set("set", alice, 2, "alice")
       .set("add", mike, 2)

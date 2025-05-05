@@ -1,6 +1,7 @@
 const addMethods = (fns, m) => {
-  for (const k in fns)
+  for (const k in fns) {
     for (const k2 in fns[k]) m[k2] = (...args) => m[k](fns[k][k2](...args))
+  }
   return m
 }
 
@@ -10,9 +11,7 @@ const of = (ctx, fns = {}, copy = false) => {
   m.tap = fn => (fn(ctx), of(ctx, m, true))
   m.chain = fn => {
     const res = fn(ctx)
-    if (!res || res.__monad__ !== true) {
-      throw new Error("chain: fn must return monad")
-    }
+    if (!res?.__monad__) throw new Error("fn must return monad")
     return res
   }
   m.to = fn => fn(ctx)
@@ -42,8 +41,7 @@ const pof = (ctx, fns = {}, copy = false) => {
     pof(
       run.then(async x => {
         const res = await fn(x)
-        if (!res || res.__monad__ !== true)
-          throw new Error("chain: fn must return monad")
+        if (!res?.__monad__) throw new Error("fn must return monad")
         return res.run
       }),
       m,
