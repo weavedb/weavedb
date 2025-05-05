@@ -1,0 +1,12 @@
+{
+  "name": "weavedb-hb",
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/test.js",
+    "test-only": "node --test-only test/test.js"
+  },
+  "dependencies": {
+    "ramda": "^0.30.1"
+  }
+}
