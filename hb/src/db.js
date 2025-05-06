@@ -1,7 +1,6 @@
 import { of } from "./monade.js"
 import { dir_schema } from "./schemas.js"
-import { isNil } from "ramda"
-
+import { tail, is, isNil, clone, includes } from "ramda"
 import {
   updateData,
   upsertData,
@@ -11,20 +10,76 @@ import {
   getDocID,
 } from "./ops.js"
 
+import { fpj, ac_funcs } from "./fpjson.js"
+
+const auth = ({ db, q, ctx }) => {
+  let data, dir, doc
+  if (ctx.op === "add") {
+    ;[data, dir] = q
+  } else if (ctx.op === "del") {
+    ;[dir, doc] = q
+  } else {
+    ;[data, dir, doc] = q
+  }
+  let vars = {
+    op: ctx.op,
+    opname: ctx.opname,
+    from: "",
+    tx: 0,
+    dir,
+    doc,
+    db: {},
+    old: {},
+    new: {},
+    allow: false,
+  }
+  if (isNil(db[0][dir])) throw Error(`dir doesn't exist: ${dir}`)
+  let allow = false
+  for (const v of db[0][dir].auth) {
+    if (includes(ctx.opname, v[0].split(","))) {
+      try {
+        fpj(v[1], vars, ac_funcs)
+        if (vars.allow) allow = true
+        break
+      } catch (e) {}
+    }
+  }
+  if (!allow) throw Error("operation not allowed")
+  return { db, q, ctx }
+}
+
 const handlers = {
-  add: (db, q) => of({ db, q }).tap(validateSchema).map(getDocID).map(setData),
-  set: (db, q) => of({ db, q }).tap(validateSchema).map(setData),
-  del: (db, q) => of({ db, q }).map(delData),
-  update: (db, q) =>
-    of({ db, q }).map(updateData).tap(validateSchema).map(setData),
-  upsert: (db, q) =>
-    of({ db, q }).map(upsertData).tap(validateSchema).map(setData),
+  add: (db, q, ctx) =>
+    of({ db, q, ctx }).map(auth).tap(validateSchema).map(getDocID).map(setData),
+  set: (db, q, ctx) =>
+    of({ db, q, ctx }).map(auth).tap(validateSchema).map(setData),
+  del: (db, q, ctx) => of({ db, q, ctx }).map(auth).map(delData),
+  update: (db, q, ctx) =>
+    of({ db, q, ctx })
+      .map(auth)
+      .map(updateData)
+      .tap(validateSchema)
+      .map(setData),
+  upsert: (db, q, ctx) =>
+    of({ db, q, ctx })
+      .map(auth)
+      .map(upsertData)
+      .tap(validateSchema)
+      .map(setData),
+}
+
+const rules = {
+  dirs_set: ["set", [["allow()"]]],
 }
 
 const wdb = db => {
   db ??= [
     {
-      0: { name: "__dirs__", schema: dir_schema },
+      0: {
+        name: "__dirs__",
+        schema: dir_schema,
+        auth: [rules.dirs_set],
+      },
       1: {
         name: "__config__",
         schema: { type: "object", additionalProperties: false },
@@ -51,8 +106,11 @@ const wdb = db => {
         (...msg) =>
         db => {
           const [op, ...q] = msg
-          if (isNil(handlers[op])) throw Error(`handler doesn't exist: ${op}`)
-          handlers[op](db, q)
+          const sp = op.split(":")
+          let ctx = { op: sp[0], opname: op }
+          if (isNil(handlers[ctx.op]))
+            throw Error(`handler doesn't exist: ${op}`)
+          handlers[ctx.op](db, q, ctx)
           return db
         },
     },
