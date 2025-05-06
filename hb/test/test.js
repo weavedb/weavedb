@@ -2,6 +2,9 @@ import assert from "assert"
 import { afterEach, after, describe, it, before, beforeEach } from "node:test"
 import { of, pof } from "../src/monade.js"
 import wdb from "../src/index.js"
+import lsjson from "../src/lsjson.js"
+import { open } from "lmdb"
+import { resolve } from "path"
 
 describe("Monade", () => {
   it("should create a monad", async () => {
@@ -86,7 +89,7 @@ describe("WeaveDB TPS", () => {
 })
 
 describe("WeaveDB Core", () => {
-  it.only("should init", async () => {
+  it("should init", async () => {
     const db = wdb().init({ from: "me", id: "db-1" })
     assert.equal(db.get(0, "0").name, "__dirs__")
   })
@@ -122,5 +125,26 @@ describe("WeaveDB Core", () => {
     assert.deepEqual(db.get(2, "A"), mike)
     assert.deepEqual(db.get(2, "B"), beth)
     assert.deepEqual(db.get(2, "john"), john)
+  })
+
+  it.only("should persist data with lsJSON", () => {
+    const kv = open({
+      path: resolve(
+        import.meta.dirname,
+        `.db/mydb-${Math.floor(Math.random() * 10000)}`,
+      ),
+    })
+    let o = lsjson({}, { kv })
+    o.users = {}
+    o.users.bob = { name: "Bob" }
+    o.users.bob.age = 5
+    o.$commit()
+    o.users.bob.age = 6
+    o.$commit()
+    o.users.bob.age = 7
+    let o2 = lsjson({}, { kv })
+    o.users.bob.age = 8
+    o.$commit()
+    assert.deepEqual(o.users, { bob: { name: "Bob", age: 8 } })
   })
 })

@@ -1,4 +1,5 @@
 .weavedb
+.db
 test/circuits
 cache
 scripts/.wallets
