@@ -16,21 +16,21 @@ function tob64(n) {
   return result
 }
 
-const updateData = ({ db, q, ctx }) => {
+function updateData({ db, q, ctx }) {
   const [data, dir, doc] = q
   if (isNil(db[dir]?.[doc])) throw Error("data doesn't exist")
   q[0] = mergeLeft(data, db[dir][doc])
-  return { db, q, ctx }
+  return arguments[0]
 }
 
-const upsertData = ({ db, q, ctx }) => {
+function upsertData({ db, q, ctx }) {
   const [data, dir, doc] = q
   if (isNil(db[0][dir])) throw Error("dir doesn't exist")
   db[dir] ??= {}
   if (!isNil(db[dir]?.[doc])) {
     q[0] = mergeLeft(data, db[dir][doc])
   }
-  return { db, q, ctx }
+  return arguments[0]
 }
 
 const validateSchema = ({ db, q, ctx }) => {
@@ -43,23 +43,23 @@ const validateSchema = ({ db, q, ctx }) => {
   if (!valid) throw Error("invalid schema")
 }
 
-const setData = ({ db, q, ctx }) => {
+function setData({ db, q, ctx }) {
   const [data, dir, doc] = q
   if (isNil(db[0][dir])) throw Error("dir doesn't exist")
   db[dir] ??= {}
   db[dir][doc] = data
-  return { db, q, ctx }
+  return arguments[0]
 }
 
-const delData = ({ db, q, ctx }) => {
+function delData({ db, q, ctx }) {
   const [dir, doc] = q
   if (isNil(db[0][dir])) throw Error("dir doesn't exist")
   db[dir] ??= {}
   delete db[dir][doc]
-  return { db, q, ctx }
+  return arguments[0]
 }
 
-const getDocID = ({ db, q, ctx }) => {
+function getDocID({ db, q, ctx }) {
   const [, dir] = q
   if (isNil(db[0][dir])) throw Error("dir doesn't exist")
   const docs = db[dir] ?? {}
@@ -68,7 +68,19 @@ const getDocID = ({ db, q, ctx }) => {
   q.push(tob64(i))
   db[0][dir] ??= {}
   db[0][dir].autoid = i
-  return { db, q, ctx }
+  return arguments[0]
 }
 
-export { updateData, upsertData, validateSchema, setData, delData, getDocID }
+function commit({ db, q, ctx }) {
+  db.$commit()
+}
+
+export {
+  updateData,
+  upsertData,
+  validateSchema,
+  setData,
+  delData,
+  getDocID,
+  commit,
+}

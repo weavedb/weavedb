@@ -8,9 +8,11 @@ import {
   setData,
   delData,
   getDocID,
+  commit,
 } from "./ops.js"
 
 import { fpj, ac_funcs } from "./fpjson.js"
+import lsjson from "../src/lsjson.js"
 
 const auth = ({ db, q, ctx }) => {
   let data, dir, doc
@@ -50,42 +52,52 @@ const auth = ({ db, q, ctx }) => {
 
 const handlers = {
   add: (db, q, ctx) =>
-    of({ db, q, ctx }).map(auth).tap(validateSchema).map(getDocID).map(setData),
+    of({ db, q, ctx })
+      .map(auth)
+      .tap(validateSchema)
+      .map(getDocID)
+      .map(setData)
+      .tap(commit),
   set: (db, q, ctx) =>
-    of({ db, q, ctx }).map(auth).tap(validateSchema).map(setData),
-  del: (db, q, ctx) => of({ db, q, ctx }).map(auth).map(delData),
+    of({ db, q, ctx }).map(auth).tap(validateSchema).map(setData).tap(commit),
+  del: (db, q, ctx) => of({ db, q, ctx }).map(auth).map(delData).tap(commit),
   update: (db, q, ctx) =>
     of({ db, q, ctx })
       .map(auth)
       .map(updateData)
       .tap(validateSchema)
-      .map(setData),
+      .map(setData)
+      .tap(commit),
   upsert: (db, q, ctx) =>
     of({ db, q, ctx })
       .map(auth)
       .map(upsertData)
       .tap(validateSchema)
-      .map(setData),
+      .map(setData)
+      .tap(commit),
 }
 
 const rules = {
   dirs_set: ["set", [["allow()"]]],
 }
 
-const wdb = db => {
-  db ??= [
-    {
-      0: {
-        name: "__dirs__",
-        schema: dir_schema,
-        auth: [rules.dirs_set],
+const wdb = (db, kv) => {
+  db ??= lsjson(
+    [
+      {
+        0: {
+          name: "__dirs__",
+          schema: dir_schema,
+          auth: [rules.dirs_set],
+        },
+        1: {
+          name: "__config__",
+          schema: { type: "object", additionalProperties: false },
+        },
       },
-      1: {
-        name: "__config__",
-        schema: { type: "object", additionalProperties: false },
-      },
-    },
-  ]
+    ],
+    { kv },
+  )
   return of(db, {
     to: {
       get:
