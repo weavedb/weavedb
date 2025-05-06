@@ -97,7 +97,7 @@ describe("WeaveDB Core", () => {
     const mike = { name: "Mike" }
     const beth = { name: "Beth" }
     const john = { name: "John" }
-
+    const allow = [["allow()"]]
     const db = wdb()
       .init({ from: "me", id: "db-1" })
       .set(
@@ -105,17 +105,18 @@ describe("WeaveDB Core", () => {
         {
           name: "users",
           schema: { type: "object", required: ["name"] },
+          auth: [["set:user,add:user,update:user,upsert:user,del:user", allow]],
         },
         0,
         "2",
       )
-      .set("set", bob, 2, "bob")
-      .set("set", alice, 2, "alice")
-      .set("add", mike, 2)
-      .set("add", beth, 2)
-      .set("del", 2, "bob")
-      .set("update", { age: 20 }, 2, "alice")
-      .set("upsert", john, 2, "john")
+      .set("set:user", bob, 2, "bob")
+      .set("set:user", alice, 2, "alice")
+      .set("add:user", mike, 2)
+      .set("add:user", beth, 2)
+      .set("del:user", 2, "bob")
+      .set("update:user", { age: 20 }, 2, "alice")
+      .set("upsert:user", john, 2, "john")
 
     assert.deepEqual(db.get(2, "alice"), { ...alice, age: 20 })
     assert.deepEqual(db.get(2, "A"), mike)

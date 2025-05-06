@@ -2,14 +2,10 @@ import draft_07 from "./jsonschema-draft-07.js"
 
 const dir_schema = {
   type: "object",
-  required: ["name", "schema"],
+  required: ["name", "schema", "auth"],
   additionalProperties: false,
   properties: {
-    name: {
-      type: "string",
-      pattern: "^[A-Za-z0-9_-]+$",
-      maxLength: 42,
-    },
+    name: { type: "string", pattern: "^[A-Za-z0-9_-]+$", maxLength: 42 },
     schema: { $ref: "http://json-schema.org/draft-07/schema#" },
     docs: {
       type: "object",
@@ -27,6 +23,7 @@ const dir_schema = {
         additionalProperties: false,
       },
     },
+    auth: { type: "array" },
   },
   definitions: { draft_07 },
 }
