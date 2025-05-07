@@ -94,6 +94,10 @@ const wdb = (db, kv) => {
         name: "__config__",
         schema: { type: "object", additionalProperties: false },
       },
+      2: {
+        name: "__indexes__",
+        schema: { type: "object" },
+      },
     })
   }
   return of(db, {
