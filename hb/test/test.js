@@ -5,6 +5,7 @@ import wdb from "../src/index.js"
 import lsjson from "../src/lsjson.js"
 import { open } from "lmdb"
 import { resolve } from "path"
+const wait = ms => new Promise(res => setTimeout(() => res(), ms))
 
 describe("Monade", () => {
   it("should create a monad", async () => {
@@ -95,13 +96,19 @@ describe("WeaveDB Core", () => {
   })
 
   it.only("should get/add/set/update/upsert/del", async () => {
+    const kv = open({
+      path: resolve(
+        import.meta.dirname,
+        `.db/weavedb-${Math.floor(Math.random() * 10000)}`,
+      ),
+    })
     const bob = { name: "Bob" }
     const alice = { name: "Alice" }
     const mike = { name: "Mike" }
     const beth = { name: "Beth" }
     const john = { name: "John" }
     const allow = [["allow()"]]
-    const db = wdb()
+    const db = wdb(null, kv)
       .init({ from: "me", id: "db-1" })
       .set(
         "set",
@@ -125,15 +132,24 @@ describe("WeaveDB Core", () => {
     assert.deepEqual(db.get(2, "A"), mike)
     assert.deepEqual(db.get(2, "B"), beth)
     assert.deepEqual(db.get(2, "john"), john)
+    await wait(0)
+    const db2 = wdb(null, kv)
+    assert.equal(db2.get(2, "bob"), null)
   })
 
-  it.only("should persist data with lsJSON", () => {
+  it("should persist data with lsJSON", async () => {
     const kv = open({
       path: resolve(
         import.meta.dirname,
         `.db/mydb-${Math.floor(Math.random() * 10000)}`,
       ),
     })
+    /*
+    const store = {}
+    const kv = {
+      get: k => store[k],
+      put: async (k, v) => (store[k] = v),
+    }*/
     let o = lsjson({}, { kv })
     o.users = {}
     o.users.bob = { name: "Bob" }
@@ -142,6 +158,7 @@ describe("WeaveDB Core", () => {
     o.users.bob.age = 6
     o.$commit()
     o.users.bob.age = 7
+    await wait(0)
     let o2 = lsjson({}, { kv })
     o.users.bob.age = 8
     o.$commit()
