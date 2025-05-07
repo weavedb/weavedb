@@ -72,7 +72,7 @@ function getDocID({ db, q, ctx }) {
 }
 
 function commit({ db, q, ctx }) {
-  db.$commit()
+  db.$commit?.()
 }
 
 export {

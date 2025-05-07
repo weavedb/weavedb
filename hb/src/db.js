@@ -82,22 +82,20 @@ const rules = {
 }
 
 const wdb = (db, kv) => {
-  db ??= lsjson(
-    [
-      {
-        0: {
-          name: "__dirs__",
-          schema: dir_schema,
-          auth: [rules.dirs_set],
-        },
-        1: {
-          name: "__config__",
-          schema: { type: "object", additionalProperties: false },
-        },
+  db = kv ? lsjson([], { kv }) : (db ?? [])
+  if (db.length === 0) {
+    db.push({
+      0: {
+        name: "__dirs__",
+        schema: dir_schema,
+        auth: [rules.dirs_set],
       },
-    ],
-    { kv },
-  )
+      1: {
+        name: "__config__",
+        schema: { type: "object", additionalProperties: false },
+      },
+    })
+  }
   return of(db, {
     to: {
       get:
@@ -110,20 +108,32 @@ const wdb = (db, kv) => {
     },
     map: {
       init: msg => db => {
-        if (!isNil(db[1])) throw Error("already initialized")
-        db[1] = { info: { id: msg.id, owner: msg.from } }
-        return db
+        try {
+          if (!isNil(db[1])) throw Error("already initialized")
+          db[1] = { info: { id: msg.id, owner: msg.from } }
+          return db
+        } catch (e) {
+          db.$reset()
+          throw Error(e)
+        }
       },
       set:
         (...msg) =>
         db => {
-          const [op, ...q] = msg
-          const sp = op.split(":")
-          let ctx = { op: sp[0], opname: op }
-          if (isNil(handlers[ctx.op]))
-            throw Error(`handler doesn't exist: ${op}`)
-          handlers[ctx.op](db, q, ctx)
-          return db
+          try {
+            const [op, ...q] = msg
+            const sp = op.split(":")
+            let ctx = { op: sp[0], opname: op }
+            if (isNil(handlers[ctx.op]))
+              throw Error(`handler doesn't exist: ${op}`)
+            handlers[ctx.op](db, q, ctx)
+            return db
+          } catch (e) {
+            console.log(e)
+            console.log(db[0], msg)
+            db.$reset?.()
+            throw Error(e)
+          }
         },
     },
   })
