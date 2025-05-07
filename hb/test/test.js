@@ -5,7 +5,14 @@ import wdb from "../src/index.js"
 import lsjson from "../src/lsjson.js"
 import { open } from "lmdb"
 import { resolve } from "path"
+import BPT from "../src/bpt.js"
+import { pluck, prop } from "ramda"
 const wait = ms => new Promise(res => setTimeout(() => res(), ms))
+const bob = { name: "Bob" }
+const alice = { name: "Alice" }
+const mike = { name: "Mike" }
+const beth = { name: "Beth" }
+const john = { name: "John" }
 
 describe("Monade", () => {
   it("should create a monad", async () => {
@@ -95,18 +102,13 @@ describe("WeaveDB Core", () => {
     assert.equal(db.get(0, "0").name, "__dirs__")
   })
 
-  it.only("should get/add/set/update/upsert/del", async () => {
+  it("should get/add/set/update/upsert/del", async () => {
     const kv = open({
       path: resolve(
         import.meta.dirname,
         `.db/weavedb-${Math.floor(Math.random() * 10000)}`,
       ),
     })
-    const bob = { name: "Bob" }
-    const alice = { name: "Alice" }
-    const mike = { name: "Mike" }
-    const beth = { name: "Beth" }
-    const john = { name: "John" }
     const allow = [["allow()"]]
     const db = wdb(null, kv)
       .init({ from: "me", id: "db-1" })
@@ -163,5 +165,37 @@ describe("WeaveDB Core", () => {
     o.users.bob.age = 8
     o.$commit()
     assert.deepEqual(o.users, { bob: { name: "Bob", age: 8 } })
+  })
+
+  it.only("should build b+ tree", async () => {
+    const store = {}
+    const kv = {
+      get: k => store[k],
+      put: (k, v, nosave) => (store[k] = v),
+      del: (k, v, nosave) => delete store[k],
+    }
+    let src = {
+      bob: { name: "Bob", age: 3 },
+      alice: { name: "Alice", age: 5 },
+      mike: { name: "Mike", age: 3 },
+      beth: { name: "Beth", age: 1 },
+    }
+    const data_src = key => ({ val: src[key], __id__: key.split("/").pop() })
+    const bpt = new BPT({
+      prefix: "users",
+      kv,
+      data_src,
+      sort_fields: [
+        ["age", "desc"],
+        ["name", "desc"],
+      ],
+    })
+    bpt.insert("bob")
+    bpt.insert("alice")
+    bpt.insert("mike")
+    bpt.insert("beth")
+    bpt.delete("beth")
+    delete src.beth
+    assert.deepEqual(pluck("key", bpt.range({})), ["alice", "mike", "bob"])
   })
 })
