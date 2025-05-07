@@ -7,6 +7,15 @@ import { open } from "lmdb"
 import { resolve } from "path"
 import BPT from "../src/bpt.js"
 import { pluck, prop } from "ramda"
+import {
+  put,
+  mod,
+  del,
+  addIndex,
+  getIndexes,
+  removeIndex,
+} from "../src/indexer.js"
+
 const wait = ms => new Promise(res => setTimeout(() => res(), ms))
 const bob = { name: "Bob" }
 const alice = { name: "Alice" }
@@ -167,35 +176,78 @@ describe("WeaveDB Core", () => {
     assert.deepEqual(o.users, { bob: { name: "Bob", age: 8 } })
   })
 
-  it.only("should build b+ tree", async () => {
-    const store = {}
-    const kv = {
-      get: k => store[k],
-      put: (k, v, nosave) => (store[k] = v),
-      del: (k, v, nosave) => delete store[k],
-    }
-    let src = {
+  it("should build b+ tree", async () => {
+    let data = {
       bob: { name: "Bob", age: 3 },
       alice: { name: "Alice", age: 5 },
       mike: { name: "Mike", age: 3 },
       beth: { name: "Beth", age: 1 },
     }
-    const data_src = key => ({ val: src[key], __id__: key.split("/").pop() })
+    const store = {}
+    const kv = {
+      get: k => store[k],
+      put: (k, v, nosave) => (store[k] = v),
+      del: (k, v, nosave) => delete store[k],
+      data: key => ({ val: data[key], __id__: key.split("/").pop() }),
+    }
+
     const bpt = new BPT({
       prefix: "users",
       kv,
-      data_src,
       sort_fields: [
         ["age", "desc"],
         ["name", "desc"],
       ],
     })
-    bpt.insert("bob")
-    bpt.insert("alice")
-    bpt.insert("mike")
-    bpt.insert("beth")
+    bpt.insert("bob", data.bob)
+    bpt.insert("alice", data.alice)
+    bpt.insert("mike", data.mike)
+    bpt.insert("beth", data.beth)
     bpt.delete("beth")
-    delete src.beth
+    delete data.beth
     assert.deepEqual(pluck("key", bpt.range({})), ["alice", "mike", "bob"])
+  })
+  it.only("should build add indexes", async () => {
+    const data = {}
+    const store = {}
+    const kv = {
+      get: k => store[k],
+      put: (k, v, nosave) => (store[k] = v),
+      del: (k, nosave) => delete store[k],
+      data: key => ({ val: data[key], __id__: key.split("/").pop() }),
+      putData: (key, val) => (data[key] = val),
+      delData: key => delete data[key],
+    }
+    put({ ...bob, age: 3 }, "bob", ["users"], kv, true)
+    put({ ...alice, age: 5 }, "alice", ["users"], kv, true)
+    addIndex(
+      [
+        ["age", "desc"],
+        ["name", "asc"],
+      ],
+      ["users"],
+      kv,
+    )
+    put({ ...mike, age: 7 }, "mike", ["users"], kv, true)
+    assert.deepEqual(store["age/asc/0"].vals, ["bob", "alice", "mike"])
+    put({ ...bob, age: 10 }, "bob", ["users"], kv)
+    assert.deepEqual(store["age/asc/0"].vals, ["alice", "mike", "bob"])
+    put({ ...bob, age: 6 }, "bob", ["users"], kv)
+    assert.deepEqual(store["age/asc/0"].vals, ["alice", "bob", "mike"])
+    del("bob", ["users"], kv)
+    assert.deepEqual(store["age/asc/0"].vals, ["alice", "mike"])
+    assert.deepEqual(store["indexes"]["age/desc/name/asc"], {
+      key: "age/desc/name/asc",
+      order: 100,
+    })
+    removeIndex(
+      [
+        ["age", "desc"],
+        ["name", "asc"],
+      ],
+      ["users"],
+      kv,
+    )
+    assert.equal(store["indexes"]["age/desc/name/asc"] ?? null, null)
   })
 })
