@@ -27,14 +27,7 @@ import {
 } from "ramda"
 
 class BPT {
-  constructor({
-    order = 5,
-    sort_fields = "number",
-    kv,
-    prefix,
-    onCommit,
-    data_src,
-  }) {
+  constructor({ order = 5, sort_fields = "number", kv, prefix, onCommit }) {
     this.kv = kv
     this.onCommit = onCommit
     this.order = order
@@ -42,7 +35,6 @@ class BPT {
     this.max_vals = this.order - 1
     this.min_vals = Math.ceil(this.order / 2) - 1
     this.prefix = prefix
-    this.data_src = data_src
   }
   addPrefix(key, prefix) {
     return prefix ? `${prefix}${key}` : key
@@ -88,7 +80,7 @@ class BPT {
         val: cache[key]?.val ?? null,
       }
     const dkey = `data/${key}`
-    let _data = stats?.[dkey] ?? this.data_src(key) ?? null
+    let _data = stats?.[dkey] ?? this.kv.data(key) ?? null
     cache[key] = _data
     return { key, val: _data?.val ?? null }
   }
@@ -909,8 +901,7 @@ class BPT {
     if (!exists) node.vals.push(key)
   }
 
-  insert(key, skipPut = false) {
-    const val = this.data_src(key)?.val ?? null
+  insert(key, val, skipPut = false) {
     if (val === null) return
     let stats = {}
     this.putData(key, val, stats)
