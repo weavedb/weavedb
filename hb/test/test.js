@@ -6,7 +6,7 @@ import lsjson from "../src/lsjson.js"
 import { open } from "lmdb"
 import { resolve } from "path"
 import BPT from "../src/bpt.js"
-import { pluck, prop } from "ramda"
+import { last, init, clone, map, pluck, prop, slice } from "ramda"
 import {
   put,
   mod,
@@ -15,8 +15,8 @@ import {
   getIndexes,
   removeIndex,
 } from "../src/indexer.js"
-import parser from "../src/parser.js"
-
+import parseQuery from "../src/parser.js"
+import { range, get, ranges, pranges, doc } from "../src/planner.js"
 const wait = ms => new Promise(res => setTimeout(() => res(), ms))
 const bob = { name: "Bob" }
 const alice = { name: "Alice" }
@@ -251,36 +251,67 @@ describe("WeaveDB Core", () => {
     )
     assert.equal(store["indexes"]["age/desc/name/asc"] ?? null, null)
   })
-  it.only("should parse query", async () => {
+
+  it("should parse query", async () => {
+    const q = {
+      path: ["users"],
+      limit: 10,
+      start: ["startAt", { name: "Bob" }],
+      end: ["endBefore", { name: "Bob", age: 3 }],
+      startCursor: null,
+      endCursor: null,
+      sort: [
+        ["name", "asc"],
+        ["age", "desc"],
+      ],
+      reverse: { start: false, end: true },
+      array: ["favs", "array-contains", "apple"],
+      equals: [["name", "==", "Bob"]],
+      range: [["age", "<", 3]],
+      sortByTail: false,
+      queries: [
+        {
+          opt: {
+            limit: 10,
+            startAt: { name: "Bob" },
+            endBefore: { name: "Bob", age: 3 },
+          },
+          prefix: "favs/array:701935c8d90e8c630a35a7ae824446bf",
+        },
+      ],
+      type: "range",
+    }
     assert.deepEqual(
-      parser([
+      parseQuery([
         "users",
         ["age", "desc"],
-        ["name", "desc"],
         ["name", "==", "Bob"],
         ["favs", "array-contains", "apple"],
         ["age", "<", 3],
-        ["startAt", 9],
-        ["endBefore", 15],
         10,
       ]),
-      {
-        path: ["users"],
-        limit: 10,
-        start: ["startAt", 9],
-        end: ["endBefore", 15],
-        startCursor: null,
-        endCursor: null,
-        sort: [
-          ["age", "desc"],
-          ["name", "desc"],
-        ],
-        reverse: { start: false, end: false },
-        array: ["favs", "array-contains", "apple"],
-        equals: [["name", "==", "Bob"]],
-        range: [["age", "<", 3]],
-        sortByTail: false,
-      },
+      q,
     )
+  })
+  it.only("should query with planner", async () => {
+    const data = {}
+    const store = {}
+    const kv = {
+      get: k => store[k],
+      put: (k, v, nosave) => (store[k] = v),
+      del: (k, nosave) => delete store[k],
+      data: key => ({ val: data[key], __id__: key.split("/").pop() }),
+      putData: (key, val) => (data[key] = val),
+      delData: key => delete data[key],
+    }
+    put({ ...bob, age: 3 }, "bob", ["users"], kv, true)
+    put({ ...alice, age: 5 }, "alice", ["users"], kv, true)
+    const parsed = parseQuery(["users", ["name", "==", "Bob"]])
+    assert.deepEqual(get(parsed, kv), [
+      {
+        key: "bob",
+        val: { name: "Bob", age: 3 },
+      },
+    ])
   })
 })
