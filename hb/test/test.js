@@ -15,6 +15,7 @@ import {
   getIndexes,
   removeIndex,
 } from "../src/indexer.js"
+import parser from "../src/parser.js"
 
 const wait = ms => new Promise(res => setTimeout(() => res(), ms))
 const bob = { name: "Bob" }
@@ -207,7 +208,7 @@ describe("WeaveDB Core", () => {
     delete data.beth
     assert.deepEqual(pluck("key", bpt.range({})), ["alice", "mike", "bob"])
   })
-  it.only("should build add indexes", async () => {
+  it("should build add indexes", async () => {
     const data = {}
     const store = {}
     const kv = {
@@ -249,5 +250,37 @@ describe("WeaveDB Core", () => {
       kv,
     )
     assert.equal(store["indexes"]["age/desc/name/asc"] ?? null, null)
+  })
+  it.only("should parse query", async () => {
+    assert.deepEqual(
+      parser([
+        "users",
+        ["age", "desc"],
+        ["name", "desc"],
+        ["name", "==", "Bob"],
+        ["favs", "array-contains", "apple"],
+        ["age", "<", 3],
+        ["startAt", 9],
+        ["endBefore", 15],
+        10,
+      ]),
+      {
+        path: ["users"],
+        limit: 10,
+        start: ["startAt", 9],
+        end: ["endBefore", 15],
+        startCursor: null,
+        endCursor: null,
+        sort: [
+          ["age", "desc"],
+          ["name", "desc"],
+        ],
+        reverse: { start: false, end: false },
+        array: ["favs", "array-contains", "apple"],
+        equals: [["name", "==", "Bob"]],
+        range: [["age", "<", 3]],
+        sortByTail: false,
+      },
+    )
   })
 })
