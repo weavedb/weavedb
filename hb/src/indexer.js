@@ -523,9 +523,7 @@ const put = (_data, id, path, kv, create = false) => {
     if (create) {
       // craete means set (not update)
       del(id, path, kv)
-    } else {
-      return _update(_data, id, old_data, idtree, kv)
-    }
+    } else return _update(_data, id, old_data, idtree, kv)
   }
   kv.putData(id, _data)
   idtree.insert(id, _data, false)

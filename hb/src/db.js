@@ -1,6 +1,7 @@
 import { of } from "./monade.js"
+import { isNil } from "ramda"
 import { dir_schema } from "./schemas.js"
-import { tail, is, isNil, clone, includes } from "ramda"
+import { dirs_set } from "../src/rules.js"
 import {
   updateData,
   upsertData,
@@ -9,76 +10,40 @@ import {
   delData,
   getDocID,
   commit,
+  auth,
+  init,
 } from "./ops.js"
 
-import { fpj, ac_funcs } from "./fpjson.js"
 import lsjson from "../src/lsjson.js"
 
-const auth = ({ db, q, ctx }) => {
-  let data, dir, doc
-  if (ctx.op === "add") {
-    ;[data, dir] = q
-  } else if (ctx.op === "del") {
-    ;[dir, doc] = q
-  } else {
-    ;[data, dir, doc] = q
-  }
-  let vars = {
-    op: ctx.op,
-    opname: ctx.opname,
-    from: "",
-    tx: 0,
-    dir,
-    doc,
-    db: {},
-    old: {},
-    new: {},
-    allow: false,
-  }
-  if (isNil(db[0][dir])) throw Error(`dir doesn't exist: ${dir}`)
-  let allow = false
-  for (const v of db[0][dir].auth) {
-    if (includes(ctx.opname, v[0].split(","))) {
-      try {
-        fpj(v[1], vars, ac_funcs)
-        if (vars.allow) allow = true
-        break
-      } catch (e) {}
-    }
-  }
-  if (!allow) throw Error("operation not allowed")
-  return { db, q, ctx }
-}
-
 const handlers = {
-  add: (db, q, ctx) =>
-    of({ db, q, ctx })
+  add: args =>
+    of(args)
+      .map(init)
       .map(auth)
       .tap(validateSchema)
       .map(getDocID)
       .map(setData)
       .tap(commit),
-  set: (db, q, ctx) =>
-    of({ db, q, ctx }).map(auth).tap(validateSchema).map(setData).tap(commit),
-  del: (db, q, ctx) => of({ db, q, ctx }).map(auth).map(delData).tap(commit),
-  update: (db, q, ctx) =>
-    of({ db, q, ctx })
+  set: args =>
+    of(args).map(init).map(auth).tap(validateSchema).map(setData).tap(commit),
+  del: args => of(args).map(init).map(auth).map(delData).tap(commit),
+  update: args =>
+    of(args)
+      .map(init)
       .map(auth)
       .map(updateData)
       .tap(validateSchema)
       .map(setData)
       .tap(commit),
-  upsert: (db, q, ctx) =>
-    of({ db, q, ctx })
+  upsert: args =>
+    of(args)
+      .map(init)
       .map(auth)
       .map(upsertData)
       .tap(validateSchema)
       .map(setData)
       .tap(commit),
-}
-
-const rules = {
-  dirs_set: ["set", [["allow()"]]],
 }
 
 const wdb = (db, kv) => {
@@ -88,7 +53,7 @@ const wdb = (db, kv) => {
       0: {
         name: "__dirs__",
         schema: dir_schema,
-        auth: [rules.dirs_set],
+        auth: [dirs_set],
       },
       1: {
         name: "__config__",
@@ -115,6 +80,7 @@ const wdb = (db, kv) => {
         try {
           if (!isNil(db[1])) throw Error("already initialized")
           db[1] = { info: { id: msg.id, owner: msg.from } }
+          db[2] = {}
           return db
         } catch (e) {
           db.$reset()
@@ -130,7 +96,7 @@ const wdb = (db, kv) => {
             let ctx = { op: sp[0], opname: op }
             if (isNil(handlers[ctx.op]))
               throw Error(`handler doesn't exist: ${op}`)
-            handlers[ctx.op](db, q, ctx)
+            handlers[ctx.op]({ db, q, ctx })
             return db
           } catch (e) {
             console.log(e)
