@@ -34,7 +34,6 @@ const pranges = (_ranges, limit, kv, sortByTail = false, cur = {}) => {
       v.opt.reverse = true
     }
     delete v.opt.limit
-    //const kv = new KV(`${v.path.join("/")}/`, _KV(kvs, SW))
     let prefix = v.prefix ?? ""
     let suffix = `${compose(
       join("/"),
@@ -273,7 +272,6 @@ const range = (
   _prefix = "",
   cur = {},
 ) => {
-  //const kv = new KV(`${path.join("/")}/`, _KV(kvs, SW))
   if (
     !isArrayIndex(_prefix) &&
     sort_fields.length === 1 &&

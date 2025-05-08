@@ -130,23 +130,25 @@ describe("WeaveDB Core", () => {
           auth: [["set:user,add:user,update:user,upsert:user,del:user", allow]],
         },
         0,
-        "2",
+        "3",
       )
-      .set("set:user", bob, 2, "bob")
-      .set("set:user", alice, 2, "alice")
-      .set("add:user", mike, 2)
-      .set("add:user", beth, 2)
-      .set("del:user", 2, "bob")
-      .set("update:user", { age: 20 }, 2, "alice")
-      .set("upsert:user", john, 2, "john")
+      .set("set:user", bob, 3, "bob")
+      .set("set:user", alice, 3, "alice")
+      .set("add:user", mike, 3)
+      .set("add:user", beth, 3)
+      .set("del:user", 3, "bob")
+      .set("update:user", { age: 20 }, 3, "alice")
+      .set("upsert:user", john, 3, "john")
+    assert.deepEqual(db.get(3, "alice"), { ...alice, age: 20 })
+    assert.deepEqual(db.get(3, "A"), mike)
+    assert.deepEqual(db.get(3, "B"), beth)
+    assert.deepEqual(db.get(3, "john"), john)
+    await wait(100)
 
-    assert.deepEqual(db.get(2, "alice"), { ...alice, age: 20 })
-    assert.deepEqual(db.get(2, "A"), mike)
-    assert.deepEqual(db.get(2, "B"), beth)
-    assert.deepEqual(db.get(2, "john"), john)
-    await wait(0)
+    // recover from kv
     const db2 = wdb(null, kv)
-    assert.equal(db2.get(2, "bob"), null)
+    assert.equal(db2.get(3, "bob"), null)
+    assert.deepEqual(db2.get(3, "alice"), { ...alice, age: 20 })
   })
 
   it("should persist data with lsJSON", async () => {
@@ -156,12 +158,6 @@ describe("WeaveDB Core", () => {
         `.db/mydb-${Math.floor(Math.random() * 10000)}`,
       ),
     })
-    /*
-    const store = {}
-    const kv = {
-      get: k => store[k],
-      put: async (k, v) => (store[k] = v),
-    }*/
     let o = lsjson({}, { kv })
     o.users = {}
     o.users.bob = { name: "Bob" }
@@ -293,7 +289,7 @@ describe("WeaveDB Core", () => {
       q,
     )
   })
-  it.only("should query with planner", async () => {
+  it("should query with planner", async () => {
     const data = {}
     const store = {}
     const kv = {
