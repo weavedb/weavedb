@@ -17,6 +17,7 @@ import {
 } from "../src/indexer.js"
 import parseQuery from "../src/parser.js"
 import { range, get, ranges, pranges, doc } from "../src/planner.js"
+import kv from "../src/kv.js"
 const wait = ms => new Promise(res => setTimeout(() => res(), ms))
 const bob = { name: "Bob" }
 const alice = { name: "Alice" }
@@ -86,18 +87,36 @@ describe("WeaveDB TPS", () => {
   })
 
   it("weavedb monad tps (2.5-3M)", async () => {
-    const weavedb = obj => {
-      obj ??= { env: {}, state: {} }
-      return of(obj, { map: { set } })
-    }
-    const db = wdb()
+    const kv = open({
+      path: resolve(
+        import.meta.dirname,
+        `.db/weavedb-${Math.floor(Math.random() * 10000)}`,
+      ),
+    })
+    const allow = [["allow()"]]
+    const db = wdb(null, kv)
+      .init({ from: "me", id: "db-1" })
+      .set(
+        "set",
+        {
+          name: "users",
+          schema: { type: "object", required: ["name"] },
+          auth: [["set:user,add:user,update:user,upsert:user,del:user", allow]],
+        },
+        0,
+        "3",
+      )
     let start = Date.now()
+    let last = 0
     let i = 0
-    while (Date.now() - start < 1000) db.set(msg(i++))
+    while (Date.now() - start < 1000) {
+      db.set("set:user", { name: `Bob-${i}` }, 3, `bob-${i++}`)
+    }
     console.log(i, "tps with weavedb monad")
   })
 
   it("bare monad tps (2.5-3M)", async () => {
+    console.log("lets go next...")
     let start = Date.now()
     let i = 0
     const db = of({ env: {}, state: {} })
@@ -309,5 +328,35 @@ describe("WeaveDB Core", () => {
         val: { name: "Bob", age: 3 },
       },
     ])
+  })
+})
+
+describe("KV", () => {
+  it.only("should save data to kv", async () => {
+    const io = open({
+      path: resolve(
+        import.meta.dirname,
+        `.db/mydb-${Math.floor(Math.random() * 10000)}`,
+      ),
+    })
+    const wkv = kv(io, c => {})
+    let start = Date.now()
+    let last = 0
+    let i = 0
+    let s = {}
+    while (Date.now() - start < 10) {
+      wkv.put(`bob-${i}`, { name: `Bob_${i++}` })
+      if (i % 3 === 0) {
+        if (i % 6 === 0) {
+          wkv.reset()
+        } else {
+          wkv.commit().then(({ i, data }) => {})
+        }
+      }
+    }
+    console.log(i)
+    const wkv2 = kv(io)
+    await wait(100)
+    assert.deepEqual(wkv2.get("bob-1"), { name: "Bob_1" })
   })
 })
