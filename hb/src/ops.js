@@ -80,8 +80,8 @@ function getDocID({ db, ctx }) {
   return arguments[0]
 }
 
-function commit({ db }) {
-  db.commit()
+function commit({ db, ctx }) {
+  db.commit(ctx.opt)
 }
 
 function init({ db, ctx, q }) {

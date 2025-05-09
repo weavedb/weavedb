@@ -2,6 +2,7 @@ import { of } from "./monade.js"
 import { pluck, isNil } from "ramda"
 import { dir_schema } from "./schemas.js"
 import { dirs_set } from "../src/rules.js"
+import { last } from "ramda"
 import {
   updateData,
   upsertData,
@@ -55,7 +56,7 @@ const wdb = kv => {
     put,
     del,
     dir: id => get(0, id),
-    commit: () => kv.commit(),
+    commit: opt => kv.commit(opt),
     reset: () => kv.reset(),
   }
   if (isNil(db.dir(0))) {
@@ -105,13 +106,17 @@ const wdb = kv => {
           try {
             const [op, ...q] = msg
             const sp = op.split(":")
-            let ctx = { op: sp[0], opname: op }
+            const _opt = last(q)
+            let opt = {}
+            if (_opt && typeof _opt === "object" && _opt["signature"])
+              opt = q.pop()
+            let ctx = { op: sp[0], opname: op, opt }
             if (isNil(handlers[ctx.op]))
               throw Error(`handler doesn't exist: ${op}`)
             handlers[ctx.op]({ db, q, ctx })
             return db
           } catch (e) {
-            db.reset?.()
+            db.reset()
             throw e
           }
         },

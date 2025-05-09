@@ -10,37 +10,36 @@ const verify = async req => {
   let address = null
   let query = null
   let ts = Date.now()
+  let fields = null
   try {
-    const input = parseSignatureInput(req.headers["signature-input"])
-    const key = { kty: "RSA", n: input.keyid, e: "AQAB" }
+    const { keyid, fields } = parseSI(req.headers["signature-input"])
+    const key = { kty: "RSA", n: keyid, e: "AQAB" }
     const verifier = createVerifier(
       createPublicKey({ key, format: "jwk" }),
       "rsa-pss-sha512",
     )
     valid = await verifyMessage(
       { keyLookup: params => ({ verify: verifier }) },
-      {
-        method: req.method,
-        headers: req.headers,
-        url: `https://weavedb.dev${req.headers.path}`,
-      },
+      { headers: req.headers },
     )
     address = await arweave.wallets.jwkToAddress(key)
     query = JSON.parse(req.headers.query)
-    return { valid, address, query, ts }
+    return { valid, address, query, ts, fields }
   } catch (e) {
-    return { err: true, valid, address, query, ts }
+    return { err: true, valid, address, query, ts, fields }
   }
 }
-function parseSignatureInput(input) {
+function parseSI(input) {
   const match = input.match(
     /^([^=]+)=\(([^)]+)\);alg="([^"]+)";keyid="([^"]+)"$/,
   )
   if (!match) throw new Error("Invalid signature-input format")
 
   const [, label, fieldsStr, alg, keyid] = match
-  const fields = fieldsStr.split('" "').map(f => f.replace(/"/g, ""))
+  const fields = fieldsStr
+    .split('" "')
+    .map(f => f.replace(/"/g, "").toLowerCase())
   return { label, fields, alg, keyid }
 }
 
-export { verify }
+export { verify, parseSI }

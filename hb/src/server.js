@@ -6,22 +6,52 @@ import wdb from "./index.js"
 import kv from "./kv.js"
 import { open } from "lmdb"
 import { resolve } from "path"
+import { includes } from "ramda"
+import { connect, createSigner } from "@permaweb/aoconnect"
 
-const getKV = () => {
-  const io = open({
-    path: resolve(
-      import.meta.dirname,
-      `.db/weavedb-${Math.floor(Math.random() * 10000)}`,
-    ),
+const getKV = ({ jwk, pid, hb, dbpath }) => {
+  let request = null
+  if (jwk && hb) {
+    ;({ request } = connect({
+      MODE: "mainnet",
+      URL: hb,
+      device: "",
+      signer: createSigner(jwk),
+    }))
+  }
+  const io = open({ path: dbpath })
+  let addr = null
+  return kv(io, async c => {
+    let bundle = []
+    for (const d of c.data) {
+      if (d.opt && typeof d.opt === "object" && d.opt["signature"]) {
+        bundle.push(d.opt)
+      }
+    }
+    if (bundle.length > 0) {
+      if (request && pid) {
+        if (!addr) {
+          const txt = await fetch(
+            `${hb}/~meta@1.0/info/serialize~json@1.0`,
+          ).then(r => r.json())
+          addr = txt.address
+        }
+        const tags = {
+          method: "POST",
+          path: `/${pid}/schedule`,
+          scheduler: addr,
+          data: JSON.stringify(bundle),
+        }
+        const res = await request(tags)
+        console.log(`[${res.slot}] ${res.process}`)
+      }
+    }
   })
-  return kv(io, c => {})
 }
 
-const wkv = getKV()
-const db = wdb(wkv).init({ from: "me", id: "db-1" })
-const port = 4000
-
-const server = () => {
+const server = ({ jwk, hb, dbpath, port = 4000, pid }) => {
+  const wkv = getKV({ jwk, hb, dbpath, pid })
+  const db = wdb(wkv).init({ from: "me", id: "db-1" })
   const app = express()
   app.use(cors())
   app.use(bodyParser.raw({ type: "*/*", limit: "100mb" }))
@@ -42,16 +72,23 @@ const server = () => {
   })
 
   app.post("/~weavedb@1.0/set", async (req, res) => {
-    const q = await verify(req)
-    if (q.valid) {
+    const { valid, query, fields } = await verify(req)
+    if (valid) {
       try {
-        db.set(...q.query)
-        res.json({ success: true, ...q })
+        let headers = {}
+        for (const k in req.headers) {
+          let lowK = k.toLowerCase()
+          if (includes(lowK, [...fields, "signature", "signature-input"])) {
+            headers[lowK] = req.headers[lowK]
+          }
+        }
+        db.set(...query, headers)
+        res.json({ success: true, query })
       } catch (e) {
-        res.json({ success: false, ...q, error: e.toString() })
+        res.json({ success: false, query, error: e.toString() })
       }
     } else {
-      res.json({ success: false, ...q })
+      res.json({ success: false, query })
     }
   })
 

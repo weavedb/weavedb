@@ -8,34 +8,44 @@ const kv = (io, fn) => {
   let on = false
   const get = k => l[k] ?? s[k] ?? io.get(k) ?? null
   const put = (k, v) => (l[k] = v)
-  const reset = () => (l = {})
+  const reset = () => {
+    l = {}
+  }
   const commit = async () => {
     if (c.length > 0) {
       on = true
       let count = 0
       let i, cl, from, to
-      await io.transaction(() => {
-        while (c.length > 0) {
-          ;({ i, cl } = c.shift())
-          if (!from) from = i
-          to = i
-          for (const k in cl ?? {}) {
-            if (cl[k] === null) io.remove(k)
-            else io.put(k, cl[k])
-            count++
+      let opt = null
+      let data = []
+      try {
+        await io.transaction(() => {
+          while (c.length > 0) {
+            ;({ i, cl, opt } = c.shift())
+            if (!from) from = i
+            to = i
+            for (const k in cl ?? {}) {
+              if (cl[k] === null) io.remove(k)
+              else io.put(k, cl[k])
+              count++
+            }
+            data.push({ i, opt, cl })
+            i++
           }
-        }
-      })
-      fn?.({ from, to, count, len: c.length })
+        })
+      } catch (e) {
+        console.log(e)
+      }
+      fn?.({ from, to, count, len: c.length, data })
       await commit()
     }
     on = false
   }
   return {
     reset,
-    commit: async () => {
+    commit: async (opt = null) => {
       const cl = clone(l)
-      c.push({ i, cl })
+      c.push({ i, cl, opt })
       for (const k in cl ?? {}) s[k] = cl[k]
       reset()
       if (!on) commit().then(() => {})
