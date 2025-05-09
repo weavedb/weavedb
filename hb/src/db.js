@@ -83,7 +83,7 @@ const wdb = kv => {
             let ctx = { op: "get" }
             return handlers.get({ db, q, ctx })
           } catch (e) {
-            throw Error(e)
+            throw e
           }
         },
     },
@@ -111,10 +111,8 @@ const wdb = kv => {
             handlers[ctx.op]({ db, q, ctx })
             return db
           } catch (e) {
-            console.log(e)
-            console.log(db[0], msg)
             db.reset?.()
-            throw Error(e)
+            throw e
           }
         },
     },

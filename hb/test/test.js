@@ -6,6 +6,7 @@ import { open } from "lmdb"
 import { resolve } from "path"
 import BPT from "../src/bpt.js"
 import { last, init, clone, map, pluck, prop, slice } from "ramda"
+import server from "../src/server.js"
 import {
   put,
   mod,
@@ -16,6 +17,9 @@ import {
 } from "../src/indexer.js"
 import parseQuery from "../src/parser.js"
 import { range, get, ranges, pranges, doc } from "../src/planner.js"
+import { connect, createSigner } from "@permaweb/aoconnect"
+import { AO, HB } from "wao"
+
 import kv from "../src/kv.js"
 const wait = ms => new Promise(res => setTimeout(() => res(), ms))
 const bob = { name: "Bob" }
@@ -187,7 +191,7 @@ describe("WeaveDB Core", () => {
     o.users.bob.age = 8
     o.$commit()
     assert.deepEqual(o.users, { bob: { name: "Bob", age: 8 } })
-  })
+    })
   */
   it("should build b+ tree", async () => {
     let data = {
@@ -356,5 +360,68 @@ describe("KV", () => {
     const wkv2 = kv(io)
     await wait(5000)
     assert.deepEqual(wkv2.get("bob-1"), { name: "Bob_1" })
+  })
+})
+
+describe("Server", () => {
+  it.only("should run a server", async () => {
+    const ao = new AO()
+    const { jwk } = await ao.ar.gen()
+    const node = server()
+    const { request } = connect({
+      MODE: "mainnet",
+      URL: "http://localhost:4000",
+      device: "",
+      signer: createSigner(jwk),
+    })
+    const allow = [["allow()"]]
+    let start = Date.now()
+    const res = await request({
+      method: "POST",
+      path: "/~weavedb@1.0/set",
+      query: JSON.stringify([
+        "set",
+        {
+          name: "users",
+          schema: { type: "object", required: ["name"] },
+          auth: [["set:user,add:user,update:user,upsert:user,del:user", allow]],
+        },
+        0,
+        "3",
+      ]),
+    })
+    const json = JSON.parse(res.body)
+    if (json.success) {
+      console.log(Date.now() - start, "ms")
+      console.log(json)
+    }
+    start = Date.now()
+    const res2 = await request({
+      method: "POST",
+      path: "/~weavedb@1.0/set",
+      query: JSON.stringify(["set:user", bob, 3, "bob"]),
+    })
+    const json2 = JSON.parse(res2.body)
+    if (json2.success) {
+      console.log(Date.now() - start, "ms")
+      console.log(json2)
+    } else {
+      console.log(json2.error)
+    }
+
+    start = Date.now()
+    const res3 = await request({
+      method: "GET",
+      path: "/~weavedb@1.0/get",
+      query: JSON.stringify(["3"]),
+    })
+    const json3 = JSON.parse(res3.body)
+    if (json3.success) {
+      console.log(Date.now() - start, "ms")
+      assert.deepEqual(json3.res, [bob])
+    } else {
+      console.log(json3.error)
+    }
+    node.stop()
   })
 })
