@@ -1,9 +1,9 @@
 import { clone } from "ramda"
+
 const kv = (io, fn) => {
   let s = {}
   let l = {}
   let i = 1
-  let ci = 0
   let c = []
   let on = false
   const get = k => l[k] ?? s[k] ?? io.get(k) ?? null
@@ -12,14 +12,21 @@ const kv = (io, fn) => {
   const commit = async () => {
     if (c.length > 0) {
       on = true
-      const { i, cl } = c.shift()
       let count = 0
-      for (const k in cl ?? {}) {
-        if (cl[k] === null) await io.remove(k)
-        else await io.put(k, cl[k])
-        count++
-      }
-      fn?.({ block: i, data: cl, count, len: c.length })
+      let i, cl, from, to
+      await io.transaction(() => {
+        while (c.length > 0) {
+          ;({ i, cl } = c.shift())
+          if (!from) from = i
+          to = i
+          for (const k in cl ?? {}) {
+            if (cl[k] === null) io.remove(k)
+            else io.put(k, cl[k])
+            count++
+          }
+        }
+      })
+      fn?.({ from, to, count, len: c.length })
       await commit()
     }
     on = false

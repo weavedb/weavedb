@@ -2,7 +2,6 @@ import assert from "assert"
 import { afterEach, after, describe, it, before, beforeEach } from "node:test"
 import { of, pof } from "../src/monade.js"
 import wdb from "../src/index.js"
-import lsjson from "../src/lsjson.js"
 import { open } from "lmdb"
 import { resolve } from "path"
 import BPT from "../src/bpt.js"
@@ -24,6 +23,16 @@ const alice = { name: "Alice" }
 const mike = { name: "Mike" }
 const beth = { name: "Beth" }
 const john = { name: "John" }
+
+const getKV = () => {
+  const io = open({
+    path: resolve(
+      import.meta.dirname,
+      `.db/mydb-${Math.floor(Math.random() * 10000)}`,
+    ),
+  })
+  return kv(io, c => {})
+}
 
 describe("Monade", () => {
   it("should create a monad", async () => {
@@ -78,7 +87,7 @@ describe("WeaveDB TPS", () => {
     return obj
   }
 
-  it("bare func tps (2.5-3M)", async () => {
+  it("bare func tps (2.5 - 3.0 M)", async () => {
     let start = Date.now()
     let i = 0
     let obj = { env: {}, state: {} }
@@ -86,15 +95,9 @@ describe("WeaveDB TPS", () => {
     console.log(i, "tps without monad")
   })
 
-  it("weavedb monad tps (2.5-3M)", async () => {
-    const kv = open({
-      path: resolve(
-        import.meta.dirname,
-        `.db/weavedb-${Math.floor(Math.random() * 10000)}`,
-      ),
-    })
+  it("full weavedb monad & kv tps (3.0 - 3.5 K)", async () => {
     const allow = [["allow()"]]
-    const db = wdb(null, kv)
+    const db = wdb(getKV())
       .init({ from: "me", id: "db-1" })
       .set(
         "set",
@@ -112,11 +115,10 @@ describe("WeaveDB TPS", () => {
     while (Date.now() - start < 1000) {
       db.set("set:user", { name: `Bob-${i}` }, 3, `bob-${i++}`)
     }
-    console.log(i, "tps with weavedb monad")
+    console.log(i, "tps with weavedb monad & kv")
   })
 
-  it("bare monad tps (2.5-3M)", async () => {
-    console.log("lets go next...")
+  it("bare monad tps (2.5 - 3.0 M)", async () => {
     let start = Date.now()
     let i = 0
     const db = of({ env: {}, state: {} })
@@ -127,19 +129,14 @@ describe("WeaveDB TPS", () => {
 
 describe("WeaveDB Core", () => {
   it("should init", async () => {
-    const db = wdb().init({ from: "me", id: "db-1" })
-    assert.equal(db.get(0, "0").name, "__dirs__")
+    const db = wdb(getKV()).init({ from: "me", id: "db-1" })
+    assert.equal(db.get("0", "0").name, "__dirs__")
   })
 
   it("should get/add/set/update/upsert/del", async () => {
-    const kv = open({
-      path: resolve(
-        import.meta.dirname,
-        `.db/weavedb-${Math.floor(Math.random() * 10000)}`,
-      ),
-    })
     const allow = [["allow()"]]
-    const db = wdb(null, kv)
+    const wkv = getKV()
+    const db = wdb(wkv)
       .init({ from: "me", id: "db-1" })
       .set(
         "set",
@@ -158,19 +155,19 @@ describe("WeaveDB Core", () => {
       .set("del:user", 3, "bob")
       .set("update:user", { age: 20 }, 3, "alice")
       .set("upsert:user", john, 3, "john")
-    assert.deepEqual(db.get(3, "alice"), { ...alice, age: 20 })
-    assert.deepEqual(db.get(3, "A"), mike)
-    assert.deepEqual(db.get(3, "B"), beth)
-    assert.deepEqual(db.get(3, "john"), john)
+    assert.deepEqual(db.get("3", "alice"), { ...alice, age: 20 })
+    assert.deepEqual(db.get("3", "A"), mike)
+    assert.deepEqual(db.get("3", "B"), beth)
+    assert.deepEqual(db.get("3", "john"), john)
     await wait(100)
 
     // recover from kv
-    const db2 = wdb(null, kv)
-    assert.equal(db2.get(3, "bob"), null)
-    assert.deepEqual(db2.get(3, "alice"), { ...alice, age: 20 })
+    const db2 = wdb(wkv)
+    assert.equal(db2.get("3", "bob"), null)
+    assert.deepEqual(db2.get("3", "alice"), { ...alice, age: 20 })
   })
-
-  it("should persist data with lsJSON", async () => {
+  /*
+  it.skip("should persist data with lsJSON", async () => {
     const kv = open({
       path: resolve(
         import.meta.dirname,
@@ -191,7 +188,7 @@ describe("WeaveDB Core", () => {
     o.$commit()
     assert.deepEqual(o.users, { bob: { name: "Bob", age: 8 } })
   })
-
+  */
   it("should build b+ tree", async () => {
     let data = {
       bob: { name: "Bob", age: 3 },
@@ -332,7 +329,7 @@ describe("WeaveDB Core", () => {
 })
 
 describe("KV", () => {
-  it.only("should save data to kv", async () => {
+  it("should save data to kv", async () => {
     const io = open({
       path: resolve(
         import.meta.dirname,
@@ -344,7 +341,7 @@ describe("KV", () => {
     let last = 0
     let i = 0
     let s = {}
-    while (Date.now() - start < 10) {
+    while (Date.now() - start < 1000) {
       wkv.put(`bob-${i}`, { name: `Bob_${i++}` })
       if (i % 3 === 0) {
         if (i % 6 === 0) {
@@ -355,8 +352,9 @@ describe("KV", () => {
       }
     }
     console.log(i)
+    assert.deepEqual(wkv.get("bob-1"), { name: "Bob_1" })
     const wkv2 = kv(io)
-    await wait(100)
+    await wait(5000)
     assert.deepEqual(wkv2.get("bob-1"), { name: "Bob_1" })
   })
 })

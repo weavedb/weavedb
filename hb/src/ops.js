@@ -1,6 +1,7 @@
 import { validate } from "jsonschema"
-import { clone, includes, isNil, mergeLeft } from "ramda"
+import { clone, includes, isNil, mergeLeft, pluck } from "ramda"
 import { fpj, ac_funcs } from "./fpjson.js"
+import parseQuery from "./parser.js"
 import {
   put,
   mod,
@@ -9,6 +10,7 @@ import {
   getIndexes,
   removeIndex,
 } from "../src/indexer.js"
+import { get } from "../src/planner.js"
 
 const BASE64_CHARS =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
@@ -27,23 +29,24 @@ function tob64(n) {
 
 function updateData({ db, ctx }) {
   const { data, dir, doc } = ctx
-  if (isNil(db[dir]?.[doc])) throw Error("data doesn't exist")
-  ctx.data = mergeLeft(data, db[dir][doc])
+  const old = db.get(dir, doc)
+  if (isNil(old)) throw Error("data doesn't exist")
+  ctx.data = mergeLeft(data, old)
   return arguments[0]
 }
 
 function upsertData({ db, ctx }) {
   const { data, dir, doc } = ctx
-  if (isNil(db[0][dir])) throw Error("dir doesn't exist")
-  db[dir] ??= {}
-  if (!isNil(db[dir]?.[doc])) ctx.data = mergeLeft(data, db[dir][doc])
+  if (isNil(db.dir(dir))) throw Error("dir doesn't exist")
+  const old = db.get(dir, doc)
+  if (!isNil(old)) ctx.data = mergeLeft(data, old)
   return arguments[0]
 }
 
 const validateSchema = ({ db, ctx }) => {
   let valid = false
   const { data, dir } = ctx
-  const schema = db[0][dir].schema
+  const schema = db.dir(dir).schema
   try {
     valid = validate(data, schema).valid
   } catch (e) {}
@@ -52,37 +55,45 @@ const validateSchema = ({ db, ctx }) => {
 
 function setData({ db, ctx }) {
   const { data, dir, doc } = ctx
-  if (isNil(db[0][dir])) throw Error("dir doesn't exist")
+  if (isNil(db.dir(dir))) throw Error("dir doesn't exist")
   put(data, doc, [dir.toString()], ctx.kv, true)
   return arguments[0]
 }
 
 function delData({ db, ctx }) {
   const { dir, doc } = ctx
-  if (isNil(db[0][dir])) throw Error("dir doesn't exist")
+  if (isNil(db.dir(dir))) throw Error("dir doesn't exist")
   del(doc, [dir.toString()], ctx.kv)
   return arguments[0]
 }
 
 function getDocID({ db, ctx }) {
   const { dir } = ctx
-  if (isNil(db[0][dir])) throw Error("dir doesn't exist")
+  let _dir = db.dir(dir)
+  if (isNil(_dir)) throw Error("dir doesn't exist")
+  let i = isNil(_dir.autoid) ? 0 : _dir.autoid + 1
   const docs = db[dir] ?? {}
-  let i = isNil(db[0][dir]?.autoid) ? 0 : db[0][dir].autoid + 1
-  while (docs[tob64(i)]) i++
+  while (db.get(dir, tob64(i))) i++
   ctx.doc = tob64(i)
-  db[0][dir] ??= {}
-  db[0][dir].autoid = i
+  _dir.autoid = i
+  db.put(0, dir, _dir)
   return arguments[0]
 }
 
 function commit({ db }) {
-  db.$commit()
+  db.commit()
 }
 
 function init({ db, ctx, q }) {
   let data, dir, doc
-  if (ctx.op === "add") {
+  if (ctx.op === "get") {
+    ;[dir, doc] = q
+    ctx.dir = dir
+    if (typeof doc === "string") {
+      ctx.doc = doc
+      ctx.range = false
+    } else ctx.range = true
+  } else if (ctx.op === "add") {
     ;[data, dir] = q
     ctx.dir = dir
     ctx.data = data
@@ -97,18 +108,15 @@ function init({ db, ctx, q }) {
     ctx.data = data
   }
   ctx.kv = {
-    get: k => db[2][`${dir}/${k}`],
-    put: (k, v, nosave) => (db[2][`${dir}/${k}`] = v),
-    del: (k, nosave) => delete db[2][`${dir}/${k}`],
+    get: k => db.get(2, `${dir}/${k}`),
+    put: (k, v, nosave) => db.put(2, `${dir}/${k}`, v),
+    del: (k, nosave) => db.del(2, `${dir}/${k}`),
     data: key => ({
-      val: db[dir]?.[key] ?? null,
+      val: db.get(dir, key),
       __id__: key.split("/").pop(),
     }),
-    putData: (key, val) => {
-      db[dir] ??= {}
-      db[dir][key] = val
-    },
-    delData: key => delete db[dir]?.[key],
+    putData: (key, val) => db.put(dir, key, val),
+    delData: key => db.del(dir, key),
   }
   return arguments[0]
 }
@@ -127,9 +135,10 @@ function auth({ db, q, ctx }) {
     new: {},
     allow: false,
   }
-  if (isNil(db[0][dir])) throw Error(`dir doesn't exist: ${dir}`)
+  const _dir = db.dir(dir)
+  if (isNil(_dir)) throw Error(`dir doesn't exist: ${dir}`)
   let allow = false
-  for (const v of db[0][dir].auth) {
+  for (const v of _dir.auth) {
     if (includes(ctx.opname, v[0].split(","))) {
       try {
         fpj(v[1], vars, ac_funcs)
@@ -142,6 +151,14 @@ function auth({ db, q, ctx }) {
   return arguments[0]
 }
 
+function getDocs({ db, q, ctx }) {
+  const { dir, doc } = ctx
+  if (isNil(db.dir(dir))) throw Error("dir doesn't exist")
+  const parsed = parseQuery(q)
+  const res = get(parsed, ctx.kv)
+  return ctx.range ? pluck("val")(res) : res.val
+}
+
 export {
   init,
   auth,
@@ -152,4 +169,5 @@ export {
   delData,
   getDocID,
   commit,
+  getDocs,
 }
