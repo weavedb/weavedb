@@ -1,5 +1,5 @@
 import { of } from "./monade.js"
-import { isNil } from "ramda"
+import { pluck, isNil } from "ramda"
 import { dir_schema } from "./schemas.js"
 import { dirs_set } from "../src/rules.js"
 import {
@@ -12,11 +12,11 @@ import {
   commit,
   auth,
   init,
+  getDocs,
 } from "./ops.js"
 
-import lsjson from "../src/lsjson.js"
-
 const handlers = {
+  get: args => of(args).map(init).to(getDocs),
   add: args =>
     of(args)
       .map(init)
@@ -46,44 +46,56 @@ const handlers = {
       .tap(commit),
 }
 
-const wdb = (db, kv) => {
-  db = kv ? lsjson([], { kv }) : (db ?? [])
-  if (db.length === 0) {
-    db.push({
-      0: {
-        name: "__dirs__",
-        schema: dir_schema,
-        auth: [dirs_set],
-      },
-      1: {
-        name: "__config__",
-        schema: { type: "object", additionalProperties: false },
-      },
-      2: {
-        name: "__indexes__",
-        schema: { type: "object" },
-      },
-    })
+const wdb = kv => {
+  const get = (dir, doc) => kv.get(`${dir}/${doc}`)
+  const put = (dir, doc, data) => kv.put(`${dir}/${doc}`, data)
+  const del = (dir, doc) => kv.del(`${dir}/${doc}`)
+  const db = {
+    get,
+    put,
+    del,
+    dir: id => get(0, id),
+    commit: () => kv.commit(),
+    reset: () => kv.reset(),
   }
-  return of(db, {
+  if (isNil(db.dir(0))) {
+    db.put(0, "0", {
+      name: "__dirs__",
+      schema: dir_schema,
+      auth: [dirs_set],
+    })
+    db.put(0, "1", {
+      name: "__config__",
+      schema: { type: "object", additionalProperties: false },
+    })
+    db.put(0, "2", {
+      name: "__indexes__",
+      schema: { type: "object" },
+    })
+    db.commit()
+  }
+  const monad = of(db, {
     to: {
       get:
         (...q) =>
         db => {
-          const [dir, doc] = q
-          if (isNil(db[0][dir])) throw Error("dir doesn't exist")
-          return doc ? (db[dir][doc] ?? null) : db[dir]
+          try {
+            let ctx = { op: "get" }
+            return handlers.get({ db, q, ctx })
+          } catch (e) {
+            throw Error(e)
+          }
         },
     },
     map: {
       init: msg => db => {
         try {
-          if (!isNil(db[1])) throw Error("already initialized")
-          db[1] = { info: { id: msg.id, owner: msg.from } }
-          db[2] = {}
+          if (!isNil(db.get(1, "info"))) throw Error("already initialized")
+          db.put(1, "info", { id: msg.id, owner: msg.from })
+          db.commit()
           return db
         } catch (e) {
-          db.$reset()
+          db.reset()
           throw Error(e)
         }
       },
@@ -101,12 +113,13 @@ const wdb = (db, kv) => {
           } catch (e) {
             console.log(e)
             console.log(db[0], msg)
-            db.$reset?.()
+            db.reset?.()
             throw Error(e)
           }
         },
     },
   })
+  return monad
 }
 
 export default wdb
