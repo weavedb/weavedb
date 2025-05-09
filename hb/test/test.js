@@ -367,7 +367,30 @@ describe("Server", () => {
   it.only("should run a server", async () => {
     const ao = new AO()
     const { jwk } = await ao.ar.gen()
-    const node = server()
+    const hb = "http://localhost:10000"
+    const { request: request_hb } = connect({
+      MODE: "mainnet",
+      URL: hb,
+      device: "",
+      signer: createSigner(jwk),
+    })
+    const txt = await fetch(`${hb}/~meta@1.0/info/serialize~json@1.0`).then(r =>
+      r.json(),
+    )
+    const addr = txt.address
+    const tags = {
+      method: "POST",
+      path: "/~process@1.0/schedule",
+      scheduler: addr,
+      "random-seed": Math.random().toString(),
+    }
+    const pid = (await request_hb(tags)).process
+    console.log("pid", pid)
+    const dbpath = resolve(
+      import.meta.dirname,
+      `.db/weavedb-${Math.floor(Math.random() * 10000)}`,
+    )
+    const node = server({ dbpath, jwk, hb, pid })
     const { request } = connect({
       MODE: "mainnet",
       URL: "http://localhost:4000",
@@ -376,19 +399,20 @@ describe("Server", () => {
     })
     const allow = [["allow()"]]
     let start = Date.now()
+    const q1 = [
+      "set",
+      {
+        name: "users",
+        schema: { type: "object", required: ["name"] },
+        auth: [["set:user,add:user,update:user,upsert:user,del:user", allow]],
+      },
+      0,
+      "3",
+    ]
     const res = await request({
       method: "POST",
       path: "/~weavedb@1.0/set",
-      query: JSON.stringify([
-        "set",
-        {
-          name: "users",
-          schema: { type: "object", required: ["name"] },
-          auth: [["set:user,add:user,update:user,upsert:user,del:user", allow]],
-        },
-        0,
-        "3",
-      ]),
+      query: JSON.stringify(q1),
     })
     const json = JSON.parse(res.body)
     if (json.success) {
@@ -396,10 +420,11 @@ describe("Server", () => {
       console.log(json)
     }
     start = Date.now()
+    const q2 = ["set:user", bob, 3, "bob"]
     const res2 = await request({
       method: "POST",
       path: "/~weavedb@1.0/set",
-      query: JSON.stringify(["set:user", bob, 3, "bob"]),
+      query: JSON.stringify(q2),
     })
     const json2 = JSON.parse(res2.body)
     if (json2.success) {
@@ -422,6 +447,24 @@ describe("Server", () => {
     } else {
       console.log(json3.error)
     }
+    await wait(1000)
+    let params = `target=${pid}`
+    let res4 = await fetch(
+      `${hb}/~scheduler@1.0/schedule/serialize~json@1.0?${params}`,
+    ).then(r => r.json())
+    let i = 0
+    let qs = [q1, q2]
+    for (let k in res4.assignments ?? {}) {
+      const m = res4.assignments[k]
+      assert.equal(m.process, pid)
+      if (m.body.data) {
+        for (const v of JSON.parse(m.body.data)) {
+          assert.deepEqual(JSON.parse(v.query), qs[i])
+          i++
+        }
+      }
+    }
+
     node.stop()
   })
 })
