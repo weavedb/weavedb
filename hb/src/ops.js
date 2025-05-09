@@ -153,7 +153,8 @@ function auth({ db, q, ctx }) {
 
 function getDocs({ db, q, ctx }) {
   const { dir, doc } = ctx
-  if (isNil(db.dir(dir))) throw Error("dir doesn't exist")
+  const _dir = db.dir(dir)
+  if (isNil(_dir)) throw Error(`dir doesn't exist: ${dir}`)
   const parsed = parseQuery(q)
   const res = get(parsed, ctx.kv)
   return ctx.range ? pluck("val")(res) : res.val
