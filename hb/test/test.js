@@ -7,6 +7,7 @@ import { resolve } from "path"
 import BPT from "../src/bpt.js"
 import { last, init, clone, map, pluck, prop, slice } from "ramda"
 import server from "../src/server.js"
+import recover from "../src/recover.js"
 import {
   put,
   mod,
@@ -16,11 +17,19 @@ import {
   removeIndex,
 } from "../src/indexer.js"
 import parseQuery from "../src/parser.js"
-import { range, get, ranges, pranges, doc } from "../src/planner.js"
+import {
+  range,
+  get as planner_get,
+  ranges,
+  pranges,
+  doc,
+} from "../src/planner.js"
 import { connect, createSigner } from "@permaweb/aoconnect"
 import { AO, HB } from "wao"
 
 import kv from "../src/kv.js"
+const genDir = () =>
+  resolve(import.meta.dirname, `.db/mydb-${Math.floor(Math.random() * 10000)}`)
 const wait = ms => new Promise(res => setTimeout(() => res(), ms))
 const bob = { name: "Bob" }
 const alice = { name: "Alice" }
@@ -29,12 +38,7 @@ const beth = { name: "Beth" }
 const john = { name: "John" }
 
 const getKV = () => {
-  const io = open({
-    path: resolve(
-      import.meta.dirname,
-      `.db/mydb-${Math.floor(Math.random() * 10000)}`,
-    ),
-  })
+  const io = open({ path: genDir() })
   return kv(io, c => {})
 }
 
@@ -323,7 +327,7 @@ describe("WeaveDB Core", () => {
     put({ ...bob, age: 3 }, "bob", ["users"], kv, true)
     put({ ...alice, age: 5 }, "alice", ["users"], kv, true)
     const parsed = parseQuery(["users", ["name", "==", "Bob"]])
-    assert.deepEqual(get(parsed, kv), [
+    assert.deepEqual(planner_get(parsed, kv), [
       {
         key: "bob",
         val: { name: "Bob", age: 3 },
@@ -335,10 +339,7 @@ describe("WeaveDB Core", () => {
 describe("KV", () => {
   it("should save data to kv", async () => {
     const io = open({
-      path: resolve(
-        import.meta.dirname,
-        `.db/mydb-${Math.floor(Math.random() * 10000)}`,
-      ),
+      path: genDir(),
     })
     const wkv = kv(io, c => {})
     let start = Date.now()
@@ -363,108 +364,70 @@ describe("KV", () => {
   })
 })
 
+const deploy = async ({ hb }) => {
+  const { jwk, addr } = await new AO().ar.gen()
+  const signer = createSigner(jwk)
+  const { request } = connect({ MODE: "mainnet", URL: hb, device: "", signer })
+  const address = (
+    await fetch(`${hb}/~meta@1.0/info/serialize~json@1.0`).then(r => r.json())
+  ).address
+  const tags = {
+    method: "POST",
+    path: "/~process@1.0/schedule",
+    scheduler: address,
+    "random-seed": Math.random().toString(),
+  }
+  const dbpath = genDir()
+  const res = await request(tags)
+  return { pid: res.process, address, addr, jwk, signer, dbpath }
+}
+
+const set = async (req, q) => {
+  const res = await req({
+    method: "POST",
+    path: "/~weavedb@1.0/set",
+    query: JSON.stringify(q),
+  })
+  return JSON.parse(res.body)
+}
+
+const get = async (req, q) => {
+  const res = await req({
+    method: "GET",
+    path: "/~weavedb@1.0/get",
+    query: JSON.stringify(q),
+  })
+  return JSON.parse(res.body)
+}
+const allow = [["allow()"]]
+const q1 = [
+  "set",
+  {
+    name: "users",
+    schema: { type: "object", required: ["name"] },
+    auth: [["set:user,add:user,update:user,upsert:user,del:user", allow]],
+  },
+  0,
+  "3",
+]
+const q2 = ["set:user", bob, 3, "bob"]
+let qs = [q1, q2]
 describe("Server", () => {
   it.only("should run a server", async () => {
-    const ao = new AO()
-    const { jwk } = await ao.ar.gen()
     const hb = "http://localhost:10000"
-    const { request: request_hb } = connect({
-      MODE: "mainnet",
-      URL: hb,
-      device: "",
-      signer: createSigner(jwk),
-    })
-    const txt = await fetch(`${hb}/~meta@1.0/info/serialize~json@1.0`).then(r =>
-      r.json(),
-    )
-    const addr = txt.address
-    const tags = {
-      method: "POST",
-      path: "/~process@1.0/schedule",
-      scheduler: addr,
-      "random-seed": Math.random().toString(),
-    }
-    const pid = (await request_hb(tags)).process
+    const URL = "http://localhost:4000"
+    const { pid, signer, jwk, addr, dbpath } = await deploy({ hb })
     console.log("pid", pid)
-    const dbpath = resolve(
-      import.meta.dirname,
-      `.db/weavedb-${Math.floor(Math.random() * 10000)}`,
-    )
-    const node = server({ dbpath, jwk, hb, pid })
-    const { request } = connect({
-      MODE: "mainnet",
-      URL: "http://localhost:4000",
-      device: "",
-      signer: createSigner(jwk),
-    })
-    const allow = [["allow()"]]
-    let start = Date.now()
-    const q1 = [
-      "set",
-      {
-        name: "users",
-        schema: { type: "object", required: ["name"] },
-        auth: [["set:user,add:user,update:user,upsert:user,del:user", allow]],
-      },
-      0,
-      "3",
-    ]
-    const res = await request({
-      method: "POST",
-      path: "/~weavedb@1.0/set",
-      query: JSON.stringify(q1),
-    })
-    const json = JSON.parse(res.body)
-    if (json.success) {
-      console.log(Date.now() - start, "ms")
-      console.log(json)
-    }
-    start = Date.now()
-    const q2 = ["set:user", bob, 3, "bob"]
-    const res2 = await request({
-      method: "POST",
-      path: "/~weavedb@1.0/set",
-      query: JSON.stringify(q2),
-    })
-    const json2 = JSON.parse(res2.body)
-    if (json2.success) {
-      console.log(Date.now() - start, "ms")
-      console.log(json2)
-    } else {
-      console.log(json2.error)
-    }
-
-    start = Date.now()
-    const res3 = await request({
-      method: "GET",
-      path: "/~weavedb@1.0/get",
-      query: JSON.stringify(["3"]),
-    })
-    const json3 = JSON.parse(res3.body)
-    if (json3.success) {
-      console.log(Date.now() - start, "ms")
-      assert.deepEqual(json3.res, [bob])
-    } else {
-      console.log(json3.error)
-    }
+    console.log("addr", addr)
+    const node = await server({ dbpath, jwk, hb, pid })
+    const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
+    const json = await set(request, q1)
+    const json2 = await set(request, q2)
+    const json3 = await get(request, ["3"])
+    assert.deepEqual(json3.res, [bob])
     await wait(1000)
-    let params = `target=${pid}`
-    let res4 = await fetch(
-      `${hb}/~scheduler@1.0/schedule/serialize~json@1.0?${params}`,
-    ).then(r => r.json())
-    let i = 0
-    let qs = [q1, q2]
-    for (let k in res4.assignments ?? {}) {
-      const m = res4.assignments[k]
-      assert.equal(m.process, pid)
-      if (m.body.data) {
-        for (const v of JSON.parse(m.body.data)) {
-          assert.deepEqual(JSON.parse(v.query), qs[i])
-          i++
-        }
-      }
-    }
-
+    const db = await recover({ pid, hb, dbpath: genDir(), jwk })
+    assert.deepEqual(db.get("3"), [bob])
     node.stop()
   })
 })
