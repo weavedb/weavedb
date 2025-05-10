@@ -58,7 +58,7 @@ const handlers = {
       .tap(commit),
 }
 
-const wdb = kv => {
+const wdb = (kv, __opt__ = {}) => {
   const get = (dir, doc) => kv.get(`${dir}/${doc}`)
   const put = (dir, doc, data) => kv.put(`${dir}/${doc}`, data)
   const del = (dir, doc) => kv.del(`${dir}/${doc}`)
@@ -91,7 +91,7 @@ const wdb = kv => {
       schema: { type: "object" },
       auth: [],
     })
-    db.commit()
+    if (__opt__.no_commit !== true) db.commit(__opt__)
   }
   const monad = of(db, {
     to: {
@@ -112,7 +112,7 @@ const wdb = kv => {
           if (!isNil(db.get("__config__", "info")))
             throw Error("already initialized")
           db.put("__config__", "info", { id: msg.id, owner: msg.from })
-          db.commit()
+          if (__opt__.no_commit !== true) db.commit(__opt__)
           return db
         } catch (e) {
           db.reset()
@@ -126,9 +126,9 @@ const wdb = kv => {
             const [op, ...q] = msg
             const sp = op.split(":")
             const _opt = last(q)
-            let opt = {}
+            let opt = __opt__
             if (_opt && typeof _opt === "object" && _opt["signature"])
-              opt = q.pop()
+              opt = { ...__opt__, ...q.pop() }
             let ctx = { op: sp[0], opname: op, opt }
             if (isNil(handlers[ctx.op]))
               throw Error(`handler doesn't exist: ${op}`)

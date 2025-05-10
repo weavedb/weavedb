@@ -3,7 +3,7 @@ import { clone } from "ramda"
 const kv = (io, fn) => {
   let s = {}
   let l = {}
-  let i = 1
+  let i = 0
   let c = []
   let on = false
   const get = k => l[k] ?? s[k] ?? io.get(k) ?? null
@@ -11,13 +11,14 @@ const kv = (io, fn) => {
   const reset = () => {
     l = {}
   }
-  const commit = async () => {
+  const commit = async (opt = {}) => {
     if (c.length > 0) {
       on = true
       let count = 0
       let i, cl, from, to
       let opt = null
       let data = []
+      let old = {}
       try {
         await io.transaction(() => {
           while (c.length > 0) {
@@ -25,6 +26,7 @@ const kv = (io, fn) => {
             if (!from) from = i
             to = i
             for (const k in cl ?? {}) {
+              if (opt.delta) old[k] = io.get(k) ?? null
               if (cl[k] === null) io.remove(k)
               else io.put(k, cl[k])
               count++
@@ -36,19 +38,19 @@ const kv = (io, fn) => {
       } catch (e) {
         console.log(e)
       }
-      fn?.({ from, to, count, len: c.length, data })
+      fn?.({ from, to, count, len: c.length, data, old })
       await commit()
     }
     on = false
   }
   return {
     reset,
-    commit: async (opt = null) => {
+    commit: async (opt = {}) => {
       const cl = clone(l)
       c.push({ i, cl, opt })
       for (const k in cl ?? {}) s[k] = cl[k]
       reset()
-      if (!on) commit().then(() => {})
+      if (!on) commit(opt).then(() => {})
       return { i: i++, data: cl }
     },
     put,
