@@ -1,4 +1,5 @@
 import assert from "assert"
+import { createPrivateKey } from "node:crypto"
 import { afterEach, after, describe, it, before, beforeEach } from "node:test"
 import { of, pof } from "../src/monade.js"
 import wdb from "../src/index.js"
@@ -8,6 +9,7 @@ import BPT from "../src/bpt.js"
 import { last, init, clone, map, pluck, prop, slice } from "ramda"
 import server from "../src/server.js"
 import recover from "../src/recover.js"
+
 import {
   put,
   mod,
@@ -26,8 +28,43 @@ import {
 } from "../src/planner.js"
 import { connect, createSigner } from "@permaweb/aoconnect"
 import { AO, HB } from "wao"
-
+import {
+  httpbis,
+  createSigner as createHttpSigner,
+} from "http-message-signatures"
 import kv from "../src/kv.js"
+
+class sign {
+  constructor({ jwk }) {
+    this.jwk = jwk
+    this.nonce = 0
+    this.signer = createHttpSigner(
+      createPrivateKey({ key: jwk, format: "jwk" }),
+      "rsa-pss-sha512",
+      jwk.n,
+    )
+  }
+  async sign(...query) {
+    const msg = await httpbis.signMessage(
+      { key: this.signer, fields: ["query", "nonce"] },
+      {
+        headers: {
+          query: JSON.stringify(query),
+          nonce: Number(++this.nonce).toString(),
+        },
+      },
+    )
+    return [
+      ...query,
+      {
+        nonce: Number(this.nonce).toString(),
+        signature: msg.headers.Signature,
+        "signature-input": msg.headers["Signature-Input"],
+      },
+    ]
+  }
+}
+
 const genDir = () =>
   resolve(import.meta.dirname, `.db/mydb-${Math.floor(Math.random() * 10000)}`)
 const wait = ms => new Promise(res => setTimeout(() => res(), ms))
@@ -104,24 +141,36 @@ describe("WeaveDB TPS", () => {
   })
 
   it("full weavedb monad & kv tps (3.0 - 3.5 K)", async () => {
+    const { jwk, addr } = await new AO().ar.gen()
+    const s = new sign({ jwk })
     const allow = [["allow()"]]
     const db = wdb(getKV())
       .init({ from: "me", id: "db-1" })
       .set(
-        "set",
-        {
-          name: "users",
-          schema: { type: "object", required: ["name"] },
-          auth: [["set:user,add:user,update:user,upsert:user,del:user", allow]],
-        },
-        0,
-        "3",
+        ...(await s.sign(
+          "set",
+          {
+            name: "users",
+            schema: { type: "object", required: ["name"] },
+            auth: [
+              ["set:user,add:user,update:user,upsert:user,del:user", allow],
+            ],
+          },
+          0,
+          "4",
+        )),
       )
-    let start = Date.now()
+
     let last = 0
     let i = 0
+    let qs = []
+    while (i < 5000) {
+      qs.push(await s.sign("set:user", { name: `Bob-${i}` }, 4, `bob-${i++}`))
+    }
+    let start = Date.now()
+    i = 0
     while (Date.now() - start < 1000) {
-      db.set("set:user", { name: `Bob-${i}` }, 3, `bob-${i++}`)
+      db.set(...qs[i++])
     }
     console.log(i, "tps with weavedb monad & kv")
   })
@@ -142,37 +191,45 @@ describe("WeaveDB Core", () => {
   })
 
   it("should get/add/set/update/upsert/del", async () => {
-    const allow = [["allow()"]]
+    const { jwk, addr } = await new AO().ar.gen()
+    const s = new sign({ jwk })
     const wkv = getKV()
     const db = wdb(wkv)
       .init({ from: "me", id: "db-1" })
       .set(
-        "set",
-        {
-          name: "users",
-          schema: { type: "object", required: ["name"] },
-          auth: [["set:user,add:user,update:user,upsert:user,del:user", allow]],
-        },
-        0,
-        "3",
+        ...(await s.sign(
+          "set",
+          {
+            name: "users",
+            schema: { type: "object", required: ["name"] },
+            auth: [
+              [
+                "set:user,add:user,update:user,upsert:user,del:user",
+                [["allow()"]],
+              ],
+            ],
+          },
+          0,
+          "4",
+        )),
       )
-      .set("set:user", bob, 3, "bob")
-      .set("set:user", alice, 3, "alice")
-      .set("add:user", mike, 3)
-      .set("add:user", beth, 3)
-      .set("del:user", 3, "bob")
-      .set("update:user", { age: 20 }, 3, "alice")
-      .set("upsert:user", john, 3, "john")
-    assert.deepEqual(db.get("3", "alice"), { ...alice, age: 20 })
-    assert.deepEqual(db.get("3", "A"), mike)
-    assert.deepEqual(db.get("3", "B"), beth)
-    assert.deepEqual(db.get("3", "john"), john)
+      .set(...(await s.sign("set:user", bob, 4, "bob")))
+      .set(...(await s.sign("set:user", alice, 4, "alice")))
+      .set(...(await s.sign("add:user", mike, 4)))
+      .set(...(await s.sign("add:user", beth, 4)))
+      .set(...(await s.sign("del:user", 4, "bob")))
+      .set(...(await s.sign("update:user", { age: 20 }, 4, "alice")))
+      .set(...(await s.sign("upsert:user", john, 4, "john")))
+    assert.deepEqual(db.get("4", "alice"), { ...alice, age: 20 })
+    assert.deepEqual(db.get("4", "A"), mike)
+    assert.deepEqual(db.get("4", "B"), beth)
+    assert.deepEqual(db.get("4", "john"), john)
     await wait(100)
 
     // recover from kv
     const db2 = wdb(wkv)
-    assert.equal(db2.get("3", "bob"), null)
-    assert.deepEqual(db2.get("3", "alice"), { ...alice, age: 20 })
+    assert.equal(db2.get("4", "bob"), null)
+    assert.deepEqual(db2.get("4", "alice"), { ...alice, age: 20 })
   })
   /*
   it.skip("should persist data with lsJSON", async () => {
@@ -382,11 +439,12 @@ const deploy = async ({ hb }) => {
   return { pid: res.process, address, addr, jwk, signer, dbpath }
 }
 
-const set = async (req, q) => {
+const set = async (req, q, nonce) => {
   const res = await req({
     method: "POST",
     path: "/~weavedb@1.0/set",
     query: JSON.stringify(q),
+    nonce: Number(nonce).toString(),
   })
   return JSON.parse(res.body)
 }
@@ -399,19 +457,22 @@ const get = async (req, q) => {
   })
   return JSON.parse(res.body)
 }
-const allow = [["allow()"]]
+
 const q1 = [
   "set",
   {
     name: "users",
     schema: { type: "object", required: ["name"] },
-    auth: [["set:user,add:user,update:user,upsert:user,del:user", allow]],
+    auth: [
+      ["set:user,add:user,update:user,upsert:user,del:user", [["allow()"]]],
+    ],
   },
   0,
-  "3",
+  "4",
 ]
-const q2 = ["set:user", bob, 3, "bob"]
+const q2 = ["set:user", bob, 4, "bob"]
 let qs = [q1, q2]
+
 describe("Server", () => {
   it.only("should run a server", async () => {
     const hb = "http://localhost:10000"
@@ -421,13 +482,14 @@ describe("Server", () => {
     console.log("addr", addr)
     const node = await server({ dbpath, jwk, hb, pid })
     const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
-    const json = await set(request, q1)
-    const json2 = await set(request, q2)
-    const json3 = await get(request, ["3"])
+    let nonce = 0
+    const json = await set(request, q1, ++nonce)
+    const json2 = await set(request, q2, ++nonce)
+    const json3 = await get(request, ["4"])
     assert.deepEqual(json3.res, [bob])
     await wait(1000)
     const db = await recover({ pid, hb, dbpath: genDir(), jwk })
-    assert.deepEqual(db.get("3"), [bob])
+    assert.deepEqual(db.get("4"), [bob])
     node.stop()
   })
 })
