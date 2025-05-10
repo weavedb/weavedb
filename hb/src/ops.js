@@ -153,7 +153,7 @@ function getDocID({ db, ctx }) {
   while (db.get(dir, tob64(i))) i++
   ctx.doc = tob64(i)
   _dir.autoid = i
-  db.put(0, dir, _dir)
+  db.put("__dirs__", dir, _dir)
   return arguments[0]
 }
 
@@ -185,9 +185,9 @@ function init({ db, ctx, q }) {
     ctx.data = data
   }
   ctx.kv = {
-    get: k => db.get(2, `${dir}/${k}`),
-    put: (k, v, nosave) => db.put(2, `${dir}/${k}`, v),
-    del: (k, nosave) => db.del(2, `${dir}/${k}`),
+    get: k => db.get("__indexes__", `${dir}/${k}`),
+    put: (k, v, nosave) => db.put("__indexes__", `${dir}/${k}`, v),
+    del: (k, nosave) => db.del("__indexes__", `${dir}/${k}`),
     data: key => ({
       val: db.get(dir, key),
       __id__: key.split("/").pop(),
@@ -204,10 +204,10 @@ function verifyNonce({ db, q, ctx }) {
     throw Error("nonce or query not signed")
   }
   ctx.from = toAddr(keyid)
-  const acc = db.get(3, ctx.from)
+  const acc = db.get("__accounts__", ctx.from)
   const nonce = acc?.nonce ?? 0
   if (+ctx.opt.nonce !== nonce + 1) throw Error(`the wrong nonce: ${nonce}`)
-  db.put(3, ctx.from, { ...acc, nonce: nonce + 1 })
+  db.put("__accounts__", ctx.from, { ...acc, nonce: nonce + 1 })
   return arguments[0]
 }
 

@@ -150,14 +150,14 @@ describe("WeaveDB TPS", () => {
         ...(await s.sign(
           "set",
           {
-            name: "users",
+            index: 4,
             schema: { type: "object", required: ["name"] },
             auth: [
               ["set:user,add:user,update:user,upsert:user,del:user", allow],
             ],
           },
-          0,
-          "4",
+          "__dirs__",
+          "users",
         )),
       )
 
@@ -165,7 +165,9 @@ describe("WeaveDB TPS", () => {
     let i = 0
     let qs = []
     while (i < 5000) {
-      qs.push(await s.sign("set:user", { name: `Bob-${i}` }, 4, `bob-${i++}`))
+      qs.push(
+        await s.sign("set:user", { name: `Bob-${i}` }, "users", `bob-${i++}`),
+      )
     }
     let start = Date.now()
     i = 0
@@ -187,7 +189,7 @@ describe("WeaveDB TPS", () => {
 describe("WeaveDB Core", () => {
   it("should init", async () => {
     const db = wdb(getKV()).init({ from: "me", id: "db-1" })
-    assert.equal(db.get("0", "0").name, "__dirs__")
+    assert.equal(db.get("__dirs__", "__dirs__").index, 0)
   })
 
   it("should get/add/set/update/upsert/del", async () => {
@@ -200,7 +202,7 @@ describe("WeaveDB Core", () => {
         ...(await s.sign(
           "set",
           {
-            name: "users",
+            index: 4,
             schema: { type: "object", required: ["name"] },
             auth: [
               [
@@ -209,27 +211,27 @@ describe("WeaveDB Core", () => {
               ],
             ],
           },
-          0,
-          "4",
+          "__dirs__",
+          "users",
         )),
       )
-      .set(...(await s.sign("set:user", bob, 4, "bob")))
-      .set(...(await s.sign("set:user", alice, 4, "alice")))
-      .set(...(await s.sign("add:user", mike, 4)))
-      .set(...(await s.sign("add:user", beth, 4)))
-      .set(...(await s.sign("del:user", 4, "bob")))
-      .set(...(await s.sign("update:user", { age: 20 }, 4, "alice")))
-      .set(...(await s.sign("upsert:user", john, 4, "john")))
-    assert.deepEqual(db.get("4", "alice"), { ...alice, age: 20 })
-    assert.deepEqual(db.get("4", "A"), mike)
-    assert.deepEqual(db.get("4", "B"), beth)
-    assert.deepEqual(db.get("4", "john"), john)
+      .set(...(await s.sign("set:user", bob, "users", "bob")))
+      .set(...(await s.sign("set:user", alice, "users", "alice")))
+      .set(...(await s.sign("add:user", mike, "users")))
+      .set(...(await s.sign("add:user", beth, "users")))
+      .set(...(await s.sign("del:user", "users", "bob")))
+      .set(...(await s.sign("update:user", { age: 20 }, "users", "alice")))
+      .set(...(await s.sign("upsert:user", john, "users", "john")))
+    assert.deepEqual(db.get("users", "alice"), { ...alice, age: 20 })
+    assert.deepEqual(db.get("users", "A"), mike)
+    assert.deepEqual(db.get("users", "B"), beth)
+    assert.deepEqual(db.get("users", "john"), john)
     await wait(100)
 
     // recover from kv
     const db2 = wdb(wkv)
-    assert.equal(db2.get("4", "bob"), null)
-    assert.deepEqual(db2.get("4", "alice"), { ...alice, age: 20 })
+    assert.equal(db2.get("users", "bob"), null)
+    assert.deepEqual(db2.get("users", "alice"), { ...alice, age: 20 })
   })
   /*
   it.skip("should persist data with lsJSON", async () => {
@@ -254,6 +256,7 @@ describe("WeaveDB Core", () => {
     assert.deepEqual(o.users, { bob: { name: "Bob", age: 8 } })
     })
   */
+
   it("should build b+ tree", async () => {
     let data = {
       bob: { name: "Bob", age: 3 },
@@ -285,6 +288,7 @@ describe("WeaveDB Core", () => {
     delete data.beth
     assert.deepEqual(pluck("key", bpt.range({})), ["alice", "mike", "bob"])
   })
+
   it("should build add indexes", async () => {
     const data = {}
     const store = {}
@@ -370,6 +374,7 @@ describe("WeaveDB Core", () => {
       q,
     )
   })
+
   it("should query with planner", async () => {
     const data = {}
     const store = {}
@@ -385,19 +390,14 @@ describe("WeaveDB Core", () => {
     put({ ...alice, age: 5 }, "alice", ["users"], kv, true)
     const parsed = parseQuery(["users", ["name", "==", "Bob"]])
     assert.deepEqual(planner_get(parsed, kv), [
-      {
-        key: "bob",
-        val: { name: "Bob", age: 3 },
-      },
+      { key: "bob", val: { name: "Bob", age: 3 } },
     ])
   })
 })
 
 describe("KV", () => {
   it("should save data to kv", async () => {
-    const io = open({
-      path: genDir(),
-    })
+    const io = open({ path: genDir() })
     const wkv = kv(io, c => {})
     let start = Date.now()
     let last = 0
@@ -406,11 +406,8 @@ describe("KV", () => {
     while (Date.now() - start < 1000) {
       wkv.put(`bob-${i}`, { name: `Bob_${i++}` })
       if (i % 3 === 0) {
-        if (i % 6 === 0) {
-          wkv.reset()
-        } else {
-          wkv.commit().then(({ i, data }) => {})
-        }
+        if (i % 6 === 0) wkv.reset()
+        else wkv.commit().then(({ i, data }) => {})
       }
     }
     console.log(i)
@@ -461,16 +458,17 @@ const get = async (req, q) => {
 const q1 = [
   "set",
   {
-    name: "users",
+    index: 4,
     schema: { type: "object", required: ["name"] },
     auth: [
       ["set:user,add:user,update:user,upsert:user,del:user", [["allow()"]]],
     ],
   },
-  0,
-  "4",
+  "__dirs__",
+  "users",
 ]
-const q2 = ["set:user", bob, 4, "bob"]
+
+const q2 = ["set:user", bob, "users", "bob"]
 let qs = [q1, q2]
 
 describe("Server", () => {
@@ -484,12 +482,14 @@ describe("Server", () => {
     const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
     let nonce = 0
     const json = await set(request, q1, ++nonce)
+    console.log(json)
     const json2 = await set(request, q2, ++nonce)
-    const json3 = await get(request, ["4"])
+    console.log(json2)
+    const json3 = await get(request, ["users"])
     assert.deepEqual(json3.res, [bob])
     await wait(1000)
     const db = await recover({ pid, hb, dbpath: genDir(), jwk })
-    assert.deepEqual(db.get("4"), [bob])
+    assert.deepEqual(db.get("users"), [bob])
     node.stop()
   })
 })
