@@ -9,6 +9,7 @@ import BPT from "../src/bpt.js"
 import { last, init, clone, map, pluck, prop, slice } from "ramda"
 import server from "../src/server.js"
 import recover from "../src/recover.js"
+import validate from "../src/validate.js"
 
 import {
   put,
@@ -472,7 +473,7 @@ const q2 = ["set:user", bob, "users", "bob"]
 let qs = [q1, q2]
 
 describe("Server", () => {
-  it.only("should run a server", async () => {
+  it("should run a server", async () => {
     const hb = "http://localhost:10000"
     const URL = "http://localhost:4000"
     const { pid, signer, jwk, addr, dbpath } = await deploy({ hb })
@@ -490,6 +491,28 @@ describe("Server", () => {
     await wait(1000)
     const db = await recover({ pid, hb, dbpath: genDir(), jwk })
     assert.deepEqual(db.get("users"), [bob])
+    node.stop()
+  })
+})
+
+describe("Validator", () => {
+  it.only("should validate HB WAL", async () => {
+    const hb = "http://localhost:10000"
+    const URL = "http://localhost:4000"
+    const { pid, signer, jwk, addr, dbpath } = await deploy({ hb })
+    console.log("pid", pid)
+    console.log("addr", addr)
+    const node = await server({ dbpath, jwk, hb, pid })
+    const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
+    let nonce = 0
+    const json = await set(request, q1, ++nonce)
+    console.log(json)
+    const json2 = await set(request, q2, ++nonce)
+    console.log(json2)
+    const json3 = await get(request, ["users"])
+    assert.deepEqual(json3.res, [bob])
+    await wait(1000)
+    const db = await validate({ pid, hb, dbpath: genDir(), jwk })
     node.stop()
   })
 })

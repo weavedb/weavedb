@@ -158,7 +158,7 @@ function getDocID({ db, ctx }) {
 }
 
 function commit({ db, ctx }) {
-  db.commit(ctx.opt)
+  if (ctx.opt.no_commit !== true) db.commit(ctx.opt)
 }
 
 function init({ db, ctx, q }) {
