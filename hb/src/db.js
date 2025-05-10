@@ -14,12 +14,14 @@ import {
   auth,
   init,
   getDocs,
+  verifyNonce,
 } from "./ops.js"
 
 const handlers = {
   get: args => of(args).map(init).to(getDocs),
   add: args =>
     of(args)
+      .map(verifyNonce)
       .map(init)
       .map(auth)
       .tap(validateSchema)
@@ -27,10 +29,18 @@ const handlers = {
       .map(setData)
       .tap(commit),
   set: args =>
-    of(args).map(init).map(auth).tap(validateSchema).map(setData).tap(commit),
-  del: args => of(args).map(init).map(auth).map(delData).tap(commit),
+    of(args)
+      .map(verifyNonce)
+      .map(init)
+      .map(auth)
+      .tap(validateSchema)
+      .map(setData)
+      .tap(commit),
+  del: args =>
+    of(args).map(verifyNonce).map(init).map(auth).map(delData).tap(commit),
   update: args =>
     of(args)
+      .map(verifyNonce)
       .map(init)
       .map(auth)
       .map(updateData)
@@ -39,6 +49,7 @@ const handlers = {
       .tap(commit),
   upsert: args =>
     of(args)
+      .map(verifyNonce)
       .map(init)
       .map(auth)
       .map(upsertData)
@@ -73,6 +84,11 @@ const wdb = kv => {
       name: "__indexes__",
       schema: { type: "object" },
     })
+    db.put(0, "3", {
+      name: "__accounts__",
+      schema: { type: "object" },
+    })
+
     db.commit()
   }
   const monad = of(db, {

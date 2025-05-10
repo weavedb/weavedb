@@ -32,17 +32,57 @@ const verify = async req => {
     return { err: true, valid, address, query, ts, fields }
   }
 }
-function parseSI(input) {
-  const match = input.match(
-    /^([^=]+)=\(([^)]+)\);alg="([^"]+)";keyid="([^"]+)"$/,
-  )
-  if (!match) throw new Error("Invalid signature-input format")
 
-  const [, label, fieldsStr, alg, keyid] = match
-  const fields = fieldsStr
-    .split('" "')
-    .map(f => f.replace(/"/g, "").toLowerCase())
-  return { label, fields, alg, keyid }
+function parseSI(input) {
+  const eq = input.indexOf("=")
+  if (eq < 0) throw new Error("Invalid Signature-Input (no `=` found)")
+  const label = input.slice(0, eq).trim()
+  let rest = input.slice(eq + 1).trim()
+
+  if (!rest.startsWith("(")) {
+    throw new Error("Invalid Signature-Input (fields list missing)")
+  }
+  const endFields = rest.indexOf(")")
+  if (endFields < 0) {
+    throw new Error("Invalid Signature-Input (unclosed fields list)")
+  }
+  const fieldsRaw = rest.slice(1, endFields)
+  const fields = fieldsRaw
+    .split(/\s+/)
+    .map(f => f.replace(/^"|"$/g, "").toLowerCase())
+
+  rest = rest.slice(endFields + 1)
+
+  const params = []
+  rest.split(";").forEach(part => {
+    const p = part.trim()
+    if (!p) return
+
+    const m = p.match(
+      /^([a-z0-9-]+)=(?:"((?:[^"\\]|\\.)*)"|([0-9]+|[A-Za-z0-9-._~]+))$/i,
+    )
+    if (!m) {
+      throw new Error(`Invalid parameter in Signature-Input: ${p}`)
+    }
+    const key = m[1].toLowerCase()
+    const val =
+      m[2] != null ? m[2].replace(/\\"/g, '"').replace(/\\\\/g, "\\") : m[3]
+    params.push({ key, val })
+  })
+
+  const obj = { label, fields }
+  for (const { key, val } of params) {
+    if (key === "alg") obj.alg = val
+    if (key === "keyid") obj.keyid = val
+    if (key === "created") obj.created = Number(val)
+    if (key === "expires") obj.expires = Number(val)
+    if (key === "nonce") obj.nonce = val
+  }
+
+  if (!obj.alg) throw new Error("Missing `alg` in Signature-Input")
+  if (!obj.keyid) throw new Error("Missing `keyid` in Signature-Input")
+
+  return obj
 }
 
 const getKV = ({ jwk, pid, hb, dbpath }) => {

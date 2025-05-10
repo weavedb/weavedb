@@ -1,5 +1,5 @@
 import { validate } from "jsonschema"
-import { clone, includes, isNil, mergeLeft, pluck } from "ramda"
+import { intersection, clone, includes, isNil, mergeLeft, pluck } from "ramda"
 import { fpj, ac_funcs } from "./fpjson.js"
 import parseQuery from "./parser.js"
 import {
@@ -12,8 +12,85 @@ import {
 } from "../src/indexer.js"
 import { get } from "../src/planner.js"
 
+import sha256 from "fast-sha256"
+function base64urlDecode(str) {
+  str = str.replace(/-/g, "+").replace(/_/g, "/")
+  const pad = str.length % 4
+  if (pad === 2) str += "=="
+  else if (pad === 3) str += "="
+  else if (pad !== 0) throw new Error("Invalid base64url string")
+  const bin = atob(str)
+  const bytes = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+  return bytes
+}
+function base64urlEncode(bytes) {
+  let bin = ""
+  for (const b of bytes) bin += String.fromCharCode(b)
+  let b64 = btoa(bin)
+  return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "")
+}
+
+function toAddr(n) {
+  const pubBytes = base64urlDecode(n)
+  const hash = sha256(pubBytes)
+  return base64urlEncode(hash)
+}
+
 const BASE64_CHARS =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+
+function parseSI(input) {
+  const eq = input.indexOf("=")
+  if (eq < 0) throw new Error("Invalid Signature-Input (no `=` found)")
+  const label = input.slice(0, eq).trim()
+  let rest = input.slice(eq + 1).trim()
+
+  if (!rest.startsWith("(")) {
+    throw new Error("Invalid Signature-Input (fields list missing)")
+  }
+  const endFields = rest.indexOf(")")
+  if (endFields < 0) {
+    throw new Error("Invalid Signature-Input (unclosed fields list)")
+  }
+  const fieldsRaw = rest.slice(1, endFields)
+  const fields = fieldsRaw
+    .split(/\s+/)
+    .map(f => f.replace(/^"|"$/g, "").toLowerCase())
+
+  rest = rest.slice(endFields + 1)
+
+  const params = []
+  rest.split(";").forEach(part => {
+    const p = part.trim()
+    if (!p) return
+
+    const m = p.match(
+      /^([a-z0-9-]+)=(?:"((?:[^"\\]|\\.)*)"|([0-9]+|[A-Za-z0-9-._~]+))$/i,
+    )
+    if (!m) {
+      throw new Error(`Invalid parameter in Signature-Input: ${p}`)
+    }
+    const key = m[1].toLowerCase()
+    const val =
+      m[2] != null ? m[2].replace(/\\"/g, '"').replace(/\\\\/g, "\\") : m[3]
+    params.push({ key, val })
+  })
+
+  const obj = { label, fields }
+  for (const { key, val } of params) {
+    if (key === "alg") obj.alg = val
+    if (key === "keyid") obj.keyid = val
+    if (key === "created") obj.created = Number(val)
+    if (key === "expires") obj.expires = Number(val)
+    if (key === "nonce") obj.nonce = val
+  }
+
+  if (!obj.alg) throw new Error("Missing `alg` in Signature-Input")
+  if (!obj.keyid) throw new Error("Missing `keyid` in Signature-Input")
+
+  return obj
+}
 
 function tob64(n) {
   if (!Number.isInteger(n) || n < 0)
@@ -121,6 +198,19 @@ function init({ db, ctx, q }) {
   return arguments[0]
 }
 
+function verifyNonce({ db, q, ctx }) {
+  const { fields, keyid } = parseSI(ctx.opt["signature-input"])
+  if (intersection(["query", "nonce"], fields).length !== 2) {
+    throw Error("nonce or query not signed")
+  }
+  ctx.from = toAddr(keyid)
+  const acc = db.get(3, ctx.from)
+  const nonce = acc?.nonce ?? 0
+  if (+ctx.opt.nonce !== nonce + 1) throw Error(`the wrong nonce: ${nonce}`)
+  db.put(3, ctx.from, { ...acc, nonce: nonce + 1 })
+  return arguments[0]
+}
+
 function auth({ db, q, ctx }) {
   const { dir, doc, op, opname } = ctx
   let vars = {
@@ -171,4 +261,5 @@ export {
   getDocID,
   commit,
   getDocs,
+  verifyNonce,
 }

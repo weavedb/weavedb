@@ -27,7 +27,11 @@ const recover = async ({ pid, jwk, dbpath, hb }) => {
         for (const v of JSON.parse(m.body.data)) {
           const q = JSON.parse(v.query)
           console.log("recovering...", q)
-          db.set(...q)
+          db.set(...q, {
+            nonce: v.nonce,
+            signature: v.signature,
+            "signature-input": v["signature-input"],
+          })
           i++
         }
       }
