@@ -66,29 +66,31 @@ const wdb = kv => {
     get,
     put,
     del,
-    dir: id => get(0, id),
+    dir: id => get("__dirs__", id),
     commit: opt => kv.commit(opt),
     reset: () => kv.reset(),
   }
-  if (isNil(db.dir(0))) {
-    db.put(0, "0", {
-      name: "__dirs__",
+  if (isNil(db.dir("__dirs__"))) {
+    db.put("__dirs__", "__dirs__", {
+      index: 0,
       schema: dir_schema,
       auth: [dirs_set],
     })
-    db.put(0, "1", {
-      name: "__config__",
+    db.put("__dirs__", "__config__", {
+      index: 1,
       schema: { type: "object", additionalProperties: false },
+      auth: [],
     })
-    db.put(0, "2", {
-      name: "__indexes__",
+    db.put("__dirs__", "__indexes__", {
+      index: 2,
       schema: { type: "object" },
+      auth: [],
     })
-    db.put(0, "3", {
-      name: "__accounts__",
+    db.put("__dirs__", "__accounts__", {
+      index: 3,
       schema: { type: "object" },
+      auth: [],
     })
-
     db.commit()
   }
   const monad = of(db, {
@@ -107,8 +109,9 @@ const wdb = kv => {
     map: {
       init: msg => db => {
         try {
-          if (!isNil(db.get(1, "info"))) throw Error("already initialized")
-          db.put(1, "info", { id: msg.id, owner: msg.from })
+          if (!isNil(db.get("__config__", "info")))
+            throw Error("already initialized")
+          db.put("__config__", "info", { id: msg.id, owner: msg.from })
           db.commit()
           return db
         } catch (e) {
