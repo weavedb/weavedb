@@ -128,9 +128,10 @@ const getMsgs = async ({ hb, pid, from = 0, to = 99 }) => {
   let params = `target=${pid}`
   if (from) params += `&from=${from}`
   if (to) params += `&to=${to}`
-  return await fetch(
+  const res = await fetch(
     `${hb}/~scheduler@1.0/schedule/serialize~json@1.0?${params}`,
   ).then(r => r.json())
+  return res
 }
 
 export { verify, parseSI, getKV, getMsgs }
