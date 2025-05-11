@@ -1,7 +1,7 @@
 import wdb from "./index.js"
 import { getMsgs } from "./server-utils.js"
 import { isEmpty, sortBy, prop } from "ramda"
-import { json, encode, Encoder, Decoder } from "arjson"
+import { json, encode, Encoder, decode, Decoder } from "arjson"
 import kv from "./kv.js"
 import { open } from "lmdb"
 
@@ -15,7 +15,6 @@ function frombits(bitArray) {
     const bits = bitStr.substring(start, end).padEnd(8, "0")
     result[i] = parseInt(bits, 2)
   }
-
   return result
 }
 
@@ -26,25 +25,28 @@ const decodeBuf = buf => {
   let json = d.json
   if (left[0].length !== 8) left.shift()
   let start = 0
-  for (let k in json) {
-    const arr8 = frombits(left.slice(start, start + json[k][1]))
-    start += json[k][1]
+  for (let v of json) {
+    const arr8 = frombits(left.slice(start, start + v[2]))
+    start += v[2]
+    console.log(decode(arr8, d))
   }
 }
 
 const buildBundle = changes => {
+  const d = new Decoder()
   let _changes = []
-  for (const k in changes) _changes.push({ key: k, delta: changes[k].delta })
+  for (const k in changes)
+    _changes.push({ key: k, delta: changes[k].delta, data: changes[k].to })
   _changes = sortBy(prop("key"), _changes)
-  let header = {}
+  let header = []
   let bytes = []
   let i = 0
   for (const v of _changes) {
-    header[v.key] = [v.delta[0] + 1, v.delta[1].length]
+    header.push([v.key, v.delta[0] + 1, v.delta[1].length])
     bytes.push(v.delta[1])
     i++
   }
-  let u = new Encoder()
+  let u = new Encoder(2)
   const enc = encode(header, u)
   bytes.unshift(enc)
   const totalLen = bytes.reduce((sum, arr) => sum + arr.length, 0)
@@ -71,9 +73,9 @@ const getKV = ({ jwk, pid, hb, dbpath }) => {
             let cache = io.get(`__deltas__/${k}`)
             if (cache) {
               for (let v of cache) v[1] = Uint8Array.from(v[1])
-              deltas[k] = json(cache)
+              deltas[k] = json(cache, undefined, 2)
             } else {
-              deltas[k] = json(null, d.cl[k])
+              deltas[k] = json(null, d.cl[k], 2)
               delta = deltas[k].deltas()[0]
               await io.put(`__deltas__/${k}`, deltas[k].deltas())
               const cache = io.get(`__deltas__/${k}`)
