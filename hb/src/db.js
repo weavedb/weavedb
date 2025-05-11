@@ -66,27 +66,27 @@ const wdb = (kv, __opt__ = {}) => {
     get,
     put,
     del,
-    dir: id => get("__dirs__", id),
+    dir: id => get("____", id),
     commit: opt => kv.commit(opt),
     reset: () => kv.reset(),
   }
-  if (isNil(db.dir("__dirs__"))) {
-    db.put("__dirs__", "__dirs__", {
+  if (isNil(db.dir("____"))) {
+    db.put("____", "____", {
       index: 0,
       schema: dir_schema,
       auth: [dirs_set],
     })
-    db.put("__dirs__", "__config__", {
+    db.put("____", "__config__", {
       index: 1,
       schema: { type: "object", additionalProperties: false },
       auth: [],
     })
-    db.put("__dirs__", "__indexes__", {
+    db.put("____", "__indexes__", {
       index: 2,
       schema: { type: "object" },
       auth: [],
     })
-    db.put("__dirs__", "__accounts__", {
+    db.put("____", "__accounts__", {
       index: 3,
       schema: { type: "object" },
       auth: [],
@@ -109,8 +109,9 @@ const wdb = (kv, __opt__ = {}) => {
     map: {
       init: msg => db => {
         try {
-          if (!isNil(db.get("__config__", "info")))
+          if (!isNil(db.get("__config__", "info"))) {
             throw Error("already initialized")
+          }
           db.put("__config__", "info", { id: msg.id, owner: msg.from })
           if (__opt__.no_commit !== true) db.commit(__opt__)
           return db

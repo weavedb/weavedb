@@ -10,32 +10,6 @@ import { connect, createSigner } from "@permaweb/aoconnect"
 
 let io = null
 let request = null
-function frombits(bitArray) {
-  const bitStr = bitArray.join("")
-  const byteCount = Math.ceil(bitStr.length / 8)
-  const result = new Uint8Array(byteCount)
-  for (let i = 0; i < byteCount; i++) {
-    const start = i * 8
-    const end = Math.min(start + 8, bitStr.length)
-    const bits = bitStr.substring(start, end).padEnd(8, "0")
-    result[i] = parseInt(bits, 2)
-  }
-  return result
-}
-
-const decodeBuf = buf => {
-  const q = Uint8Array.from(buf)
-  const d = new Decoder()
-  const left = d.decode(q, null)
-  let json = d.json
-  if (left[0].length !== 8) left.shift()
-  let start = 0
-  for (let v of json) {
-    const arr8 = frombits(left.slice(start, start + v[2]))
-    start += v[2]
-    console.log(decode(arr8, d))
-  }
-}
 const to64 = hash => {
   const n = BigInt(hash)
   let hex = n.toString(16)
@@ -69,7 +43,7 @@ const calcZKHash = async changes => {
   for (const v of changes) {
     const [dir, doc] = v.key.split("/")
     if (isNil(cols[dir])) {
-      const index = io.get(`__dirs__/${dir}`).index
+      const index = io.get(`____/${dir}`).index
       cols[dir] = index
       await zkdb.addCollection(index)
     }
@@ -112,15 +86,15 @@ const buildBundle = async changes => {
     r.json(),
   )
   const addr = txt.address
-
   const tags = {
     method: "POST",
     path: `/${v_pid}/schedule`,
     scheduler: addr,
-    data: buf,
+    zkhash,
+    data: buf.toString("base64"),
   }
   const res = await request(tags)
-  console.log();
+  console.log()
   console.log(`[${res.slot}] ${res.process}`)
   console.log(`zkhash: ${zkhash}`)
   console.log(buf)

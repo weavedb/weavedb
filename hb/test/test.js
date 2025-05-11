@@ -10,6 +10,7 @@ import { last, init, clone, map, pluck, prop, slice } from "ramda"
 import server from "../src/server.js"
 import recover from "../src/recover.js"
 import validate from "../src/validate.js"
+import zkjson from "../src/zkjson.js"
 
 import {
   put,
@@ -157,7 +158,7 @@ describe("WeaveDB TPS", () => {
               ["set:user,add:user,update:user,upsert:user,del:user", allow],
             ],
           },
-          "__dirs__",
+          "____",
           "users",
         )),
       )
@@ -190,7 +191,7 @@ describe("WeaveDB TPS", () => {
 describe("WeaveDB Core", () => {
   it("should init", async () => {
     const db = wdb(getKV()).init({ from: "me", id: "db-1" })
-    assert.equal(db.get("__dirs__", "__dirs__").index, 0)
+    assert.equal(db.get("____", "____").index, 0)
   })
 
   it("should get/add/set/update/upsert/del", async () => {
@@ -212,7 +213,7 @@ describe("WeaveDB Core", () => {
               ],
             ],
           },
-          "__dirs__",
+          "____",
           "users",
         )),
       )
@@ -465,7 +466,7 @@ const q1 = [
       ["set:user,add:user,update:user,upsert:user,del:user", [["allow()"]]],
     ],
   },
-  "__dirs__",
+  "____",
   "users",
 ]
 
@@ -512,8 +513,16 @@ describe("Validator", () => {
     const json3 = await get(request, ["users"])
     assert.deepEqual(json3.res, [bob])
     await wait(1000)
-    const { pid: validate_pid } = await deploy({ hb })
-    const db = await validate({ pid, hb, dbpath: genDir(), jwk, validate_pid })
+    const { pid: validate_pid, dbpath: dbpath2 } = await deploy({ hb })
+    await validate({ pid, hb, dbpath: genDir(), jwk, validate_pid })
+    await wait(5000)
+    const zkp = await zkjson({ pid: validate_pid, hb, dbpath: genDir() })
+    await wait(5000)
+    const proof = await zkp.proof({ dir: "users", doc: "bob", path: "name" })
+    assert.equal(proof[proof.length - 2], "4")
     node.stop()
+    console.log("success!")
+    process.exit()
+    return
   })
 })
