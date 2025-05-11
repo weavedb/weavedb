@@ -171,7 +171,7 @@ function checkMaxDocID(id, size) {
 function checkDocID(id, db) {
   if (!/^[A-Za-z0-9\-_]+$/.test(id)) throw Error(`invalid docID: ${id}`)
   else {
-    const { max_doc_id } = db.get("__config__", "config")
+    const { max_doc_id } = db.get("_config", "config")
     if (!checkMaxDocID(id, max_doc_id)) throw Error(`docID too large: ${id}`)
   }
 }

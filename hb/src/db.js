@@ -76,7 +76,7 @@ const wdb = (kv, __opt__ = {}) => {
       schema: dir_schema,
       auth: [dirs_set],
     })
-    db.put("_", "__config__", {
+    db.put("_", "_config", {
       index: 1,
       schema: { type: "object", additionalProperties: false },
       auth: [],
@@ -110,11 +110,11 @@ const wdb = (kv, __opt__ = {}) => {
     map: {
       init: msg => db => {
         try {
-          if (!isNil(db.get("__config__", "info"))) {
+          if (!isNil(db.get("_config", "info"))) {
             throw Error("already initialized")
           }
-          db.put("__config__", "info", { id: msg.id, owner: msg.from })
-          db.put("__config__", "config", { max_doc_id: 168 })
+          db.put("_config", "info", { id: msg.id, owner: msg.from })
+          db.put("_config", "config", { max_doc_id: 168 })
           if (__opt__.no_commit !== true) db.commit(__opt__)
           return db
         } catch (e) {
