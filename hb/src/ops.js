@@ -161,12 +161,28 @@ function commit({ db, ctx }) {
   if (ctx.opt.no_commit !== true) db.commit(ctx.opt)
 }
 
+function checkMaxDocID(id, size) {
+  const b64 =
+    id.replace(/-/g, "+").replace(/_/g, "/") + "==".slice((2 * id.length) % 4)
+  const buf = Buffer.from(b64, "base64")
+  return buf.length <= size
+}
+
+function checkDocID(id, db) {
+  if (!/^[A-Za-z0-9\-_]+$/.test(id)) throw Error(`invalid docID: ${id}`)
+  else {
+    const { max_doc_id } = db.get("__config__", "config")
+    if (!checkMaxDocID(id, max_doc_id)) throw Error(`docID too large: ${id}`)
+  }
+}
+
 function init({ db, ctx, q }) {
   let data, dir, doc
   if (ctx.op === "get") {
     ;[dir, doc] = q
     ctx.dir = dir
     if (typeof doc === "string") {
+      checkDocID(doc, db)
       ctx.doc = doc
       ctx.range = false
     } else ctx.range = true
@@ -176,10 +192,12 @@ function init({ db, ctx, q }) {
     ctx.data = data
   } else if (ctx.op === "del") {
     ;[dir, doc] = q
+    checkDocID(doc, db)
     ctx.dir = dir
     ctx.doc = doc
   } else {
     ;[data, dir, doc] = q
+    checkDocID(doc, db)
     ctx.dir = dir
     ctx.doc = doc
     ctx.data = data

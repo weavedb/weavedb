@@ -3348,10 +3348,10 @@ yargs@^3.32.0:
     window-size "^0.1.4"
     y18n "^3.2.0"
 
-zkjson@^0.5.2:
-  version "0.5.2"
-  resolved "https://registry.yarnpkg.com/zkjson/-/zkjson-0.5.2.tgz#b59ba7e1cdc28e4cd1db3b6d45b7c425bbd43eb3"
-  integrity sha512-ZKFJwR/gRKcQNQOIRMAK5wt8yvZgLXSC/SUbKoJu5+sM5lndGvfDEMSYJNCwyRXsOoRSi9qzY7cFuinI1qGvwQ==
+zkjson@^0.5.3:
+  version "0.5.3"
+  resolved "https://registry.yarnpkg.com/zkjson/-/zkjson-0.5.3.tgz#9bf71e522cf1570235c7602b9f8ceccebccf75c2"
+  integrity sha512-eLGV0dCDMjQ0VJ/YdkHlTOcvAlv2bj5DJKXCK14QeRXn7Vp5uWOo/2zI/HHkjRIe6wB9nU3FX3RkaYSCC8YEQw==
   dependencies:
     blake-hash "^2.0.0"
     blake2b "^2.1.3"
