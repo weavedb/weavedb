@@ -6,7 +6,10 @@ import kv from "./kv.js"
 import { open } from "lmdb"
 import { DB as ZKDB } from "zkjson"
 import { resolve } from "path"
+import { connect, createSigner } from "@permaweb/aoconnect"
+
 let io = null
+let request = null
 function frombits(bitArray) {
   const bitStr = bitArray.join("")
   const byteCount = Math.ceil(bitStr.length / 8)
@@ -51,6 +54,8 @@ const from64 = b64 => {
 
 let zkdb = null
 let cols = {}
+let v_hb
+let v_pid
 const calcZKHash = async changes => {
   if (!zkdb) {
     zkdb = new ZKDB({
@@ -103,6 +108,20 @@ const buildBundle = async changes => {
   }
   //decodeBuf(buf)
   const zkhash = await calcZKHash(_changes)
+  const txt = await fetch(`${v_hb}/~meta@1.0/info/serialize~json@1.0`).then(r =>
+    r.json(),
+  )
+  const addr = txt.address
+
+  const tags = {
+    method: "POST",
+    path: `/${v_pid}/schedule`,
+    scheduler: addr,
+    data: buf,
+  }
+  const res = await request(tags)
+  console.log();
+  console.log(`[${res.slot}] ${res.process}`)
   console.log(`zkhash: ${zkhash}`)
   console.log(buf)
 }
@@ -144,11 +163,24 @@ const getKV = ({ jwk, pid, hb, dbpath }) => {
   })
 }
 
-const validate = async ({ pid, jwk, dbpath, hb }) => {
+const validate = async ({ pid, jwk, dbpath, hb, validate_pid }) => {
+  v_pid = validate_pid
+  v_hb = hb
   let i = 0
   let db = null
   let from = 0
   let to = 99
+  if (isNil(request)) {
+    request = null
+    if (jwk && hb) {
+      ;({ request } = connect({
+        MODE: "mainnet",
+        URL: hb,
+        device: "",
+        signer: createSigner(jwk),
+      }))
+    }
+  }
   let res = await getMsgs({ pid, hb })
   const wkv = getKV({ jwk, hb, dbpath, pid })
   while (!isEmpty(res.assignments)) {
