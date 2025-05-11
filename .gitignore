@@ -1,3 +1,4 @@
+circom/
 .weavedb
 .db
 test/circuits
