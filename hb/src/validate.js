@@ -108,7 +108,7 @@ const getKV = ({ jwk, pid, hb, dbpath }) => {
     let changes = {}
     for (const d of c.data) {
       for (const k in d.cl) {
-        if (k.split("/")[0] !== "__indexes__") {
+        if (!/^__/.test(k.split("/")[0])) {
           let delta = null
           if (!deltas[k]) {
             let cache = io.get(`__deltas__/${k}`)
