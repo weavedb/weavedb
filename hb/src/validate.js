@@ -43,7 +43,7 @@ const calcZKHash = async changes => {
   for (const v of changes) {
     const [dir, doc] = v.key.split("/")
     if (isNil(cols[dir])) {
-      const index = io.get(`____/${dir}`).index
+      const index = io.get(`_/${dir}`).index
       cols[dir] = index
       await zkdb.addCollection(index)
     }

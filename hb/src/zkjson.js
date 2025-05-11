@@ -47,7 +47,7 @@ const decodeBuf = async buf => {
     const [dir, doc] = v[0].split("/")
     if (isNil(cols[dir])) {
       // todo: cannot get dir
-      const index = io.get(`____/${dir}`).index
+      const index = io.get(`_/${dir}`).index
       cols[dir] = index
       await zkdb.addCollection(index)
     }
@@ -91,7 +91,7 @@ const zkjson = async ({ dbpath, hb, pid }) => {
   }
   return {
     proof: async ({ dir, doc, path, query }) => {
-      const col_id = io.get(`____/${dir}`)?.index
+      const col_id = io.get(`_/${dir}`)?.index
       const json = io.get(`${dir}/${doc}`)
       let params = {
         json,

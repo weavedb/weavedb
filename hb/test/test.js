@@ -158,7 +158,7 @@ describe("WeaveDB TPS", () => {
               ["set:user,add:user,update:user,upsert:user,del:user", allow],
             ],
           },
-          "____",
+          "_",
           "users",
         )),
       )
@@ -191,7 +191,7 @@ describe("WeaveDB TPS", () => {
 describe("WeaveDB Core", () => {
   it("should init", async () => {
     const db = wdb(getKV()).init({ from: "me", id: "db-1" })
-    assert.equal(db.get("____", "____").index, 0)
+    assert.equal(db.get("_", "_").index, 0)
   })
 
   it("should get/add/set/update/upsert/del", async () => {
@@ -213,7 +213,7 @@ describe("WeaveDB Core", () => {
               ],
             ],
           },
-          "____",
+          "_",
           "users",
         )),
       )
@@ -466,7 +466,7 @@ const q1 = [
       ["set:user,add:user,update:user,upsert:user,del:user", [["allow()"]]],
     ],
   },
-  "____",
+  "_",
   "users",
 ]
 

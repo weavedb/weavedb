@@ -66,27 +66,27 @@ const wdb = (kv, __opt__ = {}) => {
     get,
     put,
     del,
-    dir: id => get("____", id),
+    dir: id => get("_", id),
     commit: opt => kv.commit(opt),
     reset: () => kv.reset(),
   }
-  if (isNil(db.dir("____"))) {
-    db.put("____", "____", {
+  if (isNil(db.dir("_"))) {
+    db.put("_", "_", {
       index: 0,
       schema: dir_schema,
       auth: [dirs_set],
     })
-    db.put("____", "__config__", {
+    db.put("_", "__config__", {
       index: 1,
       schema: { type: "object", additionalProperties: false },
       auth: [],
     })
-    db.put("____", "__indexes__", {
+    db.put("_", "__indexes__", {
       index: 2,
       schema: { type: "object" },
       auth: [],
     })
-    db.put("____", "__accounts__", {
+    db.put("_", "__accounts__", {
       index: 3,
       schema: { type: "object" },
       auth: [],
