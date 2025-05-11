@@ -1,10 +1,12 @@
 import wdb from "./index.js"
 import { getMsgs } from "./server-utils.js"
-import { isEmpty, sortBy, prop } from "ramda"
+import { isEmpty, sortBy, prop, isNil } from "ramda"
 import { json, encode, Encoder, decode, Decoder } from "arjson"
 import kv from "./kv.js"
 import { open } from "lmdb"
-
+import { DB as ZKDB } from "zkjson"
+import { resolve } from "path"
+let io = null
 function frombits(bitArray) {
   const bitStr = bitArray.join("")
   const byteCount = Math.ceil(bitStr.length / 8)
@@ -31,8 +33,51 @@ const decodeBuf = buf => {
     console.log(decode(arr8, d))
   }
 }
+const to64 = hash => {
+  const n = BigInt(hash)
+  let hex = n.toString(16)
+  if (hex.length % 2) hex = "0" + hex
+  const buf = Buffer.from(hex, "hex")
+  return buf.toString("base64")
+}
+const from64 = b64 => {
+  const buf = Buffer.from(b64, "base64")
 
-const buildBundle = changes => {
+  const hex = buf.toString("hex")
+
+  const n = BigInt("0x" + hex)
+  return n.toString()
+}
+
+let zkdb = null
+let cols = {}
+const calcZKHash = async changes => {
+  if (!zkdb) {
+    zkdb = new ZKDB({
+      wasmRU: resolve(import.meta.dirname, "circom/rollup/index_js/index.wasm"),
+      zkeyRU: resolve(import.meta.dirname, "circom/rollup/index_0001.zkey"),
+      wasm: resolve(import.meta.dirname, "circom/db/index_js/index.wasm"),
+      zkey: resolve(import.meta.dirname, "circom/db/index_0001.zkey"),
+    })
+    await zkdb.init()
+  }
+  for (const v of changes) {
+    const [dir, doc] = v.key.split("/")
+    if (isNil(cols[dir])) {
+      const index = io.get(`__dirs__/${dir}`).index
+      cols[dir] = index
+      await zkdb.addCollection(index)
+    }
+    try {
+      await zkdb.insert(cols[dir], doc, v.data)
+      console.log("added to zk tree", dir, doc)
+    } catch (e) {
+      console.log("zk error", v.data)
+    }
+  }
+  return to64(zkdb.tree.F.toObject(zkdb.tree.root).toString())
+}
+const buildBundle = async changes => {
   const d = new Decoder()
   let _changes = []
   for (const k in changes)
@@ -56,12 +101,15 @@ const buildBundle = changes => {
     buf.set(arr, offset)
     offset += arr.length
   }
-  decodeBuf(buf)
+  //decodeBuf(buf)
+  const zkhash = await calcZKHash(_changes)
+  console.log(`zkhash: ${zkhash}`)
+  console.log(buf)
 }
 
 let deltas = {}
 const getKV = ({ jwk, pid, hb, dbpath }) => {
-  const io = open({ path: dbpath })
+  io = open({ path: dbpath })
   let addr = null
   return kv(io, async c => {
     let changes = {}
@@ -92,7 +140,7 @@ const getKV = ({ jwk, pid, hb, dbpath }) => {
         }
       }
     }
-    buildBundle(changes)
+    await buildBundle(changes)
   })
 }
 
