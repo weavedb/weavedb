@@ -93,6 +93,7 @@ const wdb = (kv, __opt__ = {}) => {
     })
     if (__opt__.no_commit !== true) db.commit(__opt__)
   }
+
   const monad = of(db, {
     to: {
       get:
@@ -113,6 +114,7 @@ const wdb = (kv, __opt__ = {}) => {
             throw Error("already initialized")
           }
           db.put("__config__", "info", { id: msg.id, owner: msg.from })
+          db.put("__config__", "config", { max_doc_id: 168 })
           if (__opt__.no_commit !== true) db.commit(__opt__)
           return db
         } catch (e) {

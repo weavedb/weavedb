@@ -194,7 +194,7 @@ describe("WeaveDB Core", () => {
     assert.equal(db.get("_", "_").index, 0)
   })
 
-  it("should get/add/set/update/upsert/del", async () => {
+  it.only("should get/add/set/update/upsert/del", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk })
     const wkv = getKV()
@@ -497,7 +497,7 @@ describe("Server", () => {
 })
 
 describe("Validator", () => {
-  it.only("should validate HB WAL", async () => {
+  it("should validate HB WAL", async () => {
     const hb = "http://localhost:10000"
     const URL = "http://localhost:4000"
     const { pid, signer, jwk, addr, dbpath } = await deploy({ hb })
