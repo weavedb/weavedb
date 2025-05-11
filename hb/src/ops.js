@@ -153,7 +153,7 @@ function getDocID({ db, ctx }) {
   while (db.get(dir, tob64(i))) i++
   ctx.doc = tob64(i)
   _dir.autoid = i
-  db.put("____", dir, _dir)
+  db.put("_", dir, _dir)
   return arguments[0]
 }
 
