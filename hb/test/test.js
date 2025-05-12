@@ -1,7 +1,7 @@
 import assert from "assert"
 import { createPrivateKey } from "node:crypto"
 import { afterEach, after, describe, it, before, beforeEach } from "node:test"
-import { of, pof } from "../src/monade.js"
+import { of, pof, fn, pfn } from "../src/monade.js"
 import wdb from "../src/index.js"
 import { open } from "lmdb"
 import { resolve } from "path"
@@ -99,6 +99,22 @@ const getKV = () => {
 }
 
 describe("Monade", () => {
+  it("should create a kleisli", async () => {
+    const p1 = fn().map(n => n + 1)
+    const p2 = pfn().map(async n => n + 2)
+    const p3 = pfn().chain(p1).chain(p2)
+    const f = pfn()
+      .chain(p1)
+      .map(n => n * 10)
+      .chain(p3)
+    assert.equal(
+      await pof(3)
+        .chain(f)
+        .map(n => n * 3)
+        .val(),
+      129,
+    )
+  })
   it("should create a monad", async () => {
     const res = await pof(2).map(async x => x + 1)
     assert.equal(await res.val(), 3)
@@ -206,7 +222,7 @@ describe("WeaveDB Core", () => {
       .set(...(await s.sign("init", init_query)))
       .set(...(await s.sign(...users_query)))
   })
-  it.only("should update with _$ operators", async () => {
+  it("should update with _$ operators", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
     const wkv = getKV()
@@ -226,7 +242,7 @@ describe("WeaveDB Core", () => {
       )
     assert.equal(db.get("users", "bob").age, 5)
   })
-  it("should get/add/set/update/upsert/del", async () => {
+  it.only("should get/add/set/update/upsert/del", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
     const wkv = getKV()

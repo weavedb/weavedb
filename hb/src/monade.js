@@ -5,6 +5,52 @@ const addMethods = (fns, m) => {
   return m
 }
 
+const _fn = (m, steps) => {
+  m.__monad__ = true
+  m.map = fn => {
+    const f = ctx => fn(ctx)
+    steps.push(f)
+    return m
+  }
+  m.tap = fn => {
+    const f = ctx => {
+      fn(ctx)
+      return ctx
+    }
+    steps.push(f)
+    return m
+  }
+  m.chain = fn => {
+    const f = ctx => {
+      const res = fn(ctx)
+      if (!res?.__monad__) throw new Error("fn must return monad")
+      return res.val()
+    }
+    steps.push(f)
+    return m
+  }
+}
+const fn = () => {
+  const steps = []
+  const m = ctx => {
+    for (const v of steps) ctx = v(ctx)
+    return of(ctx)
+  }
+  _fn(m, steps)
+  return m
+}
+
+const pfn = () => {
+  const steps = []
+  const m = ctx => {
+    let mon = pof(ctx)
+    for (const f of steps) mon = mon.chain(v => of(f(v)))
+    return mon
+  }
+  _fn(m, steps)
+  return m
+}
+
 const of = (ctx, fns = {}, copy = false) => {
   let m = copy ? fns : { __monad__: true }
   m.map = fn => of(fn(ctx), m, true)
@@ -42,7 +88,8 @@ const pof = (ctx, fns = {}, copy = false) => {
       run.then(async x => {
         const res = await fn(x)
         if (!res?.__monad__) throw new Error("fn must return monad")
-        return res.run
+        const val = res.run
+        return typeof val !== "undefined" ? val : res.val()
       }),
       m,
       true,
@@ -56,4 +103,4 @@ const pof = (ctx, fns = {}, copy = false) => {
   return copy ? m : addMethods(fns, m)
 }
 
-export { pof, of }
+export { pof, of, fn, pfn }
