@@ -29,6 +29,7 @@ const recover = async ({ pid, jwk, dbpath, hb }) => {
           console.log("recovering...", q)
           db.set(...q, {
             slot: m.slot,
+            id: v.id,
             nonce: v.nonce,
             signature: v.signature,
             "signature-input": v["signature-input"],

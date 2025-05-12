@@ -222,6 +222,10 @@ function init({ db, ctx, q }) {
 }
 
 function verifyNonce({ db, q, ctx }) {
+  ctx.info = db.get("_config", "info") ?? { owner: ctx.from, id: ctx.opt?.id }
+  if (!ctx.opt?.id || ctx.info.id !== ctx.opt.id)
+    throw Error(`the wrong id: ${ctx.opt?.id ?? null}`)
+  console.log(ctx.info.id, ctx.opt?.id)
   const { fields, keyid } = parseSI(ctx.opt["signature-input"])
   if (intersection(["query", "nonce"], fields).length !== 2) {
     throw Error("nonce or query not signed")
@@ -257,12 +261,11 @@ function setup({ db, q, ctx }) {
 }
 function auth({ db, q, ctx }) {
   const { dir, doc, op, opname } = ctx
-  const info = db.get("_config", "info") ?? { owner: ctx.from, id: ctx.opt.id }
   let vars = {
     op,
     opname,
-    id: info,
-    owner: info.owner,
+    id: ctx.info.id,
+    owner: ctx.info.owner,
     from: ctx.from,
     dir,
     doc,
