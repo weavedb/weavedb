@@ -117,7 +117,12 @@ function merge(data, ctx, old) {
   for (const k of _fields) {
     if (typeof data[k] !== "undefined") {
       if (data[k] !== null && is(Object, data[k]) && !isNil(data[k]._$)) {
-        let vars = { from: ctx.from }
+        let vars = {
+          from: ctx.from,
+          ts: ctx.ts,
+          id: ctx.info.id,
+          owner: ctx.info.owner,
+        }
         if (typeof data[k]._$ === "string") {
           if (data[k]._$ === "del") continue
           if (typeof vars[data[k]._$] !== "undefined")
@@ -308,8 +313,10 @@ function auth({ db, q, ctx }) {
     id: ctx.info.id,
     owner: ctx.info.owner,
     from: ctx.from,
+    ts: ctx.ts,
     dir,
     doc,
+    query: q,
     old: ctx.old,
     new: ctx.data,
     allow: false,
