@@ -283,6 +283,7 @@ function verifyNonce({ db, q, ctx }) {
   db.put("__accounts__", ctx.from, { ...acc, nonce: nonce + 1 })
   return arguments[0]
 }
+
 function setup({ db, q, ctx }) {
   if (db.dir("_")) throw Error("already initialized")
   db.put("_", "_", { ...q[0], index: 0 })
@@ -305,6 +306,7 @@ function setup({ db, q, ctx }) {
   db.put("_config", "config", { max_doc_id: 168 })
   return arguments[0]
 }
+
 function auth({ db, q, ctx }) {
   const { dir, doc, op, opname } = ctx
   let vars = {
