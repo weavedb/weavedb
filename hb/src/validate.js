@@ -169,7 +169,7 @@ const validate = async ({ pid, jwk, dbpath, hb, validate_pid }) => {
             break
           }
         }
-        db = wdb(wkv, { no_commit: true }).init({ from, id: pid })
+        db = wdb(wkv, { no_commit: true })
       }
       if (m.body.data) {
         for (const v of JSON.parse(m.body.data)) {

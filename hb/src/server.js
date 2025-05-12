@@ -11,7 +11,7 @@ import { AR } from "wao"
 const server = async ({ jwk, hb, dbpath, port = 4000, pid }) => {
   const wkv = getKV({ jwk, hb, dbpath, pid })
   const addr = (await new AR().init(jwk)).addr
-  const db = wdb(wkv).init({ from: addr, id: pid })
+  const db = wdb(wkv)
   const app = express()
   app.use(cors())
   app.use(bodyParser.raw({ type: "*/*", limit: "100mb" }))

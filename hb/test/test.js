@@ -11,7 +11,8 @@ import server from "../src/server.js"
 import recover from "../src/recover.js"
 import validate from "../src/validate.js"
 import zkjson from "../src/zkjson.js"
-
+import { dir_schema } from "../src/schemas.js"
+import { dirs_set } from "../src/rules.js"
 import {
   put,
   mod,
@@ -28,6 +29,7 @@ import {
   pranges,
   doc,
 } from "../src/planner.js"
+
 import { connect, createSigner } from "@permaweb/aoconnect"
 import { AO, HB } from "wao"
 import {
@@ -35,10 +37,11 @@ import {
   createSigner as createHttpSigner,
 } from "http-message-signatures"
 import kv from "../src/kv.js"
-
+const init_query = { schema: dir_schema, auth: [dirs_set] }
 class sign {
-  constructor({ jwk }) {
+  constructor({ jwk, id }) {
     this.jwk = jwk
+    this.id = id
     this.nonce = 0
     this.signer = createHttpSigner(
       createPrivateKey({ key: jwk, format: "jwk" }),
@@ -48,17 +51,19 @@ class sign {
   }
   async sign(...query) {
     const msg = await httpbis.signMessage(
-      { key: this.signer, fields: ["query", "nonce"] },
+      { key: this.signer, fields: ["query", "nonce", "id"] },
       {
         headers: {
           query: JSON.stringify(query),
           nonce: Number(++this.nonce).toString(),
+          id: this.id,
         },
       },
     )
     return [
       ...query,
       {
+        id: this.id,
         nonce: Number(this.nonce).toString(),
         signature: msg.headers.Signature,
         "signature-input": msg.headers["Signature-Input"],
@@ -144,13 +149,13 @@ describe("WeaveDB TPS", () => {
 
   it("full weavedb monad & kv tps (3.0 - 3.5 K)", async () => {
     const { jwk, addr } = await new AO().ar.gen()
-    const s = new sign({ jwk })
+    const s = new sign({ jwk, id: "db-1" })
     const allow = [["allow()"]]
     const db = wdb(getKV())
-      .init({ from: "me", id: "db-1" })
+      .set(...(await s.sign("init", init_query)))
       .set(
         ...(await s.sign(
-          "set",
+          "set:dir",
           {
             index: 4,
             schema: { type: "object", required: ["name"] },
@@ -190,19 +195,43 @@ describe("WeaveDB TPS", () => {
 
 describe("WeaveDB Core", () => {
   it("should init", async () => {
-    const db = wdb(getKV()).init({ from: "me", id: "db-1" })
+    const { jwk, addr } = await new AO().ar.gen()
+    const s = new sign({ jwk, id: "db-1" })
+    const db = wdb(getKV()).set(...(await s.sign("init", init_query)))
     assert.equal(db.get("_", "_").index, 0)
   })
-
-  it("should get/add/set/update/upsert/del", async () => {
+  it("should add dirs", async () => {
     const { jwk, addr } = await new AO().ar.gen()
-    const s = new sign({ jwk })
-    const wkv = getKV()
-    const db = wdb(wkv)
-      .init({ from: "me", id: "db-1" })
+    const s = new sign({ jwk, id: "db-1" })
+    const db = wdb(getKV())
+      .set(...(await s.sign("init", init_query)))
       .set(
         ...(await s.sign(
-          "set",
+          "set:dir",
+          {
+            index: 4,
+            schema: { type: "object", required: ["name"] },
+            auth: [
+              [
+                "set:user,add:user,update:user,upsert:user,del:user",
+                [["allow()"]],
+              ],
+            ],
+          },
+          "_",
+          "users",
+        )),
+      )
+  })
+  it("should get/add/set/update/upsert/del", async () => {
+    const { jwk, addr } = await new AO().ar.gen()
+    const s = new sign({ jwk, id: "db-1" })
+    const wkv = getKV()
+    const db = wdb(wkv)
+      .set(...(await s.sign("init", init_query)))
+      .set(
+        ...(await s.sign(
+          "set:dir",
           {
             index: 4,
             schema: { type: "object", required: ["name"] },
@@ -458,7 +487,7 @@ const get = async (req, q) => {
 }
 
 const q1 = [
-  "set",
+  "set:dir",
   {
     index: 4,
     schema: { type: "object", required: ["name"] },
@@ -483,6 +512,8 @@ describe("Server", () => {
     const node = await server({ dbpath, jwk, hb, pid })
     const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
     let nonce = 0
+    const json0 = await set(request, ["init", init_query], ++nonce)
+    console.log(json0)
     const json = await set(request, q1, ++nonce)
     console.log(json)
     const json2 = await set(request, q2, ++nonce)
@@ -506,6 +537,8 @@ describe("Validator", () => {
     const node = await server({ dbpath, jwk, hb, pid })
     const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
     let nonce = 0
+    const json0 = await set(request, ["init", init_query], ++nonce)
+    console.log(json0)
     const json = await set(request, q1, ++nonce)
     console.log(json)
     const json2 = await set(request, q2, ++nonce)

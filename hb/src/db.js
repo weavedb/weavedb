@@ -1,7 +1,7 @@
 import { of } from "./monade.js"
 import { pluck, isNil } from "ramda"
 import { dir_schema } from "./schemas.js"
-import { dirs_set } from "../src/rules.js"
+import { dirs_set } from "./rules.js"
 import { last } from "ramda"
 import {
   updateData,
@@ -15,10 +15,12 @@ import {
   init,
   getDocs,
   verifyNonce,
+  setup,
 } from "./ops.js"
 
 const handlers = {
   get: args => of(args).map(init).to(getDocs),
+  init: args => of(args).map(verifyNonce).map(setup).tap(commit),
   add: args =>
     of(args)
       .map(verifyNonce)
@@ -42,8 +44,8 @@ const handlers = {
     of(args)
       .map(verifyNonce)
       .map(init)
-      .map(auth)
       .map(updateData)
+      .map(auth)
       .tap(validateSchema)
       .map(setData)
       .tap(commit),
@@ -51,8 +53,8 @@ const handlers = {
     of(args)
       .map(verifyNonce)
       .map(init)
-      .map(auth)
       .map(upsertData)
+      .map(auth)
       .tap(validateSchema)
       .map(setData)
       .tap(commit),
@@ -70,30 +72,6 @@ const wdb = (kv, __opt__ = {}) => {
     commit: opt => kv.commit(opt),
     reset: () => kv.reset(),
   }
-  if (isNil(db.dir("_"))) {
-    db.put("_", "_", {
-      index: 0,
-      schema: dir_schema,
-      auth: [dirs_set],
-    })
-    db.put("_", "_config", {
-      index: 1,
-      schema: { type: "object", additionalProperties: false },
-      auth: [],
-    })
-    db.put("_", "__indexes__", {
-      index: 2,
-      schema: { type: "object" },
-      auth: [],
-    })
-    db.put("_", "__accounts__", {
-      index: 3,
-      schema: { type: "object" },
-      auth: [],
-    })
-    if (__opt__.no_commit !== true) db.commit(__opt__)
-  }
-
   const monad = of(db, {
     to: {
       get:
@@ -108,20 +86,6 @@ const wdb = (kv, __opt__ = {}) => {
         },
     },
     map: {
-      init: msg => db => {
-        try {
-          if (!isNil(db.get("_config", "info"))) {
-            throw Error("already initialized")
-          }
-          db.put("_config", "info", { id: msg.id, owner: msg.from })
-          db.put("_config", "config", { max_doc_id: 168 })
-          if (__opt__.no_commit !== true) db.commit(__opt__)
-          return db
-        } catch (e) {
-          db.reset()
-          throw Error(e)
-        }
-      },
       set:
         (...msg) =>
         db => {
