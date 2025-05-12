@@ -106,24 +106,26 @@ function tob64(n) {
 
 function updateData({ db, ctx }) {
   const { data, dir, doc } = ctx
-  const old = db.get(dir, doc)
-  if (isNil(old)) throw Error("data doesn't exist")
-  ctx.data = mergeLeft(data, old)
+  if (isNil(ctx.old)) throw Error("data doesn't exist")
+  ctx.data = mergeLeft(data, ctx.old)
   return arguments[0]
 }
 
 function upsertData({ db, ctx }) {
   const { data, dir, doc } = ctx
   if (isNil(db.dir(dir))) throw Error("dir doesn't exist")
-  const old = db.get(dir, doc)
-  if (!isNil(old)) ctx.data = mergeLeft(data, old)
+  if (!isNil(ctx.old)) ctx.data = mergeLeft(data, ctx.old)
   return arguments[0]
 }
 
 const validateSchema = ({ db, ctx }) => {
   let valid = false
   const { data, dir } = ctx
-  const schema = db.dir(dir).schema
+  let _dir = db.dir(dir)
+  let schema = null
+  if (!_dir && dir === "_") schema = {}
+  else schema = _dir.schema
+
   try {
     valid = validate(data, schema).valid
   } catch (e) {}
@@ -132,7 +134,7 @@ const validateSchema = ({ db, ctx }) => {
 
 function setData({ db, ctx }) {
   const { data, dir, doc } = ctx
-  if (isNil(db.dir(dir))) throw Error("dir doesn't exist")
+  if (dir !== "_" && isNil(db.dir(dir))) throw Error("dir doesn't exist")
   put(data, doc, [dir.toString()], ctx.kv, true)
   return arguments[0]
 }
@@ -169,6 +171,7 @@ function checkMaxDocID(id, size) {
 }
 
 function checkDocID(id, db) {
+  if (id === "_") return
   if (!/^[A-Za-z0-9\-_]+$/.test(id)) throw Error(`invalid docID: ${id}`)
   else {
     const { max_doc_id } = db.get("_config", "config")
@@ -193,11 +196,13 @@ function init({ db, ctx, q }) {
   } else if (ctx.op === "del") {
     ;[dir, doc] = q
     checkDocID(doc, db)
+    ctx.old = db.get(dir, doc)
     ctx.dir = dir
     ctx.doc = doc
   } else {
     ;[data, dir, doc] = q
     checkDocID(doc, db)
+    ctx.old = db.get(dir, doc)
     ctx.dir = dir
     ctx.doc = doc
     ctx.data = data
@@ -228,31 +233,95 @@ function verifyNonce({ db, q, ctx }) {
   db.put("__accounts__", ctx.from, { ...acc, nonce: nonce + 1 })
   return arguments[0]
 }
-
+function setup({ db, q, ctx }) {
+  if (db.dir("_")) throw Error("already initialized")
+  db.put("_", "_", { ...q[0], index: 0 })
+  db.put("_", "_config", {
+    index: 1,
+    schema: { type: "object", additionalProperties: false },
+    auth: [],
+  })
+  db.put("_", "__indexes__", {
+    index: 2,
+    schema: { type: "object" },
+    auth: [],
+  })
+  db.put("_", "__accounts__", {
+    index: 3,
+    schema: { type: "object" },
+    auth: [],
+  })
+  db.put("_config", "info", { id: ctx.opt.id, owner: ctx.from, last_dir_id: 3 })
+  db.put("_config", "config", { max_doc_id: 168 })
+  return arguments[0]
+}
 function auth({ db, q, ctx }) {
   const { dir, doc, op, opname } = ctx
+  const info = db.get("_config", "info") ?? { owner: ctx.from, id: ctx.opt.id }
   let vars = {
     op,
     opname,
-    from: "",
-    tx: 0,
+    id: info,
+    owner: info.owner,
+    from: ctx.from,
     dir,
     doc,
-    db: {},
-    old: {},
-    new: {},
+    old: ctx.old,
+    new: ctx.data,
     allow: false,
   }
-  const _dir = db.dir(dir)
+  let _dir = db.dir(dir)
+  if (!_dir && dir === "_")
+    _dir = {
+      auth: [
+        [
+          "set:init",
+          [
+            ["=$isOwner", ["equals", "$from", "$owner"]],
+            ["allowif()", "$isOwner"],
+          ],
+        ],
+      ],
+    }
   if (isNil(_dir)) throw Error(`dir doesn't exist: ${dir}`)
   let allow = false
+  const fn = {
+    get: (v, obj, set) => [db.get(...v), false],
+    set: (v, obj, set) => {
+      const [data, dir, doc] = v
+      db.put(dir, doc, data)
+      return [true, false]
+    },
+    update: (v, obj, set) => {
+      const [data, dir, doc] = v
+      const old = db.get(dir, doc)
+      if (!old) return [false, false]
+      db.put(dir, doc, mergeLeft(data, old))
+      return [true, false]
+    },
+    upsert: (v, obj, set) => {
+      const [data, dir, doc] = v
+      const old = db.get(dir, doc) ?? {}
+      db.put(dir, doc, mergeLeft(data, old))
+      return [true, false]
+    },
+    del: (v, obj, set) => {
+      const [dir, doc] = v
+      const old = db.get(dir, doc)
+      if (!old) return [false, false]
+      db.del(dir, doc)
+      return [true, false]
+    },
+  }
   for (const v of _dir.auth) {
     if (includes(ctx.opname, v[0].split(","))) {
       try {
-        fpj(v[1], vars, ac_funcs)
+        fpj(v[1], vars, { ...ac_funcs, ...fn })
         if (vars.allow) allow = true
         break
-      } catch (e) {}
+      } catch (e) {
+        throw Error("authentication failed")
+      }
     }
   }
   if (!allow) throw Error("operation not allowed")
@@ -280,4 +349,5 @@ export {
   commit,
   getDocs,
   verifyNonce,
+  setup,
 }

@@ -20,9 +20,8 @@ const recover = async ({ pid, jwk, dbpath, hb }) => {
             break
           }
         }
-        const wkv = getKV({ jwk, hb, dbpath, pid })
         console.log("initializing...", pid)
-        db = wdb(wkv).init({ from, id: pid })
+        db = wdb(getKV({ jwk, hb, dbpath, pid }))
       }
       if (m.body.data) {
         for (const v of JSON.parse(m.body.data)) {
