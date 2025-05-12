@@ -26,10 +26,10 @@ const handlers = {
     of(args)
       .map(verifyNonce)
       .map(init)
+      .map(getDocID)
       .map(setData)
       .map(auth)
       .tap(validateSchema)
-      .map(getDocID)
       .map(putData)
       .tap(commit),
   set: args =>
@@ -99,7 +99,7 @@ const wdb = (kv, __opt__ = {}) => {
             let opt = __opt__
             if (_opt && typeof _opt === "object" && _opt["signature"])
               opt = { ...__opt__, ...q.pop() }
-            let ctx = { op: sp[0], opname: op, opt }
+            let ctx = { op: sp[0], opname: op, opt, ts: Date.now() }
             if (isNil(handlers[ctx.op]))
               throw Error(`handler doesn't exist: ${op}`)
             handlers[ctx.op]({ db, q, ctx })
