@@ -38,6 +38,18 @@ import {
 } from "http-message-signatures"
 import kv from "../src/kv.js"
 const init_query = { schema: dir_schema, auth: [dirs_set] }
+const users_query = [
+  "set:dir",
+  {
+    index: 4,
+    schema: { type: "object", required: ["name"] },
+    auth: [
+      ["set:user,add:user,update:user,upsert:user,del:user", [["allow()"]]],
+    ],
+  },
+  "_",
+  "users",
+]
 class sign {
   constructor({ jwk, id }) {
     this.jwk = jwk
@@ -153,20 +165,7 @@ describe("WeaveDB TPS", () => {
     const allow = [["allow()"]]
     const db = wdb(getKV())
       .set(...(await s.sign("init", init_query)))
-      .set(
-        ...(await s.sign(
-          "set:dir",
-          {
-            index: 4,
-            schema: { type: "object", required: ["name"] },
-            auth: [
-              ["set:user,add:user,update:user,upsert:user,del:user", allow],
-            ],
-          },
-          "_",
-          "users",
-        )),
-      )
+      .set(...(await s.sign(...users_query)))
 
     let last = 0
     let i = 0
@@ -205,23 +204,27 @@ describe("WeaveDB Core", () => {
     const s = new sign({ jwk, id: "db-1" })
     const db = wdb(getKV())
       .set(...(await s.sign("init", init_query)))
+      .set(...(await s.sign(...users_query)))
+  })
+  it.only("should update with _$ operators", async () => {
+    const { jwk, addr } = await new AO().ar.gen()
+    const s = new sign({ jwk, id: "db-1" })
+    const wkv = getKV()
+    const db = wdb(wkv)
+      .set(...(await s.sign("init", init_query)))
+      .set(...(await s.sign(...users_query)))
+      .set(
+        ...(await s.sign("set:user", { name: "Bob", age: 4 }, "users", "bob")),
+      )
       .set(
         ...(await s.sign(
-          "set:dir",
-          {
-            index: 4,
-            schema: { type: "object", required: ["name"] },
-            auth: [
-              [
-                "set:user,add:user,update:user,upsert:user,del:user",
-                [["allow()"]],
-              ],
-            ],
-          },
-          "_",
+          "update:user",
+          { age: { _$: ["inc"] } },
           "users",
+          "bob",
         )),
       )
+    assert.equal(db.get("users", "bob").age, 5)
   })
   it("should get/add/set/update/upsert/del", async () => {
     const { jwk, addr } = await new AO().ar.gen()
@@ -229,23 +232,7 @@ describe("WeaveDB Core", () => {
     const wkv = getKV()
     const db = wdb(wkv)
       .set(...(await s.sign("init", init_query)))
-      .set(
-        ...(await s.sign(
-          "set:dir",
-          {
-            index: 4,
-            schema: { type: "object", required: ["name"] },
-            auth: [
-              [
-                "set:user,add:user,update:user,upsert:user,del:user",
-                [["allow()"]],
-              ],
-            ],
-          },
-          "_",
-          "users",
-        )),
-      )
+      .set(...(await s.sign(...users_query)))
       .set(...(await s.sign("set:user", bob, "users", "bob")))
       .set(...(await s.sign("set:user", alice, "users", "alice")))
       .set(...(await s.sign("add:user", mike, "users")))

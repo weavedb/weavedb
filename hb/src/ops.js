@@ -1,6 +1,20 @@
 import { validate } from "jsonschema"
-import { intersection, clone, includes, isNil, mergeLeft, pluck } from "ramda"
-import { fpj, ac_funcs } from "./fpjson.js"
+import _fpjson from "fpjson-lang"
+const fpjson = _fpjson.default || _fpjson
+import {
+  compose,
+  uniq,
+  concat,
+  intersection,
+  clone,
+  includes,
+  isNil,
+  mergeLeft,
+  pluck,
+  keys,
+  is,
+} from "ramda"
+import { fpj, ac_funcs, replace$ } from "./fpjson.js"
 import parseQuery from "./parser.js"
 import {
   put,
@@ -91,7 +105,31 @@ function parseSI(input) {
 
   return obj
 }
-
+function fields(ndata, odata) {
+  let nkeys = keys(ndata)
+  let okeys = keys(odata)
+  return compose(uniq, concat(nkeys))(okeys)
+}
+function merge(data, ctx, old) {
+  old ??= ctx.old
+  let new_data = {}
+  const _fields = fields(data, old)
+  for (const k of _fields) {
+    if (typeof data[k] !== "undefined") {
+      if (data[k] !== null && is(Object, data[k]) && !isNil(data[k]._$)) {
+        let vars = { from: ctx.from }
+        if (typeof data[k]._$ === "string") {
+          if (data[k]._$ === "del") continue
+          if (typeof vars[data[k]._$] !== "undefined")
+            new_data[k] = vars[data[k]._$]
+        } else {
+          new_data[k] = fpjson(replace$([data[k]._$, old[k] ?? null]), vars)
+        }
+      } else new_data[k] = data[k]
+    } else new_data[k] = old[k]
+  }
+  return new_data
+}
 function tob64(n) {
   if (!Number.isInteger(n) || n < 0)
     throw new Error("Only non-negative integers allowed")
@@ -107,14 +145,14 @@ function tob64(n) {
 function updateData({ db, ctx }) {
   const { data, dir, doc } = ctx
   if (isNil(ctx.old)) throw Error("data doesn't exist")
-  ctx.data = mergeLeft(data, ctx.old)
+  ctx.data = merge(data, ctx)
   return arguments[0]
 }
 
 function upsertData({ db, ctx }) {
   const { data, dir, doc } = ctx
   if (isNil(db.dir(dir))) throw Error("dir doesn't exist")
-  if (!isNil(ctx.old)) ctx.data = mergeLeft(data, ctx.old)
+  if (!isNil(ctx.old)) ctx.data = merge(data, ctx)
   return arguments[0]
 }
 
@@ -122,9 +160,7 @@ const validateSchema = ({ db, ctx }) => {
   let valid = false
   const { data, dir } = ctx
   let _dir = db.dir(dir)
-  let schema = null
-  if (!_dir && dir === "_") schema = {}
-  else schema = _dir.schema
+  const schema = _dir.schema
 
   try {
     valid = validate(data, schema).valid
@@ -132,10 +168,17 @@ const validateSchema = ({ db, ctx }) => {
   if (!valid) throw Error("invalid schema")
 }
 
-function setData({ db, ctx }) {
+function putData({ db, ctx }) {
   const { data, dir, doc } = ctx
-  if (dir !== "_" && isNil(db.dir(dir))) throw Error("dir doesn't exist")
+  if (isNil(db.dir(dir))) throw Error("dir doesn't exist")
   put(data, doc, [dir.toString()], ctx.kv, true)
+  return arguments[0]
+}
+
+function setData({ db, ctx }) {
+  const { data, dir } = ctx
+  if (isNil(db.dir(dir))) throw Error("dir doesn't exist")
+  ctx.data = merge(data, ctx, {})
   return arguments[0]
 }
 
@@ -171,7 +214,6 @@ function checkMaxDocID(id, size) {
 }
 
 function checkDocID(id, db) {
-  if (id === "_") return
   if (!/^[A-Za-z0-9\-_]+$/.test(id)) throw Error(`invalid docID: ${id}`)
   else {
     const { max_doc_id } = db.get("_config", "config")
@@ -225,7 +267,6 @@ function verifyNonce({ db, q, ctx }) {
   ctx.info = db.get("_config", "info") ?? { owner: ctx.from, id: ctx.opt?.id }
   if (!ctx.opt?.id || ctx.info.id !== ctx.opt.id)
     throw Error(`the wrong id: ${ctx.opt?.id ?? null}`)
-  console.log(ctx.info.id, ctx.opt?.id)
   const { fields, keyid } = parseSI(ctx.opt["signature-input"])
   if (intersection(["query", "nonce"], fields).length !== 2) {
     throw Error("nonce or query not signed")
@@ -346,6 +387,7 @@ export {
   updateData,
   upsertData,
   validateSchema,
+  putData,
   setData,
   delData,
   getDocID,

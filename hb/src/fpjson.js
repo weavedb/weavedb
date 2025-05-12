@@ -312,4 +312,4 @@ const ac_funcs = {
   },
 }
 
-export { fpj, ac_funcs }
+export { fpj, ac_funcs, replace$ }
