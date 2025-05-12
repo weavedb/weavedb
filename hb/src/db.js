@@ -7,6 +7,7 @@ import {
   updateData,
   upsertData,
   validateSchema,
+  putData,
   setData,
   delData,
   getDocID,
@@ -25,18 +26,20 @@ const handlers = {
     of(args)
       .map(verifyNonce)
       .map(init)
+      .map(setData)
       .map(auth)
       .tap(validateSchema)
       .map(getDocID)
-      .map(setData)
+      .map(putData)
       .tap(commit),
   set: args =>
     of(args)
       .map(verifyNonce)
       .map(init)
+      .map(setData)
       .map(auth)
       .tap(validateSchema)
-      .map(setData)
+      .map(putData)
       .tap(commit),
   del: args =>
     of(args).map(verifyNonce).map(init).map(auth).map(delData).tap(commit),
@@ -47,7 +50,7 @@ const handlers = {
       .map(updateData)
       .map(auth)
       .tap(validateSchema)
-      .map(setData)
+      .map(putData)
       .tap(commit),
   upsert: args =>
     of(args)
@@ -56,7 +59,7 @@ const handlers = {
       .map(upsertData)
       .map(auth)
       .tap(validateSchema)
-      .map(setData)
+      .map(putData)
       .tap(commit),
 }
 
