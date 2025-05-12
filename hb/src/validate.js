@@ -175,6 +175,7 @@ const validate = async ({ pid, jwk, dbpath, hb, validate_pid }) => {
         for (const v of JSON.parse(m.body.data)) {
           const q = JSON.parse(v.query)
           db.set(...q, {
+            id: v.id,
             slot: m.slot,
             nonce: v.nonce,
             signature: v.signature,

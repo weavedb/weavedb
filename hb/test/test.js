@@ -467,12 +467,13 @@ const deploy = async ({ hb }) => {
   return { pid: res.process, address, addr, jwk, signer, dbpath }
 }
 
-const set = async (req, q, nonce) => {
+const set = async (req, q, nonce, id) => {
   const res = await req({
     method: "POST",
     path: "/~weavedb@1.0/set",
     query: JSON.stringify(q),
     nonce: Number(nonce).toString(),
+    id,
   })
   return JSON.parse(res.body)
 }
@@ -512,11 +513,11 @@ describe("Server", () => {
     const node = await server({ dbpath, jwk, hb, pid })
     const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
     let nonce = 0
-    const json0 = await set(request, ["init", init_query], ++nonce)
+    const json0 = await set(request, ["init", init_query], ++nonce, pid)
     console.log(json0)
-    const json = await set(request, q1, ++nonce)
+    const json = await set(request, q1, ++nonce, pid)
     console.log(json)
-    const json2 = await set(request, q2, ++nonce)
+    const json2 = await set(request, q2, ++nonce, pid)
     console.log(json2)
     const json3 = await get(request, ["users"])
     assert.deepEqual(json3.res, [bob])
@@ -528,7 +529,7 @@ describe("Server", () => {
 })
 
 describe("Validator", () => {
-  it.only("should validate HB WAL", async () => {
+  it("should validate HB WAL", async () => {
     const hb = "http://localhost:10000"
     const URL = "http://localhost:4000"
     const { pid, signer, jwk, addr, dbpath } = await deploy({ hb })
@@ -537,11 +538,11 @@ describe("Validator", () => {
     const node = await server({ dbpath, jwk, hb, pid })
     const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
     let nonce = 0
-    const json0 = await set(request, ["init", init_query], ++nonce)
+    const json0 = await set(request, ["init", init_query], ++nonce, pid)
     console.log(json0)
-    const json = await set(request, q1, ++nonce)
+    const json = await set(request, q1, ++nonce, pid)
     console.log(json)
-    const json2 = await set(request, q2, ++nonce)
+    const json2 = await set(request, q2, ++nonce, pid)
     console.log(json2)
     const json3 = await get(request, ["users"])
     assert.deepEqual(json3.res, [bob])

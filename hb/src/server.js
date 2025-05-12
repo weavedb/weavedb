@@ -41,6 +41,7 @@ const server = async ({ jwk, hb, dbpath, port = 4000, pid }) => {
             headers[lowK] = req.headers[lowK]
           }
         }
+        console.log(headers)
         db.set(...query, headers)
         res.json({ success: true, query })
       } catch (e) {
