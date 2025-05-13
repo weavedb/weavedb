@@ -150,6 +150,7 @@ const checkIndex = (prefix, path, kv) => {
     throw Error(`missing index ${JSON.stringify(sort_fields)}`)
   }
 }
+
 const modOpt = (opt, cur = {}, tree) => {
   let reversed = {}
   if (opt.reverse) {

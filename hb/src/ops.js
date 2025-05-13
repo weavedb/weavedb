@@ -21,9 +21,9 @@ import {
   put,
   mod,
   del as _del,
-  addIndex,
+  addIndex as _addIndex,
   getIndexes,
-  removeIndex,
+  removeIndex as _removeIndex,
 } from "../src/indexer.js"
 import { get } from "../src/planner.js"
 import { of, fn } from "./monade.js"
@@ -192,7 +192,7 @@ function setData({ db, ctx }) {
 function delData({ db, ctx }) {
   const { dir, doc } = ctx
   if (isNil(db.dir(dir))) throw Error("dir doesn't exist")
-  _del(doc, [dir.toString()], ctx.kv)
+  _del(doc, [dir], ctx.kv)
   return arguments[0]
 }
 
@@ -238,7 +238,7 @@ function init({ db, ctx, q }) {
       ctx.doc = doc
       ctx.range = false
     } else ctx.range = true
-  } else if (ctx.op === "add") {
+  } else if (includes(ctx.op, ["add", "addIndex", "removeIndex"])) {
     ;[data, dir] = q
     ctx.dir = dir
     ctx.data = data
@@ -443,6 +443,16 @@ function batch({ db, q, ctx }) {
   return arguments[0]
 }
 
+function addIndex({ db, q, ctx }) {
+  _addIndex(ctx.data, [ctx.dir], ctx.kv)
+  return arguments[0]
+}
+
+function removeIndex({ db, q, ctx }) {
+  _removeIndex(ctx.data, [ctx.dir], ctx.kv)
+  return arguments[0]
+}
+
 export {
   add,
   set,
@@ -463,4 +473,6 @@ export {
   verify,
   setup,
   batch,
+  addIndex,
+  removeIndex,
 }

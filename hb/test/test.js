@@ -213,7 +213,7 @@ describe("WeaveDB TPS", () => {
 })
 
 describe("WeaveDB Core", () => {
-  it.only("should cget and pagenate", async () => {
+  it("should cget and pagenate", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
     const wkv = getKV()
@@ -273,6 +273,7 @@ describe("WeaveDB Core", () => {
       )
     assert.equal(db.get("users", "bob").age, 5)
   })
+
   it("should batch", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
@@ -289,6 +290,60 @@ describe("WeaveDB Core", () => {
       )
     assert.deepEqual(db.get("users"), [alice, { name: "Bobby" }])
   })
+
+  it.only("should add/remove indexes", async () => {
+    const bob = { name: "Bbb", age: 20, favs: ["apple", "orange", "grape"] }
+    const alice = { name: "Alice", age: 30, favs: ["apple", "peach"] }
+    const mike = { name: "Mike", age: 40, favs: ["lemmon", "peach"] }
+    const beth = { name: "Beth", age: 50, favs: ["peach", "kiwi"] }
+    const { jwk, addr } = await new AO().ar.gen()
+    const s = new sign({ jwk, id: "db-1" })
+    const wkv = getKV()
+    const db = wdb(wkv)
+      .set(...(await s.sign("init", init_query)))
+      .set(...(await s.sign(...users_query)))
+      .set(
+        ...(await s.sign("batch", [
+          ["set:user", bob, "users", "bob"],
+          ["set:user", alice, "users", "alice"],
+          ["set:user", mike, "users", "mike"],
+          ["set:user", beth, "users", "beth"],
+        ])),
+      )
+      .set(
+        ...(await s.sign(
+          "addIndex",
+          [
+            ["age", "desc"],
+            ["name", "asc"],
+          ],
+          "users",
+        )),
+      )
+    assert.deepEqual(db.get("users", ["age", "desc"], ["name"]), [
+      beth,
+      mike,
+      alice,
+      bob,
+    ])
+    assert.deepEqual(db.get("users", ["favs", "array-contains", "peach"]), [
+      alice,
+      beth,
+      mike,
+    ])
+    db.set(
+      ...(await s.sign("batch", [
+        ["update:user", { age: 60 }, "users", "bob"],
+      ])),
+    )
+    assert.deepEqual(db.get("users", ["age", "desc"], ["name"]), [
+      { ...bob, age: 60 },
+      beth,
+      mike,
+      alice,
+    ])
+  })
+
   it("should get/add/set/update/upsert/del", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
@@ -599,7 +654,7 @@ describe("Server", () => {
 })
 
 describe("Validator", () => {
-  it.only("should validate HB WAL", async () => {
+  it("should validate HB WAL", async () => {
     const hbeam = runHB()
     await wait(5000)
     const hb = "http://localhost:10000"
