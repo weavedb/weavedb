@@ -95,7 +95,7 @@ const getKV = ({ jwk, pid, hb, dbpath }) => {
       signer: createSigner(jwk),
     }))
   }
-  const io = open({ path: dbpath })
+  const io = open({ path: `${dbpath}-${pid}` })
   let addr = null
   return kv(io, async c => {
     let bundle = []

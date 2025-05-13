@@ -291,7 +291,7 @@ describe("WeaveDB Core", () => {
     assert.deepEqual(db.get("users"), [alice, { name: "Bobby" }])
   })
 
-  it.only("should add/remove indexes", async () => {
+  it("should add/remove indexes", async () => {
     const bob = { name: "Bbb", age: 20, favs: ["apple", "orange", "grape"] }
     const alice = { name: "Alice", age: 30, favs: ["apple", "peach"] }
     const mike = { name: "Mike", age: 40, favs: ["lemmon", "peach"] }
@@ -583,11 +583,12 @@ const set = async (req, q, nonce, id) => {
   return JSON.parse(res.body)
 }
 
-const get = async (req, q) => {
+const get = async (req, q, id) => {
   const res = await req({
     method: "GET",
     path: "/~weavedb@1.0/get",
     query: JSON.stringify(q),
+    id,
   })
   return JSON.parse(res.body)
 }
@@ -606,6 +607,7 @@ const q1 = [
 ]
 
 const q2 = ["set:user", bob, "users", "bob"]
+const q3 = ["set:user", alice, "users", "alice"]
 let qs = [q1, q2]
 const runHB = () => {
   const hb = spawn("rebar3", ["shell"], {
@@ -625,7 +627,7 @@ const runHB = () => {
 }
 
 describe("Server", () => {
-  it("should run a server", async () => {
+  it.only("should run a server", async () => {
     const hbeam = runHB()
     await wait(5000)
     const hb = "http://localhost:10000"
@@ -633,20 +635,27 @@ describe("Server", () => {
     const { pid, signer, jwk, addr, dbpath } = await deploy({ hb })
     console.log("pid", pid)
     console.log("addr", addr)
-    const node = await server({ dbpath, jwk, hb, pid })
+    const node = await server({ dbpath, jwk, hb })
+
     const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
+
     let nonce = 0
     const json0 = await set(request, ["init", init_query], ++nonce, pid)
-    console.log(json0)
     const json = await set(request, q1, ++nonce, pid)
-    console.log(json)
     const json2 = await set(request, q2, ++nonce, pid)
-    console.log(json2)
-    const json3 = await get(request, ["users"])
+    const json3 = await get(request, ["users"], pid)
     assert.deepEqual(json3.res, [bob])
     await wait(1000)
     const db = await recover({ pid, hb, dbpath: genDir(), jwk })
-    assert.deepEqual(db.get("users"), [bob])
+    assert.deepEqual(db.get("users"), [bob], pid)
+
+    const { pid: pid2 } = await deploy({ hb })
+    let nonce_2 = 0
+    const json0_2 = await set(request, ["init", init_query], ++nonce_2, pid2)
+    const json_2 = await set(request, q1, ++nonce_2, pid2)
+    const json2_2 = await set(request, q3, ++nonce_2, pid2)
+    const json3_2 = await get(request, ["users"], pid2)
+    assert.deepEqual(json3_2.res, [alice])
     node.stop()
     await wait(3000)
     hbeam.kill("SIGINT")
