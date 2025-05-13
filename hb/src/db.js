@@ -1,7 +1,5 @@
 import { of, fn } from "./monade.js"
-import { pluck, isNil } from "ramda"
-import { dir_schema } from "./schemas.js"
-import { dirs_set } from "./rules.js"
+import { isNil } from "ramda"
 import { last } from "ramda"
 import {
   updateData,
@@ -15,7 +13,7 @@ import {
   auth,
   init,
   getDocs,
-  verifyNonce,
+  verify,
   setup,
   batch,
   add,
@@ -27,13 +25,13 @@ import {
 
 const handlers = {
   get: args => of(args).map(init).to(getDocs),
-  init: args => of(args).map(verifyNonce).map(setup).tap(commit),
-  add: args => of(args).map(verifyNonce).chain(add).tap(commit),
-  set: args => of(args).map(verifyNonce).chain(set).tap(commit),
-  del: args => of(args).map(verifyNonce).chain(del).tap(commit),
-  update: args => of(args).map(verifyNonce).chain(update).tap(commit),
-  upsert: args => of(args).map(verifyNonce).chain(upsert).tap(commit),
-  batch: args => of(args).map(verifyNonce).map(batch).tap(commit),
+  init: args => of(args).map(verify).map(setup).tap(commit),
+  add: args => of(args).map(verify).chain(add).tap(commit),
+  set: args => of(args).map(verify).chain(set).tap(commit),
+  del: args => of(args).map(verify).chain(del).tap(commit),
+  update: args => of(args).map(verify).chain(update).tap(commit),
+  upsert: args => of(args).map(verify).chain(upsert).tap(commit),
+  batch: args => of(args).map(verify).map(batch).tap(commit),
 }
 
 const wdb = (kv, __opt__ = {}) => {

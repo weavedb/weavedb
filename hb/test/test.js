@@ -3,6 +3,7 @@ import { createPrivateKey } from "node:crypto"
 import { afterEach, after, describe, it, before, beforeEach } from "node:test"
 import { of, pof, fn, pfn } from "../src/monade.js"
 import wdb from "../src/index.js"
+import queue from "../src/queue.js"
 import { open } from "lmdb"
 import { resolve } from "path"
 import BPT from "../src/bpt.js"
@@ -85,7 +86,10 @@ class sign {
 }
 
 const genDir = () =>
-  resolve(import.meta.dirname, `.db/mydb-${Math.floor(Math.random() * 10000)}`)
+  resolve(
+    import.meta.dirname,
+    `.db/mydb-${Math.floor(Math.random() * 1000000000)}`,
+  )
 const wait = ms => new Promise(res => setTimeout(() => res(), ms))
 const bob = { name: "Bob" }
 const alice = { name: "Alice" }
@@ -209,6 +213,20 @@ describe("WeaveDB TPS", () => {
 })
 
 describe("WeaveDB Core", () => {
+  it.only("should handle queue", async () => {
+    const { jwk, addr } = await new AO().ar.gen()
+    const s = new sign({ jwk, id: "db-1" })
+    const db = queue(wdb(getKV()))
+    await db.set(...(await s.sign("init", init_query)))
+    await db.set(...(await s.sign(...users_query)))
+    await db.set(
+      ...(await s.sign("set:user", { name: "Bob", age: 4 }, "users", "bob")),
+    )
+    assert.deepEqual(db.get("users"), [{ name: "Bob", age: 4 }])
+    await db.set(...(await s.sign("set:user", alice, "users", "alice")))
+    assert.deepEqual(db.get("users"), [alice, { name: "Bob", age: 4 }])
+  })
+
   it("should init", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
@@ -242,7 +260,7 @@ describe("WeaveDB Core", () => {
       )
     assert.equal(db.get("users", "bob").age, 5)
   })
-  it.only("should batch", async () => {
+  it("should batch", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
     const wkv = getKV()
@@ -565,7 +583,7 @@ describe("Validator", () => {
     console.log(json2)
     const json3 = await get(request, ["users"])
     assert.deepEqual(json3.res, [bob])
-    await wait(1000)
+    await wait(5000)
     const { pid: validate_pid, dbpath: dbpath2 } = await deploy({ hb })
     await validate({ pid, hb, dbpath: genDir(), jwk, validate_pid })
     await wait(5000)
