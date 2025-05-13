@@ -1,6 +1,7 @@
 circom/
 .weavedb
 .db
+.wallet.json
 test/circuits
 cache
 scripts/.wallets
