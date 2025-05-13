@@ -1,4 +1,4 @@
-import { of } from "./monade.js"
+import { of, fn } from "./monade.js"
 import { pluck, isNil } from "ramda"
 import { dir_schema } from "./schemas.js"
 import { dirs_set } from "./rules.js"
@@ -17,50 +17,23 @@ import {
   getDocs,
   verifyNonce,
   setup,
+  batch,
+  add,
+  set,
+  del,
+  update,
+  upsert,
 } from "./ops.js"
 
 const handlers = {
   get: args => of(args).map(init).to(getDocs),
   init: args => of(args).map(verifyNonce).map(setup).tap(commit),
-  add: args =>
-    of(args)
-      .map(verifyNonce)
-      .map(init)
-      .map(getDocID)
-      .map(setData)
-      .map(auth)
-      .tap(validateSchema)
-      .map(putData)
-      .tap(commit),
-  set: args =>
-    of(args)
-      .map(verifyNonce)
-      .map(init)
-      .map(setData)
-      .map(auth)
-      .tap(validateSchema)
-      .map(putData)
-      .tap(commit),
-  del: args =>
-    of(args).map(verifyNonce).map(init).map(auth).map(delData).tap(commit),
-  update: args =>
-    of(args)
-      .map(verifyNonce)
-      .map(init)
-      .map(updateData)
-      .map(auth)
-      .tap(validateSchema)
-      .map(putData)
-      .tap(commit),
-  upsert: args =>
-    of(args)
-      .map(verifyNonce)
-      .map(init)
-      .map(upsertData)
-      .map(auth)
-      .tap(validateSchema)
-      .map(putData)
-      .tap(commit),
+  add: args => of(args).map(verifyNonce).chain(add).tap(commit),
+  set: args => of(args).map(verifyNonce).chain(set).tap(commit),
+  del: args => of(args).map(verifyNonce).chain(del).tap(commit),
+  update: args => of(args).map(verifyNonce).chain(update).tap(commit),
+  upsert: args => of(args).map(verifyNonce).chain(upsert).tap(commit),
+  batch: args => of(args).map(verifyNonce).map(batch).tap(commit),
 }
 
 const wdb = (kv, __opt__ = {}) => {
@@ -93,15 +66,15 @@ const wdb = (kv, __opt__ = {}) => {
         (...msg) =>
         db => {
           try {
-            const [op, ...q] = msg
-            const sp = op.split(":")
+            const [opname, ...q] = msg
+            const op = opname.split(":")[0]
             const _opt = last(q)
             let opt = __opt__
             if (_opt && typeof _opt === "object" && _opt["signature"])
               opt = { ...__opt__, ...q.pop() }
-            let ctx = { op: sp[0], opname: op, opt, ts: Date.now() }
+            let ctx = { op, opname, opt, ts: Date.now() }
             if (isNil(handlers[ctx.op]))
-              throw Error(`handler doesn't exist: ${op}`)
+              throw Error(`handler doesn't exist: ${ctx.opname}`)
             handlers[ctx.op]({ db, q, ctx })
             return db
           } catch (e) {

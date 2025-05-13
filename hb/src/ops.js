@@ -19,12 +19,13 @@ import parseQuery from "./parser.js"
 import {
   put,
   mod,
-  del,
+  del as _del,
   addIndex,
   getIndexes,
   removeIndex,
 } from "../src/indexer.js"
 import { get } from "../src/planner.js"
+import { of, fn } from "./monade.js"
 
 import sha256 from "fast-sha256"
 function base64urlDecode(str) {
@@ -190,7 +191,7 @@ function setData({ db, ctx }) {
 function delData({ db, ctx }) {
   const { dir, doc } = ctx
   if (isNil(db.dir(dir))) throw Error("dir doesn't exist")
-  del(doc, [dir.toString()], ctx.kv)
+  _del(doc, [dir.toString()], ctx.kv)
   return arguments[0]
 }
 
@@ -389,8 +390,58 @@ function getDocs({ db, q, ctx }) {
   const res = get(parsed, ctx.kv)
   return ctx.range ? pluck("val")(res) : res.val
 }
+const add = fn()
+  .map(init)
+  .map(getDocID)
+  .map(setData)
+  .map(auth)
+  .tap(validateSchema)
+  .map(putData)
+const set = fn()
+  .map(init)
+  .map(setData)
+  .map(auth)
+  .tap(validateSchema)
+  .map(putData)
+const del = fn().map(init).map(auth).map(delData)
+const update = fn()
+  .map(init)
+  .map(updateData)
+  .map(auth)
+  .tap(validateSchema)
+  .map(putData)
+const upsert = fn()
+  .map(init)
+  .map(upsertData)
+  .map(auth)
+  .tap(validateSchema)
+  .map(putData)
+
+const handlers = { add, set, del, update, upsert }
+
+function batch({ db, q, ctx }) {
+  for (const v of q[0]) {
+    const [opname, ...q] = v
+    const op = opname.split(":")[0]
+    let _ctx = { op, opname, ts: ctx.ts }
+    if (isNil(handlers[_ctx.op])) {
+      throw Error(`handler doesn't exist: ${_ctx.opname}`)
+    }
+    _ctx.info = db.get("_config", "info") ?? {
+      owner: ctx.from,
+      id: ctx.opt?.id,
+    }
+    of({ db, q, ctx: _ctx }).chain(handlers[_ctx.op])
+  }
+  return arguments[0]
+}
 
 export {
+  add,
+  set,
+  del,
+  update,
+  upsert,
   init,
   auth,
   updateData,
@@ -404,4 +455,5 @@ export {
   getDocs,
   verifyNonce,
   setup,
+  batch,
 }

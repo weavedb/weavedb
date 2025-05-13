@@ -242,7 +242,23 @@ describe("WeaveDB Core", () => {
       )
     assert.equal(db.get("users", "bob").age, 5)
   })
-  it.only("should get/add/set/update/upsert/del", async () => {
+  it.only("should batch", async () => {
+    const { jwk, addr } = await new AO().ar.gen()
+    const s = new sign({ jwk, id: "db-1" })
+    const wkv = getKV()
+    const db = wdb(wkv)
+      .set(...(await s.sign("init", init_query)))
+      .set(...(await s.sign(...users_query)))
+      .set(
+        ...(await s.sign("batch", [
+          ["set:user", bob, "users", "bob"],
+          ["set:user", alice, "users", "alice"],
+          ["update:user", { name: "Bobby" }, "users", "bob"],
+        ])),
+      )
+    assert.deepEqual(db.get("users"), [alice, { name: "Bobby" }])
+  })
+  it("should get/add/set/update/upsert/del", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
     const wkv = getKV()
