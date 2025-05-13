@@ -13,6 +13,7 @@ import {
   pluck,
   keys,
   is,
+  map,
 } from "ramda"
 import { fpj, ac_funcs, replace$ } from "./fpjson.js"
 import parseQuery from "./parser.js"
@@ -229,7 +230,7 @@ function checkDocID(id, db) {
 
 function init({ db, ctx, q }) {
   let data, dir, doc
-  if (ctx.op === "get") {
+  if (ctx.op === "get" || ctx.op === "cget") {
     ;[dir, doc] = q
     ctx.dir = dir
     if (typeof doc === "string") {
@@ -388,7 +389,13 @@ function getDocs({ db, q, ctx }) {
   if (isNil(_dir)) throw Error(`dir doesn't exist: ${dir}`)
   const parsed = parseQuery(q)
   const res = get(parsed, ctx.kv)
-  return ctx.range ? pluck("val")(res) : res.val
+  if (ctx.op === "cget") {
+    return ctx.range
+      ? map(v => ({ __cursor__: true, dir: dir, id: v.key, data: v.val }))(res)
+      : { __cursor__: true, dir: dir, id: res.key, data: res.val }
+  } else {
+    return ctx.range ? pluck("val")(res) : res.val
+  }
 }
 const add = fn()
   .map(init)

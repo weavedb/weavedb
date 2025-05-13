@@ -213,7 +213,20 @@ describe("WeaveDB TPS", () => {
 })
 
 describe("WeaveDB Core", () => {
-  it.only("should handle queue", async () => {
+  it.only("should cget and pagenate", async () => {
+    const { jwk, addr } = await new AO().ar.gen()
+    const s = new sign({ jwk, id: "db-1" })
+    const wkv = getKV()
+    const db = wdb(wkv)
+      .set(...(await s.sign("init", init_query)))
+      .set(...(await s.sign(...users_query)))
+      .set(...(await s.sign("set:user", bob, "users", "bob")))
+      .set(...(await s.sign("set:user", alice, "users", "alice")))
+    const cur = db.cget("users", 1)[0]
+    assert.deepEqual(db.get("users", ["startAfter", cur]), [bob])
+  })
+
+  it("should handle queue", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
     const db = queue(wdb(getKV()))
