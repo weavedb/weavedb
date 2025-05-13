@@ -20,6 +20,7 @@ const queue = wdb => {
   }
   const db = {
     get: (...args) => wdb.get(...args),
+    cget: (...args) => wdb.cget(...args),
     set: (...args) => {
       return new Promise(resolve => {
         qs.push({ resolve, args })

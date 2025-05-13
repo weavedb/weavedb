@@ -58,6 +58,16 @@ const wdb = (kv, __opt__ = {}) => {
             throw e
           }
         },
+      cget:
+        (...q) =>
+        db => {
+          try {
+            let ctx = { op: "cget" }
+            return handlers.get({ db, q, ctx })
+          } catch (e) {
+            throw e
+          }
+        },
     },
     map: {
       set:
