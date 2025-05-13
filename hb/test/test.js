@@ -186,7 +186,6 @@ describe("WeaveDB TPS", () => {
     const db = wdb(getKV())
       .set(...(await s.sign("init", init_query)))
       .set(...(await s.sign(...users_query)))
-
     let last = 0
     let i = 0
     let qs = []

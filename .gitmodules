@@ -1,0 +1,4 @@
+[submodule "HyperBEAM"]
+	path = HyperBEAM
+	url = https://github.com/weavedb/HyperBEAM.git
+	branch = weavedb
