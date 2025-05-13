@@ -15,6 +15,7 @@ const run = async () => {
   const jwk = JSON.parse(
     readFileSync(resolve(import.meta.dirname, `${wallet}`), "utf8"),
   )
+  console.log(`dbpath: ${dbpath}`)
   const node = await server({ dbpath, jwk, hb })
 }
 
