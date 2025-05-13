@@ -8,11 +8,9 @@ import kv from "./kv.js"
 import { resolve } from "path"
 import { includes } from "ramda"
 import { AR } from "wao"
-
-const server = async ({ jwk, hb, dbpath, port = 4000, pid }) => {
-  const wkv = getKV({ jwk, hb, dbpath, pid })
+let dbs = {}
+const server = async ({ jwk, hb, dbpath, port = 4000 }) => {
   const addr = (await new AR().init(jwk)).addr
-  const db = queue(wdb(wkv))
   const app = express()
   app.use(cors())
   app.use(bodyParser.raw({ type: "*/*", limit: "100mb" }))
@@ -20,7 +18,12 @@ const server = async ({ jwk, hb, dbpath, port = 4000, pid }) => {
     const q = await verify(req)
     if (q.valid) {
       try {
-        const _res = db.get(...q.query)
+        let headers = {}
+        for (const k in req.headers) {
+          let lowK = k.toLowerCase()
+          headers[lowK] = req.headers[lowK]
+        }
+        const _res = dbs[headers.id].get(...q.query)
         res.json({ success: true, ...q, res: _res })
       } catch (e) {
         res.json({ success: false, ...q, error: e.toString() })
@@ -41,7 +44,12 @@ const server = async ({ jwk, hb, dbpath, port = 4000, pid }) => {
             headers[lowK] = req.headers[lowK]
           }
         }
-        await db.set(...query, headers)
+        const pid = headers.id
+        if (query[0] === "init" && !dbs[pid]) {
+          const wkv = getKV({ jwk, hb, dbpath, pid })
+          dbs[pid] = queue(wdb(wkv))
+        }
+        await dbs[pid].set(...query, headers)
         res.json({ success: true, query })
       } catch (e) {
         res.json({ success: false, query, error: e.toString() })
