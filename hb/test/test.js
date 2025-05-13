@@ -14,6 +14,7 @@ import validate from "../src/validate.js"
 import zkjson from "../src/zkjson.js"
 import { dir_schema } from "../src/schemas.js"
 import { dirs_set } from "../src/rules.js"
+import { spawn } from "child_process"
 import {
   put,
   mod,
@@ -551,9 +552,27 @@ const q1 = [
 
 const q2 = ["set:user", bob, "users", "bob"]
 let qs = [q1, q2]
+const runHB = () => {
+  const hb = spawn("rebar3", ["shell"], {
+    env: {
+      ...process.env,
+      CMAKE_POLICY_VERSION_MINIMUM: "3.5",
+      CC: "gcc-12",
+      CXX: "g++-12",
+    },
+    cwd: resolve(import.meta.dirname, "../../HyperBEAM"),
+  })
+  hb.stdout.on("data", chunk => console.log(`stdout: ${chunk}`))
+  hb.stderr.on("data", err => console.error(`stderr: ${err}`))
+  hb.on("error", err => console.error(`failed to start process: ${err}`))
+  hb.on("close", code => console.log(`child process exited with code ${code}`))
+  return hb
+}
 
 describe("Server", () => {
   it("should run a server", async () => {
+    const hbeam = runHB()
+    await wait(5000)
     const hb = "http://localhost:10000"
     const URL = "http://localhost:4000"
     const { pid, signer, jwk, addr, dbpath } = await deploy({ hb })
@@ -574,11 +593,15 @@ describe("Server", () => {
     const db = await recover({ pid, hb, dbpath: genDir(), jwk })
     assert.deepEqual(db.get("users"), [bob])
     node.stop()
+    await wait(3000)
+    hbeam.kill("SIGINT")
   })
 })
 
 describe("Validator", () => {
-  it("should validate HB WAL", async () => {
+  it.only("should validate HB WAL", async () => {
+    const hbeam = runHB()
+    await wait(5000)
     const hb = "http://localhost:10000"
     const URL = "http://localhost:4000"
     const { pid, signer, jwk, addr, dbpath } = await deploy({ hb })
@@ -605,6 +628,8 @@ describe("Validator", () => {
     assert.equal(proof[proof.length - 2], "4")
     node.stop()
     console.log("success!")
+    await wait(3000)
+    hbeam.kill("SIGINT")
     process.exit()
     return
   })
