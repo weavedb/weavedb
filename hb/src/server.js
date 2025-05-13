@@ -8,10 +8,18 @@ import kv from "./kv.js"
 import { resolve } from "path"
 import { includes } from "ramda"
 import { AR } from "wao"
+import { open } from "lmdb"
+import recover from "../src/recover.js"
 let dbs = {}
 const server = async ({ jwk, hb, dbpath, port = 4000 }) => {
   const addr = (await new AR().init(jwk)).addr
   const app = express()
+  const io = open({ path: `${dbpath}-admin` })
+  let pids = io.get("pids") ?? []
+  for (let v of pids) {
+    console.log("recovering....", v)
+    dbs[v] = await recover({ pid: v, hb, dbpath: `${dbpath}-${v}`, jwk })
+  }
   app.use(cors())
   app.use(bodyParser.raw({ type: "*/*", limit: "100mb" }))
   app.get("/~weavedb@1.0/get", async (req, res) => {
@@ -34,7 +42,7 @@ const server = async ({ jwk, hb, dbpath, port = 4000 }) => {
   })
 
   app.post("/~weavedb@1.0/set", async (req, res) => {
-    const { valid, query, fields } = await verify(req)
+    const { valid, query, fields, address } = await verify(req)
     if (valid) {
       try {
         let headers = {}
@@ -46,11 +54,25 @@ const server = async ({ jwk, hb, dbpath, port = 4000 }) => {
         }
         const pid = headers.id
         if (query[0] === "init" && !dbs[pid]) {
-          const wkv = getKV({ jwk, hb, dbpath, pid })
-          dbs[pid] = queue(wdb(wkv))
+          if (addr !== address) {
+            res.json({
+              success: false,
+              error: "only node admin can add instances",
+            })
+          } else {
+            console.log(`initializing a new db: ${pid}`)
+            const wkv = getKV({ jwk, hb, dbpath, pid })
+            dbs[pid] = queue(wdb(wkv))
+            pids.push(pid)
+            io.put("pids", pids)
+          }
         }
-        await dbs[pid].set(...query, headers)
-        res.json({ success: true, query })
+        if (!dbs[pid]) {
+          res.json({ success: false, error: `db doesn't exist: ${pid}` })
+        } else {
+          await dbs[pid].set(...query, headers)
+          res.json({ success: true, query })
+        }
       } catch (e) {
         res.json({ success: false, query, error: e.toString() })
       }
