@@ -627,7 +627,7 @@ const runHB = () => {
 }
 
 describe("Server", () => {
-  it.only("should connect with a remote server", async () => {
+  it("should connect with a remote server", async () => {
     const hb = "http://localhost:10000"
     const URL = "http://localhost:4000"
     const { pid, signer, jwk, addr, dbpath } = await deploy({ hb })
@@ -642,6 +642,43 @@ describe("Server", () => {
     console.log(json3)
     assert.deepEqual(json3.res, [bob])
   })
+  it.only("should recover db from HB", async () => {
+    const hbeam = runHB()
+    await wait(5000)
+    const hb = "http://localhost:10000"
+    const URL = "http://localhost:4000"
+    const URL2 = "http://localhost:5000"
+
+    const { pid, signer, jwk, addr, dbpath } = await deploy({ hb })
+    console.log("pid", pid)
+    console.log("addr", addr)
+    const node = await server({ dbpath, jwk, hb })
+
+    const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
+
+    let nonce = 0
+    const json0 = await set(request, ["init", init_query], ++nonce, pid)
+    const json = await set(request, q1, ++nonce, pid)
+    const json2 = await set(request, q2, ++nonce, pid)
+    const json3 = await get(request, ["users"], pid)
+    assert.deepEqual(json3.res, [bob])
+    await wait(1000)
+    node.stop()
+    const node2 = await server({ dbpath, jwk, hb, port: 5000 })
+    await wait(3000)
+    const { request: request2 } = connect({
+      MODE: "mainnet",
+      URL: URL2,
+      device: "",
+      signer,
+    })
+    const json3_2 = await get(request2, ["users"], pid)
+    assert.deepEqual(json3_2.res, [bob])
+    node2.stop()
+    await wait(3000)
+    hbeam.kill("SIGINT")
+  })
+
   it("should run a server", async () => {
     const hbeam = runHB()
     await wait(5000)
