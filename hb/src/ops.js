@@ -269,7 +269,7 @@ function init({ db, ctx, q }) {
   return arguments[0]
 }
 
-function verifyNonce({ db, q, ctx }) {
+function verify({ db, q, ctx }) {
   ctx.info = db.get("_config", "info") ?? { owner: ctx.from, id: ctx.opt?.id }
   if (!ctx.opt?.id || ctx.info.id !== ctx.opt.id)
     throw Error(`the wrong id: ${ctx.opt?.id ?? null}`)
@@ -453,7 +453,7 @@ export {
   getDocID,
   commit,
   getDocs,
-  verifyNonce,
+  verify,
   setup,
   batch,
 }

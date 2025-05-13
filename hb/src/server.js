@@ -3,6 +3,7 @@ import cors from "cors"
 import bodyParser from "body-parser"
 import { getKV, verify } from "./server-utils.js"
 import wdb from "./index.js"
+import queue from "../src/queue.js"
 import kv from "./kv.js"
 import { resolve } from "path"
 import { includes } from "ramda"
@@ -11,7 +12,7 @@ import { AR } from "wao"
 const server = async ({ jwk, hb, dbpath, port = 4000, pid }) => {
   const wkv = getKV({ jwk, hb, dbpath, pid })
   const addr = (await new AR().init(jwk)).addr
-  const db = wdb(wkv)
+  const db = queue(wdb(wkv))
   const app = express()
   app.use(cors())
   app.use(bodyParser.raw({ type: "*/*", limit: "100mb" }))
@@ -20,7 +21,6 @@ const server = async ({ jwk, hb, dbpath, port = 4000, pid }) => {
     if (q.valid) {
       try {
         const _res = db.get(...q.query)
-        console.log(_res)
         res.json({ success: true, ...q, res: _res })
       } catch (e) {
         res.json({ success: false, ...q, error: e.toString() })
@@ -41,8 +41,7 @@ const server = async ({ jwk, hb, dbpath, port = 4000, pid }) => {
             headers[lowK] = req.headers[lowK]
           }
         }
-        console.log(headers)
-        db.set(...query, headers)
+        await db.set(...query, headers)
         res.json({ success: true, query })
       } catch (e) {
         res.json({ success: false, query, error: e.toString() })
