@@ -21,6 +21,8 @@ import {
   del,
   update,
   upsert,
+  addIndex,
+  removeIndex,
 } from "./ops.js"
 
 const handlers = {
@@ -32,6 +34,9 @@ const handlers = {
   update: args => of(args).map(verify).chain(update).tap(commit),
   upsert: args => of(args).map(verify).chain(upsert).tap(commit),
   batch: args => of(args).map(verify).map(batch).tap(commit),
+  addIndex: args => of(args).map(verify).map(init).map(addIndex).tap(commit),
+  removeIndex: args =>
+    of(args).map(verify).map(init).map(removeIndex).tap(commit),
 }
 
 const wdb = (kv, __opt__ = {}) => {
