@@ -444,11 +444,17 @@ function batch({ db, q, ctx }) {
 }
 
 function addIndex({ db, q, ctx }) {
+  if (ctx.info.owner !== ctx.from) {
+    throw Error("only db onwer can add indexes")
+  }
   _addIndex(ctx.data, [ctx.dir], ctx.kv)
   return arguments[0]
 }
 
 function removeIndex({ db, q, ctx }) {
+  if (ctx.info.owner !== ctx.from) {
+    throw Error("only db onwer can remove indexes")
+  }
   _removeIndex(ctx.data, [ctx.dir], ctx.kv)
   return arguments[0]
 }
