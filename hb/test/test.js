@@ -627,9 +627,10 @@ const runHB = () => {
 }
 
 describe("Server", () => {
-  it("should connect with a remote server", async () => {
+  it.only("should connect with a remote server", async () => {
     const hb = "http://localhost:10000"
     const URL = "http://localhost:4000"
+
     const { pid, signer, jwk, addr, dbpath } = await deploy({ hb })
     console.log("pid", pid)
     console.log("addr", addr)
@@ -642,7 +643,7 @@ describe("Server", () => {
     console.log(json3)
     assert.deepEqual(json3.res, [bob])
   })
-  it.only("should recover db from HB", async () => {
+  it("should recover db from HB", async () => {
     const hbeam = runHB()
     await wait(5000)
     const hb = "http://localhost:10000"
