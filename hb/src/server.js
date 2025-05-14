@@ -53,8 +53,11 @@ const server = async ({ jwk, hb, dbpath, port = 4000 }) => {
           }
         }
         const pid = headers.id
+        let err = false
         if (query[0] === "init" && !dbs[pid]) {
           if (addr !== address) {
+            console.log(`not admin: ${addr}:${address}`)
+            err = true
             res.json({
               success: false,
               error: "only node admin can add instances",
@@ -67,11 +70,13 @@ const server = async ({ jwk, hb, dbpath, port = 4000 }) => {
             io.put("pids", pids)
           }
         }
-        if (!dbs[pid]) {
-          res.json({ success: false, error: `db doesn't exist: ${pid}` })
-        } else {
-          await dbs[pid].set(...query, headers)
-          res.json({ success: true, query })
+        if (!err) {
+          if (!dbs[pid]) {
+            res.json({ success: false, error: `db doesn't exist: ${pid}` })
+          } else {
+            await dbs[pid].set(...query, headers)
+            res.json({ success: true, query })
+          }
         }
       } catch (e) {
         res.json({ success: false, query, error: e.toString() })
