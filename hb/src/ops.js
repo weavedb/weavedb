@@ -305,7 +305,7 @@ function setup({ db, q, ctx }) {
     auth: [],
   })
   db.put("_config", "info", { id: ctx.opt.id, owner: ctx.from, last_dir_id: 3 })
-  db.put("_config", "config", { max_doc_id: 168 })
+  db.put("_config", "config", { max_doc_id: 168, max_dir_id: 8 })
   return arguments[0]
 }
 
