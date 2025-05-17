@@ -11,6 +11,8 @@ import { AR } from "wao"
 import { open } from "lmdb"
 import recover from "../src/recover.js"
 let dbs = {}
+let dbmap = {}
+
 const server = async ({ jwk, hb, dbpath, port = 4000 }) => {
   const addr = (await new AR().init(jwk)).addr
   const app = express()
@@ -32,13 +34,52 @@ const server = async ({ jwk, hb, dbpath, port = 4000 }) => {
           headers[lowK] = req.headers[lowK]
         }
         const _res = dbs[headers.id].get(...q.query)
+        console.log(_res)
         res.json({ success: true, ...q, res: _res })
       } catch (e) {
+        console.log(e)
         res.json({ success: false, ...q, error: e.toString() })
       }
     } else {
       res.json({ success: false, ...q })
     }
+  })
+
+  app.post("/result/:mid", async (req, res) => {
+    const mid = req.params.mid
+    const pid = req.query["process-id"]
+    let data = null
+    if (!dbmap[pid]) {
+      const json = await fetch(
+        `${hb}/${pid}~process@1.0/compute/serialize~json@1.0?slot=0`,
+      ).then(r => r.json())
+      const {
+        process: { db },
+      } = json
+      console.log(db)
+      dbmap[pid] = db
+    }
+    try {
+      const {
+        edges: [
+          {
+            node: {
+              message: { Tags: tags },
+            },
+          },
+        ],
+        page_info,
+      } = JSON.parse(req.body.toString())
+      let query = null
+      let id = null
+      for (let v of tags) if (v.name === "Query") query = JSON.parse(v.value)
+      if (query) data = dbs[dbmap[pid]].get(...query)
+    } catch (e) {
+      console.log(e)
+    }
+    res.json({
+      Output: { data },
+    })
   })
 
   app.post("/~weavedb@1.0/set", async (req, res) => {

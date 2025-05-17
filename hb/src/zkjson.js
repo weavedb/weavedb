@@ -80,9 +80,11 @@ const zkjson = async ({ dbpath, hb, pid }) => {
           }
         }
       } else {
-        zkhash = m.body.zkhash
-        const buf = Buffer.from(m.body.data, "base64")
-        decodeBuf(buf)
+        if (m.body.zkhash) {
+          zkhash = m.body.zkhash
+          const buf = Buffer.from(m.body.data, "base64")
+          await decodeBuf(buf)
+        }
       }
     }
     from += 100
