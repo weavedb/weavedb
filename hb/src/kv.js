@@ -11,7 +11,7 @@ const kv = (io, fn) => {
   const reset = () => {
     l = {}
   }
-  const commit = async (opt = {}) => {
+  const commit = async () => {
     if (c.length > 0) {
       on = true
       let count = 0

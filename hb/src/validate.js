@@ -10,6 +10,7 @@ import { connect, createSigner } from "@permaweb/aoconnect"
 
 let io = null
 let request = null
+let v_pid = null
 const to64 = hash => {
   const n = BigInt(hash)
   let hex = n.toString(16)
@@ -29,7 +30,6 @@ const from64 = b64 => {
 let zkdb = null
 let cols = {}
 let v_hb
-let v_pid
 const calcZKHash = async changes => {
   if (!zkdb) {
     zkdb = new ZKDB({
@@ -56,6 +56,7 @@ const calcZKHash = async changes => {
   }
   return to64(zkdb.tree.F.toObject(zkdb.tree.root).toString())
 }
+
 const buildBundle = async changes => {
   const d = new Decoder()
   let _changes = []
@@ -80,8 +81,9 @@ const buildBundle = async changes => {
     buf.set(arr, offset)
     offset += arr.length
   }
-  //decodeBuf(buf)
   const zkhash = await calcZKHash(_changes)
+
+  //decodeBuf(buf)
   const txt = await fetch(`${v_hb}/~meta@1.0/info/serialize~json@1.0`).then(r =>
     r.json(),
   )
@@ -91,6 +93,7 @@ const buildBundle = async changes => {
     path: `/${v_pid}/schedule`,
     scheduler: addr,
     zkhash,
+    Action: "Commit",
     data: buf.toString("base64"),
   }
   const res = await request(tags)
@@ -98,6 +101,7 @@ const buildBundle = async changes => {
   console.log(`[${res.slot}] ${res.process}`)
   console.log(`zkhash: ${zkhash}`)
   console.log(buf)
+  return { buf, zkhash }
 }
 
 let deltas = {}
@@ -106,7 +110,11 @@ const getKV = ({ jwk, pid, hb, dbpath }) => {
   let addr = null
   return kv(io, async c => {
     let changes = {}
+    let i = null
+    let slot = null
     for (const d of c.data) {
+      i = d.i
+      slot = d.opt.slot
       for (const k in d.cl) {
         if (!/^__/.test(k.split("/")[0])) {
           let delta = null
@@ -119,7 +127,6 @@ const getKV = ({ jwk, pid, hb, dbpath }) => {
               deltas[k] = json(null, d.cl[k], 2)
               delta = deltas[k].deltas()[0]
               await io.put(`__deltas__/${k}`, deltas[k].deltas())
-              const cache = io.get(`__deltas__/${k}`)
             }
           } else {
             delta = deltas[k].update(d.cl[k])
@@ -133,7 +140,9 @@ const getKV = ({ jwk, pid, hb, dbpath }) => {
         }
       }
     }
-    await buildBundle(changes)
+    const { buf, zkhash } = await buildBundle(changes)
+    io.put("__height__", { i, slot })
+    io.put("__bundle__", { zkhash, buf })
   })
 }
 
@@ -141,11 +150,16 @@ const validate = async ({ pid, jwk, dbpath, hb, validate_pid }) => {
   v_pid = validate_pid
   v_hb = hb
   let i = 0
-  let db = null
   let from = 0
-  let to = 99
+  const wkv = getKV({ jwk, hb, dbpath, pid })
+  let db = wdb(wkv, { no_commit: true })
+  const height = io.get("__height__")
+  if (height) {
+    from = height.slot + 1
+    i = height.i + 1
+  }
+  let to = from + 99
   if (isNil(request)) {
-    request = null
     if (jwk && hb) {
       ;({ request } = connect({
         MODE: "mainnet",
@@ -155,11 +169,14 @@ const validate = async ({ pid, jwk, dbpath, hb, validate_pid }) => {
       }))
     }
   }
-  let res = await getMsgs({ pid, hb })
-  const wkv = getKV({ jwk, hb, dbpath, pid })
+  console.log("lets get...", pid, from, to)
+  let res = await getMsgs({ pid, hb, from, to })
+  let slot = 0
+  let isData = false
   while (!isEmpty(res.assignments)) {
     for (let k in res.assignments ?? {}) {
       const m = res.assignments[k]
+      slot = m.slot
       if (m.slot === 0) {
         let from = null
         for (const k in m.body.commitments) {
@@ -169,9 +186,9 @@ const validate = async ({ pid, jwk, dbpath, hb, validate_pid }) => {
             break
           }
         }
-        db = wdb(wkv, { no_commit: true })
       }
       if (m.body.data) {
+        isData = true
         for (const v of JSON.parse(m.body.data)) {
           const q = JSON.parse(v.query)
           db.set(...q, {
@@ -189,7 +206,7 @@ const validate = async ({ pid, jwk, dbpath, hb, validate_pid }) => {
     to += 100
     res = await getMsgs({ pid, hb, from, to })
   }
-  wkv.commit({ delta: true })
+  if (isData) wkv.commit({ delta: true, slot })
   return db
 }
 

@@ -12,9 +12,22 @@ import server from "../src/server.js"
 import recover from "../src/recover.js"
 import validate from "../src/validate.js"
 import zkjson from "../src/zkjson.js"
-import { dir_schema } from "../src/schemas.js"
-import { dirs_set } from "../src/rules.js"
 import { spawn } from "child_process"
+import {
+  get,
+  set,
+  bob,
+  alice,
+  mike,
+  beth,
+  john,
+  wait,
+  genDir,
+  init_query,
+  users_query,
+  HB as HBeam,
+} from "./test-utils.js"
+
 import {
   put,
   mod,
@@ -39,19 +52,6 @@ import {
   createSigner as createHttpSigner,
 } from "http-message-signatures"
 import kv from "../src/kv.js"
-const init_query = { schema: dir_schema, auth: [dirs_set] }
-const users_query = [
-  "set:dir",
-  {
-    index: 4,
-    schema: { type: "object", required: ["name"] },
-    auth: [
-      ["set:user,add:user,update:user,upsert:user,del:user", [["allow()"]]],
-    ],
-  },
-  "_",
-  "users",
-]
 class sign {
   constructor({ jwk, id }) {
     this.jwk = jwk
@@ -85,18 +85,6 @@ class sign {
     ]
   }
 }
-
-const genDir = () =>
-  resolve(
-    import.meta.dirname,
-    `.db/mydb-${Math.floor(Math.random() * 1000000000)}`,
-  )
-const wait = ms => new Promise(res => setTimeout(() => res(), ms))
-const bob = { name: "Bob" }
-const alice = { name: "Alice" }
-const mike = { name: "Mike" }
-const beth = { name: "Beth" }
-const john = { name: "John" }
 
 const getKV = () => {
   const io = open({ path: genDir() })
@@ -554,80 +542,42 @@ describe("KV", () => {
   })
 })
 
-const deploy = async ({ hb }) => {
+const deploy = async ({ hb, tags }) => {
   const { jwk, addr } = await new AO().ar.gen()
   const signer = createSigner(jwk)
   const { request } = connect({ MODE: "mainnet", URL: hb, device: "", signer })
   const address = (
     await fetch(`${hb}/~meta@1.0/info/serialize~json@1.0`).then(r => r.json())
   ).address
-  const tags = {
+  const _tags = {
     method: "POST",
     path: "/~process@1.0/schedule",
     scheduler: address,
     "random-seed": Math.random().toString(),
+    ...tags,
   }
   const dbpath = genDir()
-  const res = await request(tags)
+  const res = await request(_tags)
   return { pid: res.process, address, addr, jwk, signer, dbpath }
 }
 
-const set = async (req, q, nonce, id) => {
-  const res = await req({
-    method: "POST",
-    path: "/~weavedb@1.0/set",
-    query: JSON.stringify(q),
-    nonce: Number(nonce).toString(),
-    id,
-  })
-  return JSON.parse(res.body)
-}
-
-const get = async (req, q, id) => {
-  const res = await req({
-    method: "GET",
-    path: "/~weavedb@1.0/get",
-    query: JSON.stringify(q),
-    id,
-  })
-  return JSON.parse(res.body)
-}
-
-const q1 = [
-  "set:dir",
-  {
-    index: 4,
-    schema: { type: "object", required: ["name"] },
-    auth: [
-      ["set:user,add:user,update:user,upsert:user,del:user", [["allow()"]]],
-    ],
-  },
-  "_",
-  "users",
-]
-
+const q1 = users_query
 const q2 = ["set:user", bob, "users", "bob"]
 const q3 = ["set:user", alice, "users", "alice"]
 let qs = [q1, q2]
-const runHB = () => {
-  const hb = spawn("rebar3", ["shell"], {
-    env: {
-      ...process.env,
-      CMAKE_POLICY_VERSION_MINIMUM: "3.5",
-      CC: "gcc-12",
-      CXX: "g++-12",
-    },
-    cwd: resolve(import.meta.dirname, "../../HyperBEAM"),
-  })
-  hb.stdout.on("data", chunk => console.log(`stdout: ${chunk}`))
-  hb.stderr.on("data", err => console.error(`stderr: ${err}`))
-  hb.on("error", err => console.error(`failed to start process: ${err}`))
-  hb.on("close", code => console.log(`child process exited with code ${code}`))
-  return hb
+
+const runHB = port => {
+  const env = {
+    //DIAGNOSTIC: "1",
+    CMAKE_POLICY_VERSION_MINIMUM: "3.5",
+    CC: "gcc-12",
+    CXX: "g++-12",
+  }
+  return new HBeam({ cwd: "../../HyperBEAM", env, port })
 }
 
 describe("Server", () => {
-  it.only("should connect with a remote server", async () => {
+  it("should connect with a remote server", async () => {
     const hb = "http://localhost:10000"
     const URL = "http://localhost:4000"
 
@@ -643,12 +593,16 @@ describe("Server", () => {
     console.log(json3)
     assert.deepEqual(json3.res, [bob])
   })
+
   it("should recover db from HB", async () => {
-    const hbeam = runHB()
+    const port = 10002
+    const port2 = 6363
+    const port3 = 5000
+    const hbeam = runHB(port)
     await wait(5000)
-    const hb = "http://localhost:10000"
-    const URL = "http://localhost:4000"
-    const URL2 = "http://localhost:5000"
+    const hb = `http://localhost:${port}`
+    const URL = `http://localhost:${port2}`
+    const URL2 = `http://localhost:${port3}`
 
     const { pid, signer, jwk, addr, dbpath } = await deploy({ hb })
     console.log("pid", pid)
@@ -665,7 +619,7 @@ describe("Server", () => {
     assert.deepEqual(json3.res, [bob])
     await wait(1000)
     node.stop()
-    const node2 = await server({ dbpath, jwk, hb, port: 5000 })
+    const node2 = await server({ dbpath, jwk, hb, port: port3 })
     await wait(3000)
     const { request: request2 } = connect({
       MODE: "mainnet",
@@ -677,14 +631,17 @@ describe("Server", () => {
     assert.deepEqual(json3_2.res, [bob])
     node2.stop()
     await wait(3000)
-    hbeam.kill("SIGINT")
+    hbeam.stop()
   })
 
   it("should run a server", async () => {
+    const port = 10002
+    const port2 = 6363
     const hbeam = runHB()
     await wait(5000)
-    const hb = "http://localhost:10000"
-    const URL = "http://localhost:4000"
+    const hb = `http://localhost:${port}`
+    const URL = `http://localhost:${port2}`
+
     const { pid, signer, jwk, addr, dbpath } = await deploy({ hb })
     console.log("pid", pid)
     console.log("addr", addr)
@@ -711,42 +668,73 @@ describe("Server", () => {
     assert.deepEqual(json3_2.res, [alice])
     node.stop()
     await wait(3000)
-    hbeam.kill("SIGINT")
+    hbeam.stop()
   })
 })
 
+function to64(str) {
+  return btoa(unescape(encodeURIComponent(JSON.stringify(str))))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "")
+}
+
+function from64(str) {
+  str = str
+    .replace(/-/g, "+")
+    .replace(/_/g, "/")
+    .padEnd(str.length + ((4 - (str.length % 4)) % 4), "=")
+  return JSON.parse(decodeURIComponent(escape(atob(str))))
+}
 describe("Validator", () => {
-  it("should validate HB WAL", async () => {
-    const hbeam = runHB()
+  it.only("should validate HB WAL", async () => {
+    const port = 10002
+    const port2 = 6363
+    const hbeam = runHB(port)
     await wait(5000)
-    const hb = "http://localhost:10000"
-    const URL = "http://localhost:4000"
-    const { pid, signer, jwk, addr, dbpath } = await deploy({ hb })
+    const hb = `http://localhost:${port}`
+    const URL = `http://localhost:${port2}`
+    const { process: pid } = await hbeam.spawn({})
+    const signer = hbeam.signer
+    const jwk = hbeam.jwk
     console.log("pid", pid)
-    console.log("addr", addr)
-    const node = await server({ dbpath, jwk, hb, pid })
+    const dbpath = genDir()
+    const node = await server({ dbpath, jwk, hb, pid, port: port2 })
     const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
     let nonce = 0
     const json0 = await set(request, ["init", init_query], ++nonce, pid)
-    console.log(json0)
     const json = await set(request, q1, ++nonce, pid)
-    console.log(json)
     const json2 = await set(request, q2, ++nonce, pid)
-    console.log(json2)
-    const json3 = await get(request, ["users"])
+    const json3 = await get(request, ["users"], pid)
     assert.deepEqual(json3.res, [bob])
+    const { process: validate_pid } = await hbeam.spawn({
+      tags: { "execution-device": "weavedb@1.0", db: pid },
+    })
     await wait(5000)
-    const { pid: validate_pid, dbpath: dbpath2 } = await deploy({ hb })
-    await validate({ pid, hb, dbpath: genDir(), jwk, validate_pid })
+    const dbpath2 = genDir()
+    await validate({ pid, hb, dbpath: dbpath2, jwk, validate_pid })
     await wait(5000)
+    const json4 = await set(request, q3, ++nonce, pid)
+    await wait(5000)
+    await validate({ pid, hb, dbpath: dbpath2, jwk, validate_pid })
+    await wait(5000)
+    const { slot } = await hbeam.message({
+      pid: validate_pid,
+      tags: { Action: "Query", Query: JSON.stringify(["users"]) },
+    })
+    const {
+      results: { data },
+    } = await hbeam.compute(validate_pid, slot)
+    assert.deepEqual(data, [alice, bob])
     const zkp = await zkjson({ pid: validate_pid, hb, dbpath: genDir() })
     await wait(5000)
-    const proof = await zkp.proof({ dir: "users", doc: "bob", path: "name" })
+    const proof = await zkp.proof({ dir: "users", doc: "alice", path: "name" })
+    console.log(proof)
     assert.equal(proof[proof.length - 2], "4")
     node.stop()
     console.log("success!")
     await wait(3000)
-    hbeam.kill("SIGINT")
+    hbeam.stop()
     process.exit()
     return
   })
