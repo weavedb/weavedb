@@ -115,14 +115,15 @@ class HB {
   constructor({
     env,
     port = 10001,
+    sport = 4000,
     devs,
     cwd = "../../HyperBEAM",
     wallet = ".wallet.json",
   }) {
     this.port = port
     const _eval = !devs
-      ? `hb:start_mainnet(#{ port => ${port}, priv_key_location => <<"${wallet}">>}).`
-      : `hb:start_mainnet(#{ port => ${port}, priv_key_location => <<"${wallet}">>, preloaded_devices => [${map(
+      ? `hb:start_mainnet(#{ port => ${port}, gateway => <<"http://localhost:${sport}">>, priv_key_location => <<"${wallet}">>}).`
+      : `hb:start_mainnet(#{ port => ${port}, , gateway => <<"http://localhost:${sport}">>, priv_key_location => <<"${wallet}">>, preloaded_devices => [${map(
           v => {
             return `#{<<"name">> => <<"${v}@${devmap[v]?.ver ?? "1.0"}">>, <<"module">> => dev_${devmap[v]?.dev ?? v}}`
           },
@@ -186,7 +187,6 @@ class HB {
     return await this.fetch(`/${pid}~process@1.0/now`)
   }
   async compute(pid, slot) {
-    console.log("lets go......................................", pid, slot)
     return await this.fetch(`/${pid}~process@1.0/compute`, {
       params: `slot=${slot}`,
     })
