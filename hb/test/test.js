@@ -687,34 +687,66 @@ function from64(str) {
     .padEnd(str.length + ((4 - (str.length % 4)) % 4), "=")
   return JSON.parse(decodeURIComponent(escape(atob(str))))
 }
+
+const checkZK = async ({ pid, hb }) => {
+  const zkp = await zkjson({ pid, hb, dbpath: genDir() })
+  await wait(5000)
+  const proof = await zkp.proof({ dir: "users", doc: "alice", path: "name" })
+  console.log(proof)
+  assert.equal(proof[proof.length - 2], "4")
+  console.log("success!")
+  await wait(3000)
+}
+const deployHB = async ({ port }) => {
+  const port2 = 6363
+  const hbeam = runHB(port)
+  await wait(5000)
+  const hb = `http://localhost:${port}`
+  const URL = `http://localhost:${port2}`
+  const { process: pid } = await hbeam.spawn({})
+  const signer = hbeam.signer
+  const jwk = hbeam.jwk
+  console.log("pid", pid)
+  const dbpath = genDir()
+  const node = await server({ dbpath, jwk, hb, pid, port: port2 })
+  const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
+  return { node, pid, request, hbeam, jwk, hb }
+}
+const setup = async ({ pid, request }) => {
+  let nonce = 0
+  const json0 = await set(request, ["init", init_query], ++nonce, pid)
+  const json = await set(request, q1, ++nonce, pid)
+  const json2 = await set(request, q2, ++nonce, pid)
+  const json3 = await get(request, ["users"], pid)
+  assert.deepEqual(json3.res, [bob])
+  return { nonce }
+}
+const validateDB = async ({ hbeam, pid, hb, jwk }) => {
+  const { process: validate_pid } = await hbeam.spawn({
+    tags: { "execution-device": "weavedb@1.0", db: pid },
+  })
+  await wait(5000)
+  const dbpath2 = genDir()
+  await validate({ pid, hb, dbpath: dbpath2, jwk, validate_pid })
+  await wait(5000)
+  const { slot } = await hbeam.message({
+    pid: validate_pid,
+    tags: { Action: "Query", Query: JSON.stringify(["users"]) },
+  })
+  const {
+    results: { data },
+  } = await hbeam.compute(validate_pid, slot)
+  assert.deepEqual(data, [bob])
+  return { validate_pid, dbpath2 }
+}
 describe("Validator", () => {
-  it("should validate HB WAL", async () => {
-    const port = 10002
-    const port2 = 6363
-    const hbeam = runHB(port)
-    await wait(5000)
-    const hb = `http://localhost:${port}`
-    const URL = `http://localhost:${port2}`
-    const { process: pid } = await hbeam.spawn({})
-    const signer = hbeam.signer
-    const jwk = hbeam.jwk
-    console.log("pid", pid)
-    const dbpath = genDir()
-    const node = await server({ dbpath, jwk, hb, pid, port: port2 })
-    const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
-    let nonce = 0
-    const json0 = await set(request, ["init", init_query], ++nonce, pid)
-    const json = await set(request, q1, ++nonce, pid)
-    const json2 = await set(request, q2, ++nonce, pid)
-    const json3 = await get(request, ["users"], pid)
-    assert.deepEqual(json3.res, [bob])
-    const { process: validate_pid } = await hbeam.spawn({
-      tags: { "execution-device": "weavedb@1.0", db: pid },
+  it.only("should validate HB WAL", async () => {
+    const { node, pid, request, hbeam, jwk, hb } = await deployHB({
+      port: 10004,
     })
-    await wait(5000)
-    const dbpath2 = genDir()
-    await validate({ pid, hb, dbpath: dbpath2, jwk, validate_pid })
-    await wait(5000)
+    let { nonce } = await setup({ pid, request })
+    const { validate_pid, dbpath2 } = await validateDB({ hbeam, pid, hb, jwk })
+
     const json4 = await set(request, q3, ++nonce, pid)
     await wait(5000)
     await validate({ pid, hb, dbpath: dbpath2, jwk, validate_pid })
@@ -723,18 +755,13 @@ describe("Validator", () => {
       pid: validate_pid,
       tags: { Action: "Query", Query: JSON.stringify(["users"]) },
     })
+
     const {
       results: { data },
     } = await hbeam.compute(validate_pid, slot)
     assert.deepEqual(data, [alice, bob])
-    const zkp = await zkjson({ pid: validate_pid, hb, dbpath: genDir() })
-    await wait(5000)
-    const proof = await zkp.proof({ dir: "users", doc: "alice", path: "name" })
-    console.log(proof)
-    assert.equal(proof[proof.length - 2], "4")
+    await checkZK({ pid: validate_pid, hb })
     node.stop()
-    console.log("success!")
-    await wait(3000)
     hbeam.stop()
     process.exit()
     return
@@ -742,7 +769,7 @@ describe("Validator", () => {
 })
 
 describe("AOS", () => {
-  it.only("should serve AOS Legacynet", async () => {
+  it("should serve AOS Legacynet", async () => {
     const port = 10003
     const port2 = 6363
     const hbeam = runHB(port)
@@ -752,7 +779,6 @@ describe("AOS", () => {
     const { process: pid } = await hbeam.spawn({})
     const signer = hbeam.signer
     const jwk = hbeam.jwk
-    console.log("pid", pid)
     const dbpath = genDir()
     const node = await server({ dbpath, jwk, hb, pid, port: port2 })
     const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
@@ -775,8 +801,7 @@ local count = 0
 Handlers.add("Hello", "Hello", function (msg)
   local data = Send({ Target = msg.DB, Action = "Query",  Query = msg.Query, __HyperBEAM__ = msg.HyperBEAM }).receive().Data
   msg.reply({ Data = data })
-end)
-`
+end)`
 
     const server_aos = new Server({ port: 5000, log: true })
     let ao = new AO({ port: 5000 })

@@ -169,7 +169,6 @@ const validate = async ({ pid, jwk, dbpath, hb, validate_pid }) => {
       }))
     }
   }
-  console.log("lets get...", pid, from, to)
   let res = await getMsgs({ pid, hb, from, to })
   let slot = 0
   let isData = false
@@ -188,7 +187,6 @@ const validate = async ({ pid, jwk, dbpath, hb, validate_pid }) => {
         }
       }
       if (m.body.data) {
-        console.log(m.body.data)
         isData = true
         for (const v of JSON.parse(m.body.data)) {
           const q = JSON.parse(v.query)
