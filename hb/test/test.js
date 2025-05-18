@@ -567,14 +567,14 @@ const q2 = ["set:user", bob, "users", "bob"]
 const q3 = ["set:user", alice, "users", "alice"]
 let qs = [q1, q2]
 
-const runHB = port => {
+const runHB = (port, sport) => {
   const env = {
     //DIAGNOSTIC: "1",
     CMAKE_POLICY_VERSION_MINIMUM: "3.5",
     CC: "gcc-12",
     CXX: "g++-12",
   }
-  return new HBeam({ cwd: "../../HyperBEAM", env, port })
+  return new HBeam({ cwd: "../../HyperBEAM", env, port, sport })
 }
 
 describe("Server", () => {
@@ -697,9 +697,9 @@ const checkZK = async ({ pid, hb }) => {
   console.log("success!")
   await wait(3000)
 }
-const deployHB = async ({ port }) => {
+const deployHB = async ({ port, sport }) => {
   const port2 = 6363
-  const hbeam = runHB(port)
+  const hbeam = runHB(port, sport)
   await wait(5000)
   const hb = `http://localhost:${port}`
   const URL = `http://localhost:${port2}`
@@ -708,7 +708,14 @@ const deployHB = async ({ port }) => {
   const jwk = hbeam.jwk
   console.log("pid", pid)
   const dbpath = genDir()
-  const node = await server({ dbpath, jwk, hb, pid, port: port2 })
+  const node = await server({
+    dbpath,
+    jwk,
+    hb,
+    pid,
+    port: port2,
+    gateway: sport,
+  })
   const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
   return { node, pid, request, hbeam, jwk, hb }
 }
@@ -740,13 +747,12 @@ const validateDB = async ({ hbeam, pid, hb, jwk }) => {
   return { validate_pid, dbpath2 }
 }
 describe("Validator", () => {
-  it.only("should validate HB WAL", async () => {
+  it("should validate HB WAL", async () => {
     const { node, pid, request, hbeam, jwk, hb } = await deployHB({
       port: 10004,
     })
     let { nonce } = await setup({ pid, request })
     const { validate_pid, dbpath2 } = await validateDB({ hbeam, pid, hb, jwk })
-
     const json4 = await set(request, q3, ++nonce, pid)
     await wait(5000)
     await validate({ pid, hb, dbpath: dbpath2, jwk, validate_pid })
@@ -769,45 +775,25 @@ describe("Validator", () => {
 })
 
 describe("AOS", () => {
-  it("should serve AOS Legacynet", async () => {
+  it.only("should serve AOS Legacynet", async () => {
     const port = 10003
-    const port2 = 6363
-    const hbeam = runHB(port)
-    await wait(5000)
-    const hb = `http://localhost:${port}`
-    const URL = `http://localhost:${port2}`
-    const { process: pid } = await hbeam.spawn({})
-    const signer = hbeam.signer
-    const jwk = hbeam.jwk
-    const dbpath = genDir()
-    const node = await server({ dbpath, jwk, hb, pid, port: port2 })
-    const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
-    let nonce = 0
-    const json0 = await set(request, ["init", init_query], ++nonce, pid)
-    const json = await set(request, q1, ++nonce, pid)
-    const json2 = await set(request, q2, ++nonce, pid)
-    const json3 = await get(request, ["users"], pid)
-    assert.deepEqual(json3.res, [bob])
-    const { process: validate_pid } = await hbeam.spawn({
-      tags: { "execution-device": "weavedb@1.0", db: pid },
+    const sport = 5000
+    const { node, pid, request, hbeam, jwk, hb } = await deployHB({
+      port,
+      sport,
     })
-    await wait(5000)
-    const dbpath2 = genDir()
-    await validate({ pid, hb, dbpath: dbpath2, jwk, validate_pid })
-    await wait(5000)
-
+    let { nonce } = await setup({ pid, request })
+    const { validate_pid, dbpath2 } = await validateDB({ hbeam, pid, hb, jwk })
     const src_data = `
 local count = 0
 Handlers.add("Hello", "Hello", function (msg)
   local data = Send({ Target = msg.DB, Action = "Query",  Query = msg.Query, __HyperBEAM__ = msg.HyperBEAM }).receive().Data
   msg.reply({ Data = data })
 end)`
-
-    const server_aos = new Server({ port: 5000, log: true })
-    let ao = new AO({ port: 5000 })
-    const { p, pid: pid2 } = await ao.deploy({
-      src_data,
-    })
+    const server_aos = new Server({ port: sport, log: true })
+    let ao = await new AO({ port: sport }).init(mu.jwk)
+    await ao.postScheduler({ url: `http://localhost:${sport + 3}` })
+    const { p, pid: pid2 } = await ao.deploy({ src_data })
     const users = await p.m(
       "Hello",
       {

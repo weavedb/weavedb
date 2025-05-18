@@ -6,14 +6,15 @@ import wdb from "./index.js"
 import queue from "../src/queue.js"
 import kv from "./kv.js"
 import { resolve } from "path"
-import { includes } from "ramda"
-import { AR } from "wao"
+import { includes, map, fromPairs } from "ramda"
+import { AR, AO } from "wao"
 import { open } from "lmdb"
 import recover from "../src/recover.js"
 let dbs = {}
 let dbmap = {}
+const _tags = tags => fromPairs(map(v => [v.name, v.value])(tags))
 
-const server = async ({ jwk, hb, dbpath, port = 4000 }) => {
+const server = async ({ jwk, hb, dbpath, port = 6363, gateway = 5000 }) => {
   const addr = (await new AR().init(jwk)).addr
   const app = express()
   const io = open({ path: `${dbpath}-admin` })
@@ -59,26 +60,41 @@ const server = async ({ jwk, hb, dbpath, port = 4000 }) => {
       console.log(db)
       dbmap[pid] = db
     }
+    let msg = []
     try {
-      const {
-        edges: [
-          {
-            node: {
-              message: { Tags: tags },
-            },
-          },
-        ],
-        page_info,
-      } = JSON.parse(req.body.toString())
+      const { assignment, message } = JSON.parse(req.body.toString()).edges[0]
+        .node
+      const tags_a = _tags(assignment.Tags)
+      const tags_m = _tags(message.Tags)
       let query = null
       let id = null
-      for (let v of tags) if (v.name === "Query") query = JSON.parse(v.value)
+      if (tags_m?.Query) query = JSON.parse(tags_m.Query)
       if (query) data = dbs[dbmap[pid]].get(...query)
+      if (tags_m["From-Process"]) {
+        const r_tags = [
+          { name: "Type", value: "Message" },
+          { name: "Data-Protocol", value: tags_m["Data-Protocol"] },
+          { name: "Variant", value: tags_m["Variant"] },
+          { name: "X-Reference", value: tags_m["Reference"] },
+          { name: "From-Process", value: pid },
+        ]
+        msg.push({
+          Target: tags_m["From-Process"],
+          Tags: r_tags,
+          Data: data,
+        })
+        const ao = await new AO({ port: gateway }).init(jwk)
+        const res = await ao.msg({
+          pid: tags_m["From-Process"],
+          data: JSON.stringify(data),
+          act: null,
+          tags: _tags(r_tags),
+        })
+      }
     } catch (e) {
       console.log(e)
     }
-    console.log(JSON.parse(req.body.toString()), data)
-    res.json({ Output: { data } })
+    res.json({ Output: { data }, Messages: msg })
   })
 
   app.post("/~weavedb@1.0/set", async (req, res) => {
