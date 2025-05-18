@@ -47,6 +47,7 @@ import {
 
 import { connect, createSigner } from "@permaweb/aoconnect"
 import { AO, HB } from "wao"
+import { Server, mu } from "wao/test"
 import {
   httpbis,
   createSigner as createHttpSigner,
@@ -687,7 +688,7 @@ function from64(str) {
   return JSON.parse(decodeURIComponent(escape(atob(str))))
 }
 describe("Validator", () => {
-  it.only("should validate HB WAL", async () => {
+  it("should validate HB WAL", async () => {
     const port = 10002
     const port2 = 6363
     const hbeam = runHB(port)
@@ -737,5 +738,65 @@ describe("Validator", () => {
     hbeam.stop()
     process.exit()
     return
+  })
+})
+
+describe("AOS", () => {
+  it.only("should serve AOS Legacynet", async () => {
+    const port = 10003
+    const port2 = 6363
+    const hbeam = runHB(port)
+    await wait(5000)
+    const hb = `http://localhost:${port}`
+    const URL = `http://localhost:${port2}`
+    const { process: pid } = await hbeam.spawn({})
+    const signer = hbeam.signer
+    const jwk = hbeam.jwk
+    console.log("pid", pid)
+    const dbpath = genDir()
+    const node = await server({ dbpath, jwk, hb, pid, port: port2 })
+    const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
+    let nonce = 0
+    const json0 = await set(request, ["init", init_query], ++nonce, pid)
+    const json = await set(request, q1, ++nonce, pid)
+    const json2 = await set(request, q2, ++nonce, pid)
+    const json3 = await get(request, ["users"], pid)
+    assert.deepEqual(json3.res, [bob])
+    const { process: validate_pid } = await hbeam.spawn({
+      tags: { "execution-device": "weavedb@1.0", db: pid },
+    })
+    await wait(5000)
+    const dbpath2 = genDir()
+    await validate({ pid, hb, dbpath: dbpath2, jwk, validate_pid })
+    await wait(5000)
+
+    const src_data = `
+local count = 0
+Handlers.add("Hello", "Hello", function (msg)
+  local data = Send({ Target = msg.DB, Action = "Query",  Query = msg.Query, __HyperBEAM__ = msg.HyperBEAM }).receive().Data
+  msg.reply({ Data = data })
+end)
+`
+
+    const server_aos = new Server({ port: 5000, log: true })
+    let ao = new AO({ port: 5000 })
+    const { p, pid: pid2 } = await ao.deploy({
+      src_data,
+    })
+    const users = await p.m(
+      "Hello",
+      {
+        DB: validate_pid,
+        Query: JSON.stringify(["users"]),
+        Action: "Hello",
+        HyperBEAM: `http://localhost:${port}`,
+      },
+      { timeout: 3000, get: true },
+    )
+    assert.deepEqual(users, [bob])
+    await wait(5000)
+    server_aos.end()
+    hbeam.stop()
+    process.exit()
   })
 })

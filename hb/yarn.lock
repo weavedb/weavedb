@@ -617,6 +617,23 @@
     ramda "^0.30.0"
     zod "^3.23.5"
 
+"@permaweb/aoconnect-69@npm:@permaweb/aoconnect@0.0.69":
+  version "0.0.69"
+  resolved "https://registry.yarnpkg.com/@permaweb/aoconnect/-/aoconnect-0.0.69.tgz#c8f8dcac9cff85d080dc659d780e8e4cbe42e0af"
+  integrity sha512-JHGTHeP3zO1ZAuONBGRFHLsMV2Ba3hFkspyYMjhHmNaxXISpYOFX/L2/G8eBd9WIcTBmUdGVL19xPRnRtdyaNw==
+  dependencies:
+    "@permaweb/ao-scheduler-utils" "~0.0.25"
+    "@permaweb/protocol-tag-utils" "~0.0.2"
+    base64url "^3.0.1"
+    buffer "^6.0.3"
+    debug "^4.4.0"
+    http-message-signatures "^1.0.4"
+    hyper-async "^1.1.2"
+    mnemonist "^0.39.8"
+    ramda "^0.30.1"
+    warp-arbundles "^1.0.4"
+    zod "^3.24.1"
+
 "@permaweb/aoconnect@^0.0.83":
   version "0.0.83"
   resolved "https://registry.yarnpkg.com/@permaweb/aoconnect/-/aoconnect-0.0.83.tgz#bee623d3b8ec73c790989c2163d06977040d965b"
@@ -3157,16 +3174,17 @@ vlq@^2.0.4:
   resolved "https://registry.yarnpkg.com/vlq/-/vlq-2.0.4.tgz#6057b85729245b9829e3cc7755f95b228d4fe041"
   integrity sha512-aodjPa2wPQFkra1G8CzJBTHXhgk3EVSwxSWXNPr1fgdFLUb8kvLV1iEb6rFgasIsjP82HWI6dsb5Io26DDnasA==
 
-wao@^0.20.4:
-  version "0.20.4"
-  resolved "https://registry.yarnpkg.com/wao/-/wao-0.20.4.tgz#2c4e9ba417468a750ce74e03f1af73df68aff875"
-  integrity sha512-KooCFGzYRKskM2fG+4vqmv0qLCpxRZkl+Q6PIzb3F0tEEA2U2yfx5mzsE8/NCEgJQ+hU7z7sKgKuI0RekP12LQ==
+wao@^0.21.2:
+  version "0.21.2"
+  resolved "https://registry.yarnpkg.com/wao/-/wao-0.21.2.tgz#6523587b66e33ebc39331e222d14d27135668a47"
+  integrity sha512-02QXOjleFLPU2HBoEZsc8YDUmNTDYWNViOaa6nOzo6nwdFcud1wKflK2ZMhoU2s69hoG55YQ1iJMkrzbxuCc8w==
   dependencies:
     "@babel/plugin-transform-modules-commonjs" "^7.24.8"
     "@bokuweb/zstd-wasm" "^0.0.22"
     "@dha-team/arbundles" "^1.0.1"
     "@permaweb/ao-loader" "^0.0.44"
     "@permaweb/aoconnect" "^0.0.84"
+    "@permaweb/aoconnect-69" "npm:@permaweb/aoconnect@0.0.69"
     arbundles "^0.11.1"
     arjson "^0.0.2"
     arweave "^1.15.1"
