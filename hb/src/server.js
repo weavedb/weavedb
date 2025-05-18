@@ -77,9 +77,8 @@ const server = async ({ jwk, hb, dbpath, port = 4000 }) => {
     } catch (e) {
       console.log(e)
     }
-    res.json({
-      Output: { data },
-    })
+    console.log(JSON.parse(req.body.toString()), data)
+    res.json({ Output: { data } })
   })
 
   app.post("/~weavedb@1.0/set", async (req, res) => {

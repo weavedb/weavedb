@@ -186,6 +186,7 @@ class HB {
     return await this.fetch(`/${pid}~process@1.0/now`)
   }
   async compute(pid, slot) {
+    console.log("lets go......................................", pid, slot)
     return await this.fetch(`/${pid}~process@1.0/compute`, {
       params: `slot=${slot}`,
     })
