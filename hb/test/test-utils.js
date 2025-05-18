@@ -1,4 +1,4 @@
-import { mergeLeft } from "ramda"
+import { map, mergeLeft } from "ramda"
 import { spawn } from "child_process"
 import { readFileSync } from "fs"
 import { connect, createSigner } from "@permaweb/aoconnect"

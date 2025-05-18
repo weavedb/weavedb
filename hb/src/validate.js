@@ -188,6 +188,7 @@ const validate = async ({ pid, jwk, dbpath, hb, validate_pid }) => {
         }
       }
       if (m.body.data) {
+        console.log(m.body.data)
         isData = true
         for (const v of JSON.parse(m.body.data)) {
           const q = JSON.parse(v.query)
