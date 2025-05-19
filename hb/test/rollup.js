@@ -49,7 +49,7 @@ describe("Rollup", () => {
       message: "ok",
     })
     assert.deepEqual(
-      await post(port, { op: "put", key: "bob", value: "Bob" }),
+      await post(port, { op: "hello", key: "bob", value: "Bob" }),
       { result: null, message: "ok" },
     )
     await post(port, { op: "close" })
@@ -57,7 +57,7 @@ describe("Rollup", () => {
     const port2 = 4005
     await run(port2, num)
     assert.deepEqual(await post(port2, { op: "get", key: "bob" }), {
-      result: "Bob",
+      result: "Hello, Bob!",
       message: "ok",
     })
     await post(port2, { op: "close" })

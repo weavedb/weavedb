@@ -1,10 +1,15 @@
+use std::cell::RefCell;
+use crate::transform::Transformer;
 use axum::{routing::post, Json, Router, serve};
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 use tokio::{net::TcpListener, sync::Notify};
 use std::sync::Arc;
-
 use crate::kv;
+
+thread_local! {
+    static TRANSFORMER: RefCell<Transformer> = RefCell::new(Transformer::new());
+}
 
 #[derive(Deserialize)]
 pub struct KVRequest {
@@ -26,7 +31,16 @@ pub async fn kv_handler(
     match req.op.as_str() {
         "put" => {
             if let (Some(key), Some(val)) = (req.key, req.value) {
-                kv::put(&key, &val);
+		kv::put(&key, &val);
+                Json(KVResponse { result: None, message: "ok".into() })
+            } else {
+                Json(KVResponse { result: None, message: "missing key/value for put".into() })
+            }
+        }
+	"hello" => {
+            if let (Some(key), Some(val)) = (req.key, req.value) {
+		let transformed = TRANSFORMER.with(|t| t.borrow_mut().apply(&val).unwrap());
+		kv::put(&key, &transformed);
                 Json(KVResponse { result: None, message: "ok".into() })
             } else {
                 Json(KVResponse { result: None, message: "missing key/value for put".into() })
