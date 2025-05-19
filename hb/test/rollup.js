@@ -4,10 +4,14 @@ import { spawn } from "child_process"
 import { resolve } from "path"
 import { wait } from "./test-utils.js"
 
-const run = async port => {
-  const ru = spawn("cargo", ["run", "--", "--port", port], {
-    cwd: resolve(import.meta.dirname, "../../rollup"),
-  })
+const run = async (port, num) => {
+  const ru = spawn(
+    "cargo",
+    ["run", "--", "--port", port, "--db", `.db/${num}`],
+    {
+      cwd: resolve(import.meta.dirname, "../../rollup"),
+    },
+  )
   ru.stdout.on("data", chunk => console.log(`stdout: ${chunk}`))
   ru.stderr.on("data", err => console.error(`stderr: ${err}`))
   ru.on("error", err => console.error(`failed to start process: ${err}`))
@@ -25,8 +29,9 @@ const post = async (port, json) => {
 }
 describe("Rollup", () => {
   it.only("should run rollup server", async () => {
-    const port = 4002
-    await run(port)
+    const num = Math.floor(Math.random() * 1000000)
+    const port = 4003
+    await run(port, num)
     assert.deepEqual(
       await post(port, { op: "put", key: "bob", value: "Bob" }),
       { result: null, message: "ok" },
@@ -43,10 +48,18 @@ describe("Rollup", () => {
       result: null,
       message: "ok",
     })
-    try {
-      await post(port, { op: "close" })
-    } catch (e) {
-      console.log(e)
-    }
+    assert.deepEqual(
+      await post(port, { op: "put", key: "bob", value: "Bob" }),
+      { result: null, message: "ok" },
+    )
+    await post(port, { op: "close" })
+    await wait(2000)
+    const port2 = 4005
+    await run(port2, num)
+    assert.deepEqual(await post(port2, { op: "get", key: "bob" }), {
+      result: "Bob",
+      message: "ok",
+    })
+    await post(port2, { op: "close" })
   })
 })
