@@ -11,12 +11,14 @@ use std::{
     net::SocketAddr,
     sync::Arc,
     collections::HashMap,
+    process,
 };
 use tokio::{net::TcpListener, sync::Notify};
 
 use crate::verify::verify_signature;
 use crate::transform::Transformer;
 use crate::kv;
+use crate::bundler;
 
 thread_local! {
     static TRANSFORMER: RefCell<Transformer> = RefCell::new(Transformer::new());
@@ -48,8 +50,17 @@ pub async fn kv_handler(
                 Json(KVResponse { result: None, message: "missing key for get".into() })
             }
         }
+        "flush" => {
+            // Force flush of the bundler
+            bundler::flush().await;
+            Json(KVResponse { result: None, message: "bundler flushed".into() })
+        }
         "close" => {
             println!("🔁 Received shutdown request");
+            
+            // Flush bundler before shutting down
+            bundler::flush().await;
+            
             let notify = shutdown.clone();
             tokio::spawn(async move {
                 tokio::time::sleep(std::time::Duration::from_millis(100)).await;
@@ -111,55 +122,86 @@ pub async fn query(req: Request<body::Body>) -> Result<Json<KVResponse>, (Status
 
     match kv_req.op.as_str() {
         "put" => {
-            if let (Some(key), Some(val)) = (kv_req.key, kv_req.value) {
+            if let (Some(key), Some(val)) = (kv_req.key.clone(), kv_req.value.clone()) {
+                // Update local KV store immediately
                 kv::put(&key, &val);
+                
+                // Add to bundle for HyperBEAM
+                bundler::add_put(&key, &val).await;
+                
                 Ok(Json(KVResponse { result: None, message: "ok".into() }))
             } else {
                 Ok(Json(KVResponse { result: None, message: "missing key/value for put".into() }))
             }
         }
         "hello" => {
-            if let (Some(key), Some(val)) = (kv_req.key, kv_req.value) {
+            if let (Some(key), Some(val)) = (kv_req.key.clone(), kv_req.value) {
                 let transformed = TRANSFORMER.with(|t| t.borrow_mut().apply(&val).unwrap());
+                
+                // Update local KV store immediately
                 kv::put(&key, &transformed);
+                
+                // Add to bundle for HyperBEAM
+                bundler::add_put(&key, &transformed).await;
+                
                 Ok(Json(KVResponse { result: None, message: "ok".into() }))
             } else {
                 Ok(Json(KVResponse { result: None, message: "missing key/value for put".into() }))
             }
         }
         "del" => {
-            if let Some(key) = kv_req.key {
+            if let Some(key) = kv_req.key.clone() {
+                // Update local KV store immediately
                 kv::del(&key);
+                
+                // Add to bundle for HyperBEAM
+                bundler::add_del(&key).await;
+                
                 Ok(Json(KVResponse { result: None, message: "ok".into() }))
             } else {
                 Ok(Json(KVResponse { result: None, message: "missing key for del".into() }))
             }
         }
         _ => {
-
             Ok(Json(KVResponse { result: Some("signature verified".into()), message: "ok".into() }))
         }
     }
 }
 
-pub async fn run_server(port: u16) {
+pub async fn run_server(port: u16, hb_port: Option<u16>) {
+    // Initialize HyperBEAM process if port is provided
+    if let Some(process_id) = bundler::init(hb_port).await {
+        println!("🚀 HyperBEAM integration enabled with process ID: {}", process_id);
+    } else if hb_port.is_some() {
+        println!("⚠️ HyperBEAM integration failed to initialize");
+    }
+    
     let shutdown_notify = Arc::new(Notify::new());
     let shutdown_for_handler = shutdown_notify.clone();
 
     let app = Router::new()
         .route("/kv", post(move |body| kv_handler(body, shutdown_for_handler.clone())))
-	.route("/query", post(query));
+        .route("/query", post(query));
 
     let addr: SocketAddr = ([127, 0, 0, 1], port).into();
-    let listener = TcpListener::bind(addr).await.unwrap();
+    
+    // Try to bind to the address, handle error gracefully
+    match TcpListener::bind(addr).await {
+        Ok(listener) => {
+            println!("🚀 Server listening on http://{}", addr);
 
-    println!("🚀 Server listening on http://{}", addr);
-
-    serve(listener, app)
-        .with_graceful_shutdown(async move {
-            shutdown_notify.notified().await;
-            println!("✅ Server shutdown signal received");
-        })
-        .await
-        .unwrap();
+            serve(listener, app)
+                .with_graceful_shutdown(async move {
+                    shutdown_notify.notified().await;
+                    println!("✅ Server shutdown signal received");
+                })
+                .await
+                .expect("Server error");
+        },
+        Err(e) => {
+            eprintln!("❌ Failed to bind to address {}: {}", addr, e);
+            eprintln!("The port may already be in use. Try a different port with --port <PORT>");
+            process::exit(1);
+        }
+    }
 }
