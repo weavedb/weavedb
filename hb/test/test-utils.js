@@ -178,6 +178,10 @@ class HB {
     })
     return await this.request(_tags)
   }
+  async req({ path, tags = {} }) {
+    const _tags = mergeLeft(tags, { method: "POST", path })
+    return await this.request(_tags)
+  }
   async fetch(path, { json = true, params = "" } = {}) {
     return await fetch(
       `http://localhost:${this.port}${path}${json ? "/serialize~json@1.0" : ""}${params ? "?" + params : ""}`,
