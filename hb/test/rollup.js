@@ -22,7 +22,7 @@ const run = async (port, num) => {
   ru.on("close", code => console.log(`child process exited with code ${code}`))
   await wait(2000)
 }
-const post = async (port, json) => {
+const get = async (port, json) => {
   return await fetch(`http://localhost:${port}/kv`, {
     method: "POST",
     headers: {
@@ -31,16 +31,31 @@ const post = async (port, json) => {
     body: JSON.stringify(json),
   }).then(r => r.json())
 }
+const post = async (port, json) => {
+  const signer = createSigner(acc[0].jwk)
+  const { request } = connect({
+    MODE: "mainnet",
+    URL: `http://localhost:${port}`,
+    device: "",
+    signer,
+  })
+  const res = await request({
+    method: "POST",
+    path: "/query",
+    query: JSON.stringify(json),
+  })
+  return JSON.parse(res.body)
+}
 describe("Rollup", () => {
-  it("should run rollup server", async () => {
+  it.only("should run rollup server", async () => {
     const num = Math.floor(Math.random() * 1000000)
-    const port = 4003
+    const port = 4011
     await run(port, num)
     assert.deepEqual(
       await post(port, { op: "put", key: "bob", value: "Bob" }),
       { result: null, message: "ok" },
     )
-    assert.deepEqual(await post(port, { op: "get", key: "bob" }), {
+    assert.deepEqual(await get(port, { op: "get", key: "bob" }), {
       result: "Bob",
       message: "ok",
     })
@@ -48,7 +63,7 @@ describe("Rollup", () => {
       result: null,
       message: "ok",
     })
-    assert.deepEqual(await post(port, { op: "get", key: "bob" }), {
+    assert.deepEqual(await get(port, { op: "get", key: "bob" }), {
       result: null,
       message: "ok",
     })
@@ -56,15 +71,15 @@ describe("Rollup", () => {
       await post(port, { op: "hello", key: "bob", value: "Bob" }),
       { result: null, message: "ok" },
     )
-    await post(port, { op: "close" })
+    await get(port, { op: "close" })
     await wait(2000)
     const port2 = 4005
     await run(port2, num)
-    assert.deepEqual(await post(port2, { op: "get", key: "bob" }), {
+    assert.deepEqual(await get(port2, { op: "get", key: "bob" }), {
       result: "Hello, Bob!",
       message: "ok",
     })
-    await post(port2, { op: "close" })
+    await get(port2, { op: "close" })
   })
 
   it.only("should verify http message signatures", async () => {
@@ -81,10 +96,9 @@ describe("Rollup", () => {
     const res = await request({
       method: "POST",
       path: "/query",
-      query: JSON.stringify({ op: "put" }),
-      data: JSON.stringify({ op: "put" }),
+      query: JSON.stringify({ op: "verify" }),
     })
-    assert.equal(res.body, "signature verified")
+    assert.equal(JSON.parse(res.body).result, "signature verified")
     await post(port, { op: "close" })
   })
 })
