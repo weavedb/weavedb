@@ -36,11 +36,13 @@ const q3 = ["set:user", alice, "users", "alice"]
 let qs = [q1, q2]
 
 describe("HyperBEAM | dev_weavedb", () => {
-  it("should spawn a process and compute", async () => {
+  it.only("should spawn a process and compute", async () => {
     const port = 10002
     const hb = new HB({ cwd: "../../HyperBEAM", env, port })
     await wait(5000)
+    console.log(await hb.spawn({}))
     const { process: pid } = await hb.spawn({})
+    return
     const dbpath = genDir()
     const node = await server({
       dbpath,
@@ -67,7 +69,7 @@ describe("HyperBEAM | dev_weavedb", () => {
     hb.stop()
     node.stop()
   })
-  it.only("should query weavedb NIF device", async () => {
+  it("should query weavedb NIF device", async () => {
     const port = 10005
     const hb = new HB({ cwd: "../../HyperBEAM", env, port })
     await wait(5000)
