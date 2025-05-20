@@ -22,14 +22,14 @@ thread_local! {
     static TRANSFORMER: RefCell<Transformer> = RefCell::new(Transformer::new());
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct KVRequest {
     pub op: String,
     pub key: Option<String>,
     pub value: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct KVResponse {
     pub result: Option<String>,
     pub message: String,
@@ -40,37 +40,12 @@ pub async fn kv_handler(
     shutdown: Arc<Notify>,
 ) -> Json<KVResponse> {
     match req.op.as_str() {
-        "put" => {
-            if let (Some(key), Some(val)) = (req.key, req.value) {
-		kv::put(&key, &val);
-                Json(KVResponse { result: None, message: "ok".into() })
-            } else {
-                Json(KVResponse { result: None, message: "missing key/value for put".into() })
-            }
-        }
-	"hello" => {
-            if let (Some(key), Some(val)) = (req.key, req.value) {
-		let transformed = TRANSFORMER.with(|t| t.borrow_mut().apply(&val).unwrap());
-		kv::put(&key, &transformed);
-                Json(KVResponse { result: None, message: "ok".into() })
-            } else {
-                Json(KVResponse { result: None, message: "missing key/value for put".into() })
-            }
-        }
         "get" => {
             if let Some(key) = req.key {
                 let val = kv::get(&key);
                 Json(KVResponse { result: val, message: "ok".into() })
             } else {
                 Json(KVResponse { result: None, message: "missing key for get".into() })
-            }
-        }
-        "del" => {
-            if let Some(key) = req.key {
-                kv::del(&key);
-                Json(KVResponse { result: None, message: "ok".into() })
-            } else {
-                Json(KVResponse { result: None, message: "missing key for del".into() })
             }
         }
         "close" => {
@@ -94,10 +69,7 @@ fn headers_to_map(headers: &http::HeaderMap) -> HashMap<String, String> {
     let mut map = HashMap::new();
     
     for (name, value) in headers.iter() {
-        // Convert header name to lowercase (RFC 9421 requirement)
         let key = name.as_str().to_lowercase();
-        
-        // Convert header value to string
         if let Ok(value_str) = value.to_str() {
             map.insert(key, value_str.to_string());
         }
@@ -106,8 +78,8 @@ fn headers_to_map(headers: &http::HeaderMap) -> HashMap<String, String> {
     map
 }
 
-pub async fn query(req: Request<body::Body>) -> Result<String, (StatusCode, String)> {
-    let (parts, _body) = req.into_parts();
+pub async fn query(req: Request<body::Body>) -> Result<Json<KVResponse>, (StatusCode, String)> {
+    let (parts, body) = req.into_parts();
     let headers = parts.headers;
     let headers_map = headers_to_map(&headers);
     let headers_json = serde_json::to_string(&headers_map)
@@ -119,11 +91,53 @@ pub async fn query(req: Request<body::Body>) -> Result<String, (StatusCode, Stri
     match verify_signature(&headers_json) {
         Ok(()) => {
             println!("✅ Signature verification successful");
-            Ok("signature verified".to_string())
         }
         Err(e) => {
             eprintln!("❌ Signature verification failed: {}", e);
-            Err((StatusCode::UNAUTHORIZED, format!("Signature verification failed: {}", e)))
+            return Err((StatusCode::UNAUTHORIZED, format!("Signature verification failed: {}", e)));
+        }
+    }
+
+    let query_header = headers.get("query")
+        .ok_or((StatusCode::BAD_REQUEST, "Missing 'query' header".to_string()))?;
+    
+    let query_str = query_header.to_str()
+        .map_err(|e| (StatusCode::BAD_REQUEST, format!("Invalid query header: {}", e)))?;
+    
+    let kv_req: KVRequest = serde_json::from_str(query_str)
+        .map_err(|e| (StatusCode::BAD_REQUEST, format!("Invalid JSON in query header: {}", e)))?;
+    
+    println!("kv: {:?}", kv_req);
+
+    match kv_req.op.as_str() {
+        "put" => {
+            if let (Some(key), Some(val)) = (kv_req.key, kv_req.value) {
+                kv::put(&key, &val);
+                Ok(Json(KVResponse { result: None, message: "ok".into() }))
+            } else {
+                Ok(Json(KVResponse { result: None, message: "missing key/value for put".into() }))
+            }
+        }
+        "hello" => {
+            if let (Some(key), Some(val)) = (kv_req.key, kv_req.value) {
+                let transformed = TRANSFORMER.with(|t| t.borrow_mut().apply(&val).unwrap());
+                kv::put(&key, &transformed);
+                Ok(Json(KVResponse { result: None, message: "ok".into() }))
+            } else {
+                Ok(Json(KVResponse { result: None, message: "missing key/value for put".into() }))
+            }
+        }
+        "del" => {
+            if let Some(key) = kv_req.key {
+                kv::del(&key);
+                Ok(Json(KVResponse { result: None, message: "ok".into() }))
+            } else {
+                Ok(Json(KVResponse { result: None, message: "missing key for del".into() }))
+            }
+        }
+        _ => {
+
+            Ok(Json(KVResponse { result: Some("signature verified".into()), message: "ok".into() }))
         }
     }
 }
