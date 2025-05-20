@@ -1,6 +1,7 @@
 mod kv;
 mod server;
 mod transform;
+mod verify;
 use clap::Parser;
 
 #[derive(Parser, Debug)]

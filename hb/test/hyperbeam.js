@@ -36,7 +36,7 @@ const q3 = ["set:user", alice, "users", "alice"]
 let qs = [q1, q2]
 
 describe("HyperBEAM | dev_weavedb", () => {
-  it.only("should spawn a process and compute", async () => {
+  it("should spawn a process and compute", async () => {
     const port = 10002
     const hb = new HB({ cwd: "../../HyperBEAM", env, port })
     await wait(5000)
@@ -66,5 +66,15 @@ describe("HyperBEAM | dev_weavedb", () => {
     //console.log(await hb.compute(pid, 0))
     hb.stop()
     node.stop()
+  })
+  it.only("should query weavedb NIF device", async () => {
+    const port = 10005
+    const hb = new HB({ cwd: "../../HyperBEAM", env, port })
+    await wait(5000)
+    assert.equal(
+      (await hb.req({ path: "/~weavedb@1.0/query", tags: { a: 2, b: 3 } })).sum,
+      "5",
+    )
+    hb.stop()
   })
 })

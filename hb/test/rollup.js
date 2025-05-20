@@ -3,6 +3,10 @@ import { afterEach, after, describe, it, before, beforeEach } from "node:test"
 import { spawn } from "child_process"
 import { resolve } from "path"
 import { wait } from "./test-utils.js"
+import { parseSI } from "../src/server-utils.js"
+import { connect, createSigner } from "@permaweb/aoconnect"
+import { acc } from "wao/test"
+import { readFileSync } from "fs"
 
 const run = async (port, num) => {
   const ru = spawn(
@@ -28,7 +32,7 @@ const post = async (port, json) => {
   }).then(r => r.json())
 }
 describe("Rollup", () => {
-  it.only("should run rollup server", async () => {
+  it("should run rollup server", async () => {
     const num = Math.floor(Math.random() * 1000000)
     const port = 4003
     await run(port, num)
@@ -61,5 +65,26 @@ describe("Rollup", () => {
       message: "ok",
     })
     await post(port2, { op: "close" })
+  })
+
+  it.only("should verify http message signatures", async () => {
+    const num = Math.floor(Math.random() * 1000000)
+    const port = 5000
+    await run(port, num)
+    const signer = createSigner(acc[0].jwk)
+    const { request } = connect({
+      MODE: "mainnet",
+      URL: `http://localhost:${port}`,
+      device: "",
+      signer,
+    })
+    const res = await request({
+      method: "POST",
+      path: "/query",
+      query: JSON.stringify({ op: "put" }),
+      data: JSON.stringify({ op: "put" }),
+    })
+    assert.equal(res.body, "signature verified")
+    await post(port, { op: "close" })
   })
 })
