@@ -213,7 +213,7 @@ mod tests {
             crate::kv::init(&db_path);
             
             // Start the server
-            crate::server::run_server(port).await;
+            crate::server::run_server(port, Some(10000)).await;
         })
     }
 
@@ -274,7 +274,7 @@ mod tests {
     #[tokio::test]
     async fn test_with_own_server() {
         cleanup_test_dbs();
-        let port = 10001;
+        let port = 10000;
         
         // Start our own server
         let _server_handle = start_test_server(port).await;
