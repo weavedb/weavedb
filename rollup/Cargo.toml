@@ -19,3 +19,4 @@ base64 = "0.22.1"
 http-sig = "0.6"
 hex = "0.4.3"
 openssl = { version = "0.10.72", features = ["vendored"] }
+rayon = "1.10.0"
