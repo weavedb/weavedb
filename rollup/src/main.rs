@@ -4,7 +4,10 @@ mod transform;
 mod verify;
 mod sign;
 mod http_client;
+mod hb_client;
+mod benchmark;
 use clap::Parser;
+
 
 #[derive(Parser, Debug)]
 #[command(name = "weavedb")]

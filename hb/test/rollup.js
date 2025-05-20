@@ -47,7 +47,7 @@ const post = async (port, json) => {
   return JSON.parse(res.body)
 }
 describe("Rollup", () => {
-  it.only("should run rollup server", async () => {
+  it("should run rollup server", async () => {
     const num = Math.floor(Math.random() * 1000000)
     const port = 4011
     await run(port, num)
@@ -82,7 +82,7 @@ describe("Rollup", () => {
     await get(port2, { op: "close" })
   })
 
-  it.only("should verify http message signatures", async () => {
+  it("should verify http message signatures", async () => {
     const num = Math.floor(Math.random() * 1000000)
     const port = 5000
     await run(port, num)
@@ -100,5 +100,28 @@ describe("Rollup", () => {
     })
     assert.equal(JSON.parse(res.body).result, "signature verified")
     await post(port, { op: "close" })
+  })
+  it.only("should verify http message signatures with content", async () => {
+    console.log(acc[0].jwk)
+    const port = 5000
+    const signer = createSigner(acc[0].jwk)
+    const { request } = connect({
+      MODE: "mainnet",
+      URL: `http://localhost:${port}`,
+      device: "",
+      signer,
+    })
+    const res = await request({
+      method: "POST",
+      path: "/abc/schedule",
+      scheduler: "xyz",
+      data: "yo man man",
+    })
+    console.log(JSON.parse(res.body))
+    console.log(
+      JSON.parse(
+        readFileSync(resolve(import.meta.dirname, "../.wallet.json"), "utf8"),
+      ),
+    )
   })
 })
