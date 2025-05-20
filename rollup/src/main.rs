@@ -3,6 +3,7 @@ mod server;
 mod transform;
 mod verify;
 mod sign;
+mod http_client;
 use clap::Parser;
 
 #[derive(Parser, Debug)]
