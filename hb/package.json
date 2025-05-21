@@ -3,15 +3,20 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "test": "node --experimental-wasm-memory64 --test test/test.js",
-    "test-only": "node --experimental-wasm-memory64 --test-only test/test.js",
-    "test-hb": "node --experimental-wasm-memory64 --test test/hyperbeam.js",
-    "test-hb-only": "node --experimental-wasm-memory64 --test-only test/hyperbeam.js",
-    "test-ru": "node --experimental-wasm-memory64 --test test/rollup.js",
-    "test-ru-only": "node --experimental-wasm-memory64 --test-only test/rollup.js",
+    "test": "node --test test/test.js",
+    "test-only": "node --test-only test/test.js",
+    "test-hb": "node --test test/hyperbeam.js",
+    "test-hb-only": "node --test-only test/hyperbeam.js",
+    "test-ru": "node --test test/rollup.js",
+    "test-ru-only": "node --test-only test/rollup.js",
+    "test-sql": "node --test test/sql.js",
+    "test-sql-only": "node --test-only test/sql.js",
     "compile": "cd ../HyperBEAM && reset && CMAKE_POLICY_VERSION_MINIMUM=3.5 CC=gcc-12 CXX=g++-12 rebar3 compile",
     "shell": "cd ../HyperBEAM && reset && CMAKE_POLICY_VERSION_MINIMUM=3.5 CC=gcc-12 CXX=g++-12 rebar3 shell",
     "eunit": "cd ../HyperBEAM && reset && HB_DEBUG=1 CMAKE_POLICY_VERSION_MINIMUM=3.5 CC=gcc-12 CXX=g++-12 rebar3 eunit"
+  },
+  "engines": {
+    "node": "24"
   },
   "dependencies": {
     "@permaweb/aoconnect": "^0.0.83",
@@ -25,8 +30,8 @@
     "http-message-signatures": "^1.0.4",
     "jsonschema": "^1.5.0",
     "lmdb": "^3.3.0",
+    "node-sql-parser": "^5.3.9",
     "ramda": "^0.30.1",
-    "raw-body": "^3.0.0",
     "wao": "^0.21.3",
     "yargs": "^17.7.2",
     "zkjson": "^0.5.3"
