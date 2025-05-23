@@ -1,21 +1,7 @@
-import {
-  compose,
-  uniq,
-  concat,
-  intersection,
-  clone,
-  includes,
-  isNil,
-  mergeLeft,
-  pluck,
-  keys,
-  is,
-  map,
-} from "ramda"
-
+import { includes, isNil } from "ramda"
 import { of, fn } from "./monade.js"
-
 import sha256 from "fast-sha256"
+import { parseOp, getInfo } from "./dev_common.js"
 function base64urlDecode(str) {
   str = str.replace(/-/g, "+").replace(/_/g, "/")
   const pad = str.length % 4
@@ -27,6 +13,7 @@ function base64urlDecode(str) {
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
   return bytes
 }
+
 function base64urlEncode(bytes) {
   let bin = ""
   for (const b of bytes) bin += String.fromCharCode(b)
@@ -107,26 +94,8 @@ function tob64(n) {
   return result
 }
 
-const handlers = { add, set, del, update, upsert }
-
-function batch({ db, q, ctx }) {
-  for (const v of q[0]) {
-    const [opname, ...q] = v
-    const op = opname.split(":")[0]
-    let _ctx = { op, opname, ts: ctx.ts }
-    if (isNil(handlers[_ctx.op])) {
-      throw Error(`handler doesn't exist: ${_ctx.opname}`)
-    }
-    _ctx.info = db.get("_config", "info") ?? {
-      owner: ctx.from,
-      id: ctx.opt?.id,
-    }
-    of({ db, q, ctx: _ctx }).chain(handlers[_ctx.op])
-  }
-  return arguments[0]
-}
-
 function toLower({ msg }) {
+  if (!msg) return arguments[0]
   let lowers = { signature: null, "signature-input": null }
   for (const k in msg.headers) {
     const lower = k.toLowerCase()
@@ -140,6 +109,7 @@ function toLower({ msg }) {
 }
 
 function pickInput({ state, msg }) {
+  if (!msg) return arguments[0]
   let etc = {}
   const { fields, keyid } = parseSI(msg.headers["signature-input"])
   let headers = {
@@ -157,24 +127,8 @@ function pickInput({ state, msg }) {
   if (typeof headers.nonce === "undefined") throw Error("nonce missing")
   state.id = headers.id
   state.nonce = headers.nonce
+  state.ts = Date.now()
   arguments[0].msg = { headers, ...etc }
-  return arguments[0]
-}
-
-function parseOp({ state }) {
-  state.op = state.query[0]
-  state.opcode = state.op.split(":")[0]
-  state.operand = state.op.split(":")[1] ?? null
-  return arguments[0]
-}
-
-function getInfo({ state, env }) {
-  env.info =
-    state.opcode === "init"
-      ? { owner: state.signer, id: state.id }
-      : env.kv.get("_config", "info")
-  if (env.info === null) throw Error("database not initialized")
-  if (env.info.id !== state.id) throw Error("the wrong id")
   return arguments[0]
 }
 
@@ -186,4 +140,4 @@ const normalize = (msg, kv, opt = {}) =>
     .map(getInfo)
     .val()
 
-export { normalize }
+export default normalize

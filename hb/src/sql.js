@@ -1,12 +1,12 @@
 import sql_parser from "node-sql-parser"
 import { of, fn } from "./monade.js"
-import { isNil } from "ramda"
-import { last } from "ramda"
-import { commit } from "./ops.js"
+import { last, isNil } from "ramda"
+
+import normalize from "./dev_normalize.js"
+import verify from "./dev_verify.js"
+import write from "./dev_write.js"
+
 const parser = new sql_parser.Parser()
-const handlers = {
-  sql: args => of(args).tap(commit),
-}
 
 const wdb = (kv, __opt__ = {}) => {
   const get = (dir, doc) => kv.get(`${dir}/${doc}`)
@@ -31,23 +31,16 @@ const wdb = (kv, __opt__ = {}) => {
       },
     },
     map: {
-      set:
-        (...msg) =>
-        db => {
+      write:
+        (msg, opt = {}) =>
+        kv => {
           try {
-            try {
-              const ast = parser.astify(msg[0], { database: "sqlite" })
-              handlers.sql({
-                db,
-                q: msg[0],
-                ctx: { opt: { ...last(msg), query: msg[0] } },
-              })
-              return db
-            } catch (e) {
-              throw e
-            }
+            of(normalize(msg, kv, opt))
+              .map(verify)
+              .map(write)
+            return kv
           } catch (e) {
-            db.reset()
+            kv.reset()
             throw e
           }
         },

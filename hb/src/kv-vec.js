@@ -1,7 +1,7 @@
 import { clone } from "ramda"
 
 let tables = {}
-const kv = (io, fn) => {
+const kv = (io, vec, fn) => {
   let s = {}
   let l = {}
   let i = 0
@@ -25,19 +25,23 @@ const kv = (io, fn) => {
           ;({ i, cl, opt } = c.shift())
           if (!from) from = i
           to = i
-          if (opt.op === "createTable") {
-            await io.createTable(...opt.query)
-          } else if (opt.op === "add") {
-            const table = tables[opt.dir] ?? (await io.openTable(opt.dir))
-            tables[opt.dir] = table
-            await table.add(opt.query)
+          try {
+            const [op, ...query] = JSON.parse(opt.headers.query)
+            const [dir] = query
+            if (op === "createTable") {
+              await vec.createTable(...query)
+            } else if (op === "addData") {
+              const table = tables[dir] ?? (await vec.openTable(dir))
+              tables[dir] = table
+              await table.add(query[1])
+            }
+          } catch (e) {
+            console.log(e)
           }
           for (const k in cl ?? {}) {
-            /*
             if (opt.delta) old[k] = io.get(k) ?? null
             if (cl[k] === null) io.remove(k)
             else io.put(k, cl[k])
-            */
             count++
           }
           data.push({ i, opt, cl })
@@ -66,19 +70,19 @@ const kv = (io, fn) => {
     get,
     dump: () => ({ l, s }),
     add: async (dir, data) => {
-      const table = tables[dir] ?? (await io.openTable(dir))
+      const table = tables[dir] ?? (await vec.openTable(dir))
       tables[dir] = table
       await table.add(data)
     },
     createTable: async (dir, data) =>
-      await io.createTable(dir, data, { mode: "overwrite" }),
+      await vec.createTable(dir, data, { mode: "overwrite" }),
     vectorSearch: async (dir, embeddings, limit) => {
-      const table = tables[dir] ?? (await io.openTable(dir))
+      const table = tables[dir] ?? (await vec.openTable(dir))
       tables[dir] = table
       return await table.vectorSearch(embeddings).limit(limit).toArray()
     },
     query: async (dir, query) => {
-      const table = tables[dir] ?? (await io.openTable(dir))
+      const table = tables[dir] ?? (await vec.openTable(dir))
       tables[dir] = table
       return await table.query().where(query).toArray()
     },

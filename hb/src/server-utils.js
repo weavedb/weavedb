@@ -100,7 +100,11 @@ const getKV = ({ jwk, pid, hb, dbpath }) => {
   return kv(io, async c => {
     let bundle = []
     for (const d of c.data) {
-      if (d.opt && typeof d.opt === "object" && d.opt["signature"]) {
+      if (
+        d.opt?.headers &&
+        typeof d.opt?.headers === "object" &&
+        d.opt?.headers["signature"]
+      ) {
         bundle.push(d.opt)
       }
     }

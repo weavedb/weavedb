@@ -6,7 +6,8 @@ import { last, init, clone, map, pluck, prop, slice } from "ramda"
 import { connect, createSigner } from "@permaweb/aoconnect"
 import { AO } from "wao"
 import * as lancedb from "@lancedb/lancedb"
-import { wait } from "./test-utils.js"
+import { init_query, wait, sign } from "./test-utils.js"
+import { open } from "lmdb"
 import {
   httpbis,
   createSigner as createHttpSigner,
@@ -14,58 +15,29 @@ import {
 
 import kv from "../src/kv-vec.js"
 
-class sign {
-  constructor({ jwk }) {
-    this.jwk = jwk
-    this.nonce = 0
-    this.signer = createHttpSigner(
-      createPrivateKey({ key: jwk, format: "jwk" }),
-      "rsa-pss-sha512",
-      jwk.n,
-    )
-  }
-  async sign(...query) {
-    const msg = await httpbis.signMessage(
-      { key: this.signer, fields: ["query", "nonce"] },
-      {
-        headers: {
-          query: JSON.stringify(query),
-          nonce: Number(++this.nonce).toString(),
-        },
-      },
-    )
-    return [
-      ...query,
-      {
-        nonce: Number(this.nonce).toString(),
-        signature: msg.headers.Signature,
-        "signature-input": msg.headers["Signature-Input"],
-      },
-    ]
-  }
-}
-
 const getKV = async () => {
-  const io = await lancedb.connect(
-    `.db/mydb.${Math.floor(Math.random() * 100000)}`,
-  )
-  return kv(io, c => {})
+  const rand = Math.floor(Math.random() * 100000)
+  const io = open({ path: `.db/kv.${rand}` })
+  const _vec = await lancedb.connect(`.db/vec.${rand}`)
+  return kv(io, _vec, c => {})
 }
 
 describe("WeaveVec", () => {
   it.only("should init", async () => {
     const { jwk, addr } = await new AO().ar.gen()
-    const s = new sign({ jwk })
-    const db = vec(await getKV()).create(
-      ...(await s.sign("vectors", [
-        { id: 1, vector: [0.1, 0.2], item: "foo", price: 10 },
-      ])),
-    )
+    const s = new sign({ jwk, id: "myvec" })
+    const db = vec(await getKV())
+      .write(await s.sign("init", init_query))
+      .write(
+        await s.sign("createTable", "vectors", [
+          { id: 1, vector: [0.1, 0.2], item: "foo", price: 10 },
+        ]),
+      )
     await wait(100)
-    db.add(
-      ...(await s.sign("vectors", [
+    db.write(
+      await s.sign("addData", "vectors", [
         { id: 2, vector: [1.1, 1.2], item: "bar", price: 50 },
-      ])),
+      ]),
     )
     await wait(100)
     console.log(await db.search("vectors", [0.1, 0.3], 2))

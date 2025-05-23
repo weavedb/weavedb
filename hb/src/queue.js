@@ -9,7 +9,7 @@ const queue = wdb => {
       while (qs.length > 0) {
         const { resolve, args } = qs.shift()
         try {
-          await wdb.set(...args)
+          await wdb.write(...args)
           resolve({ success: true, err: null })
         } catch (e) {
           resolve({ success: false, err: e?.toString?.() ?? true })
@@ -21,7 +21,8 @@ const queue = wdb => {
   const db = {
     get: (...args) => wdb.get(...args),
     cget: (...args) => wdb.cget(...args),
-    set: (...args) => {
+    read: (...args) => wdb.read(...args),
+    write: (...args) => {
       return new Promise(resolve => {
         qs.push({ resolve, args })
         exec()

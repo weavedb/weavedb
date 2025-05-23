@@ -8,6 +8,7 @@ let {
   db = ".cache",
   hb = "http://localhost:10000",
   wallet = ".wallet.json",
+  test_mode = false,
 } = yargs(process.argv.slice(2)).argv
 
 const run = async () => {
@@ -15,8 +16,8 @@ const run = async () => {
   const jwk = JSON.parse(
     readFileSync(resolve(import.meta.dirname, `${wallet}`), "utf8"),
   )
-  console.log(`dbpath: ${dbpath}`)
-  const node = await server({ dbpath, jwk, hb })
+  console.log(`dbpath: ${dbpath}, admin_only: ${!test_mode}`)
+  const node = await server({ dbpath, jwk, hb, port, admin_only: !test_mode })
 }
 
 run()

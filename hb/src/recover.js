@@ -25,15 +25,11 @@ const recover = async ({ pid, jwk, dbpath, hb }) => {
       }
       if (m.body.data) {
         for (const v of JSON.parse(m.body.data)) {
-          const q = JSON.parse(v.query)
-          console.log("recovering...", q)
-          db.set(...q, {
-            slot: m.slot,
-            id: v.id,
-            nonce: v.nonce,
-            signature: v.signature,
-            "signature-input": v["signature-input"],
-          })
+          try {
+            db.write(v)
+          } catch (e) {
+            console.log(e)
+          }
           i++
         }
       }
