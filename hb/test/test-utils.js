@@ -1,7 +1,13 @@
 import { map, mergeLeft } from "ramda"
 import { spawn } from "child_process"
 import { readFileSync } from "fs"
+import { createPrivateKey } from "node:crypto"
 import { connect, createSigner } from "@permaweb/aoconnect"
+import {
+  httpbis,
+  createSigner as createHttpSigner,
+} from "http-message-signatures"
+
 const bob = { name: "Bob" }
 const alice = { name: "Alice" }
 const mike = { name: "Mike" }
@@ -199,8 +205,33 @@ class HB {
     this.hb.kill("SIGINT")
   }
 }
+class sign {
+  constructor({ jwk, id }) {
+    this.jwk = jwk
+    this.id = id
+    this.nonce = 0
+    this.signer = createHttpSigner(
+      createPrivateKey({ key: jwk, format: "jwk" }),
+      "rsa-pss-sha512",
+      jwk.n,
+    )
+  }
+  async sign(...query) {
+    return await httpbis.signMessage(
+      { key: this.signer, fields: ["query", "nonce", "id"] },
+      {
+        headers: {
+          query: JSON.stringify(query),
+          nonce: Number(++this.nonce).toString(),
+          id: this.id,
+        },
+      },
+    )
+  }
+}
 
 export {
+  sign,
   HB,
   bob,
   alice,

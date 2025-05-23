@@ -1,6 +1,6 @@
 import { clone } from "ramda"
 
-const kv = (io, fn) => {
+const kv = (io, sql, fn) => {
   let s = {}
   let l = {}
   let i = 0
@@ -19,26 +19,21 @@ const kv = (io, fn) => {
       let opt = null
       let data = []
       let old = {}
-      try {
+      await io.transaction(() => {
         while (c.length > 0) {
           ;({ i, cl, opt } = c.shift())
           if (!from) from = i
           to = i
-          io.exec(opt.query)
           for (const k in cl ?? {}) {
-            /*
             if (opt.delta) old[k] = io.get(k) ?? null
             if (cl[k] === null) io.remove(k)
             else io.put(k, cl[k])
-            */
             count++
           }
           data.push({ i, opt, cl })
           i++
         }
-      } catch (e) {
-        console.log(e)
-      }
+      })
       fn?.({ from, to, count, len: c.length, data, old })
       await commit()
     }
@@ -47,6 +42,12 @@ const kv = (io, fn) => {
   return {
     reset,
     commit: async (opt = {}) => {
+      try {
+        const [op, query] = JSON.parse(opt.headers.query)
+        if (op === "sql") sql.exec(query)
+      } catch (e) {
+        console.log(e)
+      }
       const cl = clone(l)
       c.push({ i, cl, opt })
       for (const k in cl ?? {}) s[k] = cl[k]
@@ -58,7 +59,7 @@ const kv = (io, fn) => {
     del: k => put(k, null),
     get,
     dump: () => ({ l, s }),
-    sql: q => io.prepare(q).all(),
+    sql: q => sql.prepare(q).all(),
   }
 }
 

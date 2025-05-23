@@ -14,7 +14,14 @@ let dbs = {}
 let dbmap = {}
 const _tags = tags => fromPairs(map(v => [v.name, v.value])(tags))
 
-const server = async ({ jwk, hb, dbpath, port = 6363, gateway = 5000 }) => {
+const server = async ({
+  jwk,
+  hb,
+  dbpath,
+  port = 6363,
+  gateway = 5000,
+  admin_only = true,
+}) => {
   const addr = (await new AR().init(jwk)).addr
   const app = express()
   const io = open({ path: `${dbpath}-admin` })
@@ -25,6 +32,7 @@ const server = async ({ jwk, hb, dbpath, port = 6363, gateway = 5000 }) => {
   }
   app.use(cors())
   app.use(bodyParser.raw({ type: "*/*", limit: "100mb" }))
+
   app.get("/~weavedb@1.0/get", async (req, res) => {
     const q = await verify(req)
     if (q.valid) {
@@ -35,7 +43,6 @@ const server = async ({ jwk, hb, dbpath, port = 6363, gateway = 5000 }) => {
           headers[lowK] = req.headers[lowK]
         }
         const _res = dbs[headers.id].get(...q.query)
-        console.log(_res)
         res.json({ success: true, ...q, res: _res })
       } catch (e) {
         console.log(e)
@@ -57,7 +64,6 @@ const server = async ({ jwk, hb, dbpath, port = 6363, gateway = 5000 }) => {
       const {
         process: { db },
       } = json
-      console.log(db)
       dbmap[pid] = db
     }
     let msg = []
@@ -69,6 +75,7 @@ const server = async ({ jwk, hb, dbpath, port = 6363, gateway = 5000 }) => {
       let query = null
       let id = null
       if (tags_m?.Query) query = JSON.parse(tags_m.Query)
+
       if (query) data = dbs[dbmap[pid]].get(...query)
       if (tags_m["From-Process"]) {
         const r_tags = [
@@ -101,17 +108,19 @@ const server = async ({ jwk, hb, dbpath, port = 6363, gateway = 5000 }) => {
     const { valid, query, fields, address } = await verify(req)
     if (valid) {
       try {
+        /*
         let headers = {}
         for (const k in req.headers) {
           let lowK = k.toLowerCase()
           if (includes(lowK, [...fields, "signature", "signature-input"])) {
             headers[lowK] = req.headers[lowK]
           }
-        }
-        const pid = headers.id
+          }
+        */
+        const pid = req.headers.id
         let err = false
         if (query[0] === "init" && !dbs[pid]) {
-          if (addr !== address) {
+          if (admin_only && addr !== address) {
             console.log(`not admin: ${addr}:${address}`)
             err = true
             res.json({
@@ -130,8 +139,12 @@ const server = async ({ jwk, hb, dbpath, port = 6363, gateway = 5000 }) => {
           if (!dbs[pid]) {
             res.json({ success: false, error: `db doesn't exist: ${pid}` })
           } else {
-            await dbs[pid].set(...query, headers)
-            res.json({ success: true, query })
+            const _res = await dbs[pid].write(req)
+            if (_res?.success) {
+              res.json({ success: true, query })
+            } else {
+              res.json({ success: false, error: _res.err, query })
+            }
           }
         }
       } catch (e) {

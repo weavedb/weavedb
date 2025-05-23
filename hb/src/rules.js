@@ -1,7 +1,7 @@
 const dirs_set = [
   "set:dir",
   [
-    ["=$isOwner", ["equals", "$from", "$owner"]],
+    ["=$isOwner", ["equals", "$signer", "$owner"]],
     ["=$dir", ["get()", ["_config", "info"]]],
     ["=$dirid", ["inc", "$dir.last_dir_id"]],
     ["mod()", { index: "$dirid" }],
