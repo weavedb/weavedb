@@ -26,6 +26,8 @@ import {
   users_query,
   HB as HBeam,
   sign,
+  runHB,
+  deployHB,
 } from "./test-utils.js"
 
 import {
@@ -395,16 +397,6 @@ const q2 = ["set:user", bob, "users", "bob"]
 const q3 = ["set:user", alice, "users", "alice"]
 let qs = [q1, q2]
 
-const runHB = (port, sport) => {
-  const env = {
-    //DIAGNOSTIC: "1",
-    CMAKE_POLICY_VERSION_MINIMUM: "3.5",
-    CC: "gcc-12",
-    CXX: "g++-12",
-  }
-  return new HBeam({ cwd: "../../HyperBEAM", env, port, sport })
-}
-
 describe("Server", () => {
   it.skip("should connect with a remote server", async () => {
     const hb = "http://localhost:10000"
@@ -528,28 +520,7 @@ const checkZK = async ({ pid, hb }) => {
   console.log("success!")
   await wait(3000)
 }
-const deployHB = async ({ port, sport }) => {
-  const port2 = 6363
-  const hbeam = runHB(port, sport)
-  await wait(5000)
-  const hb = `http://localhost:${port}`
-  const URL = `http://localhost:${port2}`
-  const { process: pid } = await hbeam.spawn({})
-  const signer = hbeam.signer
-  const jwk = hbeam.jwk
-  console.log("pid", pid)
-  const dbpath = genDir()
-  const node = await server({
-    dbpath,
-    jwk,
-    hb,
-    pid,
-    port: port2,
-    gateway: sport,
-  })
-  const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
-  return { node, pid, request, hbeam, jwk, hb }
-}
+
 const setup = async ({ pid, request }) => {
   let nonce = 0
   const json0 = await set(request, ["init", init_query], ++nonce, pid)
@@ -559,6 +530,7 @@ const setup = async ({ pid, request }) => {
   assert.deepEqual(json3.res, [bob])
   return { nonce }
 }
+
 const validateDB = async ({ hbeam, pid, hb, jwk }) => {
   const { process: validate_pid } = await hbeam.spawn({
     tags: { "execution-device": "weavedb@1.0", db: pid },
@@ -577,6 +549,7 @@ const validateDB = async ({ hbeam, pid, hb, jwk }) => {
   assert.deepEqual(data, [bob])
   return { validate_pid, dbpath2 }
 }
+
 describe("Validator", () => {
   it("should validate HB WAL", async () => {
     const { node, pid, request, hbeam, jwk, hb } = await deployHB({
@@ -603,7 +576,6 @@ describe("Validator", () => {
     } = await hbeam.compute(validate_pid, slot)
     assert.deepEqual(data, [alice, bob])
     await checkZK({ pid: validate_pid, hb })
-
     node.stop()
     hbeam.stop()
     return

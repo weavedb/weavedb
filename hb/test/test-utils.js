@@ -13,6 +13,8 @@ const alice = { name: "Alice" }
 const mike = { name: "Mike" }
 const beth = { name: "Beth" }
 const john = { name: "John" }
+import server from "../src/server.js"
+import server_sql from "../src/server_sql.js"
 let devices = [
   "ans104",
   "compute",
@@ -229,7 +231,43 @@ class sign {
   }
 }
 
+const runHB = (port, sport) => {
+  const env = {
+    //DIAGNOSTIC: "1",
+    CMAKE_POLICY_VERSION_MINIMUM: "3.5",
+    CC: "gcc-12",
+    CXX: "g++-12",
+  }
+  return new HB({ cwd: "../../HyperBEAM", env, port, sport })
+}
+
+const deployHB = async ({ port, sport, type = "nosql" }) => {
+  const port2 = 6363
+  const hbeam = runHB(port, sport)
+  await wait(5000)
+  const hb = `http://localhost:${port}`
+  const URL = `http://localhost:${port2}`
+  const { process: pid } = await hbeam.spawn({})
+  const signer = hbeam.signer
+  const jwk = hbeam.jwk
+  console.log("pid", pid)
+  const dbpath = genDir()
+  const _server = type === "nosql" ? server : server_sql
+  const node = await _server({
+    dbpath,
+    jwk,
+    hb,
+    pid,
+    port: port2,
+    gateway: sport,
+  })
+  const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
+  return { node, pid, request, hbeam, jwk, hb }
+}
+
 export {
+  runHB,
+  deployHB,
   sign,
   HB,
   bob,

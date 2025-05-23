@@ -1,5 +1,3 @@
-import wdb from "./db.js"
-
 const queue = wdb => {
   let qs = []
   let on = false
@@ -19,6 +17,7 @@ const queue = wdb => {
     }
   }
   const db = {
+    sql: (...args) => wdb.sql(...args),
     get: (...args) => wdb.get(...args),
     cget: (...args) => wdb.cget(...args),
     read: (...args) => wdb.read(...args),
