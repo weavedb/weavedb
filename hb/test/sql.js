@@ -12,7 +12,7 @@ import {
   createSigner as createHttpSigner,
 } from "http-message-signatures"
 import { sign, wait, init_query } from "./test-utils.js"
-import kv from "../src/kv-sql.js"
+import kv from "../src/kv_sql.js"
 
 const getKV = () => {
   const rand = Math.floor(Math.random() * 100000)

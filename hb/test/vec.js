@@ -13,7 +13,7 @@ import {
   createSigner as createHttpSigner,
 } from "http-message-signatures"
 
-import kv from "../src/kv-vec.js"
+import kv from "../src/kv_vec.js"
 
 const getKV = async () => {
   const rand = Math.floor(Math.random() * 100000)
