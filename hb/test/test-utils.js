@@ -107,7 +107,6 @@ const init_query = { schema: dir_schema, auth: [dirs_set] }
 const users_query = [
   "set:dir",
   {
-    index: 4,
     schema: { type: "object", required: ["name"] },
     auth: [
       ["set:user,add:user,update:user,upsert:user,del:user", [["allow()"]]],

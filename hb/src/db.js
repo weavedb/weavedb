@@ -8,7 +8,7 @@ import auth from "./dev_auth.js"
 import write from "./dev_write.js"
 import read from "./dev_read.js"
 
-const wdb = (_kv, __opt__ = {}) => {
+const wdb = (_kv, __env__ = {}) => {
   const get = (dir, doc) => _kv.get(`${dir}/${doc}`)
   const put = (dir, doc, data) => _kv.put(`${dir}/${doc}`, data)
   const del = (dir, doc) => _kv.del(`${dir}/${doc}`)
@@ -30,7 +30,7 @@ const wdb = (_kv, __opt__ = {}) => {
         return of({
           state: { opcode, query: ["get", ...q] },
           msg: null,
-          env: { kv },
+          env: { kv, ...__env__ },
         })
           .map(parse)
           .to(read)
@@ -53,10 +53,10 @@ const wdb = (_kv, __opt__ = {}) => {
     },
     map: {
       write:
-        (msg, opt = {}) =>
+        (msg, env = {}) =>
         kv => {
           try {
-            of(normalize(msg, kv, opt))
+            of(normalize(msg, kv, { ...__env__, ...env }))
               .map(verify)
               .map(parse)
               .map(auth)

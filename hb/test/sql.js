@@ -14,10 +14,9 @@ import {
 import { sign, wait, init_query } from "./test-utils.js"
 import kv from "../src/kv_sql.js"
 
-const getKV = () => {
+const getKV = _sql => {
   const rand = Math.floor(Math.random() * 100000)
   const io = open({ path: `.db/kv.${rand}` })
-  const _sql = new DatabaseSync(`.db/sql.${rand})}`)
   return kv(io, _sql, c => {})
 }
 
@@ -28,19 +27,25 @@ const create = `CREATE TABLE IF NOT EXISTS users (
   )`
 
 const insert = `INSERT INTO users (name, age) VALUES ('Bob', 24)`
-
+const insert2 = `INSERT INTO users (name, age) VALUES ('Alice', 24)`
+const update = `UPDATE users SET age = 25 WHERE age = 24`
+const del = `DELETE from users WHERE age = 25`
 describe("WeaveSQL", () => {
   it("should init", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "my-sql" })
-    const db = sql(getKV())
+    const rand = Math.floor(Math.random() * 100000)
+    const _sql = new DatabaseSync(`.db/sql.${rand})}`)
+    const db = sql(getKV(_sql), { sql: _sql })
       .write(await s.sign("init", init_query))
       .write(await s.sign("sql", create))
       .write(await s.sign("sql", insert))
-    assert.deepEqual(db.get("SELECT * from users")[0], {
-      id: 1,
-      name: "Bob",
-      age: 24,
-    })
+      .write(await s.sign("sql", insert2))
+      .write(await s.sign("sql", update))
+      .write(await s.sign("sql", del))
+      .write(await s.sign("sql", insert))
+    assert.deepEqual(db.sql("SELECT * from users"), [
+      { name: "Bob", age: 24, id: 3 },
+    ])
   })
 })

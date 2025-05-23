@@ -2,6 +2,8 @@ import { of, fn } from "./monade.js"
 import { keys, uniq, concat, compose, is, isNil, includes } from "ramda"
 import _fpjson from "fpjson-lang"
 const fpjson = _fpjson.default || _fpjson
+import sql_parser from "node-sql-parser"
+const _parser = new sql_parser.Parser()
 
 import { replace$ } from "./fpjson.js"
 function fields(ndata, odata) {
@@ -38,7 +40,7 @@ function merge(data, state, old, env) {
 
 function setData({ state, env }) {
   const { data, dir } = state
-  if (isNil(env.kv.dir(dir))) throw Error("dir doesn't exist:", dir)
+  if (isNil(env.kv.dir(dir))) throw Error("dir doesn't exist")
   state.data = merge(data, state, {}, env)
   return arguments[0]
 }
@@ -52,7 +54,7 @@ function updateData({ state, env }) {
 
 function upsertData({ state, env }) {
   const { data, dir, doc } = state
-  if (isNil(env.kv.dir(dir))) throw Error("dir doesn't exist:", dir)
+  if (isNil(env.kv.dir(dir))) throw Error("dir doesn't exist")
   if (!isNil(state.before)) state.data = merge(data, state, undefined, env)
   return arguments[0]
 }
@@ -75,7 +77,7 @@ function tob64(n) {
 function genDocID({ state, env }) {
   const { dir } = state
   let _dir = env.kv.dir(dir)
-  if (isNil(_dir)) throw Error("dir doesn't exist:", dir)
+  if (isNil(_dir)) throw Error("dir doesn't exist")
   let i = isNil(_dir.autoid) ? 0 : _dir.autoid + 1
   const docs = env.kv[dir] ?? {}
   while (env.kv.get(dir, tob64(i))) i++
@@ -85,12 +87,7 @@ function genDocID({ state, env }) {
   return arguments[0]
 }
 
-const parser = {
-  add: fn().map(genDocID).map(setData),
-  set: fn().map(setData),
-  update: fn().map(updateData),
-  upsert: fn().map(upsertData),
-}
+const parser = {}
 
 function checkMaxDocID(id, size) {
   const b64 =
@@ -109,35 +106,15 @@ function checkDocID(id, db) {
 
 function parse({ state, env }) {
   state.query.shift()
-  if (state.opcode === "batch") return arguments[0]
   const { kv } = env
   let data, dir, doc
   if (state.opcode === "init") {
-  } else if (state.opcode === "get" || state.opcode === "cget") {
-    ;[dir, doc] = state.query
-    state.dir = dir
-    if (typeof doc === "string") {
-      checkDocID(doc, kv)
-      state.doc = doc
-      state.range = false
-    } else state.range = true
-  } else if (includes(state.opcode, ["add", "addIndex", "removeIndex"])) {
-    ;[data, dir] = state.query
-    state.dir = dir
-    state.data = data
-  } else if (state.opcode === "del") {
-    ;[dir, doc] = state.query
-    checkDocID(doc, kv)
-    state.before = kv.get(dir, doc)
-    state.dir = dir
-    state.doc = doc
-  } else {
-    ;[data, dir, doc] = state.query
-    checkDocID(doc, kv)
-    state.before = kv.get(dir, doc)
-    state.dir = dir
-    state.doc = doc
-    state.data = data
+  } else if (state.opcode === "sql") {
+    try {
+      state.ast = _parser.astify(state.query[0], { database: "sqlite" })
+    } catch (e) {
+      throw Error("invalid sql")
+    }
   }
   env.kv_dir = {
     get: k => kv.get("__indexes__", `${dir}/${k}`),

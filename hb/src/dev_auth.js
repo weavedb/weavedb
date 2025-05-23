@@ -11,7 +11,7 @@ function onlyOwner({ state, env }) {
 }
 
 function default_auth({
-  state: { op, signer, ts, opcode, operand, dir, doc, query, before, after },
+  state: { op, signer, ts, opcode, operand, dir, doc, query, before, data },
   msg,
   env: {
     kv,
@@ -30,7 +30,7 @@ function default_auth({
     doc,
     query,
     before,
-    after,
+    after: data,
     allow: false,
   }
   let _dir = kv.dir(dir)
@@ -40,7 +40,7 @@ function default_auth({
         [
           "set:init",
           [
-            ["=$isOwner", ["equals", "$from", "$owner"]],
+            ["=$isOwner", ["equals", "$signer", "$owner"]],
             ["allowif()", "$isOwner"],
           ],
         ],

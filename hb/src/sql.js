@@ -1,14 +1,12 @@
-import sql_parser from "node-sql-parser"
 import { of, fn } from "./monade.js"
 import { last, isNil } from "ramda"
 
 import normalize from "./dev_normalize.js"
 import verify from "./dev_verify.js"
-import write from "./dev_write.js"
+import write from "./dev_write_sql.js"
+import parse from "./dev_parse_sql.js"
 
-const parser = new sql_parser.Parser()
-
-const wdb = (kv, __opt__ = {}) => {
+const wdb = (kv, __env__ = {}) => {
   const get = (dir, doc) => kv.get(`${dir}/${doc}`)
   const put = (dir, doc, data) => kv.put(`${dir}/${doc}`, data)
   const del = (dir, doc) => kv.del(`${dir}/${doc}`)
@@ -22,7 +20,7 @@ const wdb = (kv, __opt__ = {}) => {
   }
   const monad = of(db, {
     to: {
-      get: q => db => {
+      sql: q => db => {
         try {
           return kv.sql(q)
         } catch (e) {
@@ -32,11 +30,12 @@ const wdb = (kv, __opt__ = {}) => {
     },
     map: {
       write:
-        (msg, opt = {}) =>
+        (msg, env = {}) =>
         kv => {
           try {
-            of(normalize(msg, kv, opt))
+            of(normalize(msg, kv, { ...__env__, ...env }))
               .map(verify)
+              .map(parse)
               .map(write)
             return kv
           } catch (e) {
