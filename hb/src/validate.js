@@ -1,4 +1,6 @@
 import wdb from "./index.js"
+import { DatabaseSync } from "node:sqlite"
+import sql from "./sql.js"
 import { getMsgs } from "./server-utils.js"
 import { isEmpty, sortBy, prop, isNil } from "ramda"
 import { json, encode, Encoder, decode, Decoder } from "arjson"
@@ -146,13 +148,27 @@ const getKV = ({ jwk, pid, hb, dbpath }) => {
   })
 }
 
-const validate = async ({ pid, jwk, dbpath, hb, validate_pid }) => {
+const validate = async ({
+  pid,
+  jwk,
+  dbpath,
+  hb,
+  validate_pid,
+  type = "nosql",
+}) => {
   v_pid = validate_pid
   v_hb = hb
   let i = 0
   let from = 0
+  let db = null
   const wkv = getKV({ jwk, hb, dbpath, pid })
-  let db = wdb(wkv, { no_commit: true })
+  if (type === "sql") {
+    const _sql = new DatabaseSync(`${dbpath}.sql`)
+    db = sql(wkv, { no_commit: true, sql: _sql })
+  } else {
+    db = wdb(wkv, { no_commit: true })
+  }
+
   const height = io.get("__height__")
   if (height) {
     from = height.slot + 1
@@ -189,6 +205,7 @@ const validate = async ({ pid, jwk, dbpath, hb, validate_pid }) => {
       if (m.body.data) {
         isData = true
         for (const v of JSON.parse(m.body.data)) {
+          console.log(v)
           db.write(v, { no_commit: true })
           i++
         }

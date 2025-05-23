@@ -22,7 +22,7 @@ function frombits(bitArray) {
   return result
 }
 
-const decodeBuf = async buf => {
+const decodeBuf = async (buf, sql) => {
   if (!zkdb) {
     zkdb = new ZKDB({
       wasmRU: resolve(import.meta.dirname, "circom/rollup/index_js/index.wasm"),
@@ -43,6 +43,33 @@ const decodeBuf = async buf => {
     const arr8 = frombits(left.slice(start, start + v[2]))
     start += v[2]
     const data = decode(arr8, d)
+    if (sql) {
+      try {
+        if (/^_\//.test(v[0])) {
+          if (v[0].split("/")[1][0] !== "_") {
+            const table_name = v[0].split("/")[1]
+            console.log("add table:", table_name)
+            const create = `CREATE TABLE IF NOT EXISTS ${table_name} (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    age INTEGER NOT NULL
+  )`
+            sql.exec(create)
+          }
+        } else if (!/^_/.test(v[0])) {
+          const table_name = v[0].split("/")[0]
+          console.log("add data:", v[0], data)
+          const insert = `INSERT INTO ${table_name} (id, name, age)
+VALUES (${data.id}, '${data.name}', ${data.age})
+ON CONFLICT(id) DO UPDATE SET
+  name = excluded.name,
+  age = excluded.age;`
+          sql.exec(insert)
+        }
+      } catch (e) {
+        console.log(e)
+      }
+    }
     await io.put(v[0], data)
     const [dir, doc] = v[0].split("/")
     if (isNil(cols[dir])) {
@@ -60,7 +87,7 @@ const decodeBuf = async buf => {
   }
 }
 
-const zkjson = async ({ dbpath, hb, pid }) => {
+const zkjson = async ({ dbpath, hb, pid, sql }) => {
   let i = 0
   let db = null
   let from = 0
@@ -83,7 +110,7 @@ const zkjson = async ({ dbpath, hb, pid }) => {
         if (m.body.zkhash) {
           zkhash = m.body.zkhash
           const buf = Buffer.from(m.body.data, "base64")
-          await decodeBuf(buf)
+          await decodeBuf(buf, sql)
         }
       }
     }

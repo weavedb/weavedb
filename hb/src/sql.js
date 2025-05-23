@@ -22,7 +22,7 @@ const wdb = (kv, __env__ = {}) => {
     to: {
       sql: q => db => {
         try {
-          return kv.sql(q)
+          return __env__.sql.prepare(q).all()
         } catch (e) {
           throw e
         }

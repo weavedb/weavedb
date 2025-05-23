@@ -1,4 +1,5 @@
 import assert from "assert"
+import zkjson from "../src/zkjson.js"
 import { createPrivateKey } from "node:crypto"
 import { DatabaseSync } from "node:sqlite"
 import { afterEach, after, describe, it, before, beforeEach } from "node:test"
@@ -7,17 +8,25 @@ import { last, init, clone, map, pluck, prop, slice } from "ramda"
 import { connect, createSigner } from "@permaweb/aoconnect"
 import { AO } from "wao"
 import { open } from "lmdb"
+import validate from "../src/validate.js"
 import {
   httpbis,
   createSigner as createHttpSigner,
 } from "http-message-signatures"
-import { sign, wait, init_query } from "./test-utils.js"
-import kv from "../src/kv_sql.js"
+import {
+  genDir,
+  sign,
+  wait,
+  init_query,
+  deployHB,
+  set,
+  get,
+} from "./test-utils.js"
+import kv from "../src/kv.js"
 
-const getKV = _sql => {
-  const rand = Math.floor(Math.random() * 100000)
-  const io = open({ path: `.db/kv.${rand}` })
-  return kv(io, _sql, c => {})
+const getKV = ({ dbpath }) => {
+  const io = open({ path: dbpath })
+  return kv(io, c => {})
 }
 
 const create = `CREATE TABLE IF NOT EXISTS users (
@@ -30,13 +39,53 @@ const insert = `INSERT INTO users (name, age) VALUES ('Bob', 24)`
 const insert2 = `INSERT INTO users (name, age) VALUES ('Alice', 24)`
 const update = `UPDATE users SET age = 25 WHERE age = 24`
 const del = `DELETE from users WHERE age = 25`
+
+const setup = async ({ pid, request }) => {
+  let nonce = 0
+  const json0 = await set(request, ["init", init_query], ++nonce, pid)
+  const json = await set(request, ["sql", create], ++nonce, pid)
+  const json2 = await set(request, ["sql", insert], ++nonce, pid)
+  const json3 = await get(request, ["SELECT * from users"], pid)
+  assert.deepEqual(json3.res, [{ id: 1, name: "Bob", age: 24 }])
+  return { nonce }
+}
+
+const validateDB = async ({ hbeam, pid, hb, jwk }) => {
+  const { process: validate_pid } = await hbeam.spawn({
+    tags: { "execution-device": "weavedb@1.0", db: pid },
+  })
+  await wait(5000)
+  const dbpath2 = genDir()
+  await validate({ pid, hb, dbpath: dbpath2, jwk, validate_pid, type: "sql" })
+  await wait(5000)
+  const { slot } = await hbeam.message({
+    pid: validate_pid,
+    tags: { Action: "Query", Query: JSON.stringify(["SELECT * from users"]) },
+  })
+  const {
+    results: { data },
+  } = await hbeam.compute(validate_pid, slot)
+  assert.deepEqual(data, [{ id: 1, age: 24, name: "Bob" }])
+  return { validate_pid, dbpath2 }
+}
+
+const checkZK = async ({ pid, hb, sql }) => {
+  const zkp = await zkjson({ pid, hb, dbpath: genDir(), sql })
+  await wait(5000)
+  const proof = await zkp.proof({ dir: "users", doc: "1", path: "name" })
+  console.log(proof)
+  assert.equal(proof[proof.length - 2], "4")
+  console.log("success!")
+  await wait(3000)
+}
+
 describe("WeaveSQL", () => {
   it("should init", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "my-sql" })
     const rand = Math.floor(Math.random() * 100000)
     const _sql = new DatabaseSync(`.db/sql.${rand})}`)
-    const db = sql(getKV(_sql), { sql: _sql })
+    const db = sql(getKV({ dbpath: `.db/kv.${rand}` }), { sql: _sql })
       .write(await s.sign("init", init_query))
       .write(await s.sign("sql", create))
       .write(await s.sign("sql", insert))
@@ -47,5 +96,26 @@ describe("WeaveSQL", () => {
     assert.deepEqual(db.sql("SELECT * from users"), [
       { name: "Bob", age: 24, id: 3 },
     ])
+  })
+  it.only("should validate HB WAL", async () => {
+    const { node, pid, request, hbeam, jwk, hb } = await deployHB({
+      port: 10005,
+      type: "sql",
+    })
+    let { nonce } = await setup({ pid, request })
+    const { validate_pid, dbpath2 } = await validateDB({
+      hbeam,
+      pid,
+      hb,
+      jwk,
+    })
+    const rand2 = Math.floor(Math.random() * 100000)
+    const _sql2 = new DatabaseSync(`.db/sql.${rand2})}`)
+    await checkZK({ pid: validate_pid, hb, sql: _sql2 })
+    assert.deepEqual(_sql2.prepare("SELECT * from users").all(), [
+      { id: 1, name: "Bob", age: 24 },
+    ])
+    node.stop()
+    hbeam.stop()
   })
 })
