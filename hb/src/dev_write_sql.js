@@ -37,6 +37,50 @@ function initDB({
   kv.put("_config", "config", { max_doc_id: 168, max_dir_id: 8 })
   return arguments[0]
 }
+
+function ast2schema(ast) {
+  if (!ast || ast.type !== "create" || ast.keyword !== "table") {
+    throw new Error("Invalid CREATE TABLE AST")
+  }
+
+  const tableName = ast.table?.[0]?.table || "unknown_table"
+
+  const schema = {
+    title: tableName,
+    type: "object",
+    properties: {},
+    required: [],
+    additionalProperties: false,
+  }
+
+  for (const def of ast.create_definitions) {
+    if (def.resource !== "column") continue
+
+    const colName = def.column?.column
+    const sqliteType = def.definition?.dataType?.toUpperCase?.() || "TEXT"
+
+    // Map SQLite types to JSON Schema types
+    let jsType = "string"
+    if (sqliteType.includes("INT")) jsType = "integer"
+    else if (["REAL", "FLOAT", "DOUBLE"].some(t => sqliteType.includes(t)))
+      jsType = "number"
+    else if (sqliteType === "BOOLEAN") jsType = "boolean"
+    else if (sqliteType === "BLOB") jsType = "string" // format: binary (optional)
+
+    schema.properties[colName] = { type: jsType }
+
+    const isNotNull = def.nullable?.type === "not null"
+    const isPrimaryKey = def.primary_key === "primary key"
+
+    if (isNotNull || isPrimaryKey) {
+      if (!schema.required.includes(colName)) {
+        schema.required.push(colName)
+      }
+    }
+  }
+
+  return schema
+}
 function sync({
   state: { ts, nonce, op, query, ast },
   msg,
@@ -52,14 +96,17 @@ function sync({
         if (ast.type === "create" && ast.keyword === "table") {
           let primary = null
           let primary_type = null
+          let auto_inc = false
           for (const v of ast.create_definitions) {
             if (v.primary_key === "primary key") {
               primary = v.column.column
               primary_type = v.definition.dataType.toLowerCase()
+              auto_inc = v.auto_increment === "autoincrement"
             }
           }
           sql.exec(query[0])
           const table_name = ast.table[0].table
+          const schema = ast2schema(ast)
           of({
             state: {
               nonce,
@@ -71,7 +118,8 @@ function sync({
                 {
                   primary,
                   primary_type,
-                  schema: { type: "object" },
+                  auto_inc,
+                  schema,
                   auth: [["set,add,update,upsert,del", [["allow()"]]]],
                 },
                 "_",

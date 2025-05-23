@@ -21,7 +21,84 @@ function frombits(bitArray) {
   }
   return result
 }
+function schema2sql(schema, primary = "id", auto_inc = false) {
+  if (
+    !schema ||
+    schema.type !== "object" ||
+    !schema.title ||
+    !schema.properties
+  ) {
+    throw new Error("Invalid JSON Schema")
+  }
 
+  const tableName = schema.title
+  const props = schema.properties
+  const required = new Set(schema.required || [])
+
+  const columns = Object.entries(props).map(([name, prop]) => {
+    let sqlType = "TEXT" // default
+
+    switch (prop.type) {
+      case "integer":
+        sqlType = "INTEGER"
+        break
+      case "number":
+        sqlType = "REAL"
+        break
+      case "boolean":
+        sqlType = "BOOLEAN"
+        break
+      case "string":
+        sqlType = "TEXT"
+        break
+    }
+
+    const isPrimary = name === primary
+    const notNull = required.has(name) || isPrimary ? "NOT NULL" : ""
+    const primaryKey = isPrimary ? "PRIMARY KEY" : ""
+    const auto = isPrimary && auto_inc ? "AUTOINCREMENT" : ""
+
+    return `  ${name} ${sqlType} ${notNull} ${primaryKey} ${auto}`.trim()
+  })
+
+  const sql = `CREATE TABLE IF NOT EXISTS ${tableName} (\n${columns.join(",\n")}\n);`
+  return sql
+}
+
+function toInsert(schema, data, primary = "id") {
+  if (
+    !schema ||
+    schema.type !== "object" ||
+    !schema.title ||
+    !schema.properties
+  ) {
+    throw new Error("Invalid JSON Schema")
+  }
+
+  const table = schema.title
+  const keys = Object.keys(schema.properties)
+
+  const columns = keys.join(", ")
+  const values = keys
+    .map(k => {
+      const v = data[k]
+      if (typeof v === "string") return `'${v.replace(/'/g, "''")}'` // escape single quotes
+      if (v === null || v === undefined) return "NULL"
+      return v
+    })
+    .join(", ")
+
+  const update = keys
+    .filter(k => k !== primary)
+    .map(k => `${k} = excluded.${k}`)
+    .join(", ")
+
+  const sql = `INSERT INTO ${table} (${columns})\nVALUES (${values})\nON CONFLICT(${primary}) DO UPDATE SET\n  ${update};`
+
+  return sql
+}
+
+let schemas = {}
 const decodeBuf = async (buf, sql) => {
   if (!zkdb) {
     zkdb = new ZKDB({
@@ -49,21 +126,14 @@ const decodeBuf = async (buf, sql) => {
           if (v[0].split("/")[1][0] !== "_") {
             const table_name = v[0].split("/")[1]
             console.log("add table:", table_name)
-            const create = `CREATE TABLE IF NOT EXISTS ${table_name} (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    age INTEGER NOT NULL
-  )`
-            sql.exec(create)
+            schemas[table_name] = { primary: data.primary, schema: data.schema }
+            sql.exec(schema2sql(data.schema, data.primary, data.auto_inc))
           }
         } else if (!/^_/.test(v[0])) {
           const table_name = v[0].split("/")[0]
           console.log("add data:", v[0], data)
-          const insert = `INSERT INTO ${table_name} (id, name, age)
-VALUES (${data.id}, '${data.name}', ${data.age})
-ON CONFLICT(id) DO UPDATE SET
-  name = excluded.name,
-  age = excluded.age;`
+          const schema = schemas[table_name]
+          const insert = toInsert(schema.schema, data, schema.primary)
           sql.exec(insert)
         }
       } catch (e) {
