@@ -1,6 +1,5 @@
 import { clone } from "ramda"
-
-const kv = (io, fn) => {
+const kv_base = (io, fn, sync, methods = {}) => {
   let s = {}
   let l = {}
   let i = 0
@@ -19,25 +18,21 @@ const kv = (io, fn) => {
       let opt = null
       let data = []
       let old = {}
-      try {
-        await io.transaction(() => {
-          while (c.length > 0) {
-            ;({ i, cl, opt } = c.shift())
-            if (!from) from = i
-            to = i
-            for (const k in cl ?? {}) {
-              if (opt.delta) old[k] = io.get(k) ?? null
-              if (cl[k] === null) io.remove(k)
-              else io.put(k, cl[k])
-              count++
-            }
-            data.push({ i, opt, cl })
-            i++
+      await io.transaction(() => {
+        while (c.length > 0) {
+          ;({ i, cl, opt } = c.shift())
+          if (!from) from = i
+          to = i
+          for (const k in cl ?? {}) {
+            if (opt.delta) old[k] = io.get(k) ?? null
+            if (cl[k] === null) io.remove(k)
+            else io.put(k, cl[k])
+            count++
           }
-        })
-      } catch (e) {
-        console.log(e)
-      }
+          data.push({ i, opt, cl })
+          i++
+        }
+      })
       fn?.({ from, to, count, len: c.length, data, old })
       await commit()
     }
@@ -46,6 +41,7 @@ const kv = (io, fn) => {
   return {
     reset,
     commit: async (opt = {}) => {
+      if (sync) sync(opt).then(() => {})
       const cl = clone(l)
       c.push({ i, cl, opt })
       for (const k in cl ?? {}) s[k] = cl[k]
@@ -57,7 +53,8 @@ const kv = (io, fn) => {
     del: k => put(k, null),
     get,
     dump: () => ({ l, s }),
+    ...methods,
   }
 }
 
-export default kv
+export default kv_base
