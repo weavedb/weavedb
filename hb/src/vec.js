@@ -4,7 +4,7 @@ import { isNil } from "ramda"
 import { last, head, init } from "ramda"
 import normalize from "./dev_normalize.js"
 import verify from "./dev_verify.js"
-import write from "./dev_write.js"
+import write from "./dev_write_vec.js"
 
 const wdb = (kv, __opt__ = {}) => {
   const get = (dir, doc) => kv.get(`${dir}/${doc}`)

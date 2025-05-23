@@ -189,7 +189,7 @@ const ac_funcs = {
     let val = null
     let isBreak = false
     for (const k3 in v) {
-      set(`new.${k3}`, fpjson(v[k3], obj), obj)
+      set(`after.${k3}`, fpjson(v[k3], obj), obj)
     }
     return [val, isBreak]
   },

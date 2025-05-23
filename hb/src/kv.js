@@ -7,6 +7,7 @@ const kv_base = (io, fn, sync, methods = {}) => {
   let on = false
   const get = k => l[k] ?? s[k] ?? io.get(k) ?? null
   const put = (k, v) => (l[k] = v)
+  const del = k => put(k, null)
   const reset = () => {
     l = {}
   }
@@ -41,7 +42,7 @@ const kv_base = (io, fn, sync, methods = {}) => {
   return {
     reset,
     commit: async (opt = {}) => {
-      if (sync) sync(opt).then(() => {})
+      if (sync) sync(opt, { put, get, del }).then(() => {})
       const cl = clone(l)
       c.push({ i, cl, opt })
       for (const k in cl ?? {}) s[k] = cl[k]
@@ -50,7 +51,7 @@ const kv_base = (io, fn, sync, methods = {}) => {
       return { i: i++, data: cl }
     },
     put,
-    del: k => put(k, null),
+    del,
     get,
     dump: () => ({ l, s }),
     ...methods,
