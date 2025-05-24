@@ -15,6 +15,7 @@ const beth = { name: "Beth" }
 const john = { name: "John" }
 import server from "../src/server.js"
 import server_sql from "../src/server_sql.js"
+import server_vec from "../src/server_vec.js"
 let devices = [
   "ans104",
   "compute",
@@ -252,7 +253,8 @@ const deployHB = async ({ port, sport, type = "nosql" }) => {
   const jwk = hbeam.jwk
   console.log("pid", pid)
   const dbpath = genDir()
-  const _server = type === "nosql" ? server : server_sql
+  const _server =
+    type === "nosql" ? server : type === "vec" ? server_vec : server_sql
   const node = await _server({
     dbpath,
     jwk,

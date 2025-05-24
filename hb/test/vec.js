@@ -8,7 +8,16 @@ import vec from "../src/vec.js"
 import { last, init, clone, map, pluck, prop, slice } from "ramda"
 import { connect, createSigner } from "@permaweb/aoconnect"
 import { AO } from "wao"
-import { init_query, wait, sign } from "./test-utils.js"
+import validate from "../src/validate.js"
+import {
+  set,
+  get,
+  init_query,
+  wait,
+  sign,
+  deployHB,
+  genDir,
+} from "./test-utils.js"
 import { open } from "lmdb"
 import { Utf8 } from "apache-arrow"
 import {
@@ -23,6 +32,7 @@ const getKV = async _vec => {
   const io = open({ path: `.db/kv.${rand}` })
   return kv(io, _vec, c => {})
 }
+const ibm = "IBM's Watson won Jeopardy! in 2011."
 const facts = [
   "The capital of France is Paris.",
   "The Great Wall of China is one of the Seven Wonders of the World.",
@@ -44,7 +54,7 @@ const facts = [
   "Basketball is a sport played with a ball and a hoop.",
   "The first computer virus was created in 1983.",
   "Deep learning is a subset of machine learning.",
-  "IBM's Watson won Jeopardy! in 2011.",
+  ibm,
   "The first computer programmer was Ada Lovelace.",
   "The first chatbot was ELIZA, created in the 1960s.",
 ].map(text => ({ text }))
@@ -52,6 +62,44 @@ const facts2 = [
   { text: "Albert Einstein was a theoretical physicist." },
   { text: "Artificial neural networks are inspired by the human brain." },
 ]
+
+const setup = async ({ pid, request }) => {
+  let nonce = 0
+  const json0 = await set(request, ["init", init_query], ++nonce, pid)
+  const json = await set(
+    request,
+    ["createTable", "vectors", facts],
+    ++nonce,
+    pid,
+  )
+  const json2 = await set(request, ["add", "vectors", facts2], ++nonce, pid)
+  const json3 = await get(request, ["search", "vectors", "who won?", 1], pid)
+  assert.deepEqual(json3.res[0].text, ibm)
+  return { nonce }
+}
+
+const validateDB = async ({ hbeam, pid, hb, jwk }) => {
+  const { process: validate_pid } = await hbeam.spawn({
+    tags: { "execution-device": "weavedb@1.0", db: pid },
+  })
+  await wait(5000)
+  const dbpath2 = genDir()
+  await validate({ pid, hb, dbpath: dbpath2, jwk, validate_pid, type: "vec" })
+  await wait(5000)
+  const { slot } = await hbeam.message({
+    pid: validate_pid,
+    tags: {
+      Action: "Query",
+      Query: JSON.stringify(["search", "vectors", "who won?", 1]),
+    },
+  })
+  const {
+    results: { data },
+  } = await hbeam.compute(validate_pid, slot)
+  assert.deepEqual(data[0].text, ibm)
+  return { validate_pid, dbpath2 }
+}
+
 describe("WeaveVec", () => {
   it("should test LanceDB features", async () => {
     const rand = Math.floor(Math.random() * 100000)
@@ -76,10 +124,10 @@ describe("WeaveVec", () => {
       await q("what is bell used for?"),
       "Basketball is a sport played with a ball and a hoop.",
     )
-    assert.equal(await q("who won?"), "IBM's Watson won Jeopardy! in 2011.")
+    assert.equal(await q("who won?"), ibm)
   })
 
-  it.only("should init", async () => {
+  it("should init", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "myvec" })
     const rand = Math.floor(Math.random() * 100000)
@@ -88,11 +136,21 @@ describe("WeaveVec", () => {
       .write(await s.sign("init", init_query))
       .pwrite(await s.sign("createTable", "vectors", facts))
       .pwrite(await s.sign("add", "vectors", facts2))
-    assert.equal(
-      (await db.search("vectors", "who won?", 1))[0].text,
-      "IBM's Watson won Jeopardy! in 2011.",
-    )
-    //console.log(await db.vectorSearch("vectors", [0.1, 0.3], 2))
-    //console.log(await db.query("vectors", "price <= 10"))
+    assert.equal((await db.search("vectors", "who won?", 1))[0].text, ibm)
+  })
+  it.only("should validate HB WAL", async () => {
+    const { node, pid, request, hbeam, jwk, hb } = await deployHB({
+      port: 10005,
+      type: "vec",
+    })
+    let { nonce } = await setup({ pid, request })
+    const { validate_pid, dbpath2 } = await validateDB({
+      hbeam,
+      pid,
+      hb,
+      jwk,
+    })
+    node.stop()
+    hbeam.stop()
   })
 })
