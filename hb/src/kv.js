@@ -21,9 +21,10 @@ const kv_base = (io, fn, sync, methods = {}) => {
       let data = []
       let old = {}
       let cb = null
+      let state = null
       await io.transaction(() => {
         while (c.length > 0) {
-          ;({ i, cl, opt, cb } = c.shift())
+          ;({ i, cl, opt, cb, state } = c.shift())
           if (!from) from = i
           to = i
           for (const k in cl ?? {}) {
@@ -44,10 +45,10 @@ const kv_base = (io, fn, sync, methods = {}) => {
   }
   return {
     reset,
-    commit: async (opt = {}, cb) => {
-      if (sync) await sync(opt, { put, get, del }).then(() => {})
+    commit: async (opt = {}, cb, state) => {
+      if (sync) await sync(opt, { put, get, del }, state).then(() => {})
       const cl = clone(l)
-      c.push({ i, cl, opt, cb })
+      c.push({ i, cl, opt, cb, state })
       for (const k in cl ?? {}) s[k] = cl[k]
       reset()
       if (!on) commit().then(() => {})
