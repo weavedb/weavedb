@@ -94,7 +94,7 @@ function tob64(n) {
   return result
 }
 
-function toLower({ msg }) {
+function toLower({ msg, env }) {
   if (!msg) return arguments[0]
   let lowers = { signature: null, "signature-input": null }
   for (const k in msg.headers) {
