@@ -13,8 +13,8 @@
     "test-ru-only": "node --experimental-wasm-memory64 --test-only test/rollup.js",
     "test-sql": "node  --experimental-sqlite --experimental-wasm-memory64 --test test/sql.js",
     "test-sql-only": "node --experimental-sqlite --experimental-wasm-memory64 --test-only test/sql.js",
-    "test-vec": "node --experimental-wasm-memory64 --test test/vec.js",
-    "test-vec-only": "node --experimental-wasm-memory64 --test-only test/vec.js",
+    "test-vec": "node --experimental-sqlite --experimental-wasm-memory64 --test test/vec.js",
+    "test-vec-only": "node --experimental-sqlite --experimental-wasm-memory64 --test-only test/vec.js",
     "compile": "cd ../HyperBEAM && reset && CMAKE_POLICY_VERSION_MINIMUM=3.5 CC=gcc-12 CXX=g++-12 rebar3 compile",
     "shell": "cd ../HyperBEAM && reset && CMAKE_POLICY_VERSION_MINIMUM=3.5 CC=gcc-12 CXX=g++-12 rebar3 shell",
     "eunit": "cd ../HyperBEAM && reset && HB_DEBUG=1 CMAKE_POLICY_VERSION_MINIMUM=3.5 CC=gcc-12 CXX=g++-12 rebar3 eunit"
@@ -23,6 +23,7 @@
     "node": ">=22.5.0 <23"
   },
   "dependencies": {
+    "@huggingface/transformers": "^3.5.1",
     "@lancedb/lancedb": "^0.19.0",
     "@permaweb/aoconnect": "^0.0.83",
     "apache-arrow": "^20.0.0",

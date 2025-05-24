@@ -1,42 +1,8 @@
 import { of, fn } from "./monade.js"
-import { parseOp, getInfo } from "./dev_common.js"
+import { initDB, parseOp, getInfo } from "./dev_common.js"
 import parse from "./dev_parse.js"
 import auth from "./dev_auth.js"
 import write from "./dev_write.js"
-
-function initDB({
-  state: { query },
-  msg,
-  env: {
-    kv,
-    info: { id, owner },
-  },
-}) {
-  if (kv.dir("_")) throw Error("already initialized")
-  kv.put("_", "_", { ...query[0], index: 0 })
-  kv.put("_", "_config", {
-    index: 1,
-    schema: { type: "object", additionalProperties: false },
-    auth: [],
-  })
-  kv.put("_", "__indexes__", {
-    index: 2,
-    schema: { type: "object" },
-    auth: [],
-  })
-  kv.put("_", "__accounts__", {
-    index: 3,
-    schema: { type: "object" },
-    auth: [],
-  })
-  kv.put("_config", "info", {
-    id,
-    owner,
-    last_dir_id: 3,
-  })
-  kv.put("_config", "config", { max_doc_id: 168, max_dir_id: 8 })
-  return arguments[0]
-}
 
 function ast2schema(ast) {
   if (!ast || ast.type !== "create" || ast.keyword !== "table") {
