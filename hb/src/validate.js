@@ -1,6 +1,7 @@
 import wdb from "./index.js"
 import { DatabaseSync } from "node:sqlite"
-import sql from "./sql.js"
+import * as lancedb from "@lancedb/lancedb"
+import vec from "./vec.js"
 import { getMsgs } from "./server-utils.js"
 import { isEmpty, sortBy, prop, isNil } from "ramda"
 import { json, encode, Encoder, decode, Decoder } from "arjson"
@@ -162,7 +163,10 @@ const validate = async ({
   let from = 0
   let db = null
   const wkv = getKV({ jwk, hb, dbpath, pid })
-  if (type === "sql") {
+  if (type === "vec") {
+    const _vec = await lancedb.connect(`${dbpath}-${pid}.vec`)
+    db = await vec(wkv, { no_commit: true, sql: _vec })
+  } else if (type === "sql") {
     const _sql = new DatabaseSync(`${dbpath}.sql`)
     db = sql(wkv, { no_commit: true, sql: _sql })
   } else {
@@ -206,7 +210,8 @@ const validate = async ({
         isData = true
         for (const v of JSON.parse(m.body.data)) {
           console.log(v)
-          db.write(v, { no_commit: true })
+          if (type === "vec") await db.pwrite(v, { no_commit: true })
+          else db.write(v, { no_commit: true })
           i++
         }
       }

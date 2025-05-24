@@ -70,7 +70,6 @@ const wdb = (kv, __env__ = {}) => {
         (msg, env = {}) =>
         kv =>
           new Promise(async (cb, rej) => {
-            await kv
             try {
               _write(msg, kv, {
                 ...__env__,
