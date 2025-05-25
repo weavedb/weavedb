@@ -8,6 +8,9 @@ mod hb_client;
 mod benchmark;
 mod bundler;
 mod tester;
+#[macro_use]
+mod monade;
+mod monade_test;
 use clap::Parser;
 
 
