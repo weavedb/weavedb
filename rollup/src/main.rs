@@ -11,6 +11,7 @@ mod tester;
 #[macro_use]
 mod monade;
 mod monade_test;
+mod db;
 use clap::Parser;
 
 
