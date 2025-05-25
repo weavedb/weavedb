@@ -1,0 +1,10 @@
+name = "weavedb"
+version = "0.1.0"
+defaultTargets = ["weavedb"]
+
+[[lean_lib]]
+name = "Weavedb"
+
+[[lean_exe]]
+name = "weavedb"
+root = "Main"
