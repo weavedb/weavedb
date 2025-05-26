@@ -103,4 +103,21 @@ const pof = (ctx, fns = {}, copy = false) => {
   return copy ? m : addMethods(fns, m)
 }
 
-export { pof, of, fn, pfn }
+const opt = monad => {
+  try {
+    monad.val()
+    return monad
+  } catch (error) {
+    return of(null)
+  }
+}
+
+const popt = async pmonad => {
+  try {
+    await pmonad.val()
+    return pmonad
+  } catch (error) {
+    return pof(null)
+  }
+}
+export { pof, of, fn, pfn, opt, popt }

@@ -6,7 +6,7 @@ function parseOp(ctx) {
   return arguments[0]
 }
 
-function initDB({ state: { query, signer }, msg, env: { kv, id } }) {
+function initDB({ state: { query, signer, id: _id }, msg, env: { kv, id } }) {
   if (id) throw Error("already initialized")
   kv.put("_", "_", { ...query[0], index: 0 })
   kv.put("_", "_config", {
@@ -25,7 +25,7 @@ function initDB({ state: { query, signer }, msg, env: { kv, id } }) {
     auth: [],
   })
   kv.put("_config", "info", {
-    id,
+    id: _id,
     owner: signer,
     last_dir_id: 3,
   })
