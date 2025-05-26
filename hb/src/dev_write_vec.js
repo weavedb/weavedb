@@ -1,18 +1,10 @@
 import { of, fn } from "./monade.js"
-import { parseOp, getInfo, initDB } from "./dev_common.js"
+import { parseOp, initDB } from "./dev_common.js"
 import parse from "./dev_parse.js"
 import auth from "./dev_auth.js"
 import write from "./dev_write.js"
 
-function syncTable({
-  state,
-  msg,
-  env: {
-    sql,
-    kv,
-    info: { id, owner },
-  },
-}) {
+function syncTable({ state, msg, env: { kv, id, owner } }) {
   try {
     const { ts, nonce, op, query, ast } = state
     const table_name = query[0]
@@ -34,10 +26,9 @@ function syncTable({
         ],
       },
       msg: null,
-      env: { kv, no_commit: true },
+      env: { kv, no_commit: true, id, owner },
     })
       .map(parseOp)
-      .map(getInfo)
       .map(parse)
       .map(auth)
       .map(write)
@@ -50,11 +41,7 @@ function syncTable({
 function syncAdd({
   state: { ts, nonce, op, query, ast },
   msg,
-  env: {
-    sql,
-    kv,
-    info: { id, owner },
-  },
+  env: { kv, id, owner },
 }) {
   try {
     for (const v of query[1] ?? []) {
@@ -68,10 +55,9 @@ function syncAdd({
       of({
         state: _state,
         msg: null,
-        env: { kv, no_commit: true },
+        env: { kv, no_commit: true, id, owner },
       })
         .map(parseOp)
-        .map(getInfo)
         .map(parse)
         .map(auth)
         .map(write)

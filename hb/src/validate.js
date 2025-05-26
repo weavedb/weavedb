@@ -1,6 +1,7 @@
 import wdb from "./index.js"
 import { DatabaseSync } from "node:sqlite"
 import * as lancedb from "@lancedb/lancedb"
+import sql from "./sql.js"
 import vec from "./vec.js"
 import { getMsgs } from "./server-utils.js"
 import { isEmpty, sortBy, prop, isNil } from "ramda"
@@ -209,7 +210,6 @@ const validate = async ({
       if (m.body.data) {
         isData = true
         for (const v of JSON.parse(m.body.data)) {
-          console.log(v)
           if (type === "vec") await db.pwrite(v, { no_commit: true })
           else db.write(v, { no_commit: true })
           i++

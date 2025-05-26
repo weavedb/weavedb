@@ -80,7 +80,7 @@ const checkZK = async ({ pid, hb, sql }) => {
 }
 
 describe("WeaveSQL", () => {
-  it("should init", async () => {
+  it.only("should init", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "my-sql" })
     const rand = Math.floor(Math.random() * 100000)
@@ -97,7 +97,7 @@ describe("WeaveSQL", () => {
       { name: "Bob", age: 24, id: 3 },
     ])
   })
-  it.only("should validate HB WAL", async () => {
+  it("should validate HB WAL", async () => {
     const { node, pid, request, hbeam, jwk, hb } = await deployHB({
       port: 10005,
       type: "sql",

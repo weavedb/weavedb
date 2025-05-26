@@ -95,6 +95,7 @@ describe("WeaveDB Core", () => {
     const db = wdb(getKV()).write(await s.sign("init", init_query))
     assert.equal(db.get("_", "_").index, 0)
   })
+
   it("should add dirs", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
@@ -102,6 +103,7 @@ describe("WeaveDB Core", () => {
       .write(await s.sign("init", init_query))
       .write(await s.sign(...users_query))
   })
+
   it("should update with _$ operators", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
@@ -551,7 +553,7 @@ const validateDB = async ({ hbeam, pid, hb, jwk }) => {
 }
 
 describe("Validator", () => {
-  it("should validate HB WAL", async () => {
+  it.only("should validate HB WAL", async () => {
     const { node, pid, request, hbeam, jwk, hb } = await deployHB({
       port: 10005,
     })

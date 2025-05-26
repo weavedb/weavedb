@@ -1,5 +1,5 @@
 import { of, fn } from "./monade.js"
-import { initDB, parseOp, getInfo } from "./dev_common.js"
+import { initDB, parseOp } from "./dev_common.js"
 import parse from "./dev_parse.js"
 import auth from "./dev_auth.js"
 import write from "./dev_write.js"
@@ -50,11 +50,7 @@ function ast2schema(ast) {
 function sync({
   state: { ts, nonce, op, query, ast },
   msg,
-  env: {
-    sql,
-    kv,
-    info: { id, owner },
-  },
+  env: { sql, kv, id, owner },
 }) {
   try {
     if (op === "sql") {
@@ -93,10 +89,9 @@ function sync({
               ],
             },
             msg: null,
-            env: { kv, no_commit: true },
+            env: { kv, no_commit: true, id, owner },
           })
             .map(parseOp)
-            .map(getInfo)
             .map(parse)
             .map(auth)
             .map(write)
@@ -121,10 +116,9 @@ function sync({
                 query: _query,
               },
               msg: null,
-              env: { kv, no_commit: true },
+              env: { kv, no_commit: true, id, owner },
             })
               .map(parseOp)
-              .map(getInfo)
               .map(parse)
               .map(auth)
               .map(write)

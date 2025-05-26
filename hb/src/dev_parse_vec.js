@@ -22,8 +22,8 @@ function merge(data, state, old, env) {
         let vars = {
           signer: state.signer,
           ts: state.ts,
-          id: env.info.id,
-          owner: env.info.owner,
+          id: env.id,
+          owner: env.owner,
         }
         if (typeof data[k]._$ === "string") {
           if (data[k]._$ === "del") continue
