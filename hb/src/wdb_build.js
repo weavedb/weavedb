@@ -5,9 +5,9 @@ const store = _kv => {
   const put = (dir, doc, data) => _kv.put(`${dir}/${doc}`, data)
   const del = (dir, doc) => _kv.del(`${dir}/${doc}`)
   const dir = id => get("_", id)
-  const commit = opt => _kv.commit(opt)
-  const reset = () => _kv.reset()
-  return { get, put, del, dir, commit, reset }
+  const commit = (...params) => _kv.commit(...params)
+  const reset = (...params) => _kv.reset(...params)
+  return { ..._kv, get, put, del, dir, commit, reset }
 }
 
 const init = ({ kv, msg, opt }) => {
@@ -77,6 +77,28 @@ const build = ({
           kv.reset()
           throw e
         }
+      }
+      if (async) {
+        _map.pwrite = (msg, _opt) => kv =>
+          new Promise(async (cb, rej) => {
+            try {
+              of({
+                kv,
+                msg,
+                opt: {
+                  ...opt,
+                  ..._opt,
+                  cb: () => cb(kv),
+                },
+              })
+                .map(init)
+                .chain(_write)
+            } catch (e) {
+              console.log(e)
+              kv.reset()
+              rej(e)
+            }
+          })
       }
     }
     for (const k in __write__) {
