@@ -1,6 +1,6 @@
 import { pof, of, fn } from "./monade.js"
 
-const store = _kv => {
+const _store = _kv => {
   const get = (dir, doc) => _kv.get(`${dir}/${doc}`)
   const put = (dir, doc, data) => _kv.put(`${dir}/${doc}`, data)
   const del = (dir, doc) => _kv.del(`${dir}/${doc}`)
@@ -9,13 +9,11 @@ const store = _kv => {
   return { ..._kv, get, put, del, commit, reset }
 }
 
-const init = ({ kv, msg, opt }) => {
-  return {
-    state: {},
-    msg,
-    env: { ...opt, kv, ...kv.get("_config", "info") },
-  }
-}
+const _init = ({ kv, msg, opt }) => ({
+  state: {},
+  msg,
+  env: { ...opt, kv, ...kv.get("_config", "info") },
+})
 
 const build = ({
   async = false,
@@ -23,6 +21,8 @@ const build = ({
   read,
   __write__ = {},
   __read__ = {},
+  init = _init,
+  store = _store,
 }) => {
   return (kv, opt = {}) => {
     let _to = {}
