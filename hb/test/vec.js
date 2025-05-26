@@ -138,7 +138,7 @@ describe("WeaveVec", () => {
       .pwrite(await s.sign("add", "vectors", facts2))
     assert.equal((await db.search("vectors", "who won?", 1))[0].text, ibm)
   })
-  it.only("should validate HB WAL", async () => {
+  it("should validate HB WAL", async () => {
     const { node, pid, request, hbeam, jwk, hb } = await deployHB({
       port: 10005,
       type: "vec",

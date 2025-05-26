@@ -82,7 +82,7 @@ const writer = {
 
 function write({ state, msg, env: { no_commit, kv } }) {
   if (writer[state.opcode]) of(arguments[0]).chain(writer[state.opcode])
-  if (no_commit !== true) kv.commit(msg)
+  if (no_commit !== true) kv.commit(msg, null, state)
   return arguments[0]
 }
 
