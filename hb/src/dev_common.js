@@ -1,29 +1,13 @@
-function parseOp({ state }) {
+function parseOp(ctx) {
+  const { state } = ctx
   state.op = state.query[0]
   state.opcode = state.op.split(":")[0]
   state.operand = state.op.split(":")[1] ?? null
   return arguments[0]
 }
 
-function getInfo({ state, env }) {
-  env.info =
-    state.opcode === "init"
-      ? { owner: state.signer, id: state.id }
-      : env.kv.get("_config", "info")
-  if (env.info === null) throw Error("database not initialized")
-  if (env.info.id !== state.id) throw Error("the wrong id")
-  return arguments[0]
-}
-
-function initDB({
-  state: { query },
-  msg,
-  env: {
-    kv,
-    info: { id, owner },
-  },
-}) {
-  if (kv.dir("_")) throw Error("already initialized")
+function initDB({ state: { query, signer }, msg, env: { kv, id } }) {
+  if (id) throw Error("already initialized")
   kv.put("_", "_", { ...query[0], index: 0 })
   kv.put("_", "_config", {
     index: 1,
@@ -42,11 +26,11 @@ function initDB({
   })
   kv.put("_config", "info", {
     id,
-    owner,
+    owner: signer,
     last_dir_id: 3,
   })
   kv.put("_config", "config", { max_doc_id: 168, max_dir_id: 8 })
   return arguments[0]
 }
 
-export { parseOp, getInfo, initDB }
+export { parseOp, initDB }

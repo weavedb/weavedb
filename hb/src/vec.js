@@ -19,7 +19,12 @@ const wdb = (kv, __env__ = {}) => {
     reset: (opt = {}) => kv.reset(opt),
   }
   const _write = (msg, kv, env) => {
-    of(normalize(msg, kv, env))
+    of({
+      state: {},
+      msg,
+      env: { kv, ...__env__, ...env, ...kv.get("_config", "info") },
+    })
+      .chain(normalize)
       .map(verify)
       .map(parse)
       .map(write)
@@ -62,6 +67,7 @@ const wdb = (kv, __env__ = {}) => {
             _write(msg, kv, { ...__env__, ...env })
             return kv
           } catch (e) {
+            console.log(e)
             kv.reset(env.cb)
             throw e
           }

@@ -6,24 +6,21 @@ function anyone() {
 }
 
 function onlyOwner({ state, env }) {
-  if (state.signer !== env.info.owner) throw Error("only owner can execute")
+  if (state.signer !== env.owner) throw Error("only owner can execute")
   return arguments[0]
 }
 
 function default_auth({
   state: { op, signer, ts, opcode, operand, dir, doc, query, before, data },
   msg,
-  env: {
-    kv,
-    info: { id, owner },
-  },
+  env: { kv, id, owner },
 }) {
   let vars = {
     op,
     opcode,
     operand,
-    id,
-    owner,
+    id: id,
+    owner: owner,
     signer,
     ts,
     dir,
@@ -99,7 +96,7 @@ const authenticator = {
   removeIndex: onlyOwner,
 }
 
-function auth({ state }) {
+function auth({ state, env }) {
   const func = authenticator[state.opcode] ?? authenticator.default
   func(arguments[0])
   return arguments[0]
