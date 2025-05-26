@@ -5,7 +5,7 @@ import { get } from "../src/planner.js"
 
 function getDocs({ state, env }) {
   const { dir, doc } = state
-  const _dir = env.kv.dir(dir)
+  const _dir = env.kv.get("_", dir)
   if (isNil(_dir)) throw Error(`dir doesn't exist: ${dir}`)
   const parsed = parseQuery(state.query)
   const res = get(parsed, env.kv_dir)

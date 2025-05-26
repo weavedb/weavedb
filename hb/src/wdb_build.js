@@ -4,10 +4,9 @@ const store = _kv => {
   const get = (dir, doc) => _kv.get(`${dir}/${doc}`)
   const put = (dir, doc, data) => _kv.put(`${dir}/${doc}`, data)
   const del = (dir, doc) => _kv.del(`${dir}/${doc}`)
-  const dir = id => get("_", id)
   const commit = (...params) => _kv.commit(...params)
   const reset = (...params) => _kv.reset(...params)
-  return { ..._kv, get, put, del, dir, commit, reset }
+  return { ..._kv, get, put, del, commit, reset }
 }
 
 const init = ({ kv, msg, opt }) => {

@@ -25,14 +25,14 @@ function removeIndex({ state, env }) {
 
 function putData({ state, env: { kv, kv_dir } }) {
   const { data, dir, doc } = state
-  if (isNil(kv.dir(dir))) throw Error("dir doesn't exist")
+  if (isNil(kv.get("_", dir))) throw Error("dir doesn't exist")
   put(data, doc, [dir.toString()], kv_dir, true)
   return arguments[0]
 }
 
 function delData({ state, env }) {
   const { dir, doc } = state
-  if (isNil(env.kv.dir(dir))) throw Error("dir doesn't exist")
+  if (isNil(env.kv.get("_", dir))) throw Error("dir doesn't exist")
   del(doc, [dir], env.kv_dir)
   return arguments[0]
 }
@@ -40,7 +40,7 @@ function delData({ state, env }) {
 function validateSchema({ state, env: { kv } }) {
   let valid = false
   const { data, dir } = state
-  let _dir = kv.dir(dir)
+  let _dir = kv.get("_", dir)
   try {
     valid = validate(data, _dir.schema).valid
   } catch (e) {}

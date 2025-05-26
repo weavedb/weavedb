@@ -30,7 +30,7 @@ function default_auth({
     after: data,
     allow: false,
   }
-  let _dir = kv.dir(dir)
+  let _dir = kv.get("_", dir)
   if (!_dir && dir === "_")
     _dir = {
       auth: [
