@@ -210,8 +210,8 @@ const validate = async ({
       if (m.body.data) {
         isData = true
         for (const v of JSON.parse(m.body.data)) {
-          if (type === "vec") await db.pwrite(v, { no_commit: true })
-          else db.write(v, { no_commit: true })
+          if (type === "vec") await db.pwrite(v)
+          else db.write(v)
           i++
         }
       }
