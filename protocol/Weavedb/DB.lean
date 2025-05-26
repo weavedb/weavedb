@@ -3,7 +3,7 @@ import Weavedb.Normalize
 import Weavedb.Verify
 import Weavedb.Parse
 import Weavedb.Auth
-import Weavedb.Set
+import Weavedb.Write
 import Weavedb.Init
 import Weavedb.Store
 import Weavedb.Types
@@ -16,7 +16,7 @@ open Weavedb.Write.Normalize
 open Weavedb.Write.Verify
 open Weavedb.Write.Parse
 open Weavedb.Write.Auth
-open Weavedb.Write.Set
+open Weavedb.Write.Write
 open Weavedb.Write.Init
 open Weavedb.Store
 
@@ -46,7 +46,7 @@ def read : WriteM := fun ctx =>
 
 /-- Default database instance using build -/
 def db := build {
-  write := [normalize, verify, parse, auth, set]
+  write := [normalize, verify, parse, auth, write]
   read := [normalize, parse, read]
   init := init
   store := store
