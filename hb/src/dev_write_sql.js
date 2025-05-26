@@ -98,7 +98,7 @@ function sync({
         } else {
           const table_name = ast.table[0].table
           const rows = sql.prepare(`${query[0]} RETURNING *`).all()
-          const { primary, primary_type } = kv.dir(table_name)
+          const { primary, primary_type } = kv.get("_", table_name)
           const toKey = id => {
             return id.toString ? id.toString() : id
           }

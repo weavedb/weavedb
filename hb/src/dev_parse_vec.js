@@ -40,7 +40,7 @@ function merge(data, state, old, env) {
 
 function setData({ state, env }) {
   const { data, dir } = state
-  if (isNil(env.kv.dir(dir))) throw Error("dir doesn't exist")
+  if (isNil(env.kv.get("_", dir))) throw Error("dir doesn't exist")
   state.data = merge(data, state, {}, env)
   return arguments[0]
 }
@@ -54,7 +54,7 @@ function updateData({ state, env }) {
 
 function upsertData({ state, env }) {
   const { data, dir, doc } = state
-  if (isNil(env.kv.dir(dir))) throw Error("dir doesn't exist")
+  if (isNil(env.kv.get("_", dir))) throw Error("dir doesn't exist")
   if (!isNil(state.before)) state.data = merge(data, state, undefined, env)
   return arguments[0]
 }
@@ -76,7 +76,7 @@ function tob64(n) {
 
 function genDocID({ state, env }) {
   const { dir } = state
-  let _dir = env.kv.dir(dir)
+  let _dir = env.kv.get("_", dir)
   if (isNil(_dir)) throw Error("dir doesn't exist")
   let i = isNil(_dir.autoid) ? 0 : _dir.autoid + 1
   const docs = env.kv[dir] ?? {}
