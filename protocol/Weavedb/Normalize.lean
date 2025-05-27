@@ -14,7 +14,7 @@ def toLowerCase (s : String) : String :=
 def BASE64_CHARS : String :=
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
 
-/-- Convert address from public key (simplified - would use SHA256 in practice) -/
+/-- Convert public key to address (simplified - would use SHA256 in practice) -/
 def toAddr (keyid : String) : String :=
   -- In practice, this would:
   -- 1. base64url decode the keyid
@@ -23,87 +23,104 @@ def toAddr (keyid : String) : String :=
   -- For now, just prefix with "addr_"
   s!"addr_{keyid}"
 
+/-- Convert number to base64url -/
+def tob64 (n : Nat) : String :=
+  if n == 0 then BASE64_CHARS.get ⟨0⟩ |>.toString
+  else
+    let rec loop (n : Nat) (acc : String) : String :=
+      if h : n = 0 then acc
+      else
+        let c := BASE64_CHARS.get ⟨n % 64⟩
+        have : n / 64 < n := Nat.div_lt_self (Nat.zero_lt_of_ne_zero h) (by decide : 1 < 64)
+        loop (n / 64) (c.toString ++ acc)
+    termination_by n
+    loop n ""
+
 /-- Parse signature input parameters -/
 structure SignatureInput where
   label : String
   fields : List String
-  alg : Option String
-  keyid : Option String
-  created : Option Nat
-  expires : Option Nat
-  nonce : Option String
+  alg : String
+  keyid : String
+  created : Option Nat := none
+  expires : Option Nat := none
+  nonce : Option String := none
   deriving Inhabited
 
 /-- Parse the Signature-Input header -/
-def parseSI (input : String) : Option SignatureInput :=
-  -- Simplified parser - in practice would parse the full format:
-  -- sig1=(query nonce id);alg="eddsa";keyid="abc123"
+def parseSI (input : String) : Except String SignatureInput :=
+  -- Find the '=' separator
+  match input.splitOn "=" with
+  | label :: rest =>
+    let restStr := "=".intercalate rest
+    -- Check for fields list
+    if restStr.startsWith "(" then
+      match restStr.splitOn ")" with
+      | fieldsRaw :: paramsRest =>
+        let fields := fieldsRaw.drop 1 |>.split (· == ' ') |>.filter (· ≠ "") |>.map toLowerCase
 
-  -- For now, return a mock result
-  some {
-    label := "sig1"
-    fields := ["query", "nonce", "id", "content-digest"]
-    alg := some "eddsa"
-    keyid := some "test-key"
-    created := none
-    expires := none
-    nonce := none
-  }
+        -- Parse parameters after the fields list
+        let paramsStr := ")".intercalate paramsRest
+        let params := paramsStr.splitOn ";" |>.filter (· ≠ "")
+
+        -- Extract alg and keyid (required)
+        let alg := params.find? (·.startsWith "alg=") |>.map (fun s =>
+          s.drop 4 |>.data.filter (· ≠ '"') |> String.mk)
+        let keyid := params.find? (·.startsWith "keyid=") |>.map (fun s =>
+          s.drop 6 |>.data.filter (· ≠ '"') |> String.mk)
+
+        match alg, keyid with
+        | some algVal, some keyidVal =>
+          Except.ok {
+            label := label.trim
+            fields := fields
+            alg := algVal
+            keyid := keyidVal
+          }
+        | none, _ => Except.error "Missing `alg` in Signature-Input"
+        | _, none => Except.error "Missing `keyid` in Signature-Input"
+      | _ => Except.error "Invalid Signature-Input (unclosed fields list)"
+    else
+      Except.error "Invalid Signature-Input (fields list missing)"
+  | _ => Except.error "Invalid Signature-Input (no `=` found)"
 
 /-- Convert header keys to lowercase for signature/signature-input -/
 def toLower : WriteM := fun ctx =>
-  let headers := ctx.msg.headers
-
-  -- In JS, this normalizes signature and signature-input to lowercase
+  -- In JS, this normalizes signature and signature-input headers to lowercase
   -- Since our Headers structure has fixed fields, we just ensure they're set
   WriteResult.ok ctx
 
 /-- Pick relevant headers based on signature input -/
 def pickInput : WriteM := fun ctx =>
   match parseSI ctx.msg.headers.signatureInput with
-  | none => WriteResult.error "Invalid Signature-Input"
-  | some si =>
-    match si.keyid with
-    | none => WriteResult.error "Missing keyid in Signature-Input"
-    | some keyid =>
+  | Except.error e => WriteResult.error s!"Invalid Signature-Input: {e}"
+  | Except.ok si =>
+    -- Validate required headers
+    if ctx.msg.headers.id.isEmpty then
+      WriteResult.error "id missing"
+    else if ctx.msg.headers.nonce == 0 then
+      WriteResult.error "nonce missing"
+    else
       -- Update state with parsed values
-      let state := ctx.state
-      let state' := { state with
-        address := some (toAddr keyid)
-        keyId := some keyid
-        query := some ctx.msg.headers.query
+      let signer := toAddr si.keyid
+
+      -- The query is already parsed in the message
+      let state' := { ctx.state with
+        address := some signer
+        parsedQuery := some ctx.msg.parsedQuery
         nonce := some ctx.msg.headers.nonce
       }
-
-      -- Validate required headers
-      if ctx.msg.headers.id.isEmpty then
-        WriteResult.error "id missing"
-      else if ctx.msg.headers.nonce == 0 then
-        WriteResult.error "nonce missing"
-      else
-        WriteResult.ok { ctx with state := state' }
+      WriteResult.ok { ctx with state := state' }
 
 /-- Parse operation from query -/
 def parseOp : WriteM := fun ctx =>
-  match ctx.state.query with
+  match ctx.state.parsedQuery with
   | none => WriteResult.error "No query in state"
-  | some queryStr =>
-    -- Parse the query to extract operation
-    -- Expected format: ["op", ...args]
-    -- For now, simplified parsing
-    let op :=
-      if queryStr.startsWith "[\"get\"" then some "get"
-      else if queryStr.startsWith "[\"set\"" then some "set"
-      else if queryStr.startsWith "[\"update\"" then some "update"
-      else if queryStr.startsWith "[\"upsert\"" then some "upsert"
-      else if queryStr.startsWith "[\"del\"" then some "del"
-      else none
-
-    match op with
-    | none => WriteResult.error "Unknown operation in query"
-    | some opStr =>
-      let state' := { ctx.state with op := some opStr }
-      WriteResult.ok { ctx with state := state' }
+  | some query =>
+    -- Extract operation from the typed Query
+    let op := query.operation.toString
+    let state' := { ctx.state with op := some op }
+    WriteResult.ok { ctx with state := state' }
 
 /-- The normalize pipeline -/
 def normalize : WriteM := fun ctx =>

@@ -1,63 +1,32 @@
 import Weavedb.Types
 import Weavedb.Data
 import Weavedb.Store
-import Weavedb.Init  -- Assuming Init.lean is in the Weavedb directory
+import Weavedb.Init
+import Weavedb.Monade
 
 namespace Weavedb.Build
 
 open Weavedb.Types
 open Weavedb.Data
 open Weavedb.Store
-open Weavedb.Write.Init  -- This namespace is still defined in Init.lean
+open Weavedb.Write.Init
 
-/- Build function creates a database instance with read/write operations
-   JS: const build = ({
-     async = false,
-     write,
-     read,
-     __write__ = {},
-     __read__ = {},
-     init = _init,
-     store = _store,
-   }) => {
-     return (kv, opt = {}) => { ... }
-   }
--/
-
-/-- Read operation result -/
-structure ReadResult where
-  data : Data
-  result : Option Doc
-  deriving Inhabited
-
-/-- Write operation result -/
-structure WriteOpResult where
-  data : Data
-  success : Bool
-  error : Option String
-  deriving Inhabited
-
-/-- Database instance with operations -/
-structure DB where
-  data : Data
-  store : Store
-  read : Msg → Env → WriteResult Context
-  write : Msg → Env → WriteResult Context
-
-/-- Build configuration -/
+/-- Build configuration matching JS -/
 structure BuildConfig where
-  write : List WriteM  -- Write pipeline devices
-  read : List WriteM   -- Read pipeline devices (if different from write)
-  init : WriteM        -- Init function
-  store : Data → Store -- Store wrapper function
+  async : Bool := false
+  write : Option (List (KleisliArrow Context Context)) := none
+  read : Option (List (KleisliArrow Context Context)) := none
+  customWrite : List (String × List (KleisliArrow Context Context)) := []
+  customRead : List (String × List (KleisliArrow Context Context)) := []
+  init : Context → Context := id  -- Default init
+  store : Data → Store := store
 
-/-- Chain multiple WriteM operations together -/
-def chainOps (ops : List WriteM) : WriteM :=
-  ops.foldl (fun acc op => fun ctx =>
-    match acc ctx with
-    | WriteResult.ok ctx' => op ctx'
-    | WriteResult.error e => WriteResult.error e
-  ) (fun ctx => WriteResult.ok ctx)
+/-- Device methods structure -/
+structure DBMethods where
+  write : Option (Data → Msg → Env → Data)
+  pwrite : Option (Data → Msg → Env → Task Data)
+  read : Option (Data → Msg → Env → Context)
+  customMethods : List (String × (Data → List Dynamic → Context))
 
 /-- Default environment -/
 def defaultEnv (processId : String) : Env :=
@@ -66,75 +35,173 @@ def defaultEnv (processId : String) : Env :=
     dbId := none
     owner := none }
 
-/-- Default build configuration -/
-def defaultConfig : BuildConfig where
-  write := []  -- Will be populated with actual devices
-  read := []
-  init := init
-  store := store
+/-- Default init function matching JS _init -/
+def defaultInit (input : Context) : Context :=
+  -- In JS: gets info from kv.get("_config", "info")
+  -- For now, just return input with empty state
+  { input with state := {} }
 
-/-- Build a database instance -/
-def build (config : BuildConfig) (kv : Data) (opt : Env) : DB :=
-  let st := config.store kv
+/-- Chain multiple arrows together -/
+def chainArrows [Inhabited (Monad' Context)] : List (KleisliArrow Context Context) → KleisliArrow Context Context
+  | [] => KleisliArrow.ka Context
+  | [a] => a
+  | a :: rest =>
+    rest.foldl (fun (acc : KleisliArrow Context Context) (arrow : KleisliArrow Context Context) =>
+      acc.chainArrow arrow) a
 
-  -- Create write operation
-  let writeOp : Msg → Env → WriteResult Context := fun msg env =>
-    let initialCtx := mkContext kv msg env
-    let pipeline := chainOps (config.init :: config.write)
-    match pipeline initialCtx with
-    | WriteResult.ok ctx =>
-      -- In JS, this commits changes to kv
-      WriteResult.ok ctx
-    | WriteResult.error e =>
-      -- In JS, this would call kv.reset()
-      WriteResult.error e
+/-- Build write method -/
+def buildWriteMethod (config : BuildConfig) (_kv : Data) (opt : Env)
+    : Option (Data → Msg → Env → Data) :=
+  config.write.map fun writeDevs =>
+    fun currentKv msg _opt =>
+      -- Create initial context
+      let ctx : Context := {
+        data := currentKv
+        msg := msg
+        env := { opt with processId := _opt.processId }
+        state := {}
+      }
 
-  -- Create read operation (similar to write but might have different pipeline)
-  let readOp : Msg → Env → WriteResult Context := fun msg env =>
-    let initialCtx := mkContext kv msg env
-    let pipeline := if config.read.isEmpty then
-      chainOps (config.init :: config.write)
-    else
-      chainOps (config.init :: config.read)
-    pipeline initialCtx
+      -- Build the pipeline: init then chain all write devices
+      let pipeline := KleisliArrow.ka Context
+        |>.map config.init
+        |>.chainArrow (chainArrows writeDevs)
 
-  { data := kv
-    store := st
-    read := readOp
-    write := writeOp }
+      -- Execute pipeline
+      let result := of ctx |>.chain pipeline.fn |>.val
 
-/-- Execute a write operation on the database -/
-def DB.execWrite (db : DB) (msg : Msg) (env : Env) : DB :=
-  match db.write msg env with
-  | WriteResult.ok ctx =>
-    -- Update database with new data
-    { db with data := ctx.data }
-  | WriteResult.error _ =>
-    -- Keep original data (like reset in JS)
-    db
+      -- Return the updated data
+      result.data
 
-/-- Execute a read operation on the database -/
-def DB.execRead (db : DB) (msg : Msg) (env : Env) : Option Doc :=
-  match db.read msg env with
-  | WriteResult.ok ctx =>
-    -- Extract result from context (implementation depends on read devices)
-    none  -- Placeholder
-  | WriteResult.error _ => none
+/-- Build async write method (pwrite) -/
+def buildPWriteMethod (config : BuildConfig) (_kv : Data) (opt : Env)
+    : Option (Data → Msg → Env → Task Data) :=
+  if config.async && config.write.isSome then
+    config.write.map fun writeDevs =>
+      fun currentKv msg _opt =>
+        Task.pure <| Id.run do
+          let ctx : Context := {
+            data := currentKv
+            msg := msg
+            env := { opt with processId := _opt.processId }
+            state := {}
+          }
+          let pipeline := KleisliArrow.ka Context
+            |>.map config.init
+            |>.chainArrow (chainArrows writeDevs)
+          let result := of ctx |>.chain pipeline.fn |>.val
+          result.data
+  else
+    none
 
-/-- Helper to create a message for operations -/
-def createMsg (query : String) (nonce : Nat) (processId : String) : Msg :=
-  { headers := {
-      signature := ""
-      signatureInput := ""
-      nonce := nonce
-      query := query
-      id := processId
-      contentDigest := ""
+/-- Build read method -/
+def buildReadMethod (config : BuildConfig) (_kv : Data) (opt : Env)
+    : Option (Data → Msg → Env → Context) :=
+  config.read.map fun readDevs =>
+    fun currentKv msg _opt =>
+      let ctx : Context := {
+        data := currentKv
+        msg := msg
+        env := { opt with processId := _opt.processId }
+        state := {}
+      }
+      let pipeline := KleisliArrow.ka Context
+        |>.map config.init
+        |>.chainArrow (chainArrows readDevs)
+      of ctx |>.chain pipeline.fn |>.val
+
+/-- Build custom methods -/
+def buildCustomMethods (customOps : List (String × List (KleisliArrow Context Context)))
+    (_kv : Data) (opt : Env) (init : Context → Context)
+    : List (String × (Data → List Dynamic → Context)) :=
+  customOps.map fun (name, ops) =>
+    (name, fun currentKv _args =>
+      -- In JS: msg is spread from args, here we create a dummy msg
+      let msg := {
+        headers := {
+          signature := ""
+          signatureInput := ""
+          nonce := 0
+          id := ""
+          contentDigest := ""
+        }
+        body := ""
+        parsedQuery := Query.get "" ""  -- Dummy query
+      }
+      let ctx : Context := {
+        data := currentKv
+        msg := msg
+        env := opt
+        state := {}
+      }
+      let pipeline := KleisliArrow.ka Context
+        |>.map init
+        |>.chainArrow (chainArrows ops)
+      of ctx |>.chain pipeline.fn |>.val)
+
+/-- Main build function matching JS implementation -/
+def build (config : BuildConfig) : Data → Env → Device Data DBMethods :=
+  fun kv opt =>
+    -- Build store (in JS this wraps kv with additional methods)
+    -- For now, we'll just use kv directly since store returns Store type
+
+    -- Build methods
+    let writeMeth := buildWriteMethod config kv opt
+    let pwriteMeth := buildPWriteMethod config kv opt
+    let readMeth := buildReadMethod config kv opt
+    let customWrites := buildCustomMethods config.customWrite kv opt config.init
+    let customReads := buildCustomMethods config.customRead kv opt config.init
+
+    let methods : DBMethods := {
+      write := writeMeth
+      pwrite := pwriteMeth
+      read := readMeth
+      customMethods := customWrites ++ customReads
     }
-    body := "" }
 
-/-- Build a database with default configuration -/
-def buildDefault (kv : Data) (processId : String) : DB :=
-  build defaultConfig kv (defaultEnv processId)
+    -- Create device using dev
+    -- Note: In JS, store wraps kv, but here we use kv directly
+    Device.dev methods kv
+
+/-- Helper to create a simple write pipeline -/
+def simpleWritePipeline : List (KleisliArrow Context Context) :=
+  [ KleisliArrow.ka Context |>.map (fun ctx =>
+    -- In Lean, state has type State (not Data), so we need to convert
+    { ctx with state := {} }) ]
+
+/-- Helper to create a simple read pipeline -/
+def simpleReadPipeline : List (KleisliArrow Context Context) :=
+  [ KleisliArrow.ka Context |>.map id ]  -- Just pass through
+
+/-- Example usage matching JS pattern -/
+def exampleBuild : Data → Device Data DBMethods :=
+  let config : BuildConfig := {
+    write := some simpleWritePipeline
+    read := some simpleReadPipeline
+    init := defaultInit
+    store := store
+  }
+  fun kv => build config kv (defaultEnv "example-process")
+
+/-- Execute write on device -/
+def executeWrite (db : Device Data DBMethods) (msg : Msg) (env : Env) : Device Data DBMethods :=
+  match db.methods.write with
+  | some writeFn =>
+    let newData := writeFn db.value msg env
+    Device.dev db.methods newData
+  | none => db
+
+/-- Execute read on device -/
+def executeRead (db : Device Data DBMethods) (msg : Msg) (env : Env) : Option Context :=
+  match db.methods.read with
+  | some readFn => some (readFn db.value msg env)
+  | none => none
+
+/-- Execute custom method on device -/
+def executeCustom (db : Device Data DBMethods) (methodName : String) (args : List Dynamic)
+    : Option Context :=
+  match db.methods.customMethods.find? (fun (name, _) => name == methodName) with
+  | some (_, method) => some (method db.value args)
+  | none => none
 
 end Weavedb.Build

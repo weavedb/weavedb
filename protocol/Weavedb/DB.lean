@@ -7,6 +7,7 @@ import Weavedb.Write
 import Weavedb.Init
 import Weavedb.Store
 import Weavedb.Types
+import Weavedb.Monade
 
 namespace Weavedb.DB
 
@@ -20,19 +21,27 @@ open Weavedb.Write.Write
 open Weavedb.Write.Init
 open Weavedb.Store
 
+/-- Convert WriteM to KleisliArrow for compatibility -/
+def writeMToArrow (wm : WriteM) : KleisliArrow Context Context :=
+  KleisliArrow.ka Context
+    |>.chain fun ctx =>
+      match wm ctx with
+      | WriteResult.ok ctx' => Monad'.of ctx'
+      | WriteResult.error _ => Monad'.of ctx  -- Return original on error
+
 /-- Get operation for read pipeline -/
 def get : WriteM := fun ctx =>
   let state' := { ctx.state with
-    op := some "get",
-    query := ctx.state.query  -- Keep existing query
+    op := some "get"
+    -- parsedQuery is already set by normalize
   }
   WriteResult.ok { ctx with state := state' }
 
 /-- Cget operation for read pipeline -/
 def cget : WriteM := fun ctx =>
   let state' := { ctx.state with
-    op := some "cget",
-    query := ctx.state.query  -- Keep existing query
+    op := some "cget"
+    -- parsedQuery is already set by normalize
   }
   WriteResult.ok { ctx with state := state' }
 
@@ -44,11 +53,32 @@ def read : WriteM := fun ctx =>
   -- 3. Return it in some way (perhaps in ctx.state)
   WriteResult.ok ctx
 
+/-- Convert WriteM init to regular function -/
+def initFn : Context → Context := fun ctx =>
+  match init ctx with
+  | WriteResult.ok ctx' => ctx'
+  | WriteResult.error _ => ctx  -- Return original on error
+
 /-- Default database instance using build -/
 def db := build {
-  write := [normalize, verify, parse, auth, write]
-  read := [normalize, parse, read]
-  init := init
+  write := some [
+    writeMToArrow normalize,
+    writeMToArrow verify,
+    writeMToArrow parse,
+    writeMToArrow auth,
+    writeMToArrow write
+  ]
+  read := some [
+    writeMToArrow normalize,
+    writeMToArrow parse,
+    writeMToArrow read
+  ]
+  customWrite := []
+  customRead := [
+    ("get", [writeMToArrow get, writeMToArrow parse, writeMToArrow read]),
+    ("cget", [writeMToArrow cget, writeMToArrow parse, writeMToArrow read])
+  ]
+  init := initFn
   store := store
 }
 
