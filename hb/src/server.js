@@ -42,7 +42,7 @@ const server = async ({
           let lowK = k.toLowerCase()
           headers[lowK] = req.headers[lowK]
         }
-        const _res = dbs[headers.id].get(...q.query)
+        const _res = dbs[headers.id].get(...q.query).val()
         res.json({ success: true, ...q, res: _res })
       } catch (e) {
         console.log(e)
@@ -76,7 +76,7 @@ const server = async ({
       let id = null
       if (tags_m?.Query) query = JSON.parse(tags_m.Query)
 
-      if (query) data = dbs[dbmap[pid]].get(...query)
+      if (query) data = dbs[dbmap[pid]].get(...query).val()
       if (tags_m["From-Process"]) {
         const r_tags = [
           { name: "Type", value: "Message" },

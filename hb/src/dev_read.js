@@ -1,4 +1,4 @@
-import { of, fn } from "./monade.js"
+import { of, ka } from "./monade.js"
 import { map, pluck, isNil } from "ramda"
 import parseQuery from "./parser.js"
 import { get } from "../src/planner.js"
@@ -20,16 +20,14 @@ function getDocs({ state, env }) {
 }
 
 const reader = {
-  get: fn().map(getDocs),
-  cget: fn().map(getDocs),
+  get: ka().map(getDocs),
+  cget: ka().map(getDocs),
 }
 
 const toResult = ({ state }) => state.result
 
 function read({ state }) {
-  return of(arguments[0])
-    .chain(reader[state.opcode] ?? reader.default)
-    .to(toResult)
+  return of(arguments[0]).chain(reader[state.opcode].fn()).to(toResult)
 }
 
 export default read

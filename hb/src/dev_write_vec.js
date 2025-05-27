@@ -1,4 +1,4 @@
-import { of, fn } from "./monade.js"
+import { of, ka } from "./monade.js"
 import { parseOp, initDB } from "./dev_common.js"
 import parse from "./dev_parse.js"
 import auth from "./dev_auth.js"
@@ -71,13 +71,13 @@ function syncAdd({
 }
 
 const writer = {
-  init: fn().map(initDB),
-  createTable: fn().map(syncTable).map(syncAdd),
-  add: fn().map(syncAdd),
+  init: ka().map(initDB),
+  createTable: ka().map(syncTable).map(syncAdd),
+  add: ka().map(syncAdd),
 }
 
 function write_vec({ state, msg, env: { no_commit, kv, cb } }) {
-  if (writer[state.opcode]) of(arguments[0]).chain(writer[state.opcode])
+  if (writer[state.opcode]) of(arguments[0]).chain(writer[state.opcode].fn())
   if (no_commit !== true) kv.commit(msg, cb, state)
   return arguments[0]
 }

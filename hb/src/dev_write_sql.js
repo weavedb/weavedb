@@ -1,4 +1,4 @@
-import { of, fn } from "./monade.js"
+import { of, ka } from "./monade.js"
 import { initDB, parseOp } from "./dev_common.js"
 import parse from "./dev_parse.js"
 import auth from "./dev_auth.js"
@@ -135,12 +135,12 @@ function sync({
 }
 
 const writer = {
-  init: fn().map(initDB),
-  sql: fn().map(sync),
+  init: ka().map(initDB),
+  sql: ka().map(sync),
 }
 
 function write_sql({ state, msg, env: { no_commit, kv } }) {
-  if (writer[state.opcode]) of(arguments[0]).chain(writer[state.opcode])
+  if (writer[state.opcode]) of(arguments[0]).chain(writer[state.opcode].fn())
   if (no_commit !== true) kv.commit(msg, null, state)
   return arguments[0]
 }

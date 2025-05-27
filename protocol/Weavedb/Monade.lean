@@ -33,13 +33,6 @@ def to (f : α → β) (m : Monad' α) : β :=
 def val (m : Monad' α) : α :=
   m.value
 
--- Custom bind instance for do notation
-instance : Bind Monad' where
-  bind := fun ma f => chain f ma
-
-instance : Pure Monad' where
-  pure := of
-
 end Monad'
 
 -- Task-based monad for async operations
@@ -60,8 +53,8 @@ def map (f : α → β) (m : AsyncMonad α) : AsyncMonad β :=
   ⟨m.task.map f⟩
 
 -- Async tap
-def tap (f : α → Task Unit) (m : AsyncMonad α) : AsyncMonad α :=
-  ⟨m.task.bind fun a => f a |>.map fun _ => a⟩
+def tap (f : α → Unit) (m : AsyncMonad α) : AsyncMonad α :=
+  ⟨m.task.map (fun a => let _ := f a; a)⟩
 
 -- Async chain
 def chain (f : α → AsyncMonad β) (m : AsyncMonad α) : AsyncMonad β :=
@@ -77,127 +70,199 @@ def val (m : AsyncMonad α) : Task α :=
 
 end AsyncMonad
 
--- Function pipeline for composing operations
-structure Pipeline (α : Type u) where
-  steps : List (α → α)
+-- Kleisli arrow builder for sync operations
+structure KleisliArrow (α β : Type u) where
+  run : α → Monad' β
 
-namespace Pipeline
+namespace KleisliArrow
 
--- Create empty pipeline
-def empty : Pipeline α := ⟨[]⟩
+-- Identity arrow
+def id : KleisliArrow α α := ⟨Monad'.of⟩
 
--- Add map step
-def map (f : α → α) (p : Pipeline α) : Pipeline α :=
-  ⟨p.steps ++ [f]⟩
+-- Map operation
+def map (f : β → γ) (k : KleisliArrow α β) : KleisliArrow α γ :=
+  ⟨fun a => k.run a |>.map f⟩
 
--- Add tap step
-def tap (f : α → Unit) (p : Pipeline α) : Pipeline α :=
-  let tapFn := fun a =>
-    let _ := f a
-    a
-  ⟨p.steps ++ [tapFn]⟩
+-- Tap operation
+def tap (f : β → Unit) (k : KleisliArrow α β) : KleisliArrow α β :=
+  ⟨fun a => k.run a |>.tap f⟩
 
--- Execute pipeline
-def execute (p : Pipeline α) (input : α) : Monad' α :=
-  let result := p.steps.foldl (fun acc f => f acc) input
-  Monad'.of result
+-- Chain operation
+def chain (f : β → Monad' γ) (k : KleisliArrow α β) : KleisliArrow α γ :=
+  ⟨fun a => k.run a |>.chain f⟩
+
+-- Compose arrows
+def compose (k2 : KleisliArrow β γ) (k1 : KleisliArrow α β) : KleisliArrow α γ :=
+  ⟨fun a => k1.run a |>.chain k2.run⟩
 
 -- Convert to function
-def toFn (p : Pipeline α) : α → Monad' α :=
-  fun input => p.execute input
+def fn (k : KleisliArrow α β) : α → Monad' β :=
+  k.run
 
-end Pipeline
+-- Make it directly callable
+instance : CoeFun (KleisliArrow α β) (fun _ => α → Monad' β) where
+  coe := fn
 
--- Async pipeline for composing async operations
-structure AsyncPipeline (α : Type u) where
-  steps : List (α → Task α)
+end KleisliArrow
 
-namespace AsyncPipeline
+-- Async Kleisli arrow builder
+structure AsyncKleisliArrow (α β : Type u) where
+  run : α → AsyncMonad β
 
--- Create empty async pipeline
-def empty : AsyncPipeline α := ⟨[]⟩
+namespace AsyncKleisliArrow
 
--- Add async map step
-def map (f : α → Task α) (p : AsyncPipeline α) : AsyncPipeline α :=
-  ⟨p.steps ++ [f]⟩
+-- Identity arrow
+def id : AsyncKleisliArrow α α := ⟨AsyncMonad.pof⟩
 
--- Add async tap step
-def tap (f : α → Task Unit) (p : AsyncPipeline α) : AsyncPipeline α :=
-  let tapFn := fun a => f a |>.map fun _ => a
-  ⟨p.steps ++ [tapFn]⟩
+-- Map operation
+def map (f : β → γ) (k : AsyncKleisliArrow α β) : AsyncKleisliArrow α γ :=
+  ⟨fun a => k.run a |>.map f⟩
 
--- Execute async pipeline
-def execute (p : AsyncPipeline α) (input : α) : AsyncMonad α :=
-  let runSteps := p.steps.foldl
-    (fun accTask f => accTask.bind f)
-    (Task.pure input)
-  AsyncMonad.fromTask runSteps
+-- Tap operation
+def tap (f : β → Unit) (k : AsyncKleisliArrow α β) : AsyncKleisliArrow α β :=
+  ⟨fun a => k.run a |>.tap f⟩
 
--- Convert to async function
-def toFn (p : AsyncPipeline α) : α → AsyncMonad α :=
-  fun input => p.execute input
+-- Chain operation
+def chain (f : β → AsyncMonad γ) (k : AsyncKleisliArrow α β) : AsyncKleisliArrow α γ :=
+  ⟨fun a => k.run a |>.chain f⟩
 
-end AsyncPipeline
+-- Compose arrows
+def compose (k2 : AsyncKleisliArrow β γ) (k1 : AsyncKleisliArrow α β) : AsyncKleisliArrow α γ :=
+  ⟨fun a => k1.run a |>.chain k2.run⟩
 
--- Helper functions similar to JS/Rust versions
+-- Convert to function
+def fn (k : AsyncKleisliArrow α β) : α → AsyncMonad β :=
+  k.run
 
--- Create sync pipeline (similar to 'fn' in JS, 'ka' in Rust)
-def fn : Pipeline α := Pipeline.empty
+-- Make it directly callable
+instance : CoeFun (AsyncKleisliArrow α β) (fun _ => α → AsyncMonad β) where
+  coe := fn
 
--- Create async pipeline (similar to 'pfn' in JS, 'aka' in Rust)
-def pfn : AsyncPipeline α := AsyncPipeline.empty
+end AsyncKleisliArrow
 
--- Option handling for error recovery
+-- Simple API
+
+-- Kleisli arrow constructors
+def ka (α : Type u) : KleisliArrow α α := KleisliArrow.id
+def pka (α : Type u) : AsyncKleisliArrow α α := AsyncKleisliArrow.id
+
+-- Option handling
 def opt (m : Except ε α) : Option α :=
   match m with
   | .ok a => some a
   | .error _ => none
 
--- Async option handling
 def popt (m : Task (Except ε α)) : Task (Option α) :=
   m.map opt
 
--- Examples showing clean usage
+-- Examples
 namespace Examples
 
-open Monad' AsyncMonad
+open Monad' AsyncMonad KleisliArrow AsyncKleisliArrow
 
--- Simple synchronous example
-def syncExample : Nat :=
-  let m := of 10
-  let m' := m.map (· * 2)
-  let m'' := m'.map (· + 5)
-  m''.to id  -- Result: 25
+-- Define reusable functions
+def double (x : Nat) : Nat := x * 2
+def addTen (x : Nat) : Nat := x + 10
+def toString (x : Nat) : String := s!"Result: {x}"
+def logValue (x : Nat) : Unit := dbgTrace s!"Value: {x}" fun _ => ()
 
--- Pipeline example
-def pipelineExample : Nat :=
-  let pipeline := fn
-    |>.map (· * 2)
-    |>.tap (fun x => dbgTrace s!"Value is {x}" fun _ => ())
-    |>.map (· + 10)
+-- Simple sync example
+def syncExample : String :=
+  Monad'.of 5
+  |>.map double
+  |>.map addTen
+  |>.map toString
+  |>.val  -- Result: "Result: 20"
 
-  (pipeline.execute 5).val  -- Result: 20
+-- Kleisli arrow example
+def kaExample : String :=
+  let pipeline := ka Nat
+    |>.map double
+    |>.tap logValue
+    |>.map addTen
+
+  Monad'.of 5
+  |>.chain pipeline.fn
+  |>.map toString
+  |>.val  -- Result: "Result: 20"
+
+-- Direct arrow call
+def directArrowExample : String :=
+  let transform := ka Nat
+    |>.map double
+    |>.map addTen
+    |>.map toString
+
+  (transform 5).val  -- Result: "Result: 20"
 
 -- Async example
-def asyncExample : Task Nat :=
-  let m := pof 42
-  let m' := m.map (fun x => x * 2)
-  let m'' := m'.map (fun x => x + 10)
-  m''.val
+def asyncExample : Task String :=
+  AsyncMonad.pof 5
+  |>.map double
+  |>.map addTen
+  |>.map toString
+  |>.val
 
--- Chaining example using do notation
-def chainExample : String := Id.run do
-  let mx ← pure (of 5)
-  let x := mx.val
-  let my ← pure (of (x * 2))
-  let y := my.val
-  pure s!"Result is {y}"  -- Result: "Result is 10"
+-- Async Kleisli arrow
+def pkaExample : Task String :=
+  let pipeline := pka Nat
+    |>.map double
+    |>.map addTen
 
--- Alternative chaining without do notation
-def chainExample2 : String :=
-  let m := of 5
-  let m' := m.chain (fun x => of (x * 2))
-  let m'' := m'.chain (fun x => of s!"Result is {x}")
-  m''.val  -- Result: "Result is 10"
+  (AsyncMonad.pof 5
+    |>.chain pipeline.fn
+    |>.map toString)
+    |>.val  -- Result: "Result: 20"
+
+-- Composition example using chain
+def compositionExample : String :=
+  let doubleMonad (x : Nat) : Monad' Nat := Monad'.of (double x)
+  let addTenMonad (x : Nat) : Monad' Nat := Monad'.of (addTen x)
+
+  let pipeline := ka Nat
+    |>.chain doubleMonad
+    |>.chain addTenMonad
+    |>.map toString
+
+  (pipeline 5).val  -- Result: "Result: 20"
+
+-- Arrow composition example
+def arrowCompositionExample : String :=
+  let double := ka Nat |>.map (· * 2)
+  let addTen := ka Nat |>.map (· + 10)
+  let toString' := ka Nat |>.map toString
+  -- Compose manually using chain
+  let combined : KleisliArrow Nat String := ⟨fun x =>
+    double.run x |>.chain addTen.run |>.chain toString'.run⟩
+
+  (combined 5).val  -- Result: "Result: 20"
 
 end Examples
+
+-- API Summary
+namespace APISummary
+
+/-
+Unified API across JS/Rust/Lean:
+
+**Monads:**
+- `of` / `pof` - create sync/async monads
+- `map` - transform value
+- `tap` - side effects
+- `chain` - flat map
+- `to` - extract with transformation
+- `val` - extract value
+
+**Kleisli Arrows:**
+- `ka` / `pka` - create sync/async arrows
+- `map` - transform output
+- `tap` - side effects on output
+- `chain` - compose with other functions
+- `fn` - convert to function
+
+Arrow composition:
+- JavaScript: `ka1.chain(ka2)`
+- Lean: Manual composition via chain or helper functions
+-/
+
+end APISummary

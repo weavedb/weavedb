@@ -1,4 +1,4 @@
-import { of, fn } from "./monade.js"
+import { of } from "./monade.js"
 import { keys, uniq, concat, compose, is, isNil, includes } from "ramda"
 import _fpjson from "fpjson-lang"
 const fpjson = _fpjson.default || _fpjson
@@ -123,7 +123,7 @@ function parse({ state, env }) {
     putData: (key, val) => kv.put(dir, key, val),
     delData: key => kv.del(dir, key),
   }
-  if (parser[state.opcode]) of(arguments[0]).chain(parser[state.opcode])
+  if (parser[state.opcode]) of(arguments[0]).chain(parser[state.opcode].fn())
   return arguments[0]
 }
 export default parse
