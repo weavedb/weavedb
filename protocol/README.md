@@ -10,46 +10,52 @@ WeaveDB is a NoSQL database protocol that organizes data into directories contai
 
 - **Pipeline Architecture**: Modular processing stages for read/write operations
 - **Directory-Based Organization**: Documents are organized into named directories
-- **Built-in Authentication**: Configurable auth rules per directory
+- **Built-in Authentication**: Configurable auth rules per directory with FPJSON expressions
 - **Schema Validation**: Optional JSON Schema validation for documents
 - **Nonce-Based Ordering**: Prevents replay attacks and ensures operation ordering
-- **Base64url Document IDs**: URL-safe identifiers for documents
+- **Base64url Document IDs**: URL-safe identifiers with auto-increment support
+- **Monadic Error Handling**: Type-safe error propagation through WriteM monad
 
 ## Architecture
 
 ### Core Components
 
 1. **Data Layer** (`Data.lean`)
-   - `Doc`: Key-value document structure
-   - `Dir`: Directory containing documents
-   - `Data`: Array of directories
+   - `Doc`: Key-value document structure (simplified JSON)
+   - `Dir`: Directory containing documents indexed by base64url IDs
+   - `Data`: Array of directories with fixed system directories
 
 2. **Type System** (`Types.lean`)
-   - `WriteM`: Monad for write operations
-   - `Context`: Operation context with state, message, environment
+   - `WriteM`: Monad for write operations with error handling
+   - `Context`: Operation context containing state, message, environment, and data
+   - `Query`: Strongly-typed query representations
    - `WriteResult`: Success/error result type
 
 3. **Pipeline Stages**
-   - `Init.lean`: Initialize operation context
-   - `Normalize.lean`: Process headers and extract operation
-   - `Verify.lean`: Verify nonce and update accounts
-   - `Parse.lean`: Parse query and prepare data
-   - `Auth.lean`: Check permissions based on rules
-   - `Write.lean`: Execute write operations
+   - `Init.lean`: Initialize operation context from KV store
+   - `Normalize.lean`: Process headers, extract signer from signature
+   - `Verify.lean`: Verify and increment nonce in accounts directory
+   - `Parse.lean`: Parse query, resolve directories, and prepare data
+   - `Auth.lean`: Check permissions based on configurable rules
+   - `Write.lean`: Execute write operations and update indexes
 
-4. **Build System** (`Build.lean`)
-   - Configurable pipeline composition
-   - Read/write operation builders
+4. **Infrastructure**
+   - `Store.lean`: Storage abstraction with get/put/del operations
+   - `Build.lean`: Pipeline builder and device construction
+   - `Monade.lean`: Monadic utilities and Kleisli arrows
+   - `DB.lean`: High-level database interface
 
 ## Directory Structure
 
 ```
 .
-├── Weavedb.lean       # Root module
-├── Main.lean          # Example usage
+├── Weavedb.lean       # Root module with imports
+├── Main.lean          # Example usage and tests
+├── lakefile.lean      # Lake build configuration
 └── Weavedb/
     ├── Data.lean      # Core data structures
     ├── Types.lean     # Type definitions
+    ├── Monade.lean    # Monadic utilities
     ├── Init.lean      # Context initialization
     ├── Normalize.lean # Header normalization
     ├── Verify.lean    # Nonce verification
@@ -63,12 +69,17 @@ WeaveDB is a NoSQL database protocol that organizes data into directories contai
 
 ## System Directories
 
-WeaveDB uses special system directories:
+WeaveDB uses special system directories with fixed indices:
 
 - **Directory 0 (`_`)**: Metadata about user-defined directories
+  - Stores directory names, schemas, auth rules, and auto-increment counters
 - **Directory 1 (`_config`)**: Database configuration
+  - `config`: Database settings (id, owner, secure, version)
+  - `info`: Basic database info (id, owner)
 - **Directory 2 (`__accounts__`)**: Account nonces for replay protection
+  - Each signer has a document tracking their current nonce
 - **Directory 3 (`__indexes__`)**: Index structures
+  - Stores index definitions and data for efficient queries
 
 ## Usage
 
@@ -77,6 +88,8 @@ WeaveDB uses special system directories:
 ```lean
 import Weavedb
 open Weavedb.Data
+open Weavedb.Types
+open Weavedb.DB
 
 -- Create a document
 let userDoc := Doc.fromList [
@@ -85,31 +98,68 @@ let userDoc := Doc.fromList [
   ("role", "admin")
 ]
 
--- Create a directory and add the document
-let usersDir := Dir.empty.set "user1" userDoc
+-- Create a set query
+let query := Query.set userDoc "users" "user1"
 
--- Create data structure with the directory
-let data := empty.addDir usersDir
+-- Create a message
+let msg := createMsg query 1 "my-process-id"
+
+-- Execute through the database pipeline
+let env := Env.mk "my-process-id" #[] none none
+let ctx := mkContext initialData msg env
+
+-- Process the write operation
+match db.methods.write with
+| some writeFn => 
+    let newData := writeFn ctx.data msg env
+    -- newData now contains the updated database
+| none => -- handle no write method
 ```
 
 ### Pipeline Operations
 
-Operations flow through the pipeline:
+Operations flow through configurable pipelines:
 
 ```
-Write: normalize → verify → parse → auth → write
-Read:  normalize → parse → read
+Write: init → normalize → verify → parse → auth → write
+Read:  init → normalize → parse → read
+
+Custom operations can define their own pipelines:
+get:   get → parse → read
+cget:  cget → parse → read
 ```
 
 Each stage transforms the context, with errors short-circuiting the pipeline.
 
-### Creating a Database Instance
+### Creating a Custom Database
 
 ```lean
-import Weavedb.DB
+import Weavedb.Build
 
--- The default database instance with configured pipelines
-let db := Weavedb.DB.db
+-- Define custom pipeline stages
+def myCustomAuth : WriteM := fun ctx =>
+  -- Custom authentication logic
+  WriteResult.ok ctx
+
+-- Build database with custom configuration
+def customDB := build {
+  write := some [
+    writeMToArrow normalize,
+    writeMToArrow verify,
+    writeMToArrow parse,
+    writeMToArrow myCustomAuth,  -- Custom auth
+    writeMToArrow write
+  ]
+  read := some [
+    writeMToArrow normalize,
+    writeMToArrow parse,
+    writeMToArrow read
+  ]
+  customWrite := []
+  customRead := []
+  init := initFn
+  store := store
+}
 ```
 
 ## Data Model
@@ -120,9 +170,15 @@ Documents are key-value stores with string keys and values:
 
 ```lean
 let doc := Doc.fromList [
-  ("field1", "value1"),
-  ("field2", "value2")
+  ("name", "John Doe"),
+  ("age", "30"),
+  ("active", "true")
 ]
+
+-- Access fields
+match doc.get "name" with
+| some name => -- use name
+| none => -- field not found
 ```
 
 ### Directories
@@ -131,46 +187,97 @@ Directories contain documents indexed by base64url IDs:
 
 ```lean
 let dir := Dir.empty
-  |>.set "docId1" doc1
-  |>.set "docId2" doc2
+  |>.set "A" doc1      -- Manual ID
+  |>.set "B" doc2      -- Manual ID
+
+-- Auto-generated IDs use base64url encoding
+-- First auto ID would be "B" (1 in base64url)
 ```
 
-### Operations
+### Queries
 
-- **set**: Create or overwrite a document
-- **update**: Update an existing document
-- **upsert**: Update if exists, insert if not
-- **del**: Delete a document
-- **get**: Retrieve a document
-- **cget**: Cached get operation
+Strongly-typed query representations:
+
+```lean
+-- Write operations
+Query.set data "users" "docId"     -- Create/overwrite
+Query.add data "users"              -- Auto-generate ID
+Query.update data "users" "docId"   -- Update existing
+Query.upsert data "users" "docId"   -- Update or insert
+Query.del "users" "docId"           -- Delete
+
+-- Read operations  
+Query.get "users" "docId"           -- Retrieve document
+Query.cget "users" "docId"          -- Cached get
+
+-- Batch operations
+Query.batch [op1, op2, op3]         -- Multiple operations
+
+-- Index operations
+Query.addIndex "users" [("age", "asc"), ("name", "desc")]
+Query.removeIndex "users" [("age", "asc")]
+
+-- Initialization
+Query.init (Doc.fromList [("owner", "0x..."), ("secure", "true")])
+```
 
 ## Authentication
 
-Each directory can have authentication rules that control access:
+Each directory can have authentication rules using pattern matching and expressions:
 
 ```lean
+-- Directory metadata in system directory
 let dirMeta := Doc.fromList [
   ("name", "users"),
-  ("auth", "[\"set,update:owner\", \"del:admin\"]")
+  ("autoid", "100"),  -- Next auto-increment ID
+  ("schema", "{...}"), -- JSON Schema
+  ("auth", "[{\"pattern\": \"set,update\", \"fpjson\": [...]}]")
 ]
 ```
 
+Authentication patterns:
+- `"set"` - Matches set operations
+- `"set,update"` - Matches set OR update
+- `"set:init"` - Special pattern for initialization
+
 ## Message Format
 
-Operations are sent as messages with headers:
+Operations are sent as messages with HTTP Signature headers:
 
 ```lean
 let msg : Msg := {
   headers := {
-    signature := "..."
-    signatureInput := "sig1=(query nonce id);alg=\"eddsa\";keyid=\"...\""
+    signature := "sig1=:MEUCIQDx...:"
+    signatureInput := "sig1=(query nonce id);alg=\"ecdsa\";keyid=\"...\""
     nonce := 1
-    query := "[\"set\", {...}, \"users\", \"docId\"]"
     id := "process-id"
-    contentDigest := "..."
+    contentDigest := "sha256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE="
   }
   body := ""
+  parsedQuery := query  -- Pre-parsed for type safety
 }
+```
+
+## Error Handling
+
+The `WriteM` monad provides clean error handling:
+
+```lean
+def someOperation : WriteM := fun ctx =>
+  match ctx.state.dirIndex with
+  | none => WriteResult.error "No directory in state"
+  | some idx =>
+    -- Process operation
+    WriteResult.ok { ctx with state := newState }
+
+-- Chain operations with automatic error propagation
+def pipeline : WriteM := fun ctx =>
+  match operation1 ctx with
+  | WriteResult.error e => WriteResult.error e
+  | WriteResult.ok ctx' =>
+    match operation2 ctx' with
+    | WriteResult.error e => WriteResult.error e  
+    | WriteResult.ok ctx'' => operation3 ctx''
 ```
 
 ## Development
@@ -181,25 +288,40 @@ let msg : Msg := {
 lake build
 ```
 
-### Running
+### Running Tests
 
 ```bash
-.lake/build/bin/weavedb
+lake exe weavedb
 ```
 
 ### Adding New Pipeline Stages
 
-1. Create a new module implementing `WriteM`
-2. Add it to the pipeline configuration in `DB.lean`
-3. Import it in `Weavedb.lean`
+1. Create a new module implementing `WriteM`:
+   ```lean
+   def myStage : WriteM := fun ctx =>
+     -- Process context
+     WriteResult.ok { ctx with state := updatedState }
+   ```
+
+2. Add it to the pipeline configuration:
+   ```lean
+   write := some [
+     writeMToArrow normalize,
+     writeMToArrow myStage,  -- New stage
+     writeMToArrow verify,
+     -- ...
+   ]
+   ```
+
+3. Import the module in `Weavedb.lean`
 
 ## Design Principles
 
 1. **Modularity**: Each pipeline stage is independent and composable
-2. **Type Safety**: Lean's type system ensures correctness
-3. **Immutability**: Data structures are immutable, operations return new versions
-4. **Error Handling**: Explicit error handling with `WriteResult`
-5. **Extensibility**: Easy to add new operations or pipeline stages
+2. **Type Safety**: Lean's type system ensures correctness at compile time
+3. **Immutability**: All data structures are immutable, operations return new versions
+4. **Error Handling**: Explicit error handling with `WriteResult` type
+5. **Extensibility**: Easy to add new operations, stages, or storage backends
 
 ## Mathematical Provability
 
@@ -210,39 +332,53 @@ WeaveDB is the **first ever mathematically provable modular database protocol**.
 - **Guarantee** that authentication rules are properly enforced
 - **Mathematically ensure** that the pipeline composition preserves safety properties
 
-This level of formal verification is unprecedented in database systems and provides unparalleled confidence in the protocol's correctness.
+Example properties that can be proven:
+```lean
+-- Nonce monotonicity
+theorem nonce_increases (ctx : Context) (ctx' : Context) :
+  verify ctx = WriteResult.ok ctx' → 
+  ctx'.state.nonce > ctx.state.nonce
+
+-- Directory existence preservation
+theorem dir_exists_after_write (ctx : Context) (ctx' : Context) :
+  write ctx = WriteResult.ok ctx' →
+  ctx.state.dirIndex.isSome →
+  ∃ dir, ctx'.data.getDir ctx.state.dirIndex = some dir
+```
 
 ## Ultimate Modularity: Swap Your Database Backend
 
 The true power of WeaveDB's modular architecture is that you can **completely swap out the underlying database implementation** by changing pipeline devices. The same protocol can power:
 
 ### NoSQL Database (Default)
-```javascript
-export default build({
-  write: [normalize, verify, parse, auth, write],
-  read: [normalize, parse, read]
-})
+```lean
+def nosqlDB := build {
+  write := some [normalize, verify, parse, auth, write]
+  read := some [normalize, parse, read]
+  -- ...
+}
 ```
 
 ### SQL Database
-```javascript
-export default build({
-  write: [normalize, verify, parse_sql, write_sql],
-  __read__: { sql: [sql] }
-})
+```lean
+def sqlDB := build {
+  write := some [normalize, verify, parse_sql, auth, write_sql]
+  customRead := [("sql", [parse_sql, execute_sql])]
+  -- ...
+}
 ```
 
 ### Vector Database
-```javascript
-export default build({
-  async: true,
-  write: [normalize, verify, parse_vec, write_vec],
-  __read__: { 
-    search: [search], 
-    vectorSearch: [vectorSearch], 
-    query: [query] 
-  }
-})
+```lean
+def vectorDB := build {
+  async := true
+  write := some [normalize, verify, parse_vec, auth, write_vec]
+  customRead := [
+    ("search", [parse_search, vector_search]),
+    ("similarity", [parse_similarity, similarity_search])
+  ]
+  -- ...
+}
 ```
 
 This means you can:
@@ -251,11 +387,9 @@ This means you can:
 - Maintain **consistent operation semantics** regardless of backend
 - **Mix and match** different storage engines for different directories
 
-No other database protocol offers this level of flexibility while maintaining mathematical guarantees about correctness. WeaveDB truly is a universal database protocol that adapts to your needs.
-
 ## WeaveDB: The First zkDB
 
-WeaveDB is the first zero-knowledge database (zkDB) protocol. As detailed in the v0.3 litepaper, it combines several technical innovations to create a new category of database system:
+WeaveDB pioneers the zero-knowledge database (zkDB) category by combining:
 
 ### Core Technologies
 
@@ -271,95 +405,5 @@ WeaveDB is the first zero-knowledge database (zkDB) protocol. As detailed in the
 
 **Storage Architecture**
 - **WAL Layer**: HyperBEAM (AO Core Protocol) for verifiable state transitions
-- **Permanent Storage**: Arweave with ARJSON encoding (up to 20x more efficient than MessagePack/CBOR for heavily patterned data)
+- **Permanent Storage**: Arweave with ARJSON encoding
 - **Performance**: Cloud-grade latency through rollup architecture
-
-**Access Control**
-- **FPJSON**: Functional programming DSL with 250+ functions encoded in JSON
-- **Smart Contract Logic**: Data mutations during authentication
-- **Permissionless Updates**: Anyone can submit queries with proper authorization
-
-### Technical Specifications
-
-**Database Constraints**
-- Document IDs: Base64url, up to 20 bytes
-- Collections: 2^20 documents per collection
-- Query Performance: Millisecond response times
-- Proof Size: Typically under 10KB
-
-**Supported Paradigms**
-- NoSQL (default implementation)
-- SQL (via index/schema modifications)
-- Vector (embedding layer addition)
-- Graph (relationship indexing)
-
-**Scalability**
-- Vertical: Limited only by hardware
-- Horizontal: KV store partitioning
-- Storage: Incremental bit-level updates
-
-### Implementation Details
-
-**Pipeline Architecture**
-```
-Write: init → normalize → verify → parse → auth → write → commit
-Read: init → normalize → parse → read
-```
-
-**System Directories**
-- `dir[0]`: Metadata about user directories
-- `dir[1]`: Database configuration
-- `dir[2]`: Account nonces (replay protection)
-- `dir[3]`: Index structures
-
-**Message Format**
-```javascript
-{
-  headers: {
-    signature: "...",
-    "signature-input": "sig1=(...);alg=\"ecdsa\";keyid=\"...\"",
-    nonce: 1,
-    query: "[\"set\", {...}, \"users\", \"docId\"]",
-    id: "database-process-id",
-    "content-digest": "sha256-..."
-  }
-}
-```
-
-### Use Cases
-
-**Off-Chain State Storage**
-- Reduce on-chain storage costs by 1000x
-- Maintain cryptographic verifiability
-- Enable complex queries not possible on-chain
-
-**Privacy-Preserving Queries**
-- Prove data membership without revealing content
-- Selective disclosure with ZK proofs
-- GDPR-compliant data handling
-
-**Cross-Chain Data Sharing**
-- Verifiable state across multiple blockchains
-- Universal data layer for multi-chain apps
-- Trustless bridges via merkle proofs
-
-**Verifiable Data Pipelines**
-- Auditable data transformations
-- Provable data lineage
-- Integrity guarantees for ML training data
-
-### Economic Model
-
-**Self-Sustaining Operation**
-- Restaking mechanism for protocol security
-- Bonding curves for database liquidity
-- Query costs covered by staking yields
-- No external funding required for operation
-
-**Token Mechanics**
-- `$DB`: Protocol token for staking/operations
-- `$OWNER`: Per-database ownership token
-- Validators stake for rewards
-- Delegators earn proportional returns
-
-WeaveDB represents a new approach to decentralized databases by combining permanent storage, zero-knowledge proofs, and self-sustaining economics. The protocol is designed to operate indefinitely without external funding while providing verifiable, private, and performant data storage.

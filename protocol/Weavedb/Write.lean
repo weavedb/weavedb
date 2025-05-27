@@ -18,14 +18,14 @@ def validateSchema : WriteM := fun ctx =>
     | some sysDir =>
       let dirName := toString dirIdx
       match sysDir.get dirName with
-      | none => WriteResult.error s!"dir doesn't exist: {dirName}"
+      | none => WriteResult.ok ctx  -- No directory metadata means no schema
       | some dirMeta =>
         -- Get schema from directory metadata
         match dirMeta.get "schema" with
         | none => WriteResult.ok ctx  -- No schema means any data is valid
-        | some _ =>
-          -- Simplified validation - in practice would use proper JSON Schema validator
-          -- For now, just check that data is not empty
+        | some schemaStr =>
+          -- In practice would validate against JSON Schema
+          -- For now, just ensure data is not empty
           if data.data.isEmpty then
             WriteResult.error "invalid schema"
           else
@@ -33,28 +33,37 @@ def validateSchema : WriteM := fun ctx =>
 
 /-- Add index for a directory -/
 def addIndex : WriteM := fun ctx =>
-  match ctx.state.dirIndex with
-  | none => WriteResult.error "No directory in state"
-  | some dirIdx =>
-    -- In practice, would update indexing structures
-    -- For now, just verify directory exists
-    match ctx.data.dirs[0]? with
-    | none => WriteResult.error "System directory not found"
-    | some sysDir =>
-      let dirName := toString dirIdx
-      if (sysDir.get dirName).isNone then
-        WriteResult.error s!"dir doesn't exist: {dirName}"
-      else
-        -- Would update index structures here
-        WriteResult.ok ctx
+  match ctx.state.dirIndex, ctx.state.parsedQuery with
+  | none, _ => WriteResult.error "No directory in state"
+  | _, none => WriteResult.error "No query in state"
+  | some dirIdx, some query =>
+    match query with
+    | Query.addIndex _ indexDef =>
+      -- In practice, would update indexing structures in __indexes__ directory
+      -- For now, just verify directory exists
+      match ctx.data.dirs[0]? with
+      | none => WriteResult.error "System directory not found"
+      | some sysDir =>
+        let dirName := toString dirIdx
+        match sysDir.get dirName with
+        | none => WriteResult.error s!"dir doesn't exist: {dirName}"
+        | some _ =>
+          -- Would update index structures in __indexes__ directory
+          -- Key would be: __indexes__/{dir}/{indexName}
+          WriteResult.ok ctx
+    | _ => WriteResult.error "Invalid query for addIndex"
 
 /-- Remove index for a directory -/
 def removeIndex : WriteM := fun ctx =>
-  match ctx.state.dirIndex with
-  | none => WriteResult.error "No directory in state"
-  | some _ =>
-    -- In practice, would remove indexing structures
-    WriteResult.ok ctx
+  match ctx.state.dirIndex, ctx.state.parsedQuery with
+  | none, _ => WriteResult.error "No directory in state"
+  | _, none => WriteResult.error "No query in state"
+  | some dirIdx, some query =>
+    match query with
+    | Query.removeIndex _ indexDef =>
+      -- In practice, would remove indexing structures from __indexes__ directory
+      WriteResult.ok ctx
+    | _ => WriteResult.error "Invalid query for removeIndex"
 
 /-- Put data into the database -/
 def putData : WriteM := fun ctx =>
@@ -63,23 +72,31 @@ def putData : WriteM := fun ctx =>
   | _, none, _ => WriteResult.error "No document ID in state"
   | _, _, none => WriteResult.error "No document data in state"
   | some dirIdx, some docId, some data =>
-    -- Verify directory exists
+    -- Verify directory exists in metadata
     match ctx.data.dirs[0]? with
     | none => WriteResult.error "System directory not found"
     | some sysDir =>
       let dirName := toString dirIdx
-      if (sysDir.get dirName).isNone then
-        WriteResult.error "dir doesn't exist"
-      else
-        -- Get or create directory data
-        let dirData := ctx.data.dirs[dirIdx]?.getD Dir.empty
+      match sysDir.get dirName with
+      | none => WriteResult.error "dir doesn't exist"
+      | some _ =>
+        -- Ensure directory array is large enough
+        let dataWithDir := if ctx.data.dirs.size <= dirIdx then
+          ctx.data.setDir dirIdx Dir.empty
+        else
+          ctx.data
 
-        -- Add document to directory
-        let newDir := dirData.set docId data
-        let newDirs := ctx.data.dirs.modify dirIdx (fun _ => newDir)
+        -- Get directory
+        match dataWithDir.dirs[dirIdx]? with
+        | none => WriteResult.error "Failed to access directory"
+        | some dirData =>
+          -- Add/update document in directory
+          let newDir := dirData.set docId data
+          let newDirs := dataWithDir.dirs.modify dirIdx (fun _ => newDir)
+          let newData := { dataWithDir with dirs := newDirs }
 
-        let newData := { ctx.data with dirs := newDirs }
-        WriteResult.ok { ctx with data := newData }
+          -- In JS, this also updates indexes via put() from indexer.js
+          WriteResult.ok { ctx with data := newData }
 
 /-- Delete data from the database -/
 def delData : WriteM := fun ctx =>
@@ -92,53 +109,72 @@ def delData : WriteM := fun ctx =>
     | none => WriteResult.error "System directory not found"
     | some sysDir =>
       let dirName := toString dirIdx
-      if (sysDir.get dirName).isNone then
-        WriteResult.error "dir doesn't exist"
-      else
+      match sysDir.get dirName with
+      | none => WriteResult.error "dir doesn't exist"
+      | some _ =>
         -- Get directory data
         match ctx.data.dirs[dirIdx]? with
-        | none => WriteResult.error "Directory not found"
+        | none => WriteResult.ok ctx  -- Directory doesn't exist, nothing to delete
         | some dirData =>
-          -- Check if document exists
-          match dirData.get docId with
-          | none => WriteResult.error "Document not found"
-          | some _ =>
-            -- Remove document from directory
-            let newDir := { docs := dirData.docs.erase docId }
-            let newDirs := ctx.data.dirs.modify dirIdx (fun _ => newDir)
-            let newData := { ctx.data with dirs := newDirs }
-            WriteResult.ok { ctx with data := newData }
+          -- Remove document from directory
+          let newDir := dirData.del docId
+          let newDirs := ctx.data.dirs.modify dirIdx (fun _ => newDir)
+          let newData := { ctx.data with dirs := newDirs }
+
+          -- In JS, this also updates indexes via del() from indexer.js
+          WriteResult.ok { ctx with data := newData }
 
 /-- Initialize database -/
 def initDB : WriteM := fun ctx =>
-  -- Check if already initialized
-  if ctx.state.isInitialized then
-    WriteResult.error "Database already initialized"
-  else
-    -- Create system directory with initial config
+  match ctx.state.parsedQuery with
+  | none => WriteResult.error "No query in state"
+  | some (Query.init config) =>
+    -- Extract configuration from init query
+    let dbId := config.get "id" |>.getD ctx.env.processId
+    let owner := config.get "owner" |>.getD ""
+    let secure := config.get "secure" |>.getD "false"
+
+    -- Create initial config document
     let configDoc := Doc.fromList [
-      ("dbId", ctx.env.processId),
-      ("owner", ctx.env.owner.getD ""),
+      ("id", dbId),
+      ("owner", owner),
+      ("secure", secure),
       ("version", "1.0.0")
     ]
 
-    -- Create system directory
-    let sysDir : Dir := Dir.empty.set "_config" configDoc
+    -- Create info document with dbId and owner
+    let infoDoc := Doc.fromList [
+      ("id", dbId),
+      ("owner", owner)
+    ]
 
-    -- Initialize data with system directory
+    -- Create system directory with both documents
+    let sysDir := Dir.empty
+      |>.set "config" configDoc
+      |>.set "info" infoDoc
+
+    -- Initialize data with system directory at index 0
     let newData := { dirs := #[sysDir] }
     let newState := { ctx.state with isInitialized := true }
 
     WriteResult.ok { ctx with data := newData, state := newState }
+  | _ => WriteResult.error "Invalid query for init"
 
 /-- Process batch operations -/
 def batch : WriteM := fun ctx =>
-  match ctx.state.query with
-  | none => WriteResult.error "No query in state"
-  | some _ =>
-    -- In practice, would parse query array and process each operation
-    -- For now, just return success
+  match ctx.state.parsedQuery with
+  | some (Query.batch ops) =>
+    -- In JS, this recursively processes each operation
+    -- For simplicity, we'll just validate that it's a batch
+    -- In practice, would need to process each op through the pipeline
     WriteResult.ok ctx
+  | _ => WriteResult.error "Invalid query for batch"
+
+/-- Helper to chain WriteM operations with tap (execute but keep original context) -/
+def tap (f : WriteM) : WriteM := fun ctx =>
+  match f ctx with
+  | WriteResult.error e => WriteResult.error e
+  | WriteResult.ok _ => WriteResult.ok ctx  -- Return original context
 
 /-- Helper to chain WriteM operations -/
 def bind : WriteResult Context → (Context → WriteResult Context) → WriteResult Context
@@ -149,10 +185,10 @@ def bind : WriteResult Context → (Context → WriteResult Context) → WriteRe
 def getWriter (opcode : String) : Option WriteM :=
   match opcode with
   | "init" => some initDB
-  | "set" => some (fun ctx => bind (validateSchema ctx) putData)
-  | "add" => some (fun ctx => bind (validateSchema ctx) putData)
-  | "upsert" => some (fun ctx => bind (validateSchema ctx) putData)
-  | "update" => some (fun ctx => bind (validateSchema ctx) putData)
+  | "set" => some (fun ctx => bind (tap validateSchema ctx) putData)
+  | "add" => some (fun ctx => bind (tap validateSchema ctx) putData)
+  | "upsert" => some (fun ctx => bind (tap validateSchema ctx) putData)
+  | "update" => some (fun ctx => bind (tap validateSchema ctx) putData)
   | "del" => some delData
   | "addIndex" => some addIndex
   | "removeIndex" => some removeIndex
@@ -166,27 +202,13 @@ def write : WriteM := fun ctx =>
   | some op =>
     match getWriter op with
     | none => WriteResult.error s!"Unknown operation: {op}"
-    | some writer => writer ctx
-
-/-- Commit changes (simplified) -/
-def commit : WriteM := fun ctx =>
-  -- In a real implementation, this would:
-  -- 1. Serialize the data changes
-  -- 2. Update any indexes
-  -- 3. Persist to storage
-  -- 4. Return transaction receipt
-
-  -- For now, just mark as successful
-  WriteResult.ok ctx
-
-/-- Main entry point for set operations -/
-def set : WriteM := fun ctx =>
-  -- Run the write operation
-  match write ctx with
-  | WriteResult.error e => WriteResult.error e
-  | WriteResult.ok ctx' =>
-    -- Commit unless no_commit flag is set
-    -- (In practice, would check env.no_commit)
-    commit ctx'
+    | some writer =>
+      -- Execute the writer
+      match writer ctx with
+      | WriteResult.error e => WriteResult.error e
+      | WriteResult.ok ctx' =>
+        -- In JS, commit happens here unless no_commit is true
+        -- For now, just return the context
+        WriteResult.ok ctx'
 
 end Weavedb.Write.Write

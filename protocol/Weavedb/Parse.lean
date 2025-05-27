@@ -37,7 +37,7 @@ def genDocID : WriteM := fun ctx =>
     match ctx.data.dirs[0]? with
     | none => WriteResult.error "System directory not found"
     | some sysDir =>
-      let dirName := toString dirIdx  -- Simplified - should map to actual dir name
+      let dirName := toString dirIdx
       match sysDir.get dirName with
       | none =>
         -- Directory doesn't exist in metadata
@@ -78,7 +78,7 @@ def genDocID : WriteM := fun ctx =>
         WriteResult.ok { ctx with data := newData, state := newState }
 
 /-- Merge data with special variable substitutions -/
-def mergeData (data : Doc) (_state : State) (old : Option Doc) (_env : Env) : Doc :=
+def mergeData (data : Doc) (state : State) (old : Option Doc) (env : Env) : Doc :=
   -- Simplified version - in practice would handle:
   -- 1. _$ variable substitutions (signer, ts, id, owner)
   -- 2. _$ operations like "del"
@@ -104,9 +104,9 @@ def setData : WriteM := fun ctx =>
     | none => WriteResult.error "System directory not found"
     | some sysDir =>
       let dirName := toString dirIdx
-      if sysDir.get dirName |>.isNone then
-        WriteResult.error s!"dir doesn't exist: {dirName}"
-      else
+      match sysDir.get dirName with
+      | none => WriteResult.error s!"dir doesn't exist: {dirName}"
+      | some _ =>
         -- Merge data with empty old data
         let mergedData := mergeData data ctx.state none ctx.env
         let newState := { ctx.state with doc := some mergedData }
@@ -143,9 +143,9 @@ def upsertData : WriteM := fun ctx =>
     | none => WriteResult.error "System directory not found"
     | some sysDir =>
       let dirName := toString dirIdx
-      if sysDir.get dirName |>.isNone then
-        WriteResult.error s!"dir doesn't exist: {dirName}"
-      else
+      match sysDir.get dirName with
+      | none => WriteResult.error s!"dir doesn't exist: {dirName}"
+      | some _ =>
         -- Get existing document if it exists
         let oldDoc := match ctx.data.dirs[dirIdx]? with
           | none => none
@@ -156,112 +156,148 @@ def upsertData : WriteM := fun ctx =>
         let newState := { ctx.state with doc := some mergedData }
         WriteResult.ok { ctx with state := newState }
 
-/-- Parse operation and extract parameters -/
+/-- Get directory index from name -/
+def getDirIndex (dirName : String) : Option Nat :=
+  -- Map directory names to indices
+  -- In practice, would look up in directory configuration
+  if dirName == "_" then some 0
+  else if dirName == "_config" then some 1
+  else if dirName == "_accounts" then some 2
+  else if dirName == "__indexes__" then some 3
+  else dirName.toNat?  -- Try to parse as number for user directories
+
+/-- Parse operation and extract parameters from typed Query -/
 def parse : WriteM := fun ctx =>
-  match ctx.state.op, ctx.state.query with
-  | none, _ => WriteResult.error "No operation in state"
-  | _, none => WriteResult.error "No query in state"
-  | some op, some _queryStr =>
-    -- Parse query array (simplified - would use proper JSON parser)
-    -- Expected formats:
-    -- ["op", data, dir, doc] for set/update/upsert
-    -- ["op", dir, doc] for get/del
-    -- ["op", data, dir] for add
-
-    if op == "get" || op == "cget" then
-      -- Parse: [dir, doc]
-      let state' := { ctx.state with
-        dirIndex := some 0  -- Simplified - would parse from query
-        docId := some "doc1"  -- Simplified - would parse from query
-      }
-      WriteResult.ok { ctx with state := state' }
-
-    else if op == "del" then
-      -- Parse: [dir, doc]
-      let dirIdx := 0  -- Simplified
-      let docId := "doc1"  -- Simplified
-
-      -- Check doc ID validity
-      if !checkDocID docId then
-        WriteResult.error s!"invalid docID: {docId}"
-      else
-        -- Get existing document for "before" state
-        let before := match ctx.data.dirs[dirIdx]? with
-          | none => none
-          | some dir => dir.get docId
-
+  match ctx.state.parsedQuery with
+  | none => WriteResult.error "No query in state"
+  | some query =>
+    match query with
+    | Query.get dir doc =>
+      match getDirIndex dir with
+      | none => WriteResult.error s!"Invalid directory: {dir}"
+      | some dirIdx =>
         let state' := { ctx.state with
           dirIndex := some dirIdx
-          docId := some docId
-          doc := before  -- Store old data in doc field
+          docId := some doc
         }
         WriteResult.ok { ctx with state := state' }
 
-    else if op == "add" then
-      -- Parse: [data, dir]
-      let data := Doc.fromList [("field", "value")]  -- Simplified
-      let dirIdx := 0  -- Simplified
+    | Query.cget dir doc =>
+      match getDirIndex dir with
+      | none => WriteResult.error s!"Invalid directory: {dir}"
+      | some dirIdx =>
+        let state' := { ctx.state with
+          dirIndex := some dirIdx
+          docId := some doc
+        }
+        WriteResult.ok { ctx with state := state' }
 
+    | Query.del dir doc =>
+      match getDirIndex dir with
+      | none => WriteResult.error s!"Invalid directory: {dir}"
+      | some dirIdx =>
+        -- Check doc ID validity
+        if !checkDocID doc then
+          WriteResult.error s!"invalid docID: {doc}"
+        else
+          -- Get existing document for "before" state
+          let before := match ctx.data.dirs[dirIdx]? with
+            | none => none
+            | some d => d.get doc
+
+          let state' := { ctx.state with
+            dirIndex := some dirIdx
+            docId := some doc
+            doc := before  -- Store old data in doc field for reference
+            -- Note: State doesn't have 'before' field in current definition
+          }
+          WriteResult.ok { ctx with state := state' }
+
+    | Query.add data dir =>
+      match getDirIndex dir with
+      | none => WriteResult.error s!"Invalid directory: {dir}"
+      | some dirIdx =>
+        let state' := { ctx.state with
+          dirIndex := some dirIdx
+          doc := some data
+        }
+        -- Chain to genDocID and setData
+        match genDocID { ctx with state := state' } with
+        | WriteResult.error e => WriteResult.error e
+        | WriteResult.ok ctx' => setData ctx'
+
+    | Query.set data dir doc =>
+      match getDirIndex dir with
+      | none => WriteResult.error s!"Invalid directory: {dir}"
+      | some dirIdx =>
+        if !checkDocID doc then
+          WriteResult.error s!"invalid docID: {doc}"
+        else
+          let state' := { ctx.state with
+            dirIndex := some dirIdx
+            docId := some doc
+            doc := some data
+          }
+          setData { ctx with state := state' }
+
+    | Query.update data dir doc =>
+      match getDirIndex dir with
+      | none => WriteResult.error s!"Invalid directory: {dir}"
+      | some dirIdx =>
+        if !checkDocID doc then
+          WriteResult.error s!"invalid docID: {doc}"
+        else
+          let state' := { ctx.state with
+            dirIndex := some dirIdx
+            docId := some doc
+            doc := some data
+          }
+          updateData { ctx with state := state' }
+
+    | Query.upsert data dir doc =>
+      match getDirIndex dir with
+      | none => WriteResult.error s!"Invalid directory: {dir}"
+      | some dirIdx =>
+        if !checkDocID doc then
+          WriteResult.error s!"invalid docID: {doc}"
+        else
+          let state' := { ctx.state with
+            dirIndex := some dirIdx
+            docId := some doc
+            doc := some data
+          }
+          upsertData { ctx with state := state' }
+
+    | Query.batch ops =>
+      -- For batch operations, would need to process each operation
+      -- For now, just return success
+      WriteResult.ok ctx
+
+    | Query.addIndex dir index =>
+      match getDirIndex dir with
+      | none => WriteResult.error s!"Invalid directory: {dir}"
+      | some dirIdx =>
+        let state' := { ctx.state with
+          dirIndex := some dirIdx
+          -- Would store index configuration somewhere
+        }
+        WriteResult.ok { ctx with state := state' }
+
+    | Query.removeIndex dir index =>
+      match getDirIndex dir with
+      | none => WriteResult.error s!"Invalid directory: {dir}"
+      | some dirIdx =>
+        let state' := { ctx.state with
+          dirIndex := some dirIdx
+          -- Would remove index configuration
+        }
+        WriteResult.ok { ctx with state := state' }
+
+    | Query.init config =>
+      -- Init operation - would initialize database with config
       let state' := { ctx.state with
-        dirIndex := some dirIdx
-        doc := some data
+        doc := some config  -- Store config in doc field
       }
-
-      -- Chain to genDocID and setData
-      match genDocID { ctx with state := state' } with
-      | WriteResult.error e => WriteResult.error e
-      | WriteResult.ok ctx' => setData ctx'
-
-    else if op == "set" then
-      -- Parse: [data, dir, doc]
-      let data := Doc.fromList [("field", "value")]  -- Simplified
-      let dirIdx := 0  -- Simplified
-      let docId := "doc1"  -- Simplified
-
-      if !checkDocID docId then
-        WriteResult.error s!"invalid docID: {docId}"
-      else
-        let state' := { ctx.state with
-          dirIndex := some dirIdx
-          docId := some docId
-          doc := some data
-        }
-        setData { ctx with state := state' }
-
-    else if op == "update" then
-      -- Similar to set but requires existing doc
-      let data := Doc.fromList [("field", "value")]  -- Simplified
-      let dirIdx := 0  -- Simplified
-      let docId := "doc1"  -- Simplified
-
-      if !checkDocID docId then
-        WriteResult.error s!"invalid docID: {docId}"
-      else
-        -- Get existing document (stored in state by updateData)
-        let state' := { ctx.state with
-          dirIndex := some dirIdx
-          docId := some docId
-          doc := some data
-        }
-        updateData { ctx with state := state' }
-
-    else if op == "upsert" then
-      -- Parse: [data, dir, doc]
-      let data := Doc.fromList [("field", "value")]  -- Simplified
-      let dirIdx := 0  -- Simplified
-      let docId := "doc1"  -- Simplified
-
-      if !checkDocID docId then
-        WriteResult.error s!"invalid docID: {docId}"
-      else
-        let state' := { ctx.state with
-          dirIndex := some dirIdx
-          docId := some docId
-          doc := some data
-        }
-        upsertData { ctx with state := state' }
-
-    else
-      WriteResult.error s!"Unknown operation: {op}"
+      WriteResult.ok { ctx with state := state' }
 
 end Weavedb.Write.Parse
