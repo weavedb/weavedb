@@ -1,5 +1,5 @@
 import { validate } from "jsonschema"
-import { of, fn } from "./monade.js"
+import { of, ka } from "./monade.js"
 import parse from "./dev_parse.js"
 import auth from "./dev_auth.js"
 import { parseOp, initDB } from "./dev_common.js"
@@ -69,19 +69,19 @@ function batch({ state, env }) {
 }
 
 const writer = {
-  init: fn().map(initDB),
-  set: fn().tap(validateSchema).map(putData),
-  add: fn().tap(validateSchema).map(putData),
-  upsert: fn().tap(validateSchema).map(putData),
-  update: fn().tap(validateSchema).map(putData),
-  del: fn().map(delData),
-  addIndex: fn().map(addIndex),
-  removeIndex: fn().map(removeIndex),
-  batch: fn().map(batch),
+  init: ka().map(initDB),
+  set: ka().tap(validateSchema).map(putData),
+  add: ka().tap(validateSchema).map(putData),
+  upsert: ka().tap(validateSchema).map(putData),
+  update: ka().tap(validateSchema).map(putData),
+  del: ka().map(delData),
+  addIndex: ka().map(addIndex),
+  removeIndex: ka().map(removeIndex),
+  batch: ka().map(batch),
 }
 
 function write({ state, msg, env: { no_commit, kv } }) {
-  if (writer[state.opcode]) of(arguments[0]).chain(writer[state.opcode])
+  if (writer[state.opcode]) of(arguments[0]).chain(writer[state.opcode].fn())
   if (no_commit !== true) kv.commit(msg, null, state)
   return arguments[0]
 }

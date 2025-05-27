@@ -66,13 +66,16 @@ const facts2 = [
 const setup = async ({ pid, request }) => {
   let nonce = 0
   const json0 = await set(request, ["init", init_query], ++nonce, pid)
+  await wait(1000)
   const json = await set(
     request,
     ["createTable", "vectors", facts],
     ++nonce,
     pid,
   )
+  await wait(1000)
   const json2 = await set(request, ["add", "vectors", facts2], ++nonce, pid)
+  await wait(1000)
   const json3 = await get(request, ["search", "vectors", "who won?", 1], pid)
   assert.deepEqual(json3.res[0].text, ibm)
   return { nonce }
@@ -136,9 +139,10 @@ describe("WeaveVec", () => {
       .write(await s.sign("init", init_query))
       .pwrite(await s.sign("createTable", "vectors", facts))
       .pwrite(await s.sign("add", "vectors", facts2))
-    assert.equal((await db.search("vectors", "who won?", 1))[0].text, ibm)
+    assert.equal((await db.search("vectors", "who won?", 1).val())[0].text, ibm)
   })
-  it("should validate HB WAL", async () => {
+
+  it.only("should validate HB WAL", async () => {
     const { node, pid, request, hbeam, jwk, hb } = await deployHB({
       port: 10005,
       type: "vec",

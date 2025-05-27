@@ -93,7 +93,7 @@ describe("WeaveSQL", () => {
       .write(await s.sign("sql", update))
       .write(await s.sign("sql", del))
       .write(await s.sign("sql", insert))
-    assert.deepEqual(db.sql("SELECT * from users"), [
+    assert.deepEqual(db.sql("SELECT * from users").val(), [
       { name: "Bob", age: 24, id: 3 },
     ])
   })

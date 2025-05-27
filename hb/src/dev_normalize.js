@@ -1,5 +1,5 @@
 import { includes, isNil } from "ramda"
-import { of, fn } from "./monade.js"
+import { of, ka } from "./monade.js"
 import sha256 from "fast-sha256"
 import { parseOp } from "./dev_common.js"
 function base64urlDecode(str) {
@@ -132,6 +132,6 @@ function pickInput({ state, msg }) {
   return arguments[0]
 }
 
-const normalize = fn().map(toLower).map(pickInput).map(parseOp)
+const normalize = ka().map(toLower).map(pickInput).map(parseOp)
 
 export default normalize

@@ -1,6 +1,6 @@
 import assert from "assert"
 import { afterEach, after, describe, it, before, beforeEach } from "node:test"
-import { of, pof, fn, pfn } from "../src/monade.js"
+import { of, pof } from "../src/monade.js"
 import wdb from "../src/db.js"
 import queue from "../src/queue.js"
 import { open } from "lmdb"
@@ -71,8 +71,8 @@ describe("WeaveDB Core", () => {
       .write(await s.sign(...users_query))
       .write(await s.sign("set:user", bob, "users", "bob"))
       .write(await s.sign("set:user", alice, "users", "alice"))
-    const cur = db.cget("users", 1)[0]
-    assert.deepEqual(db.get("users", ["startAfter", cur]), [bob])
+    const cur = db.cget("users", 1).val()[0]
+    assert.deepEqual(db.get("users", ["startAfter", cur]).val(), [bob])
   })
 
   it("should handle queue", async () => {
@@ -84,16 +84,16 @@ describe("WeaveDB Core", () => {
     await db.write(
       await s.sign("set:user", { name: "Bob", age: 4 }, "users", "bob"),
     )
-    assert.deepEqual(db.get("users"), [{ name: "Bob", age: 4 }])
+    assert.deepEqual(db.get("users").val(), [{ name: "Bob", age: 4 }])
     await db.write(await s.sign("set:user", alice, "users", "alice"))
-    assert.deepEqual(db.get("users"), [alice, { name: "Bob", age: 4 }])
+    assert.deepEqual(db.get("users").val(), [alice, { name: "Bob", age: 4 }])
   })
 
   it("should init", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
     const db = wdb(getKV()).write(await s.sign("init", init_query))
-    assert.equal(db.get("_", "_").index, 0)
+    assert.equal(db.get("_", "_").val().index, 0)
   })
 
   it("should add dirs", async () => {
@@ -115,7 +115,7 @@ describe("WeaveDB Core", () => {
       .write(
         await s.sign("update:user", { age: { _$: ["inc"] } }, "users", "bob"),
       )
-    assert.equal(db.get("users", "bob").age, 5)
+    assert.equal(db.get("users", "bob").val().age, 5)
   })
 
   it("should batch", async () => {
@@ -133,7 +133,7 @@ describe("WeaveDB Core", () => {
           ["update:user", { name: "Bobby" }, "users", "bob"],
         ),
       )
-    assert.deepEqual(db.get("users"), [alice, { name: "Bobby" }])
+    assert.deepEqual(db.get("users").val(), [alice, { name: "Bobby" }])
   })
 
   it("should add/remove indexes", async () => {
@@ -166,21 +166,20 @@ describe("WeaveDB Core", () => {
           "users",
         ),
       )
-    assert.deepEqual(db.get("users", ["age", "desc"], ["name"]), [
+    assert.deepEqual(db.get("users", ["age", "desc"], ["name"]).val(), [
       beth,
       mike,
       alice,
       bob,
     ])
-    assert.deepEqual(db.get("users", ["favs", "array-contains", "peach"]), [
-      alice,
-      beth,
-      mike,
-    ])
+    assert.deepEqual(
+      db.get("users", ["favs", "array-contains", "peach"]).val(),
+      [alice, beth, mike],
+    )
     db.write(
       await s.sign("batch", ["update:user", { age: 60 }, "users", "bob"]),
     )
-    assert.deepEqual(db.get("users", ["age", "desc"], ["name"]), [
+    assert.deepEqual(db.get("users", ["age", "desc"], ["name"]).val(), [
       { ...bob, age: 60 },
       beth,
       mike,
@@ -202,16 +201,16 @@ describe("WeaveDB Core", () => {
       .write(await s.sign("del:user", "users", "bob"))
       .write(await s.sign("update:user", { age: 20 }, "users", "alice"))
       .write(await s.sign("upsert:user", john, "users", "john"))
-    assert.deepEqual(db.get("users", "alice"), { ...alice, age: 20 })
-    assert.deepEqual(db.get("users", "A"), mike)
-    assert.deepEqual(db.get("users", "B"), beth)
-    assert.deepEqual(db.get("users", "john"), john)
+    assert.deepEqual(db.get("users", "alice").val(), { ...alice, age: 20 })
+    assert.deepEqual(db.get("users", "A").val(), mike)
+    assert.deepEqual(db.get("users", "B").val(), beth)
+    assert.deepEqual(db.get("users", "john").val(), john)
     await wait(100)
 
     // recover from kv
     const db2 = wdb(wkv)
-    assert.equal(db2.get("users", "bob"), null)
-    assert.deepEqual(db2.get("users", "alice"), { ...alice, age: 20 })
+    assert.equal(db2.get("users", "bob").val(), null)
+    assert.deepEqual(db2.get("users", "alice").val(), { ...alice, age: 20 })
   })
   /*
   it.skip("should persist data with lsJSON", async () => {
@@ -483,7 +482,7 @@ describe("Server", () => {
     assert.deepEqual(json3.res, [bob])
     await wait(1000)
     const db = await recover({ pid, hb, dbpath: genDir(), jwk })
-    assert.deepEqual(db.get("users"), [bob], pid)
+    assert.deepEqual(db.get("users").val(), [bob], pid)
 
     const { pid: pid2 } = await deploy({ hb })
     let nonce_2 = 0
@@ -553,7 +552,7 @@ const validateDB = async ({ hbeam, pid, hb, jwk }) => {
 }
 
 describe("Validator", () => {
-  it.only("should validate HB WAL", async () => {
+  it("should validate HB WAL", async () => {
     const { node, pid, request, hbeam, jwk, hb } = await deployHB({
       port: 10005,
     })

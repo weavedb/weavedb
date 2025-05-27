@@ -1,4 +1,4 @@
-import { pof, of, fn } from "./monade.js"
+import { pof, of, ka, dev, pdev } from "./monade.js"
 
 const _store = _kv => {
   const get = (dir, doc) => _kv.get(`${dir}/${doc}`)
@@ -25,102 +25,151 @@ const build = ({
   store = _store,
 }) => {
   return (kv, opt = {}) => {
-    let _to = {}
-    if (read) {
-      let _read = fn()
-      for (const dev of read) {
-        _read = dev.__monad__ ? _read.chain(dev) : _read.map(dev)
+    // Build all methods for the device
+    const methods = {}
+
+    // Build write method
+    if (write) {
+      let _write = ka()
+      for (const dev of write) {
+        if (dev.__ka__) {
+          // If dev is a Kleisli arrow, convert to function and chain
+          _write = _write.chain(dev.fn())
+        } else if (dev.__monad__) {
+          // If dev is a monad (function that returns a monad), chain it
+          _write = _write.chain(dev)
+        } else {
+          // Otherwise, it's a regular function, use map
+          _write = _write.map(dev)
+        }
       }
-      _to.read = (msg, _opt) => kv => {
+
+      methods.write = (currentKv, msg, _opt) => {
         try {
-          return of({ kv, msg, opt: { ...opt, ..._opt } })
+          of({ kv: currentKv, msg, opt: { ...opt, ..._opt } })
             .map(init)
-            .chain(_read)
+            .chain(_write.fn())
+          return currentKv
+        } catch (e) {
+          console.log(e)
+          currentKv.reset()
+          throw e
+        }
+      }
+
+      // Add pwrite for async version
+      if (async) {
+        methods.pwrite = (currentKv, msg, _opt) => {
+          return new Promise((cb, rej) => {
+            try {
+              of({
+                kv: currentKv,
+                msg,
+                opt: {
+                  ...opt,
+                  ..._opt,
+                  cb: () => cb(currentKv),
+                },
+              })
+                .map(init)
+                .chain(_write.fn())
+            } catch (e) {
+              console.log(e)
+              currentKv.reset()
+              rej(e)
+            }
+          })
+        }
+      }
+    }
+
+    // Build read method
+    if (read) {
+      let _read = ka()
+      for (const dev of read) {
+        if (dev.__ka__) {
+          _read = _read.chain(dev.fn())
+        } else if (dev.__monad__) {
+          _read = _read.chain(dev)
+        } else {
+          _read = _read.map(dev)
+        }
+      }
+
+      methods.read = (currentKv, msg, _opt) => {
+        try {
+          return of({ kv: currentKv, msg, opt: { ...opt, ..._opt } })
+            .map(init)
+            .chain(_read.fn())
             .val()
         } catch (e) {
           throw e
         }
       }
     }
+
+    // Build custom read methods
     for (const k in __read__) {
       const read = __read__[k]
-      let _read = fn()
+      let _read = ka()
       for (const dev of read) {
-        _read = dev.__monad__ ? _read.chain(dev) : _read.map(dev)
-      }
-      _to[k] =
-        (...msg) =>
-        kv => {
-          try {
-            return of({ kv, msg, opt }).map(init).chain(_read).val()
-          } catch (e) {
-            throw e
-          }
+        if (dev.__ka__) {
+          _read = _read.chain(dev.fn())
+        } else if (dev.__monad__) {
+          _read = _read.chain(dev)
+        } else {
+          _read = _read.map(dev)
         }
-    }
-
-    let _map = {}
-    if (write) {
-      let _write = fn()
-      for (const dev of write) {
-        _write = dev.__monad__ ? _write.chain(dev) : _write.map(dev)
       }
-      _map.write = (msg, _opt) => kv => {
+
+      methods[k] = async (currentKv, ...msg) => {
         try {
-          of({ kv, msg, opt: { ...opt, ..._opt } })
+          // For async operations, we might need to await
+          const result = of({ kv: currentKv, msg, opt })
             .map(init)
-            .chain(_write)
-          return kv
+            .chain(_read.fn())
+            .val()
+
+          // If the result is a promise (for async operations), await it
+          if (result && typeof result.then === "function") {
+            return await result
+          }
+          return result
         } catch (e) {
-          console.log(e)
-          kv.reset()
           throw e
         }
       }
-      if (async) {
-        _map.pwrite = (msg, _opt) => kv =>
-          new Promise(async (cb, rej) => {
-            try {
-              of({
-                kv,
-                msg,
-                opt: {
-                  ...opt,
-                  ..._opt,
-                  cb: () => cb(kv),
-                },
-              })
-                .map(init)
-                .chain(_write)
-            } catch (e) {
-              console.log(e)
-              kv.reset()
-              rej(e)
-            }
-          })
-      }
     }
+
+    // Build custom write methods
     for (const k in __write__) {
       const write = __write__[k]
-      let _write = fn()
+      let _write = ka()
       for (const dev of write) {
-        _write = dev.__monad__ ? _write.chain(dev) : _write.map(dev)
-      }
-      _map.write =
-        (...msg) =>
-        kv => {
-          try {
-            of({ kv, msg, opt }).map(init).chain(_write)
-            return kv
-          } catch (e) {
-            console.log(e)
-            kv.reset()
-            throw e
-          }
+        if (dev.__ka__) {
+          _write = _write.chain(dev.fn())
+        } else if (dev.__monad__) {
+          _write = _write.chain(dev)
+        } else {
+          _write = _write.map(dev)
         }
+      }
+
+      methods[k] = (currentKv, ...msg) => {
+        try {
+          of({ kv: currentKv, msg, opt }).map(init).chain(_write.fn())
+          return currentKv
+        } catch (e) {
+          console.log(e)
+          currentKv.reset()
+          throw e
+        }
+      }
     }
-    const _of = async ? pof : of
-    return _of(store(kv), { to: _to, map: _map })
+
+    // Use dev or pdev to create the device
+    const deviceCreator = async ? pdev(methods) : dev(methods)
+    return deviceCreator(store(kv))
   }
 }
 
