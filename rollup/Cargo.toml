@@ -5,42 +5,51 @@ edition = "2021"
 
 [dependencies]
 # Core dependencies
-deno_core = "0.280.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-clap = { version = "4.0", features = ["derive"] }
-
-# Async runtime
-tokio = { version = "1.0", features = ["full"] }
-
-# Web server
+tokio = { version = "1", features = ["full"] }
 axum = "0.7"
 tower = { version = "0.4", features = ["util"] }
-http = "1.0"
+tower-http = { version = "0.5", features = ["cors"] }
 
-# HTTP client for HyperBEAM
-reqwest = { version = "0.11", features = ["json"] }
+# CLI
+clap = { version = "4.0", features = ["derive"] }
 
-# Logging
-log = "0.4"
-
-# Utilities
-hex = "0.4"
-rand = "0.8"
-chrono = "0.4"
-base64 = "0.21"
-uuid = { version = "1.6", features = ["v4"] }
-
-# Ed25519 signatures
-ed25519-dalek = "2.0"
-
-# SHA256 for content digest
+# Cryptography
+ed25519-dalek = { version = "2.0", features = ["serde"] }
 sha2 = "0.10"
-
-# OpenSSL for RSA signatures
+base64 = "0.21"
+md5 = "0.7"
+hex = "0.4"
 openssl = "0.10"
 
+# Time handling
+chrono = "0.4"
+
+# HTTP signature verification
+http-signature-normalization = "0.5"
+
+# JavaScript runtime for FPJson
+deno_core = "0.280.0"
+
+# HTTP client
+reqwest = { version = "0.11", features = ["json"] }
+
+# Random
+rand = "0.8"
+
+# Development dependencies
 [dev-dependencies]
-http-body-util = "0.1"
-bytes = "1.5"
 tokio-test = "0.4"
+
+[[bin]]
+name = "weavedb"
+path = "src/main.rs"
+
+[lib]
+name = "weavedb"
+path = "src/lib.rs"
+
+[[test]]
+name = "test_weavedb"
+path = "tests/test_weavedb.rs"
