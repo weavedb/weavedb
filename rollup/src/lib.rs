@@ -14,3 +14,4 @@ pub mod monade;
 pub mod db;
 pub mod weavedb_device;
 pub mod server_db;
+pub mod parse;

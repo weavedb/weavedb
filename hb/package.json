@@ -42,5 +42,8 @@
     "wao": "^0.21.3",
     "yargs": "^17.7.2",
     "zkjson": "^0.5.3"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.5"
   }
 }
