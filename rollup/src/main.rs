@@ -1,11 +1,12 @@
-// File: src/main.rs
+// src/main.rs
 
-use weavedb::{server_db, weavedb_device::wdb};
+use std::net::SocketAddr;
+use tokio::net::TcpListener;
 use clap::{Parser, Subcommand};
-use std::collections::HashMap;
-use serde_json::json;
+use weavedb::server_db;
 
-#[derive(Parser, Debug)]
+/// WeaveDB Command Line Interface
+#[derive(Parser)]
 #[command(name = "weavedb")]
 #[command(about = "WeaveDB - Decentralized NoSQL Database", long_about = None)]
 pub struct Args {
@@ -13,7 +14,7 @@ pub struct Args {
     command: Option<Commands>,
 }
 
-#[derive(Subcommand, Debug)]
+#[derive(Subcommand)]
 enum Commands {
     /// Run the WeaveDB server
     Server {
@@ -25,19 +26,19 @@ enum Commands {
         #[arg(short, long, default_value = "weavedb-local")]
         id: String,
         
-        /// Database storage path
+        /// Database path
         #[arg(short, long, default_value = ".weavedb")]
         db_path: String,
         
-        /// HyperBEAM port (optional, enables WAL)
+        /// HyperBeam port (if using HyperBeam)
         #[arg(short = 'b', long)]
-        hyperbeam_port: Option<u16>,
+        hb_port: Option<u16>,
     },
-    /// Run a test query
-    Test {
-        /// Test command to run
+    /// Run the weavedb docker configuration
+    Docker {
+        /// Docker mode
         #[arg(default_value = "basic")]
-        test: String,
+        mode: String,
     },
 }
 
@@ -46,74 +47,41 @@ async fn main() {
     let args = Args::parse();
     
     match args.command {
-        Some(Commands::Server { port, id, db_path, hyperbeam_port }) => {
-            println!("🔧 Initializing WeaveDB...");
-            if let Some(hb_port) = hyperbeam_port {
-                server_db::run_weavedb_server_with_hyperbeam(port, id, db_path, Some(hb_port)).await;
+        Some(Commands::Server { port, id, db_path, hb_port }) => {
+            println!("Starting WeaveDB server on port {}", port);
+            
+            let router = if let Some(hb_port) = hb_port {
+                weavedb::server_db::create_router_with_hb(id.clone(), db_path.clone(), hb_port).await
             } else {
-                server_db::run_weavedb_server(port, id, db_path).await;
-            }
+                weavedb::server_db::create_router(id.clone(), db_path.clone())
+            };
+            
+            let addr = SocketAddr::from(([127, 0, 0, 1], port));
+            let listener = TcpListener::bind(addr).await.unwrap();
+            
+            println!("WeaveDB server listening on {}", addr);
+            
+            axum::serve(listener, router).await.unwrap();
         }
-        Some(Commands::Test { test }) => {
-            run_tests(&test);
+        Some(Commands::Docker { mode }) => {
+            println!("Running WeaveDB in Docker mode: {}", mode);
+            // Docker mode implementation would go here
         }
         None => {
-            // Default: run server
-            println!("🔧 Initializing WeaveDB with default settings...");
-            server_db::run_weavedb_server(8080, "weavedb-local".to_string(), ".weavedb".to_string()).await;
-        }
-    }
-}
-
-fn run_tests(test_name: &str) {
-    println!("🧪 Running test: {}", test_name);
-    
-    match test_name {
-        "basic" => {
-            // Create a WeaveDB instance - just like JS: wdb(kv, opt)
-            let mut db = wdb(HashMap::new(), HashMap::new());
+            // Default behavior - run server on port 8080
+            println!("Starting WeaveDB server on default port 8080");
             
-            // Test init operation
-            let init_msg = json!({
-                "headers": {
-                    "query": r#"["init", "_", {"id": "test-db", "owner": "test-owner"}]"#,
-                    "nonce": "1",
-                    "signature": "test-sig",
-                    "signature-input": r#"sig1=("id" "nonce" "query");alg="eddsa-ed25519";keyid="test-key""#,
-                    "id": "test-db"
-                }
-            });
+            let router = weavedb::server_db::create_router(
+                "weavedb-local".to_string(), 
+                ".weavedb".to_string()
+            );
             
-            // Call db.write(msg) - just like JS
-            match db.write(init_msg) {
-                Ok(_) => println!("✅ Init operation successful"),
-                Err(e) => println!("❌ Init operation failed: {}", e),
-            }
+            let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
+            let listener = TcpListener::bind(addr).await.unwrap();
             
-            // Test set operation
-            let set_msg = json!({
-                "headers": {
-                    "query": r#"["set", {"name": "Alice", "age": 30}, "users", "user1"]"#,
-                    "nonce": "2",
-                    "signature": "test-sig",
-                    "signature-input": r#"sig1=("id" "nonce" "query");alg="eddsa-ed25519";keyid="test-key""#,
-                    "id": "test-db"
-                }
-            });
+            println!("WeaveDB server listening on {}", addr);
             
-            match db.write(set_msg) {
-                Ok(_) => println!("✅ Set operation successful"),
-                Err(e) => println!("❌ Set operation failed: {}", e),
-            }
-            
-            // Test get operation - just like JS: db.get(...query).val()
-            match db.get(vec![json!("users"), json!("user1")]) {
-                Ok(result) => println!("✅ Get operation result: {}", serde_json::to_string_pretty(&result).unwrap()),
-                Err(e) => println!("❌ Get operation failed: {}", e),
-            }
-        }
-        _ => {
-            println!("❓ Unknown test: {}", test_name);
+            axum::serve(listener, router).await.unwrap();
         }
     }
 }

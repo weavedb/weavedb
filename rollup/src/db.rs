@@ -1,59 +1,44 @@
-use crate::build::{build, transform, BuildConfig, Context, TransformFn};
+// File: src/db.rs
+
+use crate::build::{build, transform, BuildConfig, Context, TransformFn, DBImpl, DBMethods};
 use crate::normalize;
 use crate::verify_nonce;
 use crate::auth;
 use crate::write;
+use crate::read;  // Import the read module
+use crate::monade::Device;
 
 use std::sync::Arc;
 use serde_json::{Value, json};
 
 // Re-export commonly used types
-pub use crate::build::{Store, DBMethods};
+pub use crate::build::Store;
 
 // Re-export parse function so it can be accessed through db module
 pub use crate::parse::parse;
-
-/// Read device - executes read operations
-pub fn read(mut ctx: Context) -> Context {
-    if let Some(op) = ctx.state.get("op").and_then(|v| v.as_str()) {
-        match op {
-            "get" | "cget" => {
-                // Get directory and document from state
-                let dir = ctx.state.get("dir").and_then(|v| v.as_str());
-                let doc = ctx.state.get("doc").and_then(|v| v.as_str());
-                
-                if let (Some(dir), Some(doc)) = (dir, doc) {
-                    // Try to get the actual data from store
-                    if let Some(data) = ctx.kv.get(dir, doc) {
-                        ctx.state.insert("read_result".to_string(), data);
-                    } else {
-                        ctx.state.insert("read_result".to_string(), json!(null));
-                    }
-                } else {
-                    ctx.state.insert("error".to_string(), json!("Missing dir or doc in state"));
-                }
-            }
-            _ => {
-                ctx.state.insert("error".to_string(), json!("Unknown read operation"));
-            }
-        }
-    }
-    
-    ctx
-}
 
 /// Get operation setup
 pub fn get(mut ctx: Context) -> Context {
     ctx.state.insert("opcode".to_string(), json!("get"));
     ctx.state.insert("op".to_string(), json!("get"));
     
-    // Build query array: ["get", ...msg]
-    let mut query = vec![json!("get")];
-    if let Some(msg_array) = ctx.msg.as_array() {
-        query.extend(msg_array.iter().cloned());
-    }
-    ctx.state.insert("query".to_string(), json!(query));
+    // Check if msg already has "get" as first element
+    let query = if let Some(msg_array) = ctx.msg.as_array() {
+        if msg_array.first().and_then(|v| v.as_str()) == Some("get") {
+            // Already has "get", use as-is
+            ctx.msg.clone()
+        } else {
+            // Build query array: ["get", ...msg]
+            let mut q = vec![json!("get")];
+            q.extend(msg_array.iter().cloned());
+            json!(q)
+        }
+    } else {
+        // Not an array, wrap it
+        json!(["get", ctx.msg.clone()])
+    };
     
+    ctx.state.insert("query".to_string(), query);
     ctx
 }
 
@@ -62,13 +47,23 @@ pub fn cget(mut ctx: Context) -> Context {
     ctx.state.insert("opcode".to_string(), json!("cget"));
     ctx.state.insert("op".to_string(), json!("cget"));
     
-    // Build query array: ["cget", ...msg]
-    let mut query = vec![json!("cget")];
-    if let Some(msg_array) = ctx.msg.as_array() {
-        query.extend(msg_array.iter().cloned());
-    }
-    ctx.state.insert("query".to_string(), json!(query));
+    // Check if msg already has "cget" as first element
+    let query = if let Some(msg_array) = ctx.msg.as_array() {
+        if msg_array.first().and_then(|v| v.as_str()) == Some("cget") {
+            // Already has "cget", use as-is
+            ctx.msg.clone()
+        } else {
+            // Build query array: ["cget", ...msg]
+            let mut q = vec![json!("cget")];
+            q.extend(msg_array.iter().cloned());
+            json!(q)
+        }
+    } else {
+        // Not an array, wrap it
+        json!(["cget", ctx.msg.clone()])
+    };
     
+    ctx.state.insert("query".to_string(), query);
     ctx
 }
 
@@ -85,18 +80,18 @@ pub fn create_db_config() -> BuildConfig {
         read: Some(vec![
             transform(normalize::normalize),
             transform(parse),
-            transform(read),
+            transform(read::read),  // Use read::read from the read module
         ]),
         __read__: vec![
             ("get".to_string(), vec![
                 transform(get),
                 transform(parse),
-                transform(read),
+                transform(read::read),  // Use read::read from the read module
             ]),
             ("cget".to_string(), vec![
                 transform(cget),
                 transform(parse),
-                transform(read),
+                transform(read::read),  // Use read::read from the read module
             ]),
         ].into_iter().collect(),
         __write__: Default::default(),
@@ -105,8 +100,8 @@ pub fn create_db_config() -> BuildConfig {
 }
 
 /// Create a database instance
-pub fn create_db() -> impl Fn(std::collections::HashMap<String, Value>, std::collections::HashMap<String, Value>) 
-    -> crate::monade::Device<crate::build::Store, crate::build::DBMethods> {
+pub fn create_db() -> Box<dyn Fn(std::collections::HashMap<String, Value>, std::collections::HashMap<String, Value>) 
+    -> Device<(Store, Value), DBImpl> + Send + Sync> {
     build(create_db_config())
 }
 
@@ -252,7 +247,7 @@ mod tests {
         // Run through read pipeline
         ctx = normalize(ctx);
         ctx = parse(ctx);
-        ctx = read(ctx);
+        ctx = read::read(ctx);  // Use read::read from the module
         
         // Check stages completed
         assert!(ctx.state.contains_key("signer"));

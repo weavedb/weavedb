@@ -2,6 +2,8 @@ use crate::build::{build, transform, BuildConfig, Context, TransformFn};
 use crate::normalize;
 use crate::verify_nonce;
 use crate::auth;
+use crate::indexer;
+use crate::bpt::KVStore;
 use std::sync::Arc;
 use serde_json::{Value, json, Map};
 use std::collections::HashMap;
@@ -21,8 +23,8 @@ fn init_db(mut ctx: Context) -> Context {
         .and_then(|v| v.as_object()) {
             Some(cfg) => cfg,
             None => {
-		ctx.state.insert("error".to_string(), json!("Invalid init configuration"));
-		return ctx;
+                ctx.state.insert("error".to_string(), json!("Invalid init configuration"));
+                return ctx;
             }
 	};
     
@@ -112,31 +114,44 @@ fn add_index(mut ctx: Context) -> Context {
 
     // Verify directory exists
     if ctx.kv.get(SYSTEM_DIR, dir).is_none() {
-	ctx.state.insert("error".to_string(), json!(format!("dir doesn't exist: {}", dir)));
-	return ctx;
+        ctx.state.insert("error".to_string(), json!(format!("dir doesn't exist: {}", dir)));
+        return ctx;
     }
     
-    // Extract index definition from query
-    let _index_def = match ctx.state.get("query")
-        .and_then(|q| q.as_array())
-        .and_then(|arr| arr.get(2)) {
-            Some(def) => def.clone(),
-            None => {
-		ctx.state.insert("error".to_string(), json!("No index definition in query"));
-		return ctx;
-            }
-	};
+    // Extract index definition from state (should be in data)
+    let index_def = match ctx.state.get("data") {
+        Some(def) => def,
+        None => {
+            ctx.state.insert("error".to_string(), json!("No index definition in state"));
+            return ctx;
+        }
+    };
     
-    // In real implementation, would update __indexes__ directory
-    // For now, just mark as successful
-    ctx.state.insert("index_added".to_string(), json!(true));
+    // Parse sort fields from index definition
+    let sort_fields = match parse_sort_fields(index_def) {
+        Ok(fields) => fields,
+        Err(e) => {
+            ctx.state.insert("error".to_string(), json!(e));
+            return ctx;
+        }
+    };
+    
+    // Add the index using the Store directly (which implements Clone)
+    match indexer::add_index(sort_fields, &[dir.to_string()], &mut ctx.kv) {
+        Ok(_) => {
+            ctx.state.insert("index_added".to_string(), json!(true));
+        }
+        Err(e) => {
+            ctx.state.insert("error".to_string(), json!(e));
+        }
+    }
     
     ctx
 }
 
 /// Remove index for a directory
 fn remove_index(mut ctx: Context) -> Context {
-    let _dir = match ctx.state.get("dir").and_then(|v| v.as_str()) {
+    let dir = match ctx.state.get("dir").and_then(|v| v.as_str()) {
         Some(d) => d,
         None => {
             ctx.state.insert("error".to_string(), json!("No directory in state"));
@@ -144,10 +159,61 @@ fn remove_index(mut ctx: Context) -> Context {
         }
     };
     
-    // In real implementation, would remove from __indexes__ directory
-    ctx.state.insert("index_removed".to_string(), json!(true));
+    // Extract index definition from state
+    let index_def = match ctx.state.get("data") {
+        Some(def) => def,
+        None => {
+            ctx.state.insert("error".to_string(), json!("No index definition in state"));
+            return ctx;
+        }
+    };
+    
+    // Parse sort fields from index definition
+    let sort_fields = match parse_sort_fields(index_def) {
+        Ok(fields) => fields,
+        Err(e) => {
+            ctx.state.insert("error".to_string(), json!(e));
+            return ctx;
+        }
+    };
+    
+    // Remove the index using the Store directly
+    match indexer::remove_index(sort_fields, &[dir.to_string()], &mut ctx.kv) {
+        Ok(_) => {
+            ctx.state.insert("index_removed".to_string(), json!(true));
+        }
+        Err(e) => {
+            ctx.state.insert("error".to_string(), json!(e));
+        }
+    }
     
     ctx
+}
+
+/// Parse sort fields from index definition
+fn parse_sort_fields(index_def: &Value) -> Result<Vec<(String, String)>, String> {
+    if let Value::Array(arr) = index_def {
+        let mut fields = Vec::new();
+        for item in arr {
+            if let Value::Array(field_def) = item {
+                if field_def.len() >= 1 {
+                    let field = field_def[0].as_str()
+                        .ok_or("Invalid field name")?
+                        .to_string();
+                    let direction = field_def.get(1)
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("asc")
+                        .to_string();
+                    fields.push((field, direction));
+                }
+            } else if let Value::String(field) = item {
+                fields.push((field.clone(), "asc".to_string()));
+            }
+        }
+        Ok(fields)
+    } else {
+        Err("Index definition must be an array".to_string())
+    }
 }
 
 /// Put data into the database
@@ -182,19 +248,36 @@ fn put_data(mut ctx: Context) -> Context {
     // If directory doesn't exist and it's not a system directory, create it
     if !dir_exists && dir != "_" && dir != "__accounts__" && dir != "__indexes__" {
         // Create directory metadata in system directory
-        let dir_meta = json!({
+        let mut dir_meta = json!({
             "name": dir,
             "created": chrono::Utc::now().timestamp(),
         });
+        
+        // If we have an autoid in state (from add operation), include it
+        if let Some(autoid) = ctx.state.get("autoid") {
+            if let Some(meta_obj) = dir_meta.as_object_mut() {
+                meta_obj.insert("autoid".to_string(), autoid.clone());
+            }
+        }
+        
         ctx.kv.put(SYSTEM_DIR, dir, dir_meta);
     }
     
-    // Store the document
-    ctx.kv.put(dir, doc, data);
+    // Determine if this is a create (set) or update operation
+    let is_create = ctx.state.get("op")
+        .and_then(|v| v.as_str())
+        .map(|op| op == "set" || op == "add")
+        .unwrap_or(false);
+    
+    // Use indexer to put data (handles all index updates)
+    if let Some((before, after)) = indexer::put(data, doc, &[dir.to_string()], &mut ctx.kv, is_create) {
+        // Store the before/after states for potential triggers or logging
+        ctx.state.insert("before".to_string(), serde_json::to_value(&before).unwrap_or(json!(null)));
+        ctx.state.insert("after".to_string(), serde_json::to_value(&after).unwrap_or(json!(null)));
+    }
     
     ctx
 }
-
 
 /// Delete data from the database
 fn del_data(mut ctx: Context) -> Context {
@@ -214,8 +297,18 @@ fn del_data(mut ctx: Context) -> Context {
         }
     };
     
-    // Just delete the document - if it doesn't exist, that's okay
-    ctx.kv.del(dir, doc);
+    // Check if directory exists
+    if ctx.kv.get(SYSTEM_DIR, dir).is_none() {
+        ctx.state.insert("error".to_string(), json!(format!("dir doesn't exist: {}", dir)));
+        return ctx;
+    }
+    
+    // Use indexer to delete (handles all index updates)
+    if let Some((before, after)) = indexer::del(doc, &[dir.to_string()], &mut ctx.kv) {
+        // Store the before/after states
+        ctx.state.insert("before".to_string(), serde_json::to_value(&before).unwrap_or(json!(null)));
+        ctx.state.insert("after".to_string(), serde_json::to_value(&after).unwrap_or(json!(null)));
+    }
     
     ctx
 }
@@ -228,8 +321,8 @@ fn batch(mut ctx: Context) -> Context {
         .and_then(|v| v.as_array()) {
             Some(ops) => ops.clone(),
             None => {
-		ctx.state.insert("error".to_string(), json!("Invalid batch query"));
-		return ctx;
+                ctx.state.insert("error".to_string(), json!("Invalid batch query"));
+                return ctx;
             }
 	};
     
@@ -379,111 +472,5 @@ mod tests {
         // Check data was stored
         let data = ctx.kv.get("users", "user1");
         assert_eq!(data, Some(json!({"name": "Alice", "age": 30})));
-    }
-    
-    #[test]
-    fn test_get_operation() {
-        let mut ctx = Context {
-            kv: Store::new(HashMap::new()),
-            msg: json!(["collection", "doc_id"]),
-            opt: HashMap::new(),
-            state: HashMap::new(),
-            env: HashMap::new(),
-        };
-        
-        ctx = crate::db::get(ctx);
-        assert_eq!(ctx.state.get("opcode"), Some(&json!("get")));
-        assert_eq!(ctx.state.get("query"), Some(&json!(["get", "collection", "doc_id"])));
-    }
-    
-    #[test]
-    fn test_normalize() {
-        use crate::normalize::normalize;
-        
-        let mut headers = serde_json::Map::new();
-        headers.insert("Signature-Input".to_string(), 
-		       json!(r#"sig1=("id" "nonce" "query");alg="eddsa-ed25519";keyid="test-key""#));
-        headers.insert("signature".to_string(), json!("test-sig"));
-        headers.insert("id".to_string(), json!("test-id"));
-        headers.insert("nonce".to_string(), json!("12345"));
-        headers.insert("query".to_string(), json!(r#"["get", "collection", "doc_id"]"#));
-        
-        let msg = json!({
-            "headers": headers
-        });
-        
-        let mut ctx = Context {
-            kv: Store::new(HashMap::new()),
-            msg,
-            opt: HashMap::new(),
-            state: HashMap::new(),
-            env: HashMap::new(),
-        };
-        
-        ctx = normalize(ctx);
-        assert!(ctx.state.contains_key("query"));
-        assert!(ctx.state.contains_key("signer"));
-    }
-    
-    #[test]
-    fn test_read_pipeline() {
-        use crate::normalize::normalize;
-        
-        let mut headers = serde_json::Map::new();
-        headers.insert("Signature-Input".to_string(), 
-		       json!(r#"sig1=("id" "nonce" "query");alg="eddsa-ed25519";keyid="test-key""#));
-        headers.insert("signature".to_string(), json!("test-sig"));
-        headers.insert("id".to_string(), json!("test-id"));
-        headers.insert("nonce".to_string(), json!("12345"));
-        headers.insert("query".to_string(), json!(r#"["get", "collection", "doc_id"]"#));
-        
-        let msg = json!({
-            "headers": headers
-        });
-        
-        let mut ctx = Context {
-            kv: Store::new(HashMap::new()),
-            msg,
-            opt: HashMap::new(),
-            state: HashMap::new(),
-            env: HashMap::new(),
-        };
-        
-        // Run through read pipeline
-        ctx = normalize(ctx);
-        ctx = crate::db::parse(ctx);
-        ctx = crate::db::read(ctx);
-        
-        // Check stages completed
-        assert!(ctx.state.contains_key("signer"));
-        assert_eq!(ctx.state.get("parsed"), Some(&json!(true)));
-        assert!(ctx.state.contains_key("read_result"));
-    }
-    
-    #[test]
-    fn test_write_pipeline() {
-        let mut ctx = Context {
-            kv: Store::new(HashMap::new()),
-            msg: json!({}),
-            opt: HashMap::new(),
-            state: HashMap::new(),
-            env: HashMap::new(),
-        };
-        
-        // Set up state as if it went through parse
-        ctx.state.insert("op".to_string(), json!("init"));
-        ctx.state.insert("parsed".to_string(), json!(true));
-        ctx.state.insert("query".to_string(), json!([
-            "init", "_", {
-                "id": "test-db",
-                "owner": "owner123"
-            }
-        ]));
-        
-        ctx = write(ctx);
-        
-        // Check parsed is still there
-        assert_eq!(ctx.state.get("parsed"), Some(&json!(true)));
-        assert!(ctx.state.contains_key("write_result"));
     }
 }

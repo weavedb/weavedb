@@ -5,7 +5,8 @@ use crate::normalize::normalize;
 use crate::verify_nonce::verify_nonce;
 use crate::auth::auth;
 use crate::write::write;
-use crate::db::{parse, read, get as get_transform, cget as cget_transform};
+use crate::db::{parse, get as get_transform, cget as cget_transform};
+use crate::read::read;
 use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -28,58 +29,59 @@ impl WeaveDB {
 
     /// Write operation - matches JS: db.write(msg)
     pub fn write(&mut self, msg: Value) -> Result<Value, String> {
-	// Create context
-	let ctx = Context {
+        // Create context
+        let ctx = Context {
             kv: self.store.clone(),
             msg,
             opt: HashMap::new(),
             state: HashMap::new(),
             env: self.env.clone(),
-	};
-	
-	// Initialize
-	let ctx = default_init(ctx);
-	
-	// Run through write pipeline
-	let ctx = normalize(ctx);
-	if let Some(error) = ctx.state.get("error") {
+        };
+        
+        // Initialize
+        let ctx = default_init(ctx);
+        
+        // Run through write pipeline
+        let ctx = normalize(ctx);
+        if let Some(error) = ctx.state.get("error") {
             println!("Error after normalize: {:?}", error);
             return Err(error.to_string());
-	}
-	
-	let ctx = verify_nonce(ctx);
-	if let Some(error) = ctx.state.get("error") {
+        }
+        
+        let ctx = verify_nonce(ctx);
+        if let Some(error) = ctx.state.get("error") {
             println!("Error after verify_nonce: {:?}", error);
             return Err(error.to_string());
-	}
-	
-	let ctx = parse(ctx);
-	if let Some(error) = ctx.state.get("error") {
+        }
+        
+        let ctx = parse(ctx);
+        if let Some(error) = ctx.state.get("error") {
             println!("Error after parse: {:?}", error);
             return Err(error.to_string());
-	}
-	
-	let ctx = auth(ctx);
-	if let Some(error) = ctx.state.get("error") {
+        }
+        
+        let ctx = auth(ctx);
+        if let Some(error) = ctx.state.get("error") {
             println!("Error after auth: {:?}", error);
             return Err(error.to_string());
-	}
-	
-	let ctx = write(ctx);
-	if let Some(error) = ctx.state.get("error") {
+        }
+        
+        let ctx = write(ctx);
+        if let Some(error) = ctx.state.get("error") {
             println!("Error after write: {:?}", error);
             return Err(error.to_string());
-	}
-	
-	// Update store
-	self.store = ctx.kv;
-	
-	// Return success with state
-	Ok(json!({
+        }
+        
+        // Update store
+        self.store = ctx.kv;
+        
+        // Return success with state
+        Ok(json!({
             "success": true,
             "state": ctx.state
-	}))
-    }   
+        }))
+    }
+    
     /// Read operation - matches JS: db.read(msg)
     pub fn read(&self, msg: Value) -> Result<Value, String> {
         // Create context

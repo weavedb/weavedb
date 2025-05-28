@@ -1,3 +1,80 @@
+// File: src/parse.rs
+
+use crate::build::Context;
+use serde_json::{Value, json, Map};
+use std::collections::HashMap;
+use base64::{Engine as _, engine::general_purpose};
+use deno_core::{JsRuntime, RuntimeOptions, v8, serde_v8};
+
+const BASE64_CHARS: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+
+/// Convert a number to base64 string
+fn to_b64(mut n: u64) -> String {
+    if n == 0 {
+        return BASE64_CHARS.chars().nth(0).unwrap().to_string();
+    }
+    
+    let mut result = String::new();
+    while n > 0 {
+        let char_idx = (n % 64) as usize;
+        result.insert(0, BASE64_CHARS.chars().nth(char_idx).unwrap());
+        n /= 64;
+    }
+    result
+}
+
+/// Check if document ID is valid
+fn check_doc_id(id: &str, kv: &crate::build::Store) -> Result<(), String> {
+    // Check if ID contains only valid base64url characters
+    if !id.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_') {
+        return Err(format!("invalid docID: {}", id));
+    }
+    
+    // Check maximum document ID size
+    if let Some(config) = kv.get("_config", "config") {
+        if let Some(max_doc_id) = config.get("max_doc_id").and_then(|v| v.as_u64()) {
+            if !check_max_doc_id(id, max_doc_id as usize) {
+                return Err(format!("docID too large: {}", id));
+            }
+        }
+    }
+    
+    Ok(())
+}
+
+/// Check if document ID size is within limit
+fn check_max_doc_id(id: &str, size: usize) -> bool {
+    // Convert from base64url to standard base64
+    let b64 = id.replace('-', "+").replace('_', "/");
+    let padding = match (2 * id.len()) % 4 {
+        0 => "",
+        2 => "==",
+        _ => "=",
+    };
+    let padded = format!("{}{}", b64, padding);
+    
+    // Try to decode to check size
+    match general_purpose::STANDARD.decode(&padded) {
+        Ok(decoded) => decoded.len() <= size,
+        Err(_) => false,
+    }
+}
+
+/// Get field keys from new and old data
+fn fields(ndata: &Map<String, Value>, odata: &Map<String, Value>) -> Vec<String> {
+    let mut keys: std::collections::HashSet<String> = std::collections::HashSet::new();
+    
+    for key in ndata.keys() {
+        keys.insert(key.clone());
+    }
+    
+    for key in odata.keys() {
+        keys.insert(key.clone());
+    }
+    
+    keys.into_iter().collect()
+}
+
 /// Replace $ references in FPJson arrays
 fn replace_dollar(val: &Value, old_val: Option<&Value>) -> Value {
     match val {
@@ -77,79 +154,6 @@ fn eval_fpjson(expr: &Value, vars: &HashMap<String, Value>, old_val: Option<&Val
     } else {
         Err("Unknown error in FPJson evaluation".to_string())
     }
-}use crate::build::Context;
-use serde_json::{Value, json, Map};
-use std::collections::HashMap;
-use base64;
-use deno_core::{JsRuntime, RuntimeOptions, v8, serde_v8};
-
-const BASE64_CHARS: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
-
-/// Convert a number to base64 string
-fn to_b64(mut n: u64) -> String {
-    if n == 0 {
-        return BASE64_CHARS.chars().nth(0).unwrap().to_string();
-    }
-    
-    let mut result = String::new();
-    while n > 0 {
-        let char_idx = (n % 64) as usize;
-        result.insert(0, BASE64_CHARS.chars().nth(char_idx).unwrap());
-        n /= 64;
-    }
-    result
-}
-
-/// Check if document ID is valid
-fn check_doc_id(id: &str, kv: &crate::build::Store) -> Result<(), String> {
-    // Check if ID contains only valid base64url characters
-    if !id.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_') {
-        return Err(format!("invalid docID: {}", id));
-    }
-    
-    // Check maximum document ID size
-    if let Some(config) = kv.get("_config", "config") {
-        if let Some(max_doc_id) = config.get("max_doc_id").and_then(|v| v.as_u64()) {
-            if !check_max_doc_id(id, max_doc_id as usize) {
-                return Err(format!("docID too large: {}", id));
-            }
-        }
-    }
-    
-    Ok(())
-}
-
-/// Check if document ID size is within limit
-fn check_max_doc_id(id: &str, size: usize) -> bool {
-    // Convert from base64url to standard base64
-    let b64 = id.replace('-', "+").replace('_', "/");
-    let padding = match (2 * id.len()) % 4 {
-        0 => "",
-        2 => "==",
-        _ => "=",
-    };
-    let padded = format!("{}{}", b64, padding);
-    
-    // Try to decode to check size
-    match base64::decode(&padded) {
-        Ok(decoded) => decoded.len() <= size,
-        Err(_) => false,
-    }
-}
-
-/// Get field keys from new and old data
-fn fields(ndata: &Map<String, Value>, odata: &Map<String, Value>) -> Vec<String> {
-    let mut keys: std::collections::HashSet<String> = std::collections::HashSet::new();
-    
-    for key in ndata.keys() {
-        keys.insert(key.clone());
-    }
-    
-    for key in odata.keys() {
-        keys.insert(key.clone());
-    }
-    
-    keys.into_iter().collect()
 }
 
 /// Merge data with special variable substitutions and FPJson evaluation
@@ -387,7 +391,16 @@ pub fn parse(mut ctx: Context) -> Context {
         }
         
         "get" | "cget" => {
-            if params.len() >= 2 {
+            if params.is_empty() {
+                Err("Invalid get/cget parameters".to_string())
+            } else if params.len() == 1 {
+                // Collection query: ["get", "collection"]
+                let dir = params[0].as_str().unwrap_or("");
+                ctx.state.insert("dir".to_string(), json!(dir));
+                ctx.state.insert("range".to_string(), json!(true));
+                Ok(())
+            } else {
+                // Document query: ["get", "collection", "doc_id", ...] 
                 let dir = params[0].as_str().unwrap_or("");
                 ctx.state.insert("dir".to_string(), json!(dir));
                 
@@ -400,12 +413,10 @@ pub fn parse(mut ctx: Context) -> Context {
                         Ok(())
                     }
                 } else {
-                    // Range query
+                    // If second param is not a string, it might be query options
                     ctx.state.insert("range".to_string(), json!(true));
                     Ok(())
                 }
-            } else {
-                Err("Invalid get/cget parameters".to_string())
             }
         }
         
@@ -447,8 +458,10 @@ pub fn parse(mut ctx: Context) -> Context {
                 if let Err(e) = check_doc_id(doc, &ctx.kv) {
                     Err(e)
                 } else {
-                    // Get existing document
-                    let before = ctx.kv.get(dir, doc);
+                    // Get existing document using the same method as read module
+                    let before = crate::planner::doc(doc, &[dir.to_string()], &ctx.kv)
+                        .map(|dv| dv.val);
+                    
                     if let Some(before_val) = before {
                         ctx.state.insert("before".to_string(), before_val);
                     }
@@ -471,16 +484,26 @@ pub fn parse(mut ctx: Context) -> Context {
                 if let Err(e) = check_doc_id(doc, &ctx.kv) {
                     Err(e)
                 } else {
-                    // Get existing document for update/upsert
-                    if opcode.as_str() != "set" {
-                        let before = ctx.kv.get(dir, doc);
-                        if let Some(before_val) = before {
-                            ctx.state.insert("before".to_string(), before_val);
-                        }
-                    }
-                    
                     ctx.state.insert("dir".to_string(), json!(dir));
                     ctx.state.insert("doc".to_string(), json!(doc));
+                    
+                    // Get existing document for update/upsert
+                    if opcode.as_str() != "set" {
+                        // Use the same method as the read module to get the document
+                        let before = crate::planner::doc(doc, &[dir.to_string()], &ctx.kv)
+                            .map(|dv| dv.val);
+                        
+                        if let Some(before_val) = before {
+                            ctx.state.insert("before".to_string(), before_val);
+                        } else if opcode.as_str() == "update" {
+                            // For update, the document must exist
+                            return {
+                                ctx.state.insert("error".to_string(), json!("data doesn't exist"));
+                                ctx
+                            };
+                        }
+                        // For upsert, it's OK if document doesn't exist
+                    }
                     
                     // Execute the appropriate operation
                     match opcode.as_str() {
