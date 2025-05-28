@@ -1,141 +1,394 @@
-use std::collections::HashMap;
-use serde_json::Value;
-use crate::monade::{of, SyncMonad};
+use crate::build::{build, transform, BuildConfig, Context, TransformFn};
+use crate::normalize;
+use crate::verify_nonce;
+use crate::auth;
+use crate::write;
+use std::sync::Arc;
+use serde_json::{Value, json};
 
-/// Mock in-memory KV store
-#[derive(Debug, Clone)]
-pub struct KV {
-    store: HashMap<String, String>,
+// Re-export commonly used types
+pub use crate::build::{Store, DBMethods};
+
+/// Verify device - verifies query permissions and structure
+fn verify(mut ctx: Context) -> Context {
+    // Mock implementation
+    // In real implementation:
+    // 1. Check permissions
+    // 2. Verify query constraints
+    // 3. Validate access rules
+    
+    ctx.state.insert("verified".to_string(), json!(true));
+    ctx
 }
 
-impl KV {
-    /// Create a new empty KV
-    pub fn new() -> Self {
-        KV { store: HashMap::new() }
-    }
-
-    /// Put a value under `dir/doc`
-    pub fn put(&mut self, dir: &str, doc: &str, data: &str) {
-        let key = format!("{}/{}", dir, doc);
-        self.store.insert(key, data.to_string());
-    }
-
-    /// Get a value from `dir/doc`
-    pub fn get(&self, dir: &str, doc: &str) -> Option<String> {
-        let key = format!("{}/{}", dir, doc);
-        self.store.get(&key).cloned()
-    }
-
-    /// Reset entire store
-    pub fn reset(&mut self) {
-        self.store.clear();
-    }
-}
-
-/// Start a new WeaveDB monad
-pub fn wdb(kv: KV) -> SyncMonad<KV> {
-    of(kv)
-}
-
-/// Extension methods for KV monad
-impl SyncMonad<KV> {
-    /// Monadic write: expects JSON args ["set", data_obj, dir, doc]
-    /// Panics with descriptive message if query is invalid
-    pub fn write(self, args: Value) -> SyncMonad<KV> {
-        self.map(|mut kv| {
-            let arr = args.as_array().expect("Invalid write query: expected JSON array");
-            let op = arr.get(0)
-                .and_then(Value::as_str)
-                .expect("Invalid write query: op must be a string");
-            if op != "set" {
-                panic!("Invalid write operation: expected 'set', found '{}'", op);
+/// Parse device - parses the query into executable format
+pub fn parse(mut ctx: Context) -> Context {
+    if let Some(query) = ctx.state.get("query").cloned() {  // Clone here
+        if let Some(arr) = query.as_array() {
+            if !arr.is_empty() {
+                // Extract operation
+                if let Some(op) = arr[0].as_str() {
+                    ctx.state.insert("op".to_string(), json!(op));
+                    
+                    // Parse based on operation type
+                    match op {
+                        "init" => {
+                            // init: ["init", "_", config]
+                            if arr.len() >= 3 {
+                                ctx.state.insert("dir".to_string(), json!("_"));
+                                ctx.state.insert("data".to_string(), arr[2].clone());
+                            }
+                        }
+                        "set" | "add" | "update" | "upsert" => {
+                            // write ops: ["op", data, dir, doc]
+                            if arr.len() >= 4 {
+                                ctx.state.insert("data".to_string(), arr[1].clone());
+                                if let Some(dir) = arr[2].as_str() {
+                                    ctx.state.insert("dir".to_string(), json!(dir));
+                                }
+                                if let Some(doc) = arr[3].as_str() {
+                                    ctx.state.insert("doc".to_string(), json!(doc));
+                                }
+                            } else if arr.len() >= 3 && op == "add" {
+                                // add: ["add", data, dir]
+                                ctx.state.insert("data".to_string(), arr[1].clone());
+                                if let Some(dir) = arr[2].as_str() {
+                                    ctx.state.insert("dir".to_string(), json!(dir));
+                                }
+                            }
+                        }
+                        "del" => {
+                            // del: ["del", dir, doc]
+                            if arr.len() >= 3 {
+                                if let Some(dir) = arr[1].as_str() {
+                                    ctx.state.insert("dir".to_string(), json!(dir));
+                                }
+                                if let Some(doc) = arr[2].as_str() {
+                                    ctx.state.insert("doc".to_string(), json!(doc));
+                                }
+                            }
+                        }
+                        "get" | "cget" => {
+                            // get/cget: ["op", dir, doc]
+                            if arr.len() >= 3 {
+                                if let Some(dir) = arr[1].as_str() {
+                                    ctx.state.insert("dir".to_string(), json!(dir));
+                                }
+                                if let Some(doc) = arr[2].as_str() {
+                                    ctx.state.insert("doc".to_string(), json!(doc));
+                                }
+                            }
+                        }
+                        _ => {
+                            // Other operations
+                        }
+                    }
+                }
             }
-            if arr.len() != 4 {
-                panic!("Invalid write query length: expected 4 elements, got {}", arr.len());
-            }
-            let data_val = &arr[1];
-            let dir = arr[2].as_str().expect("Invalid write query: dir must be a string");
-            let doc = arr[3].as_str().expect("Invalid write query: doc must be a string");
-            let data_str = serde_json::to_string(data_val)
-                .expect("Failed to serialize data object");
-            kv.put(dir, doc, &data_str);
-            kv
-        })
+        }
     }
+    
+    ctx.state.insert("parsed".to_string(), json!(true));
+    ctx
+}
 
-    /// Monadic read: expects JSON args ["get", dir, doc]
-    /// Panics with descriptive message if query is invalid
-    pub fn read(self, args: Value) -> Option<String> {
-        let arr = args.as_array().expect("Invalid read query: expected JSON array");
-        let op = arr.get(0)
-            .and_then(Value::as_str)
-            .expect("Invalid read query: op must be a string");
-        if op != "get" {
-            panic!("Invalid read operation: expected 'get', found '{}'", op);
+/// Auth device - handles authentication
+fn auth_device(mut ctx: Context) -> Context {
+    // Mock implementation
+    // In real implementation:
+    // 1. Verify signatures
+    // 2. Check authentication
+    // 3. Set user context
+    
+    ctx.state.insert("authenticated".to_string(), json!(true));
+    ctx
+}
+
+/// Write device - executes write operations
+fn write_device(mut ctx: Context) -> Context {
+    // Mock implementation
+    // In real implementation:
+    // 1. Execute the write operation
+    // 2. Update the store
+    // 3. Handle transactions
+    
+    if let Some(op) = ctx.state.get("op").and_then(|v| v.as_str()) {
+        match op {
+            "set" => {
+                // Mock set operation
+                ctx.state.insert("write_result".to_string(), json!({
+                    "success": true,
+                    "operation": "set"
+                }));
+            }
+            "update" => {
+                // Mock update operation
+                ctx.state.insert("write_result".to_string(), json!({
+                    "success": true,
+                    "operation": "update"
+                }));
+            }
+            "delete" => {
+                // Mock delete operation
+                ctx.state.insert("write_result".to_string(), json!({
+                    "success": true,
+                    "operation": "delete"
+                }));
+            }
+            _ => {
+                ctx.state.insert("write_result".to_string(), json!({
+                    "success": false,
+                    "error": "Unknown operation"
+                }));
+            }
         }
-        if arr.len() != 3 {
-            panic!("Invalid read query length: expected 3 elements, got {}", arr.len());
-        }
-        let dir = arr[1].as_str().expect("Invalid read query: dir must be a string");
-        let doc = arr[2].as_str().expect("Invalid read query: doc must be a string");
-        self.map(|kv| kv.get(dir, doc)).val()
     }
+    
+    ctx
+}
+
+/// Read device - executes read operations
+pub fn read(mut ctx: Context) -> Context {
+    if let Some(op) = ctx.state.get("op").and_then(|v| v.as_str()) {
+        match op {
+            "get" | "cget" => {
+                // Get directory and document from state
+                let dir = ctx.state.get("dir").and_then(|v| v.as_str());
+                let doc = ctx.state.get("doc").and_then(|v| v.as_str());
+                
+                if let (Some(dir), Some(doc)) = (dir, doc) {
+                    // Try to get the actual data from store
+                    if let Some(data) = ctx.kv.get(dir, doc) {
+                        ctx.state.insert("read_result".to_string(), data);
+                    } else {
+                        ctx.state.insert("read_result".to_string(), json!(null));
+                    }
+                } else {
+                    ctx.state.insert("error".to_string(), json!("Missing dir or doc in state"));
+                }
+            }
+            _ => {
+                ctx.state.insert("error".to_string(), json!("Unknown read operation"));
+            }
+        }
+    }
+    
+    ctx
+}
+
+/// Get operation setup
+pub fn get(mut ctx: Context) -> Context {
+    ctx.state.insert("opcode".to_string(), json!("get"));
+    
+    // Build query array: ["get", ...msg]
+    let mut query = vec![json!("get")];
+    if let Some(msg_array) = ctx.msg.as_array() {
+        query.extend(msg_array.iter().cloned());
+    }
+    ctx.state.insert("query".to_string(), json!(query));
+    
+    ctx
+}
+
+/// Cget operation setup
+pub fn cget(mut ctx: Context) -> Context {
+    ctx.state.insert("opcode".to_string(), json!("cget"));
+    
+    // Build query array: ["cget", ...msg]
+    let mut query = vec![json!("cget")];
+    if let Some(msg_array) = ctx.msg.as_array() {
+        query.extend(msg_array.iter().cloned());
+    }
+    ctx.state.insert("query".to_string(), json!(query));
+    
+    ctx
+}
+
+/// Create the default database configuration
+pub fn create_db_config() -> BuildConfig {
+    BuildConfig {
+        write: Some(vec![
+            transform(normalize::normalize),
+            transform(verify_nonce::verify_nonce),
+            transform(parse),
+            transform(auth::auth),
+            transform(write::write),
+        ]),
+        read: Some(vec![
+            transform(normalize::normalize),
+            transform(parse),
+            transform(read),
+        ]),
+        __read__: vec![
+            ("get".to_string(), vec![
+                transform(get),
+                transform(parse),
+                transform(read),
+            ]),
+            ("cget".to_string(), vec![
+                transform(cget),
+                transform(parse),
+                transform(read),
+            ]),
+        ].into_iter().collect(),
+        __write__: Default::default(),
+        ..Default::default()
+    }
+}
+
+/// Create a database instance
+pub fn create_db() -> impl Fn(std::collections::HashMap<String, Value>, std::collections::HashMap<String, Value>) 
+    -> crate::monade::Device<crate::build::Store, crate::build::DBMethods> {
+    build(create_db_config())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json::json;
-
+    use std::collections::HashMap;
+    
     #[test]
-    fn chaining_example() {
-        let kv = KV::new();
-        let query_set = json!( ["set", {"name":"Bob"}, "users", "Bob"] );
-        let query_get = json!( ["get", "users", "Bob"] );
-
-        // Inline chaining: write then read returns Option<String>
-        let val = wdb(kv.clone())
-            .write(query_set.clone())
-            .read(query_get.clone());
-        assert_eq!(val.as_deref(), Some("{\"name\":\"Bob\"}"));
-
-        // Separate chain then read
-        let db = wdb(kv).write(query_set);
-        let val2 = db.read(query_get);
-        assert_eq!(val2.as_deref(), Some("{\"name\":\"Bob\"}"));
+    fn test_normalize() {
+        use crate::normalize::normalize;
+        
+        let mut headers = serde_json::Map::new();
+        headers.insert("Signature-Input".to_string(), 
+            json!(r#"sig1=("id" "nonce" "query");alg="eddsa-ed25519";keyid="test-key""#));
+        headers.insert("signature".to_string(), json!("test-sig"));
+        headers.insert("id".to_string(), json!("test-id"));
+        headers.insert("nonce".to_string(), json!("12345"));
+        headers.insert("query".to_string(), json!(r#"["get", "collection", "doc_id"]"#));
+        
+        let msg = json!({
+            "headers": headers
+        });
+        
+        let mut ctx = Context {
+            kv: crate::build::Store::new(HashMap::new()),
+            msg,
+            opt: HashMap::new(),
+            state: HashMap::new(),
+            env: HashMap::new(),
+        };
+        
+        ctx = normalize(ctx);
+        assert!(ctx.state.contains_key("query"));
+        assert!(ctx.state.contains_key("signer"));
     }
-
+    
     #[test]
-    #[should_panic(expected = "Invalid write operation")]
-    fn invalid_write_op() {
-        let kv = KV::new();
-        let bad = json!( ["get", "users", "Bob"] );
-        // Should panic because op is not 'set'
-        wdb(kv).write(bad);
+    fn test_get_operation() {
+        let mut ctx = Context {
+            kv: crate::build::Store::new(HashMap::new()),
+            msg: json!(["collection", "doc_id"]),
+            opt: HashMap::new(),
+            state: HashMap::new(),
+            env: HashMap::new(),
+        };
+        
+        ctx = get(ctx);
+        assert_eq!(ctx.state.get("opcode"), Some(&json!("get")));
+        assert_eq!(ctx.state.get("query"), Some(&json!(["get", "collection", "doc_id"])));
     }
-
+    
     #[test]
-    #[should_panic(expected = "Invalid read operation")]
-    fn invalid_read_op() {
-        let kv = KV::new();
-        let bad = json!( ["set", {"foo":1}, "a", "1"] );
-        // Should panic because op is not 'get'
-        wdb(kv).read(bad);
+    fn test_write_pipeline() {
+        use crate::normalize::normalize;
+        use crate::verify_nonce::verify_nonce;
+        use crate::auth::auth;
+        use crate::write::write;
+        
+        let mut headers = serde_json::Map::new();
+        headers.insert("Signature-Input".to_string(), 
+            json!(r#"sig1=("id" "nonce" "query");alg="eddsa-ed25519";keyid="test-key""#));
+        headers.insert("signature".to_string(), json!("test-sig"));
+        headers.insert("id".to_string(), json!("test-id"));
+        headers.insert("nonce".to_string(), json!("1")); // First nonce for new account
+        headers.insert("query".to_string(), json!(r#"["init", "_", {"owner": "addr_test", "id": "test-db"}]"#));
+        
+        let msg = json!({
+            "headers": headers
+        });
+        
+        let mut ctx = Context {
+            kv: crate::build::Store::new(HashMap::new()),
+            msg,
+            opt: HashMap::new(),
+            state: HashMap::new(),
+            env: HashMap::new(),
+        };
+        
+        // Set environment for auth
+        ctx.env.insert("owner".to_string(), json!("addr_test"));
+        ctx.env.insert("id".to_string(), json!("default-id"));
+        
+        // Run through write pipeline
+        ctx = normalize(ctx);
+        if let Some(error) = ctx.state.get("error") {
+            panic!("Normalize failed: {}", error);
+        }
+        
+        ctx = verify_nonce(ctx);
+        if let Some(error) = ctx.state.get("error") {
+            panic!("Verify nonce failed: {}", error);
+        }
+        
+        ctx = parse(ctx);
+        if let Some(error) = ctx.state.get("error") {
+            panic!("Parse failed: {}", error);
+        }
+        
+        ctx = auth(ctx);
+        if let Some(error) = ctx.state.get("error") {
+            panic!("Auth failed: {}", error);
+        }
+        
+        ctx = write(ctx);
+        if let Some(error) = ctx.state.get("error") {
+            panic!("Write failed: {}", error);
+        }
+        
+        // Check all stages completed
+        assert!(ctx.state.contains_key("signer"));
+        assert_eq!(ctx.state.get("verified"), Some(&json!(true)));
+        assert_eq!(ctx.state.get("parsed"), Some(&json!(true)));
+        assert_eq!(ctx.state.get("authenticated"), Some(&json!(true)));
+        assert!(ctx.state.contains_key("write_result"));
+        assert_eq!(ctx.state.get("initialized"), Some(&json!(true)));
     }
-
+    
     #[test]
-    #[should_panic(expected = "Invalid write query length")]
-    fn invalid_write_length() {
-        let kv = KV::new();
-        let bad = json!( ["set", {"x":1}, "only_two"] );
-        wdb(kv).write(bad);
-    }
-
-    #[test]
-    #[should_panic(expected = "Invalid read query length")]
-    fn invalid_read_length() {
-        let kv = KV::new();
-        let bad = json!( ["get", "only_dir"] );
-        wdb(kv).read(bad);
+    fn test_read_pipeline() {
+        use crate::normalize::normalize;
+        
+        let mut headers = serde_json::Map::new();
+        headers.insert("Signature-Input".to_string(), 
+            json!(r#"sig1=("id" "nonce" "query");alg="eddsa-ed25519";keyid="test-key""#));
+        headers.insert("signature".to_string(), json!("test-sig"));
+        headers.insert("id".to_string(), json!("test-id"));
+        headers.insert("nonce".to_string(), json!("12345"));
+        headers.insert("query".to_string(), json!(r#"["get", "collection", "doc_id"]"#));
+        
+        let msg = json!({
+            "headers": headers
+        });
+        
+        let mut ctx = Context {
+            kv: crate::build::Store::new(HashMap::new()),
+            msg,
+            opt: HashMap::new(),
+            state: HashMap::new(),
+            env: HashMap::new(),
+        };
+        
+        // Run through read pipeline
+        ctx = normalize(ctx);
+        ctx = parse(ctx);
+        ctx = read(ctx);
+        
+        // Check stages completed
+        assert!(ctx.state.contains_key("signer"));
+        assert_eq!(ctx.state.get("parsed"), Some(&json!(true)));
+        assert!(ctx.state.contains_key("read_result"));
     }
 }
