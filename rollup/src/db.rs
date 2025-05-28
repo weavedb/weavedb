@@ -3,149 +3,15 @@ use crate::normalize;
 use crate::verify_nonce;
 use crate::auth;
 use crate::write;
+
 use std::sync::Arc;
 use serde_json::{Value, json};
 
 // Re-export commonly used types
 pub use crate::build::{Store, DBMethods};
 
-/// Verify device - verifies query permissions and structure
-fn verify(mut ctx: Context) -> Context {
-    // Mock implementation
-    // In real implementation:
-    // 1. Check permissions
-    // 2. Verify query constraints
-    // 3. Validate access rules
-    
-    ctx.state.insert("verified".to_string(), json!(true));
-    ctx
-}
-
-/// Parse device - parses the query into executable format
-pub fn parse(mut ctx: Context) -> Context {
-    if let Some(query) = ctx.state.get("query").cloned() {  // Clone here
-        if let Some(arr) = query.as_array() {
-            if !arr.is_empty() {
-                // Extract operation
-                if let Some(op) = arr[0].as_str() {
-                    ctx.state.insert("op".to_string(), json!(op));
-                    
-                    // Parse based on operation type
-                    match op {
-                        "init" => {
-                            // init: ["init", "_", config]
-                            if arr.len() >= 3 {
-                                ctx.state.insert("dir".to_string(), json!("_"));
-                                ctx.state.insert("data".to_string(), arr[2].clone());
-                            }
-                        }
-                        "set" | "add" | "update" | "upsert" => {
-                            // write ops: ["op", data, dir, doc]
-                            if arr.len() >= 4 {
-                                ctx.state.insert("data".to_string(), arr[1].clone());
-                                if let Some(dir) = arr[2].as_str() {
-                                    ctx.state.insert("dir".to_string(), json!(dir));
-                                }
-                                if let Some(doc) = arr[3].as_str() {
-                                    ctx.state.insert("doc".to_string(), json!(doc));
-                                }
-                            } else if arr.len() >= 3 && op == "add" {
-                                // add: ["add", data, dir]
-                                ctx.state.insert("data".to_string(), arr[1].clone());
-                                if let Some(dir) = arr[2].as_str() {
-                                    ctx.state.insert("dir".to_string(), json!(dir));
-                                }
-                            }
-                        }
-                        "del" => {
-                            // del: ["del", dir, doc]
-                            if arr.len() >= 3 {
-                                if let Some(dir) = arr[1].as_str() {
-                                    ctx.state.insert("dir".to_string(), json!(dir));
-                                }
-                                if let Some(doc) = arr[2].as_str() {
-                                    ctx.state.insert("doc".to_string(), json!(doc));
-                                }
-                            }
-                        }
-                        "get" | "cget" => {
-                            // get/cget: ["op", dir, doc]
-                            if arr.len() >= 3 {
-                                if let Some(dir) = arr[1].as_str() {
-                                    ctx.state.insert("dir".to_string(), json!(dir));
-                                }
-                                if let Some(doc) = arr[2].as_str() {
-                                    ctx.state.insert("doc".to_string(), json!(doc));
-                                }
-                            }
-                        }
-                        _ => {
-                            // Other operations
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    ctx.state.insert("parsed".to_string(), json!(true));
-    ctx
-}
-
-/// Auth device - handles authentication
-fn auth_device(mut ctx: Context) -> Context {
-    // Mock implementation
-    // In real implementation:
-    // 1. Verify signatures
-    // 2. Check authentication
-    // 3. Set user context
-    
-    ctx.state.insert("authenticated".to_string(), json!(true));
-    ctx
-}
-
-/// Write device - executes write operations
-fn write_device(mut ctx: Context) -> Context {
-    // Mock implementation
-    // In real implementation:
-    // 1. Execute the write operation
-    // 2. Update the store
-    // 3. Handle transactions
-    
-    if let Some(op) = ctx.state.get("op").and_then(|v| v.as_str()) {
-        match op {
-            "set" => {
-                // Mock set operation
-                ctx.state.insert("write_result".to_string(), json!({
-                    "success": true,
-                    "operation": "set"
-                }));
-            }
-            "update" => {
-                // Mock update operation
-                ctx.state.insert("write_result".to_string(), json!({
-                    "success": true,
-                    "operation": "update"
-                }));
-            }
-            "delete" => {
-                // Mock delete operation
-                ctx.state.insert("write_result".to_string(), json!({
-                    "success": true,
-                    "operation": "delete"
-                }));
-            }
-            _ => {
-                ctx.state.insert("write_result".to_string(), json!({
-                    "success": false,
-                    "error": "Unknown operation"
-                }));
-            }
-        }
-    }
-    
-    ctx
-}
+// Re-export parse function so it can be accessed through db module
+pub use crate::parse::parse;
 
 /// Read device - executes read operations
 pub fn read(mut ctx: Context) -> Context {
@@ -179,6 +45,7 @@ pub fn read(mut ctx: Context) -> Context {
 /// Get operation setup
 pub fn get(mut ctx: Context) -> Context {
     ctx.state.insert("opcode".to_string(), json!("get"));
+    ctx.state.insert("op".to_string(), json!("get"));
     
     // Build query array: ["get", ...msg]
     let mut query = vec![json!("get")];
@@ -193,6 +60,7 @@ pub fn get(mut ctx: Context) -> Context {
 /// Cget operation setup
 pub fn cget(mut ctx: Context) -> Context {
     ctx.state.insert("opcode".to_string(), json!("cget"));
+    ctx.state.insert("op".to_string(), json!("cget"));
     
     // Build query array: ["cget", ...msg]
     let mut query = vec![json!("cget")];
