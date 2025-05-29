@@ -4,11 +4,20 @@ use crate::build::{Context, Store};
 use crate::planner;
 use serde_json::{Value, json};
 
+/// Where condition for filtering
+#[derive(Debug, Clone)]
+pub struct WhereCondition {
+    pub field: String,
+    pub operator: String,
+    pub value: Value,
+}
+
 /// ParsedQuery structure that matches what parse.rs expects
 #[derive(Debug, Clone)]
 pub struct ParsedQuery {
     pub path: Vec<String>,
     pub queries: Vec<QueryItem>,
+    pub where_conditions: Vec<WhereCondition>,
     pub sort: Vec<(String, String)>,
     pub limit: usize,
     pub op: String,
@@ -34,25 +43,74 @@ fn parse_query(query: &Value) -> Result<ParsedQuery, String> {
     let op = query_array[0].as_str()
         .ok_or("First element must be operation string")?;
     
-    let path: Vec<String> = query_array[1..]
-        .iter()
-        .take_while(|v| v.is_string())
-        .map(|v| v.as_str().unwrap().to_string())
-        .collect();
+    // Parse path elements (strings)
+    let mut path: Vec<String> = Vec::new();
+    let mut i = 1;
+    
+    while i < query_array.len() {
+        if let Some(s) = query_array[i].as_str() {
+            path.push(s.to_string());
+            i += 1;
+        } else {
+            break;
+        }
+    }
     
     if path.is_empty() {
         return Err("Query must have at least one path element".to_string());
     }
     
+    // Parse where conditions, sort options, and limit
+    let mut where_conditions: Vec<WhereCondition> = Vec::new();
+    let mut sort: Vec<(String, String)> = Vec::new();
+    let mut limit = 1000;
+    
+    while i < query_array.len() {
+        if let Some(arr) = query_array[i].as_array() {
+            if arr.len() == 3 {
+                // This is a where condition: ["field", "operator", value]
+                if let (Some(field), Some(op)) = (
+                    arr[0].as_str(),
+                    arr[1].as_str()
+                ) {
+                    match op {
+                        "==" | "!=" | ">" | ">=" | "<" | "<=" => {
+                            where_conditions.push(WhereCondition {
+                                field: field.to_string(),
+                                operator: op.to_string(),
+                                value: arr[2].clone(),
+                            });
+                        }
+                        _ => {} // Ignore unknown operators
+                    }
+                }
+            } else if arr.len() >= 2 {
+                // This might be a sort directive: ["field", "asc/desc"]
+                if let (Some(field), Some(order)) = (arr[0].as_str(), arr[1].as_str()) {
+                    if order == "asc" || order == "desc" {
+                        sort.push((field.to_string(), order.to_string()));
+                    }
+                }
+            }
+        } else if let Some(num) = query_array[i].as_u64() {
+            limit = num as usize;
+        }
+        i += 1;
+    }
+    
+    let single = path.len() == 2 && where_conditions.is_empty(); // Collection + doc ID
+    let range = !single;
+    
     Ok(ParsedQuery {
         path: path.clone(),
         queries: vec![],
-        sort: vec![],
-        limit: 1000,
+        where_conditions,
+        sort,
+        limit,
         op: op.to_string(),
-        doc: if path.len() == 2 { Some(path[1].clone()) } else { None },
-        range: path.len() == 1,
-        single: path.len() == 2,
+        doc: if single { Some(path[1].clone()) } else { None },
+        range,
+        single,
     })
 }
 
@@ -94,19 +152,22 @@ fn get_docs(mut ctx: Context) -> (Context, Result<(), String>) {
         .and_then(|v| v.as_str())
         .unwrap_or("get");
     
-    // Check if this is a range query
-    let is_range = parsed.path.len() % 2 == 1;
-    
     let final_result = if opcode == "cget" {
-        if is_range {
+        if parsed.range {
             // For range queries, planner returns an array of values
             match result {
                 Value::Array(items) => {
-                    let cursors: Vec<Value> = items.into_iter().map(|item| {
+                    let cursors: Vec<Value> = items.into_iter().enumerate().map(|(idx, item)| {
+                        // Try to extract the ID from the item
+                        let id = item.get("__id__")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or(&format!("doc_{}", idx))
+                            .to_string();
+                        
                         json!({
                             "__cursor__": true,
-                            "dir": dir,
-                            "id": "", // Would need to extract from item if available
+                            "dir": dir.clone(),
+                            "id": id,
                             "data": item
                         })
                     }).collect();
@@ -198,6 +259,9 @@ mod tests {
         // Set up directory
         store.put("_", "users", json!({"name": "users"}));
         
+        // Store document metadata
+        store.put("users", "user1", json!({"__id__": "user1"}));
+        
         // Store test data with proper key format
         store.put_data("user1", json!({"name": "Alice", "age": 30}));
         
@@ -258,7 +322,8 @@ mod tests {
         // Set up directory
         store.put("_", "users", json!({"name": "users"}));
         
-        // Store test data
+        // Store document
+        store.put("users", "user1", json!({"__id__": "user1"}));
         store.put_data("user1", json!({"name": "Bob", "age": 25}));
         
         let mut ctx = Context {

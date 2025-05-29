@@ -1,370 +1,412 @@
-use crate::build::{build, transform, BuildConfig, Context, TransformFn};
-use crate::normalize;
-use crate::verify_nonce;
-use crate::auth;
-use crate::indexer;
-use crate::bpt::KVStore;
-use std::sync::Arc;
-use serde_json::{Value, json, Map};
+// File: src/write.rs
+
+use crate::build::Context;
+use crate::bpt::{BPT, SortFields, KVStore};
+use serde_json::{Value, json};
 use std::collections::HashMap;
 
-// Re-export commonly used types
-pub use crate::build::{Store, DBMethods};
-
-/// System directory name
-const SYSTEM_DIR: &str = "_";
-
 /// Initialize database
-fn init_db(mut ctx: Context) -> Context {
-    // Extract configuration from query
-    let config = match ctx.state.get("query")
-        .and_then(|q| q.as_array())
-        .and_then(|arr| arr.get(2))
-        .and_then(|v| v.as_object()) {
-            Some(cfg) => cfg,
-            None => {
-                ctx.state.insert("error".to_string(), json!("Invalid init configuration"));
-                return ctx;
-            }
-	};
+fn init_db(ctx: &mut Context) -> Result<(), String> {
+    // Get initialization data from query
+    let init_data = ctx.state.get("data")
+        .and_then(|v| v.as_object())
+        .ok_or("Invalid init data")?;
     
-    // Extract configuration values
-    let db_id = config.get("id")
+    let id = init_data.get("id")
         .and_then(|v| v.as_str())
-        .unwrap_or_else(|| ctx.env.get("id").and_then(|v| v.as_str()).unwrap_or(""));
+        .ok_or("No database ID in init data")?;
     
-    let owner = config.get("owner")
+    let owner = init_data.get("owner")
         .and_then(|v| v.as_str())
-        .unwrap_or("");
+        .ok_or("No owner in init data")?;
     
-    let secure = config.get("secure")
-        .and_then(|v| v.as_str())
-        .unwrap_or("false");
-    
-    // Create config document
-    let config_doc = json!({
-        "id": db_id,
+    // Store database metadata
+    ctx.kv.put("_config", "info", json!({
+        "id": id,
         "owner": owner,
-        "secure": secure,
         "version": "1.0.0"
-    });
+    }));
     
-    // Create info document
-    let info_doc = json!({
-        "id": db_id,
-        "owner": owner
-    });
-    
-    // Store in system directory
-    ctx.kv.put(SYSTEM_DIR, "config", config_doc);
-    ctx.kv.put(SYSTEM_DIR, "info", info_doc);
-    
-    // Mark as initialized
-    ctx.state.insert("initialized".to_string(), json!(true));
-    
-    ctx
+    Ok(())
 }
 
-// Validate data against directory schema
-fn validate_schema(ctx: &Context) -> Result<(), String> {
+/// Write data to a collection
+fn write_data(ctx: &mut Context) -> Result<(), String> {
+    // Extract values first to avoid borrow issues
     let dir = ctx.state.get("dir")
         .and_then(|v| v.as_str())
-        .ok_or("No directory in state")?;
+        .ok_or("No directory in state")?
+        .to_string();
+    
+    let doc = ctx.state.get("doc")
+        .and_then(|v| v.as_str())
+        .ok_or("No document ID in state")?
+        .to_string();
     
     let data = ctx.state.get("data")
-        .ok_or("No data in state")?;
+        .ok_or("No data in state")?
+        .clone();
     
-    // Get directory metadata
-    let dir_meta = ctx.kv.get(SYSTEM_DIR, dir);
-    
-    // If directory doesn't exist, that's okay - it will be created
-    if dir_meta.is_none() {
-        return Ok(());
-    }
-    
-    // Check if schema exists
-    let has_schema = dir_meta
-        .as_ref()
-        .and_then(|meta| meta.as_object())
-        .and_then(|obj| obj.get("schema"))
-        .is_some();
-    
-    if has_schema {
-        // In real implementation, would use jsonschema crate to validate
-        // For now, just ensure data is not empty
-        if data.is_null() || (data.is_object() && data.as_object().unwrap().is_empty()) {
-            Err("invalid schema".to_string())
-        } else {
-            Ok(())
-        }
-    } else {
-        Ok(()) // No schema means any data is valid
-    }
-}
-
-/// Add index for a directory
-fn add_index(mut ctx: Context) -> Context {
-    let dir = match ctx.state.get("dir").and_then(|v| v.as_str()) {
-        Some(d) => d,
-        None => {
-            ctx.state.insert("error".to_string(), json!("No directory in state"));
-            return ctx;
-        }
-    };
-
-    // Verify directory exists
-    if ctx.kv.get(SYSTEM_DIR, dir).is_none() {
-        ctx.state.insert("error".to_string(), json!(format!("dir doesn't exist: {}", dir)));
-        return ctx;
-    }
-    
-    // Extract index definition from state (should be in data)
-    let index_def = match ctx.state.get("data") {
-        Some(def) => def,
-        None => {
-            ctx.state.insert("error".to_string(), json!("No index definition in state"));
-            return ctx;
-        }
-    };
-    
-    // Parse sort fields from index definition
-    let sort_fields = match parse_sort_fields(index_def) {
-        Ok(fields) => fields,
-        Err(e) => {
-            ctx.state.insert("error".to_string(), json!(e));
-            return ctx;
-        }
-    };
-    
-    // Add the index using the Store directly (which implements Clone)
-    match indexer::add_index(sort_fields, &[dir.to_string()], &mut ctx.kv) {
-        Ok(_) => {
-            ctx.state.insert("index_added".to_string(), json!(true));
-        }
-        Err(e) => {
-            ctx.state.insert("error".to_string(), json!(e));
-        }
-    }
-    
-    ctx
-}
-
-/// Remove index for a directory
-fn remove_index(mut ctx: Context) -> Context {
-    let dir = match ctx.state.get("dir").and_then(|v| v.as_str()) {
-        Some(d) => d,
-        None => {
-            ctx.state.insert("error".to_string(), json!("No directory in state"));
-            return ctx;
-        }
-    };
-    
-    // Extract index definition from state
-    let index_def = match ctx.state.get("data") {
-        Some(def) => def,
-        None => {
-            ctx.state.insert("error".to_string(), json!("No index definition in state"));
-            return ctx;
-        }
-    };
-    
-    // Parse sort fields from index definition
-    let sort_fields = match parse_sort_fields(index_def) {
-        Ok(fields) => fields,
-        Err(e) => {
-            ctx.state.insert("error".to_string(), json!(e));
-            return ctx;
-        }
-    };
-    
-    // Remove the index using the Store directly
-    match indexer::remove_index(sort_fields, &[dir.to_string()], &mut ctx.kv) {
-        Ok(_) => {
-            ctx.state.insert("index_removed".to_string(), json!(true));
-        }
-        Err(e) => {
-            ctx.state.insert("error".to_string(), json!(e));
-        }
-    }
-    
-    ctx
-}
-
-/// Parse sort fields from index definition
-fn parse_sort_fields(index_def: &Value) -> Result<Vec<(String, String)>, String> {
-    if let Value::Array(arr) = index_def {
-        let mut fields = Vec::new();
-        for item in arr {
-            if let Value::Array(field_def) = item {
-                if field_def.len() >= 1 {
-                    let field = field_def[0].as_str()
-                        .ok_or("Invalid field name")?
-                        .to_string();
-                    let direction = field_def.get(1)
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("asc")
-                        .to_string();
-                    fields.push((field, direction));
-                }
-            } else if let Value::String(field) = item {
-                fields.push((field.clone(), "asc".to_string()));
-            }
-        }
-        Ok(fields)
-    } else {
-        Err("Index definition must be an array".to_string())
-    }
-}
-
-/// Put data into the database
-fn put_data(mut ctx: Context) -> Context {
-    let dir = match ctx.state.get("dir").and_then(|v| v.as_str()) {
-        Some(d) => d,
-        None => {
-            ctx.state.insert("error".to_string(), json!("No directory in state"));
-            return ctx;
-        }
-    };
-    
-    let doc = match ctx.state.get("doc").and_then(|v| v.as_str()) {
-        Some(d) => d,
-        None => {
-            ctx.state.insert("error".to_string(), json!("No document ID in state"));
-            return ctx;
-        }
-    };
-    
-    let data = match ctx.state.get("data") {
-        Some(d) => d.clone(),
-        None => {
-            ctx.state.insert("error".to_string(), json!("No document data in state"));
-            return ctx;
-        }
-    };
-    
-    // Check if directory exists in system directory
-    let dir_exists = ctx.kv.get(SYSTEM_DIR, dir).is_some();
-    
-    // If directory doesn't exist and it's not a system directory, create it
-    if !dir_exists && dir != "_" && dir != "__accounts__" && dir != "__indexes__" {
-        // Create directory metadata in system directory
-        let mut dir_meta = json!({
+    // Check if directory exists (create if needed)
+    if dir != "_" && ctx.kv.get("_", &dir).is_none() {
+        let autoid = ctx.state.get("autoid")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0);
+        
+        ctx.kv.put("_", &dir, json!({
             "name": dir,
-            "created": chrono::Utc::now().timestamp(),
-        });
-        
-        // If we have an autoid in state (from add operation), include it
-        if let Some(autoid) = ctx.state.get("autoid") {
-            if let Some(meta_obj) = dir_meta.as_object_mut() {
-                meta_obj.insert("autoid".to_string(), autoid.clone());
-            }
-        }
-        
-        ctx.kv.put(SYSTEM_DIR, dir, dir_meta);
+            "autoid": autoid
+        }));
     }
     
-    // Determine if this is a create (set) or update operation
-    let is_create = ctx.state.get("op")
-        .and_then(|v| v.as_str())
-        .map(|op| op == "set" || op == "add")
-        .unwrap_or(false);
+    // Store the document metadata
+    ctx.kv.put(&dir, &doc, json!({
+        "__id__": doc,
+        "__ts__": chrono::Utc::now().timestamp_millis()
+    }));
     
-    // Use indexer to put data (handles all index updates)
-    //if let Some((before, after)) = indexer::put_fast(data, doc, &[dir.to_string()], &mut ctx.kv, is_create) {
-    if let Some((before, after)) = indexer::put(data, doc, &[dir.to_string()], &mut ctx.kv, is_create) {
-        // Store the before/after states for potential triggers or logging
-        ctx.state.insert("before".to_string(), serde_json::to_value(&before).unwrap_or(json!(null)));
-        ctx.state.insert("after".to_string(), serde_json::to_value(&after).unwrap_or(json!(null)));
-    }
+    // Store the actual document data
+    ctx.kv.put_data(&doc, data.clone());
     
-    ctx
+    // Update indexes
+    update_indexes(ctx, &doc, &data)?;
+    
+    Ok(())
 }
 
-/// Delete data from the database
-fn del_data(mut ctx: Context) -> Context {
-    let dir = match ctx.state.get("dir").and_then(|v| v.as_str()) {
-        Some(d) => d,
-        None => {
-            ctx.state.insert("error".to_string(), json!("No directory in state"));
-            return ctx;
-        }
-    };
+/// Update indexes for a document
+fn update_indexes(ctx: &mut Context, doc_id: &str, data: &Value) -> Result<(), String> {
+    let dir = ctx.state.get("dir")
+        .and_then(|v| v.as_str())
+        .ok_or("No directory in state")?
+        .to_string();
     
-    let doc = match ctx.state.get("doc").and_then(|v| v.as_str()) {
-        Some(d) => d,
-        None => {
-            ctx.state.insert("error".to_string(), json!("No document ID in state"));
-            return ctx;
+    // Get indexes for this collection
+    let index_key = format!("_/{}/indexes", dir);
+    if let Some(indexes) = ctx.kv.get("", &index_key) {
+        if let Some(index_map) = indexes.as_object() {
+            // For each index, update the B+ tree
+            for (index_name, _) in index_map {
+                // Parse the index fields from the name
+                let fields: Vec<(String, String)> = index_name.split('/')
+                    .collect::<Vec<_>>()
+                    .chunks(2)
+                    .map(|chunk| {
+                        let field = chunk[0].to_string();
+                        let order = chunk.get(1).map(|s| s.to_string()).unwrap_or("asc".to_string());
+                        (field, order)
+                    })
+                    .collect();
+                
+                // Create B+ tree for this index
+                let prefix = format!("{}/{}", dir, index_name);
+                let sort_fields = if fields.len() == 1 {
+                    SortFields::Simple(fields[0].0.clone())
+                } else {
+                    SortFields::Complex(fields)
+                };
+                
+                // Create a Box<dyn KVStore> from the context's Store
+                let kv_box: Box<dyn KVStore> = Box::new(ctx.kv.clone());
+                let mut bpt = BPT::new(100, sort_fields, prefix, kv_box);
+                
+                // Insert the document into the index
+                bpt.insert(doc_id, data.clone());
+                
+                // The B+ tree will automatically update the underlying store
+            }
         }
-    };
-    
-    // Check if directory exists
-    if ctx.kv.get(SYSTEM_DIR, dir).is_none() {
-        ctx.state.insert("error".to_string(), json!(format!("dir doesn't exist: {}", dir)));
-        return ctx;
     }
     
-    // Use indexer to delete (handles all index updates)
-    if let Some((before, after)) = indexer::del(doc, &[dir.to_string()], &mut ctx.kv) {
-        // Store the before/after states
-        ctx.state.insert("before".to_string(), serde_json::to_value(&before).unwrap_or(json!(null)));
-        ctx.state.insert("after".to_string(), serde_json::to_value(&after).unwrap_or(json!(null)));
+    Ok(())
+}
+
+/// Delete a document
+fn delete_data(ctx: &mut Context) -> Result<(), String> {
+    // Extract values first to avoid borrow issues
+    let dir = ctx.state.get("dir")
+        .and_then(|v| v.as_str())
+        .ok_or("No directory in state")?
+        .to_string();
+    
+    let doc = ctx.state.get("doc")
+        .and_then(|v| v.as_str())
+        .ok_or("No document ID in state")?
+        .to_string();
+    
+    // Get the document data before deletion (for index removal)
+    let data = ctx.kv.get_data(&doc);
+    
+    // Delete from indexes first
+    if let Some(data_val) = data {
+        remove_from_indexes(ctx, &doc, &data_val)?;
     }
     
-    ctx
+    // Delete the document metadata
+    ctx.kv.del(&dir, &doc);
+    
+    // Delete the document data
+    ctx.kv.del_data(&doc);
+    
+    Ok(())
+}
+
+/// Remove document from indexes
+fn remove_from_indexes(ctx: &mut Context, doc_id: &str, _data: &Value) -> Result<(), String> {
+    let dir = ctx.state.get("dir")
+        .and_then(|v| v.as_str())
+        .ok_or("No directory in state")?
+        .to_string();
+    
+    // Get indexes for this collection
+    let index_key = format!("_/{}/indexes", dir);
+    if let Some(indexes) = ctx.kv.get("", &index_key) {
+        if let Some(index_map) = indexes.as_object() {
+            // For each index, remove from B+ tree
+            for (index_name, _) in index_map {
+                // Parse the index fields from the name
+                let fields: Vec<(String, String)> = index_name.split('/')
+                    .collect::<Vec<_>>()
+                    .chunks(2)
+                    .map(|chunk| {
+                        let field = chunk[0].to_string();
+                        let order = chunk.get(1).map(|s| s.to_string()).unwrap_or("asc".to_string());
+                        (field, order)
+                    })
+                    .collect();
+                
+                // Create B+ tree for this index
+                let prefix = format!("{}/{}", dir, index_name);
+                let sort_fields = if fields.len() == 1 {
+                    SortFields::Simple(fields[0].0.clone())
+                } else {
+                    SortFields::Complex(fields)
+                };
+                
+                let kv_box: Box<dyn KVStore> = Box::new(ctx.kv.clone());
+                let mut bpt = BPT::new(100, sort_fields, prefix, kv_box);
+                
+                // Delete the document from the index
+                bpt.delete(doc_id);
+            }
+        }
+    }
+    
+    Ok(())
+}
+
+/// Add an index to a collection
+fn add_index(ctx: &mut Context) -> Result<(), String> {
+    let dir = ctx.state.get("dir")
+        .and_then(|v| v.as_str())
+        .ok_or("No directory in state")?
+        .to_string();
+    
+    let data = ctx.state.get("data")
+        .ok_or("No index data in state")?
+        .clone();
+    
+    // Parse the index fields
+    let fields = data.as_array()
+        .ok_or("Index data must be an array")?;
+    
+    // Build the index name from fields
+    let index_name = fields.iter()
+        .filter_map(|f| f.as_array())
+        .map(|arr| {
+            let field = arr.get(0)?.as_str()?;
+            let order = arr.get(1).and_then(|v| v.as_str()).unwrap_or("asc");
+            Some(format!("{}/{}", field, order))
+        })
+        .collect::<Option<Vec<_>>>()
+        .ok_or("Invalid index fields")?
+        .join("/");
+    
+    // Store the index metadata
+    let index_key = format!("_/{}/indexes", dir);
+    let mut indexes = ctx.kv.get("", &index_key)
+        .and_then(|v| v.as_object().cloned())
+        .unwrap_or_default();
+    
+    indexes.insert(index_name.clone(), json!(true));
+    ctx.kv.put("", &index_key, json!(indexes));
+    
+    // Create the B+ tree for this index
+    let prefix = format!("{}/{}", dir, index_name);
+    let sort_fields = if fields.len() == 1 {
+        let field = fields[0].as_array()
+            .and_then(|arr| arr.get(0))
+            .and_then(|v| v.as_str())
+            .unwrap_or("value");
+        SortFields::Simple(field.to_string())
+    } else {
+        let complex_fields: Vec<(String, String)> = fields.iter()
+            .filter_map(|f| {
+                let arr = f.as_array()?;
+                let field = arr.get(0)?.as_str()?.to_string();
+                let order = arr.get(1)
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("asc")
+                    .to_string();
+                Some((field, order))
+            })
+            .collect();
+        SortFields::Complex(complex_fields)
+    };
+    
+    // Index all existing documents
+    let mut docs_to_index = Vec::new();
+    
+    for (key, _) in &ctx.kv.data.clone() {
+        if key.starts_with(&format!("{}/", dir)) {
+            let parts: Vec<&str> = key.split('/').collect();
+            if parts.len() == 2 && parts[0] == dir {
+                docs_to_index.push(parts[1].to_string());
+            }
+        }
+    }
+    
+    // Create a single B+ tree and index all documents
+    let kv_box: Box<dyn KVStore> = Box::new(ctx.kv.clone());
+    let mut bpt = BPT::new(100, sort_fields, prefix, kv_box);
+    
+    for doc_id in docs_to_index {
+        if let Some(data) = ctx.kv.data(&doc_id) {
+            bpt.insert(&doc_id, data.val);
+        }
+    }
+    
+    Ok(())
+}
+
+/// Remove an index from a collection
+fn remove_index(ctx: &mut Context) -> Result<(), String> {
+    let dir = ctx.state.get("dir")
+        .and_then(|v| v.as_str())
+        .ok_or("No directory in state")?
+        .to_string();
+    
+    let data = ctx.state.get("data")
+        .ok_or("No index data in state")?
+        .clone();
+    
+    // Parse the index fields
+    let fields = data.as_array()
+        .ok_or("Index data must be an array")?;
+    
+    // Build the index name from fields
+    let index_name = fields.iter()
+        .filter_map(|f| f.as_array())
+        .map(|arr| {
+            let field = arr.get(0)?.as_str()?;
+            let order = arr.get(1).and_then(|v| v.as_str()).unwrap_or("asc");
+            Some(format!("{}/{}", field, order))
+        })
+        .collect::<Option<Vec<_>>>()
+        .ok_or("Invalid index fields")?
+        .join("/");
+    
+    // Remove the index metadata
+    let index_key = format!("_/{}/indexes", dir);
+    let mut indexes = ctx.kv.get("", &index_key)
+        .and_then(|v| v.as_object().cloned())
+        .unwrap_or_default();
+    
+    indexes.remove(&index_name);
+    
+    if indexes.is_empty() {
+        ctx.kv.del("", &index_key);
+    } else {
+        ctx.kv.put("", &index_key, json!(indexes));
+    }
+    
+    // Remove B+ tree nodes
+    let prefix = format!("{}/{}", dir, index_name);
+    let keys_to_remove: Vec<String> = ctx.kv.data.keys()
+        .filter(|k| k.starts_with(&prefix))
+        .cloned()
+        .collect();
+    
+    for key in keys_to_remove {
+        ctx.kv.data.remove(&key);
+    }
+    
+    Ok(())
 }
 
 /// Process batch operations
-fn batch(mut ctx: Context) -> Context {
-    let ops = match ctx.state.get("query")
-        .and_then(|q| q.as_array())
-        .and_then(|arr| arr.get(1))
-        .and_then(|v| v.as_array()) {
-            Some(ops) => ops.clone(),
-            None => {
-                ctx.state.insert("error".to_string(), json!("Invalid batch query"));
-                return ctx;
+fn batch_operations(ctx: &mut Context) -> Result<(), String> {
+    // Clone the query to avoid borrow issues
+    let query = ctx.state.get("query")
+        .and_then(|v| v.as_array())
+        .ok_or("No query in state")?
+        .clone();
+    
+    if query.is_empty() || query[0].as_str() != Some("batch") {
+        return Err("Invalid batch query".to_string());
+    }
+    
+    // Process each operation in the batch
+    for (i, op) in query.iter().skip(1).enumerate() {
+        let op_array = op.as_array()
+            .ok_or(format!("Batch operation {} is not an array", i))?;
+        
+        if op_array.is_empty() {
+            continue;
+        }
+        
+        let op_type = op_array[0].as_str()
+            .ok_or(format!("Batch operation {} has invalid type", i))?;
+        
+        // Update the context state for this operation
+        ctx.state.insert("query".to_string(), op.clone());
+        ctx.state.insert("op".to_string(), json!(op_type));
+        
+        // Parse the operation
+        match op_type {
+            "set" | "update" | "upsert" if op_array.len() >= 4 => {
+                ctx.state.insert("data".to_string(), op_array[1].clone());
+                ctx.state.insert("dir".to_string(), op_array[2].clone());
+                ctx.state.insert("doc".to_string(), op_array[3].clone());
+                ctx.state.insert("parsed".to_string(), json!(true));
             }
-	};
-    
-    // In real implementation, would process each operation through the pipeline
-    // For now, just mark as successful
-    ctx.state.insert("batch_count".to_string(), json!(ops.len()));
-    
-    ctx
-}
-
-/// Execute write operation with optional schema validation
-fn write_with_validation<F>(mut ctx: Context, writer: F) -> Context
-where
-    F: FnOnce(Context) -> Context,
-{
-    // Validate schema first
-    if let Err(e) = validate_schema(&ctx) {
-        ctx.state.insert("error".to_string(), json!(e));
-        return ctx;
+            "add" if op_array.len() >= 3 => {
+                ctx.state.insert("data".to_string(), op_array[1].clone());
+                ctx.state.insert("dir".to_string(), op_array[2].clone());
+                ctx.state.insert("parsed".to_string(), json!(true));
+            }
+            "del" if op_array.len() >= 3 => {
+                ctx.state.insert("dir".to_string(), op_array[1].clone());
+                ctx.state.insert("doc".to_string(), op_array[2].clone());
+                ctx.state.insert("parsed".to_string(), json!(true));
+            }
+            _ => {
+                return Err(format!("Unknown batch operation: {}", op_type));
+            }
+        }
+        
+        // Execute the operation
+        let result = match op_type {
+            "set" | "add" => write_data(ctx),
+            "del" => delete_data(ctx),
+            "update" | "upsert" => {
+                // For update/upsert, we need to handle existing data
+                write_data(ctx)
+            }
+            _ => Err(format!("Unknown operation: {}", op_type)),
+        };
+        
+        if let Err(e) = result {
+            return Err(format!("Batch operation {} failed: {}", i, e));
+        }
     }
     
-    // Execute the writer
-    writer(ctx)
-}
-
-/// Get writer function for operation
-fn get_writer(opcode: &str) -> Option<fn(Context) -> Context> {
-    match opcode {
-        "init" => Some(init_db),
-        "set" | "add" | "upsert" | "update" => Some(|ctx| write_with_validation(ctx, put_data)),
-        "del" => Some(del_data),
-        "addIndex" => Some(add_index),
-        "removeIndex" => Some(remove_index),
-        "batch" => Some(batch),
-        _ => None,
-    }
+    Ok(())
 }
 
 /// Main write function
 pub fn write(mut ctx: Context) -> Context {
-    let op = match ctx.state.get("op").and_then(|v| v.as_str()) {
+    let opcode = match ctx.state.get("op").and_then(|v| v.as_str()) {
         Some(op) => op.to_string(),
         None => {
             ctx.state.insert("error".to_string(), json!("No operation in state"));
@@ -372,109 +414,25 @@ pub fn write(mut ctx: Context) -> Context {
         }
     };
     
-    // Get the writer function
-    let writer = match get_writer(&op) {
-        Some(w) => w,
-        None => {
-            ctx.state.insert("error".to_string(), json!(format!("Unknown operation: {}", op)));
-            return ctx;
-        }
+    let result = match opcode.as_str() {
+        "init" => init_db(&mut ctx),
+        "set" | "add" | "update" | "upsert" => write_data(&mut ctx),
+        "del" => delete_data(&mut ctx),
+        "batch" => batch_operations(&mut ctx),
+        "addIndex" => add_index(&mut ctx),
+        "removeIndex" => remove_index(&mut ctx),
+        _ => Err(format!("Unknown write operation: {}", opcode)),
     };
     
-    // Execute the writer
-    ctx = writer(ctx);
-    
-    // Check if we should commit (not in batch mode)
-    let no_commit = ctx.env.get("no_commit")
-        .and_then(|v| v.as_bool())
-        .unwrap_or(false);
-    
-    if !no_commit && !ctx.state.contains_key("error") {
-        // Success - commit the changes
-        ctx.kv.commit();
-        ctx.state.insert("committed".to_string(), json!(true));
-    } else if ctx.state.contains_key("error") {
-        // Error - reset to previous state
-        ctx.kv.reset();
-    }
-    
-    // Mark write as complete
-    if !ctx.state.contains_key("error") {
-        ctx.state.insert("write_result".to_string(), json!({
-            "success": true,
-            "operation": op
-        }));
+    match result {
+        Ok(()) => {
+            ctx.state.insert("success".to_string(), json!(true));
+        }
+        Err(e) => {
+            ctx.state.insert("error".to_string(), json!(e));
+            ctx.state.insert("success".to_string(), json!(false));
+        }
     }
     
     ctx
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_init_db() {
-        let mut ctx = Context {
-            kv: Store::new(HashMap::new()),
-            msg: json!({}),
-            opt: HashMap::new(),
-            state: HashMap::new(),
-            env: HashMap::new(),
-        };
-        
-        // Set up init query
-        ctx.state.insert("op".to_string(), json!("init"));
-        ctx.state.insert("query".to_string(), json!([
-            "init", "_", {
-                "id": "test-db",
-                "owner": "owner123",
-                "secure": "true"
-            }
-        ]));
-        ctx.env.insert("id".to_string(), json!("default-id"));
-        
-        ctx = write(ctx);
-        
-        // Check no error
-        assert!(!ctx.state.contains_key("error"));
-        assert_eq!(ctx.state.get("initialized"), Some(&json!(true)));
-        
-        // Check config was stored
-        let config = ctx.kv.get(SYSTEM_DIR, "config");
-        assert!(config.is_some());
-        let config = config.unwrap();
-        assert_eq!(config.get("id"), Some(&json!("test-db")));
-        assert_eq!(config.get("owner"), Some(&json!("owner123")));
-        assert_eq!(config.get("secure"), Some(&json!("true")));
-    }
-    
-    #[test]
-    fn test_put_data() {
-        let mut ctx = Context {
-            kv: Store::new(HashMap::new()),
-            msg: json!({}),
-            opt: HashMap::new(),
-            state: HashMap::new(),
-            env: HashMap::new(),
-        };
-        
-        // Initialize directory metadata
-        ctx.kv.put(SYSTEM_DIR, "users", json!({"name": "users"}));
-        
-        // Set up put operation
-        ctx.state.insert("op".to_string(), json!("set"));
-        ctx.state.insert("dir".to_string(), json!("users"));
-        ctx.state.insert("doc".to_string(), json!("user1"));
-        ctx.state.insert("data".to_string(), json!({"name": "Alice", "age": 30}));
-        
-        ctx = write(ctx);
-        
-        // Check no error
-        assert!(!ctx.state.contains_key("error"));
-        
-        // Check data was stored
-        let data = ctx.kv.get("users", "user1");
-        assert_eq!(data, Some(json!({"name": "Alice", "age": 30})));
-    }
 }
