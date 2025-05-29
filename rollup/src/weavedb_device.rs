@@ -27,15 +27,44 @@ impl WeaveDB {
         }
     }
 
+    /// Load database info from storage into environment
+    fn load_db_env(&self) -> HashMap<String, Value> {
+        let mut env = self.env.clone();
+        
+        // Load database info from _/info into env (mirrors JS _init function)
+        // First check _config/info (like some JS versions)
+        if let Some(info) = self.store.get("_config", "info") {
+            if let Some(info_obj) = info.as_object() {
+                for (key, value) in info_obj {
+                    env.insert(key.clone(), value.clone());
+                }
+            }
+        }
+        
+        // Also check _/info (like write.rs stores it)
+        if let Some(info) = self.store.get("_", "info") {
+            if let Some(info_obj) = info.as_object() {
+                for (key, value) in info_obj {
+                    env.insert(key.clone(), value.clone());
+                }
+            }
+        }
+        
+        env
+    }
+
     /// Write operation - matches JS: db.write(msg)
     pub fn write(&mut self, msg: Value) -> Result<Value, String> {
-        // Create context
+        // Load database info into environment
+        let env = self.load_db_env();
+        
+        // Create context - Store is cheap to clone now (just Arc)
         let ctx = Context {
             kv: self.store.clone(),
             msg,
             opt: HashMap::new(),
             state: HashMap::new(),
-            env: self.env.clone(),
+            env, // Use the loaded env
         };
         
         // Initialize
@@ -45,35 +74,40 @@ impl WeaveDB {
         let ctx = normalize(ctx);
         if let Some(error) = ctx.state.get("error") {
             println!("Error after normalize: {:?}", error);
+            // Reset is already handled in write.rs
             return Err(error.to_string());
         }
         
         let ctx = verify_nonce(ctx);
         if let Some(error) = ctx.state.get("error") {
             println!("Error after verify_nonce: {:?}", error);
+            // Reset is already handled in write.rs
             return Err(error.to_string());
         }
         
         let ctx = parse(ctx);
         if let Some(error) = ctx.state.get("error") {
             println!("Error after parse: {:?}", error);
+            // Reset is already handled in write.rs
             return Err(error.to_string());
         }
         
         let ctx = auth(ctx);
         if let Some(error) = ctx.state.get("error") {
             println!("Error after auth: {:?}", error);
+            // Reset is already handled in write.rs
             return Err(error.to_string());
         }
         
         let ctx = write(ctx);
         if let Some(error) = ctx.state.get("error") {
             println!("Error after write: {:?}", error);
+            // Reset is already handled in write.rs
             return Err(error.to_string());
         }
         
-        // Update store
-        self.store = ctx.kv;
+        // NO NEED TO UPDATE self.store - it's already updated through the shared state!
+        // The transforms operated on the same Store instance through the shared LsKv
         
         // Return success with state
         Ok(json!({
@@ -84,13 +118,16 @@ impl WeaveDB {
     
     /// Read operation - matches JS: db.read(msg)
     pub fn read(&self, msg: Value) -> Result<Value, String> {
+        // Load database info into environment
+        let env = self.load_db_env();
+        
         // Create context
         let ctx = Context {
             kv: self.store.clone(),
             msg,
             opt: HashMap::new(),
             state: HashMap::new(),
-            env: self.env.clone(),
+            env, // Use the loaded env
         };
         
         // Initialize
@@ -120,13 +157,16 @@ impl WeaveDB {
     
     /// Get operation - matches JS: db.get(...query).val()
     pub fn get(&mut self, query: Vec<Value>) -> Result<Value, String> {
+        // Load database info into environment
+        let env = self.load_db_env();
+        
         // Create context with query as msg
         let ctx = Context {
             kv: self.store.clone(),
             msg: Value::Array(query),
             opt: HashMap::new(),
             state: HashMap::new(),
-            env: self.env.clone(),
+            env, // Use the loaded env
         };
         
         // Initialize
@@ -158,13 +198,16 @@ impl WeaveDB {
     
     /// Cget operation - matches JS: db.cget(...query).val()
     pub fn cget(&mut self, query: Vec<Value>) -> Result<Value, String> {
+        // Load database info into environment
+        let env = self.load_db_env();
+        
         // Create context with query as msg
         let ctx = Context {
             kv: self.store.clone(),
             msg: Value::Array(query),
             opt: HashMap::new(),
             state: HashMap::new(),
-            env: self.env.clone(),
+            env, // Use the loaded env
         };
         
         // Initialize

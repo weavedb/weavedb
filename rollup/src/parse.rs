@@ -5,6 +5,41 @@ use serde_json::{Value, json, Map};
 use std::collections::HashMap;
 use base64::{Engine as _, engine::general_purpose};
 use deno_core::{JsRuntime, RuntimeOptions, v8, serde_v8};
+use std::cell::RefCell;
+
+// Thread-local V8 runtime for FPJson evaluation
+thread_local! {
+    static FPJSON_RUNTIME: RefCell<Option<JsRuntime>> = RefCell::new(None);
+}
+
+/// Get or create the thread-local FPJson runtime
+fn with_fpjson_runtime<F, R>(f: F) -> Result<R, String>
+where
+    F: FnOnce(&mut JsRuntime) -> Result<R, String>,
+{
+    FPJSON_RUNTIME.with(|runtime_cell| {
+        let mut runtime_opt = runtime_cell.borrow_mut();
+        
+        // Initialize runtime if needed
+        if runtime_opt.is_none() {
+            let mut runtime = JsRuntime::new(RuntimeOptions::default());
+            
+            // Load FPJson library once
+            let fpjson_code = include_str!("fpjson_bundle.js");
+            runtime.execute_script("[fpjson]", fpjson_code)
+                .map_err(|e| format!("Failed to load FPJson bundle: {}", e))?;
+            
+            *runtime_opt = Some(runtime);
+        }
+        
+        // Use the runtime
+        if let Some(runtime) = runtime_opt.as_mut() {
+            f(runtime)
+        } else {
+            Err("Failed to access FPJson runtime".to_string())
+        }
+    })
+}
 
 const BASE64_CHARS: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
@@ -101,59 +136,57 @@ fn replace_dollar(val: &Value, old_val: Option<&Value>) -> Value {
     }
 }
 
-/// Evaluate FPJson expression using deno_core
+
+// In parse.rs - fix the eval_fpjson function
+/// Evaluate FPJson expression using thread-local runtime
 fn eval_fpjson(expr: &Value, vars: &HashMap<String, Value>, old_val: Option<&Value>) -> Result<Value, String> {
-    // Create a new runtime for each evaluation (not ideal for performance, but simple)
-    let mut runtime = JsRuntime::new(RuntimeOptions::default());
-    
-    // Load FPJson library from bundled file
-    let fpjson_code = include_str!("fpjson_bundle.js");
-    runtime.execute_script("[fpjson]", fpjson_code)
-        .map_err(|e| format!("Failed to load FPJson: {}", e))?;
-    
-    // Process the expression to replace $ references
-    let processed_expr = replace_dollar(expr, old_val);
-    
-    // Set up the evaluation
-    let vars_json = serde_json::to_string(vars)
-        .map_err(|e| format!("Failed to serialize vars: {}", e))?;
-    let expr_json = serde_json::to_string(&processed_expr)
-        .map_err(|e| format!("Failed to serialize expression: {}", e))?;
-    
-    let eval_code = format!(
-        r#"
-        const vars = {};
-        const expr = {};
-        try {{
-            const result = globalThis.fpj(expr, vars);
-            JSON.stringify({{ success: true, value: result }});
-        }} catch (e) {{
-            JSON.stringify({{ success: false, error: e.message }});
-        }}
-        "#,
-        vars_json, expr_json
-    );
-    
-    let result_value = runtime.execute_script("[eval]", eval_code)
-        .map_err(|e| format!("Failed to evaluate FPJson: {}", e))?;
-    
-    // Convert the v8 value to serde_json::Value
-    let scope = &mut runtime.handle_scope();
-    let local = deno_core::v8::Local::new(scope, result_value);
-    let result_str: String = deno_core::serde_v8::from_v8(scope, local)
-        .map_err(|e| format!("Failed to convert result: {}", e))?;
-    
-    // Parse the result
-    let result: serde_json::Value = serde_json::from_str(&result_str)
-        .map_err(|e| format!("Failed to parse result: {}", e))?;
-    
-    if let Some(true) = result.get("success").and_then(|v| v.as_bool()) {
-        Ok(result.get("value").cloned().unwrap_or(Value::Null))
-    } else if let Some(error) = result.get("error").and_then(|v| v.as_str()) {
-        Err(error.to_string())
-    } else {
-        Err("Unknown error in FPJson evaluation".to_string())
-    }
+    with_fpjson_runtime(|runtime| {
+        // Process the expression to replace $ references
+        let processed_expr = replace_dollar(expr, old_val);
+        
+        // Set up the evaluation
+        let vars_json = serde_json::to_string(vars)
+            .map_err(|e| format!("Failed to serialize vars: {}", e))?;
+        let expr_json = serde_json::to_string(&processed_expr)
+            .map_err(|e| format!("Failed to serialize expression: {}", e))?;
+        
+        let eval_code = format!(
+            r#"
+            (function() {{
+                const vars = {};
+                const expr = {};
+                try {{
+                    const result = globalThis.fpj(expr, vars);
+                    return JSON.stringify({{ success: true, value: result }});
+                }} catch (e) {{
+                    return JSON.stringify({{ success: false, error: e.message }});
+                }}
+            }})()
+            "#,
+            vars_json, expr_json
+        );
+        
+        let result_value = runtime.execute_script("[eval]", eval_code)
+            .map_err(|e| format!("Failed to evaluate FPJson: {}", e))?;
+        
+        // Convert the v8 value to string
+        let scope = &mut runtime.handle_scope();
+        let local = v8::Local::new(scope, result_value);
+        let result_str: String = serde_v8::from_v8(scope, local)
+            .map_err(|e| format!("Failed to convert result: {}", e))?;
+        
+        // Parse the result
+        let result: serde_json::Value = serde_json::from_str(&result_str)
+            .map_err(|e| format!("Failed to parse result: {}", e))?;
+        
+        if let Some(true) = result.get("success").and_then(|v| v.as_bool()) {
+            Ok(result.get("value").cloned().unwrap_or(Value::Null))
+        } else if let Some(error) = result.get("error").and_then(|v| v.as_str()) {
+            Err(error.to_string())
+        } else {
+            Err("Unknown error in FPJson evaluation".to_string())
+        }
+    })
 }
 
 /// Merge data with special variable substitutions and FPJson evaluation

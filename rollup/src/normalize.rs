@@ -1,3 +1,5 @@
+// File: src/normalize.rs
+
 use crate::build::Context;
 use serde_json::{Value, json};
 use sha2::{Sha256, Digest};
@@ -54,7 +56,7 @@ fn to_b64(n: u64) -> String {
     result
 }
 
-/// Parse Signature-Input header
+/// Parse Signature-Input header (simplified - no verification)
 fn parse_si(input: &str) -> Result<SignatureInput, String> {
     let eq_pos = input.find('=')
         .ok_or("Invalid Signature-Input (no `=` found)")?;
@@ -147,20 +149,21 @@ fn to_lower(mut ctx: Context) -> Context {
     ctx
 }
 
-/// Pick input headers based on signature input
+/// Pick input headers based on signature input (NO VERIFICATION)
 fn pick_input(mut ctx: Context) -> Result<Context, String> {
     let headers = ctx.msg.as_object()
         .and_then(|m| m.get("headers"))
         .and_then(|h| h.as_object())
         .ok_or("No headers in message")?;
     
+    // Get signature-input to extract keyid
     let sig_input = headers.get("signature-input")
         .and_then(|v| v.as_str())
         .ok_or("No signature-input header")?;
     
     let si = parse_si(sig_input)?;
     
-    // Validate required headers
+    // Extract required headers
     let id = headers.get("id")
         .and_then(|v| v.as_str())
         .ok_or("id missing")?;
@@ -176,7 +179,7 @@ fn pick_input(mut ctx: Context) -> Result<Context, String> {
     let parsed_query: Value = serde_json::from_str(query)
         .map_err(|e| format!("Failed to parse query: {}", e))?;
     
-    // Calculate signer address
+    // Calculate signer address from keyid (but don't verify signature)
     let signer = to_addr(&si.keyid)?;
     
     // Update state
@@ -188,6 +191,8 @@ fn pick_input(mut ctx: Context) -> Result<Context, String> {
     
     // Build filtered message with only required headers
     let mut filtered_headers = serde_json::Map::new();
+    
+    // NO SIGNATURE VERIFICATION - just pass through the headers
     filtered_headers.insert("signature".to_string(), 
         headers.get("signature").cloned().unwrap_or(json!(null)));
     filtered_headers.insert("signature-input".to_string(), json!(sig_input));
@@ -232,7 +237,7 @@ fn parse_op(mut ctx: Context) -> Result<Context, String> {
     Ok(ctx)
 }
 
-/// Main normalize function that chains all operations
+/// Main normalize function that chains all operations (NO SIGNATURE VERIFICATION)
 pub fn normalize(ctx: Context) -> Context {
     let ctx = to_lower(ctx);
     

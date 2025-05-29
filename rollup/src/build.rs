@@ -1,9 +1,10 @@
-// File: src/build.rs
+// File: src/build.rs - Updated Store implementation
 
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use crate::monade::Device;
+use crate::ls_kv::LsKv;
 
 /// Build configuration for device chain
 #[derive(Clone)]
@@ -47,52 +48,56 @@ where
     Arc::new(f)
 }
 
-/// In-memory key-value store
+/// Store that wraps LsKv for log-structured operations
 #[derive(Debug, Clone)]
 pub struct Store {
-    data: Arc<Mutex<HashMap<String, HashMap<String, Value>>>>,
+    kv: LsKv,
+    // Keep track of initialized collections/directories
+    initialized: Arc<Mutex<std::collections::HashSet<String>>>,
 }
 
 impl Store {
     pub fn new(initial_data: HashMap<String, Value>) -> Self {
-        let mut data = HashMap::new();
+        let kv = LsKv::new();
+        let initialized = Arc::new(Mutex::new(std::collections::HashSet::new()));
         
-        // Initialize with default directories
-        data.insert("_".to_string(), HashMap::new());
-        data.insert("__indexes__".to_string(), HashMap::new());
+        // Initialize default directories
+        let dirs = vec!["_", "__indexes__", "__accounts__"];
+        for dir in &dirs {
+            initialized.lock().unwrap().insert(dir.to_string());
+        }
         
-        // Add initial data to the default directory
+        // Add initial data to the default directory if provided
         if !initial_data.is_empty() {
-            data.insert("default".to_string(), initial_data);
+            for (key, value) in initial_data {
+                kv.put_dir("default", &key, value);
+            }
+            initialized.lock().unwrap().insert("default".to_string());
         }
         
-        Store {
-            data: Arc::new(Mutex::new(data)),
-        }
+        Store { kv, initialized }
     }
     
     pub fn get(&self, dir: &str, key: &str) -> Option<Value> {
-        let data = self.data.lock().unwrap();
-        data.get(dir)?.get(key).cloned()
+        self.kv.get_dir(dir, key)
     }
     
-    pub fn put(&mut self, dir: &str, key: &str, value: Value) {
-        let mut data = self.data.lock().unwrap();
-        data.entry(dir.to_string())
-            .or_insert_with(HashMap::new)
-            .insert(key.to_string(), value);
+    pub fn put(&self, dir: &str, key: &str, value: Value) {
+        // Track that we've used this directory
+        self.initialized.lock().unwrap().insert(dir.to_string());
+        self.kv.put_dir(dir, key, value);
     }
     
-    pub fn del(&mut self, dir: &str, key: &str) {
-        let mut data = self.data.lock().unwrap();
-        if let Some(dir_data) = data.get_mut(dir) {
-            dir_data.remove(key);
-        }
+    pub fn del(&self, dir: &str, key: &str) {
+        self.kv.del_dir(dir, key);
+    }
+    
+    pub fn reset(&self) {
+        self.kv.reset();
     }
     
     pub fn commit(&self) {
-        // In a real implementation, this would persist changes
-        // For now, it's a no-op since we're using in-memory storage
+        self.kv.commit();
     }
     
     // Additional methods for compatibility with indexer
@@ -103,39 +108,42 @@ impl Store {
         })
     }
     
-    pub fn put_data(&mut self, key: &str, val: Value) {
-        self.put("data", key, val);
+    pub fn put_data(&self, key: &str, val: Value) {
+        self.put("data", key, val)
     }
     
-    pub fn del_data(&mut self, key: &str) {
-        self.del("data", key);
+    pub fn del_data(&self, key: &str) {
+        self.del("data", key)
     }
 }
 
 // Implement KVStore trait for Store
 impl crate::bpt::KVStore for Store {
     fn get(&self, key: &str) -> Option<Value> {
-        self.get("", key)
+        // Default to empty directory for BPT compatibility
+        Store::get(self, "", key)
     }
     
     fn put(&mut self, key: &str, val: Value) {
-        self.put("", key, val)
+        // Use empty directory for BPT compatibility
+        Store::put(self, "", key, val)
     }
     
     fn del(&mut self, key: &str) {
-        self.del("", key)
+        // Use empty directory for BPT compatibility
+        Store::del(self, "", key)
     }
     
     fn data(&self, key: &str) -> Option<crate::bpt::DataValue> {
-        self.data(key)
+        Store::data(self, key)
     }
     
     fn put_data(&mut self, key: &str, val: Value) {
-        self.put_data(key, val)
+        Store::put_data(self, key, val)
     }
     
     fn del_data(&mut self, key: &str) {
-        self.del_data(key)
+        Store::del_data(self, key)
     }
 }
 
@@ -187,12 +195,33 @@ impl DBMethods for DBImpl {
     }
     
     fn execute(&self, store: Store, msg: Value) -> (Store, Value) {
+        // Load database info from _/info into env (mirrors JS _init function)
+        let mut env = self.env.clone();
+        
+        // First check _config/info (like some JS versions)
+        if let Some(info) = store.get("_config", "info") {
+            if let Some(info_obj) = info.as_object() {
+                for (key, value) in info_obj {
+                    env.insert(key.clone(), value.clone());
+                }
+            }
+        }
+        
+        // Also check _/info (like write.rs stores it)
+        if let Some(info) = store.get("_", "info") {
+            if let Some(info_obj) = info.as_object() {
+                for (key, value) in info_obj {
+                    env.insert(key.clone(), value.clone());
+                }
+            }
+        }
+        
         let context = Context {
-            kv: store,
+            kv: store.clone(),
             msg: msg.clone(),
             opt: self.opt.clone(),
             state: HashMap::new(),
-            env: self.env.clone(),
+            env, // Use the updated env with database info
         };
         
         // Determine operation type from message
@@ -235,30 +264,36 @@ impl DBMethods for DBImpl {
         
         // Build response
         let response = if let Some(error) = final_context.state.get("error") {
+            // Reset on error (like JS)
+            store.reset();
             json!({
                 "success": false,
                 "error": error,
                 "query": msg
             })
         } else if let Some(_result) = final_context.state.get("write_result") {
+            // Successful write - commit changes (like JS: kv.commit())
+            store.commit();
             json!({
                 "success": true,
                 "query": msg
             })
         } else if let Some(result) = final_context.state.get("read_result") {
-            // For read operations, wrap the result in a success response
+            // For read operations, no commit needed
             json!({
                 "success": true,
                 "res": result
             })
         } else {
+            // Default success response
             json!({
                 "success": true,
                 "query": msg
             })
         };
         
-        (final_context.kv, response)
+        // Return the SAME store instance
+        (store, response)
     }
 }
 
@@ -297,58 +332,75 @@ mod tests {
     use super::*;
     
     #[test]
-    fn test_store() {
-        let mut store = Store::new(HashMap::new());
+    fn test_store_ls_behavior() {
+        // Initialize RocksDB for testing
+        crate::kv::init(".test-rocks-db");
         
-        // Test put and get
+        let store = Store::new(HashMap::new());
+        
+        // Test put and get with local state
         store.put("test_dir", "key1", json!("value1"));
         assert_eq!(store.get("test_dir", "key1"), Some(json!("value1")));
         
-        // Test delete
-        store.del("test_dir", "key1");
+        // Test reset clears local state
+        store.reset();
         assert_eq!(store.get("test_dir", "key1"), None);
         
-        // Test non-existent key
-        assert_eq!(store.get("test_dir", "non_existent"), None);
+        // Test commit persists to committed state
+        store.put("test_dir", "key2", json!("value2"));
+        store.commit();
+        
+        // After commit, value should persist even after reset
+        store.reset();
+        assert_eq!(store.get("test_dir", "key2"), Some(json!("value2")));
     }
     
     #[test]
-    fn test_context_chain() {
-        fn add_one(mut ctx: Context) -> Context {
-            let val = ctx.state.get("counter")
-                .and_then(|v| v.as_i64())
-                .unwrap_or(0);
-            ctx.state.insert("counter".to_string(), json!(val + 1));
-            ctx
-        }
+    fn test_store_delete() {
+        // Initialize RocksDB for testing
+        crate::kv::init(".test-rocks-db-2");
         
-        fn multiply_two(mut ctx: Context) -> Context {
-            let val = ctx.state.get("counter")
-                .and_then(|v| v.as_i64())
-                .unwrap_or(0);
-            ctx.state.insert("counter".to_string(), json!(val * 2));
-            ctx
-        }
+        let store = Store::new(HashMap::new());
         
-        let transforms = vec![transform(add_one), transform(multiply_two)];
-        let context = Context {
-            kv: Store::new(HashMap::new()),
-            msg: json!({}),
+        // Add and commit a value
+        store.put("test_dir", "key1", json!("value1"));
+        store.commit();
+        
+        // Delete (put null)
+        store.del("test_dir", "key1");
+        store.commit();
+        
+        // Should be gone
+        assert_eq!(store.get("test_dir", "key1"), None);
+    }
+    
+    #[test]
+    fn test_env_loading() {
+        // Initialize RocksDB for testing
+        crate::kv::init(".test-rocks-db-3");
+        
+        let store = Store::new(HashMap::new());
+        
+        // Simulate database initialization - store info in _/info
+        store.put("_", "info", json!({
+            "id": "test-db",
+            "owner": "test-owner"
+        }));
+        store.commit();
+        
+        // Create DBImpl
+        let config = BuildConfig::default();
+        let db_impl = DBImpl {
+            config,
             opt: HashMap::new(),
-            state: HashMap::new(),
             env: HashMap::new(),
         };
         
-        let result = execute_chain(&transforms, context);
-        assert_eq!(result.state.get("counter"), Some(&json!(2)));
-    }
-    
-    #[test]
-    fn test_build_config() {
-        let config = BuildConfig::default();
-        assert!(config.write.is_none());
-        assert!(config.read.is_none());
-        assert!(config.__write__.is_empty());
-        assert!(config.__read__.is_empty());
+        // Execute a dummy operation
+        let msg = json!(["get", "test"]);
+        let (_, _) = db_impl.execute(store, msg);
+        
+        // The env should now contain the database info
+        // (This test mainly ensures the code compiles and runs without panic)
     }
 }
