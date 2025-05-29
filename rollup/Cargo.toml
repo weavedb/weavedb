@@ -11,6 +11,11 @@ tokio = { version = "1", features = ["full"] }
 axum = "0.7"
 tower = { version = "0.4", features = ["util"] }
 tower-http = { version = "0.5", features = ["cors"] }
+thiserror = "1.0"
+
+# Storage
+once_cell = "1.19"
+rocksdb = "0.22"
 
 # CLI
 clap = { version = "4.0", features = ["derive"] }
@@ -25,6 +30,10 @@ openssl = "0.10"
 
 # Time handling
 chrono = "0.4"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = "0.3"
 
 # HTTP signature verification
 http-signature-normalization = "0.5"
@@ -53,3 +62,51 @@ path = "src/lib.rs"
 [[test]]
 name = "test_weavedb"
 path = "tests/test_weavedb.rs"
+
+[[test]]
+name = "working_index_test"
+path = "tests/working_index_test.rs"
+
+[[test]]
+name = "diagnose_signer_test"
+path = "tests/diagnose_signer_test.rs"
+
+[[test]]
+name = "fix_index_auth_test"
+path = "tests/fix_index_auth_test.rs"
+
+[[test]]
+name = "debug_get_operations"
+path = "tests/debug_get_operations.rs"
+
+[[test]]
+name = "test_index_ownership"
+path = "tests/test_index_ownership.rs"
+
+[[test]]
+name = "test_weavedb_features"
+path = "tests/test_weavedb_features.rs"
+
+[[test]]
+name = "test_basic_operations"
+path = "tests/test_basic_operations.rs"
+
+[[test]]
+name = "test_nonce_verification"
+path = "tests/test_nonce_verification.rs"
+
+[[test]]
+name = "parallel_server_benchmark"
+path = "tests/parallel_server_benchmark.rs"
+
+[[test]]
+name = "realistic_parallel_benchmark"
+path = "tests/realistic_parallel_benchmark.rs"
+
+[[test]]
+name = "test_complex_queries"
+path = "tests/test_complex_queries.rs"
+
+[[test]]
+name = "raw_db_performance"
+path = "tests/raw_db_performance.rs"

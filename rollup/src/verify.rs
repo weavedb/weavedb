@@ -1,233 +1,186 @@
-use crate::build::Context;
-use serde_json::{Value, json};
+use std::collections::HashMap;
+use base64::engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD};
+use base64::Engine;
+use openssl::hash::MessageDigest;
+use openssl::pkey::PKey;
+use openssl::rsa::Rsa;
+use openssl::sign::Verifier;
 
-/// Accounts directory name
-const ACCOUNTS_DIR: &str = "__accounts__";
-
-/// Verify nonce and update account
+/// Verifies an HTTP message signature according to RFC 9421
 /// 
-/// This function:
-/// 1. Gets the current nonce for the signer from __accounts__ directory
-/// 2. Verifies the provided nonce is currentNonce + 1
-/// 3. Updates the account with the new nonce
-pub fn verify_nonce(mut ctx: Context) -> Context {
-    // Get signer address from state
-    let signer = match ctx.state.get("signer").and_then(|v| v.as_str()) {
-        Some(s) => s.to_string(),
-        None => {
-            ctx.state.insert("error".to_string(), json!("No signer address in state"));
-            return ctx;
-        }
-    };
+/// This function expects a JSON string containing HTTP headers, including:
+/// - `signature-input`: Contains the signature label, covered components, and parameters
+/// - `signature`: Contains the actual signature value
+/// 
+/// The signature is verified using RSA-PSS-SHA512 with the RSA public key 
+/// extracted from the `keyid` parameter.
+pub fn verify_signature(headers_json: &str) -> Result<(), String> {
+    let headers: HashMap<String, String> = serde_json::from_str(headers_json)
+        .map_err(|e| format!("Failed to parse headers JSON: {}", e))?;
+
+    let sig_input = headers
+        .get("signature-input")
+        .ok_or("Missing signature-input header")?;
+    let sig_header = headers
+        .get("signature")
+        .ok_or("Missing signature header")?;
+
+    // Parse the signature-input header: "label=(fields);params"
+    let (sig_label, fields, raw_params) = parse_signature_input(sig_input)?;
     
-    // Get nonce from state
-    let state_nonce = match ctx.state.get("nonce") {
-        Some(Value::String(s)) => {
-            match s.parse::<u64>() {
-                Ok(n) => n,
-                Err(_) => {
-                    ctx.state.insert("error".to_string(), json!("Invalid nonce format"));
-                    return ctx;
-                }
-            }
-        }
-        Some(Value::Number(n)) => {
-            match n.as_u64() {
-                Some(n) => n,
-                None => {
-                    ctx.state.insert("error".to_string(), json!("Invalid nonce number"));
-                    return ctx;
-                }
-            }
-        }
-        _ => {
-            ctx.state.insert("error".to_string(), json!("No nonce in state"));
-            return ctx;
-        }
-    };
+    // Extract the signature value for this label
+    let signature_bytes = extract_signature_value(sig_header, &sig_label)?;
     
-    // Get account from store
-    let acc = ctx.kv.get(ACCOUNTS_DIR, &signer);
+    // Build the signature base string according to RFC 9421
+    let signing_string = build_signature_base(&headers, &fields, raw_params)?;
     
-    // Extract current nonce from account
-    let current_nonce = match &acc {
-        Some(Value::Object(obj)) => {
-            obj.get("nonce")
-                .and_then(|v| v.as_u64())
-                .unwrap_or(0)
-        }
-        _ => 0, // New account starts at nonce 0
-    };
+    // Extract the RSA public key from the keyid parameter
+    let public_key = extract_rsa_public_key(sig_input)?;
     
-    // Verify nonce is currentNonce + 1
-    if state_nonce != current_nonce + 1 {
-        ctx.state.insert("error".to_string(), 
-            json!(format!("the wrong nonce: {}", state_nonce)));
-        return ctx;
+    // Verify the signature using OpenSSL (matches Node.js behavior)
+    verify_signature_openssl(&public_key, &signing_string, &signature_bytes)
+}
+
+/// Parses the signature-input header to extract label, fields, and parameters
+fn parse_signature_input(sig_input: &str) -> Result<(String, Vec<String>, &str), String> {
+    let equals_pos = sig_input
+        .find('=')
+        .ok_or("Invalid signature-input format: missing '='")?;
+    let sig_label = sig_input[..equals_pos].to_string();
+    
+    let input_start = sig_input
+        .find('(')
+        .ok_or("Invalid signature-input format: missing '('")?;
+    let input_end = sig_input
+        .find(')')
+        .ok_or("Invalid signature-input format: missing ')'")?;
+    
+    let fields_str = &sig_input[input_start + 1..input_end];
+    let fields: Vec<String> = fields_str
+        .split_whitespace()
+        .map(|s| s.trim_matches('"').to_string())
+        .collect();
+    
+    let raw_params = &sig_input[equals_pos + 1..];
+    
+    Ok((sig_label, fields, raw_params))
+}
+
+/// Extracts the signature value for the given label from the signature header
+fn extract_signature_value(sig_header: &str, sig_label: &str) -> Result<Vec<u8>, String> {
+    let label_prefix = format!("{}=:", sig_label);
+    let sig_start = sig_header
+        .find(&label_prefix)
+        .ok_or("Signature label not found in signature header")?;
+    let sig_value_start = sig_start + label_prefix.len();
+    
+    let remaining = &sig_header[sig_value_start..];
+    let sig_end = remaining
+        .find(':')
+        .ok_or("Signature value not properly terminated with ':'")?;
+    let b64_signature = &remaining[..sig_end];
+    
+    STANDARD
+        .decode(b64_signature)
+        .map_err(|e| format!("Failed to decode base64 signature: {}", e))
+}
+
+/// Builds the signature base string according to RFC 9421 format
+fn build_signature_base(
+    headers: &HashMap<String, String>,
+    fields: &[String],
+    raw_params: &str,
+) -> Result<String, String> {
+    let mut signing_string = String::new();
+
+    // Add each covered component in the format: "field-name": value\n
+    for field in fields {
+        let value = headers
+            .get(field)
+            .ok_or_else(|| format!("Missing header field: {}", field))?;
+        signing_string.push_str(&format!("\"{}\": {}\n", field.to_lowercase(), value));
     }
+
+    // Add the signature parameters line (no trailing newline)
+    signing_string.push_str(&format!("\"@signature-params\": {}", raw_params));
     
-    // Create updated account document
-    let new_nonce = current_nonce + 1;
-    let new_acc = match acc {
-        Some(Value::Object(mut obj)) => {
-            // Update existing account
-            obj.insert("nonce".to_string(), json!(new_nonce));
-            json!(obj)
-        }
-        _ => {
-            // Create new account with just nonce
-            json!({
-                "nonce": new_nonce
-            })
-        }
-    };
+    Ok(signing_string)
+}
+
+/// Extracts the RSA public key from the keyid parameter in signature-input
+fn extract_rsa_public_key(sig_input: &str) -> Result<PKey<openssl::pkey::Public>, String> {
+    let key_id_start = sig_input
+        .find("keyid=\"")
+        .ok_or("Missing keyid parameter")?;
+    let key_id_end = sig_input[key_id_start + 7..]
+        .find('"')
+        .ok_or("Malformed keyid parameter")?;
+    let key_id = &sig_input[key_id_start + 7..key_id_start + 7 + key_id_end];
     
-    // Put updated account back to __accounts__
-    ctx.kv.put(ACCOUNTS_DIR, &signer, new_acc);
+    // Decode the keyid as base64url-encoded RSA modulus (n)
+    let n_bytes = URL_SAFE_NO_PAD
+        .decode(key_id)
+        .map_err(|e| format!("Failed to decode keyid: {}", e))?;
     
-    // Mark as verified
-    ctx.state.insert("verified".to_string(), json!(true));
+    // Standard RSA exponent (65537)
+    let e_bytes = URL_SAFE_NO_PAD
+        .decode("AQAB")
+        .map_err(|e| format!("Failed to decode RSA exponent: {}", e))?;
     
-    ctx
+    // Create RSA key from components (matches JWK format)
+    let rsa = Rsa::from_public_components(
+        openssl::bn::BigNum::from_slice(&n_bytes)
+            .map_err(|e| format!("Failed to create BigNum from modulus: {}", e))?,
+        openssl::bn::BigNum::from_slice(&e_bytes)
+            .map_err(|e| format!("Failed to create BigNum from exponent: {}", e))?,
+    )
+    .map_err(|e| format!("Failed to create RSA key: {}", e))?;
+    
+    PKey::from_rsa(rsa).map_err(|e| format!("Failed to create PKey: {}", e))
+}
+
+/// Verifies the signature using OpenSSL with RSA-PSS-SHA512
+fn verify_signature_openssl(
+    public_key: &PKey<openssl::pkey::Public>,
+    signing_string: &str,
+    signature_bytes: &[u8],
+) -> Result<(), String> {
+    let mut verifier = Verifier::new(MessageDigest::sha512(), public_key)
+        .map_err(|e| format!("Failed to create verifier: {}", e))?;
+    
+    // Configure RSA-PSS padding (matches Node.js RSA_PKCS1_PSS_PADDING)
+    verifier
+        .set_rsa_padding(openssl::rsa::Padding::PKCS1_PSS)
+        .map_err(|e| format!("Failed to set PSS padding: {}", e))?;
+    
+    // Set MGF1 hash function to SHA-512 (matches Node.js defaults)
+    verifier
+        .set_rsa_mgf1_md(MessageDigest::sha512())
+        .map_err(|e| format!("Failed to set MGF1 hash function: {}", e))?;
+    
+    // Update verifier with the signing string
+    verifier
+        .update(signing_string.as_bytes())
+        .map_err(|e| format!("Failed to update verifier: {}", e))?;
+    
+    // Verify the signature
+    match verifier.verify(signature_bytes) {
+        Ok(true) => Ok(()),
+        Ok(false) => Err("Signature verification failed: signature does not match".to_string()),
+        Err(e) => Err(format!("Signature verification error: {}", e)),
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::build::Store;
-    use std::collections::HashMap;
-    use serde_json::json;
-    
+
     #[test]
-    fn test_verify_new_account() {
-        let mut ctx = Context {
-            kv: Store::new(HashMap::new()),
-            msg: json!({}),
-            opt: HashMap::new(),
-            state: HashMap::new(),
-            env: HashMap::new(),
-        };
+    fn it_verifies_signature() {
+        let json_str = std::fs::read_to_string("test/sample_headers.json")
+            .expect("Failed to load test headers JSON file");
         
-        // Set up state
-        ctx.state.insert("signer".to_string(), json!("addr_test123"));
-        ctx.state.insert("nonce".to_string(), json!("1"));
-        
-        // Run verify
-        ctx = verify_nonce(ctx);
-        
-        // Check no error
-        assert!(!ctx.state.contains_key("error"));
-        assert_eq!(ctx.state.get("verified"), Some(&json!(true)));
-        
-        // Check account was created with nonce 1
-        let acc = ctx.kv.get(ACCOUNTS_DIR, "addr_test123");
-        assert_eq!(acc, Some(json!({
-            "nonce": 1
-        })));
-    }
-    
-    #[test]
-    fn test_verify_existing_account() {
-        let mut ctx = Context {
-            kv: Store::new(HashMap::new()),
-            msg: json!({}),
-            opt: HashMap::new(),
-            state: HashMap::new(),
-            env: HashMap::new(),
-        };
-        
-        // Set up existing account
-        ctx.kv.put(ACCOUNTS_DIR, "addr_test123", json!({
-            "nonce": 5,
-            "extra": "data"
-        }));
-        
-        // Set up state for nonce 6
-        ctx.state.insert("signer".to_string(), json!("addr_test123"));
-        ctx.state.insert("nonce".to_string(), json!("6"));
-        
-        // Run verify
-        ctx = verify_nonce(ctx);
-        
-        // Check no error
-        assert!(!ctx.state.contains_key("error"));
-        
-        // Check account was updated with new nonce
-        let acc = ctx.kv.get(ACCOUNTS_DIR, "addr_test123");
-        match acc {
-            Some(Value::Object(obj)) => {
-                assert_eq!(obj.get("nonce"), Some(&json!(6)));
-                assert_eq!(obj.get("extra"), Some(&json!("data"))); // Other fields preserved
-            }
-            _ => panic!("Expected account object"),
-        }
-    }
-    
-    #[test]
-    fn test_verify_wrong_nonce() {
-        let mut ctx = Context {
-            kv: Store::new(HashMap::new()),
-            msg: json!({}),
-            opt: HashMap::new(),
-            state: HashMap::new(),
-            env: HashMap::new(),
-        };
-        
-        // Set up existing account with nonce 5
-        ctx.kv.put(ACCOUNTS_DIR, "addr_test123", json!({
-            "nonce": 5
-        }));
-        
-        // Try to use nonce 10 (should be 6)
-        ctx.state.insert("signer".to_string(), json!("addr_test123"));
-        ctx.state.insert("nonce".to_string(), json!("10"));
-        
-        // Run verify
-        ctx = verify_nonce(ctx);
-        
-        // Check error
-        assert_eq!(ctx.state.get("error"), Some(&json!("the wrong nonce: 10")));
-    }
-    
-    #[test]
-    fn test_verify_missing_signer() {
-        let mut ctx = Context {
-            kv: Store::new(HashMap::new()),
-            msg: json!({}),
-            opt: HashMap::new(),
-            state: HashMap::new(),
-            env: HashMap::new(),
-        };
-        
-        // No signer in state
-        ctx.state.insert("nonce".to_string(), json!("1"));
-        
-        // Run verify
-        ctx = verify_nonce(ctx);
-        
-        // Check error
-        assert_eq!(ctx.state.get("error"), Some(&json!("No signer address in state")));
-    }
-    
-    #[test]
-    fn test_verify_number_nonce() {
-        let mut ctx = Context {
-            kv: Store::new(HashMap::new()),
-            msg: json!({}),
-            opt: HashMap::new(),
-            state: HashMap::new(),
-            env: HashMap::new(),
-        };
-        
-        // Set up state with number nonce (not string)
-        ctx.state.insert("signer".to_string(), json!("addr_test123"));
-        ctx.state.insert("nonce".to_string(), json!(1)); // Number instead of string
-        
-        // Run verify
-        ctx = verify_nonce(ctx);
-        
-        // Should work fine
-        assert!(!ctx.state.contains_key("error"));
-        assert_eq!(ctx.state.get("verified"), Some(&json!(true)));
+        verify_signature(&json_str)
+            .expect("Signature verification should succeed");
     }
 }

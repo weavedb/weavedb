@@ -270,6 +270,7 @@ fn put_data(mut ctx: Context) -> Context {
         .unwrap_or(false);
     
     // Use indexer to put data (handles all index updates)
+    //if let Some((before, after)) = indexer::put_fast(data, doc, &[dir.to_string()], &mut ctx.kv, is_create) {
     if let Some((before, after)) = indexer::put(data, doc, &[dir.to_string()], &mut ctx.kv, is_create) {
         // Store the before/after states for potential triggers or logging
         ctx.state.insert("before".to_string(), serde_json::to_value(&before).unwrap_or(json!(null)));
@@ -364,7 +365,7 @@ fn get_writer(opcode: &str) -> Option<fn(Context) -> Context> {
 /// Main write function
 pub fn write(mut ctx: Context) -> Context {
     let op = match ctx.state.get("op").and_then(|v| v.as_str()) {
-        Some(op) => op.to_string(),  // Convert to owned String
+        Some(op) => op.to_string(),
         None => {
             ctx.state.insert("error".to_string(), json!("No operation in state"));
             return ctx;
@@ -389,9 +390,12 @@ pub fn write(mut ctx: Context) -> Context {
         .unwrap_or(false);
     
     if !no_commit && !ctx.state.contains_key("error") {
-        // In real implementation, would call kv.commit()
+        // Success - commit the changes
         ctx.kv.commit();
         ctx.state.insert("committed".to_string(), json!(true));
+    } else if ctx.state.contains_key("error") {
+        // Error - reset to previous state
+        ctx.kv.reset();
     }
     
     // Mark write as complete

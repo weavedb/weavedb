@@ -5,7 +5,7 @@ use crate::normalize;
 use crate::verify_nonce;
 use crate::auth;
 use crate::write;
-use crate::read;  // Import the read module
+use crate::read;
 use crate::monade::Device;
 
 use std::sync::Arc;
@@ -13,28 +13,19 @@ use serde_json::{Value, json};
 
 // Re-export commonly used types
 pub use crate::build::Store;
-
-// Re-export parse function so it can be accessed through db module
+// Re-export parse so weavedb_device can access it
 pub use crate::parse::parse;
 
-/// Get operation setup
+/// Get operation setup - mirrors JS get function
 pub fn get(mut ctx: Context) -> Context {
     ctx.state.insert("opcode".to_string(), json!("get"));
-    ctx.state.insert("op".to_string(), json!("get"));
     
-    // Check if msg already has "get" as first element
+    // Build query array: ["get", ...msg]
     let query = if let Some(msg_array) = ctx.msg.as_array() {
-        if msg_array.first().and_then(|v| v.as_str()) == Some("get") {
-            // Already has "get", use as-is
-            ctx.msg.clone()
-        } else {
-            // Build query array: ["get", ...msg]
-            let mut q = vec![json!("get")];
-            q.extend(msg_array.iter().cloned());
-            json!(q)
-        }
+        let mut q = vec![json!("get")];
+        q.extend(msg_array.iter().cloned());
+        json!(q)
     } else {
-        // Not an array, wrap it
         json!(["get", ctx.msg.clone()])
     };
     
@@ -42,24 +33,16 @@ pub fn get(mut ctx: Context) -> Context {
     ctx
 }
 
-/// Cget operation setup
+/// Cget operation setup - mirrors JS cget function
 pub fn cget(mut ctx: Context) -> Context {
     ctx.state.insert("opcode".to_string(), json!("cget"));
-    ctx.state.insert("op".to_string(), json!("cget"));
     
-    // Check if msg already has "cget" as first element
+    // Build query array: ["cget", ...msg]
     let query = if let Some(msg_array) = ctx.msg.as_array() {
-        if msg_array.first().and_then(|v| v.as_str()) == Some("cget") {
-            // Already has "cget", use as-is
-            ctx.msg.clone()
-        } else {
-            // Build query array: ["cget", ...msg]
-            let mut q = vec![json!("cget")];
-            q.extend(msg_array.iter().cloned());
-            json!(q)
-        }
+        let mut q = vec![json!("cget")];
+        q.extend(msg_array.iter().cloned());
+        json!(q)
     } else {
-        // Not an array, wrap it
         json!(["cget", ctx.msg.clone()])
     };
     
@@ -67,9 +50,10 @@ pub fn cget(mut ctx: Context) -> Context {
     ctx
 }
 
-/// Create the default database configuration
+/// Create the default database configuration - exactly mirrors JS db.js
 pub fn create_db_config() -> BuildConfig {
     BuildConfig {
+        // write: [normalize, verify, parse, auth, write]
         write: Some(vec![
             transform(normalize::normalize),
             transform(verify_nonce::verify_nonce),
@@ -77,25 +61,26 @@ pub fn create_db_config() -> BuildConfig {
             transform(auth::auth),
             transform(write::write),
         ]),
+        // read: [normalize, parse, read]
         read: Some(vec![
             transform(normalize::normalize),
             transform(parse),
-            transform(read::read),  // Use read::read from the read module
+            transform(read::read),
         ]),
+        // __read__: { get: [get, parse, read], cget: [cget, parse, read] }
         __read__: vec![
             ("get".to_string(), vec![
                 transform(get),
                 transform(parse),
-                transform(read::read),  // Use read::read from the read module
+                transform(read::read),
             ]),
             ("cget".to_string(), vec![
                 transform(cget),
                 transform(parse),
-                transform(read::read),  // Use read::read from the read module
+                transform(read::read),
             ]),
         ].into_iter().collect(),
         __write__: Default::default(),
-        ..Default::default()
     }
 }
 
@@ -109,6 +94,36 @@ pub fn create_db() -> Box<dyn Fn(std::collections::HashMap<String, Value>, std::
 mod tests {
     use super::*;
     use std::collections::HashMap;
+    
+    #[test]
+    fn test_get_operation() {
+        let mut ctx = Context {
+            kv: crate::build::Store::new(HashMap::new()),
+            msg: json!(["collection", "doc_id"]),
+            opt: HashMap::new(),
+            state: HashMap::new(),
+            env: HashMap::new(),
+        };
+        
+        ctx = get(ctx);
+        assert_eq!(ctx.state.get("opcode"), Some(&json!("get")));
+        assert_eq!(ctx.state.get("query"), Some(&json!(["get", "collection", "doc_id"])));
+    }
+    
+    #[test]
+    fn test_cget_operation() {
+        let mut ctx = Context {
+            kv: crate::build::Store::new(HashMap::new()),
+            msg: json!(["collection", "doc_id"]),
+            opt: HashMap::new(),
+            state: HashMap::new(),
+            env: HashMap::new(),
+        };
+        
+        ctx = cget(ctx);
+        assert_eq!(ctx.state.get("opcode"), Some(&json!("cget")));
+        assert_eq!(ctx.state.get("query"), Some(&json!(["cget", "collection", "doc_id"])));
+    }
     
     #[test]
     fn test_normalize() {
@@ -137,21 +152,6 @@ mod tests {
         ctx = normalize(ctx);
         assert!(ctx.state.contains_key("query"));
         assert!(ctx.state.contains_key("signer"));
-    }
-    
-    #[test]
-    fn test_get_operation() {
-        let mut ctx = Context {
-            kv: crate::build::Store::new(HashMap::new()),
-            msg: json!(["collection", "doc_id"]),
-            opt: HashMap::new(),
-            state: HashMap::new(),
-            env: HashMap::new(),
-        };
-        
-        ctx = get(ctx);
-        assert_eq!(ctx.state.get("opcode"), Some(&json!("get")));
-        assert_eq!(ctx.state.get("query"), Some(&json!(["get", "collection", "doc_id"])));
     }
     
     #[test]
@@ -247,7 +247,7 @@ mod tests {
         // Run through read pipeline
         ctx = normalize(ctx);
         ctx = parse(ctx);
-        ctx = read::read(ctx);  // Use read::read from the module
+        ctx = read::read(ctx);
         
         // Check stages completed
         assert!(ctx.state.contains_key("signer"));
