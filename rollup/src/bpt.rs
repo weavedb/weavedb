@@ -333,8 +333,7 @@ impl BPT {
             // Insert into existing parent
             if let Some(mut parent) = self.get_node(parent_id) {
                 // Find position to insert
-                let mut pos = parent.children.iter().position(|id| id == &node.id).unwrap_or(0);
-                
+		let pos = parent.children.iter().position(|id| id == &node.id).unwrap_or(0);                
                 parent.vals.insert(pos, middle_key);
                 parent.children.insert(pos + 1, new_node.id.clone());
                 

@@ -418,11 +418,15 @@ pub fn parse(mut ctx: Context) -> Context {
     
     // Parse based on operation type
     let result = match opcode.as_str() {
-        "init" => {
-            // init doesn't need parsing
-            Ok(())
-        }
-        
+	"init" => {
+	    if params.len() >= 2 {
+		ctx.state.insert("data".to_string(), params[1].clone());
+		ctx.state.insert("dir".to_string(), json!("_"));
+		Ok(())
+	    } else {
+		Err("Invalid init parameters".to_string())
+	    }
+	}        
         "get" | "cget" => {
             if params.is_empty() {
                 Err("Invalid get/cget parameters".to_string())

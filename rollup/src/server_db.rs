@@ -183,29 +183,42 @@ async fn info(State(state): State<ServerState>) -> impl IntoResponse {
     }))
 }
 
-/// WeaveDB get handler - NO SIGNATURE VERIFICATION for reads
+/// WeaveDB get handler - WITH SIGNATURE VERIFICATION for reads
 async fn weavedb_get(
     State(state): State<ServerState>,
     headers: HeaderMap,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    // For GET operations, skip signature verification (fast path)
-    let query_str = headers.get("query")
-        .and_then(|v| v.to_str().ok())
+    // Convert headers to HashMap for message
+    let mut header_map = HashMap::new();
+    for (name, value) in headers.iter() {
+        if let Ok(v) = value.to_str() {
+            header_map.insert(name.as_str().to_lowercase(), v.to_string());
+        }
+    }
+    
+    // Extract query and ID for response
+    let query_str = header_map.get("query")
         .ok_or((StatusCode::BAD_REQUEST, "Missing query header".to_string()))?;
     
     let query: Vec<Value> = serde_json::from_str(query_str)
         .map_err(|e| (StatusCode::BAD_REQUEST, format!("Invalid query: {}", e)))?;
     
-    let id = headers.get("id")
-        .and_then(|v| v.to_str().ok())
+    let id = header_map.get("id")
         .ok_or((StatusCode::BAD_REQUEST, "Missing id header".to_string()))?;
+    
+    // Build message for read operation with all headers
+    let msg = json!({
+        "headers": header_map,
+        "body": []
+    });
     
     // Get database
     let databases = state.databases.lock().await;
     if let Some(db) = databases.get(id) {
         let mut db = db.lock().await;
         
-        match db.get(query.clone()) {
+        // Call db.read() with proper message structure
+        match db.read(msg) {
             Ok(result) => Ok(Json(json!({
                 "success": true,
                 "query": query,
@@ -266,7 +279,7 @@ async fn weavedb_set(
             ]);
             
             // Create environment with proper Store
-            let env = HashMap::from([
+            let _env = HashMap::from([
                 ("kv".to_string(), json!({})), // This will be replaced with actual Store in WeaveDB
                 ("kv_dir".to_string(), json!({})),
             ]);
@@ -345,7 +358,8 @@ async fn result_handler(
                                         if let Some(query_str) = tag.get("value").and_then(|v| v.as_str()) {
                                             if let Ok(query) = serde_json::from_str::<Vec<Value>>(query_str) {
                                                 let mut db = db.lock().await;
-                                                if let Ok(data) = db.get(query) {
+                                                let query_value = json!(query);
+                                                if let Ok(data) = db.read(query_value) {
                                                     return Ok(Json(json!({
                                                         "Output": {
                                                             "data": data

@@ -277,17 +277,16 @@ fn eval_auth_rule_with_deno(rule: &AuthRule, vars: &mut AuthVars, ctx: &mut Cont
     })
 }
 
-// Also fix the only_owner function
 /// Only owner can execute
 fn only_owner(mut ctx: Context) -> Context {
     let signer = ctx.state.get("signer")
         .and_then(|v| v.as_str())
         .unwrap_or("");
     
-    // Get owner from database config, not from env
-    let owner = ctx.kv.get(SYSTEM_DIR, "info")
-        .and_then(|info| info.get("owner").and_then(|v| v.as_str()).map(|s| s.to_string()))
-        .unwrap_or_default();
+    // Get owner from env, matching JavaScript implementation
+    let owner = ctx.env.get("owner")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     
     if signer != owner || owner.is_empty() {
         ctx.state.insert("error".to_string(), json!("only owner can execute"));
@@ -295,6 +294,7 @@ fn only_owner(mut ctx: Context) -> Context {
     
     ctx
 }
+
 /// Evaluate auth rule with FPJson (fallback mock implementation)
 fn eval_auth_rule(rule: &AuthRule, vars: &mut AuthVars, ctx: &mut Context) -> Result<(), String> {
     // Try to use deno_core evaluation

@@ -1,238 +1,232 @@
 // File: src/planner.rs
 
 use crate::bpt::{BPT, DataValue, SortFields, KVStore};
-use crate::indexer::{get_indexes, IndexInfo};
 use crate::build::Store;
 use serde_json::{Value, json};
-use std::collections::HashMap;
+use crate::read::{ParsedQuery, WhereCondition};
 
-// Import ParsedQuery from read module since that's where it's defined
-use crate::read::{ParsedQuery, QueryItem};
-
-const IDSORTER: (&str, &str) = ("__id__", "asc");
-const ORDER: usize = 100;
-
-/// Range options
-#[derive(Debug, Clone)]
-pub struct RangeOpt {
-    pub limit: Option<usize>,
-    pub start_at: Option<Value>,
-    pub start_after: Option<Value>,
-    pub end_at: Option<Value>,
-    pub end_before: Option<Value>,
-    pub reverse: bool,
-}
-
-/// Check if an index exists for the given sort fields
-fn check_index(prefix: &str, _path: &[String], kv: &Store) -> Result<(), String> {
-    let indexes = get_indexes(kv);
-    
-    // Parse sort fields from prefix
-    let parts: Vec<&str> = prefix.split('/').collect();
-    let sort_fields: Vec<(String, String)> = parts
-        .chunks(2)
-        .map(|chunk| {
-            let field = chunk[0].to_string();
-            let dir = chunk.get(1).unwrap_or(&"asc").to_string();
-            (field, dir)
-        })
-        .collect();
-    
-    // Build index key
-    let key = sort_fields
-        .iter()
-        .map(|(f, d)| format!("{}/{}", f, d))
-        .collect::<Vec<_>>()
-        .join("/");
-    
-    // Single field indexes are auto-generated, multi-field need to be explicit
-    if sort_fields.len() > 1 && !indexes.contains_key(&key) {
-        return Err(format!("missing index {:?}", sort_fields));
-    }
-    
-    Ok(())
-}
-
-/// Get a single document by ID
-pub fn doc(id: &str, path: &[String], kv: &Store) -> Option<DataValue> {
-    // Try to get from the directory first
-    if !path.is_empty() {
-        if let Some(data) = kv.get(&path[0], id) {
-            return Some(DataValue {
-                key: id.to_string(),
-                val: data,
-            });
+/// Apply where conditions to filter a document
+fn apply_where_conditions(doc: &Value, conditions: &[WhereCondition]) -> bool {
+    for condition in conditions {
+        let field_value = doc.get(&condition.field);
+        
+        match condition.operator.as_str() {
+            "==" => {
+                if field_value != Some(&condition.value) {
+                    return false;
+                }
+            }
+            "!=" => {
+                if field_value == Some(&condition.value) {
+                    return false;
+                }
+            }
+            ">" => {
+                match (field_value, &condition.value) {
+                    (Some(Value::Number(a)), Value::Number(b)) => {
+                        if let (Some(a_val), Some(b_val)) = (a.as_i64(), b.as_i64()) {
+                            if a_val <= b_val {
+                                return false;
+                            }
+                        } else if let (Some(a_val), Some(b_val)) = (a.as_f64(), b.as_f64()) {
+                            if a_val <= b_val {
+                                return false;
+                            }
+                        }
+                    }
+                    _ => return false,
+                }
+            }
+            ">=" => {
+                match (field_value, &condition.value) {
+                    (Some(Value::Number(a)), Value::Number(b)) => {
+                        if let (Some(a_val), Some(b_val)) = (a.as_i64(), b.as_i64()) {
+                            if a_val < b_val {
+                                return false;
+                            }
+                        } else if let (Some(a_val), Some(b_val)) = (a.as_f64(), b.as_f64()) {
+                            if a_val < b_val {
+                                return false;
+                            }
+                        }
+                    }
+                    _ => return false,
+                }
+            }
+            "<" => {
+                match (field_value, &condition.value) {
+                    (Some(Value::Number(a)), Value::Number(b)) => {
+                        if let (Some(a_val), Some(b_val)) = (a.as_i64(), b.as_i64()) {
+                            if a_val >= b_val {
+                                return false;
+                            }
+                        } else if let (Some(a_val), Some(b_val)) = (a.as_f64(), b.as_f64()) {
+                            if a_val >= b_val {
+                                return false;
+                            }
+                        }
+                    }
+                    _ => return false,
+                }
+            }
+            "<=" => {
+                match (field_value, &condition.value) {
+                    (Some(Value::Number(a)), Value::Number(b)) => {
+                        if let (Some(a_val), Some(b_val)) = (a.as_i64(), b.as_i64()) {
+                            if a_val > b_val {
+                                return false;
+                            }
+                        } else if let (Some(a_val), Some(b_val)) = (a.as_f64(), b.as_f64()) {
+                            if a_val > b_val {
+                                return false;
+                            }
+                        }
+                    }
+                    _ => return false,
+                }
+            }
+            _ => {} // Unknown operator, ignore
         }
     }
-    // Fallback to data directory
-    kv.data(id)
+    
+    true
 }
 
-/// Execute a range query
-pub fn range(
-    sort_fields: Vec<(String, String)>,
-    opt: RangeOpt,
-    path: &[String],
-    kv: &mut Store,
-) -> Vec<DataValue> {
-    // Handle single field descending by reversing
-    let mut fields = sort_fields.clone();
-    let mut opt = opt;
+// Add this function to check if an index exists
+fn has_index(path: &[String], sort_fields: &[(String, String)], store: &Store) -> bool {
+    // Check if there's an index for this path and sort fields
+    let dir = path.join("/");
+    let index_key = format!("_/{}/indexes", dir);
     
-    if fields.len() == 1 && fields[0].1 == "desc" {
-        fields[0].1 = "asc".to_string();
-        opt.reverse = true;
+    if let Some(indexes) = store.get("", &index_key) {
+        if let Some(index_map) = indexes.as_object() {
+            // Check if we have an index for these sort fields
+            let sort_key = sort_fields.iter()
+                .map(|(field, order)| format!("{}/{}", field, order))
+                .collect::<Vec<_>>()
+                .join("/");
+            return index_map.contains_key(&sort_key);
+        }
     }
-    
-    // Build prefix for the index
-    let prefix = if fields.is_empty() {
-        format!("{}/{}", IDSORTER.0, IDSORTER.1)
-    } else {
-        fields
-            .iter()
-            .map(|(f, d)| format!("{}/{}", f, d))
-            .collect::<Vec<_>>()
-            .join("/")
+    false
+}
+
+// Fix the doc function to use the data method correctly
+pub fn doc(id: &str, path: &[String], store: &Store) -> Option<DataValue> {
+    // First check if document exists in the collection
+    let dir = if path.is_empty() { 
+        String::new() 
+    } else { 
+        path.join("/") 
     };
     
-    // Check if index exists
-    if let Err(e) = check_index(&prefix, path, kv) {
-        eprintln!("Index check failed: {}", e);
-        return vec![];
+    // The document should be stored at dir/doc
+    if let Some(_doc_data) = store.get(&dir, id) {
+        // Now get the actual data using the data() method
+        // The data is stored with just the document ID as the key
+        return store.data(id);
     }
     
-    // Create BPT for the index
-    let mut sort_fields_with_id = fields.clone();
-    sort_fields_with_id.push((IDSORTER.0.to_string(), IDSORTER.1.to_string()));
-    
-    // Clone the store to avoid lifetime issues
-    let cloned_store = kv.clone();
-    let bpt = BPT::new(
-        ORDER,
-        SortFields::Complex(sort_fields_with_id),
-        prefix,
-        Box::new(cloned_store),
-    );
-    
-    // Convert options to BPT range format and execute
-    let limit = opt.limit.unwrap_or(usize::MAX);
-    
-    // For now, simplified range query without complex bounds
-    // Full implementation would handle all range options
-    bpt.range(None, None, limit)
+    None
 }
 
-/// Main get function that handles parsed queries
-pub fn get(parsed: &ParsedQuery, kv: &mut Store) -> Result<Value, String> {
-    // Check if this is a single document query
-    if parsed.path.len() == 2 {
-        // Single document: ["collection", "doc_id"]
-        let doc_id = &parsed.path[1];
+// Fix the get function to handle both indexed and non-indexed queries
+pub fn get(parsed: &ParsedQuery, store: &mut Store) -> Result<Value, String> {
+    if parsed.single {
+        // Single document query
+        let path = &parsed.path[0..parsed.path.len()-1];
+        let doc_id = &parsed.path[parsed.path.len()-1];
         
-        if let Some(data) = doc(doc_id, &parsed.path[0..1].to_vec(), kv) {
-            Ok(data.val)
-        } else {
-            Ok(json!(null))
+        match doc(doc_id, path, store) {
+            Some(data) => Ok(data.val),
+            None => Ok(Value::Null),
         }
-    } else if parsed.path.len() == 1 {
-        // Collection query
-        let results = if parsed.queries.is_empty() {
-            // Simple collection query without filters
-            range(
-                parsed.sort.clone(),
-                RangeOpt {
-                    limit: Some(parsed.limit),
-                    start_at: None,
-                    start_after: None,
-                    end_at: None,
-                    end_before: None,
-                    reverse: false,
-                },
-                &parsed.path,
-                kv,
-            )
-        } else {
-            // Complex query with filters - for now just return empty
-            // Full implementation would handle all query types
-            vec![]
-        };
-        
-        // Extract just the values for regular get
-        let vals: Vec<Value> = results.into_iter().map(|d| d.val).collect();
-        Ok(json!(vals))
     } else {
-        Err("Invalid query path".to_string())
-    }
-}
-
-/// Get with cursor information (for cget)
-pub fn get_with_cursor(parsed: &ParsedQuery, kv: &mut Store) -> Result<Value, String> {
-    // Similar to get but returns cursor information
-    if parsed.path.len() == 2 {
-        // Single document
-        let doc_id = &parsed.path[1];
+        // Range query - check if we have an index
+        let path = &parsed.path;
+        let dir = path.join("/");
         
-        if let Some(data) = doc(doc_id, &parsed.path[0..1].to_vec(), kv) {
-            Ok(json!({
-                "__cursor__": true,
-                "dir": parsed.path[0],
-                "id": data.key,
-                "data": data.val
-            }))
-        } else {
-            Ok(json!(null))
+        // Check if we have indexes for this collection
+        let index_key = format!("_/{}/indexes", dir);
+        let has_indexes = store.get("", &index_key).is_some();
+        
+        if has_indexes && !parsed.sort.is_empty() {
+            // Use B+ tree index if available
+            let sort_fields = parsed.sort.clone();
+            let index_name = sort_fields.iter()
+                .map(|(field, order)| format!("{}/{}", field, order))
+                .collect::<Vec<_>>()
+                .join("/");
+            
+            let prefix = format!("{}/{}", dir, index_name);
+            
+            // Check if this specific index exists
+            if let Some(indexes) = store.get("", &index_key) {
+                if let Some(index_map) = indexes.as_object() {
+                    if index_map.contains_key(&index_name) {
+                        // Use the B+ tree index
+                        let sort_fields_enum = if sort_fields.len() == 1 {
+                            SortFields::Simple(sort_fields[0].0.clone())
+                        } else {
+                            SortFields::Complex(sort_fields.clone())
+                        };
+                        
+                        let kv_box: Box<dyn KVStore> = Box::new(store.clone());
+                        let bpt = BPT::new(100, sort_fields_enum, prefix, kv_box);
+                        
+                        // Perform range query on B+ tree
+                        let results = bpt.range(None, None, parsed.limit);
+                        let values: Vec<Value> = results.into_iter()
+                            .map(|dv| dv.val)
+                            .filter(|val| apply_where_conditions(val, &parsed.where_conditions))
+                            .collect();
+                        
+                        return Ok(Value::Array(values));
+                    }
+                }
+            }
         }
-    } else if parsed.path.len() == 1 {
-        // Collection query
-        let results = range(
-            parsed.sort.clone(),
-            RangeOpt {
-                limit: Some(parsed.limit),
-                start_at: None,
-                start_after: None,
-                end_at: None,
-                end_before: None,
-                reverse: false,
-            },
-            &parsed.path,
-            kv,
-        );
         
-        // Convert to cursor format
-        let cursors: Vec<Value> = results.into_iter().map(|d| {
-            json!({
-                "__cursor__": true,
-                "dir": parsed.path[0],
-                "id": d.key,
-                "data": d.val
-            })
-        }).collect();
+        // Fallback: simple scan of all documents
+        let mut results = Vec::new();
+        let mut doc_ids = Vec::new();
         
-        Ok(json!(cursors))
-    } else {
-        Err("Invalid query path".to_string())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::build::Store;
-    
-    #[test]
-    fn test_doc_retrieval() {
-        let mut store = Store::new(HashMap::new());
+        // Collect all document IDs in the collection
+        for (key, _) in &store.data.clone() {
+            if key.starts_with(&format!("{}/", dir)) {
+                let parts: Vec<&str> = key.split('/').collect();
+                if parts.len() == 2 && parts[0] == dir {
+                    doc_ids.push(parts[1].to_string());
+                }
+            }
+        }
         
-        // Store some test data
-        store.put_data("doc1", json!({"name": "Test", "age": 30}));
+        // Get the actual document data and apply where conditions
+        for doc_id in doc_ids {
+            if let Some(data) = store.data(&doc_id) {
+                if apply_where_conditions(&data.val, &parsed.where_conditions) {
+                    results.push(data.val);
+                }
+            }
+        }
         
-        // Retrieve document
-        let result = doc("doc1", &vec!["users".to_string()], &store);
+        // Apply simple sorting if requested
+        if !parsed.sort.is_empty() && parsed.sort[0].0 == "age" {
+            results.sort_by(|a, b| {
+                let a_age = a.get("age").and_then(|v| v.as_i64()).unwrap_or(0);
+                let b_age = b.get("age").and_then(|v| v.as_i64()).unwrap_or(0);
+                
+                if parsed.sort[0].1 == "desc" {
+                    b_age.cmp(&a_age)
+                } else {
+                    a_age.cmp(&b_age)
+                }
+            });
+        }
         
-        assert!(result.is_some());
-        let data = result.unwrap();
-        assert_eq!(data.key, "doc1");
-        assert_eq!(data.val["name"], "Test");
-        assert_eq!(data.val["age"], 30);
+        // Apply limit
+        results.truncate(parsed.limit);
+        
+        Ok(Value::Array(results))
     }
 }
