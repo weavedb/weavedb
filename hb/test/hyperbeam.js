@@ -6,6 +6,7 @@ import { map, mergeLeft } from "ramda"
 import { connect, createSigner } from "@permaweb/aoconnect"
 import { createSigner as createHttpSigner } from "http-message-signatures"
 import server from "../src/server.js"
+import { acc } from "wao/test"
 import {
   wait,
   genDir,
@@ -36,7 +37,7 @@ const q3 = ["set:user", alice, "users", "alice"]
 let qs = [q1, q2]
 
 describe("HyperBEAM | dev_weavedb", () => {
-  it.only("should spawn a process and compute", async () => {
+  it("should spawn a process and compute", async () => {
     const port = 10002
     const hb = new HB({ cwd: "../../HyperBEAM", env, port })
     await wait(5000)
@@ -78,5 +79,15 @@ describe("HyperBEAM | dev_weavedb", () => {
       "5",
     )
     hb.stop()
+  })
+  it.only("should query wao device", async () => {
+    const signer = createSigner(acc[0].jwk)
+    const { request } = connect({
+      MODE: "mainnet",
+      URL: `http://localhost:10000`,
+      device: "",
+      signer,
+    })
+    console.log(await request({ method: "POST", path: "/~wao@1.0/info" }))
   })
 })
