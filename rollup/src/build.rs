@@ -41,16 +41,20 @@ impl Store {
         self.data.remove(&key);
     }
     
+    // Fixed: This should return DataValue to match planner.rs expectations
+    pub fn data(&self, key: &str) -> Option<DataValue> {
+        let data_key = format!("data/{}", key);
+        self.data.get(&data_key)
+            .and_then(|v| v.get("val").cloned())
+            .map(|val| DataValue {
+                key: key.to_string(),
+                val,
+            })
+    }
+    
     pub fn put_data(&mut self, key: &str, value: Value) {
         let data_key = format!("data/{}", key);
         self.data.insert(data_key, json!({"val": value}));
-    }
-    
-    pub fn get_data(&self, key: &str) -> Option<Value> {
-        let data_key = format!("data/{}", key);
-        self.data.get(&data_key)
-            .and_then(|v| v.get("val"))
-            .cloned()
     }
     
     pub fn del_data(&mut self, key: &str) {
@@ -73,23 +77,16 @@ impl KVStore for Store {
     }
     
     fn data(&self, key: &str) -> Option<DataValue> {
-        let data_key = format!("data/{}", key);
-        self.data.get(&data_key)
-            .and_then(|v| v.get("val").cloned())
-            .map(|val| DataValue {
-                key: key.to_string(),
-                val,
-            })
+        // Use the same implementation as the Store method
+        self.data(key)
     }
     
     fn put_data(&mut self, key: &str, val: Value) {
-        let data_key = format!("data/{}", key);
-        self.data.insert(data_key, json!({"val": val}));
+        self.put_data(key, val)
     }
     
     fn del_data(&mut self, key: &str) {
-        let data_key = format!("data/{}", key);
-        self.data.remove(&data_key);
+        self.del_data(key)
     }
 }
 

@@ -29,8 +29,7 @@ fn init_db(ctx: &mut Context) -> Result<(), String> {
     
     Ok(())
 }
-
-/// Write data to a collection
+// In write.rs, fix the write_data function:
 fn write_data(ctx: &mut Context) -> Result<(), String> {
     // Extract values first to avoid borrow issues
     let dir = ctx.state.get("dir")
@@ -59,17 +58,29 @@ fn write_data(ctx: &mut Context) -> Result<(), String> {
         }));
     }
     
-    // Store the document metadata
+    // Store the document metadata in the directory
     ctx.kv.put(&dir, &doc, json!({
-        "__id__": doc,
-        "__ts__": chrono::Utc::now().timestamp_millis()
+        "__id__": doc
     }));
     
-    // Store the actual document data
-    ctx.kv.put_data(&doc, data.clone());
+    // Use the indexer to handle document storage and indexing
+    let path = vec![dir.clone()];
+    let create = ctx.state.get("op")
+        .and_then(|v| v.as_str())
+        .map(|op| op == "set" || op == "add")
+        .unwrap_or(false);
     
-    // Update indexes
-    update_indexes(ctx, &doc, &data)?;
+    // Create a mutable clone of the KV store
+    let mut kv_clone = ctx.kv.clone();
+    
+    // Use indexer::put with just the doc ID (not prefixed with directory)
+    if let Some((before, after)) = crate::indexer::put(data.clone(), &doc, &path, &mut kv_clone, create) {
+        ctx.state.insert("before".to_string(), json!(before));
+        ctx.state.insert("after".to_string(), json!(after));
+    }
+    
+    // Update the context's KV store with the modified version
+    ctx.kv = kv_clone;
     
     Ok(())
 }
@@ -121,7 +132,7 @@ fn update_indexes(ctx: &mut Context, doc_id: &str, data: &Value) -> Result<(), S
     Ok(())
 }
 
-/// Delete a document
+
 fn delete_data(ctx: &mut Context) -> Result<(), String> {
     // Extract values first to avoid borrow issues
     let dir = ctx.state.get("dir")
@@ -134,23 +145,25 @@ fn delete_data(ctx: &mut Context) -> Result<(), String> {
         .ok_or("No document ID in state")?
         .to_string();
     
-    // Get the document data before deletion (for index removal)
-    let data = ctx.kv.get_data(&doc);
+    let path = vec![dir.clone()];
     
-    // Delete from indexes first
-    if let Some(data_val) = data {
-        remove_from_indexes(ctx, &doc, &data_val)?;
+    // Create a mutable clone of the KV store
+    let mut kv_clone = ctx.kv.clone();
+    
+    // Use indexer::del to remove the document and update all indexes
+    if let Some((before, after)) = crate::indexer::del(&doc, &path, &mut kv_clone) {
+        ctx.state.insert("before".to_string(), json!(before));
+        ctx.state.insert("after".to_string(), json!(after));
     }
     
-    // Delete the document metadata
-    ctx.kv.del(&dir, &doc);
+    // Update the context's KV store with the modified version
+    ctx.kv = kv_clone;
     
-    // Delete the document data
-    ctx.kv.del_data(&doc);
+    // Also remove from the directory
+    ctx.kv.del(&dir, &doc);
     
     Ok(())
 }
-
 /// Remove document from indexes
 fn remove_from_indexes(ctx: &mut Context, doc_id: &str, _data: &Value) -> Result<(), String> {
     let dir = ctx.state.get("dir")

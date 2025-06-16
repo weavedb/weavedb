@@ -4,6 +4,7 @@ use crate::bpt::{BPT, DataValue, SortFields, KVStore};
 use crate::build::Store;
 use serde_json::{Value, json};
 use crate::read::{ParsedQuery, WhereCondition};
+use std::cmp::Ordering;  // Add this import
 
 /// Apply where conditions to filter a document
 fn apply_where_conditions(doc: &Value, conditions: &[WhereCondition]) -> bool {
@@ -130,7 +131,7 @@ pub fn doc(id: &str, path: &[String], store: &Store) -> Option<DataValue> {
     None
 }
 
-// Fix the get function to handle both indexed and non-indexed queries
+// In planner.rs, keep the original simple approach:
 pub fn get(parsed: &ParsedQuery, store: &mut Store) -> Result<Value, String> {
     if parsed.single {
         // Single document query
@@ -142,85 +143,43 @@ pub fn get(parsed: &ParsedQuery, store: &mut Store) -> Result<Value, String> {
             None => Ok(Value::Null),
         }
     } else {
-        // Range query - check if we have an index
-        let path = &parsed.path;
-        let dir = path.join("/");
+        // Range query
+        let dir = &parsed.path[0];
+        let mut results = Vec::new();
         
-        // Check if we have indexes for this collection
-        let index_key = format!("_/{}/indexes", dir);
-        let has_indexes = store.get("", &index_key).is_some();
-        
-        if has_indexes && !parsed.sort.is_empty() {
-            // Use B+ tree index if available
-            let sort_fields = parsed.sort.clone();
-            let index_name = sort_fields.iter()
-                .map(|(field, order)| format!("{}/{}", field, order))
-                .collect::<Vec<_>>()
-                .join("/");
-            
-            let prefix = format!("{}/{}", dir, index_name);
-            
-            // Check if this specific index exists
-            if let Some(indexes) = store.get("", &index_key) {
-                if let Some(index_map) = indexes.as_object() {
-                    if index_map.contains_key(&index_name) {
-                        // Use the B+ tree index
-                        let sort_fields_enum = if sort_fields.len() == 1 {
-                            SortFields::Simple(sort_fields[0].0.clone())
-                        } else {
-                            SortFields::Complex(sort_fields.clone())
-                        };
-                        
-                        let kv_box: Box<dyn KVStore> = Box::new(store.clone());
-                        let bpt = BPT::new(100, sort_fields_enum, prefix, kv_box);
-                        
-                        // Perform range query on B+ tree
-                        let results = bpt.range(None, None, parsed.limit);
-                        let values: Vec<Value> = results.into_iter()
-                            .map(|dv| dv.val)
-                            .filter(|val| apply_where_conditions(val, &parsed.where_conditions))
-                            .collect();
-                        
-                        return Ok(Value::Array(values));
+        // Get all document IDs in this directory
+        for (key, _) in &store.data.clone() {
+            if key.starts_with(&format!("{}/", dir)) {
+                let parts: Vec<&str> = key.split('/').collect();
+                if parts.len() == 2 && parts[0] == dir {
+                    let doc_id = parts[1];
+                    // Get the actual document data
+                    if let Some(data) = store.data(doc_id) {
+                        if apply_where_conditions(&data.val, &parsed.where_conditions) {
+                            results.push(data.val);
+                        }
                     }
                 }
             }
         }
         
-        // Fallback: simple scan of all documents
-        let mut results = Vec::new();
-        let mut doc_ids = Vec::new();
-        
-        // Collect all document IDs in the collection
-        for (key, _) in &store.data.clone() {
-            if key.starts_with(&format!("{}/", dir)) {
-                let parts: Vec<&str> = key.split('/').collect();
-                if parts.len() == 2 && parts[0] == dir {
-                    doc_ids.push(parts[1].to_string());
-                }
-            }
-        }
-        
-        // Get the actual document data and apply where conditions
-        for doc_id in doc_ids {
-            if let Some(data) = store.data(&doc_id) {
-                if apply_where_conditions(&data.val, &parsed.where_conditions) {
-                    results.push(data.val);
-                }
-            }
-        }
-        
-        // Apply simple sorting if requested
-        if !parsed.sort.is_empty() && parsed.sort[0].0 == "age" {
+        // Apply sorting
+        if !parsed.sort.is_empty() {
             results.sort_by(|a, b| {
-                let a_age = a.get("age").and_then(|v| v.as_i64()).unwrap_or(0);
-                let b_age = b.get("age").and_then(|v| v.as_i64()).unwrap_or(0);
-                
-                if parsed.sort[0].1 == "desc" {
-                    b_age.cmp(&a_age)
-                } else {
-                    a_age.cmp(&b_age)
+                for (field, order) in &parsed.sort {
+                    let va = a.get(field).unwrap_or(&json!(null));
+                    let vb = b.get(field).unwrap_or(&json!(null));
+                    
+                    let cmp = compare_json_values(va, vb);
+                    if cmp != Ordering::Equal {
+                        return if order == "desc" {
+                            cmp.reverse()
+                        } else {
+                            cmp
+                        };
+                    }
                 }
+                Ordering::Equal
             });
         }
         
@@ -228,5 +187,31 @@ pub fn get(parsed: &ParsedQuery, store: &mut Store) -> Result<Value, String> {
         results.truncate(parsed.limit);
         
         Ok(Value::Array(results))
+    }
+}
+// Add this function to planner.rs (after the imports, before the other functions):
+
+fn compare_json_values(a: &Value, b: &Value) -> Ordering {
+    match (a, b) {
+        (Value::Null, Value::Null) => Ordering::Equal,
+        (Value::Null, _) => Ordering::Less,
+        (_, Value::Null) => Ordering::Greater,
+        (Value::Bool(a), Value::Bool(b)) => a.cmp(b),
+        (Value::Number(a), Value::Number(b)) => {
+            let af = a.as_f64().unwrap_or(0.0);
+            let bf = b.as_f64().unwrap_or(0.0);
+            af.partial_cmp(&bf).unwrap_or(Ordering::Equal)
+        }
+        (Value::String(a), Value::String(b)) => a.cmp(b),
+        (Value::Array(a), Value::Array(b)) => {
+            for (av, bv) in a.iter().zip(b.iter()) {
+                let cmp = compare_json_values(av, bv);
+                if cmp != Ordering::Equal {
+                    return cmp;
+                }
+            }
+            a.len().cmp(&b.len())
+        }
+        _ => Ordering::Equal,
     }
 }

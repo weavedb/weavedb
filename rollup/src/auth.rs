@@ -3,7 +3,6 @@
 use crate::build::Context;
 use deno_core::{JsRuntime, RuntimeOptions, v8, serde_v8};
 use serde_json::{Value, json};
-use std::collections::HashMap;
 use std::cell::RefCell;
 
 /// Directory names and indices
