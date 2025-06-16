@@ -986,10 +986,10 @@
     structured-headers "^2.0.0"
     zod "^3.24.1"
 
-"@permaweb/aoconnect@^0.0.84":
-  version "0.0.84"
-  resolved "https://registry.yarnpkg.com/@permaweb/aoconnect/-/aoconnect-0.0.84.tgz#1e5d7c358c8c7462da6b36c65c1de80c145eb28e"
-  integrity sha512-VwYwfcWaRhZ0ii1uHEtU1LSDLjmYE0l/6rwfZU6/xlvUpyZI0O/kunp+LkW+fbu+uVNFN6ubIn4ycLj+qfSvFA==
+"@permaweb/aoconnect@^0.0.85":
+  version "0.0.85"
+  resolved "https://registry.yarnpkg.com/@permaweb/aoconnect/-/aoconnect-0.0.85.tgz#3e8685d39ec1df91ff68b619ecd3a75168c6b6b0"
+  integrity sha512-lPfDLDaQyOY1oupxkw9B9ZslKw1ENASEdzComoMc2RZ7DejBx2OdHzU+fmZO1ZEQ5zQSm82/wgRVBd/1l6092g==
   dependencies:
     "@dha-team/arbundles" "1.0.3"
     "@permaweb/ao-scheduler-utils" "~0.0.25"
@@ -3998,16 +3998,16 @@ vlq@^2.0.4:
   resolved "https://registry.yarnpkg.com/vlq/-/vlq-2.0.4.tgz#6057b85729245b9829e3cc7755f95b228d4fe041"
   integrity sha512-aodjPa2wPQFkra1G8CzJBTHXhgk3EVSwxSWXNPr1fgdFLUb8kvLV1iEb6rFgasIsjP82HWI6dsb5Io26DDnasA==
 
-wao@^0.21.3:
-  version "0.21.3"
-  resolved "https://registry.yarnpkg.com/wao/-/wao-0.21.3.tgz#f99a601b41d01150ff63121b82b39ad5bb5f2575"
-  integrity sha512-wsjj21MPBiE7Fks/DwZm468Ros5s2ArTAYE92HKbUEUw5Y6lJiePNh0KskehPRQgXmTqkEMecGjNa0y8s0/xwQ==
+wao@^0.23.1:
+  version "0.23.1"
+  resolved "https://registry.yarnpkg.com/wao/-/wao-0.23.1.tgz#d34dcb826d2dac9db9c80a6c382d54f727c8761d"
+  integrity sha512-B+QJwe0SGWHtExKKKV0uEwb8YysWg1/dWYWurSznxXcKJXd0N9z6SdqGlDgPnezzi1r2e8mZbZqBPb4ypwnG4g==
   dependencies:
     "@babel/plugin-transform-modules-commonjs" "^7.24.8"
     "@bokuweb/zstd-wasm" "^0.0.22"
     "@dha-team/arbundles" "^1.0.1"
     "@permaweb/ao-loader" "^0.0.44"
-    "@permaweb/aoconnect" "^0.0.84"
+    "@permaweb/aoconnect" "^0.0.85"
     "@permaweb/aoconnect-69" "npm:@permaweb/aoconnect@0.0.69"
     arbundles "^0.11.1"
     arjson "^0.0.2"
@@ -4018,6 +4018,7 @@ wao@^0.21.3:
     chokidar "^4.0.3"
     cors "^2.8.5"
     express "^5.1.0"
+    fast-sha256 "^1.3.0"
     graphql "^16.10.0"
     http-message-signatures "^1.0.4"
     lmdb "^3.2.2"

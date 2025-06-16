@@ -631,4 +631,18 @@ describe("Monade Test Suite", () => {
       assert.equal(result.a, 2)
     })
   })
+  describe("AO Core", () => {
+    it.only("should create a device", () => {
+      const mul = (opt, m1, m2) => m1 * m2
+
+      const add = (opt, m1, m2) => m1 + m2
+
+      const dev_calc = dev({ mul, add })
+
+      const calc = dev_calc(1)
+
+      assert.equal(calc.mul(2, 3).val(), 6)
+      assert.equal(calc.add(2, 3).val(), 5)
+    })
+  })
 })
