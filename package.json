@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "hb": "node scripts/run-hyperbeam.js"
+    "hb": "node scripts/run-hyperbeam.js",
+    "rollup": "node scripts/run-rollup.js"
   },
   "dependencies": {
-    "wao": "^0.23.2"
+    "wao": "^0.23.5"
   }
 }

@@ -24,11 +24,11 @@ const server = async ({
 }) => {
   const addr = (await new AR().init(jwk)).addr
   const app = express()
-  const io = open({ path: `${dbpath}-admin` })
+  const io = open({ path: `${dbpath}/admin` })
   let pids = io.get("pids") ?? []
   for (let v of pids) {
     console.log("recovering....", v)
-    dbs[v] = await recover({ pid: v, hb, dbpath: `${dbpath}-${v}`, jwk })
+    dbs[v] = await recover({ pid: v, hb, dbpath: `${dbpath}/${v}`, jwk })
   }
   app.use(cors())
   app.use(bodyParser.raw({ type: "*/*", limit: "100mb" }))
@@ -42,7 +42,7 @@ const server = async ({
           let lowK = k.toLowerCase()
           headers[lowK] = req.headers[lowK]
         }
-        const _res = dbs[headers.id].get(...q.query).val()
+        const _res = await dbs[headers.id].get(...q.query).val()
         res.json({ success: true, ...q, res: _res })
       } catch (e) {
         console.log(e)
@@ -76,7 +76,7 @@ const server = async ({
       let id = null
       if (tags_m?.Query) query = JSON.parse(tags_m.Query)
 
-      if (query) data = dbs[dbmap[pid]].get(...query).val()
+      if (query) data = await dbs[dbmap[pid]].get(...query).val()
       if (tags_m["From-Process"]) {
         const r_tags = [
           { name: "Type", value: "Message" },
@@ -108,15 +108,6 @@ const server = async ({
     const { valid, query, fields, address } = await verify(req)
     if (valid) {
       try {
-        /*
-        let headers = {}
-        for (const k in req.headers) {
-          let lowK = k.toLowerCase()
-          if (includes(lowK, [...fields, "signature", "signature-input"])) {
-            headers[lowK] = req.headers[lowK]
-          }
-          }
-        */
         const pid = req.headers.id
         let err = false
         if (query[0] === "init" && !dbs[pid]) {
