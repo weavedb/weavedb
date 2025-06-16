@@ -12,6 +12,7 @@ import { readFileSync } from "fs"
 class WDB {
   constructor({ port, jwk, id }) {
     this.id = id
+    this.port = port
     this.hb = new HB({ url: `http://localhost:${port}`, jwk })
     this.nonce = 0
   }
@@ -25,14 +26,10 @@ class WDB {
     return JSON.parse(res.body).success
   }
   async get(...args) {
-    const res = await this.hb.send({
-      method: "GET",
-      path: "/~weavedb@1.0/get",
-      nonce: ++this.nonce,
-      id: this.id,
-      query: JSON.stringify(args),
-    })
-    return JSON.parse(res.body).res.state.read_result
+    const res = await fetch(`http://localhost:${this.port}/~weavedb@1.0/get`, {
+      headers: { id: this.id, query: JSON.stringify(args) },
+    }).then(r => r.json())
+    return res.res.state.read_result
   }
 }
 const run = async (port, num) => {
