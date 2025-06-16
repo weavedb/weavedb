@@ -156,30 +156,59 @@ fn pick_input(mut ctx: Context) -> Result<Context, String> {
         .and_then(|h| h.as_object())
         .ok_or("No headers in message")?;
     
-    // Get signature-input to extract keyid
+    // Extract required headers that are always needed
+    let id = headers.get("id")
+        .and_then(|v| v.as_str())
+        .ok_or("id missing")?;
+    
+    let query_str = headers.get("query")
+        .and_then(|v| v.as_str())
+        .ok_or("query missing")?;
+    
+    let parsed_query: Value = serde_json::from_str(query_str)
+        .map_err(|e| format!("Failed to parse query: {}", e))?;
+    
+    // Check if this is a read operation
+    let op = parsed_query.as_array()
+        .and_then(|arr| arr.get(0))
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    
+    let is_read_op = op == "get" || op == "cget";
+    
+    // For read operations, skip signature processing
+    if is_read_op {
+        // Update state with minimal info for reads
+        ctx.state.insert("signer".to_string(), json!(null));
+        ctx.state.insert("query".to_string(), parsed_query.clone());
+        ctx.state.insert("id".to_string(), json!(id));
+        ctx.state.insert("nonce".to_string(), json!(null));
+        ctx.state.insert("ts".to_string(), json!(chrono::Utc::now().timestamp_millis()));
+        
+        // Build filtered message with minimal headers
+        let mut filtered_headers = serde_json::Map::new();
+        filtered_headers.insert("id".to_string(), json!(id));
+        filtered_headers.insert("query".to_string(), json!(query_str));
+        
+        let mut new_msg = serde_json::Map::new();
+        new_msg.insert("headers".to_string(), json!(filtered_headers));
+        
+        ctx.msg = json!(new_msg);
+        
+        return Ok(ctx);
+    }
+    
+    // For write operations, require signature headers
     let sig_input = headers.get("signature-input")
         .and_then(|v| v.as_str())
         .ok_or("No signature-input header")?;
     
     let si = parse_si(sig_input)?;
     
-    // Extract required headers
-    let id = headers.get("id")
-        .and_then(|v| v.as_str())
-        .ok_or("id missing")?;
-    
     let nonce = headers.get("nonce")
         .ok_or("nonce missing")?;
     
-    // Parse query from headers
-    let query = headers.get("query")
-        .and_then(|v| v.as_str())
-        .ok_or("query missing")?;
-    
-    let parsed_query: Value = serde_json::from_str(query)
-        .map_err(|e| format!("Failed to parse query: {}", e))?;
-    
-    // Calculate signer address from keyid (but don't verify signature)
+    // Calculate signer address from keyid
     let signer = to_addr(&si.keyid)?;
     
     // Update state
@@ -189,10 +218,9 @@ fn pick_input(mut ctx: Context) -> Result<Context, String> {
     ctx.state.insert("nonce".to_string(), nonce.clone());
     ctx.state.insert("ts".to_string(), json!(chrono::Utc::now().timestamp_millis()));
     
-    // Build filtered message with only required headers
+    // Build filtered message with signature headers
     let mut filtered_headers = serde_json::Map::new();
     
-    // NO SIGNATURE VERIFICATION - just pass through the headers
     filtered_headers.insert("signature".to_string(), 
         headers.get("signature").cloned().unwrap_or(json!(null)));
     filtered_headers.insert("signature-input".to_string(), json!(sig_input));
@@ -221,7 +249,6 @@ fn pick_input(mut ctx: Context) -> Result<Context, String> {
     
     Ok(ctx)
 }
-
 /// Parse operation from query
 fn parse_op(mut ctx: Context) -> Result<Context, String> {
     let query = ctx.state.get("query")
