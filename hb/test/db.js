@@ -13,6 +13,7 @@ import validate from "../src/validate.js"
 import zkjson from "../src/zkjson.js"
 import { spawn } from "child_process"
 import { readFileSync } from "fs"
+import WDB from "../src/wdb.js"
 import {
   get,
   set,
@@ -460,65 +461,6 @@ describe("Server", () => {
     hbeam.stop()
   })
 
-  it.only("should run a server", async () => {
-    const jwk = JSON.parse(
-      readFileSync(
-        resolve(import.meta.dirname, "../../HyperBEAM/.wallet.json"),
-        "utf8",
-      ),
-    )
-    const hb = await new HB({}).init(jwk)
-    const { pid } = await hb.spawn()
-    const hb2 = new HB({ jwk, url: "http://localhost:6363" })
-    console.log(
-      JSON.parse(
-        (
-          await hb2.send({
-            path: "http://localhost:6363/~weavedb@1.0/set",
-            id: pid,
-            nonce: 1,
-            query: JSON.stringify(["init", init_query]),
-          })
-        ).body,
-      ),
-    )
-    console.log(
-      JSON.parse(
-        (
-          await hb2.send({
-            path: "http://localhost:6363/~weavedb@1.0/set",
-            id: pid,
-            nonce: 2,
-            query: JSON.stringify(q1),
-          })
-        ).body,
-      ),
-    )
-    console.log(
-      JSON.parse(
-        (
-          await hb2.send({
-            path: "http://localhost:6363/~weavedb@1.0/set",
-            id: pid,
-            nonce: 3,
-            query: JSON.stringify(q2),
-          })
-        ).body,
-      ),
-    )
-    console.log(
-      JSON.parse(
-        (
-          await hb2.send({
-            method: "GET",
-            path: "http://localhost:6363/~weavedb@1.0/get",
-            id: pid,
-            query: JSON.stringify(["users2"]),
-          })
-        ).body,
-      ),
-    )
-  })
   it("should run a server", async () => {
     const port = 10001
     const port2 = 6363
@@ -677,5 +619,26 @@ end)`
     await wait(5000)
     server_aos.end()
     hbeam.stop()
+  })
+})
+
+describe("JS Rollup", () => {
+  it.only("should query", async () => {
+    const jwk = JSON.parse(
+      readFileSync(
+        resolve(import.meta.dirname, "../../HyperBEAM/.wallet.json"),
+        "utf8",
+      ),
+    )
+    const hb = await new HB({}).init(jwk)
+    const { pid } = await hb.spawn()
+    const wdb = new WDB({ jwk, port: 6363, id: pid })
+    await wdb.set("init", init_query)
+    await wdb.set(...users_query)
+    await wdb.set("set:user", { name: "Bob", age: 20 }, "users", "bob")
+    await wdb.set("set:user", { name: "Alice", age: 30 }, "users", "alice")
+    console.log(await wdb.get("users"))
+    console.log(await wdb.get("users", ["age"]))
+    console.log(await wdb.get("users", ["age", "desc"]))
   })
 })

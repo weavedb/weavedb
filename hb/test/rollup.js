@@ -32,6 +32,7 @@ class WDB {
     return res.res.state.read_result
   }
 }
+
 const run = async (port, num) => {
   const ru = spawn(
     "cargo",
