@@ -1,0 +1,11 @@
+{
+  "name": "weavedb",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "hb": "node scripts/run-hyperbeam.js"
+  },
+  "dependencies": {
+    "wao": "^0.23.2"
+  }
+}
