@@ -6,12 +6,39 @@ import { wait } from "./test-utils.js"
 import { parseSI } from "../src/server-utils.js"
 import { connect, createSigner } from "@permaweb/aoconnect"
 import { acc } from "wao/test"
+import { HB } from "wao"
 import { readFileSync } from "fs"
 
+class WDB {
+  constructor({ port, jwk, id }) {
+    this.id = id
+    this.hb = new HB({ url: `http://localhost:${port}`, jwk })
+    this.nonce = 0
+  }
+  async set(...args) {
+    const res = await this.hb.send({
+      path: "/~weavedb@1.0/set",
+      nonce: ++this.nonce,
+      id: this.id,
+      query: JSON.stringify(args),
+    })
+    return JSON.parse(res.body).success
+  }
+  async get(...args) {
+    const res = await this.hb.send({
+      method: "GET",
+      path: "/~weavedb@1.0/get",
+      nonce: ++this.nonce,
+      id: this.id,
+      query: JSON.stringify(args),
+    })
+    return JSON.parse(res.body).res.state.read_result
+  }
+}
 const run = async (port, num) => {
   const ru = spawn(
     "cargo",
-    ["run", "--", "--port", port, "--db", `.db/${num}`],
+    ["run", "--", "server", "--port", port, "--db-path", `.db/${num}`],
     {
       cwd: resolve(import.meta.dirname, "../../rollup"),
     },
@@ -21,108 +48,26 @@ const run = async (port, num) => {
   ru.on("error", err => console.error(`failed to start process: ${err}`))
   ru.on("close", code => console.log(`child process exited with code ${code}`))
   await wait(2000)
+  return ru
 }
-const get = async (port, json) => {
-  return await fetch(`http://localhost:${port}/kv`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(json),
-  }).then(r => r.json())
-}
-const post = async (port, json) => {
-  const signer = createSigner(acc[0].jwk)
-  const { request } = connect({
-    MODE: "mainnet",
-    URL: `http://localhost:${port}`,
-    device: "",
-    signer,
-  })
-  const res = await request({
-    method: "POST",
-    path: "/query",
-    query: JSON.stringify(json),
-  })
-  return JSON.parse(res.body)
-}
+
 describe("Rollup", () => {
   it.only("should run rollup server", async () => {
+    const id = "test"
     const num = Math.floor(Math.random() * 1000000)
-    const port = 4011
-    await run(port, num)
-    assert.deepEqual(
-      await post(port, { op: "put", key: "bob", value: "Bob" }),
-      { result: null, message: "ok" },
-    )
-    assert.deepEqual(await get(port, { op: "get", key: "bob" }), {
-      result: "Bob",
-      message: "ok",
+    const port = 4000
+    const ru = await run(port, num)
+    const wdb = new WDB({ port: 4000, jwk: acc[0].jwk, id: "test" })
+    await wdb.set("init", "_", { id, owner: acc[0].addr })
+    let i = 0
+    while (i < 10) {
+      await wdb.set("set", { name: "Bob" + i, age: i }, "users", "bob" + i)
+      i++
+    }
+    assert.deepEqual(await wdb.get("get", "users", "bob1"), {
+      name: "Bob1",
+      age: 1,
     })
-    assert.deepEqual(await post(port, { op: "del", key: "bob" }), {
-      result: null,
-      message: "ok",
-    })
-    assert.deepEqual(await get(port, { op: "get", key: "bob" }), {
-      result: null,
-      message: "ok",
-    })
-    assert.deepEqual(
-      await post(port, { op: "hello", key: "bob", value: "Bob" }),
-      { result: null, message: "ok" },
-    )
-    await get(port, { op: "close" })
-    await wait(2000)
-    const port2 = 4005
-    await run(port2, num)
-    assert.deepEqual(await get(port2, { op: "get", key: "bob" }), {
-      result: "Hello, Bob!",
-      message: "ok",
-    })
-    await get(port2, { op: "close" })
-  })
-
-  it.only("should verify http message signatures", async () => {
-    const num = Math.floor(Math.random() * 1000000)
-    const port = 5006
-    await run(port, num)
-    const signer = createSigner(acc[0].jwk)
-    const { request } = connect({
-      MODE: "mainnet",
-      URL: `http://localhost:${port}`,
-      device: "",
-      signer,
-    })
-    const res = await request({
-      method: "POST",
-      path: "/query",
-      query: JSON.stringify({ op: "verify" }),
-    })
-    assert.equal(JSON.parse(res.body).result, "signature verified")
-    await post(port, { op: "close" })
-  })
-  it("should verify http message signatures with content", async () => {
-    const port = 5005
-    const num = Math.floor(Math.random() * 1000000)
-    await run(port, num)
-    const signer = createSigner(acc[0].jwk)
-    const { request } = connect({
-      MODE: "mainnet",
-      URL: `http://localhost:${port}`,
-      device: "",
-      signer,
-    })
-    const res = await request({
-      method: "POST",
-      path: "/abc/schedule",
-      scheduler: "xyz",
-      data: "test",
-    })
-    console.log(JSON.parse(res.body))
-    console.log(
-      JSON.parse(
-        readFileSync(resolve(import.meta.dirname, "../.wallet.json"), "utf8"),
-      ),
-    )
+    ru.kill()
   })
 })

@@ -80,14 +80,4 @@ describe("HyperBEAM | dev_weavedb", () => {
     )
     hb.stop()
   })
-  it.only("should query wao device", async () => {
-    const signer = createSigner(acc[0].jwk)
-    const { request } = connect({
-      MODE: "mainnet",
-      URL: `http://localhost:10000`,
-      device: "",
-      signer,
-    })
-    console.log(await request({ method: "POST", path: "/~wao@1.0/info" }))
-  })
 })
