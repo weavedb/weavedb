@@ -31,7 +31,7 @@ pub struct QueryItem {
     // Add fields as needed for complex queries
 }
 
-/// Parse a query array into a ParsedQuery structure
+/// Parse a query array into a ParsedQuery structure (matching JS parser)
 fn parse_query(query: &Value) -> Result<ParsedQuery, String> {
     let query_array = query.as_array()
         .ok_or("Query must be an array")?;
@@ -43,10 +43,14 @@ fn parse_query(query: &Value) -> Result<ParsedQuery, String> {
     let op = query_array[0].as_str()
         .ok_or("First element must be operation string")?;
     
-    // Parse path elements (strings)
-    let mut path: Vec<String> = Vec::new();
+    // Skip the operation
     let mut i = 1;
+    let mut path = Vec::new();
+    let mut sort = Vec::new();
+    let mut where_conditions = Vec::new();
+    let mut limit = 1000;
     
+    // Parse path elements (consecutive strings after op)
     while i < query_array.len() {
         if let Some(s) = query_array[i].as_str() {
             path.push(s.to_string());
@@ -60,46 +64,59 @@ fn parse_query(query: &Value) -> Result<ParsedQuery, String> {
         return Err("Query must have at least one path element".to_string());
     }
     
-    // Parse where conditions, sort options, and limit
-    let mut where_conditions: Vec<WhereCondition> = Vec::new();
-    let mut sort: Vec<(String, String)> = Vec::new();
-    let mut limit = 1000;
-    
+    // Parse remaining elements (sort, where, limit)
     while i < query_array.len() {
-        if let Some(arr) = query_array[i].as_array() {
-            if arr.len() == 3 {
-                // This is a where condition: ["field", "operator", value]
-                if let (Some(field), Some(op)) = (
-                    arr[0].as_str(),
-                    arr[1].as_str()
-                ) {
-                    match op {
-                        "==" | "!=" | ">" | ">=" | "<" | "<=" => {
-                            where_conditions.push(WhereCondition {
-                                field: field.to_string(),
-                                operator: op.to_string(),
-                                value: arr[2].clone(),
-                            });
+        match &query_array[i] {
+            Value::Array(arr) => {
+                match arr.len() {
+                    1 => {
+                        // Sort field without direction: ["field"] -> ["field", "asc"]
+                        if let Some(field) = arr[0].as_str() {
+                            sort.push((field.to_string(), "asc".to_string()));
                         }
-                        _ => {} // Ignore unknown operators
                     }
-                }
-            } else if arr.len() >= 2 {
-                // This might be a sort directive: ["field", "asc/desc"]
-                if let (Some(field), Some(order)) = (arr[0].as_str(), arr[1].as_str()) {
-                    if order == "asc" || order == "desc" {
-                        sort.push((field.to_string(), order.to_string()));
+                    2 => {
+                        // Could be sort or where
+                        if let (Some(field), Some(dir)) = (arr[0].as_str(), arr[1].as_str()) {
+                            if dir == "asc" || dir == "desc" {
+                                // This is a sort directive
+                                sort.push((field.to_string(), dir.to_string()));
+                            }
+                        }
                     }
+                    3 => {
+                        // Where condition: ["field", "operator", value]
+                        if let (Some(field), Some(op)) = (arr[0].as_str(), arr[1].as_str()) {
+                            match op {
+                                "==" | "!=" | ">" | ">=" | "<" | "<=" => {
+                                    where_conditions.push(WhereCondition {
+                                        field: field.to_string(),
+                                        operator: op.to_string(),
+                                        value: arr[2].clone(),
+                                    });
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                    _ => {}
                 }
             }
-        } else if let Some(num) = query_array[i].as_u64() {
-            limit = num as usize;
+            Value::Number(n) => {
+                // Limit
+                if let Some(limit_val) = n.as_u64() {
+                    limit = limit_val as usize;
+                }
+            }
+            _ => {}
         }
         i += 1;
     }
     
-    let single = path.len() == 2 && where_conditions.is_empty(); // Collection + doc ID
-    let range = !single;
+    // Determine if this is a single document or range query
+    let single = path.len() == 2 && 
+                 query_array.len() == 3 && 
+                 query_array[2].is_string();
     
     Ok(ParsedQuery {
         path: path.clone(),
@@ -108,12 +125,11 @@ fn parse_query(query: &Value) -> Result<ParsedQuery, String> {
         sort,
         limit,
         op: op.to_string(),
-        doc: if single { Some(path[1].clone()) } else { None },
-        range,
+        doc: if single { path.get(1).cloned() } else { None },
+        range: !single,
         single,
     })
 }
-
 /// Get documents based on the parsed query
 fn get_docs(mut ctx: Context) -> (Context, Result<(), String>) {
     let dir = match ctx.state.get("dir").and_then(|v| v.as_str()) {

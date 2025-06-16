@@ -65,6 +65,7 @@ describe("Rollup", () => {
       name: "Bob1",
       age: 1,
     })
+    console.log(await wdb.get("get", "users", ["age"]))
     ru.kill()
   })
 })

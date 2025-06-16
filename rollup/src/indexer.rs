@@ -415,6 +415,63 @@ pub fn put<K: KVStore + Clone + Send + Sync + 'static>(
     // Store document data
     kv.put_data(id, data.clone());
     
+    // Get current indexes
+    let mut indexes = get_indexes(kv);
+    let mut indexes_changed = false;
+    
+    // Ensure __id__/asc index exists
+    if !indexes.contains_key("__id__/asc") {
+        indexes.insert("__id__/asc".to_string(), IndexInfo {
+            key: "__id__/asc".to_string(),
+            order: ORDER,
+            items: HashMap::new(),
+        });
+        indexes_changed = true;
+    }
+    
+    // For new documents, create indexes for each field (like JS version)
+    if create {
+        if let Some(obj) = data.as_object() {
+            for (field, value) in obj {
+                // Skip internal fields
+                if field.starts_with("__") {
+                    continue;
+                }
+                
+                let field_index_key = format!("{}/asc", field);
+                if !indexes.contains_key(&field_index_key) {
+                    indexes.insert(field_index_key.clone(), IndexInfo {
+                        key: field_index_key,
+                        order: ORDER,
+                        items: HashMap::new(),
+                    });
+                    indexes_changed = true;
+                }
+                
+                // If field is array, create array index
+		// Around line 453-457, change:
+		if value.is_array() {
+		    let array_index_key = format!("{}/array", field);
+		    if !indexes.contains_key(&array_index_key) {
+			indexes.insert(array_index_key.clone(), IndexInfo {
+			    key: array_index_key,
+			    order: ORDER,
+			    items: HashMap::new(),
+			});
+			indexes_changed = true;
+		    }
+		}
+            }
+        }
+    }
+    
+    // Save updated indexes if changed
+    if indexes_changed {
+        if let Ok(indexes_val) = serde_json::to_value(&indexes) {
+            kv.put("indexes", indexes_val);
+        }
+    }
+    
     // Update ID index using cached BPT
     let prefix = format!("{}/{}", IDSORTER.0, IDSORTER.1);
     {
@@ -430,52 +487,50 @@ pub fn put<K: KVStore + Clone + Send + Sync + 'static>(
         };
     }
     
-    // Cache indexes to avoid repeated reads
-    thread_local! {
-        static CACHED_INDEXES: std::cell::RefCell<Option<(HashMap<String, IndexInfo>, std::time::Instant)>> = 
-            std::cell::RefCell::new(None);
-    }
-    
-    let indexes = CACHED_INDEXES.with(|cache| {
-        let mut cache_ref = cache.borrow_mut();
-        let now = std::time::Instant::now();
-        
-        // Cache for 100ms
-        if let Some((cached, timestamp)) = cache_ref.as_ref() {
-            if now.duration_since(*timestamp).as_millis() < 100 {
-                return cached.clone();
+    // Update field indexes
+    if let Some(obj) = data.as_object() {
+        for (field, value) in obj {
+            // Skip internal fields
+            if field.starts_with("__") {
+                continue;
             }
-        }
-        
-        let indexes = get_indexes(kv);
-        *cache_ref = Some((indexes.clone(), now));
-        indexes
-    });
-    
-    // Update only relevant indexes
-    for (index_key, _) in indexes {
-        if index_key == "__id__/asc" {
-            continue; // Already done
-        }
-        
-        let sort_fields: Vec<(String, String)> = index_key
-            .split('/')
-            .collect::<Vec<_>>()
-            .chunks(2)
-            .map(|chunk| (chunk[0].to_string(), chunk.get(1).unwrap_or(&"asc").to_string()))
-            .collect();
-        
-        {
-            let bpt = get_cached_bpt(
-                ORDER,
-                SortFields::Complex(sort_fields),
-                index_key,
-                Box::new(kv.clone())
-            );
             
-            if let Ok(mut tree) = bpt.write() {
-                tree.insert(id, data.clone());
-            };
+            // Update regular field index
+            let field_index_key = format!("{}/asc", field);
+            if indexes.contains_key(&field_index_key) {
+                let bpt = get_cached_bpt(
+                    ORDER,
+                    SortFields::Complex(vec![
+                        (field.clone(), "asc".to_string()),
+                        (IDSORTER.0.to_string(), IDSORTER.1.to_string())
+                    ]),
+                    field_index_key,
+                    Box::new(kv.clone())
+                );
+                
+                if let Ok(mut tree) = bpt.write() {
+                    tree.insert(id, data.clone());
+                };
+            }
+            
+            // Update array indexes if applicable
+            if let Some(arr) = value.as_array() {
+                for val in arr {
+                    let val_hash = md5_hash(&serde_json::to_string(&val).unwrap_or_default());
+                    let array_prefix = format!("{}/array:{}", field, val_hash);
+                    
+                    let bpt = get_cached_bpt(
+                        ORDER,
+                        SortFields::Complex(vec![(IDSORTER.0.to_string(), IDSORTER.1.to_string())]),
+                        array_prefix,
+                        Box::new(kv.clone())
+                    );
+                    
+                    if let Ok(mut tree) = bpt.write() {
+                        tree.insert(id, data.clone());
+                    };
+                }
+            }
         }
     }
     
@@ -489,7 +544,6 @@ pub fn put<K: KVStore + Clone + Send + Sync + 'static>(
         val: json!(null),
     }), after))
 }
-
 /// Ultra-fast put that bypasses BPT for maximum TPS
 pub fn put_fast<K: KVStore + Clone + Send + Sync + 'static>(
     data: Value,
