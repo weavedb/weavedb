@@ -459,8 +459,8 @@ describe("Server", () => {
     hbeam.stop()
   })
 
-  it("should run a server", async () => {
-    const port = 10002
+  it.only("should run a server", async () => {
+    const port = 10001
     const port2 = 6363
     const hbeam = runHB(port)
     await wait(5000)
