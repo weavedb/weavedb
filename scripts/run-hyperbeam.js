@@ -4,7 +4,7 @@ import yargs from "yargs"
 let {
   c,
   cmake,
-  dir = "../HyperBEAM",
+  dir = "./HyperBEAM",
   gateway = 4000,
   wallet,
 } = yargs(process.argv.slice(2)).argv

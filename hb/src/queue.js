@@ -16,11 +16,18 @@ const queue = wdb => {
       on = false
     }
   }
+  const read = (fn, args) => {
+    try {
+      return fn(...args)
+    } catch (e) {
+      throw e
+    }
+  }
   const db = {
-    sql: (...args) => wdb.sql(...args),
-    get: (...args) => wdb.get(...args),
-    cget: (...args) => wdb.cget(...args),
-    read: (...args) => wdb.read(...args),
+    sql: (...args) => read(wdb.sql, args),
+    get: (...args) => read(wdb.get, args),
+    cget: (...args) => read(wdb.cget, args),
+    read: (...args) => read(wdb.read, args),
     write: (...args) => {
       return new Promise(resolve => {
         qs.push({ resolve, args })

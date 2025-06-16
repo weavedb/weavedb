@@ -12,6 +12,7 @@ import recover from "../src/recover.js"
 import validate from "../src/validate.js"
 import zkjson from "../src/zkjson.js"
 import { spawn } from "child_process"
+import { readFileSync } from "fs"
 import {
   get,
   set,
@@ -460,6 +461,65 @@ describe("Server", () => {
   })
 
   it.only("should run a server", async () => {
+    const jwk = JSON.parse(
+      readFileSync(
+        resolve(import.meta.dirname, "../../HyperBEAM/.wallet.json"),
+        "utf8",
+      ),
+    )
+    const hb = await new HB({}).init(jwk)
+    const { pid } = await hb.spawn()
+    const hb2 = new HB({ jwk, url: "http://localhost:6363" })
+    console.log(
+      JSON.parse(
+        (
+          await hb2.send({
+            path: "http://localhost:6363/~weavedb@1.0/set",
+            id: pid,
+            nonce: 1,
+            query: JSON.stringify(["init", init_query]),
+          })
+        ).body,
+      ),
+    )
+    console.log(
+      JSON.parse(
+        (
+          await hb2.send({
+            path: "http://localhost:6363/~weavedb@1.0/set",
+            id: pid,
+            nonce: 2,
+            query: JSON.stringify(q1),
+          })
+        ).body,
+      ),
+    )
+    console.log(
+      JSON.parse(
+        (
+          await hb2.send({
+            path: "http://localhost:6363/~weavedb@1.0/set",
+            id: pid,
+            nonce: 3,
+            query: JSON.stringify(q2),
+          })
+        ).body,
+      ),
+    )
+    console.log(
+      JSON.parse(
+        (
+          await hb2.send({
+            method: "GET",
+            path: "http://localhost:6363/~weavedb@1.0/get",
+            id: pid,
+            query: JSON.stringify(["users2"]),
+          })
+        ).body,
+      ),
+    )
+  })
+  it("should run a server", async () => {
     const port = 10001
     const port2 = 6363
     const hbeam = runHB(port)

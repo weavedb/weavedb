@@ -3436,10 +3436,10 @@ vlq@^2.0.4:
   resolved "https://registry.yarnpkg.com/vlq/-/vlq-2.0.4.tgz#6057b85729245b9829e3cc7755f95b228d4fe041"
   integrity sha512-aodjPa2wPQFkra1G8CzJBTHXhgk3EVSwxSWXNPr1fgdFLUb8kvLV1iEb6rFgasIsjP82HWI6dsb5Io26DDnasA==
 
-wao@^0.23.2:
-  version "0.23.2"
-  resolved "https://registry.yarnpkg.com/wao/-/wao-0.23.2.tgz#71675c0492c34e392d76c3b2cc16d555f3f97de3"
-  integrity sha512-XVaAphgszzpT43dPF6zBNGBTZfNsrjBFM3og/Z1JsmKGR9i/Xbddy8pgUfDSHbNbZ8abUDYnH0JV70hc3e7+/w==
+wao@^0.23.5:
+  version "0.23.5"
+  resolved "https://registry.yarnpkg.com/wao/-/wao-0.23.5.tgz#6b5c11e8273430c16d05d47b73c587a648c783c5"
+  integrity sha512-UQHN9hPOjT+KAEAGrhRtTliaKt0+zozqZvvC1a/AKJC4kel7/mw6UKidpcjnFD7sh132rCYAFoVDeP9FLH8snQ==
   dependencies:
     "@babel/plugin-transform-modules-commonjs" "^7.24.8"
     "@bokuweb/zstd-wasm" "^0.0.22"
