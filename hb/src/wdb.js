@@ -9,8 +9,10 @@ export default class WDB {
     this.addr = toAddr(jwk.n)
     this.id = id
     this.port = port
-    this.hb = new HB({ url: `http://localhost:${hb}`, jwk })
-    this.db = new HB({ url: `http://localhost:${port}`, jwk })
+    if (!/^http/.test(port)) port = `http://localhost:${port}`
+    if (!/^http/.test(hb)) hb = `http://localhost:${hb}`
+    this.hb = new HB({ url: hb, jwk })
+    this.db = new HB({ url: port, jwk })
     this._nonce = 0
     this.count = 0
   }
@@ -47,7 +49,7 @@ export default class WDB {
     }
   }
   async nonce(...args) {
-    this._nonce = (await this.get("get", "__accounts__", this.addr))?.nonce ?? 0
+    this._nonce = (await this.get("__accounts__", this.addr))?.nonce ?? 0
   }
   async get(...args) {
     return await this._get("get", ...args)
