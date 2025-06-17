@@ -84,7 +84,10 @@ function parseSI(input) {
 
   return obj
 }
-
+const getKV2 = ({ jwk, pid, hb, dbpath }) => {
+  const io = open({ path: `${dbpath}/${pid}` })
+  return kv(io, async c => {})
+}
 const getKV = ({ jwk, pid, hb, dbpath }) => {
   let request = null
   if (jwk && hb) {
@@ -130,6 +133,7 @@ const getKV = ({ jwk, pid, hb, dbpath }) => {
     }
   })
 }
+
 const getMsgs = async ({ hb, pid, from = 0, to = 99 }) => {
   let params = `target=${pid}`
   if (from) params += `&from=${from}`
@@ -140,4 +144,4 @@ const getMsgs = async ({ hb, pid, from = 0, to = 99 }) => {
   return res
 }
 
-export { verify, parseSI, getKV, getMsgs }
+export { verify, parseSI, getKV, getMsgs, getKV2 }

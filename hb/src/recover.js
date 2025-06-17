@@ -1,6 +1,7 @@
 import wdb from "./index.js"
-import { getKV, getMsgs } from "./server-utils.js"
+import { getKV2, getKV, getMsgs } from "./server-utils.js"
 import { isEmpty } from "ramda"
+import { open } from "lmdb"
 
 const recover = async ({ pid, jwk, dbpath, hb }) => {
   let i = 0
@@ -8,6 +9,10 @@ const recover = async ({ pid, jwk, dbpath, hb }) => {
   let from = 0
   let to = 99
   let res = await getMsgs({ pid, hb })
+  const io = open({ path: `${dbpath}/${pid}` })
+  let height = io.get("__wal__/height")
+  console.log(`recover: ${pid}, height: ${height}`)
+  db = wdb(getKV2({ jwk, hb, dbpath, pid }))
   while (!isEmpty(res.assignments)) {
     for (let k in res.assignments ?? {}) {
       const m = res.assignments[k]
@@ -21,12 +26,15 @@ const recover = async ({ pid, jwk, dbpath, hb }) => {
           }
         }
         console.log("initializing...", pid)
-        db = wdb(getKV({ jwk, hb, dbpath, pid }))
       }
       if (m.body.data) {
         for (const v of JSON.parse(m.body.data)) {
           try {
-            db.write(v)
+            if (i >= height) {
+              db.write(v)
+            } else {
+              console.log("exists", i, "<", height)
+            }
           } catch (e) {
             console.log(e)
           }
