@@ -51,7 +51,7 @@ import {
 
 import { connect, createSigner } from "@permaweb/aoconnect"
 import { AO, HB } from "wao"
-import { Server, mu } from "wao/test"
+import { Server, mu, toAddr } from "wao/test"
 import {
   httpbis,
   createSigner as createHttpSigner,
