@@ -1,6 +1,6 @@
 {
   "name": "wdb-sdk",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "type": "module",
   "scripts": {
     "build:cjs": "babel src --out-dir dist/cjs --config-file ./.babelrc-cjs",
@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@babel/plugin-transform-modules-commonjs": "^7.24.8",
-    "wao": "^0.23.5"
+    "wao": "^0.23.6"
   },
   "devDependencies": {
     "@babel/cli": "^7.24.8",
