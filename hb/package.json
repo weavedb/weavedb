@@ -5,6 +5,8 @@
   "scripts": {
     "test": "node --experimental-sqlite --experimental-wasm-memory64 --test",
     "test-only": "node --experimental-sqlite --experimental-wasm-memory64 --test-only",
+    "test-nosql": "node --experimental-sqlite --experimental-wasm-memory64 --test test/nosql.js",
+    "test-nosql-only": "node --experimental-sqlite --experimental-wasm-memory64 --test-only test/nosql.js",
     "test-db": "node --experimental-sqlite --experimental-wasm-memory64 --test test/db.js",
     "test-db-only": "node --experimental-sqlite --experimental-wasm-memory64 --test-only test/db.js",
     "test-hb": "node --experimental-sqlite --experimental-wasm-memory64 --test test/hyperbeam.js",

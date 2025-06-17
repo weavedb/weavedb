@@ -42,7 +42,9 @@ const server = async ({
           let lowK = k.toLowerCase()
           headers[lowK] = req.headers[lowK]
         }
-        const _res = await dbs[headers.id].get(...q.query).val()
+        const _res = await dbs[headers.id]
+          [q.query[0]](...q.query.slice(1))
+          .val()
         res.json({ success: true, ...q, res: _res })
       } catch (e) {
         console.log(e)

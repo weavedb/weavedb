@@ -65,11 +65,7 @@ const build = ({
               of({
                 kv: currentKv,
                 msg,
-                opt: {
-                  ...opt,
-                  ..._opt,
-                  cb: () => cb(currentKv),
-                },
+                opt: { ...opt, ..._opt, cb: () => cb(currentKv) },
               })
                 .map(init)
                 .chain(_write.fn())
