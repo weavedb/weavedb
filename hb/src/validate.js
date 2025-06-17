@@ -207,6 +207,11 @@ const validate = async ({
           }
         }
       }
+      try {
+        console.log(JSON.parse(m.body.data))
+      } catch (e) {
+        console.log(e)
+      }
       if (m.body.data) {
         isData = true
         for (const v of JSON.parse(m.body.data)) {
