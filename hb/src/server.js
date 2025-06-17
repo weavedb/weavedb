@@ -1,7 +1,7 @@
 import express from "express"
 import cors from "cors"
 import bodyParser from "body-parser"
-import { getKV, verify } from "./server-utils.js"
+import { getKV2, getKV, verify } from "./server-utils.js"
 import wdb from "./index.js"
 import queue from "../src/queue.js"
 import kv from "./kv.js"
@@ -9,7 +9,10 @@ import { resolve } from "path"
 import { includes, map, fromPairs } from "ramda"
 import { AR, AO } from "wao"
 import { open } from "lmdb"
-import recover from "../src/recover.js"
+
+import recover from "./recover.js"
+import wal from "./wal.js"
+
 let dbs = {}
 let dbmap = {}
 const _tags = tags => fromPairs(map(v => [v.name, v.value])(tags))
@@ -28,7 +31,8 @@ const server = async ({
   let pids = io.get("pids") ?? []
   for (let v of pids) {
     console.log("recovering....", v)
-    dbs[v] = await recover({ pid: v, hb, dbpath: `${dbpath}/${v}`, jwk })
+    dbs[v] = await recover({ pid: v, hb, dbpath, jwk })
+    wal({ jwk, hb, dbpath, pid: v })
   }
   app.use(cors())
   app.use(bodyParser.raw({ type: "*/*", limit: "100mb" }))
@@ -122,7 +126,8 @@ const server = async ({
             })
           } else {
             console.log(`initializing a new db: ${pid}`)
-            const wkv = getKV({ jwk, hb, dbpath, pid })
+            const wkv = getKV2({ jwk, hb, dbpath, pid })
+            wal({ jwk, hb, dbpath, pid })
             dbs[pid] = queue(wdb(wkv))
             pids.push(pid)
             io.put("pids", pids)
