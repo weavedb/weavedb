@@ -6,7 +6,7 @@ let {
   cmake,
   dir = "./HyperBEAM",
   gateway = 4000,
-  wallet,
+  wallet = "HyperBEAM/.wallet.json",
 } = yargs(process.argv.slice(2)).argv
 
 const main = () => {

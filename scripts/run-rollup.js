@@ -6,7 +6,7 @@ let {
   port = 6363,
   hb = 10001,
   db = ".db",
-  wallet,
+  wallet = "HyperBEAM/.wallet.json",
 } = yargs(process.argv.slice(2)).argv
 
 const main = async () => {

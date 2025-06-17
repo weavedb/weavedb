@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "hb": "node scripts/run-hyperbeam.js",
-    "rollup": "node scripts/run-rollup.js"
+    "rollup": "node scripts/run-rollup.js",
+    "validator": "node --experimental-sqlite scripts/run-validator.js"
   },
   "dependencies": {
     "wao": "^0.23.5"

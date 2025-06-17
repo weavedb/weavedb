@@ -99,6 +99,7 @@ const getKV = ({ jwk, pid, hb, dbpath }) => {
   let addr = null
   return kv(io, async c => {
     let bundle = []
+    let i = c.from
     for (const d of c.data) {
       if (
         d.opt?.headers &&
@@ -107,6 +108,7 @@ const getKV = ({ jwk, pid, hb, dbpath }) => {
       ) {
         bundle.push(d.opt)
       }
+      i++
     }
     if (bundle.length > 0) {
       if (request && pid) {
