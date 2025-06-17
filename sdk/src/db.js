@@ -1,10 +1,10 @@
 import { HB } from "wao"
 import { toAddr } from "wao/test"
-import { dir_schema } from "../src/schemas.js"
-import { dirs_set } from "../src/rules.js"
+import { dir_schema } from "./schemas.js"
+import { dirs_set } from "./rules.js"
 const init_query = { schema: dir_schema, auth: [dirs_set] }
 
-export default class WDB {
+export default class DB {
   constructor({ port = 6363, jwk, id, hb = 10001 }) {
     this.addr = toAddr(jwk.n)
     this.id = id

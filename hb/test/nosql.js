@@ -3,7 +3,7 @@ import { afterEach, after, describe, it, before, beforeEach } from "node:test"
 import { resolve } from "path"
 import { wait } from "wao/test"
 import { readFileSync } from "fs"
-import WDB from "../src/wdb.js"
+import WDB from "../../sdk/src/db.js"
 
 import { HB } from "wao"
 
