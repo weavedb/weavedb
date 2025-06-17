@@ -621,24 +621,3 @@ end)`
     hbeam.stop()
   })
 })
-
-describe("JS Rollup", () => {
-  it.only("should query", async () => {
-    const jwk = JSON.parse(
-      readFileSync(
-        resolve(import.meta.dirname, "../../HyperBEAM/.wallet.json"),
-        "utf8",
-      ),
-    )
-    const hb = await new HB({}).init(jwk)
-    const { pid } = await hb.spawn()
-    const wdb = new WDB({ jwk, port: 6363, id: pid })
-    await wdb.set("init", init_query)
-    await wdb.set(...users_query)
-    await wdb.set("set:user", { name: "Bob", age: 20 }, "users", "bob")
-    await wdb.set("set:user", { name: "Alice", age: 30 }, "users", "alice")
-    console.log(await wdb.get("users"))
-    console.log(await wdb.get("users", ["age"]))
-    console.log(await wdb.get("users", ["age", "desc"]))
-  })
-})
