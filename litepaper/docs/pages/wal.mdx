@@ -1,0 +1,20 @@
+# HyperBEAM WAL
+
+## HyperBEAM & AO-Core
+
+HyperBEAM is an Erlang implementation of the AO-Core protocol, which makes any computation step verifiable with hashpaths. You can think of it as a variant of the monadic pipline WeaveDB utilizes, but each AO-Core step generates a cryptographic proof.
+
+With AO-Core, data is represented as a http message and each message generates an ID. The first message in a process becomes the original hashpath, and the current hash path and the id of the next message is concatenated and produces a new hashpath.
+
+```js
+const hashpath = hash(current_hashpath, id(next_msg))
+```
+
+HyperBEAM includes a scheduler device (sequencer) that manages process execution and state computation. It stores messages in Arweave’s permanent storage, optionally accompanied by TEE attestations for trustless validation.
+
+WeaveDB uses a KV store adaptor called WeaveKV, which bundles HTTP messages (queries) and submits them to a HyperBEAM node as an AO-Core process. This process functions as the Write-Ahead Log (WAL) layer.
+
+Any node—including the WeaveDB rollup node itself—can replay the WAL from HyperBEAM to recover the full database state or verify its correctness. This provides a fully deterministic and cryptographically verifiable state transition history.
+
+Importantly, WAL entries are not uploaded to Arweave, since they are only needed for short-term validation and recovery. Once data is validated, finalized, and compacted using ARJSON, only the minimal, compressed final state is stored permanently on Arweave.
+This design makes WeaveDB’s permanent storage layer extremely cost-effective while retaining full verifiability.
