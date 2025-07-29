@@ -4,7 +4,7 @@ import { readFileSync } from "fs"
 import server from "./server.js"
 
 let {
-  port = 4000,
+  port = 6363,
   db = ".cache",
   hb = "http://localhost:10000",
   wallet = ".wallet.json",

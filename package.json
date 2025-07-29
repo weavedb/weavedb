@@ -8,6 +8,6 @@
     "validator": "node --experimental-sqlite scripts/run-validator.js"
   },
   "dependencies": {
-    "wao": "^0.23.5"
+    "wao": "^0.34.4"
   }
 }
