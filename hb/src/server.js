@@ -9,7 +9,7 @@ import { resolve } from "path"
 import { includes, map, fromPairs } from "ramda"
 import { AR, AO } from "wao"
 import { open } from "lmdb"
-
+import { toAddr } from "hbsig"
 import recover from "./recover.js"
 import wal from "./wal.js"
 
@@ -25,6 +25,7 @@ const server = async ({
   gateway = 5000,
   admin_only = true,
 }) => {
+  const started_at = Date.now()
   const addr = (await new AR().init(jwk)).addr
   const app = express()
   const io = open({ path: `${dbpath}/admin` })
@@ -36,7 +37,16 @@ const server = async ({
   }
   app.use(cors())
   app.use(bodyParser.raw({ type: "*/*", limit: "100mb" }))
-
+  app.get("/status", async (req, res) => {
+    res.json({
+      name: "WeaveDB",
+      version: "0.1.0",
+      operator: toAddr(jwk),
+      processes: pids,
+      started_at,
+      status: "ok",
+    })
+  })
   app.get("/~weavedb@1.0/get", async (req, res) => {
     let query = []
     let id = null

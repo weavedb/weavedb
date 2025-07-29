@@ -35,4 +35,8 @@ describe("HyperBEAM | dev_weavedb", () => {
     assert.equal(out.sum, 5)
     hbeam.kill()
   })
+  it.only("should start weavedb with HyperBEAM", async () => {
+    const hbeam = await new HyperBEAM({ reset: true, as: ["weavedb"] }).ready()
+    hbeam.kill()
+  })
 })
