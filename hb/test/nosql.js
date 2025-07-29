@@ -11,7 +11,7 @@ describe("JS Rollup", () => {
   it("should query", async () => {
     const host = "http://34.18.53.73"
     const id = "Npiag-iJQJEv2fiZhrSgMJJ1FujBL_6ElmNdIE3pd6Y"
-    const port = 6363
+    const port = 6364
     const hb = 10001
     const jwk = JSON.parse(
       readFileSync(

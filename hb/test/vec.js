@@ -148,7 +148,7 @@ describe("WeaveVec", () => {
       port: 10005,
       type: "vec",
     })
-    const _hb = new HB({ url: "http://localhost:6363", jwk })
+    const _hb = new HB({ url: "http://localhost:6364", jwk })
     let { nonce } = await setup({ pid, request: _hb })
     const { validate_pid, dbpath2 } = await validateDB({
       hbeam: hbeam.hb,
