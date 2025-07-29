@@ -13,7 +13,7 @@ import validate from "../src/validate.js"
 import zkjson from "../src/zkjson.js"
 import { spawn } from "child_process"
 import { readFileSync } from "fs"
-import WDB from "../src/wdb.js"
+import { HyperBEAM } from "wao/test"
 import {
   get,
   set,
@@ -26,9 +26,7 @@ import {
   genDir,
   init_query,
   users_query,
-  HB as HBeam,
   sign,
-  runHB,
   deployHB,
 } from "./test-utils.js"
 
@@ -40,7 +38,9 @@ import {
   getIndexes,
   removeIndex,
 } from "../src/indexer.js"
+
 import parseQuery from "../src/parser.js"
+
 import {
   range,
   get as planner_get,
@@ -68,13 +68,13 @@ describe("WeaveDB Core", () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
     const wkv = getKV()
-    const db = wdb(wkv)
+    const db = await wdb(wkv)
       .write(await s.sign("init", init_query))
       .write(await s.sign(...users_query))
       .write(await s.sign("set:user", bob, "users", "bob"))
       .write(await s.sign("set:user", alice, "users", "alice"))
-    const cur = db.cget("users", 1).val()[0]
-    assert.deepEqual(db.get("users", ["startAfter", cur]).val(), [bob])
+    const cur = (await db.cget("users", 1).val())[0]
+    assert.deepEqual(await db.get("users", ["startAfter", cur]).val(), [bob])
   })
 
   it("should handle queue", async () => {
@@ -86,22 +86,25 @@ describe("WeaveDB Core", () => {
     await db.write(
       await s.sign("set:user", { name: "Bob", age: 4 }, "users", "bob"),
     )
-    assert.deepEqual(db.get("users").val(), [{ name: "Bob", age: 4 }])
+    assert.deepEqual(await db.get("users").val(), [{ name: "Bob", age: 4 }])
     await db.write(await s.sign("set:user", alice, "users", "alice"))
-    assert.deepEqual(db.get("users").val(), [alice, { name: "Bob", age: 4 }])
+    assert.deepEqual(await db.get("users").val(), [
+      alice,
+      { name: "Bob", age: 4 },
+    ])
   })
 
   it("should init", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
-    const db = wdb(getKV()).write(await s.sign("init", init_query))
-    assert.equal(db.get("_", "_").val().index, 0)
+    const db = await wdb(getKV()).write(await s.sign("init", init_query))
+    assert.equal((await db.get("_", "_").val()).index, 0)
   })
 
   it("should add dirs", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
-    const db = wdb(getKV())
+    const db = await wdb(getKV())
       .write(await s.sign("init", init_query))
       .write(await s.sign(...users_query))
   })
@@ -110,14 +113,14 @@ describe("WeaveDB Core", () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
     const wkv = getKV()
-    const db = wdb(wkv)
+    const db = await wdb(wkv)
       .write(await s.sign("init", init_query))
       .write(await s.sign(...users_query))
       .write(await s.sign("set:user", { name: "Bob", age: 4 }, "users", "bob"))
       .write(
         await s.sign("update:user", { age: { _$: ["inc"] } }, "users", "bob"),
       )
-    assert.equal(db.get("users", "bob").val().age, 5)
+    assert.equal((await db.get("users", "bob").val()).age, 5)
   })
 
   it("should batch", async () => {
@@ -135,7 +138,7 @@ describe("WeaveDB Core", () => {
           ["update:user", { name: "Bobby" }, "users", "bob"],
         ),
       )
-    assert.deepEqual(db.get("users").val(), [alice, { name: "Bobby" }])
+    assert.deepEqual(await db.get("users").val(), [alice, { name: "Bobby" }])
   })
 
   it("should add/remove indexes", async () => {
@@ -168,20 +171,20 @@ describe("WeaveDB Core", () => {
           "users",
         ),
       )
-    assert.deepEqual(db.get("users", ["age", "desc"], ["name"]).val(), [
+    assert.deepEqual(await db.get("users", ["age", "desc"], ["name"]).val(), [
       beth,
       mike,
       alice,
       bob,
     ])
     assert.deepEqual(
-      db.get("users", ["favs", "array-contains", "peach"]).val(),
+      await db.get("users", ["favs", "array-contains", "peach"]).val(),
       [alice, beth, mike],
     )
-    db.write(
+    await db.write(
       await s.sign("batch", ["update:user", { age: 60 }, "users", "bob"]),
     )
-    assert.deepEqual(db.get("users", ["age", "desc"], ["name"]).val(), [
+    assert.deepEqual(await db.get("users", ["age", "desc"], ["name"]).val(), [
       { ...bob, age: 60 },
       beth,
       mike,
@@ -203,16 +206,22 @@ describe("WeaveDB Core", () => {
       .write(await s.sign("del:user", "users", "bob"))
       .write(await s.sign("update:user", { age: 20 }, "users", "alice"))
       .write(await s.sign("upsert:user", john, "users", "john"))
-    assert.deepEqual(db.get("users", "alice").val(), { ...alice, age: 20 })
-    assert.deepEqual(db.get("users", "A").val(), mike)
-    assert.deepEqual(db.get("users", "B").val(), beth)
-    assert.deepEqual(db.get("users", "john").val(), john)
+    assert.deepEqual(await db.get("users", "alice").val(), {
+      ...alice,
+      age: 20,
+    })
+    assert.deepEqual(await db.get("users", "A").val(), mike)
+    assert.deepEqual(await db.get("users", "B").val(), beth)
+    assert.deepEqual(await db.get("users", "john").val(), john)
     await wait(100)
 
     // recover from kv
     const db2 = wdb(wkv)
-    assert.equal(db2.get("users", "bob").val(), null)
-    assert.deepEqual(db2.get("users", "alice").val(), { ...alice, age: 20 })
+    assert.equal(await db2.get("users", "bob").val(), null)
+    assert.deepEqual(await db2.get("users", "alice").val(), {
+      ...alice,
+      age: 20,
+    })
   })
   /*
   it.skip("should persist data with lsJSON", async () => {
@@ -408,15 +417,16 @@ describe("Server", () => {
     const { pid, signer, jwk, addr, dbpath } = await deploy({ hb })
     console.log("pid", pid)
     console.log("addr", addr)
-    const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
+    const _hb = new HB({ url: URL, jwk })
+    //const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
     let nonce = 0
-    const json0 = await set(request, ["init", init_query], ++nonce, pid)
+    const json0 = await set(_hb, ["init", init_query], ++nonce, pid)
     console.log(json0)
-    const json = await set(request, q1, ++nonce, pid)
+    const json = await set(_hb, q1, ++nonce, pid)
     console.log(json)
-    const json2 = await set(request, q2, ++nonce, pid)
+    const json2 = await set(_hb, q2, ++nonce, pid)
     console.log(json2)
-    const json3 = await get(request, ["users"], pid)
+    const json3 = await get(_hb, ["get", "users"], pid)
     console.log(json3)
     assert.deepEqual(json3.res, [bob])
   })
@@ -425,7 +435,7 @@ describe("Server", () => {
     const port = 10002
     const port2 = 6363
     const port3 = 5000
-    const hbeam = runHB(port)
+    const hbeam = await new HyperBEAM({ port }).ready()
     await wait(5000)
     const hb = `http://localhost:${port}`
     const URL = `http://localhost:${port2}`
@@ -436,35 +446,36 @@ describe("Server", () => {
     console.log("addr", addr)
     const node = await server({ dbpath, jwk, hb, port: port2 })
 
-    const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
-
+    //const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
+    const _hb = new HB({ url: URL, jwk })
     let nonce = 0
-    const json0 = await set(request, ["init", init_query], ++nonce, pid)
-    const json = await set(request, q1, ++nonce, pid)
-    const json2 = await set(request, q2, ++nonce, pid)
-    const json3 = await get(request, ["users"], pid)
+    const json0 = await set(_hb, ["init", init_query], ++nonce, pid)
+    const json = await set(_hb, q1, ++nonce, pid)
+    const json2 = await set(_hb, q2, ++nonce, pid)
+    const json3 = await get(_hb, ["get", "users"], pid)
     assert.deepEqual(json3.res, [bob])
     await wait(1000)
     node.stop()
     const node2 = await server({ dbpath, jwk, hb, port: port3 })
     await wait(3000)
-    const { request: request2 } = connect({
+    /*const { request: request2 } = connect({
       MODE: "mainnet",
       URL: URL2,
       device: "",
       signer,
-    })
-    const json3_2 = await get(request2, ["users"], pid)
+      })*/
+    const _hb2 = new HB({ url: URL2, jwk })
+    const json3_2 = await get(_hb2, ["get", "users"], pid)
     assert.deepEqual(json3_2.res, [bob])
     node2.stop()
     await wait(3000)
-    hbeam.stop()
+    hbeam.kill()
   })
 
   it("should run a server", async () => {
     const port = 10001
     const port2 = 6363
-    const hbeam = runHB(port)
+    const hbeam = await new HyperBEAM({ port }).ready()
     await wait(5000)
     const hb = `http://localhost:${port}`
     const URL = `http://localhost:${port2}`
@@ -474,28 +485,28 @@ describe("Server", () => {
     console.log("addr", addr)
     const node = await server({ dbpath, jwk, hb, port: port2 })
 
-    const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
-
+    //const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
+    const _hb = new HB({ url: URL, jwk })
     let nonce = 0
-    const json0 = await set(request, ["init", init_query], ++nonce, pid)
-    const json = await set(request, q1, ++nonce, pid)
-    const json2 = await set(request, q2, ++nonce, pid)
-    const json3 = await get(request, ["users"], pid)
+    const json0 = await set(_hb, ["init", init_query], ++nonce, pid)
+    const json = await set(_hb, q1, ++nonce, pid)
+    const json2 = await set(_hb, q2, ++nonce, pid)
+    const json3 = await get(_hb, ["get", "users"], pid)
     assert.deepEqual(json3.res, [bob])
     await wait(1000)
     const db = await recover({ pid, hb, dbpath: genDir(), jwk })
-    assert.deepEqual(db.get("users").val(), [bob], pid)
+    assert.deepEqual(await db.get("users").val(), [bob], pid)
 
     const { pid: pid2 } = await deploy({ hb })
     let nonce_2 = 0
-    const json0_2 = await set(request, ["init", init_query], ++nonce_2, pid2)
-    const json_2 = await set(request, q1, ++nonce_2, pid2)
-    const json2_2 = await set(request, q3, ++nonce_2, pid2)
-    const json3_2 = await get(request, ["users"], pid2)
+    const json0_2 = await set(_hb, ["init", init_query], ++nonce_2, pid2)
+    const json_2 = await set(_hb, q1, ++nonce_2, pid2)
+    const json2_2 = await set(_hb, q3, ++nonce_2, pid2)
+    const json3_2 = await get(_hb, ["get", "users"], pid2)
     assert.deepEqual(json3_2.res, [alice])
     node.stop()
     await wait(3000)
-    hbeam.stop()
+    hbeam.kill()
   })
 })
 
@@ -529,72 +540,71 @@ const setup = async ({ pid, request }) => {
   const json0 = await set(request, ["init", init_query], ++nonce, pid)
   const json = await set(request, q1, ++nonce, pid)
   const json2 = await set(request, q2, ++nonce, pid)
-  const json3 = await get(request, ["users"], pid)
+  const json3 = await get(request, ["get", "users"], pid)
   assert.deepEqual(json3.res, [bob])
   return { nonce }
 }
 
 const validateDB = async ({ hbeam, pid, hb, jwk }) => {
-  const { process: validate_pid } = await hbeam.spawn({
-    tags: { "execution-device": "weavedb@1.0", db: pid },
+  const { pid: validate_pid } = await hbeam.spawn({
+    "execution-device": "weavedb@1.0",
+    db: pid,
   })
   await wait(5000)
   const dbpath2 = genDir()
   await validate({ pid, hb, dbpath: dbpath2, jwk, validate_pid })
   await wait(5000)
-  const { slot } = await hbeam.message({
+  const { slot } = await hbeam.schedule({
     pid: validate_pid,
     tags: { Action: "Query", Query: JSON.stringify(["users"]) },
   })
   const {
     results: { data },
-  } = await hbeam.compute(validate_pid, slot)
+  } = await hbeam.compute({ pid: validate_pid, slot })
   assert.deepEqual(data, [bob])
   return { validate_pid, dbpath2 }
 }
 
 describe("Validator", () => {
   it("should validate HB WAL", async () => {
-    const { node, pid, request, hbeam, jwk, hb } = await deployHB({
-      port: 10005,
-    })
-    let { nonce } = await setup({ pid, request })
-
+    const { node, pid, hbeam, jwk, hb } = await deployHB({})
+    const _hb = new HB({ url: "http://localhost:6363", jwk })
+    let { nonce } = await setup({ pid, request: _hb })
     const { validate_pid, dbpath2 } = await validateDB({
-      hbeam,
+      hbeam: hbeam.hb,
       pid,
       hb,
       jwk,
     })
-    const json4 = await set(request, q3, ++nonce, pid)
-    await wait(5000)
+    const json4 = await set(_hb, q3, ++nonce, pid)
+    await wait(10000)
     await validate({ pid, hb, dbpath: dbpath2, jwk, validate_pid })
     await wait(5000)
-    const { slot } = await hbeam.message({
+    const { res } = await hbeam.hb.message({
       pid: validate_pid,
       tags: { Action: "Query", Query: JSON.stringify(["users"]) },
     })
-    const {
-      results: { data },
-    } = await hbeam.compute(validate_pid, slot)
-    assert.deepEqual(data, [alice, bob])
+    assert.deepEqual(res.results.data, [alice, bob])
     await checkZK({ pid: validate_pid, hb })
     node.stop()
-    hbeam.stop()
-    return
+    hbeam.kill()
   })
 })
 
 describe("AOS", () => {
-  it.skip("should serve AOS Legacynet", async () => {
+  it.only("should serve AOS Legacynet", async () => {
     const port = 10001
     const sport = 5000
-    const { node, pid, request, hbeam, jwk, hb } = await deployHB({
-      port,
-      sport,
+    const { node, pid, hbeam, jwk, hb } = await deployHB({ sport })
+    const _hb = new HB({ url: "http://localhost:6363", jwk })
+    let { nonce } = await setup({ pid, request: _hb })
+    const _hbeam = new HB({ url: "http://localhost:10001", jwk })
+    const { validate_pid, dbpath2 } = await validateDB({
+      hbeam: _hbeam,
+      pid,
+      hb,
+      jwk,
     })
-    let { nonce } = await setup({ pid, request })
-    const { validate_pid, dbpath2 } = await validateDB({ hbeam, pid, hb, jwk })
     const src_data = `
 local count = 0
 Handlers.add("Hello", "Hello", function (msg)
@@ -618,6 +628,6 @@ end)`
     assert.deepEqual(users, [bob])
     await wait(5000)
     server_aos.end()
-    hbeam.stop()
+    hbeam.kill()
   })
 })

@@ -17,7 +17,7 @@ class WDB {
     this.nonce = 0
   }
   async set(...args) {
-    const res = await this.hb.send({
+    const res = await this.hb.post({
       path: "/~weavedb@1.0/set",
       nonce: ++this.nonce,
       id: this.id,

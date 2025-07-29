@@ -153,14 +153,14 @@ const pka = () => {
 // === Devices (Domain-Specific Wrappers) ===
 
 const dev =
-  (methods = {}) =>
+  (maps = {}, tos = {}) =>
   ctx => {
     let d = { __device__: true }
     let current = ctx
 
     // Core monad operations
-    d.map = fn => dev(methods)(fn(current))
-    d.tap = fn => (fn(current), dev(methods)(current))
+    d.map = fn => dev(maps, tos)(fn(current))
+    d.tap = fn => (fn(current), dev(maps, tos)(current))
     d.chain = fn => {
       if (fn.__ka__)
         throw new Error(
@@ -168,7 +168,7 @@ const dev =
         )
       const res = fn(current)
       if (!res?.__monad__) throw new Error("fn must return monad")
-      return dev(methods)(res.val())
+      return dev(maps, tos)(res.val())
     }
     d.to = fn => fn(current)
     d.val = () => current
@@ -176,24 +176,32 @@ const dev =
     // Convert to monad
     d.monad = () => of(current)
 
-    // Add custom methods
-    for (const [name, fn] of Object.entries(methods)) {
-      d[name] = (...args) => dev(methods)(fn(current, ...args))
+    // Add custom chainable methods (maps)
+    for (const [name, fn] of Object.entries(maps)) {
+      d[name] = (...args) => dev(maps, tos)(fn(current, ...args))
+    }
+
+    // Add custom terminal methods (tos)
+    for (const [name, fn] of Object.entries(tos)) {
+      d[name] = (...args) => fn(current, ...args)
     }
 
     return d
   }
 
 const pdev =
-  (methods = {}) =>
+  (maps = {}, tos = {}) =>
   ctx => {
     let d = { __device__: true, __async__: true }
     const run = Promise.resolve(ctx)
 
     // Core async monad operations
-    d.map = fn => pdev(methods)(run.then(v => fn(v)))
+    d.map = fn => pdev(maps, tos)(run.then(v => fn(v)))
     d.tap = fn =>
-      pdev(methods)(
+      pdev(
+        maps,
+        tos,
+      )(
         run.then(v => {
           fn(v)
           return v
@@ -204,7 +212,10 @@ const pdev =
         throw new Error(
           "Cannot chain arrow directly. Use arrow.fn() to convert to function",
         )
-      return pdev(methods)(
+      return pdev(
+        maps,
+        tos,
+      )(
         run.then(async v => {
           const res = await fn(v)
           if (!res?.__monad__) throw new Error("fn must return monad")
@@ -218,10 +229,15 @@ const pdev =
     // Convert to async monad
     d.monad = () => pof(run)
 
-    // Add async custom methods
-    for (const [name, fn] of Object.entries(methods)) {
+    // Add async custom chainable methods (maps)
+    for (const [name, fn] of Object.entries(maps)) {
       d[name] = (...args) =>
-        pdev(methods)(run.then(async v => await fn(v, ...args)))
+        pdev(maps, tos)(run.then(async v => await fn(v, ...args)))
+    }
+
+    // Add async custom terminal methods (tos)
+    for (const [name, fn] of Object.entries(tos)) {
+      d[name] = (...args) => run.then(async v => await fn(v, ...args))
     }
 
     return d

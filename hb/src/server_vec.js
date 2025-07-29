@@ -36,22 +36,21 @@ const server = async ({
   app.use(bodyParser.raw({ type: "*/*", limit: "100mb" }))
 
   app.get("/~weavedb@1.0/get", async (req, res) => {
-    const q = await verify(req)
-    if (q.valid) {
-      try {
-        let headers = {}
-        for (const k in req.headers) {
-          let lowK = k.toLowerCase()
-          headers[lowK] = req.headers[lowK]
-        }
-        const _res = await dbs[headers.id][q.query[0]](...q.query.slice(1))
-        res.json({ success: true, ...q, res: await _res.val() })
-      } catch (e) {
-        console.log(e)
-        res.json({ success: false, ...q, error: e.toString() })
+    let query = []
+    let id = null
+    try {
+      query = JSON.parse(req.headers.query ?? req.query.query)
+      id = req.headers.id ?? req.query.id
+      let headers = {}
+      for (const k in req.headers) {
+        let lowK = k.toLowerCase()
+        headers[lowK] = req.headers[lowK]
       }
-    } else {
-      res.json({ success: false, ...q })
+      const _res = await dbs[id][query[0]](...query.slice(1))
+      res.json({ success: true, query, res: await _res.val() })
+    } catch (e) {
+      console.log(e)
+      res.json({ success: false, query, error: e.toString() })
     }
   })
 

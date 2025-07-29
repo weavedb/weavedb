@@ -35,26 +35,27 @@ const server = async ({
   app.use(bodyParser.raw({ type: "*/*", limit: "100mb" }))
 
   app.get("/~weavedb@1.0/get", async (req, res) => {
-    const q = await verify(req)
-    if (q.valid) {
-      try {
-        let headers = {}
-        for (const k in req.headers) {
-          let lowK = k.toLowerCase()
-          headers[lowK] = req.headers[lowK]
-        }
-        const _res = dbs[headers.id].sql(q.query[0]).val()
-        res.json({ success: true, ...q, res: _res })
-      } catch (e) {
-        console.log(e)
-        res.json({ success: false, ...q, error: e.toString() })
+    let query = []
+    let id = null
+    try {
+      query = JSON.parse(req.headers.query ?? req.query.query)
+      id = req.headers.id ?? req.query.id
+      console.log(query, id)
+      let headers = {}
+      for (const k in req.headers) {
+        let lowK = k.toLowerCase()
+        headers[lowK] = req.headers[lowK]
       }
-    } else {
-      res.json({ success: false, ...q })
+      const _res = await dbs[id].sql(query[0])
+      res.json({ success: true, query, res: await _res.val() })
+    } catch (e) {
+      console.log(e)
+      res.json({ success: false, query, error: e.toString() })
     }
   })
 
   app.post("/result/:mid", async (req, res) => {
+    console.log("are we here...................................")
     const mid = req.params.mid
     const pid = req.query["process-id"]
     let data = null
@@ -76,7 +77,7 @@ const server = async ({
       let query = null
       let id = null
       if (tags_m?.Query) query = JSON.parse(tags_m.Query)
-      if (query) data = dbs[dbmap[pid]].sql(...query).val()
+      if (query) data = await dbs[dbmap[pid]].sql(...query).val()
       if (tags_m["From-Process"]) {
         const r_tags = [
           { name: "Type", value: "Message" },

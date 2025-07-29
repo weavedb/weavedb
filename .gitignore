@@ -1,4 +1,5 @@
 circom/
+.env.hyperbeam
 .weavedb
 .db
 .wallet.json

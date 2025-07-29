@@ -27,8 +27,8 @@ export default async ({ jwk, pid, hb, dbpath }) => {
         d.opt?.headers["signature"]
       ) {
         bundle.push(d.opt)
+        h++
       }
-      h++
     } while (d !== null)
     if (bundle.length > 0) {
       const tags = {
