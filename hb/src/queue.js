@@ -28,12 +28,11 @@ const queue = wdb => {
     get: (...args) => read(wdb.get, args),
     cget: (...args) => read(wdb.cget, args),
     read: (...args) => read(wdb.read, args),
-    write: (...args) => {
-      return new Promise(resolve => {
+    write: (...args) =>
+      new Promise(resolve => {
         qs.push({ resolve, args })
         exec()
-      })
-    },
+      }),
   }
   return db
 }

@@ -2,7 +2,7 @@ import assert from "assert"
 import crypto from "crypto"
 import { createPrivateKey } from "node:crypto"
 import { afterEach, after, describe, it, before, beforeEach } from "node:test"
-import { of, pof, fn, pfn } from "../src/monade.js"
+import { pdev, dev, of, pof, ka, pka } from "../src/monade.js"
 import wdb from "../src/db.js"
 import queue from "../src/queue.js"
 import { open } from "lmdb"
@@ -67,16 +67,16 @@ const getKV = () => {
 
 describe("Monade", () => {
   it("should create a kleisli", async () => {
-    const p1 = fn().map(n => n + 1)
-    const p2 = pfn().map(async n => n + 2)
-    const p3 = pfn().chain(p1).chain(p2)
-    const f = pfn()
-      .chain(p1)
+    const p1 = ka().map(n => n + 1)
+    const p2 = pka().map(async n => n + 2)
+    const p3 = pka().chain(p1.fn()).chain(p2)
+    const f = pka()
+      .chain(p1.fn())
       .map(n => n * 10)
-      .chain(p3)
+      .chain(p3.fn())
     assert.equal(
       await pof(3)
-        .chain(f)
+        .chain(f.fn())
         .map(n => n * 3)
         .val(),
       129,
@@ -91,26 +91,22 @@ describe("Monade", () => {
   })
 
   it("should inject custom methods", async () => {
-    const db = async obj =>
-      await pof(obj, {
-        to: {
-          get: (x, y) => obj => {
-            return obj.state.count + x + y
-          },
+    const db = dev(
+      {
+        set: (obj, x) => {
+          obj.state.count += x
+          return obj
         },
-        map: {
-          set: x => obj => {
-            obj.state.count += x
-            return obj
-          },
-        },
-      })
-    const wdb = await db({ env: {}, state: { count: 2 } })
-    assert.deepEqual(await wdb.set(5).set(6).val(), {
-      env: {},
-      state: { count: 13 },
-    })
-    assert.equal(await wdb.get(9, 10), 32)
+      },
+      {
+        get: (obj, x, y) => obj.state.count + x + y,
+      },
+    )
+    const wdb = db({ state: { count: 2 } })
+    assert.deepEqual(wdb.set(5).set(6).val(), { state: { count: 13 } })
+    assert.equal(wdb.get(9, 10), 32)
+    const wdb2 = db({ state: { count: 2 } })
+    assert.equal(wdb2.set(5).set(6).get(1, 2), 16)
   })
 })
 

@@ -1,83 +1,38 @@
 import assert from "assert"
-import { afterEach, after, describe, it, before, beforeEach } from "node:test"
-import { resolve } from "path"
-import { readFileSync } from "fs"
-import { map, mergeLeft } from "ramda"
-import { connect, createSigner } from "@permaweb/aoconnect"
-import { createSigner as createHttpSigner } from "http-message-signatures"
+import { after, describe, it, before } from "node:test"
 import server from "../src/server.js"
-import { acc } from "wao/test"
-import {
-  wait,
-  genDir,
-  devices,
-  bob,
-  alice,
-  mike,
-  beth,
-  john,
-  get,
-  set,
-  devmap,
-  init_query,
-  users_query,
-  HB,
-} from "./test-utils.js"
-
-const env = {
-  //DIAGNOSTIC: "1",
-  CMAKE_POLICY_VERSION_MINIMUM: "3.5",
-  CC: "gcc-12",
-  CXX: "g++-12",
-}
+import { HyperBEAM } from "wao/test"
+import { HB } from "wao"
+import { bob, alice, mike, beth, john } from "./test-utils.js"
+import { genDir, get, set, init_query, users_query } from "./test-utils.js"
 
 const q1 = users_query
 const q2 = ["set:user", bob, "users", "bob"]
 const q3 = ["set:user", alice, "users", "alice"]
-let qs = [q1, q2]
-
+const qs = [q1, q2]
+const port = 6363
 describe("HyperBEAM | dev_weavedb", () => {
   it("should spawn a process and compute", async () => {
-    const port = 10002
-    const hb = new HB({ cwd: "../../HyperBEAM", env, port })
-    await wait(5000)
-    console.log(await hb.spawn({}))
-    const { process: pid } = await hb.spawn({})
-    return
+    const hbeam = await new HyperBEAM({ reset: true }).ready()
+    const hb = hbeam.hb
+    const { pid } = await hb.spawn({})
     const dbpath = genDir()
-    const node = await server({
-      dbpath,
-      jwk: hb.jwk,
-      hb: `http://localhost:${port}`,
-      port: 6363,
-    })
-    const { request } = connect({
-      MODE: "mainnet",
-      URL: "http://localhost:6363",
-      device: "",
-      signer: hb.signer,
-    })
+    const node = await server({ dbpath, jwk: hbeam.jwk, hb: hbeam.url, port })
+    const hb2 = new HB({ url: `http://localhost:${port}`, jwk: hbeam.jwk })
     let nonce = 0
-    const json0 = await set(request, ["init", init_query], ++nonce, pid)
-    const json = await set(request, q1, ++nonce, pid)
-    const json2 = await set(request, q2, ++nonce, pid)
-    const json3 = await get(request, ["users"], pid)
-    console.log(json3)
+    const json0 = await set(hb2, ["init", init_query], ++nonce, pid)
+    const json = await set(hb2, q1, ++nonce, pid)
+    const json2 = await set(hb2, q2, ++nonce, pid)
+    const json3 = await get(hb2, ["users"], pid)
     assert.deepEqual(json3.res, [bob])
-    //const { slot } = await hb.message({ pid, tags: { plus: "3" } })
-    //console.log(await hb.now(pid))
-    //console.log(await hb.compute(pid, 0))
-    hb.stop()
+    hbeam.kill()
     node.stop()
   })
   it("should query weavedb NIF device", async () => {
-    const port = 10005
-    const hb = new HB({ cwd: "../../HyperBEAM", env, port })
-    await wait(5000)
-    assert.equal(
-      (await hb.req({ path: "/~weavedb@1.0/query", tags: { a: 2, b: 3 } })).sum,
-      "5",
-    )
-    hb.stop()
+    const hbeam = await new HyperBEAM({ reset: true }).ready()
+    const hb = hbeam.hb
+    const { out } = await hb.post({ path: "/~weavedb@1.0/query", a: 2, b: 3 })
+    assert.equal(out.sum, 5)
+    hbeam.kill()
   })
 })

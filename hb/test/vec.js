@@ -7,7 +7,7 @@ import { afterEach, after, describe, it, before, beforeEach } from "node:test"
 import vec from "../src/vec.js"
 import { last, init, clone, map, pluck, prop, slice } from "ramda"
 import { connect, createSigner } from "@permaweb/aoconnect"
-import { AO } from "wao"
+import { AO, HB } from "wao"
 import validate from "../src/validate.js"
 import {
   set,
@@ -82,14 +82,15 @@ const setup = async ({ pid, request }) => {
 }
 
 const validateDB = async ({ hbeam, pid, hb, jwk }) => {
-  const { process: validate_pid } = await hbeam.spawn({
-    tags: { "execution-device": "weavedb@1.0", db: pid },
+  const { pid: validate_pid } = await hbeam.spawn({
+    "execution-device": "weavedb@1.0",
+    db: pid,
   })
   await wait(5000)
   const dbpath2 = genDir()
   await validate({ pid, hb, dbpath: dbpath2, jwk, validate_pid, type: "vec" })
   await wait(5000)
-  const { slot } = await hbeam.message({
+  const { slot } = await hbeam.schedule({
     pid: validate_pid,
     tags: {
       Action: "Query",
@@ -98,7 +99,7 @@ const validateDB = async ({ hbeam, pid, hb, jwk }) => {
   })
   const {
     results: { data },
-  } = await hbeam.compute(validate_pid, slot)
+  } = await hbeam.compute({ pid: validate_pid, slot })
   assert.deepEqual(data[0].text, ibm)
   return { validate_pid, dbpath2 }
 }
@@ -142,19 +143,20 @@ describe("WeaveVec", () => {
     assert.equal((await db.search("vectors", "who won?", 1).val())[0].text, ibm)
   })
 
-  it.only("should validate HB WAL", async () => {
-    const { node, pid, request, hbeam, jwk, hb } = await deployHB({
+  it("should validate HB WAL", async () => {
+    const { node, pid, hbeam, jwk, hb } = await deployHB({
       port: 10005,
       type: "vec",
     })
-    let { nonce } = await setup({ pid, request })
+    const _hb = new HB({ url: "http://localhost:6363", jwk })
+    let { nonce } = await setup({ pid, request: _hb })
     const { validate_pid, dbpath2 } = await validateDB({
-      hbeam,
+      hbeam: hbeam.hb,
       pid,
       hb,
       jwk,
     })
     node.stop()
-    hbeam.stop()
+    hbeam.kill()
   })
 })

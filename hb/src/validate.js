@@ -1,4 +1,5 @@
 import wdb from "./index.js"
+import { HB } from "wao"
 import { DatabaseSync } from "node:sqlite"
 import * as lancedb from "@lancedb/lancedb"
 import sql from "./sql.js"
@@ -88,21 +89,29 @@ const buildBundle = async changes => {
   const zkhash = await calcZKHash(_changes)
 
   //decodeBuf(buf)
+  /*
   const txt = await fetch(`${v_hb}/~meta@1.0/info/serialize~json@1.0`).then(r =>
     r.json(),
   )
   const addr = txt.address
   const tags = {
-    method: "POST",
     path: `/${v_pid}/schedule`,
     scheduler: addr,
     zkhash,
     Action: "Commit",
     data: buf.toString("base64"),
-  }
-  const res = await request(tags)
+    }*/
+  // data to nested schedule breaks
+  const res = await request.schedule({
+    pid: v_pid,
+    tags: {
+      zkhash,
+      Action: "Commit",
+    },
+    data: buf.toString("base64"),
+  })
   console.log()
-  console.log(`[${res.slot}] ${res.process}`)
+  console.log(`[${res.slot}] ${res.pid}`)
   console.log(`zkhash: ${zkhash}`)
   console.log(buf)
   return { buf, zkhash }
@@ -180,16 +189,7 @@ const validate = async ({
     i = height.i + 1
   }
   let to = from + 99
-  if (isNil(request)) {
-    if (jwk && hb) {
-      ;({ request } = connect({
-        MODE: "mainnet",
-        URL: hb,
-        device: "",
-        signer: createSigner(jwk),
-      }))
-    }
-  }
+  if (isNil(request)) if (jwk && hb) request = new HB({ url: hb, jwk })
   let res = await getMsgs({ pid, hb, from, to })
   let slot = 0
   let isData = false
@@ -206,11 +206,6 @@ const validate = async ({
             break
           }
         }
-      }
-      try {
-        console.log(JSON.parse(m.body.data))
-      } catch (e) {
-        console.log(e)
       }
       if (m.body.data) {
         isData = true

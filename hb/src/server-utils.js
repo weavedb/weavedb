@@ -1,4 +1,5 @@
 import { httpbis, createVerifier } from "http-message-signatures"
+import { verify as _verify, toAddr } from "hbsig"
 const { verifyMessage } = httpbis
 import { createPublicKey } from "node:crypto"
 import { open } from "lmdb"
@@ -13,23 +14,17 @@ const verify = async req => {
   let address = null
   let query = null
   let ts = Date.now()
-  let fields = null
   try {
-    const { keyid, fields } = parseSI(req.headers["signature-input"])
-    const key = { kty: "RSA", n: keyid, e: "AQAB" }
-    const verifier = createVerifier(
-      createPublicKey({ key, format: "jwk" }),
-      "rsa-pss-sha512",
-    )
-    valid = await verifyMessage(
-      { keyLookup: params => ({ verify: verifier }) },
-      { headers: req.headers },
-    )
-    address = await arweave.wallets.jwkToAddress(key)
+    const {
+      valid,
+      keyId,
+      decodedSignatureInput: { components },
+    } = await _verify(req)
+    address = toAddr(keyId)
     query = JSON.parse(req.headers.query)
-    return { valid, address, query, ts, fields }
+    return { valid, address, query, ts, fields: components }
   } catch (e) {
-    return { err: true, valid, address, query, ts, fields }
+    return { err: true, valid, address, query, ts, fields: null }
   }
 }
 

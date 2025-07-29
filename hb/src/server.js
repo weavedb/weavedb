@@ -1,7 +1,7 @@
 import express from "express"
 import cors from "cors"
 import bodyParser from "body-parser"
-import { getKV2, getKV, verify } from "./server-utils.js"
+import { getKV2, verify } from "./server-utils.js"
 import wdb from "./index.js"
 import queue from "../src/queue.js"
 import kv from "./kv.js"
@@ -38,6 +38,24 @@ const server = async ({
   app.use(bodyParser.raw({ type: "*/*", limit: "100mb" }))
 
   app.get("/~weavedb@1.0/get", async (req, res) => {
+    let query = []
+    let id = null
+    try {
+      query = JSON.parse(req.headers.query ?? req.query.query)
+      id = req.headers.id ?? req.query.id
+      let headers = {}
+      for (const k in req.headers) {
+        let lowK = k.toLowerCase()
+        headers[lowK] = req.headers[lowK]
+      }
+      const _res = await dbs[id][query[0]](...query.slice(1)).val()
+      res.json({ success: true, query, res: _res })
+    } catch (e) {
+      console.log(e)
+      res.json({ success: false, query, error: e.toString() })
+    }
+  })
+  app.post("/~weavedb@1.0/get", async (req, res) => {
     const q = await verify(req)
     if (q.valid) {
       try {

@@ -6,7 +6,7 @@ import { afterEach, after, describe, it, before, beforeEach } from "node:test"
 import sql from "../src/sql.js"
 import { last, init, clone, map, pluck, prop, slice } from "ramda"
 import { connect, createSigner } from "@permaweb/aoconnect"
-import { AO } from "wao"
+import { AO, HB } from "wao"
 import { open } from "lmdb"
 import validate from "../src/validate.js"
 import {
@@ -51,20 +51,21 @@ const setup = async ({ pid, request }) => {
 }
 
 const validateDB = async ({ hbeam, pid, hb, jwk }) => {
-  const { process: validate_pid } = await hbeam.spawn({
-    tags: { "execution-device": "weavedb@1.0", db: pid },
+  const { pid: validate_pid } = await hbeam.spawn({
+    "execution-device": "weavedb@1.0",
+    db: pid,
   })
   await wait(5000)
   const dbpath2 = genDir()
   await validate({ pid, hb, dbpath: dbpath2, jwk, validate_pid, type: "sql" })
   await wait(5000)
-  const { slot } = await hbeam.message({
+  const { slot } = await hbeam.schedule({
     pid: validate_pid,
     tags: { Action: "Query", Query: JSON.stringify(["SELECT * from users"]) },
   })
   const {
     results: { data },
-  } = await hbeam.compute(validate_pid, slot)
+  } = await hbeam.compute({ pid: validate_pid, slot })
   assert.deepEqual(data, [{ id: 1, age: 24, name: "Bob" }])
   return { validate_pid, dbpath2 }
 }
@@ -85,7 +86,7 @@ describe("WeaveSQL", () => {
     const s = new sign({ jwk, id: "my-sql" })
     const rand = Math.floor(Math.random() * 100000)
     const _sql = new DatabaseSync(`.db/sql.${rand})}`)
-    const db = sql(getKV({ dbpath: `.db/kv.${rand}` }), { sql: _sql })
+    const db = await sql(getKV({ dbpath: `.db/kv.${rand}` }), { sql: _sql })
       .write(await s.sign("init", init_query))
       .write(await s.sign("sql", create))
       .write(await s.sign("sql", insert))
@@ -93,7 +94,7 @@ describe("WeaveSQL", () => {
       .write(await s.sign("sql", update))
       .write(await s.sign("sql", del))
       .write(await s.sign("sql", insert))
-    assert.deepEqual(db.sql("SELECT * from users").val(), [
+    assert.deepEqual(await db.sql("SELECT * from users").val(), [
       { name: "Bob", age: 24, id: 3 },
     ])
   })
@@ -102,9 +103,10 @@ describe("WeaveSQL", () => {
       port: 10005,
       type: "sql",
     })
-    let { nonce } = await setup({ pid, request })
+    const _hb = new HB({ url: "http://localhost:6363", jwk })
+    let { nonce } = await setup({ pid, request: _hb })
     const { validate_pid, dbpath2 } = await validateDB({
-      hbeam,
+      hbeam: hbeam.hb,
       pid,
       hb,
       jwk,
@@ -116,6 +118,6 @@ describe("WeaveSQL", () => {
       { id: 1, name: "Bob", age: 24 },
     ])
     node.stop()
-    hbeam.stop()
+    hbeam.kill()
   })
 })
