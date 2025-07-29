@@ -433,7 +433,7 @@ describe("Server", () => {
 
   it("should recover db from HB", async () => {
     const port = 10002
-    const port2 = 6363
+    const port2 = 6364
     const port3 = 5000
     const hbeam = await new HyperBEAM({ port }).ready()
     await wait(5000)
@@ -474,7 +474,7 @@ describe("Server", () => {
 
   it("should run a server", async () => {
     const port = 10001
-    const port2 = 6363
+    const port2 = 6364
     const hbeam = await new HyperBEAM({ port }).ready()
     await wait(5000)
     const hb = `http://localhost:${port}`
@@ -568,7 +568,7 @@ const validateDB = async ({ hbeam, pid, hb, jwk }) => {
 describe("Validator", () => {
   it("should validate HB WAL", async () => {
     const { node, pid, hbeam, jwk, hb } = await deployHB({})
-    const _hb = new HB({ url: "http://localhost:6363", jwk })
+    const _hb = new HB({ url: "http://localhost:6364", jwk })
     let { nonce } = await setup({ pid, request: _hb })
     const { validate_pid, dbpath2 } = await validateDB({
       hbeam: hbeam.hb,
@@ -596,7 +596,7 @@ describe("AOS", () => {
     const port = 10001
     const sport = 5000
     const { node, pid, hbeam, jwk, hb } = await deployHB({ sport })
-    const _hb = new HB({ url: "http://localhost:6363", jwk })
+    const _hb = new HB({ url: "http://localhost:6364", jwk })
     let { nonce } = await setup({ pid, request: _hb })
     const _hbeam = new HB({ url: "http://localhost:10001", jwk })
     const { validate_pid, dbpath2 } = await validateDB({

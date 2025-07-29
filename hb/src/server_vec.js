@@ -20,7 +20,7 @@ const server = async ({
   jwk,
   hb,
   dbpath,
-  port = 6363,
+  port = 6364,
   gateway = 5000,
   admin_only = true,
 }) => {
@@ -54,7 +54,7 @@ const server = async ({
     }
   })
 
-  app.post("/result/:mid", async (req, res) => {
+  app.post("/weavedb/:mid", async (req, res) => {
     const mid = req.params.mid
     const pid = req.query["process-id"]
     let data = null

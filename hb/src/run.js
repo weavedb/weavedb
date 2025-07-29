@@ -4,10 +4,10 @@ import { readFileSync } from "fs"
 import server from "./server.js"
 
 let {
-  port = 6363,
+  port = 6364,
   db = ".cache",
   hb = "http://localhost:10000",
-  wallet = ".wallet.json",
+  wallet = "../../../.wallet.json",
   test_mode = false,
 } = yargs(process.argv.slice(2)).argv
 
