@@ -5,35 +5,51 @@ import { dirs_set } from "./rules.js"
 const init_query = { schema: dir_schema, auth: [dirs_set] }
 
 export default class DB {
-  constructor({ port = 6363, jwk, id, hb = 10001 }) {
+  constructor({
+    url = `http://localhost:6364`,
+    jwk,
+    id,
+    hb = `http://localhost:10000`,
+  }) {
     this.addr = toAddr(jwk.n)
     this.id = id
-    this.port = port
-    if (!/^http/.test(port)) port = `http://localhost:${port}`
-    if (!/^http/.test(hb)) hb = `http://localhost:${hb}`
+    this.url = url
     this.hb = new HB({ url: hb, jwk })
-    this.db = new HB({ url: port, jwk })
+    this.db = new HB({ url, jwk })
     this._nonce = 0
     this.count = 0
   }
   async spawn({ query = init_query } = {}) {
     if (this.id) throw Error("db already exists")
-    const { pid } = await this.hb.spawn()
+    const { pid } = await this.hb.spawn({
+      "db-type": "nosql",
+      "device-stack": [
+        "wdb-normalize@1.0",
+        "wdb-verify@1.0",
+        "wdb-parse@1.0",
+        "wdb-auth@1.0",
+        "wdb-write@1.0",
+      ],
+    })
     this.id = pid
     await this.set("init", query)
     return pid
   }
   async mkdir({ name, schema, auth }) {
+    console.log("mkdir....", schema)
     const query = ["set:dir", { schema, auth }, "_", name]
     return await this.set(...query)
   }
   async set(...args) {
-    const res = await this.db.send({
-      path: "/~weavedb@1.0/set",
-      nonce: ++this._nonce,
-      id: this.id,
-      query: JSON.stringify(args),
-    })
+    const res = await this.db.post(
+      {
+        path: "/~weavedb@1.0/set",
+        nonce: ++this._nonce,
+        id: this.id,
+        query: JSON.stringify(args),
+      },
+      { path: false },
+    )
     const json = JSON.parse(res.body)
     if (
       !json.success &&
@@ -45,7 +61,7 @@ export default class DB {
       return await this.set(...args)
     } else {
       this.count = 0
-      return json.success
+      return json
     }
   }
   async nonce(...args) {
@@ -59,8 +75,7 @@ export default class DB {
   }
 
   async _get(...args) {
-    const res = await this.db.send({
-      method: "GET",
+    const res = await this.db.get({
       path: "/~weavedb@1.0/get",
       id: this.id,
       query: JSON.stringify(args),
