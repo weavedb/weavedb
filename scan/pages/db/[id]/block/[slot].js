@@ -11,10 +11,16 @@ import { FaAngleRight } from "react-icons/fa6"
 export default function Home() {
   const router = useRouter()
   const [tx, setTx] = useState(null)
+  const [wal_url, setWalUrl] = useState("http://localhost:10000")
   useEffect(() => {
     void (async () => {
       if (router.query.slot && router.query.url) {
-        const hb = new HB({ url: "http://localhost:10000" })
+        const status = await fetch(`${router.query.url}/status`).then(r =>
+          r.json(),
+        )
+        const url = status["wal-url"] ?? "http://localhost:10000"
+        setWalUrl(url)
+        const hb = new HB({ url })
         const { edges } = await hb.messages({
           pid: router.query.id,
           from: router.query.slot,
