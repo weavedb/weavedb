@@ -33,9 +33,10 @@ const kv_base = (io, fn, sync, methods = {}) => {
             else io.put(k, cl[k])
             count++
           }
-          const __data = { i, opt, cl }
+          const __data = { i, opt, cl, hashpath: state?.hashpath ?? null }
           data.push(__data)
           io.put(`__wal__/${i}`, __data)
+          io.put(`__state__/current`, { i, hashpath: state?.hashpath ?? null })
           if (cb) cb()
           i++
         }
