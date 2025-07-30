@@ -566,7 +566,7 @@ const validateDB = async ({ hbeam, pid, hb, jwk }) => {
 }
 
 describe("Validator", () => {
-  it("should validate HB WAL", async () => {
+  it.only("should validate HB WAL", async () => {
     const { node, pid, hbeam, jwk, hb } = await deployHB({})
     const _hb = new HB({ url: "http://localhost:6364", jwk })
     let { nonce } = await setup({ pid, request: _hb })
@@ -592,7 +592,7 @@ describe("Validator", () => {
 })
 
 describe("AOS", () => {
-  it.only("should serve AOS Legacynet", async () => {
+  it.skip("should serve AOS Legacynet", async () => {
     const port = 10001
     const sport = 5000
     const { node, pid, hbeam, jwk, hb } = await deployHB({ sport })

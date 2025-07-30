@@ -148,7 +148,7 @@ class sign {
 }
 
 const deployHB = async ({ port = 10001, sport, type = "nosql" }) => {
-  const port2 = 6363
+  const port2 = 6364
   const hbeam = await new HyperBEAM({ port, gateway: sport }).ready()
   const hb = `http://localhost:${port}`
   const { pid } = await hbeam.hb.spawn({})

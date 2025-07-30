@@ -26,7 +26,7 @@ export default async ({ jwk, pid, hb, dbpath }) => {
         typeof d.opt?.headers === "object" &&
         d.opt?.headers["signature"]
       ) {
-        bundle.push(d.opt)
+        bundle.push({ ...d.opt, hashpath: d.hashpath })
         h++
       }
     } while (d !== null)

@@ -1,4 +1,5 @@
 import { includes, isNil } from "ramda"
+import { extractPubKey, rsaid, hmacid, verify, id, base, hashpath } from "hbsig"
 import { of, ka } from "./monade.js"
 import sha256 from "fast-sha256"
 import { parseOp } from "./dev_common.js"
@@ -108,7 +109,46 @@ function toLower({ msg, env }) {
   return arguments[0]
 }
 
-function pickInput({ state, msg }) {
+function commit(msg, components) {
+  let body = {}
+  const inlineBodyKey = msg.headers["inline-body-key"]
+  for (const v of components) {
+    const key = v === "@path" ? "path" : v
+    body[key] = msg.headers[key]
+  }
+  if (msg.body) {
+    let bodyContent = msg.body
+    if (inlineBodyKey === "data") {
+      body.data = bodyContent
+    } else {
+      body.body = bodyContent
+    }
+  }
+
+  // Remove inline-body-key from the final body as it's just metadata
+  delete body["inline-body-key"]
+
+  const hmacId = hmacid(msg.headers)
+  const rsaId = rsaid(msg.headers)
+  const pub = extractPubKey(msg.headers)
+  const committer = toAddr(pub.toString("base64"))
+  const meta = { alg: "rsa-pss-sha512", "commitment-device": "httpsig@1.0" }
+  const meta2 = { alg: "hmac-sha256", "commitment-device": "httpsig@1.0" }
+  const sigs = {
+    signature: msg.headers.signature,
+    "signature-input": msg.headers["signature-input"],
+  }
+  const committed = {
+    commitments: {
+      [rsaId]: { ...meta, committer, ...sigs },
+      [hmacId]: { ...meta2, ...sigs },
+    },
+    ...body,
+  }
+  return committed
+}
+
+function pickInput({ state, msg, env }) {
   if (!msg) return arguments[0]
   let etc = {}
   const { fields, keyid } = parseSI(msg.headers["signature-input"])
@@ -121,6 +161,11 @@ function pickInput({ state, msg }) {
     headers[v] = msg.headers[v]
     if (v.toLowerCase() === "content-digest") etc.body = msg.body
   }
+  const committed = commit(msg, fields)
+  let info = env.kv.get("__state__", "current") ?? {}
+  state.hashpath = !info.hashpath
+    ? id(committed)
+    : hashpath(info.hashpath, committed)
   state.signer = toAddr(keyid)
   state.query = JSON.parse(msg.headers.query)
   if (typeof headers.id === "undefined") throw Error("id missing")
