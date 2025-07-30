@@ -48,6 +48,8 @@ const server = async ({
       operator: toAddr(jwk),
       processes: pids,
       started_at,
+      "wal-url": hb,
+      "wal-type": "HyperBEAM",
       status: "ok",
     })
   })

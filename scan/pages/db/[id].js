@@ -12,6 +12,7 @@ const limit = 10
 export default function Home() {
   const router = useRouter()
   const [txs, setTxs] = useState([])
+  const [wal_url, setWalUrl] = useState("http://localhost:10000")
   const [tx_from, setTxFrom] = useState(null)
   const [block_from, setBlockFrom] = useState(null)
   const [blocks, setBlocks] = useState([])
@@ -22,11 +23,11 @@ export default function Home() {
     const { body } = await hb.get({ path })
     const { wal } = JSON.parse(body)
     setTxs([...txs, ...wal])
-    if (wal[0]) setTxFrom(wal[0].value.i)
+    if (wal[0]) setTxFrom(wal[wal.length - 1].value.i)
   }
 
-  const getBlocks = async () => {
-    const hb2 = new HB({ url: "http://localhost:10000" })
+  const getBlocks = async url => {
+    const hb2 = new HB({ url })
     let from = 0
     let to = 0
     if (block_from) {
@@ -44,8 +45,13 @@ export default function Home() {
   useEffect(() => {
     void (async () => {
       if (router.query.id && router.query.url) {
-        await getTxs()
-        await getBlocks()
+        const status = await fetch(`${router.query.url}/status`).then(r =>
+          r.json(),
+        )
+        const url = status["wal-url"] ?? "http://localhost:10000"
+        setWalUrl(url)
+        await getTxs(url)
+        await getBlocks(url)
       }
     })()
   }, [router])
@@ -108,9 +114,7 @@ export default function Home() {
                       borderRadius: "5px",
                     }}
                     justify="center"
-                    onClick={async () => {
-                      await getBlocks()
-                    }}
+                    onClick={async () => await getBlocks(wal_url)}
                   >
                     <Flex p={2} justify="center" w="100%">
                       Load More
@@ -158,9 +162,7 @@ export default function Home() {
                       borderRadius: "5px",
                     }}
                     justify="center"
-                    onClick={async () => {
-                      await getTxs()
-                    }}
+                    onClick={async () => await getTxs(wal_url)}
                   >
                     <Flex p={2} justify="center" w="100%">
                       Load More
