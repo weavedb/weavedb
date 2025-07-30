@@ -32,9 +32,7 @@ export default function Home() {
                 <Box css={{ textDecoration: "underline" }}>Nodes</Box>
               </Link>
               <Icon as={FaAngleRight} mx={2} />
-              <Link href={`/node?url=${router.query.url}`}>
-                <Box>{router.query.url}</Box>
-              </Link>
+              <Box>{router.query.url}</Box>
             </Flex>
             <Box mt={4} mb={2} px={2} fontWeight="bold" color="#777">
               Databases

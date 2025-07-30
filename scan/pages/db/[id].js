@@ -2,24 +2,50 @@ import { Flex, Box, Icon } from "@chakra-ui/react"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/router"
 import { HB } from "wao"
-import { map } from "ramda"
+import { map, reverse } from "ramda"
 import Link from "next/link"
 import Header from "../../components/Header"
 import Main from "../../components/Main"
 import { FaAngleRight } from "react-icons/fa6"
+const limit = 10
 
 export default function Home() {
   const router = useRouter()
   const [txs, setTxs] = useState([])
+  const [tx_from, setTxFrom] = useState(null)
+  const [block_from, setBlockFrom] = useState(null)
+  const [blocks, setBlocks] = useState([])
+  const getTxs = async () => {
+    const hb = new HB({ url: router.query.url })
+    let path = `/wal/${router.query.id}?order=desc&limit=${limit}`
+    if (tx_from) path += `&start=${tx_from - 1}`
+    const { body } = await hb.get({ path })
+    const { wal } = JSON.parse(body)
+    setTxs([...txs, ...wal])
+    if (wal[0]) setTxFrom(wal[0].value.i)
+  }
+
+  const getBlocks = async () => {
+    const hb2 = new HB({ url: "http://localhost:10000" })
+    let from = 0
+    let to = 0
+    if (block_from) {
+      to = block_from - 1
+    } else {
+      const now = await hb2.now({ pid: router.query.id })
+      to = now?.["at-slot"] ?? 0
+    }
+    from = Math.max(0, to - limit + 1)
+    const { edges } = await hb2.messages({ pid: router.query.id, from, to })
+    setBlocks([...blocks, ...reverse(edges)])
+    if (edges[0]) setBlockFrom(edges[0].cursor)
+  }
+
   useEffect(() => {
     void (async () => {
       if (router.query.id && router.query.url) {
-        const hb = new HB({ url: router.query.url })
-        const { body } = await hb.get({
-          path: `/wal/${router.query.id}?order=desc&limit=10`,
-        })
-        const { wal } = JSON.parse(body)
-        setTxs(wal)
+        await getTxs()
+        await getBlocks()
       }
     })()
   }, [router])
@@ -40,34 +66,110 @@ export default function Home() {
                 </Box>
               </Link>
               <Icon as={FaAngleRight} mx={2} />
-              <Link href={`/db/${router.query.id}?url=${router.query.url}`}>
-                <Box>{router.query.id}</Box>
-              </Link>
+              <Box>{router.query.id}</Box>
             </Flex>
-            <Box mt={4} mb={2} px={2} fontWeight="bold" color="#777">
-              Transactions
-            </Box>
-            {map(v => (
-              <Link
-                href={`/db/${router.query.id}/tx/${v.value.i}?url=${router.query.url}`}
-              >
-                <Flex
-                  px={2}
-                  bg="white"
-                  my={4}
-                  w="100%"
-                  css={{
-                    cursor: "pointer",
-                    _hover: { opacity: 0.75 },
-                    borderRadius: "5px",
-                  }}
-                >
-                  <Box p={2}>{v.value.i}</Box>
-                  <Box p={2}>{v.value.hashpath}</Box>
-                  <Box flex={1} />
-                </Flex>
-              </Link>
-            ))(txs)}
+            <Flex>
+              <Box flex={1} pr={4}>
+                <Box mt={4} mb={2} px={2} fontWeight="bold" color="#777">
+                  Blocks
+                </Box>
+                {map(v => (
+                  <Link
+                    href={`/db/${router.query.id}/block/${v.cursor}?url=${router.query.url}`}
+                  >
+                    <Flex
+                      px={2}
+                      bg="white"
+                      my={4}
+                      w="100%"
+                      fontSize="11px"
+                      css={{
+                        cursor: "pointer",
+                        _hover: { opacity: 0.75 },
+                        borderRadius: "5px",
+                      }}
+                    >
+                      <Box p={2}>{v.cursor}</Box>
+                      <Box p={2}>{v.node.message.Id}</Box>
+                      <Box flex={1} />
+                    </Flex>
+                  </Link>
+                ))(blocks)}
+                {!block_from ? null : (
+                  <Flex
+                    px={2}
+                    bg="white"
+                    my={4}
+                    w="100%"
+                    fontSize="11px"
+                    css={{
+                      cursor: "pointer",
+                      _hover: { opacity: 0.75 },
+                      borderRadius: "5px",
+                    }}
+                    justify="center"
+                    onClick={async () => {
+                      await getBlocks()
+                    }}
+                  >
+                    <Flex p={2} justify="center" w="100%">
+                      Load More
+                    </Flex>
+                    <Box flex={1} />
+                  </Flex>
+                )}
+              </Box>
+              <Box flex={1} pl={4}>
+                <Box mt={4} mb={2} px={2} fontWeight="bold" color="#777">
+                  Transactions
+                </Box>
+                {map(v => (
+                  <Link
+                    href={`/db/${router.query.id}/tx/${v.value.i}?url=${router.query.url}`}
+                  >
+                    <Flex
+                      px={2}
+                      bg="white"
+                      my={4}
+                      w="100%"
+                      fontSize="11px"
+                      css={{
+                        cursor: "pointer",
+                        _hover: { opacity: 0.75 },
+                        borderRadius: "5px",
+                      }}
+                    >
+                      <Box p={2}>{v.value.i}</Box>
+                      <Box p={2}>{v.value.hashpath}</Box>
+                      <Box flex={1} />
+                    </Flex>
+                  </Link>
+                ))(txs)}
+                {!tx_from ? null : (
+                  <Flex
+                    px={2}
+                    bg="white"
+                    my={4}
+                    w="100%"
+                    fontSize="11px"
+                    css={{
+                      cursor: "pointer",
+                      _hover: { opacity: 0.75 },
+                      borderRadius: "5px",
+                    }}
+                    justify="center"
+                    onClick={async () => {
+                      await getTxs()
+                    }}
+                  >
+                    <Flex p={2} justify="center" w="100%">
+                      Load More
+                    </Flex>
+                    <Box flex={1} />
+                  </Flex>
+                )}
+              </Box>
+            </Flex>
           </Box>
         </Flex>
       </Main>

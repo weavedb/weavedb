@@ -14,12 +14,13 @@ export default function Home() {
   useEffect(() => {
     void (async () => {
       if (router.query.slot && router.query.url) {
-        const hb = new HB({ url: router.query.url })
-        const { body } = await hb.get({
-          path: `/wal/${router.query.id}?start=${router.query.slot}&limit=1`,
+        const hb = new HB({ url: "http://localhost:10000" })
+        const { edges } = await hb.messages({
+          pid: router.query.id,
+          from: router.query.slot,
+          to: router.query.slot,
         })
-        const { wal } = JSON.parse(body)
-        setTx(wal[0]?.value ?? null)
+        setTx(edges[0] ?? null)
       }
     })()
   }, [router])
@@ -51,23 +52,7 @@ export default function Home() {
             {!tx ? null : (
               <>
                 <Box mt={4} mb={2} px={2} fontWeight="bold" color="#777">
-                  Hashpath
-                </Box>
-                <Flex
-                  mb={4}
-                  px={2}
-                  bg="white"
-                  w="100%"
-                  css={{
-                    cursor: "pointer",
-                    _hover: { opacity: 0.75 },
-                    borderRadius: "5px",
-                  }}
-                >
-                  <Box p={2}>{tx.hashpath}</Box>
-                </Flex>
-                <Box mt={4} mb={2} px={2} fontWeight="bold" color="#777">
-                  Headers
+                  Assignment
                 </Box>
                 <Flex
                   px={2}
@@ -81,26 +66,31 @@ export default function Home() {
                   }}
                 >
                   <Box fontSize="12px" px={2} pb={2} w="100%">
-                    {map(v => (
-                      <>
-                        <Box mt={4}>{v}</Box>
-                        <Box
-                          w="100%"
-                          bg="#eee"
-                          fontSize="12px"
-                          as="pre"
-                          p={2}
-                          my={2}
-                          css={{ whiteSpace: "wrap", wordBreak: "break-all" }}
-                        >
-                          {tx.opt.headers[v]}
-                        </Box>
-                      </>
-                    ))(keys(tx.opt.headers).sort())}
+                    {map(v => {
+                      const v2 = tx.node.assignment[v]
+                      const val =
+                        typeof v2 === "object" ? JSON.stringify(v2) : v2
+                      return val === "" ? null : (
+                        <>
+                          <Box mt={4}>{v}</Box>
+                          <Box
+                            w="100%"
+                            bg="#eee"
+                            fontSize="12px"
+                            as="pre"
+                            p={2}
+                            my={2}
+                            css={{ whiteSpace: "wrap", wordBreak: "break-all" }}
+                          >
+                            {val}
+                          </Box>
+                        </>
+                      )
+                    })(keys(tx.node.assignment).sort())}
                   </Box>
                 </Flex>
                 <Box mt={4} mb={2} px={2} fontWeight="bold" color="#777">
-                  Updated Paths
+                  Message
                 </Box>
                 <Flex
                   px={2}
@@ -114,22 +104,39 @@ export default function Home() {
                   }}
                 >
                   <Box fontSize="12px" px={2} pb={2} w="100%">
-                    {map(v => (
-                      <>
-                        <Box mt={4}>{v}</Box>
-                        <Box
-                          w="100%"
-                          bg="#eee"
-                          fontSize="12px"
-                          as="pre"
-                          p={2}
-                          my={2}
-                          css={{ whiteSpace: "wrap", wordBreak: "break-all" }}
-                        >
-                          {JSON.stringify(tx.cl[v])}
-                        </Box>
-                      </>
-                    ))(keys(tx.cl).sort())}
+                    {map(v => {
+                      const v2 = tx.node.message[v]
+                      let val = typeof v2 === "object" ? JSON.stringify(v2) : v2
+                      if (v === "Data") {
+                        try {
+                          val = map(v => (
+                            <Link
+                              href={`/db/${router.query.id}/tx/${v.slot}?url=${router.query.url}`}
+                            >
+                              <Box my={1}>{v.hashpath}</Box>
+                            </Link>
+                          ))(JSON.parse(v2))
+                        } catch (e) {
+                          val = v2
+                        }
+                      }
+                      return val === "" ? null : (
+                        <>
+                          <Box mt={4}>{v}</Box>
+                          <Box
+                            w="100%"
+                            bg="#eee"
+                            fontSize="12px"
+                            as="pre"
+                            p={2}
+                            my={2}
+                            css={{ whiteSpace: "wrap", wordBreak: "break-all" }}
+                          >
+                            {val}
+                          </Box>
+                        </>
+                      )
+                    })(keys(tx.node.message).sort())}
                   </Box>
                 </Flex>
               </>
