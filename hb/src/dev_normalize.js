@@ -162,7 +162,7 @@ function pickInput({ state, msg, env }) {
     if (v.toLowerCase() === "content-digest") etc.body = msg.body
   }
   const committed = commit(msg, fields)
-  let info = env.kv.get("__state__", "current") ?? {}
+  let info = env.kv.get("__meta__", "current") ?? {}
   state.hashpath = !info.hashpath
     ? id(committed)
     : hashpath(info.hashpath, committed)

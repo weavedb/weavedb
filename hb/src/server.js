@@ -6,7 +6,7 @@ import wdb from "./index.js"
 import queue from "../src/queue.js"
 import kv from "./kv.js"
 import { resolve } from "path"
-import { includes, map, fromPairs } from "ramda"
+import { includes, map, fromPairs, isNil } from "ramda"
 import { AR, AO } from "wao"
 import { open } from "lmdb"
 import { toAddr } from "hbsig"
@@ -14,6 +14,7 @@ import recover from "./recover.js"
 import wal from "./wal.js"
 
 let dbs = {}
+let ios = {}
 let dbmap = {}
 const _tags = tags => fromPairs(map(v => [v.name, v.value])(tags))
 
@@ -24,6 +25,7 @@ const server = async ({
   port = 6364,
   gateway = 5000,
   admin_only = true,
+  hyperbeam = true,
 }) => {
   const started_at = Date.now()
   const addr = (await new AR().init(jwk)).addr
@@ -32,8 +34,10 @@ const server = async ({
   let pids = io.get("pids") ?? []
   for (let v of pids) {
     console.log("recovering....", v)
-    dbs[v] = await recover({ pid: v, hb, dbpath, jwk })
-    wal({ jwk, hb, dbpath, pid: v })
+    const { db: _db, io: _io } = await recover({ pid: v, hb, dbpath, jwk })
+    dbs[v] = _db
+    ios[v] = _io
+    if (hyperbeam) wal({ jwk, hb, dbpath, pid: v })
   }
   app.use(cors())
   app.use(bodyParser.raw({ type: "*/*", limit: "100mb" }))
@@ -46,6 +50,26 @@ const server = async ({
       started_at,
       status: "ok",
     })
+  })
+  app.get("/wal/:pid", async (req, res) => {
+    const { pid } = req.params
+    const { start, end, limit, order, offset } = req.query
+    let obj = {}
+    if (!isNil(start)) obj.start = ["__wal__", +start]
+    if (!isNil(end)) obj.end = ["__wal__", +end]
+    if (!isNil(offset)) obj.offset = +offset
+    if (!isNil(limit)) obj.limit = +limit
+    if (order === "desc") {
+      obj.reverse = true
+      if (isNil(start)) obj.start = ["__wal__", Infinity]
+      if (isNil(end)) obj.end = ["__wal__", -1]
+    } else {
+      if (isNil(start)) obj.start = ["__wal__", 0]
+      if (isNil(end)) obj.end = ["__wal__", Infinity]
+    }
+    let wal = []
+    for (let v of ios[pid].getRange(obj)) wal.push(v)
+    res.json({ wal })
   })
   app.get("/~weavedb@1.0/get", async (req, res) => {
     let query = []
@@ -154,8 +178,9 @@ const server = async ({
           } else {
             console.log(`initializing a new db: ${pid}`)
             const wkv = getKV2({ jwk, hb, dbpath, pid })
-            wal({ jwk, hb, dbpath, pid })
+            if (hyperbeam) wal({ jwk, hb, dbpath, pid })
             dbs[pid] = queue(wdb(wkv))
+            ios[pid] = wkv.io
             pids.push(pid)
             io.put("pids", pids)
           }

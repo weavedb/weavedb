@@ -12,7 +12,9 @@ import { AR, AO } from "wao"
 import { open } from "lmdb"
 import recover from "../src/recover.js"
 let dbs = {}
+let ios = {}
 let dbmap = {}
+
 const _tags = tags => fromPairs(map(v => [v.name, v.value])(tags))
 
 const server = async ({
@@ -29,7 +31,14 @@ const server = async ({
   let pids = io.get("pids") ?? []
   for (let v of pids) {
     console.log("recovering....", v)
-    dbs[v] = await recover({ pid: v, hb, dbpath: `${dbpath}-${v}`, jwk })
+    const { db: _db, io: _io } = await recover({
+      pid: v,
+      hb,
+      dbpath: `${dbpath}-${v}`,
+      jwk,
+    })
+    dbs[v] = _db
+    ios[v] = _io
   }
   app.use(cors())
   app.use(bodyParser.raw({ type: "*/*", limit: "100mb" }))
@@ -123,6 +132,7 @@ const server = async ({
             const wkv = getKV({ jwk, hb, dbpath, pid })
             const _sql = new DatabaseSync(`${dbpath}.sql`)
             dbs[pid] = queue(sql(wkv, { sql: _sql }))
+            ios[pid] = wkv.io
             pids.push(pid)
             io.put("pids", pids)
           }

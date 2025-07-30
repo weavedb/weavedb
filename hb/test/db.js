@@ -566,7 +566,7 @@ const validateDB = async ({ hbeam, pid, hb, jwk }) => {
 }
 
 describe("Validator", () => {
-  it.only("should validate HB WAL", async () => {
+  it("should validate HB WAL", async () => {
     const { node, pid, hbeam, jwk, hb } = await deployHB({})
     const _hb = new HB({ url: "http://localhost:6364", jwk })
     let { nonce } = await setup({ pid, request: _hb })
@@ -586,6 +586,21 @@ describe("Validator", () => {
     })
     assert.deepEqual(res.results.data, [alice, bob])
     await checkZK({ pid: validate_pid, hb })
+    node.stop()
+    hbeam.kill()
+  })
+})
+
+describe("Wal", () => {
+  it.only("should validate HB WAL", async () => {
+    const { node, pid, hbeam, jwk, hb } = await deployHB({})
+    const _hb = new HB({ url: "http://localhost:6364", jwk })
+    let { nonce } = await setup({ pid, request: _hb })
+    await wait(5000)
+    const { wal } = await fetch(
+      `http://localhost:6364/wal/${pid}?limit=1&order=desc`,
+    ).then(r => r.json())
+    assert.equal(2, wal[0].key[1])
     node.stop()
     hbeam.kill()
   })

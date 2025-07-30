@@ -12,7 +12,8 @@ const recover = async ({ pid, jwk, dbpath, hb }) => {
   const io = open({ path: `${dbpath}/${pid}` })
   let height = io.get("__wal__/height")
   console.log(`recover: ${pid}, height: ${height}`)
-  db = wdb(getKV2({ jwk, hb, dbpath, pid }))
+  const kv2 = getKV2({ jwk, hb, dbpath, pid })
+  db = wdb(kv2)
   while (!isEmpty(res.assignments)) {
     for (let k in res.assignments ?? {}) {
       const m = res.assignments[k]
@@ -46,7 +47,7 @@ const recover = async ({ pid, jwk, dbpath, hb }) => {
     to += 100
     res = await getMsgs({ pid, hb, from, to })
   }
-  return db
+  return { db, io: kv2.io }
 }
 
 export default recover
