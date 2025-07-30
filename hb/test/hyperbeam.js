@@ -37,11 +37,13 @@ describe("HyperBEAM | dev_weavedb", () => {
   })
   it.only("should start weavedb with HyperBEAM", async () => {
     const hbeam = await new HyperBEAM({ reset: true, as: ["weavedb"] }).ready()
+    console.log(await hbeam.hb.get({ path: "/~weavedb@1.0/start" }))
     await wait(5000)
     const status = await fetch("http://localhost:6364/status").then(r =>
       r.json(),
     )
     assert.equal("WeaveDB", status.name)
+
     hbeam.kill()
   })
 })

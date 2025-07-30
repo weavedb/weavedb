@@ -2,7 +2,7 @@ import { open } from "lmdb"
 import { connect, createSigner } from "@permaweb/aoconnect"
 export default async ({ jwk, pid, hb, dbpath }) => {
   const io = open({ path: `${dbpath}/${pid}` })
-  let height = io.get("__wal__/height") ?? 0
+  let height = io.get("__meta__/height") ?? 0
   console.log("wal initializing:", `${dbpath}/${pid}`, height)
   const { request } = connect({
     MODE: "mainnet",
@@ -19,7 +19,7 @@ export default async ({ jwk, pid, hb, dbpath }) => {
     let d = null
     let bundle = []
     do {
-      d = io.get(`__wal__/${h}`) ?? null
+      d = io.get(["__wal__", h]) ?? null
       if (
         d !== null &&
         d.opt?.headers &&
@@ -41,7 +41,8 @@ export default async ({ jwk, pid, hb, dbpath }) => {
       console.log(`[${res.slot}] ${res.process}`)
       console.log("wal: from", height, "to", h, `${dbpath}/${pid}`)
       height = h
-      io.put("__wal__/height", h)
+      console.log("new height...", h)
+      io.put("__meta__/height", h)
     }
   }, 3000)
 }

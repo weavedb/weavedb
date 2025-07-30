@@ -35,8 +35,8 @@ const kv_base = (io, fn, sync, methods = {}) => {
           }
           const __data = { i, opt, cl, hashpath: state?.hashpath ?? null }
           data.push(__data)
-          io.put(`__wal__/${i}`, __data)
-          io.put(`__state__/current`, { i, hashpath: state?.hashpath ?? null })
+          io.put(["__wal__", i], __data)
+          io.put(`__meta__/current`, { i, hashpath: state?.hashpath ?? null })
           if (cb) cb()
           i++
         }
@@ -47,6 +47,7 @@ const kv_base = (io, fn, sync, methods = {}) => {
     on = false
   }
   return {
+    io,
     reset,
     commit: async (opt = {}, cb, state) => {
       if (sync) await sync(opt, { put, get, del }, state).then(() => {})

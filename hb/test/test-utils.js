@@ -151,7 +151,16 @@ const deployHB = async ({ port = 10001, sport, type = "nosql" }) => {
   const port2 = 6364
   const hbeam = await new HyperBEAM({ port, gateway: sport }).ready()
   const hb = `http://localhost:${port}`
-  const { pid } = await hbeam.hb.spawn({})
+  const { pid } = await hbeam.hb.spawn({
+    "db-type": "nosql",
+    "device-stack": [
+      "wdb-normalize@1.0",
+      "wdb-verify@1.0",
+      "wdb-parse@1.0",
+      "wdb-auth@1.0",
+      "wdb-write@1.0",
+    ],
+  })
   const signer = hbeam.signer
   const jwk = hbeam.jwk
   console.log("pid", pid)
