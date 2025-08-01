@@ -25,7 +25,6 @@ describe("JS Rollup", () => {
       port: `${host}:${port}`,
       hb: `${host}:${hb}`,
     })
-    //console.log(await wdb.spawn())
     const users = {
       name: "users",
       schema: { type: "object", required: ["name", "age"] },

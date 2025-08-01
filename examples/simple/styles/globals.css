@@ -1,0 +1,212 @@
+/* global.css */
+
+* {
+ margin: 0;
+ padding: 0;
+ box-sizing: border-box;
+}
+
+body {
+ background: #0a0a0a;
+ color: #ffffff;
+ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+ min-height: 100vh;
+ padding: 60px 20px;
+ position: relative;
+ overflow-x: hidden;
+}
+
+body::before {
+ content: '';
+ position: fixed;
+ top: 0;
+ left: 0;
+ right: 0;
+ bottom: 0;
+ background: 
+   radial-gradient(circle at 20% 50%, rgba(120, 40, 200, 0.3) 0%, transparent 50%),
+   radial-gradient(circle at 80% 80%, rgba(255, 40, 120, 0.2) 0%, transparent 50%),
+   radial-gradient(circle at 40% 20%, rgba(40, 120, 255, 0.2) 0%, transparent 50%);
+ pointer-events: none;
+ z-index: 1;
+}
+
+textarea {
+ width: 100%;
+ max-width: 600px;
+ height: 140px;
+ padding: 24px;
+ background: rgba(255, 255, 255, 0.03);
+ border: 1px solid rgba(255, 255, 255, 0.1);
+ border-radius: 20px;
+ color: #ffffff;
+ font-size: 16px;
+ font-family: inherit;
+ resize: none;
+ display: block;
+ margin: 0 auto 24px;
+ backdrop-filter: blur(20px);
+ transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+ position: relative;
+ z-index: 10;
+}
+
+textarea::placeholder {
+ color: rgba(255, 255, 255, 0.4);
+}
+
+textarea:focus {
+ outline: none;
+ background: rgba(255, 255, 255, 0.05);
+ border-color: rgba(120, 40, 200, 0.5);
+ box-shadow: 
+   0 0 0 4px rgba(120, 40, 200, 0.1),
+   0 10px 40px rgba(120, 40, 200, 0.2);
+}
+
+button {
+ display: block;
+ width: 100%;
+ max-width: 600px;
+ margin: 0 auto 60px;
+ padding: 18px 40px;
+ background: linear-gradient(135deg, #7828c8 0%, #ff1874 100%);
+ color: white;
+ border: none;
+ border-radius: 16px;
+ font-size: 16px;
+ font-weight: 600;
+ letter-spacing: 0.5px;
+ cursor: pointer;
+ transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+ position: relative;
+ z-index: 10;
+ overflow: hidden;
+}
+
+button::before {
+ content: '';
+ position: absolute;
+ top: 0;
+ left: 0;
+ right: 0;
+ bottom: 0;
+ background: linear-gradient(135deg, #ff1874 0%, #7828c8 100%);
+ opacity: 0;
+ transition: opacity 0.3s ease;
+ z-index: -1;
+}
+
+button:hover {
+ transform: translateY(-2px);
+ box-shadow: 
+   0 10px 30px rgba(120, 40, 200, 0.4),
+   0 0 60px rgba(255, 24, 116, 0.3);
+}
+
+button:hover::before {
+ opacity: 1;
+}
+
+button:active {
+ transform: translateY(0);
+}
+
+article {
+ max-width: 600px;
+ margin: 0 auto 20px;
+ padding: 28px;
+ background: rgba(255, 255, 255, 0.02);
+ border: 1px solid rgba(255, 255, 255, 0.08);
+ border-radius: 20px;
+ backdrop-filter: blur(20px);
+ position: relative;
+ z-index: 10;
+ overflow: hidden;
+ animation: fadeSlideIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+ transition: all 0.3s ease;
+}
+
+article::before {
+ content: '';
+ position: absolute;
+ top: -50%;
+ left: -50%;
+ width: 200%;
+ height: 200%;
+ background: radial-gradient(circle, rgba(120, 40, 200, 0.1) 0%, transparent 70%);
+ opacity: 0;
+ transition: opacity 0.3s ease;
+ pointer-events: none;
+}
+
+article:hover {
+ background: rgba(255, 255, 255, 0.04);
+ border-color: rgba(255, 255, 255, 0.12);
+ transform: translateY(-2px);
+ box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+article:hover::before {
+ opacity: 1;
+}
+
+p {
+ font-size: 17px;
+ line-height: 1.6;
+ color: rgba(255, 255, 255, 0.9);
+ margin-bottom: 16px;
+ word-wrap: break-word;
+}
+
+footer {
+ font-size: 13px;
+ color: rgba(255, 255, 255, 0.5);
+ display: flex;
+ gap: 6px;
+ align-items: center;
+ flex-wrap: wrap;
+}
+
+time {
+ color: rgba(120, 40, 200, 0.8);
+ font-weight: 500;
+}
+
+address {
+ font-style: normal;
+ font-family: 'SF Mono', Monaco, monospace;
+ font-size: 12px;
+ background: rgba(120, 40, 200, 0.2);
+ padding: 4px 10px;
+ border-radius: 6px;
+ color: rgba(255, 255, 255, 0.7);
+ display: inline-block;
+ word-break: break-all;
+}
+
+@keyframes fadeSlideIn {
+ from {
+   opacity: 0;
+   transform: translateY(20px);
+ }
+ to {
+   opacity: 1;
+   transform: translateY(0);
+ }
+}
+
+@media (max-width: 640px) {
+ body {
+   padding: 40px 16px;
+ }
+ 
+ textarea {
+   height: 120px;
+   padding: 20px;
+ }
+ 
+ article {
+   padding: 24px;
+ }
+}

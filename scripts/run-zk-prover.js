@@ -4,14 +4,13 @@ import { resolve } from "path"
 import yargs from "yargs"
 import { readFileSync } from "fs"
 import { HB } from "wao"
+import zkjson from "../hb/src/zkjson.js"
 let {
-  pid,
   vid,
   hb = `http://localhost:10001`,
-  wallet = "HyperBEAM/.wallet.json",
-  db = ".db/validator",
+  db = ".db/zk",
 } = yargs(process.argv.slice(2)).argv
-
+let zkp = null
 const query = async (hb, ...q) => {
   return (
     (
@@ -24,26 +23,17 @@ const query = async (hb, ...q) => {
 }
 const check = async opt => {
   try {
-    await validate(opt)
+    zkp = await zkjson(opt)
+    await zkjson({ ...opt })
   } catch (e) {
     console.log(e)
   }
   setTimeout(() => check(opt), 10000)
 }
 const main = async () => {
-  console.log(`pid: ${pid}`)
-  const jwk = JSON.parse(readFileSync(resolve(process.cwd(), wallet), "utf8"))
-  const _hb = new HB({ jwk, url: hb })
-  if (!vid) {
-    const { pid: _vid } = await _hb.spawn({
-      "execution-device": "weavedb@1.0",
-      db: pid,
-    })
-    vid = _vid
-  }
   const dbpath = resolve(process.cwd(), db, vid)
   console.log(`dbpath: ${dbpath}`)
-  const opt = { pid, hb, dbpath, jwk, validate_pid: vid }
+  const opt = { pid: vid, hb, dbpath }
   console.log(`vid: ${vid}`)
   check(opt)
 }

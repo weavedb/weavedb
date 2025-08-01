@@ -7,7 +7,7 @@ HyperBEAM is an Erlang implementation of the AO-Core protocol, which makes any c
 With AO-Core, data is represented as a http message and each message generates an ID. The first message in a process becomes the original hashpath, and the current hash path and the id of the next message is concatenated and produces a new hashpath.
 
 ```js
-const hashpath = hash(current_hashpath, id(next_msg))
+const hashpath = hash(current_hashpath) + "/" + id(next_msg)
 ```
 
 HyperBEAM includes a scheduler device (sequencer) that manages process execution and state computation. It stores messages in Arweave’s permanent storage, optionally accompanied by TEE attestations for trustless validation.

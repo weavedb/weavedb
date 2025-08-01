@@ -34,10 +34,14 @@ const server = async ({
   let pids = io.get("pids") ?? []
   for (let v of pids) {
     console.log("recovering....", v)
-    const { db: _db, io: _io } = await recover({ pid: v, hb, dbpath, jwk })
-    dbs[v] = _db
-    ios[v] = _io
-    if (hyperbeam) wal({ jwk, hb, dbpath, pid: v })
+    try {
+      const { db: _db, io: _io } = await recover({ pid: v, hb, dbpath, jwk })
+      dbs[v] = _db
+      ios[v] = _io
+      if (hyperbeam) wal({ jwk, hb, dbpath, pid: v })
+    } catch (e) {
+      console.log("recover failed:", v)
+    }
   }
   app.use(cors())
   app.use(bodyParser.raw({ type: "*/*", limit: "100mb" }))

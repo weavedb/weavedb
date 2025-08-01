@@ -6,7 +6,7 @@ import sql from "./sql.js"
 import vec from "./vec.js"
 import { getMsgs } from "./server-utils.js"
 import { isEmpty, sortBy, prop, isNil } from "ramda"
-import { json, encode, Encoder, decode, Decoder } from "arjson"
+import { json, encode, Encoder } from "arjson"
 import kv from "./kv.js"
 import { open } from "lmdb"
 import { DB as ZKDB } from "zkjson"
@@ -63,7 +63,6 @@ const calcZKHash = async changes => {
 }
 
 const buildBundle = async changes => {
-  const d = new Decoder()
   let _changes = []
   for (const k in changes)
     _changes.push({ key: k, delta: changes[k].delta, data: changes[k].to })
@@ -87,21 +86,6 @@ const buildBundle = async changes => {
     offset += arr.length
   }
   const zkhash = await calcZKHash(_changes)
-
-  //decodeBuf(buf)
-  /*
-  const txt = await fetch(`${v_hb}/~meta@1.0/info/serialize~json@1.0`).then(r =>
-    r.json(),
-  )
-  const addr = txt.address
-  const tags = {
-    path: `/${v_pid}/schedule`,
-    scheduler: addr,
-    zkhash,
-    Action: "Commit",
-    data: buf.toString("base64"),
-    }*/
-  // data to nested schedule breaks
   const res = await request.schedule({
     pid: v_pid,
     tags: {
@@ -119,7 +103,7 @@ const buildBundle = async changes => {
 
 let deltas = {}
 const getKV = ({ jwk, pid, hb, dbpath }) => {
-  io = open({ path: dbpath })
+  io ??= open({ path: dbpath })
   let addr = null
   return kv(io, async c => {
     let changes = {}
@@ -129,7 +113,14 @@ const getKV = ({ jwk, pid, hb, dbpath }) => {
       i = d.i
       slot = d.opt.slot
       for (const k in d.cl) {
-        if (!/^__/.test(k.split("/")[0])) {
+        let dir = false
+        if (k.split("/")[0] === "_") {
+          dir = true
+          d.cl[k] = { index: d.cl[k].index }
+        }
+        if (dir || !/^_/.test(k.split("/")[0])) {
+          // keep it strict for now
+          //if (!/^__/.test(k.split("/")[0])) {
           let delta = null
           if (!deltas[k]) {
             let cache = io.get(`__deltas__/${k}`)
