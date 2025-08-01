@@ -31,14 +31,18 @@ const server = async ({
   let pids = io.get("pids") ?? []
   for (let v of pids) {
     console.log("recovering....", v)
-    const { db: _db, io: _io } = await recover({
-      pid: v,
-      hb,
-      dbpath: `${dbpath}-${v}`,
-      jwk,
-    })
-    dbs[v] = _db
-    ios[v] = _io
+    try {
+      const { db: _db, io: _io } = await recover({
+        pid: v,
+        hb,
+        dbpath: `${dbpath}-${v}`,
+        jwk,
+      })
+      dbs[v] = _db
+      ios[v] = _io
+    } catch (e) {
+      console.log("recover failed:", v)
+    }
   }
   app.use(cors())
   app.use(bodyParser.raw({ type: "*/*", limit: "100mb" }))

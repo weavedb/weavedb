@@ -7,6 +7,7 @@ import { DB as ZKDB } from "zkjson"
 let zkdb = null
 let cols = {}
 let io = null
+
 import { json, encode, Encoder, decode, Decoder } from "arjson"
 let wkv = io
 function frombits(bitArray) {
@@ -109,7 +110,6 @@ const decodeBuf = async (buf, sql) => {
     })
     await zkdb.init()
   }
-
   const q = Uint8Array.from(buf)
   const d = new Decoder()
   const left = d.decode(q, null)
@@ -143,7 +143,7 @@ const decodeBuf = async (buf, sql) => {
     await io.put(v[0], data)
     const [dir, doc] = v[0].split("/")
     if (isNil(cols[dir])) {
-      // todo: cannot get dir
+      // todo: dir schema and auth omitted due to data size
       const index = io.get(`_/${dir}`).index
       cols[dir] = index
       await zkdb.addCollection(index)
@@ -156,13 +156,12 @@ const decodeBuf = async (buf, sql) => {
     }
   }
 }
-
+let i = 0
+let from = 0
+let to = 99
+// preserve zkdb state somehow and continue
 const zkjson = async ({ dbpath, hb, pid, sql }) => {
-  let i = 0
-  let db = null
-  let from = 0
-  let to = 99
-  let res = await getMsgs({ pid, hb })
+  let res = await getMsgs({ pid, hb, from, to })
   io ??= open({ path: dbpath })
   while (!isEmpty(res.assignments)) {
     for (let k in res.assignments ?? {}) {

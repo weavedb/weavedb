@@ -6,7 +6,7 @@ import server from "./server.js"
 let {
   port = 6364,
   db = ".cache",
-  hb = "http://localhost:10000",
+  hb = "http://localhost:10001",
   wallet = "../../../.wallet.json",
   test_mode = false,
 } = yargs(process.argv.slice(2)).argv
