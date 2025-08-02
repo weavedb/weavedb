@@ -172,7 +172,7 @@ function pickInput({ state, msg, env }) {
   if (typeof headers.nonce === "undefined") throw Error("nonce missing")
   state.id = headers.id
   state.nonce = headers.nonce
-  state.ts = Date.now()
+  state.ts = msg.ts ?? Date.now()
   arguments[0].msg = { headers, ...etc }
   return arguments[0]
 }

@@ -1,4 +1,8 @@
 import { getMsgs } from "./server-utils.js"
+import express from "express"
+import cors from "cors"
+import bodyParser from "body-parser"
+
 import { isNil, isEmpty } from "ramda"
 import { resolve } from "path"
 let zkhash = null
@@ -140,27 +144,80 @@ const decodeBuf = async (buf, sql) => {
         console.log(e)
       }
     }
-    await io.put(v[0], data)
+
     const [dir, doc] = v[0].split("/")
+    if (!(dir === "_" && isNil(data))) await io.put(v[0], data)
+    if (dir === "_" && !isNil(data?.index) && isNil(cols[doc])) {
+      cols[doc] = data.index
+      await zkdb.addCollection(data.index)
+    }
+    /*
     if (isNil(cols[dir])) {
+      console.log("why nothing...", cols, dir)
       // todo: dir schema and auth omitted due to data size
       const index = io.get(`_/${dir}`).index
       cols[dir] = index
       await zkdb.addCollection(index)
-    }
+    }*/
     try {
       await zkdb.insert(cols[dir], doc, data)
       console.log("added to zk tree", dir, doc, data)
     } catch (e) {
+      console.log(e)
       console.log("zk error", data)
     }
   }
 }
+
+const startServer = ({ port, proof }) => {
+  const app = express()
+  app.use(cors())
+  app.use(bodyParser.json())
+  app.post("/zkp", async (req, res) => {
+    let zkp = null
+    let success = false
+    let error = null
+    let dirid = null
+    try {
+      zkp = await proof(req.body)
+      dirid = io.get(`_/${req.body.dir}`)?.index
+      success = true
+    } catch (e) {
+      console.log(e)
+      error = e.toString()
+    }
+    const toInt = base64 => {
+      const buffer = Buffer.from(base64, "base64")
+      let result = 0n
+      for (const byte of buffer) {
+        result = (result << 8n) | BigInt(byte)
+      }
+      return result.toString()
+    }
+    //const hash = zkdb.tree.F.toObject(zkdb.tree.root).toString()
+    res.json({
+      success,
+      zkp,
+      error,
+      query: req.body,
+      zkhash: toInt(zkhash),
+      dirid,
+    })
+  })
+  return app.listen(port, () => console.log(`ZK Prover on port ${port}`))
+}
+
 let i = 0
 let from = 0
-let to = 99
+let height = null
+let server = null
 // preserve zkdb state somehow and continue
-const zkjson = async ({ dbpath, hb, pid, sql }) => {
+const zkjson = async ({ dbpath, hb, pid, sql, port }) => {
+  if (height) {
+    from = height + 1
+    i = height + 1
+  }
+  let to = from + 99
   let res = await getMsgs({ pid, hb, from, to })
   io ??= open({ path: dbpath })
   while (!isEmpty(res.assignments)) {
@@ -182,25 +239,26 @@ const zkjson = async ({ dbpath, hb, pid, sql }) => {
           await decodeBuf(buf, sql)
         }
       }
+      height = +k
     }
     from += 100
     to += 100
     res = await getMsgs({ pid, hb, from, to })
   }
-  return {
-    proof: async ({ dir, doc, path, query }) => {
-      const col_id = io.get(`_/${dir}`)?.index
-      const json = io.get(`${dir}/${doc}`)
-      let params = {
-        json,
-        col_id,
-        path,
-        id: doc,
-      }
-      if (query) params.query = query
-      return await zkdb.genProof(params)
-    },
+  const proof = async ({ dir, doc, path, query }) => {
+    const col_id = cols[dir]
+    const json = io.get(`${dir}/${doc}`)
+    let params = {
+      json,
+      col_id,
+      path,
+      id: doc,
+    }
+    if (query) params.query = query
+    return await zkdb.genProof(params)
   }
+  if (port && !server) server = startServer({ port, proof })
+  return { server, proof }
 }
 
 export default zkjson
