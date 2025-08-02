@@ -7,6 +7,7 @@ import { HB } from "wao"
 import zkjson from "../hb/src/zkjson.js"
 let {
   vid,
+  port = 6365,
   hb = `http://localhost:10001`,
   db = ".db/zk",
 } = yargs(process.argv.slice(2)).argv
@@ -23,8 +24,7 @@ const query = async (hb, ...q) => {
 }
 const check = async opt => {
   try {
-    zkp = await zkjson(opt)
-    await zkjson({ ...opt })
+    await zkjson({ ...opt, port })
   } catch (e) {
     console.log(e)
   }

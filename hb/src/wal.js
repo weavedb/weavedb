@@ -26,7 +26,7 @@ export default async ({ jwk, pid, hb, dbpath }) => {
         typeof d.opt?.headers === "object" &&
         d.opt?.headers["signature"]
       ) {
-        bundle.push({ ...d.opt, hashpath: d.hashpath, slot: h })
+        bundle.push({ ...d.opt, hashpath: d.hashpath, slot: h, ts: d.ts })
         h++
       }
     } while (d !== null)
@@ -41,7 +41,6 @@ export default async ({ jwk, pid, hb, dbpath }) => {
       console.log(`[${res.slot}] ${res.process}`)
       console.log("wal: from", height, "to", h, `${dbpath}/${pid}`)
       height = h
-      console.log("new height...", h)
       io.put("__meta__/height", h)
     }
   }, 3000)

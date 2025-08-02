@@ -108,6 +108,7 @@ export default class DB {
     }
   }
   async _get(...args) {
+    console.log("lets fuking go..............", this.id, args)
     const res = await this.db.get({
       path: "/~weavedb@1.0/get",
       id: this.id,

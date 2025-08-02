@@ -526,13 +526,14 @@ function from64(str) {
 }
 
 const checkZK = async ({ pid, hb }) => {
-  const zkp = await zkjson({ pid, hb, dbpath: genDir() })
+  const zkp = await zkjson({ pid, hb, dbpath: genDir(), port: 6365 })
   await wait(5000)
   const proof = await zkp.proof({ dir: "users", doc: "alice", path: "name" })
   console.log(proof)
   assert.equal(proof[proof.length - 2], "4")
   console.log("success!")
   await wait(3000)
+  return zkp.server
 }
 
 const setup = async ({ pid, request }) => {
@@ -566,7 +567,7 @@ const validateDB = async ({ hbeam, pid, hb, jwk }) => {
 }
 
 describe("Validator", () => {
-  it("should validate HB WAL", async () => {
+  it.only("should validate HB WAL", async () => {
     const { node, pid, hbeam, jwk, hb } = await deployHB({})
     const _hb = new HB({ url: "http://localhost:6364", jwk })
     let { nonce } = await setup({ pid, request: _hb })
@@ -585,14 +586,22 @@ describe("Validator", () => {
       tags: { Action: "Query", Query: JSON.stringify(["users"]) },
     })
     assert.deepEqual(res.results.data, [alice, bob])
-    await checkZK({ pid: validate_pid, hb })
+    const zk_server = await checkZK({ pid: validate_pid, hb })
+    console.log(
+      await fetch("http://localhost:6365/zkp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dir: "users", doc: "alice", path: "name" }),
+      }).then(r => r.json()),
+    )
+    zk_server.close()
     node.stop()
     hbeam.kill()
   })
 })
 
 describe("Wal", () => {
-  it.only("should validate HB WAL", async () => {
+  it("should validate HB WAL", async () => {
     const { node, pid, hbeam, jwk, hb } = await deployHB({})
     const _hb = new HB({ url: "http://localhost:6364", jwk })
     let { nonce } = await setup({ pid, request: _hb })

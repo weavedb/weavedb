@@ -38,23 +38,21 @@ let v_hb
 const calcZKHash = async changes => {
   if (!zkdb) {
     zkdb = new ZKDB({
-      wasmRU: resolve(import.meta.dirname, "circom/rollup/index_js/index.wasm"),
-      zkeyRU: resolve(import.meta.dirname, "circom/rollup/index_0001.zkey"),
       wasm: resolve(import.meta.dirname, "circom/db/index_js/index.wasm"),
       zkey: resolve(import.meta.dirname, "circom/db/index_0001.zkey"),
     })
     await zkdb.init()
   }
   for (const v of changes) {
+    console.log(v)
     const [dir, doc] = v.key.split("/")
-    if (isNil(cols[dir])) {
-      const index = io.get(`_/${dir}`).index
-      cols[dir] = index
-      await zkdb.addCollection(index)
+    if (dir === "_" && isNil(cols[doc]) && !isNil(v.data?.index)) {
+      cols[doc] = v.data.index
+      console.log("[collection]...", dir, v.data.index)
+      await zkdb.addCollection(v.data.index)
     }
     try {
       await zkdb.insert(cols[dir], doc, v.data)
-      console.log("added to zk tree", dir, doc)
     } catch (e) {
       console.log("zk error", v.data)
     }
@@ -119,8 +117,6 @@ const getKV = ({ jwk, pid, hb, dbpath }) => {
           d.cl[k] = { index: d.cl[k].index }
         }
         if (dir || !/^_/.test(k.split("/")[0])) {
-          // keep it strict for now
-          //if (!/^__/.test(k.split("/")[0])) {
           let delta = null
           if (!deltas[k]) {
             let cache = io.get(`__deltas__/${k}`)
@@ -203,6 +199,7 @@ const validate = async ({
         for (const v of JSON.parse(m.body.data)) {
           if (type === "vec") await db.pwrite(v)
           else db.write(v)
+
           i++
         }
       }

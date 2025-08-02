@@ -26,6 +26,13 @@ describe("WeaveDB SDK", () => {
     assert((await db.set("set:user", bob, "users", "bob")).success)
     assert.deepEqual(await db.get("users", "bob"), bob)
   })
+  it.only("should deploy a database", async () => {
+    const db = new DB({
+      jwk: hbeam.jwk,
+      id: "7fvjopzwphy1lkydcerj9ittwume4fkde33u1yajvcc",
+    })
+    console.log(await db.get("posts"))
+  })
 })
 
 describe("WeaveDB SDK", () => {

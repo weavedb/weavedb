@@ -498,9 +498,177 @@ cd weavedb && yarn && cd hb && yarn && cd ..
 yarn zkp --vid VALIDATION_PID
 ```
 
+You can get zk proofs at `http://localhost:6365/zkp`.
+
+```js
+const { zkp, zkhash } = await fetch("http://localhost:6365/zkp", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ dir: "posts", doc: "A", path: "body" }),
+}).then(r => r.json())
+```
+
 ## Query from Ethereum with ZK Proof
 
 You can query WeaveDB from Ethereum Solidity contarcts.
+
+Since we are working on the local environment, let's create a test with Hardhat.
+
+```bash
+mkdir zkdb && cd zkdb && npx hardhat init
+npm install zkjson wdb-sdk
+```
+
+:::warning
+Don't use `yarn` in a hardhat project as it somehow breaks dependencies.
+:::
+
+We will create `ZKDB` contract by extending the simple optimistic zk rollup contract from the `zkjson` package, which comes with the `zkQuery` interface.
+
+```solidity [/contracts/ZKDB.sol]
+// SPDX-License-Identifier: MIT
+
+pragma solidity >=0.7.0 <0.9.0;
+
+import "zkjson/contracts/OPRollup.sol";
+
+interface VerifierDB {
+  function verifyProof(uint[2] calldata _pA, uint[2][2] calldata _pB, uint[2] calldata _pC, uint[16] calldata _pubSignals) view external returns (bool);
+}
+
+contract ZKDB is OPRollup {
+  uint constant SIZE_PATH = 4;
+  uint constant SIZE_VAL = 8;
+  address public verifierDB;
+
+  constructor (address _verifierDB, address _committer){
+    verifierDB = _verifierDB;
+    committer = _committer;
+  }
+  
+  function validateQuery(uint[] memory path, uint[] memory zkp) private view returns(uint[] memory){
+    verify(zkp, VerifierDB.verifyProof.selector, verifierDB);
+    return _validateQueryRU(path, zkp, SIZE_PATH, SIZE_VAL);    
+  }
+
+  function qInt (uint[] memory path, uint[] memory zkp) public view returns (int) {
+    uint[] memory value = validateQuery(path, zkp);
+    return _qInt(value);
+  }
+
+  function qFloat (uint[] memory path, uint[] memory zkp) public view returns (uint[3] memory) {
+    uint[] memory value = validateQuery(path, zkp);
+    return _qFloat(value);
+  }
+
+  function qRaw (uint[] memory path, uint[] memory zkp) public view returns (uint[] memory) {
+    uint[] memory value = validateQuery(path, zkp);
+    return _qRaw(value);
+  }
+  
+  function qString (uint[] memory path, uint[] memory zkp) public view returns (string memory) {
+    uint[] memory value = validateQuery(path, zkp);
+    return _qString(value);
+  }
+
+  function qBool (uint[] memory path, uint[] memory zkp) public view returns (bool) {
+    uint[] memory value = validateQuery(path, zkp);
+    return _qBool(value);
+  }
+  
+  function qNull (uint[] memory path, uint[] memory zkp) public view returns (bool) {
+    uint[] memory value = validateQuery(path, zkp);
+    return _qNull(value);
+  }
+
+  function qCond (uint[] memory path, uint[] memory cond, uint[] memory zkp) public view returns (bool) {
+    uint[] memory value = validateQuery(path, zkp);
+    return _qCond(value, cond);
+  }
+
+  function qCustom (uint[] memory path, uint[] memory path2, uint[] memory zkp) public view returns (int) {
+    uint[] memory value = validateQuery(path, zkp);
+    return getInt(path2, value);
+  }
+}
+```
+
+:::warning
+You can use one of the existing verifier contracts from the `zkjson` package for testing, but you need to take proper ceremony steps to generate secure verifiers.
+:::
+
+```js
+const hre = require("hardhat")
+
+async function main() {
+  const committer = { address: "0xcD0505F215EFbF9b00C7a1EB39E299E79c4abd31" }
+  const VerifierRU = await hre.ethers.getContractFactory("Groth16VerifierRU")
+  const verifierRU = await VerifierRU.deploy()
+  await verifierRU.deployed()
+  console.log(verifierRU.address)
+
+  const VerifierDB = await hre.ethers.getContractFactory("Groth16VerifierDB")
+  const verifierDB = await VerifierDB.deploy()
+  await verifierDB.deployed()
+  console.log(verifierDB.address)
+
+  const MyRU = await hre.ethers.getContractFactory("SimpleOPRU")
+  const myru = await MyRU.deploy(
+    verifierRU.address,
+    verifierDB.address,
+    committer.address,
+  )
+  await myru.deployed()
+  console.log(myru.address)
+  return
+}
+
+main().catch(error => {
+  console.error(error)
+  process.exitCode = 1
+})
+```
+
+Now, you can commit `zkhash`, generate zk proofs from a zk prover node, then query WeaveDB from Solidity with the `zkp`.
+
+
+```js
+const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers")
+const { expect } = require("chai")
+const { toIndex, path } = require("zkjson")
+const { DB } = require("wdb-sdk")
+
+const wait = ms => new Promise(res => setTimeout(() => res(), ms))
+async function deploy() {
+  const [committer] = await ethers.getSigners()
+  const VerifierDB = await ethers.getContractFactory(
+    "zkjson/contracts/verifiers/verifier_db.sol:Groth16VerifierDB",
+  )
+  const verifierDB = await VerifierDB.deploy()
+  const ZKDB = await ethers.getContractFactory("ZKDB")
+  return (zkdb = await ZKDB.deploy(verifierDB.target, committer.address))
+}
+
+describe("MyRollup", function () {
+  this.timeout(0)
+  it("should query WeaveDB from Solidity", async function () {
+    const zkdb = await loadFixture(deploy)
+    const db = new DB({ jwk, id: DB_ID })
+    await db.set("add:post", { body: "my first post!" }, "posts")
+    const post = (await db.cget("posts", ["date", "desc"]))[0]
+    await wait(20000)
+    const { zkp, zkhash, dirid } = await fetch("http://localhost:6365/zkp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dir: "posts", doc: post.id, path: "body" }),
+    }).then(r => r.json())
+    await zkdb.commitRoot(zkhash)
+    expect(
+      await zkdb.qString([dirid, toIndex(post.id), ...path("body")], zkp),
+    ).to.eql("my first post!")
+  })
+})
+```
 
 ## Query from AOS Processes
 
