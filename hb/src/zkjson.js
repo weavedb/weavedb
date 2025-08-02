@@ -107,8 +107,6 @@ let schemas = {}
 const decodeBuf = async (buf, sql) => {
   if (!zkdb) {
     zkdb = new ZKDB({
-      wasmRU: resolve(import.meta.dirname, "circom/rollup/index_js/index.wasm"),
-      zkeyRU: resolve(import.meta.dirname, "circom/rollup/index_0001.zkey"),
       wasm: resolve(import.meta.dirname, "circom/db/index_js/index.wasm"),
       zkey: resolve(import.meta.dirname, "circom/db/index_0001.zkey"),
     })
@@ -151,17 +149,10 @@ const decodeBuf = async (buf, sql) => {
       cols[doc] = data.index
       await zkdb.addCollection(data.index)
     }
-    /*
-    if (isNil(cols[dir])) {
-      console.log("why nothing...", cols, dir)
-      // todo: dir schema and auth omitted due to data size
-      const index = io.get(`_/${dir}`).index
-      cols[dir] = index
-      await zkdb.addCollection(index)
-    }*/
     try {
       await zkdb.insert(cols[dir], doc, data)
       console.log("added to zk tree", dir, doc, data)
+      //const hash = zkdb.tree.F.toObject(zkdb.tree.root).toString()
     } catch (e) {
       console.log(e)
       console.log("zk error", data)
@@ -194,7 +185,7 @@ const startServer = ({ port, proof }) => {
       }
       return result.toString()
     }
-    //const hash = zkdb.tree.F.toObject(zkdb.tree.root).toString()
+    const hash = zkdb.tree.F.toObject(zkdb.tree.root).toString()
     res.json({
       success,
       zkp,
@@ -255,6 +246,7 @@ const zkjson = async ({ dbpath, hb, pid, sql, port }) => {
       id: doc,
     }
     if (query) params.query = query
+    console.log(params)
     return await zkdb.genProof(params)
   }
   if (port && !server) server = startServer({ port, proof })

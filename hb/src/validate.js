@@ -44,15 +44,15 @@ const calcZKHash = async changes => {
     await zkdb.init()
   }
   for (const v of changes) {
-    console.log(v)
     const [dir, doc] = v.key.split("/")
     if (dir === "_" && isNil(cols[doc]) && !isNil(v.data?.index)) {
       cols[doc] = v.data.index
-      console.log("[collection]...", dir, v.data.index)
       await zkdb.addCollection(v.data.index)
     }
     try {
       await zkdb.insert(cols[dir], doc, v.data)
+      console.log("added to zk tree", dir, doc)
+      //const hash = zkdb.tree.F.toObject(zkdb.tree.root).toString()
     } catch (e) {
       console.log("zk error", v.data)
     }
@@ -132,10 +132,12 @@ const getKV = ({ jwk, pid, hb, dbpath }) => {
             delta = deltas[k].update(d.cl[k])
             await io.put(`__deltas__/${k}`, deltas[k].deltas())
           }
-          changes[k] = {
-            from: c.old[k],
-            to: d.cl[k],
-            delta,
+          if (delta && delta[1].length > 0) {
+            changes[k] = {
+              from: c.old[k],
+              to: d.cl[k],
+              delta,
+            }
           }
         }
       }
@@ -199,7 +201,6 @@ const validate = async ({
         for (const v of JSON.parse(m.body.data)) {
           if (type === "vec") await db.pwrite(v)
           else db.write(v)
-
           i++
         }
       }

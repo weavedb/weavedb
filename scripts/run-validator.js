@@ -11,7 +11,6 @@ let {
   wallet = "HyperBEAM/.wallet.json",
   db = ".db/validator",
 } = yargs(process.argv.slice(2)).argv
-
 const query = async (hb, ...q) => {
   return (
     (
@@ -24,7 +23,7 @@ const query = async (hb, ...q) => {
 }
 const check = async opt => {
   try {
-    await validate(opt)
+    await validate({ ...opt })
   } catch (e) {
     console.log(e)
   }
