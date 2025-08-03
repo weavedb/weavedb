@@ -16,17 +16,16 @@ describe("WeaveDB SDK", () => {
   let db, hbeam
   before(async () => {
     hbeam = await new HyperBEAM({ as: ["weavedb"] }).ready()
-    await hbeam.hb.get({ path: "/~weavedb@1.0/start" })
-    db = new DB({ hb: hbeam.url, jwk: hbeam.jwk })
+    db = await new DB({ hb: hbeam.url, jwk: hbeam.jwk }).ready(true)
   })
   after(() => hbeam.kill())
-  it("should deploy a database", async () => {
+  it.only("should deploy a database", async () => {
     const pid = await db.spawn()
     assert((await db.mkdir(users)).success)
     assert((await db.set("set:user", bob, "users", "bob")).success)
     assert.deepEqual(await db.get("users", "bob"), bob)
   })
-  it.only("should deploy a database", async () => {
+  it("should deploy a database", async () => {
     const db = new DB({
       jwk: hbeam.jwk,
       id: "7fvjopzwphy1lkydcerj9ittwume4fkde33u1yajvcc",
