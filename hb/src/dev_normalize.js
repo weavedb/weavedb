@@ -1,6 +1,6 @@
 import { includes, isNil } from "ramda"
 import { extractPubKey, rsaid, hmacid, verify, id, base, hashpath } from "hbsig"
-import { of, ka } from "./monade.js"
+import { of, ka } from "monade"
 import sha256 from "fast-sha256"
 import { parseOp } from "./dev_common.js"
 function base64urlDecode(str) {

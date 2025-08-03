@@ -1,4 +1,4 @@
-import { of, ka } from "./monade.js"
+import { of, ka } from "monade"
 import { map, pluck, isNil } from "ramda"
 import parseQuery from "./parser.js"
 import { get } from "../src/planner.js"

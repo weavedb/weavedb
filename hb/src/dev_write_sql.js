@@ -1,4 +1,4 @@
-import { of, ka } from "./monade.js"
+import { of, ka } from "monade"
 import { initDB, parseOp } from "./dev_common.js"
 import parse from "./dev_parse.js"
 import auth from "./dev_auth.js"

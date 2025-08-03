@@ -1,14 +1,15 @@
 {
-  "name": "wdb-sdk",
-  "version": "0.0.7",
+  "name": "monade",
   "type": "module",
   "scripts": {
+    "test": "node --test",
+    "test-only": "node --test-only",
+    "test-all": "node --test test/*.test.js",
     "build:cjs": "babel src --out-dir dist/cjs --config-file ./.babelrc-cjs",
     "build": "rm -rf dist && npm run build:cjs && cp src -rf dist/esm && node make.js && cp .npmignore dist/"
   },
-  "dependencies": {
-    "wao": "^0.35.0"
-  },
+  "version": "0.0.1",
+  "license": "MIT",
   "devDependencies": {
     "@babel/plugin-transform-modules-commonjs": "^7.24.8",
     "@babel/cli": "^7.24.8",

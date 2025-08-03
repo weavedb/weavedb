@@ -1,5 +1,11 @@
 # Quick Start
 
+:::warning
+WeaveDB on HyperBEAM is currently in early development.
+
+The sourcecode have not yet been audited, and the APIs are still evolving. We strongly advise against using it in production environments at this stage.
+:::
+
 ## WDB SDK
 
 The easiest way to get started is to connect with a remote WeaveDB rollup node with WDB SDK.
