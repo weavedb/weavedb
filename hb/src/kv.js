@@ -47,7 +47,7 @@ const kv_base = (io, fn, sync, methods = {}) => {
             ts: state?.ts,
             hashpath: state?.hashpath ?? null,
           })
-          if (cb) cb()
+          if (cb) cb(__data)
           i++
         }
       })
@@ -59,8 +59,8 @@ const kv_base = (io, fn, sync, methods = {}) => {
   return {
     io,
     reset,
-    commit: async (opt = {}, cb, state) => {
-      if (sync) await sync(opt, { put, get, del }, state).then(() => {})
+    commit: (opt = {}, cb, state) => {
+      if (sync) sync(opt, { put, get, del }, state).then(() => {})
       const cl = clone(l)
       c.push({ i, cl, opt, cb, state })
       for (const k in cl ?? {}) s[k] = cl[k]

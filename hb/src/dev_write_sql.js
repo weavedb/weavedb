@@ -39,9 +39,7 @@ function ast2schema(ast) {
     const isPrimaryKey = def.primary_key === "primary key"
 
     if (isNotNull || isPrimaryKey) {
-      if (!schema.required.includes(colName)) {
-        schema.required.push(colName)
-      }
+      if (!schema.required.includes(colName)) schema.required.push(colName)
     }
   }
 
@@ -140,8 +138,10 @@ const writer = {
 }
 
 function write_sql({ state, msg, env: { no_commit, kv } }) {
+  let result = null
   if (writer[state.opcode]) of(arguments[0]).chain(writer[state.opcode].fn())
-  if (no_commit !== true) kv.commit(msg, null, state)
+  if (no_commit !== true) result = kv.commit(msg, null, state)
+  state.result = result
   return arguments[0]
 }
 

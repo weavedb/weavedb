@@ -56,12 +56,17 @@ const kv_vec = (io, vec, fn) => {
 
   const methods = {
     add: async (dir, data) => {
+      console.log("we gota be here.............add")
       const table = tables[dir] ?? (await vec.openTable(dir))
       tables[dir] = table
       await table.add(data)
     },
-    createTable: async (dir, data) =>
-      await vec.createTable(dir, data, { mode: "overwrite" }),
+    createTable: async (dir, data) => {
+      console.log("we gota be here.............")
+      const res = await vec.createTable(dir, data, { mode: "overwrite" })
+      console.log(res)
+      return res
+    },
     search: async (dir, txt, limit) => {
       const table = tables[dir] ?? (await vec.openTable(dir))
       tables[dir] = table
