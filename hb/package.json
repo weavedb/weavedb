@@ -30,7 +30,7 @@
     "@lancedb/lancedb": "^0.19.0",
     "@permaweb/aoconnect": "^0.0.83",
     "apache-arrow": "^20.0.0",
-    "arjson": "^0.0.6",
+    "arjson": "^0.0.8",
     "arweave": "^1.15.7",
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",

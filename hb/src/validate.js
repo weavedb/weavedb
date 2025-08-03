@@ -62,8 +62,9 @@ const calcZKHash = async changes => {
 
 const buildBundle = async changes => {
   let _changes = []
-  for (const k in changes)
+  for (const k in changes) {
     _changes.push({ key: k, delta: changes[k].delta, data: changes[k].to })
+  }
   _changes = sortBy(prop("key"), _changes)
   let header = []
   let bytes = []
