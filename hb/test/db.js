@@ -63,15 +63,22 @@ const getKV = () => {
 }
 
 describe("WeaveDB Core", () => {
-  it("should cget and pagenate", async () => {
+  it.only("should return write result", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
-    const wkv = getKV()
-    const db = await wdb(wkv)
-      .write(await s.sign("init", init_query))
-      .write(await s.sign(...users_query))
-      .write(await s.sign("set:user", bob, "users", "bob"))
-      .write(await s.sign("set:user", alice, "users", "alice"))
+    const db = wdb(getKV())
+    const res = await db.write(await s.sign("init", init_query)).val()
+    assert.equal(res.nonce, "1")
+  })
+
+  it.only("should cget and pagenate", async () => {
+    const { jwk, addr } = await new AO().ar.gen()
+    const s = new sign({ jwk, id: "db-1" })
+    const db = wdb(getKV())
+    await db.write(await s.sign("init", init_query))
+    await db.write(await s.sign(...users_query))
+    await db.write(await s.sign("set:user", bob, "users", "bob"))
+    await db.write(await s.sign("set:user", alice, "users", "alice"))
     const cur = (await db.cget("users", 1).val())[0]
     assert.deepEqual(await db.get("users", ["startAfter", cur]).val(), [bob])
   })
@@ -96,47 +103,48 @@ describe("WeaveDB Core", () => {
   it("should init", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
-    const db = await wdb(getKV()).write(await s.sign("init", init_query))
+    const db = wdb(getKV())
+    await db.write(await s.sign("init", init_query))
     assert.equal((await db.get("_", "_").val()).index, 0)
   })
 
   it("should add dirs", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
-    const db = await wdb(getKV())
-      .write(await s.sign("init", init_query))
-      .write(await s.sign(...users_query))
+    const db = wdb(getKV())
+    await db.write(await s.sign("init", init_query))
+    await db.write(await s.sign(...users_query))
   })
 
   it("should update with _$ operators", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
-    const wkv = getKV()
-    const db = await wdb(wkv)
-      .write(await s.sign("init", init_query))
-      .write(await s.sign(...users_query))
-      .write(await s.sign("set:user", { name: "Bob", age: 4 }, "users", "bob"))
-      .write(
-        await s.sign("update:user", { age: { _$: ["inc"] } }, "users", "bob"),
-      )
+    const db = wdb(getKV())
+    await db.write(await s.sign("init", init_query))
+    await db.write(await s.sign(...users_query))
+    await db.write(
+      await s.sign("set:user", { name: "Bob", age: 4 }, "users", "bob"),
+    )
+    await db.write(
+      await s.sign("update:user", { age: { _$: ["inc"] } }, "users", "bob"),
+    )
     assert.equal((await db.get("users", "bob").val()).age, 5)
   })
 
   it("should batch", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
-    const wkv = getKV()
-    const db = wdb(wkv)
-      .write(await s.sign("init", init_query))
-      .write(await s.sign(...users_query))
-      .write(
-        await s.sign(
-          "batch",
-          ["set:user", bob, "users", "bob"],
-          ["set:user", alice, "users", "alice"],
-          ["update:user", { name: "Bobby" }, "users", "bob"],
-        ),
-      )
+    const db = wdb(getKV())
+    await db.write(await s.sign("init", init_query))
+    await db.write(await s.sign(...users_query))
+    await db.write(
+      await s.sign(
+        "batch",
+        ["set:user", bob, "users", "bob"],
+        ["set:user", alice, "users", "alice"],
+        ["update:user", { name: "Bobby" }, "users", "bob"],
+      ),
+    )
     assert.deepEqual(await db.get("users").val(), [alice, { name: "Bobby" }])
   })
 
@@ -149,27 +157,27 @@ describe("WeaveDB Core", () => {
     const s = new sign({ jwk, id: "db-1" })
     const wkv = getKV()
     const db = wdb(wkv)
-      .write(await s.sign("init", init_query))
-      .write(await s.sign(...users_query))
-      .write(
-        await s.sign(
-          "batch",
-          ["set:user", bob, "users", "bob"],
-          ["set:user", alice, "users", "alice"],
-          ["set:user", mike, "users", "mike"],
-          ["set:user", beth, "users", "beth"],
-        ),
-      )
-      .write(
-        await s.sign(
-          "addIndex",
-          [
-            ["age", "desc"],
-            ["name", "asc"],
-          ],
-          "users",
-        ),
-      )
+    await db.write(await s.sign("init", init_query))
+    await db.write(await s.sign(...users_query))
+    await db.write(
+      await s.sign(
+        "batch",
+        ["set:user", bob, "users", "bob"],
+        ["set:user", alice, "users", "alice"],
+        ["set:user", mike, "users", "mike"],
+        ["set:user", beth, "users", "beth"],
+      ),
+    )
+    await db.write(
+      await s.sign(
+        "addIndex",
+        [
+          ["age", "desc"],
+          ["name", "asc"],
+        ],
+        "users",
+      ),
+    )
     assert.deepEqual(await db.get("users", ["age", "desc"], ["name"]).val(), [
       beth,
       mike,
@@ -194,17 +202,16 @@ describe("WeaveDB Core", () => {
   it("should get/add/set/update/upsert/del", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
-    const wkv = getKV()
-    const db = wdb(wkv)
-      .write(await s.sign("init", init_query))
-      .write(await s.sign(...users_query))
-      .write(await s.sign("set:user", bob, "users", "bob"))
-      .write(await s.sign("set:user", alice, "users", "alice"))
-      .write(await s.sign("add:user", mike, "users"))
-      .write(await s.sign("add:user", beth, "users"))
-      .write(await s.sign("del:user", "users", "bob"))
-      .write(await s.sign("update:user", { age: 20 }, "users", "alice"))
-      .write(await s.sign("upsert:user", john, "users", "john"))
+    const db = wdb(getKV())
+    await db.write(await s.sign("init", init_query))
+    await db.write(await s.sign(...users_query))
+    await db.write(await s.sign("set:user", bob, "users", "bob"))
+    await db.write(await s.sign("set:user", alice, "users", "alice"))
+    await db.write(await s.sign("add:user", mike, "users"))
+    await db.write(await s.sign("add:user", beth, "users"))
+    await db.write(await s.sign("del:user", "users", "bob"))
+    await db.write(await s.sign("update:user", { age: 20 }, "users", "alice"))
+    await db.write(await s.sign("upsert:user", john, "users", "john"))
     assert.deepEqual(await db.get("users", "alice").val(), {
       ...alice,
       age: 20,
@@ -471,7 +478,7 @@ describe("Server", () => {
     hbeam.kill()
   })
 
-  it.only("should run a server", async () => {
+  it("should run a server", async () => {
     const port = 10001
     const port2 = 6364
     const hbeam = await new HyperBEAM({ port }).ready()

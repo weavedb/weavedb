@@ -46,10 +46,15 @@ const build = ({
 
       methods.write = (currentKv, msg, _opt) => {
         try {
-          of({ kv: currentKv, msg, opt: { ...opt, ..._opt } })
+          const { state, msg: msg2 } = of({
+            kv: currentKv,
+            msg,
+            opt: { ...opt, ..._opt },
+          })
             .map(init)
             .chain(_write.fn())
-          return currentKv
+            .val()
+          return { ...state, msg: msg2 }
         } catch (e) {
           console.log(e)
           currentKv.reset()
@@ -65,7 +70,7 @@ const build = ({
               of({
                 kv: currentKv,
                 msg,
-                opt: { ...opt, ..._opt, cb: () => cb(currentKv) },
+                opt: { ...opt, ..._opt, cb },
               })
                 .map(init)
                 .chain(_write.fn())

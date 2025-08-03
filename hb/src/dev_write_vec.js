@@ -77,8 +77,10 @@ const writer = {
 }
 
 function write_vec({ state, msg, env: { no_commit, kv, cb } }) {
+  let result = null
   if (writer[state.opcode]) of(arguments[0]).chain(writer[state.opcode].fn())
-  if (no_commit !== true) kv.commit(msg, cb, state)
+  if (no_commit !== true) result = kv.commit(msg, cb, state)
+  state.result = result
   return arguments[0]
 }
 

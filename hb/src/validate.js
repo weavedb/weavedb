@@ -101,7 +101,7 @@ const buildBundle = async changes => {
 }
 
 let deltas = {}
-const getKV = ({ jwk, pid, hb, dbpath }) => {
+const getKV = ({ jwk, pid, hb, dbpath, type }) => {
   io ??= open({ path: dbpath })
   let addr = null
   return kv(io, async c => {
@@ -115,7 +115,12 @@ const getKV = ({ jwk, pid, hb, dbpath }) => {
         let dir = false
         if (k.split("/")[0] === "_") {
           dir = true
-          d.cl[k] = { index: d.cl[k].index }
+          let clk = { index: d.cl[k].index }
+          // sql requires schema to recover and process zkp
+          if (type === "sql" && !/^_/.test(k.split("/")[1]) && d.cl[k].schema) {
+            clk.schema = d.cl[k].schema
+          }
+          d.cl[k] = clk
         }
         if (dir || !/^_/.test(k.split("/")[0])) {
           let delta = null
@@ -162,7 +167,7 @@ const validate = async ({
   let i = 0
   let from = 0
   let db = null
-  const wkv = getKV({ jwk, hb, dbpath, pid })
+  const wkv = getKV({ jwk, hb, dbpath, pid, type })
   if (type === "vec") {
     const _vec = await lancedb.connect(`${dbpath}-${pid}.vec`)
     db = await vec(wkv, { no_commit: true, sql: _vec })

@@ -71,7 +71,7 @@ const validateDB = async ({ hbeam, pid, hb, jwk }) => {
 }
 
 const checkZK = async ({ pid, hb, sql }) => {
-  const zkp = await zkjson({ pid, hb, dbpath: genDir(), sql })
+  const zkp = await zkjson({ pid, hb, dbpath: genDir(), sql, port: 6365 })
   await wait(5000)
   const proof = await zkp.proof({ dir: "users", doc: "1", path: "name" })
   console.log(proof)
@@ -81,26 +81,25 @@ const checkZK = async ({ pid, hb, sql }) => {
 }
 
 describe("WeaveSQL", () => {
-  it.only("should init", async () => {
+  it("should init", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "my-sql" })
     const rand = Math.floor(Math.random() * 100000)
     const _sql = new DatabaseSync(`.db/sql.${rand})}`)
-    const db = await sql(getKV({ dbpath: `.db/kv.${rand}` }), { sql: _sql })
-      .write(await s.sign("init", init_query))
-      .write(await s.sign("sql", create))
-      .write(await s.sign("sql", insert))
-      .write(await s.sign("sql", insert2))
-      .write(await s.sign("sql", update))
-      .write(await s.sign("sql", del))
-      .write(await s.sign("sql", insert))
+    const db = sql(getKV({ dbpath: `.db/kv.${rand}` }), { sql: _sql })
+    await db.write(await s.sign("init", init_query))
+    await db.write(await s.sign("sql", create))
+    await db.write(await s.sign("sql", insert))
+    await db.write(await s.sign("sql", insert2))
+    await db.write(await s.sign("sql", update))
+    await db.write(await s.sign("sql", del))
+    await db.write(await s.sign("sql", insert))
     assert.deepEqual(await db.sql("SELECT * from users").val(), [
       { name: "Bob", age: 24, id: 3 },
     ])
   })
   it("should validate HB WAL", async () => {
-    const { node, pid, request, hbeam, jwk, hb } = await deployHB({
-      port: 10005,
+    const { node, pid, hbeam, jwk, hb } = await deployHB({
       type: "sql",
     })
     const _hb = new HB({ url: "http://localhost:6364", jwk })
