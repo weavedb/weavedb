@@ -7,7 +7,7 @@ const queue = wdb => {
       while (qs.length > 0) {
         const { resolve, args } = qs.shift()
         try {
-          const result = await wdb.write(...args)
+          const result = await wdb.write(...args).val()
           resolve({ success: true, err: null, result })
         } catch (e) {
           resolve({
