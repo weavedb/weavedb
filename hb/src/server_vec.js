@@ -177,6 +177,7 @@ const server = async ({
             res.json({
               success: false,
               error: "only node admin can add instances",
+              result: null,
             })
           } else {
             console.log(`initializing a new db: ${pid}`)
@@ -194,17 +195,22 @@ const server = async ({
           } else {
             const _res = await dbs[pid].pwrite(req)
             if (_res?.success) {
-              res.json({ success: true, query })
+              res.json({ success: true, query, result: _res.result })
             } else {
-              res.json({ success: false, error: _res.err, query })
+              res.json({ success: false, error: _res.err, query, result: null })
             }
           }
         }
       } catch (e) {
-        res.json({ success: false, query, error: e.toString() })
+        res.json({ success: false, query, error: e.toString(), result: null })
       }
     } else {
-      res.json({ success: false, query })
+      res.json({
+        success: false,
+        query,
+        error: "invalid signature",
+        result: null,
+      })
     }
   })
 

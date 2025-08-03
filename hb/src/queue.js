@@ -7,10 +7,14 @@ const queue = wdb => {
       while (qs.length > 0) {
         const { resolve, args } = qs.shift()
         try {
-          await wdb.write(...args)
-          resolve({ success: true, err: null })
+          const result = await wdb.write(...args)
+          resolve({ success: true, err: null, result })
         } catch (e) {
-          resolve({ success: false, err: e?.toString?.() ?? true })
+          resolve({
+            success: false,
+            err: e?.toString?.() ?? true,
+            result: null,
+          })
         }
       }
       on = false

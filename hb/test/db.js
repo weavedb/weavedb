@@ -63,7 +63,7 @@ const getKV = () => {
 }
 
 describe("WeaveDB Core", () => {
-  it.only("should return write result", async () => {
+  it("should return write result", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
     const db = wdb(getKV())
@@ -71,7 +71,7 @@ describe("WeaveDB Core", () => {
     assert.equal(res.nonce, "1")
   })
 
-  it.only("should cget and pagenate", async () => {
+  it("should cget and pagenate", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
     const db = wdb(getKV())
