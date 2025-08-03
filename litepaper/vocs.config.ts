@@ -33,8 +33,8 @@ export default defineConfig({
           link: "/litepaper/overview",
         },
         {
-          text: "Decentralized Log-Structured Engine",
-          link: "/litepaper/log-structured-storage",
+          text: "Decentralized LSM Engine",
+          link: "/litepaper/lsm-engine",
         },
         {
           text: "Modular Database",

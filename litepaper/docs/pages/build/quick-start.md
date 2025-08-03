@@ -649,7 +649,7 @@ async function deploy() {
   return (zkdb = await ZKDB.deploy(verifierDB.target, committer.address))
 }
 
-describe("MyRollup", function () {
+describe("ZKDB", function () {
   this.timeout(0)
   it("should query WeaveDB from Solidity", async function () {
     const zkdb = await loadFixture(deploy)
@@ -672,4 +672,32 @@ describe("MyRollup", function () {
 
 ## Query from AOS Processes
 
-You can query WeaveDB from any AOS Lua processes.
+You can query WeaveDB from any AOS Lua processes. We will use [WAO SDK](https://docs.wao.eco/api/ao) for simplicity.
+
+AOS processes can `Send` a message with `Query` action to `receive()` from the WeaveDB validation process.
+
+:::info
+Currently, AOS processes can only read from WeaveDB. Writing to WeaveDB from AOS processes is under development. It was not our initial focus, since writing from AOS processes (L1) is significantly slower than direct interactions with the rollup node (L2).
+:::
+
+```js
+import { AO } from "wao"
+
+const lua_script = `
+Handlers.add("Query", "Query", function (msg)
+  local data = Send({ 
+    Target = msg.DB, 
+	Action = "Query", 
+	Query = msg.Query
+  }).receive().Data
+  msg.reply({ Data = data })
+end)`
+
+const ao = await new AO({ module_type: "mainnet", hb: hb_url }).init(jwk)
+const { p } = await ao.deploy({ src_data: lua_script })
+const data = await p.m("Query", {
+  DB: validation_pid,
+  Query: JSON.stringify(["posts"]),
+})
+console.log(JSON.parse(data))
+```

@@ -1,8 +1,8 @@
-# Decentralized Log-Structured Engine
+# Decentralized Log-Structured-Merge Engine
 
 ![modular.excalidraw](/images/architecture.png)
 
-WeaveDB is a decentralized, log-structured storage engine built on Arweave for permanent storage and the AO Core Protocol for verifiable compute.
+WeaveDB is a decentralized, log-structured-merge (LSM) storage engine built on Arweave for permanent storage and the AO Core Protocol for verifiable compute.
 
 Modern databases achieve high performance by using a log-structured storage engine design: writes are first stored in an in-memory memtable, concurrently written to a write-ahead log (WAL), then flushed to SSTables on disk, with periodic compaction for space efficiency.
 

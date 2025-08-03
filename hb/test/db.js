@@ -29,7 +29,6 @@ import {
   sign,
   deployHB,
 } from "./test-utils.js"
-
 import {
   put,
   mod,
@@ -567,7 +566,7 @@ const validateDB = async ({ hbeam, pid, hb, jwk }) => {
 }
 
 describe("Validator", () => {
-  it.only("should validate HB WAL", async () => {
+  it("should validate HB WAL", async () => {
     const { node, pid, hbeam, jwk, hb } = await deployHB({})
     const _hb = new HB({ url: "http://localhost:6364", jwk })
     let { nonce } = await setup({ pid, request: _hb })
