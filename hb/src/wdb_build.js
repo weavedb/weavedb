@@ -1,4 +1,4 @@
-import { pof, of, ka, dev, pdev } from "./monade.js"
+import { pof, of, ka, dev, pdev } from "monade"
 
 const _store = _kv => {
   const get = (dir, doc) => _kv.get(`${dir}/${doc}`)

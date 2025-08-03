@@ -1,4 +1,4 @@
-import { of } from "./monade.js"
+import { of } from "monade"
 import { keys, uniq, concat, compose, is, isNil, includes } from "ramda"
 import _fpjson from "fpjson-lang"
 const fpjson = _fpjson.default || _fpjson

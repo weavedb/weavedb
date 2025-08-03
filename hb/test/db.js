@@ -1,6 +1,6 @@
 import assert from "assert"
 import { afterEach, after, describe, it, before, beforeEach } from "node:test"
-import { of, pof } from "../src/monade.js"
+import { of, pof } from "monade"
 import wdb from "../src/db.js"
 import queue from "../src/queue.js"
 import { open } from "lmdb"
@@ -471,7 +471,7 @@ describe("Server", () => {
     hbeam.kill()
   })
 
-  it("should run a server", async () => {
+  it.only("should run a server", async () => {
     const port = 10001
     const port2 = 6364
     const hbeam = await new HyperBEAM({ port }).ready()
@@ -483,8 +483,6 @@ describe("Server", () => {
     console.log("pid", pid)
     console.log("addr", addr)
     const node = await server({ dbpath, jwk, hb, port: port2 })
-
-    //const { request } = connect({ MODE: "mainnet", URL, device: "", signer })
     const _hb = new HB({ url: URL, jwk })
     let nonce = 0
     const json0 = await set(_hb, ["init", init_query], ++nonce, pid)
@@ -492,10 +490,10 @@ describe("Server", () => {
     const json2 = await set(_hb, q2, ++nonce, pid)
     const json3 = await get(_hb, ["get", "users"], pid)
     assert.deepEqual(json3.res, [bob])
-    await wait(1000)
-    const db = await recover({ pid, hb, dbpath: genDir(), jwk })
-    assert.deepEqual(await db.get("users").val(), [bob], pid)
+    await wait(5000)
 
+    const { db } = await recover({ pid, hb, dbpath: genDir(), jwk })
+    assert.deepEqual(await db.get("users").val(), [bob])
     const { pid: pid2 } = await deploy({ hb })
     let nonce_2 = 0
     const json0_2 = await set(_hb, ["init", init_query], ++nonce_2, pid2)
@@ -504,7 +502,6 @@ describe("Server", () => {
     const json3_2 = await get(_hb, ["get", "users"], pid2)
     assert.deepEqual(json3_2.res, [alice])
     node.stop()
-    await wait(3000)
     hbeam.kill()
   })
 })

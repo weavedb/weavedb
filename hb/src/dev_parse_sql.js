@@ -1,4 +1,4 @@
-import { of } from "./monade.js"
+import { of } from "monade"
 import sql_parser from "node-sql-parser"
 const _parser = new sql_parser.Parser()
 

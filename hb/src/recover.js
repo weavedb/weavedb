@@ -10,7 +10,7 @@ const recover = async ({ pid, jwk, dbpath, hb }) => {
   let to = 99
   let res = await getMsgs({ pid, hb })
   const io = open({ path: `${dbpath}/${pid}` })
-  let height = io.get("__wal__/height")
+  let height = io.get("__meta__/height") ?? 0
   console.log(`recover: ${pid}, height: ${height}`)
   const kv2 = getKV2({ jwk, hb, dbpath, pid })
   db = wdb(kv2)
@@ -33,6 +33,7 @@ const recover = async ({ pid, jwk, dbpath, hb }) => {
           try {
             if (i >= height) {
               db.write(v)
+              height = i
             } else {
               console.log("exists", i, "<", height)
             }
@@ -43,6 +44,7 @@ const recover = async ({ pid, jwk, dbpath, hb }) => {
         }
       }
     }
+    if (i > height) io.put("__meta__/height", i)
     from += 100
     to += 100
     res = await getMsgs({ pid, hb, from, to })
