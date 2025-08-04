@@ -33,8 +33,17 @@ export default function Home() {
     if (block_from) {
       to = block_from - 1
     } else {
-      const now = await hb2.now({ pid: router.query.id })
-      to = now?.["at-slot"] ?? 0
+      try {
+        const { current } = await hb2.slot({ pid: router.query.id })
+        to = current
+      } catch (e) {
+        try {
+          const now = await hb2.now({ pid: router.query.id })
+          to = now?.["at-slot"] ?? 0
+        } catch (e) {
+          to = 9
+        }
+      }
     }
     from = Math.max(0, to - limit + 1)
     const { edges } = await hb2.messages({ pid: router.query.id, from, to })

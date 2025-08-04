@@ -2,16 +2,23 @@ import { getMsgs } from "./server-utils.js"
 import express from "express"
 import cors from "cors"
 import bodyParser from "body-parser"
-
+import abi from "./zkdb_ab.js"
 import { isNil, isEmpty } from "ramda"
 import { resolve } from "path"
+import {
+  ethers,
+  Wallet,
+  getDefaultProvider,
+  Contract,
+  JsonRpcProvider,
+} from "ethers"
 let zkhash = null
 import { open } from "lmdb"
 import { DB as ZKDB } from "zkjson"
 let zkdb = null
 let cols = {}
 let io = null
-
+let io_hb = null
 import { json, encode, Encoder, decode, Decoder } from "arjson"
 let wkv = io
 function frombits(bitArray) {
@@ -105,6 +112,7 @@ function toInsert(schema, data, primary = "id") {
 
 let schemas = {}
 const decodeBuf = async (buf, sql) => {
+  let update = false
   if (!zkdb) {
     zkdb = new ZKDB({
       wasm: resolve(import.meta.dirname, "circom/db/index_js/index.wasm"),
@@ -147,10 +155,12 @@ const decodeBuf = async (buf, sql) => {
     if (!(dir === "_" && isNil(data))) await io.put(v[0], data)
     if (dir === "_" && !isNil(data?.index) && isNil(cols[doc])) {
       cols[doc] = data.index
+      update = true
       await zkdb.addCollection(data.index)
     }
     try {
       await zkdb.insert(cols[dir], doc, data)
+      update = true
       console.log("added to zk tree", dir, doc, data)
       //const hash = zkdb.tree.F.toObject(zkdb.tree.root).toString()
     } catch (e) {
@@ -158,6 +168,7 @@ const decodeBuf = async (buf, sql) => {
       console.log("zk error", data)
     }
   }
+  return update
 }
 
 const startServer = ({ port, proof }) => {
@@ -200,20 +211,55 @@ const startServer = ({ port, proof }) => {
 
 let i = 0
 let from = 0
-let height = null
+let height = -1
+let committed_height = -1
 let server = null
 // preserve zkdb state somehow and continue
-const zkjson = async ({ dbpath, hb, pid, sql, port }) => {
-  if (height) {
-    from = height + 1
-    i = height + 1
-  }
-  let to = from + 99
-  let res = await getMsgs({ pid, hb, from, to })
+const zkjson = async ({
+  dbpath,
+  hb,
+  pid,
+  sql,
+  port,
+  dbpath_hb,
+  commit,
+  alchemy_key,
+  priv_key,
+}) => {
   io ??= open({ path: dbpath })
+  io_hb ??= open({ path: dbpath_hb })
+  const exists = io_hb.get("height") ?? -1
+  if (committed_height === -1) {
+    committed_height = io_hb.get("committed_height") ?? -1
+  }
+  let res = null
+  let to = 0
+  let plus = 100
+  if (exists > height) {
+    plus = 1
+    res = { assignments: {} }
+    for (let i = height + 1; i <= exists; i++) {
+      res.assignments[Number(i).toString()] = io_hb.get(["data", i])
+      to = i
+      plus += 1
+    }
+  }
+  if (res === null) {
+    if (height) {
+      from = height + 1
+      i = height + 1
+    }
+    to = from + 99
+
+    res = await getMsgs({ pid, hb, from, to })
+  }
+  let update = false
   while (!isEmpty(res.assignments)) {
     for (let k in res.assignments ?? {}) {
       const m = res.assignments[k]
+      if (io_hb) {
+        io_hb.put(["data", m.slot], m)
+      }
       if (m.slot === 0) {
         let from = null
         for (const k in m.body.commitments) {
@@ -227,13 +273,15 @@ const zkjson = async ({ dbpath, hb, pid, sql, port }) => {
         if (m.body.zkhash) {
           zkhash = m.body.zkhash
           const buf = Buffer.from(m.body.data, "base64")
-          await decodeBuf(buf, sql)
+          if (await decodeBuf(buf, sql)) update = true
         }
       }
-      height = +k
+      height = m.slot
     }
-    from += 100
-    to += 100
+    io_hb.put("height", height)
+    from += plus
+    to = from + 100
+    console.log("height", height, "from:", from, "to:", to)
     res = await getMsgs({ pid, hb, from, to })
   }
   const proof = async ({ dir, doc, path, query }) => {
@@ -250,7 +298,23 @@ const zkjson = async ({ dbpath, hb, pid, sql, port }) => {
     return await zkdb.genProof(params)
   }
   if (port && !server) server = startServer({ port, proof })
-  return { server, proof }
+  if (update && commit && committed_height < height) {
+    console.log("committing hash...", commit)
+    const provider = new JsonRpcProvider(
+      `https://eth-sepolia.g.alchemy.com/v2/${alchemy_key}`,
+    )
+    const wallet = new Wallet(priv_key, provider)
+    const contract = new ethers.Contract(commit, abi, wallet)
+    const hash = zkdb.tree.F.toObject(zkdb.tree.root).toString()
+    const tx = await contract.commitRoot(hash)
+    const receipt = await tx.wait()
+    if (receipt.status) {
+      committed_height = height
+      console.log("hash committed!!", hash)
+      io_hb.put("committed_height", committed_height)
+    }
+  }
+  return { server, proof, update }
 }
 
 export default zkjson

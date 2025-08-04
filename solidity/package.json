@@ -5,7 +5,9 @@
     "hardhat": "^2.26.1"
   },
   "dependencies": {
+    "wao": "^0.35.2",
     "wdb-sdk": "^0.0.7",
-    "zkjson": "^0.6.0"
+    "yargs": "^17.7.2",
+    "zkjson": "^0.6.3"
   }
 }

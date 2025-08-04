@@ -10,7 +10,10 @@ let {
   port = 6365,
   hb = `http://localhost:10001`,
   db = ".db/zk",
-} = yargs(process.argv.slice(2)).argv
+  commit,
+  alchemy_key,
+  priv_key,
+} = yargs(process.argv.slice(2)).string("commit").argv
 let zkp = null
 const query = async (hb, ...q) => {
   return (
@@ -31,9 +34,18 @@ const check = async opt => {
   setTimeout(() => check(opt), 10000)
 }
 const main = async () => {
-  const dbpath = resolve(process.cwd(), db, vid)
+  const dbpath = resolve(process.cwd(), db, "db", vid)
+  const dbpath_hb = resolve(process.cwd(), db, "wal", vid)
   console.log(`dbpath: ${dbpath}`)
-  const opt = { pid: vid, hb, dbpath }
+  const opt = {
+    pid: vid,
+    hb,
+    dbpath,
+    dbpath_hb,
+    commit,
+    alchemy_key,
+    priv_key,
+  }
   console.log(`vid: ${vid}`)
   check(opt)
 }

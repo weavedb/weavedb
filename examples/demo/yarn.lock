@@ -3129,12 +3129,11 @@ wasm-brotli@^2.0.2:
   resolved "https://registry.yarnpkg.com/wasm-brotli/-/wasm-brotli-2.0.2.tgz#f5317afb0d3e2e5fe90a66b6d61e42939284f1c7"
   integrity sha512-DgjRlpZz9z5br4TjQHSlDHRF9NIuGXHUj3AqO08koDCXz7EYzmPDb7T/6oar5UKLYgPp9Yxc2ImGpx4BMFwbNQ==
 
-wdb-sdk@^0.0.7:
-  version "0.0.7"
-  resolved "https://registry.yarnpkg.com/wdb-sdk/-/wdb-sdk-0.0.7.tgz#32b28d8dc86352184b5de8124184cef8ad4f3ee4"
-  integrity sha512-Kh6od4g3rhCIjawekkVDS0WifQjdonY32d7gbJCEPEc4389nSr+16yN1JWd9aYqiJJaJm/l41PgyC5aUGECPIg==
+wdb-sdk@^0.0.8:
+  version "0.0.8"
+  resolved "https://registry.yarnpkg.com/wdb-sdk/-/wdb-sdk-0.0.8.tgz#6181cb687deeb021fcfe2769dc232bd7a499f7a6"
+  integrity sha512-Eh9G1BekDcU9c+MmGkpAyzB8X2/zn9c05O4WASlF0FX+s06OvLt8beQgLm5jYJ5hCV6CbnhsIkngkrrqW+Jzrg==
   dependencies:
-    "@babel/plugin-transform-modules-commonjs" "^7.24.8"
     wao "^0.35.0"
 
 weak-lru-cache@^1.2.2:
