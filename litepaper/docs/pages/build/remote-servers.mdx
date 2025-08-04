@@ -1,0 +1,156 @@
+# Setting Up Remote Server Domains
+
+:::info
+Modern browsers block communications between `http` and `https`. To provide public services, you need to set up remote domains with SSL certificates.
+:::
+
+Assuming you are on Ubuntu22, you can set up remote domains using `nginx` and `certbot`.
+
+Install necessary packages with `apt-get`.
+
+```bash
+sudo apt-get update
+sudo apt-get install nginx certbot python3-certbot-nginx
+```
+Let's proxy `https://hb.wdb.ae:10002` to `http://localhost:10001`.
+
+Make sure `hb` points to your remote server IP with an `A` record in the DNS settings.
+
+Also, make sure the ports `10001`, `10002`, and `80` are open with your cloud service.
+
+First, you need to open port `80` for the certbot verifications.
+
+```bash
+sudo nano /etc/nginx/sites-available/certbot-verification
+```
+
+```nginx [/etc/nginx/sites-available/certbot-verification]
+server {
+    listen 80;
+    server_name hb.wdb.ae;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 404;
+    }
+}
+```
+
+Enable the site.
+
+```bash
+sudo ln -s /etc/nginx/sites-available/certbot-verification /etc/nginx/sites-enabled/
+sudo mkdir -p /var/www/certbot
+sudo nginx -t
+sudo systemctl restart nginx
+```
+
+Then create a configuration file for `hb.wdb.ae`, too.
+
+```bash
+sudo nano /etc/nginx/sites-available/hb.wdb.ae
+```
+
+```nginx [/etc/nginx/sites-available/hb.wdb.ae]
+server {
+    listen 80;
+    server_name hb.wdb.ae;
+    
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+    
+    location / {
+        return 301 https://$host:10002$request_uri;
+    }
+}
+
+server {
+    listen 10002;  # Remove 'ssl' for now
+    server_name hb.wdb.ae;
+    
+    location / {
+        proxy_pass http://localhost:10001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Enable the site.
+
+```bash
+sudo ln -s /etc/nginx/sites-available/hb.wdb.ae /etc/nginx/sites-enabled/
+```
+
+Now, test and restart Nginx.
+
+```bash
+sudo nginx -t
+sudo systemctl restart nginx
+```
+
+Then, get the certificates with `certbot`.
+
+```bash
+sudo certbot --nginx -d hb.wdb.ae
+```
+
+Now manually modify the configuration file.
+
+```bash
+sudo nano /etc/nginx/sites-available/hb.wdb.ae
+```
+
+```nginx [/etc/nginx/sites-available/hb.wdb.ae]
+server {
+    listen 80;
+    server_name hb.wdb.ae;
+    
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+    
+    location / {
+        return 301 https://$host:10002$request_uri;
+    }
+}
+
+server {
+    listen 10002 ssl;
+    server_name hb.wdb.ae;
+    
+    ssl_certificate /etc/letsencrypt/live/hb.wdb.ae/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/hb.wdb.ae/privkey.pem;
+    
+    location / {
+        proxy_pass http://localhost:10001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Test and restart.
+
+```bash
+sudo nginx -t
+sudo systemctl restart nginx
+```
+
+Now, you can access [https://hb.wdb.ae:10002](https://hb.wdb.ae:10002).

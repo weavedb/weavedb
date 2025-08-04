@@ -15,18 +15,25 @@ export default function Home() {
   useEffect(() => {
     void (async () => {
       if (router.query.slot && router.query.url) {
-        const status = await fetch(`${router.query.url}/status`).then(r =>
-          r.json(),
-        )
-        const url = status["wal-url"] ?? "http://localhost:10000"
-        setWalUrl(url)
-        const hb = new HB({ url })
-        const { edges } = await hb.messages({
-          pid: router.query.id,
-          from: router.query.slot,
-          to: router.query.slot,
-        })
-        setTx(edges[0] ?? null)
+        try {
+          const status = await fetch(`${router.query.url}/status`).then(r =>
+            r.json(),
+          )
+          const url =
+            router.query.url === "https://db-demo.wdb.ae:10003"
+              ? "https://hb-demo.wdb.ae:10002"
+              : (status["wal-url"] ?? "http://localhost:10000")
+          setWalUrl(url)
+          const hb = new HB({ url })
+          const { edges } = await hb.messages({
+            pid: router.query.id,
+            from: router.query.slot,
+            to: router.query.slot,
+          })
+          setTx(edges[0] ?? null)
+        } catch (e) {
+          console.log(e)
+        }
       }
     })()
   }, [router])

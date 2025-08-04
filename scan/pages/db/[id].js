@@ -54,13 +54,20 @@ export default function Home() {
   useEffect(() => {
     void (async () => {
       if (router.query.id && router.query.url) {
-        const status = await fetch(`${router.query.url}/status`).then(r =>
-          r.json(),
-        )
-        const url = status["wal-url"] ?? "http://localhost:10000"
-        setWalUrl(url)
-        await getTxs(url)
-        await getBlocks(url)
+        try {
+          const status = await fetch(`${router.query.url}/status`).then(r =>
+            r.json(),
+          )
+          const url =
+            router.query.url === "https://db-demo.wdb.ae:10003"
+              ? "https://hb-demo.wdb.ae:10002"
+              : (status["wal-url"] ?? "http://localhost:10000")
+          setWalUrl(url)
+          await getTxs(url)
+          await getBlocks(url)
+        } catch (e) {
+          console.log(e)
+        }
       }
     })()
   }, [router])

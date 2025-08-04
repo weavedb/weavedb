@@ -99,7 +99,7 @@ export default function Home() {
           <a
             className="transaction-link"
             target="_blank"
-            href={`http://localhost:3000/db/${process.env.NEXT_PUBLIC_DB_ID}/tx/${slot}?url=http://localhost:6364`}
+            href={`${process.env.NEXT_PUBLIC_SCAN_URL}/db/${process.env.NEXT_PUBLIC_DB_ID}/tx/${slot}?url=${process.env.NEXT_PUBLIC_RU_URL}`}
           >
             View Transaction
           </a>
@@ -186,7 +186,7 @@ export default function Home() {
                   setGeneratingProof({ ...generatingProof, [v.id]: true })
                   try {
                     const { zkp, zkhash, dirid } = await fetch(
-                      "http://localhost:6365/zkp",
+                      `${process.env.NEXT_PUBLIC_ZKP_URL}/zkp`,
                       {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },

@@ -14,12 +14,16 @@ export default function Home() {
   useEffect(() => {
     void (async () => {
       if (router.query.slot && router.query.url) {
-        const hb = new HB({ url: router.query.url })
-        const { body } = await hb.get({
-          path: `/wal/${router.query.id}?start=${router.query.slot}&limit=1`,
-        })
-        const { wal } = JSON.parse(body)
-        setTx(wal[0]?.value ?? null)
+        try {
+          const hb = new HB({ url: router.query.url })
+          const { body } = await hb.get({
+            path: `/wal/${router.query.id}?start=${router.query.slot}&limit=1`,
+          })
+          const { wal } = JSON.parse(body)
+          setTx(wal[0]?.value ?? null)
+        } catch (e) {
+          console.log(e)
+        }
       }
     })()
   }, [router])

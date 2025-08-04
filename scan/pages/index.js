@@ -8,6 +8,7 @@ import Main from "../components/Main"
 
 export default function Home() {
   const [nodes, setNodes] = useState([
+    { name: "ZKDB Demo", url: "https://db-demo.wdb.ae:10003" },
     { name: "Localhost", url: "http://localhost:6364" },
   ])
 
