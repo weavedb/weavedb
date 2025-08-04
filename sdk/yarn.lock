@@ -3700,10 +3700,10 @@ vlq@^2.0.4:
   resolved "https://registry.yarnpkg.com/vlq/-/vlq-2.0.4.tgz#6057b85729245b9829e3cc7755f95b228d4fe041"
   integrity sha512-aodjPa2wPQFkra1G8CzJBTHXhgk3EVSwxSWXNPr1fgdFLUb8kvLV1iEb6rFgasIsjP82HWI6dsb5Io26DDnasA==
 
-wao@^0.35.0:
-  version "0.35.0"
-  resolved "https://registry.yarnpkg.com/wao/-/wao-0.35.0.tgz#b00a0b725a8123c7aafd46da1c135cef2822daf4"
-  integrity sha512-zbx01WFpl51u5EmKHp4L9rWA4+qakgSC6BAPSDcrrARZCEs+N5gL0M8hUpnxQDMVBZDIAGVTAOF4DI2PXPB1vg==
+wao@^0.35.2:
+  version "0.35.2"
+  resolved "https://registry.yarnpkg.com/wao/-/wao-0.35.2.tgz#d40cf231d8447f493463980bbce6793c04cdf58d"
+  integrity sha512-7R4+9fqlw3ALFNY5jslNaxNUTnYi5l3AI1ndvBQJfL4Uu/gTZlTsryoKjwTGyEj1n1KSZlDHY/94uWeTxpbvjA==
   dependencies:
     "@bokuweb/zstd-wasm" "^0.0.22"
     "@dha-team/arbundles" "^1.0.1"

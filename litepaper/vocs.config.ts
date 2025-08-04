@@ -86,6 +86,10 @@ export default defineConfig({
           text: "Quick Start",
           link: "/build/quick-start",
         },
+        {
+          text: "Remote Servers",
+          link: "/build/remote-servers",
+        },
         /*{
           text: "WDB SDK",
           link: "/litepaper/wdb-sdk",

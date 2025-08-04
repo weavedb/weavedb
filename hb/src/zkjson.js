@@ -294,8 +294,17 @@ const zkjson = async ({
       id: doc,
     }
     if (query) params.query = query
+    const key = [
+      params.col_id,
+      params.id,
+      params.id,
+      params.query ? JSON.stringify(params.query) : null,
+    ]
+    console.log("generating zkp...")
     console.log(params)
-    return await zkdb.genProof(params)
+    const zkp = io.get(key) ?? (await zkdb.genProof(params))
+    io.put(key, zkp)
+    return zkp
   }
   if (port && !server) server = startServer({ port, proof })
   if (update && commit && committed_height < height) {

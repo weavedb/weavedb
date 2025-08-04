@@ -4,6 +4,7 @@ import { resolve } from "path"
 import yargs from "yargs"
 import { readFileSync } from "fs"
 import { HB } from "wao"
+import { toAddr } from "wao/utils"
 let {
   pid,
   vid,
@@ -32,8 +33,10 @@ const check = async opt => {
 const main = async () => {
   console.log(`pid: ${pid}`)
   const jwk = JSON.parse(readFileSync(resolve(process.cwd(), wallet), "utf8"))
+  console.log(toAddr(jwk.n))
   const _hb = new HB({ jwk, url: hb })
   if (!vid) {
+    console.log("spawning...", hb)
     const { pid: _vid } = await _hb.spawn({
       "execution-device": "weavedb@1.0",
       db: pid,

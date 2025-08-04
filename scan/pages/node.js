@@ -14,10 +14,14 @@ export default function Home() {
   useEffect(() => {
     void (async () => {
       if (router.query.url) {
-        const hb = new HB({ url: router.query.url })
-        const { body } = await hb.get({ path: "/status" })
-        const { processes } = JSON.parse(body)
-        setProcs(processes)
+        try {
+          const hb = new HB({ url: router.query.url })
+          const { body } = await hb.get({ path: "/status" })
+          const { processes } = JSON.parse(body)
+          setProcs(processes)
+        } catch (e) {
+          console.log(e)
+        }
       }
     })()
   }, [router])

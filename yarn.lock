@@ -3446,10 +3446,10 @@ vlq@^2.0.4:
   resolved "https://registry.npmjs.org/vlq/-/vlq-2.0.4.tgz"
   integrity sha512-aodjPa2wPQFkra1G8CzJBTHXhgk3EVSwxSWXNPr1fgdFLUb8kvLV1iEb6rFgasIsjP82HWI6dsb5Io26DDnasA==
 
-wao@^0.34.4:
-  version "0.34.4"
-  resolved "https://registry.yarnpkg.com/wao/-/wao-0.34.4.tgz#1b9e0493d9ef981364ff0442b0431af178b56419"
-  integrity sha512-YwylulL6sDRpp96pFuTTpv5ECN49TzLfhA7WKSGTH8HHvR7LMgyIWsmMixAo0qzv5sXMBlVW262lk4qpprtKsQ==
+wao@^0.35.2, wao@^0.35.3:
+  version "0.35.3"
+  resolved "https://registry.yarnpkg.com/wao/-/wao-0.35.3.tgz#0fe3e832a1137a1aee85461e44de0b6f6617d35c"
+  integrity sha512-rjQ0l2LN5Gan2ovjUUyuzlaD2Sdz2K+UPdT8b6w1fxutPLEj82b/+8uzUCv2jxFQ/7MqZx2ovvqOsZIlhEcb/w==
   dependencies:
     "@bokuweb/zstd-wasm" "^0.0.22"
     "@dha-team/arbundles" "^1.0.1"
@@ -3504,13 +3504,12 @@ wasm-brotli@^2.0.2:
   resolved "https://registry.npmjs.org/wasm-brotli/-/wasm-brotli-2.0.2.tgz"
   integrity sha512-DgjRlpZz9z5br4TjQHSlDHRF9NIuGXHUj3AqO08koDCXz7EYzmPDb7T/6oar5UKLYgPp9Yxc2ImGpx4BMFwbNQ==
 
-wdb-sdk@^0.0.4:
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/wdb-sdk/-/wdb-sdk-0.0.4.tgz#a094de80bac062cbeaf8a81d306fa09921b805fe"
-  integrity sha512-AMbmgkDEpzhWb9Nd6/PkYEzMFJX2E+ScXzKxsi9nX1HdZBJm5K/5f2M4aM8BIuvS1CBK66URqH9S1BIP0lKwyw==
+wdb-sdk@^0.0.9:
+  version "0.0.9"
+  resolved "https://registry.yarnpkg.com/wdb-sdk/-/wdb-sdk-0.0.9.tgz#3bf0b86da59ca31aa399c939b84bd8c3760580d6"
+  integrity sha512-eProWbs7mPYWZ7OWa20Fvdyeekz0xt6vKl7pCuWLzziz4hOa9t0Ojd9NlRkPV+y7EqXgMeQF/+HdvZ/3EVtYpg==
   dependencies:
-    "@babel/plugin-transform-modules-commonjs" "^7.24.8"
-    wao "^0.34.4"
+    wao "^0.35.2"
 
 weak-lru-cache@^1.2.2:
   version "1.2.2"

@@ -147,6 +147,8 @@ yarn dev
 
 Now the explorer is runnint at [localhost:3000](http://localhost:3000).
 
+We have a simple public explorer for the demo at [scan.weavedb.dev](https://scan.weavedb.dev).
+
 ## Building Social App
 
 ### Define Database
@@ -500,7 +502,10 @@ The proof generation takes only a few second on a standard consumer laptop thank
 
 ```bash
 git clone https://github.com/weavedb/weavedb.git
-cd weavedb && yarn && cd hb && yarn && cd ..
+cd weavedb && yarn && cd hb && yarn && mkdir -p src/circom/db/index_js
+curl -L -o src/circom/db/index_0001.zkey "https://firebasestorage.googleapis.com/v0/b/weavedb-8c88c.appspot.com/o/zkp%2Fdb%2Findex_0001.zkey?alt=media&token=96c8ea6c-ea93-4b21-a345-34d28d8dda0a"
+curl -L -o src/circom/db/index_js/index.wasm "https://firebasestorage.googleapis.com/v0/b/weavedb-8c88c.appspot.com/o/zkp%2Fdb%2Findex.wasm?alt=media&token=19d0c4ca-946a-482e-b1bb-61a01c48ba3d"
+cd ..
 yarn zkp --vid VALIDATION_PID
 ```
 
@@ -603,38 +608,6 @@ contract ZKDB is OPRollup {
 You can use one of the existing verifier contracts from the `zkjson` package for testing, but you need to take proper ceremony steps to generate secure verifiers.
 :::
 
-```js
-const hre = require("hardhat")
-
-async function main() {
-  const committer = { address: "0xcD0505F215EFbF9b00C7a1EB39E299E79c4abd31" }
-  const VerifierRU = await hre.ethers.getContractFactory("Groth16VerifierRU")
-  const verifierRU = await VerifierRU.deploy()
-  await verifierRU.deployed()
-  console.log(verifierRU.address)
-
-  const VerifierDB = await hre.ethers.getContractFactory("Groth16VerifierDB")
-  const verifierDB = await VerifierDB.deploy()
-  await verifierDB.deployed()
-  console.log(verifierDB.address)
-
-  const MyRU = await hre.ethers.getContractFactory("SimpleOPRU")
-  const myru = await MyRU.deploy(
-    verifierRU.address,
-    verifierDB.address,
-    committer.address,
-  )
-  await myru.deployed()
-  console.log(myru.address)
-  return
-}
-
-main().catch(error => {
-  console.error(error)
-  process.exitCode = 1
-})
-```
-
 Now, you can commit `zkhash`, generate zk proofs from a zk prover node, then query WeaveDB from Solidity with the `zkp`.
 
 
@@ -676,14 +649,24 @@ describe("ZKDB", function () {
 })
 ```
 
+[This ZKDB demo](https://zkdb-demo.vercel.app/) demonstrates a simplified version of the zk proof generating process. It uses the `NORU` (No Rollup) contract to omit the root hash commitments to bypass the need of keeping 2 chains in sync.
+
+:::warning
+This is only for a simple demonstration purpose, and not a secure way to verify data in general. The root hash matching is required to keep track of the latest state unless the data is only immutable and incremental as in this simple demo.
+:::
+
 ## Query from AOS Processes
 
-You can query WeaveDB from any AOS Lua processes. We will use [WAO SDK](https://docs.wao.eco/api/ao) for simplicity.
+You can query WeaveDB from any AO processes including AOS Lua scripts. We will use [WAO SDK](https://docs.wao.eco/api/ao) for simplicity.
+
+:::info
+WeaveDB solves issues of the WASM memory size limit for AOS and it also provides shared state for multiple AOS processes. Shared databases are more than often required if you are building any serious applications.
+:::
 
 AOS processes can `Send` a message with `Query` action to `receive()` from the WeaveDB validation process.
 
 :::info
-Currently, AOS processes can only read from WeaveDB. Writing to WeaveDB from AOS processes is under development. It was not our initial focus, since writing from AOS processes (L1) is significantly slower than direct interactions with the rollup node (L2).
+Currently, AOS processes can only read from WeaveDB. Writing to WeaveDB from AOS processes is under development. It was not our initial focus since writing from AOS processes (L1) is significantly slower than direct interactions with the rollup node (L2).
 :::
 
 ```js
