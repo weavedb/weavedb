@@ -6,12 +6,9 @@ const { expect } = require("chai")
 const { DB } = require("wdb-sdk")
 
 const jwk = JSON.parse(
-  readFileSync(
-    resolve(__dirname, "../../dev/weavedb/HyperBEAM/.wallet.json"),
-    "utf8",
-  ),
+  readFileSync(resolve(__dirname, "../../HyperBEAM/.wallet.json"), "utf8"),
 )
-const id = "k10zun9mk4wtrr9jir4ixgo7p6deqphp3twml_arzl4"
+const id = "qst6b-1ce4wrftig7k0ucnmfmy0bnrk3emazaqgijsq"
 const wait = ms => new Promise(res => setTimeout(() => res(), ms))
 async function deploy() {
   const [committer] = await ethers.getSigners()
@@ -19,7 +16,7 @@ async function deploy() {
     "zkjson/contracts/verifiers/verifier_db.sol:Groth16VerifierDB",
   )
   const verifierDB = await VerifierDB.deploy()
-  const ZKDB = await ethers.getContractFactory("ZKDB")
+  const ZKDB = await ethers.getContractFactory("NORU")
   return (zkdb = await ZKDB.deploy(verifierDB.target, committer.address))
 }
 
@@ -36,9 +33,6 @@ describe("MyRollup", function () {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ dir: "posts", doc: post.id, path: "body" }),
     }).then(r => r.json())
-    await zkdb.commitRoot(zkhash)
-    expect(
-      await zkdb.qString([dirid, toIndex(post.id), ...path("body")], zkp),
-    ).to.eql("my first post!")
+    expect(await zkdb.qString(zkp)).to.eql("my first post!")
   })
 })

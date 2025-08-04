@@ -1,3 +1,4 @@
+hardhat.config.js
 circom/
 .env.hyperbeam
 .weavedb
