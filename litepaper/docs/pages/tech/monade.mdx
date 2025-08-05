@@ -1,4 +1,4 @@
-# Monade API - Mathematical Explanation
+# Monade - Mathematical Explanation
 
 ## Core Concepts
 
@@ -17,7 +17,7 @@ A Kleisli arrow is a function of type `a → M b` where `M` is a monad.
 ### 1. **of / pof** - Monad Constructor
 ```
 of : a → M a
-pof : a → P a  (where P is the async monad)
+pof : a → P a  (where P is the async/Promise monad)
 ```
 
 **Example:**
@@ -27,6 +27,10 @@ pof(5)   // Wraps 5 in an async monad: P(5)
 ```
 
 **Mathematical meaning:** The `return` operation that lifts a pure value into the monad.
+
+**Difference between of and pof:**
+- `of` creates a synchronous monad
+- `pof` creates an asynchronous monad (Promise-based), allowing async operations in the chain
 
 ---
 
@@ -38,6 +42,7 @@ map : (a → b) → M a → M b
 **Example:**
 ```javascript
 of(5).map(x => x * 2)  // M(5) → M(10)
+pof(5).map(x => x * 2)  // P(5) → P(10)
 ```
 
 **Mathematical composition:**
@@ -58,7 +63,10 @@ tap : (a → ()) → M a → M a
 of(5).tap(x => console.log(x))  // M(5), logs 5, returns M(5)
 ```
 
-**Mathematical meaning:** Performs side effects without changing the wrapped value.
+**Mathematical meaning:** Performs side effects without changing the wrapped value. It's equivalent to:
+```
+tap f m = m >>= λx. (f x; return x)
+```
 
 ---
 
@@ -79,31 +87,44 @@ of(5).chain(x => of(x * 2))  // M(5) → M(10)
 
 ---
 
-### 5. **to** - Extract with Transformation
-```
-to : (a → b) → M a → b
-```
-
-**Example:**
-```javascript
-of(5).to(x => x * 2)  // M(5) → 10 (unwrapped)
-```
-
-**Mathematical meaning:** Extracts and transforms in one step. Breaks the monad.
-
----
-
-### 6. **val** - Extract Value
+### 5. **val** - Extract Value
 ```
 val : M a → a
+val : P a → Promise a  (for async monads)
 ```
 
 **Example:**
 ```javascript
-of(5).val()  // M(5) → 5
+of(5).val()        // M(5) → 5
+await pof(5).val() // P(5) → Promise(5) → 5
 ```
 
 **Mathematical meaning:** Extracts the wrapped value. Note: This makes our monad "pointed" (not all monads have this).
+
+---
+
+### 6. **fn** - Extract Kleisli Arrow Function
+```
+fn : Arrow a b → (a → M b)
+```
+
+**Example:**
+```javascript
+const arrow = ka()
+  .map(x => x * 2)
+  .map(x => x + 10)
+
+const f = arrow.fn()  // Returns the composed function: a → M b
+f(5)                  // M(20) - applies the arrow to 5
+```
+
+**Mathematical meaning:** The `fn()` method extracts the underlying Kleisli arrow (the composed function) from the arrow builder object. This is necessary because `ka()` and `pka()` return a builder object with chainable methods, not the function itself.
+
+**Why it exists:** The arrow builders (`ka`/`pka`) create a fluent interface for composing functions. The `fn()` method "finalizes" the composition and returns the actual Kleisli arrow that can be applied to values:
+```
+ka() : () → ArrowBuilder
+ArrowBuilder.fn() : () → (a → M b)
+```
 
 ---
 
@@ -111,22 +132,144 @@ of(5).val()  // M(5) → 5
 
 ### Construction
 ```
-ka : () → (a → M a)
-pka : () → (a → P a)
+ka : () → (a → M a)   // Synchronous Kleisli arrow builder
+pka : () → (a → P a)  // Asynchronous Kleisli arrow builder
 ```
 
 ### Operations on Arrows
 ```
 map : (b → c) → (a → M b) → (a → M c)
 chain : (b → M c) → (a → M b) → (a → M c)
+fn : Arrow a b → (a → M b)
+```
+
+**Example with ka (synchronous):**
+```javascript
+const syncArrow = ka()
+  .map(x => x * 2)    // Creates: a → M(2a)
+  .map(x => x + 10)   // Creates: a → M(2a + 10)
+  .fn()               // Converts to usable function
+
+syncArrow(5).val()    // 20
+```
+
+**Example with pka (asynchronous):**
+```javascript
+const asyncArrow = pka()
+  .map(x => x * 2)
+  .map(async x => {
+    await delay(100)
+    return x + 10
+  })
+  .fn()
+
+await asyncArrow(5).val()  // 20 (after delay)
+```
+
+**Key difference:** `pka` handles async operations and returns `P` monads (Promise-based), while `ka` is purely synchronous and returns `M` monads.
+
+---
+
+## Devices (dev/pdev) - Domain-Specific Monads
+
+### What are Devices?
+Devices are specialized monads that can be extended with custom methods. They maintain all monad operations while adding domain-specific functionality.
+
+### Construction
+```
+dev : (Maps, Tos) → (a → Device a)   // Synchronous device
+pdev : (Maps, Tos) → (a → PDevice a) // Asynchronous device
+```
+
+Where:
+- **Maps**: Object of chainable methods that transform and return a new device
+- **Tos**: Object of terminal methods that extract/compute final values
+
+### Example with dev (synchronous):
+```javascript
+// Define custom string manipulation device
+const stringDevice = dev(
+  {
+    // Maps: chainable transformers
+    upper: (str) => str.toUpperCase(),
+    repeat: (str, n) => str.repeat(n),
+    trim: (str) => str.trim()
+  },
+  {
+    // Tos: terminal operations
+    length: (str) => str.length,
+    startsWith: (str, prefix) => str.startsWith(prefix)
+  }
+)
+
+// Usage
+const result = stringDevice("  hello  ")
+  .trim()           // Device("hello")
+  .upper()          // Device("HELLO")
+  .repeat(2)        // Device("HELLOHELLO")
+  .length()         // 10
+
+// Can still use monad operations
+stringDevice("test")
+  .map(s => s + "!")     // Device("test!")
+  .upper()               // Device("TEST!")
+  .val()                 // "TEST!"
+```
+
+### Example with pdev (asynchronous):
+```javascript
+// Define async HTTP device
+const httpDevice = pdev(
+  {
+    // Async maps
+    get: async (url) => await fetch(url),
+    json: async (response) => await response.json(),
+    filter: async (data, predicate) => data.filter(predicate)
+  },
+  {
+    // Async tos
+    count: async (data) => data.length,
+    save: async (data, filename) => await saveToFile(data, filename)
+  }
+)
+
+// Usage
+const users = await httpDevice("https://api.example.com/users")
+  .get()                              // PDevice(Response)
+  .json()                             // PDevice(users[])
+  .filter(user => user.active)       // PDevice(activeUsers[])
+  .count()                            // 42
+```
+
+### Mathematical Properties of Devices
+
+Devices maintain the monad laws while adding custom operations:
+
+1. **Monad laws still apply** to `map`, `chain`, `tap`
+2. **Custom maps** are functorial: `device.customMap(f).customMap(g) ≡ device.customMap(g ∘ f)`
+3. **Conversion**: `device.monad()` returns the underlying monad (`M` or `P`)
+
+---
+
+## Option Handling (opt/popt)
+
+### Purpose
+Safe error handling that converts failing monads to `null` values.
+
+```
+opt : M a → M (a | null)    // Synchronous option
+popt : P a → P (a | null)   // Asynchronous option
 ```
 
 **Example:**
 ```javascript
-const arrow = ka()
-  .map(x => x * 2)    // Creates: a → M(2a)
-  .map(x => x + 10)   // Creates: a → M(2a + 10)
-  .fn()               // Converts to usable function
+// Synchronous
+const safe = opt(of(5).map(x => x / 0))  // M(null) instead of error
+
+// Asynchronous
+const asyncSafe = await popt(
+  pof(url).map(fetch).chain(parseJSON)
+)  // P(null) if fetch or parse fails
 ```
 
 ---
@@ -156,38 +299,65 @@ This is associative, which is why we can chain operations cleanly!
 
 ---
 
-## Cleanest Example
+## Complete Example: Sync vs Async vs Device
 
 ```javascript
-// Pure functions
-const validate = x => x > 0 ? x : 0
-const double = x => x * 2
-const format = x => `Result: ${x}`
+// 1. Synchronous monad
+const syncResult = of(5)
+  .map(x => x * 2)
+  .map(x => x + 10)
+  .val()  // 20
 
-// Monadic pipeline
-const result = of(5)          // M(5)
-  .map(validate)              // M(5)
-  .map(double)                // M(10)
-  .map(format)                // M("Result: 10")
-  .val()                      // "Result: 10"
+// 2. Asynchronous monad
+const asyncResult = await pof(5)
+  .map(x => x * 2)
+  .map(async x => {
+    await delay(100)
+    return x + 10
+  })
+  .val()  // 20
 
-// Kleisli arrow (equivalent)
-const pipeline = ka()         // Creates identity arrow
-  .map(validate)              // a → M(validate(a))
-  .map(double)                // a → M(double(validate(a)))
-  .map(format)                // a → M(format(double(validate(a))))
-  .fn()                       // Extracts the function
+// 3. Kleisli arrow (reusable)
+const pipeline = ka()
+  .map(x => x * 2)
+  .map(x => x + 10)
+  .fn()
 
-const result2 = pipeline(5).val()  // "Result: 10"
+pipeline(5).val()  // 20
+pipeline(10).val() // 30
+
+// 4. Device with custom methods
+const mathDevice = dev(
+  {
+    double: x => x * 2,
+    square: x => x * x,
+    add: (x, n) => x + n
+  },
+  {
+    isEven: x => x % 2 === 0,
+    toString: x => `Result: ${x}`
+  }
+)
+
+mathDevice(5)
+  .double()      // Device(10)
+  .square()      // Device(100)
+  .add(20)       // Device(120)
+  .toString()    // "Result: 120"
 ```
 
-## Key Insight
+## Key Insights
 
-The beauty of this API is that it maintains the monad laws while providing an intuitive interface:
+The beauty of this API is that it:
 
-1. **of** lifts values into the monad
-2. **map** transforms values inside the monad
-3. **chain** sequences monadic computations
-4. **ka/pka** builds reusable monadic functions
+1. **Maintains mathematical rigor** - All monad and functor laws are preserved
+2. **Provides practical utilities** - Async support, custom devices, safe error handling
+3. **Enables composition** - Everything composes cleanly through Kleisli arrows
+4. **Extends gracefully** - Devices allow domain-specific extensions without breaking monad laws
+5. **Separates concerns** - Builder pattern (ka/pka) separates composition from execution
 
-Everything composes cleanly because we're following the mathematical laws of functors and monads!
+The entire system is built on solid category theory foundations while remaining intuitive and practical for real-world use!
+
+## Libraries
+
+- [MonadeJS API Reference](/api/monade)
