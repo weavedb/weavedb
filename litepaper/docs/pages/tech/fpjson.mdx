@@ -17,10 +17,6 @@ WeaveDB has decentralized features such as
 
 Without these features, a web3 database would either be out of control or have only limited use cases. And all these are enabled by FPJSON as the simplest JSON style settings. FPJSON enables highly advanced, and composable functional programming in a simple JSON format, which makes WeaveDB itself the most powerful smart contract sandbox as well.
 
-FPJSON 2.0 has made writing complex logic drastically simpler from [FPJSON 1.0](https://fpjson.weavedb.dev) with syntactic sugar. So to set up a DB instance, you just need to have all these [JSON configuration objects in one place](/docs/get-started/quick-start#write-db-settings), and execute a single-line of the setup command.
-
-That's how simple yet indefinetely powerful the WeaveDB development is.
-
 ## Basic FPJSON Blocks
 
 FPJSON is based upon [Ramda.js](https://ramdajs.com/) which comes from the functional programming ecosystem (I believe it's heavily inspired by [Haskell](https://www.haskell.org/)). You can use most of the [250+ pre-defined Ramda functions](https://fpjson.weavedb.dev/), and compose them in any depth of complexity, but in a simple JSON array format. The biggest advantage of JSON style programming is we can store any logic as a JSON data object as a smart contract state and reuse them to compose with other logic. This is the only viable (yet super powerful) way to dynamically construct, compose and extend logic after smart contract is immutably deployed without deploying a new contract.
@@ -316,45 +312,3 @@ equivalent to `JSON.parse()`.
 #### stringify()
 
 equivalent to `JSON.stringify()`.
-
-## Triggers and Crons
-
-[Triggers](/docs/sdk/triggers) and [Crons](/docs/sdk/crons) also use the same FPJSON, but get a different set of pre-defined variables and helper functions.
-
-### Basic Queries
-
-In addition to `get()`, you have access to the basic queries such as `add()`, `set()`, `update()`, `upsert()`, `delete()`, and `batch()`.
-
-For example, to increment `followers_count` when someone follows someone, you wold set a trigger on `follows` collection like the following.
-
-```js
-{
-  key: "follow",
-  version: 2,
-  on: "create",
-  func: [
-    ["update()", [{ followers_count: db.inc(1) }, "users", "$data.after.to"]]
-  ],
-}
-```
-### Batch
-
-Since batch queries are convenient, `batch()` gets a special treatment. You can pool a query with `toBatch()` or multiple queries with `toBatchAll()`, then all queries sent during the evaluation will be auto batch executed in the end.
-
-```js
-// send single query
-["toBatch()", ["add", {}, "posts"]]
-
-// send multiple query
-["toBatchAll()", [["add", {}, "posts"], ["add",{},"posts"]]
-```
-You can also use `toBatch` and `toBatchAll` in FPJSON blocks without `()`.
-
-```js
-[
-  "when",
-  ["always", true],
-  ["toBatch", ["add", {}, "posts"]],
-  "$some_data_to_trigger",
-]
-```

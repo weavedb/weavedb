@@ -163,9 +163,26 @@ export default defineConfig({
       collapsed: false,
       items: [
         {
-          text: "WDB SDK",
+          text: "wdb-sdk",
           link: "/api/wdb-sdk",
+        },
+	{
+          text: "monade",
+          link: "/api/monade",
+        },
+	{
+          text: "fpjson-lang",
+          link: "/api/fpjson-lang",
+        },
+	{
+          text: "arjson",
+          link: "/api/arjson",
+        },
+	{
+          text: "zkjson",
+          link: "/api/zkjson",
         }
+
       ],
     },/*
     {
