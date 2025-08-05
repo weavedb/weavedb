@@ -69,8 +69,8 @@ export default defineConfig({
           link: "/litepaper/wao",
         },
         {
-          text: "HyperAVS",
-          link: "/litepaper/hyper-avs",
+          text: "WeaveAVS",
+          link: "/litepaper/weave-avs",
         },
         {
           text: "Appendices",
@@ -132,27 +132,35 @@ export default defineConfig({
         },*/
       ],
     },
-    /*{
-      text: "Tutorials",
-      collapsed: true,
+    {
+      text: "Tech Concept",
+      collapsed: false,
       items: [
-        {
-          text: "Building Decentralized X",
-          link: "/tutorials/x-clone",
+	{
+          text: "FPJSON",
+          link: "/tech/fpjson",
         },
         {
-          text: "Building zkOracle",
-          link: "/tutorials/zkoracle",
+          text: "zkJSON",
+          link: "/tech/zkjson",
         },
         {
-          text: "Building RAG for AI",
-          link: "/tutorials/rag",
+          text: "zkDB",
+          link: "/tech/zkdb",
+        },
+        {
+          text: "ARJSON",
+          link: "/tech/arjson",
+        },
+        {
+          text: "Monade",
+          link: "/tech/monade",
         },
       ],
-    },*/
+    },
     {
       text: "API Reference",
-      collapsed: true,
+      collapsed: false,
       items: [
         {
           text: "WDB SDK",

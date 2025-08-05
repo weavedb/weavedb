@@ -1,0 +1,151 @@
+#### zkDB
+
+Once we get zkJSON, we can build a database structure with zkJSON as base building blocks.
+
+A document-based NoSQL database would have collections, and each collection in turn would have a bunch of documents, which are JSONs.
+
+![](/images/zkjson-4.png)
+
+##### Collection
+
+We can use a sparse merkle tree ([SMT](https://docs.iden3.io/getting-started/mt/)) to represent all the document data in a collection with a root hash. SMT is perfect because curcuits cannot handle dynamic tree sizes and SMT can represent a large number of documents efficiently, and any data membership or non-membership can be proven efficiently with a zk proof without the actual merkle proof. This is what enables efficient direct queries to offchain databases from within EVM smart contracts.
+
+![](/images/zkjson-5.png)
+
+Each leaf node will be the [poseidon hash](https://www.poseidon-hash.info/) of zkJSON encoding of the data. To hash 256 * 76 digits, 16 poseidon hashes are hashed together into another poseidon hash. This allows a fairly large JSON size to be proven.
+
+And each leaf node has an index number, so we need to somehow convert the document IDs to numbers without collisions. How many leaf nodes a SMT has depends on the pre-defined depth of the tree. For example, a 32-level SMT can have `2 ** 32 = 4294967296` leaf nodes. The level must be pre-defined at the circuit compile time, so we need to find the right conversion and balance.
+
+Due to this constraint, we only allow 64 characters to keep things compact and efficient, although there can be different optimized setups for your specific use cases. 
+
+- `A-Z` (0 - 25)
+- `a-z` (26 - 51)
+- `0-9` (52 - 61)
+- `-` (62)
+- `_` (63)
+
+Now 2 digits can represent one character with collision free, which means we can have only up to 4 characters in document IDs with a 32-level SMT. The last allowed digit will always have the possibility of overflowing, so we prefix the converted numbers with `1` to differentiate `A` from `AA` (they are both `0` without the prefix `1`).
+
+- `A` = `100`
+- `AA` = `10000`
+- `ABC` = `1000102`
+- `abcd` = `126272829` 
+
+We can of course increase the level to have more characters, but the more levels, the more computation with the circuit, so we need to find the right balance. For instance, to allow 10 characters we need 67 levels of SMT.
+
+- `zk_WeaveDB` = `151366322302647300301` 
+
+You can use `zkjson` to convert the string to an SMT index.
+
+```javascript
+ const { toIndex, fromIndexs } = require("zkjson")
+ 
+ const index = toIndex("zkJSON") // 1513609181413
+ const str = fromIndex(index) // "zkJSON"
+```
+
+Practically a 100-level SMT allows `15` character IDs and `1,267,650,600,228,229,401,496,703,205,376` documents in a collection. It should be sufficient for most applications if the IDs are designed wisely.
+
+One way to have a longer ID length with the same depth is to restrict the allowed characters to less than 31 since `31 * 31 = 961`. In this case 3 digits can represent 2 characters instead of 4 digits representing 2 characters. But we won't cover it here.
+
+- [Collection Circuit](https://github.com/weavedb/zkjson/blob/master/circom/collection/collection.circom)
+
+##### Database
+
+For the database, we can take the exact same approach with the collections. We can use an SMT to represent multiple collection states in a DB with one root hash, and each leaf node will be the merkle root of a collection, which in turn represents the entire documents in the collection. We could give each collection an ID with the same ID-to-index conversion as the documents, however, collection IDs are not as essential as document IDs since document IDs are usually a part of access control rules, but collection IDs are not. We can use an incremental count for collection IDs and no well-structured DB has so many collections as documents. Let's say `2 ** 8 = 256`, so an 8 level SMT can give us 256 collections and it should be more than enough for most applications. If you need alphanumeric IDs for collections, you could map them with numeric indexes offchain (e.g. `0 = FirstCollection`, `1 = AnotherCollection`, `2 = YetAnotherCollection`...). Note that this is different from the deterministic `toIndex / fromIndex` conversion. In this way we can use a smaller tree and keep the circuit small.
+
+![](/images/zkjson-6.png)
+
+Now we can write a circuit to prove a collection root hash, then we can write another circuit to prove a database root hash, which represents multiple collections within the database. This circuit can also prove any value in any JSON document in any collection in a database without revealing the entire JSON data. zkJSON enables this.
+
+- [DB Circuit](https://github.com/weavedb/zkjson/blob/master/circom/db/db.circom)
+
+#### zkRollup
+
+How do we make zkDB secure and queriable from other blockchains? We can write a circuit to prove the merkle tree hash transitions and deploy a Solidity contract to verify those proofs onchain. Fortunately, Circom auto-generates a Solidity verifier for us, so we can use that function in our verifier contract. We need to keep track of the current database root merkle hash as a Solidity contract state.
+
+```solidity
+interface IZKRollup {
+  address public committer;
+  uint public root;
+  function commit (uint[] memory zkp) external returns (uint);
+}
+```
+
+![](/images/zkjson-7.png)
+
+- [Single Query Circuit](https://github.com/weavedb/zkjson/blob/master/circom/query/query.circom)
+- [Batch Rollup Circuit](https://github.com/weavedb/zkjson/blob/master/circom/rollup/rollup.circom)
+
+#### zkQuery
+
+Finally, we can deploy the previous zkDB query circuit verifier as a Solidity contract too, and make it possible to securely query any paths with the right proof. When querying, the Solidity contract must check the DB root hash to verify the queried value against the current database state.
+
+```solidity
+interface IZKQuery {
+  function qNull (uint[] memory path, uint[] memory zkp) external pure returns (bool);
+  function qBool (uint[] memory path, uint[] memory zkp) external pure returns (bool);
+  function qInt (uint[] memory path, uint[] memory zkp) external pure returns (int);
+  function qFloat (uint[] memory path, uint[] memory zkp) external pure returns (uint[3] memory);
+  function qString (uint[] memory path, uint[] memory zkp) external pure returns (string memory);
+  function qRaw (uint[] memory path, uint[] memory zkp) external pure returns (uint[] memory);
+  function qCond (uint[] memory path, uint[] memory cond, uint[] memory zkp) external pure returns (bool);
+}
+```
+
+`path[0]` is a collection index, and `path[1]` is a doc index, then the rest of the path follows.
+
+`qNill` returns `true` only if the value is `null` and otherwise throws an error. And `qFloat` returns the array of encoded numbers without the type prefix ( e.g. `[ 1, 2, 314 ]` ) since Solidity cannot handle float numbers.
+
+`qRaw` returns the raw encoded value for non-primitive data types (array and object), and you can further query the raw value with the `getX` functions. Pass the raw value returned from `qRaw` with the path to query, instead of `zkp` proof.
+
+```solidity
+interface IZKQuery {
+  function getNull (uint[] memory path, uint[] memory raw) external pure returns (bool);
+  function getBool (uint[] memory path, uint[] memory raw) external pure returns (bool);
+  function getInt (uint[] memory path, uint[]  memory raw) external pure returns (int);
+  function getFloat (uint[] memory path, uint[] memory raw) external pure returns (uint[3] memory);
+  function getString (uint[] memory path, uint[] memory raw) external pure returns (string memory);
+}
+```
+
+##### Conditional Operators
+
+`qCond` queries a field with a conditional operator and returns `true` if the condition is met.
+
+- with boolean, number, string : `$gt` `$gte` `$lt` `$lte`
+
+- with any types : `$eq` `$ne` `$in` `$nin`
+
+- with array : `$contains` `$contains_any` `$contains_all` `$contains_none`
+
+```javascript
+const { encodeQuery } = require("zkjson")
+
+const json = { num: 5, arr: [ 1, 2, 3 ]}
+
+// for num field
+const num_gt = encodeQuery([ "$gt", 4 ])
+const num_gte = encodeQuery([ "$gte", 5 ])
+const num_lt = encodeQuery([ "$lt", 6 ])
+const num_lte = encodeQuery([ "$lte", 5 ])
+const num_eq = encodeQuery([ "$eq", 5 ])
+const num_ne = encodeQuery([ "$ne", 7 ])
+const num_in = encodeQuery([ "$in", [ 4, 5, 6 ]])
+const num_nin = encodeQuery([ "$nin", [ 1, 2, 3 ]])
+
+// for arr field
+const arr_contains = encodeQuery([ "$contains", 3 ])
+const arr_contains_any = encodeQuery([ "$contains_any", [ 3, 4, 5 ]])
+const arr_contains_all = encodeQuery([ "$contains_all", [ 2, 3 ]])
+const arr_contains_none = encodeQuery([ "$contains_none", [ 4, 5, 6 ]])
+```
+
+##### Other Structures
+
+You could also write a function to get an array of numbers or a specific data structure, but it's up to your applications what data types to extract, so we will leave it up to you.
+
+![](/images/zkjson-8.png)
+
+- [Simple zkJSON Tutorial](./docs/simple-zkjson.md)
+- [zkDB Rollup Tutorial](./docs/zkdb-rollup.md)
