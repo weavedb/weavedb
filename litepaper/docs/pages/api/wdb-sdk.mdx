@@ -1,0 +1,298 @@
+# WDB SDK
+
+## Installation
+
+```bash
+yarn add wdb-sdk
+```
+
+## Instantiation
+
+```js
+import { DB } from 'wdb-sdk'
+
+const db = new DB({ jwk, url, hb, id })
+```
+
+- `jwk` : signer Arweave wallet JWK
+- `url` : DB rollup server URL (default: `http://localhost:6364`)`
+- `hb` : HyperBEAM WAL node URL (default: `http://localhost:10001`)`
+- `id` : DB ID, don't specify it when spawning a new DB
+
+:::info
+If `jwk` is unspecified in browser environments, [Wander](https://www.wander.app/) will be automatically used.
+:::
+
+### ready()
+
+You can ensure the rollup server is available and ready when instantiating.
+
+```js
+const db = await new DB({ jwk, url, hb }).ready()
+```
+`ready()` will ensure `${url}/status` returns `status="ok"`.
+
+If you are the HyperBEAM node operator, you can also start a rollup node by passing `true` to `ready()`.
+
+```js
+const db = await new DB({ jwk, url, hb }).ready(true)
+```
+
+This will ensure `${hb}/~weavedb@1.0/start` returns `status=true`.
+
+## spawn()
+
+Spawn a new DB instance with `db.spawn()`, which returns a DB ID.
+
+It spawns a new process to record WAL (Write-Ahead Logging) on the HyperBEAM node, then use the process ID to create a new DB instance on the Rollup node. The rollup node automatically bundles up queries and asyncronously dumps them to the HyperBEAM process in the background, while serving users at in-memory speed with cloud-level performance.
+
+```js
+const id = await db.spawn()
+```
+
+## mkdir()
+
+Creating a dir (directory) with `schema`, `auth`, and `name` definitions.
+
+`auth` defines custom query types and their rules such as `set:user` and `del:user`.
+
+```js
+await db.mkdir({
+  name: "users",
+  schema: { type: "object", required: ["name", "age"] },
+  auth: [["set:user,update:user,del:user", [["allow()"]]]],
+})
+```
+
+## set()
+
+`set()` executes write queries according to the `auth` rules and the `schema` set on the `dir`.
+
+```js
+const res = await db.set("add:user", { name: "Bob", age: 25 })
+const { success, error, result, query } = res
+```
+
+### result
+
+`result` comes with variety of metadata.
+
+- `hashpath` : hash to track verifiable compute steps (AO-Core protocol)
+- `signer` : signer of the HTTP message
+- `msg` : HTTP message (HTTP message signature)
+- `nonce` : nonce to prevent replay attacks
+- `op` : operation ( `op` = `opcode` + `:` + `oprand` )
+- `opcode` : operation type
+- `operand` : custom operation name
+- `query` : query without `op`
+- `dir` : directory to update
+- `before` : data before updated
+- `data` : data after updated
+- `id` : DB ID
+- `ts` : timestamp
+- `result` : contains transaction index and updated keys and data in the underlying kv store
+
+### Query Types (`opcode`)
+
+There are 5 `opcode` types you can specify in `auth` with `mkdir()`.
+
+- `add` : add a doc with auto-generated docid, always add a new doc
+- `set` : add a new doc with specified docid, whether or not it exists
+- `update` : update a doc if it doesn't exist with docid, reject if it exists
+- `upsert` : add a doc with docid if it doesn't exist, update it if it exists
+- `del` : delete a doc with docid if it exists
+
+### Special Modifiers (`_$`)
+
+`_$` provides special modifiers for field updates.
+
+```js
+// deleting the field, this is different from assigning null
+await db.update({ name: {_$: "del" }}, "users", "Bob")
+
+// timestamp
+await db.update({ date: {_$: "ts" }}, "users", "Bob")
+
+// message signer
+await db.update({ signer: {_$: "signer" }}, "users", "Bob")
+```
+
+You can also execute advanced logic to modify the field by defining FPJSON in an array.
+
+```js
+// increment
+await db.update({ age: {_$: ["inc"] }}, "users", "Bob")
+
+// add
+await db.update({ age: {_$: ["add", 5] }}, "users", "Bob")
+
+// remoive items
+await db.update({ favs: {_$: ["without", ["apple"]] }}, "users", "Bob")
+```
+
+## batch()
+
+Batch-execute multiple write queries.
+
+```js
+const Bob = { name: "Bob", age: 20, favs: [ "apple", "orange" ]}
+const Alice = { name: "Alice", age: 40, favs: [ "orange", "peach" ]}
+const Beth = { name: "Mike", age: 30, favs: [ "grapes", "orange" ]}
+const Mike = { name: "Mike", age: 30, favs: [ "peach", "apple" ]}
+
+
+await db.batch([
+  [ "update:user", { favs: Bob.favs }, "users", "Bob" ],
+  [ "set:user", Alice, "users", "Alice" ],
+  [ "set:user", Beth, "users", "Beth" ],
+  [ "set:user", Mike, "users", "Mike" ]
+])
+```
+
+## get()
+
+### single doc
+
+```js
+const Bob = await db.get("users", "Bob")
+```
+
+### multiple docs
+
+```js
+const users = await db.get("users")
+```
+
+### sort
+
+```js
+await db.get("users", ["age", "desc"])
+// => [ Alice, Beth, Bob, Mike ]
+
+await db.get("users", ["name", "desc"])
+// => [ Mike, Bob, Beth, Alice ]
+
+await db.get("users", ["age", "desc"], ["name", "desc"])
+// => [ Alice, Mike, Beth, Bob ]
+```
+:::warning
+The last one with the multiple sort fields requires adding the index first.
+
+`await db.addIndex([["age", "desc"], ["name", "desc"]], "users")`
+:::
+
+### limit
+
+```js
+await db.get("users", ["age", "desc"], 2)
+// => [ Alice, Beth ]
+```
+
+### where
+
+`==` | `!=` | `>` | `>=` | `<` | `<=` | `in` | `not-in` | `array-contains` | `array-contains-any`
+
+```js
+await db.get("users", ["age", "==", 30])
+// => [ Beth, Mike ]
+
+await db.get("users", ["age", "!=", 30])
+// => [ Bob, Alice ]
+
+await db.get("users", ["age", ">", 30])
+// => [ Alice ]
+
+await db.get("users", ["age", ">=", 30])
+// => [ Beth, Mike, Alice ]
+
+await db.get("users", ["age", "<", 30])
+// => [ Bob ]
+
+await db.get("users", ["age", "<=", 30])
+// => [ Bob, Beth, Mike ]
+
+await db.get("users", ["age", "in", [20, 30]])
+// => [ Bob, Beth, Mike ]
+
+await db.get("users", ["age", "not-in", [20, 30]])
+// => [ Alice ]
+
+await db.get("users", ["favs", "array-conteins", "apple"])
+// => [ Bob, Mike ]
+
+await db.get("users", ["favs", "array-conteins-any", ["apple", "peach"])
+// => [ Alice, Bob, Mike ]
+``` 
+### skip
+
+`startAt` | `startAfter` | `endAt` | `endBefore`
+
+```js
+await db.get("users", ["age", "asc"], ["startAt", 30])
+// => [ Beth, Mike, Alice ]
+
+await db.get("users", ["age", "asc"], ["startAfter", 30])
+// => [ Alice ]
+
+await db.get("users", ["age", "asc"], ["endAt", 30])
+// => [ Bob, Beth, Mike ]
+
+await db.get("users", ["age", "asc"], ["endBefore", 30])
+// => [ Bob ]
+
+```
+
+## cget()
+
+`cget()` has the same interface as `get()` but it returns doc with metadata.
+
+```js
+const { __cursor__, dir, id, data: Bob } = await db.cget("users", "Bob")
+```
+
+You can also use the result from `cget()` as a cursor with skip operations.
+
+```js
+const cursor = await db.cget("users", "Bob")
+await db.get("users", ["age", "asc"], ["startAfter", cursor])
+// => [ Beth, Mike, Alice ]
+```
+
+## iter()
+
+`iter()` internally handles `cget()` and makes pagination easier.
+
+```js
+let { docs, next, isNext } = await db.iter("users", ["age", "asc"], 2)
+// docs => [ { data: Bob }, { data: Beth } ]
+  
+while(isNext) {
+  ;({ docs, next, isNext } = await next())
+  // docs => [ { data: Mike }, { data: Alice } ]
+}
+```
+
+## addIndex()
+
+Multi-field sorting requires adding the index first.
+
+```js
+await db.addIndex([["age", "desc"], ["name", "desc"]], "users")
+
+await db.get("users", ["age", "desc"], ["name", "desc"])
+// => [ Alice, Mike, Beth, Bob ]
+```
+
+:::warning
+Only the database owner can add/remove indexes.
+:::
+
+## removeIndex()
+
+```js
+await db.removeIndex([["age", "desc"], ["name", "desc"]], "users")
+
+await db.get("users", ["age", "desc"], ["name", "desc"])
+// => Error
+
+```

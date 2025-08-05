@@ -149,7 +149,7 @@ export default defineConfig({
           link: "/tutorials/rag",
         },
       ],
-    },
+    },*/
     {
       text: "API Reference",
       collapsed: true,
@@ -157,33 +157,9 @@ export default defineConfig({
         {
           text: "WDB SDK",
           link: "/api/wdb-sdk",
-        },
-        {
-          text: "zkJSON",
-          link: "/api/zkjson",
-        },
-        {
-          text: "Uint Pack",
-          link: "/api/uint-pack",
-        },
-        {
-          text: "Monade",
-          link: "/api/monade",
-        },
-        {
-          text: "FPJSON",
-          link: "/api/fpjson",
-        },
-        {
-          text: "ARJSON",
-          link: "/api/arjson",
-        },
-        {
-          text: "WAO / HyperBEAM",
-          link: "/api/wao",
-        },
+        }
       ],
-    },
+    },/*
     {
       text: "Recources",
       collapsed: true,

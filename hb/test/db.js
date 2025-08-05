@@ -63,7 +63,7 @@ const getKV = () => {
 }
 
 describe("WeaveDB Core", () => {
-  it("should return write result", async () => {
+  it.only("should return write result", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
     const db = wdb(getKV())
@@ -83,7 +83,7 @@ describe("WeaveDB Core", () => {
     assert.deepEqual(await db.get("users", ["startAfter", cur]).val(), [bob])
   })
 
-  it.only("should handle queue", async () => {
+  it("should handle queue", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
     const db = queue(wdb(getKV()))

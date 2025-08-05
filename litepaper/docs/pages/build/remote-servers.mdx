@@ -154,3 +154,10 @@ sudo systemctl restart nginx
 ```
 
 Now, you can access [https://hb.wdb.ae:10002](https://hb.wdb.ae:10002).
+
+If you are running other services such as rollup nodes and zk-proof generators, you can repeat these steps.
+
+Example proxy patterns:
+
+- https://db.wdb.ae:10003 to http://localhost:6364 for a rollup node.
+- https://zkp.wdb.ae:10004 to http://localhost:6365 for a zk-proof generator node.
