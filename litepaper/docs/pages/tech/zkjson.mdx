@@ -1,0 +1,297 @@
+## Zero Knowledge Provable JSON
+
+**zkJSON** makes any arbitrary JSON data provable with zero knowledge proof, and makes them verifiable both offchain and onchain (blockchain).
+
+EVM blockchains like Ethereum will get a hyper scalable NoSQL database extension whereby off-chain JSON data are directly queriable from within Solidity smart contracts.
+
+![](/images/zkjson-1.png)
+
+### Why
+
+Most offchain data on the web are represented in JSON format, and blockchains have been failing to connect with them efficiently for some critical reasons.
+
+- Blockchains are not scalable to the web level
+- There is no decentralized general-purpose database alternative to cloud databases
+- The current decentralized database solutions are too domain-specific
+- The current oracle / indexer solutions are limited to a great extent
+
+As a result, data on web2 (offchain) and web3 (onhain) are divided and web3 is missing a great wide variety of use cases with offchain data. What if we could verify any offchain JSON data in onchain smart contracts, and also build a general-purpose database with web2-like performance and scalability? zkJSON and zkDB will allow direct connections from smartcontract to offchain database.
+
+This entire tech stack will enable novel use cases to web3 such as decentralized oracles and indexers, as well as provide a decentralized database alternative to web2 with the performance and scalability of cloud databases. We could, for instance, build [a fully decentralized Twitter](https://www.jots.social/) without any centralized components.
+
+We envision the web where offchain data are seamlessly connected with blockchains. Our ultimate goal is to liberate the web2 data silos and redirect the huge monopolistic web2 revenue models such as ad networks and future AI-based networks to web3. Any offchain data without zkJSON are not legit, since they are not verifiable onchain.
+
+Onchain verifiability is what scales the decentralized web. Onchain is the new online, and zkJSON expands what's online/onchain (verifiable).
+
+### How
+
+There are 4 steps to build a complete solution.
+
+1. make any JSON provable with zk circuits - **zkJSON**
+2. build a database structure with merkle trees and zkJSON - **zkDB**
+3. commit db states to an EVM blockchain - **zkRollup**
+4. make it queriable with Solidity - **zkQuery**
+
+And 3 bonus steps to make it practical and sustainable (using Arweave & Cosmos IBC).
+
+5. make zkDB feature-rich to bear any web2/web3 usages - **WeaveDB**
+6. make WeaveDB performant, scalable, and secure with Arweave+EVM hybrid rollup - **WeaveDB Rollup**
+7. make the rollups sustainable with Restaking and DePIN - **WeaveAVS**
+
+*This repo contains only the first 4 steps.* You can find the rest [here](https://github.com/weavedb/weavedb).
+
+#### zkJSON
+
+The key to making JSON verifiable with zkp is to invent a deterministic encoding that is friendly to zk circuits. zk circuits can only handle arithmetic operations with natural numbers, so we need to convert any JSON to a series of natural numbers back and forth, then pack everything into as few `uint` as possible to efficiently save space. The default storage block in Solidity is `uint256` and Circom uses a modulo just below the 256 bit range. So optimizing for `uint` makes sense. Just to clarify, you cannot simply convert JSON to a binary format or any existing encoding formats, because it has to specifically make sense to the circuit logic and Solidity.
+
+##### Encoding
+
+![](/images/zkjson-2.png)
+
+zk circuits can neither handle objects nor dynamically nested arrays. So we first need to flatten all the paths into a simple array.
+
+```js
+{
+  "a": 1,
+  "c": false,
+  "b": { "e": null, "d": "four" },
+  "f": 3.14,
+  "ghi": [ 5, 6, 7 ],
+}
+```
+
+becomes
+
+```js
+[
+  [ "a", 1 ],
+  [ "c", false ]
+  [ "b.e", null ],
+  [ "b.d", "four" ],
+  [ "f", 3.14 ],
+  [ "ghi", [ 5, 6, 7 ] ],
+]
+```
+Each path will be converted to an unicode number.
+
+```js
+[
+  [ [ [ 97 ] ], 1 ],
+  [ [ [ 99 ] ], false ]
+  [ [ [ 98 ], [ 101 ] ], null ],
+  [ [ [ 98 ], [ 100 ] ], "four" ],
+  [ [ [ 102 ] ], 3.14 ],
+  [ [ [ 103, 104, 105 ] ], [ 5, 6, 7 ] ]
+]
+```
+
+To make it deterministic, items must be lexicographically sorted by the paths.
+
+```js
+[
+  [ [ [ 97 ] ], 1 ],
+  [ [ [ 98 ], [ 100 ] ], "four" ],
+  [ [ [ 98 ], [ 101 ] ], null ],
+  [ [ [ 99 ] ], false ]
+  [ [ [ 102 ] ], 3.14 ],
+  [ [ [ 103, 104, 105 ] ], [ 5, 6, 7 ] ]
+]
+```
+
+Here's a tricky part, if the value is an array, we need to create a path for each element, but we need to tell the difference between `ghi.0` and `ghi[0]` with just numbers. `ghi.0` is a path to an object, `ghi[0]` is a path to an array element. Also there is a case where the key is empty like `{ "" : "empty" }`. Another case to note is that just a primitive value without the top level element being an object is also a valid JSON, such as `null`, `true`, `[ 1, 2, 3]`, `1`. You can express the paths with empty string ` `, or something like `a..b` for `{ "a" : { "" : { "b" : 1 } } }`.
+
+To address all these edge cases, we prefix each array key with the number of characters that follow, or `0` if the key is empty (followed by `1`) or an array index (followed by another`0`).
+
+```js
+[
+  [ [ [ 1, 97 ] ], 1 ],
+  [ [ [ 1, 98 ], [ 1, 100 ] ], "four" ],
+  [ [ [ 1, 98 ], [ 1, 101 ] ], null ],
+  [ [ [ 1, 99 ] ], false ]
+  [ [ [ 1, 102 ] ], 3.14 ],
+  [ [ [ 3, 103, 104, 105 ], [ 0, 0, 0 ] ], 5 ],
+  [ [ [ 3, 103, 104, 105 ] ], [ 0, 0, 1 ], 6 ],
+  [ [ [ 3, 103, 104, 105 ] ], [ 0, 0, 2 ], 7 ]
+]
+```
+
+Now we flatten the paths but also prefix them with how many nested keys each path contains.
+
+```js
+[
+  [ 1, 1, 97 ], 1 ],
+  [ 2, 1, 98 , 1, 100 ], "four" ],
+  [ 2,  1, 98, 1, 101 ], null ],
+  [ 1, 1, 99 ], false ]
+  [ 1, 1, 102 ], 3.14 ],
+  [ 2, 3, 103, 104, 105, 0, 0, 0 ], 5 ],
+  [ 2, 3, 103, 104, 105, 0, 0, 1 ], 6 ],
+  [ 2, 3, 103, 104, 105, 0, 0, 2 ], 7 ]
+]
+```
+If the top level is a non-object value such as `1` and `null`, the flattened path is always `[ 0 ]`.
+
+Let's numerify the values in a similar fashion. There are only 6 valid data types in JSON ( `null` / `boolean` / `number` / `string` / `array` / `object` ), and since the paths are flattened, we need to handle only 4 primitive types. We assign a type number to each.
+
+- null (`0`)
+- boolean (`1`)
+- number (`2`)
+- string (`3`)
+- array | object (`4`)
+
+The first digit will always be the type number.
+
+###### null (0)
+
+`null` is always `[ 0 ]` as there's nothing else to tell.
+
+###### boolean (1)
+
+There are only 2 cases. `true` is `[ 1, 1 ]` and `false` is `[ 1, 0 ]`.
+
+###### number (2)
+
+`number` is a bit tricky as we need to differentiate integers and floats, and also positive numbers and negative ones. Remember that circuits can only handle natural numbers. A number contains 4 elements.
+
+- 1st element - type `2`
+- 2nd - sign, `0` for negative, `1` for positive
+- 3rd - how many digits after `.`, `0` in case of an integer
+- 4th - actual number without `.`
+
+for instance,
+
+- `1` : `[ 2, 1, 0, 1 ]`
+- `-1` : `[ 2, 0, 0, 1 ]`
+- `3.14` : `[ 2, 1, 2, 314 ]`
+
+###### string (3)
+
+The first digit is the type `3` and the second digit tells how many characters, then each character is converted to a unicode number (e.g. `abc` = `[ 3, 3, 97, 98, 99 ]`).
+
+###### array | object (4)
+
+In the case of an array and object, it prefixes `4` and recursively encodes all the nested values. The final array includes internal paths too.
+
+- `[ 1, 2 ]` : `[ 4, 1, 0, 0, 0, 2, 1, 0, 1, 1, 0, 0, 1, 2, 1, 0, 2 ]`
+
+Note that the path to `1` is `1, 0, 0, 0` and the path to `2` is `1, 0, 0, 1`, and they are included.
+
+Now let's convert the values in our original JSON example.
+
+```js
+[
+  [ [ 1, 1, 97 ], [ 2, 1, 0, 1 ] ],
+  [ [ 2, 1, 98 , 1, 100 ], [ 3, 4, 102, 111, 117, 114 ] ],
+  [ [ 2,  1, 98, 1, 101 ], [ 0 ] ],
+  [ [ 1, 1, 99 ], [ 1, 0 ] ],
+  [ [ 1, 1, 102 ], [ 2, 1, 2, 314 ] ],
+  [ [ 2, 3, 103, 104, 105, 0, 0, 0 ], [ 2, 1, 0, 5 ] ],
+  [ [ 2, 3, 103, 104, 105, 0, 0, 1 ], [ 2, 1, 0, 6 ] ],
+  [ [ 2, 3, 103, 104, 105, 0, 0, 2 ], [ 2, 1, 0, 7 ] ]
+]
+```
+Now we are to flatten the entire nested arrays, but each number must be prefixed by the number of digits that contains, otherwise, there's no way to tell where to partition the series of digits. And here's another tricky part, if the number contains more than 9 digits, you cannot prefix it with 10, 11, 12 ... because when all the numbers are concatenated later, `10` doesn't mean that `10` digits follow, but it means `1` digit follows and it's `0`. So we allow max 8 digits in each partition and `9` means there will be another partition(s) following the current one.
+
+- `123` : `[ 3, 123 ]`
+- `12345678` : `[ 8, 12345678 ]`
+- `1234567890` : `[ 9, 12345678, 2, 90 ]`
+
+By the way, digits are in fact stored as strings, so a leading 0 won't disappear.
+
+- `1234567809` : `[ "9", "12345678", "2", "09" ]`
+
+This is the prefixed version.
+
+```js
+[
+  [ [ 1, 1, 1, 1, 2, 97 ], [ 1, 2, 1, 1, 1, 0, 1, 1 ] ],
+  [ [ 1, 2, 1, 1, 2, 98 , 1, 1, 3, 100 ], [ 1, 3, 1, 4, 3, 102, 3, 111, 3, 117, 3, 114 ] ],
+  [ [ 1, 2,  1, 1, 3, 98, 1, 1, 3, 101 ], [ 1, 0 ] ],
+  [ [ 1, 1, 1, 1, 2, 99 ], [ 1, 1, 1, 0 ] ],
+  [ [ 1, 1, 1, 1, 3, 102 ], [ 1, 2, 1, 1, 1, 2, 3, 314 ] ],
+  [ [ 1, 2, 1, 3, 3, 103, 3, 104, 3, 105, 1, 0, 1, 0, 1, 0 ], [ 1, 2, 1, 1, 1, 0, 1, 5 ] ],
+  [ [ 1, 2, 1, 3, 3, 103, 3, 104, 3, 105, 1, 0, 1, 0, 1, 1 ], [ 1, 2, 1, 1, 1, 0, 1, 6 ] ],
+  [ [ 1, 2, 1, 3, 3, 103, 3, 104, 3, 105, 1, 0, 1, 0, 1, 2 ], [ 1, 2, 1, 1, 1, 0, 1, 7 ] ]
+]
+```
+
+Then this is the final form all flattened.
+
+```js
+[ 1, 1, 1, 1, 2, 97, 1, 2, 1, 1, 1, 0, 1, 1, 1, 2, 1, 1, 2, 98, 1, 1, 3, 100, 1, 3, 1, 4, 3, 102, 3, 111, 3, 117, 3, 114, 1, 2, 1, 1, 3, 98, 1, 1, 3, 101, 1, 0, 1, 1, 1, 1, 2, 99, 1, 1, 1, 0, 1, 1, 1, 1, 3, 102, 1, 2, 1, 1, 1, 2, 3, 314, 1, 2, 1, 3, 3, 103, 3, 104, 3, 105, 1, 0, 1, 0, 1, 0, 1, 2, 1, 1, 1, 0, 1, 5, 1, 2, 1, 3, 3, 103, 3, 104, 3, 105, 1, 0, 1, 0, 1, 1, 1, 2, 1, 1, 1, 0, 1, 6, 1, 2, 1, 3, 3, 103, 3, 104, 3, 105, 1, 0, 1, 0, 1, 2, 1, 2, 1, 1, 1, 0, 1, 7 ]
+```
+It's 144 integers, or 182 digits. The original JSON was 66 character long when JSON.stringified, so it's not too bad considering integer vs character (let's say one ascii char takes up 3 digits and one unicode char takes up 7 digits). And zk circuits and Solidity cannot handle just stringified JSONs anyway. But it gets better.
+
+When passed to a circuit, all digits will be concatenated into one integer. [Circom](https://docs.circom.io/circom-language/basic-operators/) by default uses a modulo with
+
+`21888242871839275222246405745257275088548364400416034343698204186575808495617` (77  digits)
+
+which means up to 76 digits are safe and a 77-digit number could overflow, which is also within the range of `uint / uint256` in Solidity.
+
+So to convert the encoded array to a circuit signal, it becomes
+
+```js
+[
+  1111297121110111211298113100131431023111311731141211298113101101111299111011,
+  1131021211123314121331033104310510101012111015121331033104310510101112111016,
+  121331033104310510101212111017
+]
+```
+
+If you observe carefully, there's room for more compression. Most digits are a single digit with a prefix of `1`, so we can remove the prefixes and join the succession of single digits, and we can use `0` and the number of single digits in the succession. For instance `121110111211` becomes `06210121`, and we save 4 digits.
+
+We will prefix each integer with `1`, since now `0` could come at the beginning and it disappears without the prefix. So
+
+`032123314121331033104310509000210523310331043105090012106233103310431051010` 
+
+will be prefixed with `1` and become
+
+`1032123314121331033104310509000210523310331043105090012106233103310431051010`
+
+otherwise the first `0` will disapper when being evaluated as a number.
+
+```js
+[
+  1111129706210121298113100131431023111311731141211298113101030112990410113102,
+  1032123314121331033104310509000210523310331043105090012106233103310431051010,
+  10522107
+]
+```
+
+Now it's much shorter than before. What's surprising here is that the entire JSON is compressed into just 3 integers in the end (well, almost 2 integers). It's just `uint[3]` in Solidity. This indeed is extreme efficiency! The zkJSON circuit by default allows up to 256 integers (256 * 76 safe digits), which can contain a huge JSON data size, and Solidity handles it efficiently with a dynamic array `uint[]`, which is optimized with [Yul](https://docs.soliditylang.org/en/latest/yul.html) assembly language. What's even better is that the only bits passed to Solidity is the tiny bits of the value at the queried path, and not the entire JSON bits. So if you are querying the value at the path `a`, `1111297`(path: "a") and `1042101`(value: 1) are the only digits passed to Solidity as public signals of zkp.
+
+Now we can build a circuit to handle these digits and prove the value of a selected path without revealing the entire JSON. It's easy to explain the encoding, but harder to write the actual encoder/decoder and a circuit to properly process this encoding. But fortunately, we already did write them!
+
+- [zkJSON Circuit](https://github.com/weavedb/zkjson/blob/master/circom/json/json.circom)
+- [Simple zkJSON Tutorial](./docs/simple-zkjson.md)
+- [Simple zkJSON Demo](https://zkjson-zeta.vercel.app/)
+- [Arweave | Ethereum Demo](https://zkjson-arweave.vercel.app)
+
+You can use `zkjson` node package to encode and decode JSON.
+
+```bash
+yarn add zkjson
+```
+
+```javascript
+const { encode, decode, toSignal, fromSignal } = require("zkjson")
+
+const json = { a : 1 }
+const encoded = encode(json) // [ 1, 1, 97, 2, 1, 0,  1 ]
+const signal = toSignal(encoded) // [ '11111297042101' ]
+const encoded2 = fromSignal(signal) // [ 1, 1, 97, 2, 1, 0, 1 ]
+const decoded = decode(encoded2) // { a : 1 }
+```
+
+```javascript
+const { encodePath, decodePath, encodeVal, decodeVal } = require("zkjson")
+
+const path = "a"
+const encodedPath = encodePath(path) // [ 1, 1, 97 ]
+const decodedPath = decodePath(encodedPath) // "a"
+
+const val = 1
+const encodedVal = encodeVal(val) // [ 2, 1, 0, 1 ]
+const decodedVal = decodeVal(encodedVal) // 1
+
+```
