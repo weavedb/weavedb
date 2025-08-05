@@ -95,6 +95,9 @@ export default class DB {
     const query = ["set:dir", { schema, auth }, "_", name]
     return await this.set(...query)
   }
+  async batch(queries) {
+    return await this.set("batch", ...queries)
+  }
   async set(...args) {
     const res = await this.db.post(
       {
