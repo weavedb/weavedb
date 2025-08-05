@@ -50,7 +50,35 @@ export default function Home() {
             e.target.style.borderBottom = "2px solid transparent"
           }}
         >
-          Docs →
+          Docs
+        </a>
+        <a
+          href={`${process.env.NEXT_PUBLIC_SCAN_URL}/db/${process.env.NEXT_PUBLIC_DB_ID}?url=${process.env.NEXT_PUBLIC_RU_URL}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="scan-link"
+          style={{
+            color: "rgba(255, 255, 255, 0.9)",
+            textDecoration: "none",
+            fontSize: "15px",
+            fontWeight: "500",
+            position: "fixed",
+            top: "30px",
+            right: "120px",
+            zIndex: 100,
+            transition: "all 0.3s ease",
+            borderBottom: "2px solid transparent",
+          }}
+          onMouseEnter={e => {
+            e.target.style.color = "#667eea"
+            e.target.style.borderBottom = "2px solid #667eea"
+          }}
+          onMouseLeave={e => {
+            e.target.style.color = "rgba(255, 255, 255, 0.9)"
+            e.target.style.borderBottom = "2px solid transparent"
+          }}
+        >
+          Scan
         </a>
       </header>
       <div className="app-title">

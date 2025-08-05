@@ -1,7 +1,7 @@
 import assert from "assert"
 import { afterEach, after, describe, it, before, beforeEach } from "node:test"
 import { HyperBEAM, wait, acc } from "wao/test"
-import { DB } from "../../sdk/src/index.js"
+import { DB, $ } from "../../sdk/src/index.js"
 import server from "../src/server.js"
 import { resolve } from "path"
 import { genDir } from "./test-utils.js"
@@ -24,13 +24,8 @@ describe("WeaveDB SDK", () => {
     assert((await db.mkdir(users)).success)
     assert((await db.set("set:user", bob, "users", "bob")).success)
     assert.deepEqual(await db.get("users", "bob"), bob)
-  })
-  it("should deploy a database", async () => {
-    const db = new DB({
-      jwk: hbeam.jwk,
-      id: "7fvjopzwphy1lkydcerj9ittwume4fkde33u1yajvcc",
-    })
-    console.log(await db.get("posts"))
+    await db.set("update:user", { age: $.inc(3) }, "users", "bob")
+    console.log(await db.get("users"))
   })
 })
 

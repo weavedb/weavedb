@@ -4071,10 +4071,10 @@ vlq@^2.0.4:
   resolved "https://registry.yarnpkg.com/vlq/-/vlq-2.0.4.tgz#6057b85729245b9829e3cc7755f95b228d4fe041"
   integrity sha512-aodjPa2wPQFkra1G8CzJBTHXhgk3EVSwxSWXNPr1fgdFLUb8kvLV1iEb6rFgasIsjP82HWI6dsb5Io26DDnasA==
 
-wao@^0.35.3:
-  version "0.35.3"
-  resolved "https://registry.yarnpkg.com/wao/-/wao-0.35.3.tgz#0fe3e832a1137a1aee85461e44de0b6f6617d35c"
-  integrity sha512-rjQ0l2LN5Gan2ovjUUyuzlaD2Sdz2K+UPdT8b6w1fxutPLEj82b/+8uzUCv2jxFQ/7MqZx2ovvqOsZIlhEcb/w==
+wao@^0.35.5:
+  version "0.35.5"
+  resolved "https://registry.yarnpkg.com/wao/-/wao-0.35.5.tgz#07517d1d0cc17dc6228aafc84dd6c02c2bcd12b8"
+  integrity sha512-WUVBlpKhZMgNKSVkcvjpbX0FZM+490XBlDnXN2NSzpeoLCo9Gp6WYZ8yAwt0qLjwRPN8xnG1+NIZB0jT27Mu3w==
   dependencies:
     "@bokuweb/zstd-wasm" "^0.0.22"
     "@dha-team/arbundles" "^1.0.1"
