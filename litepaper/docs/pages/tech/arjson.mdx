@@ -1,6 +1,6 @@
 # ARJSON
 
-![](./assets/arjson.png)
+![](/images/arjson.png)
 
 ARJSON leverages bit-level optimizations to encode JSON at lightning speed while compressing data more efficiently than other self-contained JSON encoding/compression algorithms, such as [MessagePack](https://msgpack.org/) and [CBOR](https://datatracker.ietf.org/doc/html/rfc7049).
 
@@ -227,6 +227,14 @@ const charmap = {
 ```
 With these special rules, positive integers less than 64 and single alphhabetical characters, as well as `null`, `true`, `false` `""`, `[]`, `{}`, are all encoded in just 1 byte, maximizing efficiency while minimizing storage overhead.
 
+
+## Absolute Minimum Incremental Update
+
+ARJSON allows incremental addition of the absolute minimum tiny bits to mutate the data.
+
+It reduces data cost for immutable permanent storage such as Arweave, and is even perfect for decentralized databases like WeaveDB to minimize the storage cost.
+
+To mutate and update immutable data, you just need the bits to specify a path and a new piece of the bit representation of the data to replace with, both of which are super tiny. This is fandamentally different from any diff-patch algorithms since the data mutation logic is built-in to the encoding itself rather than computing with fairly large external metadata. ARJSON automatically provides any past versions since the incremental only nature keeps the modification history. You can also compact the data to shrink the size after a series of updating.
 
 ## Benchmarking
 

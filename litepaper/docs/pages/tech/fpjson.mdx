@@ -1,4 +1,6 @@
-# FPJSON 2.0
+# FPJSON (Functional Programmable JSON)
+
+![](/images/fpjson.png)
 
 FPJSON is a dmain specific language (DSL) for WeaveDB, and what makes a fully decentralized DB possible.
 
@@ -15,6 +17,10 @@ WeaveDB has decentralized features such as
 - **Triggers** to chain queries with pre-defined logic
 - **Verifiable Relayers** to bring in data from outside data sources
 
+:::warning
+Crons, Triggers, and Relayers are not implemented on the new WeaveDB on HyperBEAM yet.
+:::
+
 Without these features, a web3 database would either be out of control or have only limited use cases. And all these are enabled by FPJSON as the simplest JSON style settings. FPJSON enables highly advanced, and composable functional programming in a simple JSON format, which makes WeaveDB itself the most powerful smart contract sandbox as well.
 
 ## Basic FPJSON Blocks
@@ -24,17 +30,14 @@ FPJSON is based upon [Ramda.js](https://ramdajs.com/) which comes from the funct
 Basic FPJSON blocks look something like these.
 
 ```js
-/* add */
+
 ["add", 1, 2] // = 3
 
-/* difference */
 ["difference", [1, 2, 3], [3, 4, 5]] // = [1, 2]
 
-/* map */
 [["map", ["inc"]], [1, 2, 3]] // = [4, 5, 6]
 
-/* compose */
-[["compose", ["map", ["inc"]], ["difference"]], [1, 2, 3], [3, 4, 5]] // = [2, 3]
+[["compose", ["map", ["inc"]], ["difference"]], [1, 2, 3], [2]] // = [2, 4]
 ```
 Learn the 250+ powerful functions [here](https://fpjson.weavedb.dev).
 
@@ -42,40 +45,29 @@ Learn the 250+ powerful functions [here](https://fpjson.weavedb.dev).
 
 One big constraint of FPJSON is we can only do pure functional programming with [point-free style](https://en.wikipedia.org/wiki/Tacit_programming), which means functions cannot have arguments. Functional programming is extremely powerful, but pure FP sometimes makes it overly complicated and impractical to build a simple logic.
 
-FPJSON 2.0 makes it easier and more practical by injecting side-effect variables and imperative programming features such as if-else conditional statement.
+WeaveDB elegantly extends [the base FPJSON](/api/fpjson-lang) to makes it easier and more practical by injecting side-effect variables and imperative programming features such as if-else conditional statement.
 
 ### allow() / deny()
 
 The simplest form of access control rules is just allow everything.
 
 ```js
-["write", ["allow()"]]
+["set", ["allow()"]]
 ```
 
 or deny everything.
 
 ```js
-["write", ["deny()"]]
+["set", ["deny()"]]
 ```
 
-To set up the rules to a collection.
-
-```js
-// set only one condition
-await db.setRules([ ["allow()"] ], "collection_name", "write")
-
-// set multiple conditions
-await db.setRules([ [ "create", ["allow()"] ], [ "delete", ["deny()"] ] ], "collection_name")
-```
 ### Pattern Matching
 
 The first element is an accepted operation and the condition will be evaluated only if the query matches the operation.
 
-- `write` : includes everything
-- `create` | `update` | `delete` : if the doc already exists, `update` will be applied to set and upsert operations.
-- `add` | `set` | `update` | `upsert` | `delete` : these matche query types
+- `add` | `set` | `update` | `upsert` | `del` : these matche query types
 
-You can always use the basic operation types, but a better solution is define custom operations such as `add:post` and `delete:post`.
+You can always use the basic operation types, but a better solution is define custom operations such as `add:post` and `del:post`.
 
 ```js
 ["add:post", ["allow()"]]
@@ -84,74 +76,52 @@ You can always use the basic operation types, but a better solution is define cu
 The first part of a custome tag matches query types, and the second part is an arbitrary operation name.
 
 - custome tag: `type:name`
-- types: `add` | `set` | `update` | `upsert` | `delete`
+- types: `add` | `set` | `update` | `upsert` | `del`
 
 In this way, users will only be able to execute the preset custom queries, so you will be in better control.
 
 ```js
-// a custom query
-await db.query("add:post", {title: "Test", body: "hello"}, "posts")
-
-// this will be rejected since "add" is undefined in the access rules
-await db.add({title: "Test", body: "hello"}, "posts")
+await db.set("add:post", {title: "Test", body: "hello"}, "posts")
 ```
 
 ### Preset Variables
 
-You can access preset variables in access rule evaluations as explained [here](http://localhost:3000/docs/sdk/rules#preset-variables).
+You can access preset variables in access rule evaluations as explained [here](/api/fpjson-lang#var).
 
 ```js
-const data = {
-  contract: { id, version, owners },
-  request: {
-    caller,
-	op,
-    method,
-    func,
-    auth: { signer, relayer, jobID, extra },
-    block: { height, timestamp },
-    transaction: { id, timestamp },
-    resource: { data },
-    id,
-    path,
-  },
-  resource: { data, setter, newData, id, path },
+let vars = {
+  op, // set:post
+  opcode, // set
+  operand, // post
+  id, // database ID
+  owner // database owner
+  signer, // message signer
+  ts, // timestamp
+  dir, // directory
+  doc, // document ID
+  query, // query
+  before, // data before updating
+  after, // data after updating
+  allow: false, // auth passes if allow is eventually true
 }
 ```
-:::info
-`request.transaction.timestamp` is only available for L2 rollup queries, and it's in millisecond. Note that `request.block.timestamp` is in second and not reliable as it's the Arweave block timestamp rather than the granular transaction timestamp. Always use `$ms` over `$ts` for L2 queries.
-:::
+For instance, if `{ title: "Title", body: "hellow" }` is already stored, and the query is updating `{ body: "bye" }`, the following is what will be assigned.
 
-#### Shortcuts
-
-To make things easiler, there are shortcut variables to most frequently used values. Most logic can be handled with these shortcuts.
-
-- `signer` = `request.auth.signer` : transaction signer
-- `id` = `request.id` : doc ID
-- `ts` = `request.block.timestamp` : block timestamp in second
-- `ms` = `request.transaction.timestamp` : transaction timestamp in millisecond (only L2)
-- `new` = `resource.newData` : data after applying the query
-- `old` = `resource.data` : data before applying the query
-- `req` = `request.resource.data` : updating data in the query
-
-For instance, if `{ title: "Title", body: "hellow"}` is already stored, and the query is updating `{body: "bye"}`, the following is what will be assigned.
-
-- `$old` : `{ title: "Title", body: "hellow" }`
-- `$new` : `{ title: "Title", body: "bye" }`
-- `$req` : `{ body: "bye" }`
+- `$before` : `{ title: "Title", body: "hellow" }`
+- `$after` : `{ title: "Title", body: "bye" }`
 
 ### mod()
 
 `mod()` will manipulate the uploading data before commiting permanently.
 
 ```js
-[ "add:post", [ [ "mod()", { id: "$id", owner: "$signer", date: "$ms" } ], ["allow()"] ] ]
+[ "add:post", [ [ "mod()", { id: "$id", owner: "$signer", date: "$ts" } ], ["allow()"] ] ]
 ```
 
 This will set `id` to the auto-generated docID, `owner` to the transaction signer, and `date` to the transaction timestamp.  
 
 ```js
-const tx = await db.query("add:post", {title: "Test", body: "hello"}, "posts")
+const tx = await db.set("add:post", {title: "Test", body: "hello"}, "posts")
 
 const post = await db.get("posts", tx.docID)
 // the post has the extra fields auto-assigned : { title, body, id, owner, date }
@@ -170,7 +140,7 @@ Use `["fields()", ["title", "body"]]` for such an restriction.
   "add:post",
   [
     ["fields()", ["title", "body"]],
-    ["mod()", { id: "$id", owner: "$signer", date: "$ms" }],
+    ["mod()", { id: "$id", owner: "$signer", date: "$ts" }],
     ["allow()"],
   ],
 ]
@@ -179,8 +149,8 @@ Use `["fields()", ["title", "body"]]` for such an restriction.
 
 ```js
 // these will be rejected
-await db.query("add:post", {title: "Test", body: "hello", id: "abc"}, "posts")
-await db.query("add:post", {title: "Test"}, "posts") // missing the mandatory body
+await db.set("add:post", {title: "Test", body: "hello", id: "abc"}, "posts")
+await db.set("add:post", {title: "Test"}, "posts") // missing mandatory body
 ```
 
 You can also individually whitelist and blacklist fields with `requested_fields()` and `disallowed_fields()` respectively.
@@ -191,7 +161,7 @@ You can also individually whitelist and blacklist fields with `requested_fields(
 
 ```js
 // this will check if the signer is the post owner
-["=$isOwner", ["equals", "$signer", "$old.owner"]]
+["=$isOwner", ["equals", "$signer", "$before.owner"]]
 ```
 
 ### allowif() / allowifall()
@@ -202,20 +172,20 @@ Assigned variables can be used in any later blocks. It's especially useful when 
 [
   "delete:post",
   [
-    ["=$isOwner", ["equals", "$signer", "$old.owner"]], // the second block is FPJSON
+    ["=$isOwner", ["equals", "$signer", "$before.owner"]], // the second block is FPJSON
     ["allowif()", "$isOwner"], // allow if the second element is true
   ],
 ]
 ```
-You can use multiple conditions with `allowifall()`. The following also checks if the signer is the contract owner.
+You can use multiple conditions with `allowifall()`. The following also checks if the signer is the database owner.
 
 ```js
 [
   "delete:post",
   [
-    ["=$isDataOwner", ["equals", "$signer", "$old.owner"]],
-    ["=$isContractOwner", ["includes", "$signer", "$contract.owners"]],
-    ["allowifall()", ["$isOwner", "$isContractOwner"],
+    ["=$isDataOwner", ["equals", "$signer", "$before.owner"]],
+    ["=$isDBOwner", ["equals", "$signer", "$owner"]],
+    ["allowifall()", ["$isOwner", "$isDBOwner"],
   ],
 ]
 ```
@@ -302,7 +272,7 @@ It's often useful to make the docID deterministic with some document fields. For
 Now users can send an empty query as long as the docID checks out.
 
 ```js
-await db.query("set:follow", {}, "follows", "fromUserID:toUserID")
+await db.set("set:follow", {}, "follows", "fromUserID:toUserID")
 ```
 
 #### parse()

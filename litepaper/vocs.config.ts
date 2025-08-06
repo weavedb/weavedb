@@ -156,6 +156,10 @@ export default defineConfig({
           text: "Monade",
           link: "/tech/monade",
         },
+	{
+          text: "AI3",
+          link: "/tech/ai3",
+        },
       ],
     },
     {
