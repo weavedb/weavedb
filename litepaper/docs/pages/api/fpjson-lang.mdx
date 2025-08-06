@@ -1,0 +1,192 @@
+# fpjson-lang
+
+# FPJSON
+
+[FPJSON](https://fpjson.weavedb.dev) is a programming language agnostic JSON-based functional programming language.
+
+- The whole code is just a JSON array
+- Functional Programming
+- No overhead due to programming language implementation details
+
+In other words, you don't have to worry about any programming language specifications.
+
+Instead you can just focus on building pure logics for data manipuration.
+
+Since it's just a JSON array, it can be ported to any programming language environment.
+
+## Installation
+
+```bash
+yarn add fpjson-lang
+```
+
+## Basics
+
+Compute any valid FPJSON logic.
+
+```js
+import fpjson from "fpjson-lang"
+
+fpjson(["add", 1, 2])
+// add(1, 2) = 3
+
+fpjson("difference", [1, 2, 3], [3, 4, 5]] )
+// difference([1, 2, 3],[3, 4, 5]) = [1, 2]
+
+fpjson([["map", ["inc"]], [1, 2, 3]])
+// map(inc)([1, 2, 3]) = [2, 3, 4]
+
+fpjson([["compose", ["map", ["inc"]], ["difference"]], [1, 2, 3], [3, 4, 5]])
+// difference([1, 2, 3],[3, 4, 5]) = [1, 2], map(inc)([1, 2]) = [3, 4]
+```
+
+There are [more than 250 functions](https://fpjson.weavedb.dev/) available for building highly advanced complex logic.
+
+| Category | Functions |
+|----------|-----------|
+| **Type** | [`is`](https://ramdajs.com/docs/#is), [`isNil`](https://ramdajs.com/docs/#isNil), [`propIs`](https://ramdajs.com/docs/#propIs), [`type`](https://ramdajs.com/docs/#type) |
+| **Function** | [`addIndex`](https://ramdajs.com/docs/#addIndex), [`always`](https://ramdajs.com/docs/#always), [`andThen`](https://ramdajs.com/docs/#andThen), [`ap`](https://ramdajs.com/docs/#ap), [`apply`](https://ramdajs.com/docs/#apply), [`applySpec`](https://ramdajs.com/docs/#applySpec), [`applyTo`](https://ramdajs.com/docs/#applyTo), [`ascend`](https://ramdajs.com/docs/#ascend), [`binary`](https://ramdajs.com/docs/#binary), [`bind`](https://ramdajs.com/docs/#bind), [`call`](https://ramdajs.com/docs/#call), [`comparator`](https://ramdajs.com/docs/#comparator), [`compose`](https://ramdajs.com/docs/#compose), [`composeWith`](https://ramdajs.com/docs/#composeWith), [`construct`](https://ramdajs.com/docs/#construct), [`constructN`](https://ramdajs.com/docs/#constructN), [`converge`](https://ramdajs.com/docs/#converge), [`curry`](https://ramdajs.com/docs/#curry), [`curryN`](https://ramdajs.com/docs/#curryN), [`descend`](https://ramdajs.com/docs/#descend), [`empty`](https://ramdajs.com/docs/#empty), [`F`](https://ramdajs.com/docs/#F), [`flip`](https://ramdajs.com/docs/#flip), [`identity`](https://ramdajs.com/docs/#identity), [`invoker`](https://ramdajs.com/docs/#invoker), [`juxt`](https://ramdajs.com/docs/#juxt), [`lift`](https://ramdajs.com/docs/#lift), [`liftN`](https://ramdajs.com/docs/#liftN), [`memoizeWith`](https://ramdajs.com/docs/#memoizeWith), [`nAry`](https://ramdajs.com/docs/#nAry), [`nthArg`](https://ramdajs.com/docs/#nthArg), [`o`](https://ramdajs.com/docs/#o), [`of`](https://ramdajs.com/docs/#of), [`on`](https://ramdajs.com/docs/#on), [`once`](https://ramdajs.com/docs/#once), [`otherwise`](https://ramdajs.com/docs/#otherwise), [`partial`](https://ramdajs.com/docs/#partial), [`partialObject`](https://ramdajs.com/docs/#partialObject), [`partialRight`](https://ramdajs.com/docs/#partialRight), [`pipe`](https://ramdajs.com/docs/#pipe), [`pipeWith`](https://ramdajs.com/docs/#pipeWith), [`promap`](https://ramdajs.com/docs/#promap), [`T`](https://ramdajs.com/docs/#T), [`tap`](https://ramdajs.com/docs/#tap), [`thunkify`](https://ramdajs.com/docs/#thunkify), [`tryCatch`](https://ramdajs.com/docs/#tryCatch), [`unapply`](https://ramdajs.com/docs/#unapply), [`unary`](https://ramdajs.com/docs/#unary), [`uncurryN`](https://ramdajs.com/docs/#uncurryN), [`useWith`](https://ramdajs.com/docs/#useWith) |
+| **Math** | [`add`](https://ramdajs.com/docs/#add), [`dec`](https://ramdajs.com/docs/#dec), [`divide`](https://ramdajs.com/docs/#divide), [`inc`](https://ramdajs.com/docs/#inc), [`mathMod`](https://ramdajs.com/docs/#mathMod), [`mean`](https://ramdajs.com/docs/#mean), [`median`](https://ramdajs.com/docs/#median), [`modulo`](https://ramdajs.com/docs/#modulo), [`multiply`](https://ramdajs.com/docs/#multiply), [`negate`](https://ramdajs.com/docs/#negate), [`product`](https://ramdajs.com/docs/#product), [`subtract`](https://ramdajs.com/docs/#subtract), [`sum`](https://ramdajs.com/docs/#sum) |
+| **List** | [`adjust`](https://ramdajs.com/docs/#adjust), [`all`](https://ramdajs.com/docs/#all), [`any`](https://ramdajs.com/docs/#any), [`aperture`](https://ramdajs.com/docs/#aperture), [`append`](https://ramdajs.com/docs/#append), [`chain`](https://ramdajs.com/docs/#chain), [`collectBy`](https://ramdajs.com/docs/#collectBy), [`concat`](https://ramdajs.com/docs/#concat), [`count`](https://ramdajs.com/docs/#count), [`drop`](https://ramdajs.com/docs/#drop), [`dropLast`](https://ramdajs.com/docs/#dropLast), [`dropLastWhile`](https://ramdajs.com/docs/#dropLastWhile), [`dropRepeats`](https://ramdajs.com/docs/#dropRepeats), [`dropRepeatsWith`](https://ramdajs.com/docs/#dropRepeatsWith), [`dropWhile`](https://ramdajs.com/docs/#dropWhile), [`endsWith`](https://ramdajs.com/docs/#endsWith), [`filter`](https://ramdajs.com/docs/#filter), [`find`](https://ramdajs.com/docs/#find), [`findIndex`](https://ramdajs.com/docs/#findIndex), [`findLast`](https://ramdajs.com/docs/#findLast), [`findLastIndex`](https://ramdajs.com/docs/#findLastIndex), [`flatten`](https://ramdajs.com/docs/#flatten), [`forEach`](https://ramdajs.com/docs/#forEach), [`fromPairs`](https://ramdajs.com/docs/#fromPairs), [`groupBy`](https://ramdajs.com/docs/#groupBy), [`groupWith`](https://ramdajs.com/docs/#groupWith), [`head`](https://ramdajs.com/docs/#head), [`includes`](https://ramdajs.com/docs/#includes), [`indexBy`](https://ramdajs.com/docs/#indexBy), [`indexOf`](https://ramdajs.com/docs/#indexOf), [`init`](https://ramdajs.com/docs/#init), [`insert`](https://ramdajs.com/docs/#insert), [`insertAll`](https://ramdajs.com/docs/#insertAll), [`intersperse`](https://ramdajs.com/docs/#intersperse), [`into`](https://ramdajs.com/docs/#into), [`join`](https://ramdajs.com/docs/#join), [`last`](https://ramdajs.com/docs/#last), [`lastIndexOf`](https://ramdajs.com/docs/#lastIndexOf), [`length`](https://ramdajs.com/docs/#length), [`map`](https://ramdajs.com/docs/#map), [`mapAccum`](https://ramdajs.com/docs/#mapAccum), [`mapAccumRight`](https://ramdajs.com/docs/#mapAccumRight), [`mergeAll`](https://ramdajs.com/docs/#mergeAll), [`move`](https://ramdajs.com/docs/#move), [`none`](https://ramdajs.com/docs/#none), [`nth`](https://ramdajs.com/docs/#nth), [`pair`](https://ramdajs.com/docs/#pair), [`partition`](https://ramdajs.com/docs/#partition), [`pluck`](https://ramdajs.com/docs/#pluck), [`prepend`](https://ramdajs.com/docs/#prepend), [`range`](https://ramdajs.com/docs/#range), [`reduce`](https://ramdajs.com/docs/#reduce), [`reduceBy`](https://ramdajs.com/docs/#reduceBy), [`reduced`](https://ramdajs.com/docs/#reduced), [`reduceRight`](https://ramdajs.com/docs/#reduceRight), [`reduceWhile`](https://ramdajs.com/docs/#reduceWhile), [`reject`](https://ramdajs.com/docs/#reject), [`remove`](https://ramdajs.com/docs/#remove), [`repeat`](https://ramdajs.com/docs/#repeat), [`reverse`](https://ramdajs.com/docs/#reverse), [`scan`](https://ramdajs.com/docs/#scan), [`sequence`](https://ramdajs.com/docs/#sequence), [`slice`](https://ramdajs.com/docs/#slice), [`sort`](https://ramdajs.com/docs/#sort), [`splitAt`](https://ramdajs.com/docs/#splitAt), [`splitEvery`](https://ramdajs.com/docs/#splitEvery), [`splitWhen`](https://ramdajs.com/docs/#splitWhen), [`splitWhenever`](https://ramdajs.com/docs/#splitWhenever), [`startsWith`](https://ramdajs.com/docs/#startsWith), [`tail`](https://ramdajs.com/docs/#tail), [`take`](https://ramdajs.com/docs/#take), [`takeLast`](https://ramdajs.com/docs/#takeLast), [`takeLastWhile`](https://ramdajs.com/docs/#takeLastWhile), [`takeWhile`](https://ramdajs.com/docs/#takeWhile), [`times`](https://ramdajs.com/docs/#times), [`transduce`](https://ramdajs.com/docs/#transduce), [`transpose`](https://ramdajs.com/docs/#transpose), [`traverse`](https://ramdajs.com/docs/#traverse), [`unfold`](https://ramdajs.com/docs/#unfold), [`uniq`](https://ramdajs.com/docs/#uniq), [`uniqBy`](https://ramdajs.com/docs/#uniqBy), [`uniqWith`](https://ramdajs.com/docs/#uniqWith), [`unnest`](https://ramdajs.com/docs/#unnest), [`update`](https://ramdajs.com/docs/#update), [`without`](https://ramdajs.com/docs/#without), [`xprod`](https://ramdajs.com/docs/#xprod), [`zip`](https://ramdajs.com/docs/#zip), [`zipObj`](https://ramdajs.com/docs/#zipObj), [`zipWith`](https://ramdajs.com/docs/#zipWith) |
+| **Logic** | [`allPass`](https://ramdajs.com/docs/#allPass), [`and`](https://ramdajs.com/docs/#and), [`anyPass`](https://ramdajs.com/docs/#anyPass), [`both`](https://ramdajs.com/docs/#both), [`complement`](https://ramdajs.com/docs/#complement), [`cond`](https://ramdajs.com/docs/#cond), [`defaultTo`](https://ramdajs.com/docs/#defaultTo), [`either`](https://ramdajs.com/docs/#either), [`ifElse`](https://ramdajs.com/docs/#ifElse), [`isEmpty`](https://ramdajs.com/docs/#isEmpty), [`not`](https://ramdajs.com/docs/#not), [`or`](https://ramdajs.com/docs/#or), [`pathSatisfies`](https://ramdajs.com/docs/#pathSatisfies), [`propSatisfies`](https://ramdajs.com/docs/#propSatisfies), [`unless`](https://ramdajs.com/docs/#unless), [`until`](https://ramdajs.com/docs/#until), [`when`](https://ramdajs.com/docs/#when), [`xor`](https://ramdajs.com/docs/#xor) |
+| **Relation** | [`clamp`](https://ramdajs.com/docs/#clamp), [`countBy`](https://ramdajs.com/docs/#countBy), [`difference`](https://ramdajs.com/docs/#difference), [`differenceWith`](https://ramdajs.com/docs/#differenceWith), [`eqBy`](https://ramdajs.com/docs/#eqBy), [`equals`](https://ramdajs.com/docs/#equals), [`gt`](https://ramdajs.com/docs/#gt), [`gte`](https://ramdajs.com/docs/#gte), [`identical`](https://ramdajs.com/docs/#identical), [`innerJoin`](https://ramdajs.com/docs/#innerJoin), [`intersection`](https://ramdajs.com/docs/#intersection), [`lt`](https://ramdajs.com/docs/#lt), [`lte`](https://ramdajs.com/docs/#lte), [`max`](https://ramdajs.com/docs/#max), [`maxBy`](https://ramdajs.com/docs/#maxBy), [`min`](https://ramdajs.com/docs/#min), [`minBy`](https://ramdajs.com/docs/#minBy), [`pathEq`](https://ramdajs.com/docs/#pathEq), [`propEq`](https://ramdajs.com/docs/#propEq), [`sortBy`](https://ramdajs.com/docs/#sortBy), [`sortWith`](https://ramdajs.com/docs/#sortWith), [`symmetricDifference`](https://ramdajs.com/docs/#symmetricDifference), [`symmetricDifferenceWith`](https://ramdajs.com/docs/#symmetricDifferenceWith), [`union`](https://ramdajs.com/docs/#union), [`unionWith`](https://ramdajs.com/docs/#unionWith) |
+| **Object** | [`assoc`](https://ramdajs.com/docs/#assoc), [`assocPath`](https://ramdajs.com/docs/#assocPath), [`clone`](https://ramdajs.com/docs/#clone), [`dissoc`](https://ramdajs.com/docs/#dissoc), [`dissocPath`](https://ramdajs.com/docs/#dissocPath), [`eqProps`](https://ramdajs.com/docs/#eqProps), [`evolve`](https://ramdajs.com/docs/#evolve), [`forEachObjIndexed`](https://ramdajs.com/docs/#forEachObjIndexed), [`has`](https://ramdajs.com/docs/#has), [`hasIn`](https://ramdajs.com/docs/#hasIn), [`hasPath`](https://ramdajs.com/docs/#hasPath), [`invert`](https://ramdajs.com/docs/#invert), [`invertObj`](https://ramdajs.com/docs/#invertObj), [`keys`](https://ramdajs.com/docs/#keys), [`keysIn`](https://ramdajs.com/docs/#keysIn), [`lens`](https://ramdajs.com/docs/#lens), [`lensIndex`](https://ramdajs.com/docs/#lensIndex), [`lensPath`](https://ramdajs.com/docs/#lensPath), [`lensProp`](https://ramdajs.com/docs/#lensProp), [`mapObjIndexed`](https://ramdajs.com/docs/#mapObjIndexed), [`mergeDeepLeft`](https://ramdajs.com/docs/#mergeDeepLeft), [`mergeDeepRight`](https://ramdajs.com/docs/#mergeDeepRight), [`mergeDeepWith`](https://ramdajs.com/docs/#mergeDeepWith), [`mergeDeepWithKey`](https://ramdajs.com/docs/#mergeDeepWithKey), [`mergeLeft`](https://ramdajs.com/docs/#mergeLeft), [`mergeRight`](https://ramdajs.com/docs/#mergeRight), [`mergeWith`](https://ramdajs.com/docs/#mergeWith), [`mergeWithKey`](https://ramdajs.com/docs/#mergeWithKey), [`modify`](https://ramdajs.com/docs/#modify), [`modifyPath`](https://ramdajs.com/docs/#modifyPath), [`objOf`](https://ramdajs.com/docs/#objOf), [`omit`](https://ramdajs.com/docs/#omit), [`over`](https://ramdajs.com/docs/#over), [`path`](https://ramdajs.com/docs/#path), [`pathOr`](https://ramdajs.com/docs/#pathOr), [`paths`](https://ramdajs.com/docs/#paths), [`pick`](https://ramdajs.com/docs/#pick), [`pickAll`](https://ramdajs.com/docs/#pickAll), [`pickBy`](https://ramdajs.com/docs/#pickBy), [`project`](https://ramdajs.com/docs/#project), [`prop`](https://ramdajs.com/docs/#prop), [`propOr`](https://ramdajs.com/docs/#propOr), [`props`](https://ramdajs.com/docs/#props), [`set`](https://ramdajs.com/docs/#set), [`toPairs`](https://ramdajs.com/docs/#toPairs), [`toPairsIn`](https://ramdajs.com/docs/#toPairsIn), [`unwind`](https://ramdajs.com/docs/#unwind), [`values`](https://ramdajs.com/docs/#values), [`valuesIn`](https://ramdajs.com/docs/#valuesIn), [`view`](https://ramdajs.com/docs/#view), [`where`](https://ramdajs.com/docs/#where), [`whereAny`](https://ramdajs.com/docs/#whereAny), [`whereEq`](https://ramdajs.com/docs/#whereEq) |
+| **String** | [`match`](https://ramdajs.com/docs/#match), [`replace`](https://ramdajs.com/docs/#replace), [`split`](https://ramdajs.com/docs/#split), [`test`](https://ramdajs.com/docs/#test), [`toLower`](https://ramdajs.com/docs/#toLower), [`toString`](https://ramdajs.com/docs/#toString), [`toUpper`](https://ramdajs.com/docs/#toUpper), [`trim`](https://ramdajs.com/docs/#trim) |
+
+## Syntax
+
+You should familiarize yourself with Ramda which enables Haskell-like functional programming with JS. You can use most of the powerful ramda functions with point-free style in JSON.
+
+The first element in an array is a function.
+
+```javascript
+["add", 1, 2] // add(1, 2)
+```
+
+To curry a function, nest it.
+
+```javascript
+[["add", 1], 2] // add(1)(2)
+```
+
+A function always needs to be wrapped with `[]` and to be the first element in the array.
+
+```javascript
+[["map", ["inc"]], [1, 2, 3]] // map(inc)([1, 2, 3])
+```
+
+This is an error because `inc` is imterpreted as `String`.
+```javascript
+[["map", "inc"], [1, 2, 3]] // map("inc")([1, 2, 3])
+```
+
+Point-free style means you cannot write something like this with the JSON format.
+
+```javascript
+sortBy((v)=> v.age)(people) // ramdajs
+```
+
+It's because you cannot write arbitrary JS lines such as `(v)=> v.age`.
+
+Instead, you can achieve the same using another ramda funciton `prop`.
+
+```javascript
+sortBy(prop("age"), people) // ramdajs
+["sortBy",["prop", "age"], people] // FPJSON
+```
+
+## Reserved First Words
+
+By placing a reserved word in the first spot of an array, you can access the pre-built features.
+
+There are just 6 of them.
+
+#### "[]"
+
+To create an array of functions without executing them, place `"[]"` in the first spot, otherwise the `["lte", 2]` function will be executed with `["gt", 2]` before `-3` is passed.
+
+```javascript
+[["anyPass", ["[]", ["lte", 2], ["gt", 2]]], -3] // anyPass(lte(2), gt(2))(-3)
+```
+
+#### "typ"
+
+To create a type object such as `Number`, `Boolean`, `String`, `Array`, and `Object`.
+```javascript
+["is", ["typ", "String"], "abc"] // is(String, "abc")
+```
+
+#### "reg"
+
+To create a `RegExp`.
+```javascript
+["test", ["reg", "a", "i"], "ABC"] // test(new RegExp("a", "i"), "ABC")
+```
+
+#### "$"
+
+You can pass a store object as the second argument to `fpjson`.
+
+To access previously defined variables, use `"$"`.
+
+```javascript
+fpjson(["add", ["$", "num1"], 1], { "num": 1 }) // 2
+```
+
+#### "let"
+
+Pure functional programming without any side-effects is easy to get extremely complex and entangled even for simple logics.
+
+`"let"` inserts global variables to ease up the unnecessary complexisities.
+
+```javascript
+["let", "num1", 1] // let var1 = 1
+```
+
+#### "var"
+
+`var` works just like `$` except that `var` needs another argument to invoke.
+
+The last argument can be anything since it will be ignored.
+
+Note that you cannot access a new value within the same composition where it was defined. 
+
+```javascript
+let vars = {}
+fpjson(["let", "num1", 1], vars) // vars = { "num1" : 1 }
+fpjson(["add", ["var", "num1", true], 1], vars) // 2
+```
+
+`var` is especially convenient in a composition to switch the tracked value..
+
+```javascript
+fpjson([[
+  "pipe",
+  ["add", 1], // add 1 to 1
+  ["let", "num1"], // store 2 to num1
+  ["var", "num2"] // switch the ctx to num2, var("num2", 2), but 2 ignored
+], 1]),{ num2: 4 }) // => 4 is the final result
+```
+
+This pipeline add `1` to the initial value `1`, store it to `num1`, then switch the context to `num2`.
+
+#### Dynamic Variables
+
+Variable names can be dinamically specified with `$dynamic_path`.
+
+```javascript
+let vars = {}
+fpjson(["let", "num1", 1], vars) // vars = { "num1" : 1 }
+fpjson(["let", "ln", "num1"], vars) // vars = { "num1" : 1, "ln" : "num1" }
+fpjson(["add", ["$, "$ln"], 1], vars) // 2
+```
+
+#### Dot Notation
+
+Nested fields can be accessed with `.`.
+
+```javascript
+let vars = {}
+fpjson(["let", "o", { num: 1 }], vars) // vars = { "o" : { "num": 1 } }
+fpjson(["var", "o.num", true ], vars) // 1
+```

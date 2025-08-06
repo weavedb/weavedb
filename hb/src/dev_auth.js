@@ -45,6 +45,7 @@ function default_auth({
     }
   if (isNil(_dir)) throw Error(`dir doesn't exist: ${dir}`)
   let allow = false
+  // todo: do these trigger indexers??
   const fn = {
     get: (v, obj, set) => [kv.get(...v), false],
     set: (v, obj, set) => {

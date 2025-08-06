@@ -1,4 +1,6 @@
-## Zero Knowledge Provable JSON
+# zkJSON (Zero Knowledge Provable JSON)
+
+![](/images/zkjson.jpeg)
 
 **zkJSON** makes any arbitrary JSON data provable with zero knowledge proof, and makes them verifiable both offchain and onchain (blockchain).
 
@@ -6,7 +8,7 @@ EVM blockchains like Ethereum will get a hyper scalable NoSQL database extension
 
 ![](/images/zkjson-1.png)
 
-### Why
+## Why
 
 Most offchain data on the web are represented in JSON format, and blockchains have been failing to connect with them efficiently for some critical reasons.
 
@@ -23,7 +25,7 @@ We envision the web where offchain data are seamlessly connected with blockchain
 
 Onchain verifiability is what scales the decentralized web. Onchain is the new online, and zkJSON expands what's online/onchain (verifiable).
 
-### How
+## How
 
 There are 4 steps to build a complete solution.
 
@@ -40,7 +42,7 @@ And 3 bonus steps to make it practical and sustainable (using Arweave & Cosmos I
 
 *This repo contains only the first 4 steps.* You can find the rest [here](https://github.com/weavedb/weavedb).
 
-#### zkJSON
+## zkJSON
 
 The key to making JSON verifiable with zkp is to invent a deterministic encoding that is friendly to zk circuits. zk circuits can only handle arithmetic operations with natural numbers, so we need to convert any JSON to a series of natural numbers back and forth, then pack everything into as few `uint` as possible to efficiently save space. The default storage block in Solidity is `uint256` and Circom uses a modulo just below the 256 bit range. So optimizing for `uint` makes sense. Just to clarify, you cannot simply convert JSON to a binary format or any existing encoding formats, because it has to specifically make sense to the circuit logic and Solidity.
 
