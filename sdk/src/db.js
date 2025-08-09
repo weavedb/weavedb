@@ -51,6 +51,7 @@ export default class DB {
     if (this.id) throw Error("db already exists")
     const { pid } = await this.hb.spawn({
       "db-type": type,
+      "execution-device": "weavedb_wal@1.0",
       "device-stack": stack[type],
     })
     this.id = pid

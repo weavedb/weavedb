@@ -164,7 +164,7 @@ function pickInput({ state, msg, env }) {
   const committed = commit(msg, fields)
   let info = env.kv.get("__meta__", "current") ?? {}
   state.hashpath = !info.hashpath
-    ? id(committed)
+    ? `${headers.id}/${id(committed)}`
     : hashpath(info.hashpath, committed)
   state.signer = toAddr(keyid)
   state.query = JSON.parse(msg.headers.query)
