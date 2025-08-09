@@ -24,34 +24,36 @@ export default function Home() {
   return (
     <>
       <header className="app-header">
-        <a
-          href="https://docs.weavedb.dev"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="docs-link"
-          style={{
-            color: "rgba(255, 255, 255, 0.9)",
-            textDecoration: "none",
-            fontSize: "15px",
-            fontWeight: "500",
-            position: "fixed",
-            top: "30px",
-            right: "40px",
-            zIndex: 100,
-            transition: "all 0.3s ease",
-            borderBottom: "2px solid transparent",
-          }}
-          onMouseEnter={e => {
-            e.target.style.color = "#667eea"
-            e.target.style.borderBottom = "2px solid #667eea"
-          }}
-          onMouseLeave={e => {
-            e.target.style.color = "rgba(255, 255, 255, 0.9)"
-            e.target.style.borderBottom = "2px solid transparent"
-          }}
-        >
-          Docs
-        </a>
+        {true ? null : (
+          <a
+            href="https://docs.weavedb.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="docs-link"
+            style={{
+              color: "rgba(255, 255, 255, 0.9)",
+              textDecoration: "none",
+              fontSize: "15px",
+              fontWeight: "500",
+              position: "fixed",
+              top: "30px",
+              right: "40px",
+              zIndex: 100,
+              transition: "all 0.3s ease",
+              borderBottom: "2px solid transparent",
+            }}
+            onMouseEnter={e => {
+              e.target.style.color = "#667eea"
+              e.target.style.borderBottom = "2px solid #667eea"
+            }}
+            onMouseLeave={e => {
+              e.target.style.color = "rgba(255, 255, 255, 0.9)"
+              e.target.style.borderBottom = "2px solid transparent"
+            }}
+          >
+            Docs
+          </a>
+        )}
         <a
           href={`${process.env.NEXT_PUBLIC_SCAN_URL}/db/${process.env.NEXT_PUBLIC_DB_ID}?url=${process.env.NEXT_PUBLIC_RU_URL}`}
           target="_blank"
@@ -106,11 +108,10 @@ export default function Home() {
         className="post-button"
         disabled={body.trim().length === 0}
         onClick={async () => {
-          const { success, result } = await db.current.set(
-            "add:post",
-            { body },
-            "posts",
-          )
+          const res = await db.current.set("add:post", { body }, "posts")
+          console.log(res)
+          const { success, result } = res
+          console.log(success, result)
           if (success) {
             setSlot(result.result.i)
             setBody("")

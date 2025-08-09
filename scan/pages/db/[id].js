@@ -23,6 +23,7 @@ export default function Home() {
     const { body } = await hb.get({ path })
     const { wal } = JSON.parse(body)
     setTxs([...txs, ...wal])
+    console.log(wal)
     if (wal[0]) setTxFrom(wal[wal.length - 1].value.i)
   }
 

@@ -32,7 +32,7 @@ WeaveDB solves these challenges through a novel architecture that separates imme
 
 ## 🌐 JSON as the Universal Data Format
 
-JSON has become the lingua franca of modern data exchange—every web API, configuration file, and NoSQL database speaks JSON. WeaveDB embraces JSON as its native format, making it immediately compatible with existing web infrastructure. 
+JSON has become the lingua franca of modern data exchange—every web API, configuration file, and NoSQL database speaks JSON. WeaveDB embraces JSON as its native format, making it immediately compatible with existing web infrastructure.
 
 By making JSON:
 - **Cryptographically verifiable** through zkJSON
@@ -47,11 +47,14 @@ WeaveDB transforms the web's most ubiquitous data format into a foundation for d
 
 WeaveDB functions as a **Layer-0 data infrastructure** that sits beneath all blockchains, providing a universal off-chain data layer that any chain can access with cryptographic proofs. Rather than each blockchain maintaining its own siloed data, WeaveDB becomes the shared data hub where:
 
+- **AO processes** access data natively without zkProofs (same ecosystem)
 - **Ethereum** smart contracts query user data with zkProofs
 - **Solana** programs access cross-chain state
 - **Bitcoin** inscriptions reference permanent datasets
 - **L2 rollups** share data without bridging
 - **App chains** maintain state without local storage
+
+> **Native AO Integration**: Since WeaveDB runs on HyperBEAM/AO infrastructure, AO processes can directly query WeaveDB without needing zero-knowledge proofs—they simply send messages to read data. This makes WeaveDB the natural database layer for all AO applications.
 
 This positions WeaveDB not as another blockchain, but as the **foundational data layer** that all blockchains rely on—making off-chain data as trustless and verifiable as on-chain data. It solves the fundamental problem of blockchain data silos by creating a universal, permanent, and provable data substrate accessible to every chain.
 
@@ -70,7 +73,7 @@ WeaveDB is essentially an **optimistic zk rollup** that emulates proven **Log-St
 | **SSTables** | Sorted string tables | Arweave (permanent storage) |
 | **Compaction** | Background merge | ARJSON (bit-level optimization) |
 
-> **Key Innovation**: WeaveDB achieves the same performance characteristics as modern databases (RocksDB, LevelDB, Cassandra) by mapping LSM components to decentralized infrastructure. This is why WeaveDB can deliver sub-second queries—it's using the same proven architecture that powers Google, Facebook, and Amazon's databases.
+> **Key Innovation**: WeaveDB brings proven LSM architecture to decentralized infrastructure for the first time. By mapping LSM components to distributed systems, WeaveDB delivers sub-second queries with full cryptographic verifiability and permanent storage—achieving cloud-grade performance in a fully decentralized database.
 
 ### Rollup Architecture
 
@@ -79,7 +82,7 @@ WeaveDB is essentially an **optimistic zk rollup** that emulates proven **Log-St
 | **Execution Layer** | Sub-second query responses | Rollup nodes (L2) |
 | **Sequencing** | Verifiable compute with cryptographic hashpaths | HyperBEAM (AO) |
 | **Data Availability** | Permanent immutable storage | Arweave (L1) |
-| **Compression** | Minimal storage with incremental updates | ARJSON encoding |
+| **Compression** | Minimal storage with append-only updates | ARJSON encoding |
 | **Query Proofs** | Zero-knowledge proofs for data queries | zkJSON circuits |
 
 ### How It Works as an Optimistic ZK Rollup
@@ -131,16 +134,18 @@ The zkDB structure uses nested Sparse Merkle Trees combined with zkJSON encoding
 
 ---
 
-## 📦 ARJSON: Absolute Minimum Encoding
+## 📦 ARJSON: Append-Only Updates for Permanent Storage
 
-ARJSON revolutionizes data compression through:
+ARJSON revolutionizes data storage on immutable systems through:
 
 - **Bit-level optimization**: Variable-length encoding instead of byte-level alignment
 - **Columnar restructuring**: Groups similar data types during encoding
 - **Delta packing**: Stores differences between consecutive values
-- **Incremental updates**: Bit-level mutations to immutable data without full rewrites
+- **Append-only updates**: The breakthrough—update databases with absolute minimum bits
 
-> **Result**: For structured data with patterns, ARJSON achieves compression rates **20x better** than MessagePack and CBOR, drastically reducing permanent storage costs.
+> **Key Innovation**: ARJSON's true breakthrough is enabling **append-only updates to permanent storage**. On immutable systems like Arweave, you can't modify data, only add to it. ARJSON solves this by allowing databases to append just the minimal bits needed for changes, not entire documents. This makes permanent database storage practical and cost-effective for the first time.
+
+> **Result**: Efficient initial storage combined with minimal update costs, enabling databases to run permanently on append-only storage systems while maintaining full update capabilities.
 
 ---
 
@@ -226,7 +231,7 @@ WeaveDB's unique combination of permanent storage, zero-knowledge proofs, and se
 ### Key Applications
 
 **🐦 Decentralized Web2 Alternatives**  
-Build fully decentralized versions of Twitter, Reddit, or Instagram with just WeaveDB—no servers, no companies, user-owned data forever. A complete Twitter clone takes less than 100 lines of code.
+Build fully decentralized versions of Twitter, Reddit, or Instagram with just WeaveDB—no servers, no companies, user-owned data forever. A complete Twitter clone requires only JSON configuration, no backend code.
 
 **🔮 zkOracles**  
 Smart contracts can query any off-chain data with cryptographic proof—weather, prices, sports results—without trusting oracle providers. WeaveDB becomes a universal, trustless oracle for all blockchains.
@@ -260,6 +265,6 @@ WeaveDB is not just a database—it's a **comprehensive data pipeline protocol**
 - **Revolutionary economics** (developers profit instead of pay)
 - **Layer-0 architecture** (universal data hub for all blockchains)
 
-WeaveDB enables entire data architectures that were previously impossible. Applications can process data through mathematically-provable transformations, store it permanently with dramatic compression, and make it queryable from any blockchain—all while running forever without infrastructure costs.
+WeaveDB enables entire data architectures that were previously impossible. Applications can process data through mathematically-provable transformations, store it permanently with append-only efficiency, and make it queryable from any blockchain—all while running forever without infrastructure costs.
 
 This positions WeaveDB as the **foundational data layer** for the next generation of applications that require both Web2 performance and Web3 guarantees. The protocol bridges off-chain data and on-chain verification, creating the infrastructure for truly decentralized, verifiable, and permanent data.

@@ -9,7 +9,7 @@
     "zkp": "node --experimental-sqlite scripts/run-zk-prover.js"
   },
   "dependencies": {
-    "wao": "^0.35.3",
+    "wao": "^0.35.5",
     "wdb-sdk": "^0.0.9"
   }
 }

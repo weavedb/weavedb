@@ -63,7 +63,7 @@ const getKV = () => {
 }
 
 describe("WeaveDB Core", () => {
-  it.only("should return write result", async () => {
+  it("should return write result", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
     const db = wdb(getKV())
@@ -394,20 +394,20 @@ describe("WeaveDB Core", () => {
 const deploy = async ({ hb, tags }) => {
   const { jwk, addr } = await new AO().ar.gen()
   const signer = createSigner(jwk)
-  const { request } = connect({ MODE: "mainnet", URL: hb, device: "", signer })
+  //const { request } = connect({ MODE: "mainnet", URL: hb, device: "", signer })
+  const _hb = new HB({ jwk, url: hb })
   const address = (
     await fetch(`${hb}/~meta@1.0/info/serialize~json@1.0`).then(r => r.json())
   ).address
   const _tags = {
-    method: "POST",
-    path: "/~process@1.0/schedule",
-    scheduler: address,
+    "execution-device": "weavedb_wal@1.0",
     "random-seed": Math.random().toString(),
     ...tags,
   }
   const dbpath = genDir()
-  const res = await request(_tags)
-  return { pid: res.process, address, addr, jwk, signer, dbpath }
+  //const res = await request(_tags)
+  const { pid } = await _hb.spawn(_tags)
+  return { pid, address, addr, jwk, signer, dbpath }
 }
 
 const q1 = users_query
@@ -478,7 +478,7 @@ describe("Server", () => {
     hbeam.kill()
   })
 
-  it("should run a server", async () => {
+  it.only("should run a server", async () => {
     const port = 10001
     const port2 = 6364
     const hbeam = await new HyperBEAM({ port }).ready()
@@ -489,6 +489,7 @@ describe("Server", () => {
     const { pid, signer, jwk, addr, dbpath } = await deploy({ hb })
     console.log("pid", pid)
     console.log("addr", addr)
+
     const node = await server({ dbpath, jwk, hb, port: port2 })
     const _hb = new HB({ url: URL, jwk })
     let nonce = 0
@@ -498,7 +499,6 @@ describe("Server", () => {
     const json3 = await get(_hb, ["get", "users"], pid)
     assert.deepEqual(json3.res, [bob])
     await wait(5000)
-
     const { db } = await recover({ pid, hb, dbpath: genDir(), jwk })
     assert.deepEqual(await db.get("users").val(), [bob])
     const { pid: pid2 } = await deploy({ hb })

@@ -19,9 +19,11 @@ export default function Header() {
         </Link>
         <Box flex={1} />
         <Flex fontSize="14px" align="center" px={4}>
-          <Link href="https://docs.weavedb.dev" target="_blank">
-            <Box mx={2}>Docs</Box>
-          </Link>
+          {true ? null : (
+            <Link href="https://docs.weavedb.dev" target="_blank">
+              <Box mx={2}>Docs</Box>
+            </Link>
+          )}
         </Flex>
       </Flex>
     </Flex>
