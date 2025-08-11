@@ -3071,10 +3071,45 @@ vlq@^2.0.4:
   resolved "https://registry.yarnpkg.com/vlq/-/vlq-2.0.4.tgz#6057b85729245b9829e3cc7755f95b228d4fe041"
   integrity sha512-aodjPa2wPQFkra1G8CzJBTHXhgk3EVSwxSWXNPr1fgdFLUb8kvLV1iEb6rFgasIsjP82HWI6dsb5Io26DDnasA==
 
-wao@^0.35.0:
-  version "0.35.0"
-  resolved "https://registry.yarnpkg.com/wao/-/wao-0.35.0.tgz#b00a0b725a8123c7aafd46da1c135cef2822daf4"
-  integrity sha512-zbx01WFpl51u5EmKHp4L9rWA4+qakgSC6BAPSDcrrARZCEs+N5gL0M8hUpnxQDMVBZDIAGVTAOF4DI2PXPB1vg==
+wao@^0.35.5:
+  version "0.35.5"
+  resolved "https://registry.yarnpkg.com/wao/-/wao-0.35.5.tgz#07517d1d0cc17dc6228aafc84dd6c02c2bcd12b8"
+  integrity sha512-WUVBlpKhZMgNKSVkcvjpbX0FZM+490XBlDnXN2NSzpeoLCo9Gp6WYZ8yAwt0qLjwRPN8xnG1+NIZB0jT27Mu3w==
+  dependencies:
+    "@bokuweb/zstd-wasm" "^0.0.22"
+    "@dha-team/arbundles" "^1.0.1"
+    "@permaweb/ao-loader" "^0.0.44"
+    "@permaweb/aoconnect" "^0.0.85"
+    "@permaweb/aoconnect-69" "npm:@permaweb/aoconnect@0.0.69"
+    arbundles "^0.11.1"
+    arjson "^0.0.2"
+    arweave "^1.15.1"
+    base64url "^3.0.1"
+    body-parser "^2.2.0"
+    buffer "^6.0.3"
+    chokidar "^4.0.3"
+    cors "^2.8.5"
+    dotenv "^17.2.0"
+    express "^5.1.0"
+    fast-sha256 "^1.3.0"
+    graphql "^16.10.0"
+    hbsig "^0.1.3"
+    http-message-signatures "^1.0.4"
+    lmdb "^3.2.2"
+    localforage "^1.10.0"
+    lz4-asm "^0.4.2"
+    md5 "^2.3.0"
+    pm2 "^5.4.3"
+    ramda "^0.30.1"
+    structured-headers "1.0.1"
+    warp-arbundles "^1.0.4"
+    wasm-brotli "^2.0.2"
+    yargs "^17.7.2"
+
+wao@^0.35.6:
+  version "0.35.6"
+  resolved "https://registry.yarnpkg.com/wao/-/wao-0.35.6.tgz#5136f8ae6a275890a0b2de2ac8fa3380f3e37d74"
+  integrity sha512-ZFuSJQOcnH2J0rOMcvAly7+a1d6Xt10X1PfYRhp0buERkVMyoYT8kmBu9iW9IBAjajqPrrfW6EMcPFHKc9gQHQ==
   dependencies:
     "@bokuweb/zstd-wasm" "^0.0.22"
     "@dha-team/arbundles" "^1.0.1"
@@ -3129,12 +3164,12 @@ wasm-brotli@^2.0.2:
   resolved "https://registry.yarnpkg.com/wasm-brotli/-/wasm-brotli-2.0.2.tgz#f5317afb0d3e2e5fe90a66b6d61e42939284f1c7"
   integrity sha512-DgjRlpZz9z5br4TjQHSlDHRF9NIuGXHUj3AqO08koDCXz7EYzmPDb7T/6oar5UKLYgPp9Yxc2ImGpx4BMFwbNQ==
 
-wdb-sdk@^0.0.8:
-  version "0.0.8"
-  resolved "https://registry.yarnpkg.com/wdb-sdk/-/wdb-sdk-0.0.8.tgz#6181cb687deeb021fcfe2769dc232bd7a499f7a6"
-  integrity sha512-Eh9G1BekDcU9c+MmGkpAyzB8X2/zn9c05O4WASlF0FX+s06OvLt8beQgLm5jYJ5hCV6CbnhsIkngkrrqW+Jzrg==
+wdb-sdk@^0.0.11:
+  version "0.0.11"
+  resolved "https://registry.yarnpkg.com/wdb-sdk/-/wdb-sdk-0.0.11.tgz#6660154bccea0a30a6887f36b577d86e289a4a79"
+  integrity sha512-/I8rdKPkN3/dGRY7QpwpJ2UtTqrViJyO+JVwmp4EmTx9/Xx6HnvZAQxPwwuHLeTXmZlsK7w6DSdYmXxkBFahlQ==
   dependencies:
-    wao "^0.35.0"
+    wao "^0.35.6"
 
 weak-lru-cache@^1.2.2:
   version "1.2.2"

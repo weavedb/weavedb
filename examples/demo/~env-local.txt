@@ -1,0 +1,6 @@
+NEXT_PUBLIC_DB_ID="ajehepkyemcwyremf1f_fpwtvbcx3halt7jtomprbti"
+NEXT_PUBLIC_RU_URL="https://db-demo.wdb.ae:10003"
+NEXT_PUBLIC_ZKP_URL="https://zkp-demo.wdb.ae:10004"
+NEXT_PUBLIC_HB_URL="https://hb-demo.wdb.ae:10002"
+NEXT_PUBLIC_SCAN_URL="https://scan.weavedb.dev"
+NEXT_PUBLIC_ETH_CONTRACT="0x22f327A810aEEBdfe07379096efd66b698D5b7C5"

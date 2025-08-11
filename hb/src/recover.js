@@ -34,8 +34,11 @@ const recover = async ({ pid, jwk, dbpath, hb }) => {
             if (i >= height) {
               db.write(v)
               height = i
+              console.log()
+              console.log("[writing...]", i, "<", height, pid)
+              console.log()
             } else {
-              console.log("exists", i, "<", height)
+              //console.log("exists", i, "<", height)
             }
           } catch (e) {
             console.log(e)
