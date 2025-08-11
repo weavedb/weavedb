@@ -188,7 +188,6 @@ const server = async ({
             console.log(`initializing a new db: ${pid}`)
             const wkv = getKV2({ jwk, hb, dbpath, pid })
             if (hyperbeam) wal({ jwk, hb, dbpath, pid })
-            console.log("queeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
             dbs[pid] = queue(wdb(wkv))
             ios[pid] = wkv.io
             pids.push(pid)
@@ -200,7 +199,6 @@ const server = async ({
             res.json({ success: false, error: `db doesn't exist: ${pid}` })
           } else {
             const _res = await dbs[pid].write(req)
-            console.log("res...............", _res)
             if (_res?.success) {
               res.json({ success: true, query, result: _res.result })
             } else {

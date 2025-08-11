@@ -22,11 +22,16 @@ const commit = async ({ io, height, hb, pid }) =>
       } while (d !== null)
       if (bundle.length > 0) {
         try {
+          console.log(
+            "wal committing....commit..................",
+            bundle.length,
+          )
           const {
             slot,
             pid: pid2,
             res: { ok },
           } = await hb.message({ pid, data: JSON.stringify(bundle) })
+          console.log("wal commit..................", bundle.length)
           if (ok !== true) rej()
           else {
             console.log(`[${slot}] ${pid2} ${ok}`)

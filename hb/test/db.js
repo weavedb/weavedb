@@ -400,7 +400,7 @@ const deploy = async ({ hb, tags }) => {
     await fetch(`${hb}/~meta@1.0/info/serialize~json@1.0`).then(r => r.json())
   ).address
   const _tags = {
-    "execution-device": "weavedb_wal@1.0",
+    "execution-device": "weavedb-wal@1.0",
     "random-seed": Math.random().toString(),
     ...tags,
   }

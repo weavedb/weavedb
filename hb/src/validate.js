@@ -186,38 +186,38 @@ const validate = async ({
   let to = from + 99
   if (isNil(request)) if (jwk && hb) request = new HB({ url: hb, jwk })
   let res = await getMsgs({ pid, hb, from, to })
-  let slot = 0
   let isData = false
+  let from2 = from
   while (!isEmpty(res.assignments)) {
+    let arr = []
+    let slots = {}
+    let exists = 0
     for (let k in res.assignments ?? {}) {
       const m = res.assignments[k]
-      slot = m.slot
-      if (m.slot === 0) {
-        let from = null
-        for (const k in m.body.commitments) {
-          const c = m.body.commitments[k]
-          if (c.committer) {
-            from = c.committer
-            break
-          }
-        }
-      }
       if (m.body.data) {
         isData = true
         for (const v of JSON.parse(m.body.data)) {
-          if (type === "vec") await db.pwrite(v)
-          else {
-            db.write(v)
+          if (typeof slots[v.slot] === "undefined") {
+            slots[v.slot] = true
+            arr.push(v)
           }
-          i++
         }
       }
+      from2++
     }
-    from += 100
-    to += 100
-    res = await getMsgs({ pid, hb, from, to })
+    for (let v of arr) {
+      console.log(`${v.slot}: ${v.headers?.query}`)
+      if (type === "vec") await db.pwrite(v)
+      else db.write(v)
+      i++
+    }
+    if (from2 - from >= 100) {
+      from = from2
+      to = from + 100
+      res = await getMsgs({ pid, hb, from, to })
+    } else break
   }
-  if (isData) wkv.commit({ delta: true, slot })
+  if (isData) wkv.commit({ delta: true, slot: from2 - 1 })
   return db
 }
 

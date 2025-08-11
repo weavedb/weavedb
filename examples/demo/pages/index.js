@@ -1,6 +1,5 @@
 import { useRef, useEffect, useState } from "react"
 import { DB } from "wdb-sdk"
-
 export default function Home() {
   const [posts, setPosts] = useState([])
   const [slot, setSlot] = useState(null)
@@ -9,7 +8,9 @@ export default function Home() {
   const [generatingProof, setGeneratingProof] = useState({})
   const db = useRef()
   const getPosts = async () => {
-    setPosts(await db.current.cget("posts", ["date", "desc"], 10))
+    const _posts = await db.current.cget("posts", ["date", "desc"], 10)
+    console.log(_posts)
+    setPosts(_posts)
   }
   useEffect(() => {
     void (async () => {
@@ -227,6 +228,8 @@ export default function Home() {
                       },
                     ).then(r => r.json())
                     if (zkp) setProofs({ ...proofs, [v.id]: zkp })
+                  } catch (e) {
+                    console.log(e)
                   } finally {
                     setGeneratingProof({ ...generatingProof, [v.id]: false })
                   }
