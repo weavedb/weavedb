@@ -3,7 +3,7 @@ import verify from "./dev_verify.js"
 import write from "./dev_write_sql.js"
 import parse from "./dev_parse_sql.js"
 
-import build from "./wdb_build.js"
+import build from "./build.js"
 
 function sql({ msg, env: { sql } }) {
   return sql.prepare(msg[0]).all()

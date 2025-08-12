@@ -4,9 +4,8 @@ import * as lancedb from "@lancedb/lancedb"
 import cors from "cors"
 import bodyParser from "body-parser"
 import { verify } from "./server-utils.js"
-import vec from "./vec.js"
+import { vec, kv } from "../../core/src/index.js"
 import queue from "../src/pqueue.js"
-import kv from "../src/kv_vec.js"
 import { resolve } from "path"
 import { includes, map, fromPairs } from "ramda"
 import { AR, AO } from "wao"
@@ -15,6 +14,7 @@ import recover from "../src/recover.js"
 let dbs = {}
 let ios = {}
 let dbmap = {}
+
 const _tags = tags => fromPairs(map(v => [v.name, v.value])(tags))
 
 const server = async ({

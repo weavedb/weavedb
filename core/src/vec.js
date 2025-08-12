@@ -2,7 +2,7 @@ import normalize from "./dev_normalize.js"
 import verify from "./dev_verify.js"
 import write from "./dev_write_vec.js"
 import parse from "./dev_parse_vec.js"
-import build from "./wdb_build.js"
+import build from "./build.js"
 
 function search({ msg, env: { kv } }) {
   return kv.search(...msg)

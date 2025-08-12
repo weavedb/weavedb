@@ -4,7 +4,7 @@ import parse from "./dev_parse.js"
 import auth from "./dev_auth.js"
 import write from "./dev_write.js"
 import read from "./dev_read.js"
-import build from "./wdb_build.js"
+import build from "./build.js"
 
 function get({ state, msg }) {
   state.opcode = "get"

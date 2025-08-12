@@ -1,0 +1,53 @@
+{
+  "name": "wdb-core",
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "build:cjs": "babel src --out-dir dist/cjs --config-file ./.babelrc-cjs",
+    "build": "rm -rf dist && npm run build:cjs && cp src -rf dist/esm && node make.js && cp .npmignore dist/"
+  },
+  "exports": {
+    ".": {
+      "require": "./cjs/index.js",
+      "import": "./esm/index.js"
+    },
+    "./utils": {
+      "require": "./cjs/utils.js",
+      "import": "./esm/utils.js"
+    },
+    "./planner": {
+      "require": "./cjs/planner.js",
+      "import": "./esm/planner.js"
+    },
+    "./indexer": {
+      "require": "./cjs/indexer.js",
+      "import": "./esm/indexer.js"
+    },
+    "./fpjson": {
+      "require": "./cjs/fpjson.js",
+      "import": "./esm/fpjson.js"
+    },
+    "./devs": {
+      "require": "./cjs/devs.js",
+      "import": "./esm/devs.js"
+    }
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.24.8",
+    "@babel/core": "^7.25.2",
+    "@babel/plugin-transform-modules-commonjs": "^7.24.8",
+    "@babel/preset-env": "^7.25.3"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@lancedb/lancedb": "^0.21.2",
+    "apache-arrow": "^21.0.0",
+    "fast-sha256": "^1.3.0",
+    "fpjson-lang": "^0.1.5",
+    "hbsig": "^0.1.3",
+    "jsonschema": "^1.5.0",
+    "monade": "^0.0.1",
+    "node-sql-parser": "^5.3.11",
+    "ramda": "^0.31.3"
+  }
+}

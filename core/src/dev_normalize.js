@@ -2,7 +2,7 @@ import { includes, isNil } from "ramda"
 import { extractPubKey, rsaid, hmacid, verify, id, base, hashpath } from "hbsig"
 import { of, ka } from "monade"
 import sha256 from "fast-sha256"
-import { parseOp } from "./dev_common.js"
+import { parseOp } from "./utils.js"
 function base64urlDecode(str) {
   str = str.replace(/-/g, "+").replace(/_/g, "/")
   const pad = str.length % 4

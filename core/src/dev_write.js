@@ -2,7 +2,7 @@ import { validate } from "jsonschema"
 import { of, ka } from "monade"
 import parse from "./dev_parse.js"
 import auth from "./dev_auth.js"
-import { parseOp, initDB } from "./dev_common.js"
+import { parseOp, initDB } from "./utils.js"
 
 import {
   addIndex as _addIndex,

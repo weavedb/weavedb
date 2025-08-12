@@ -9,7 +9,6 @@ export default function Home() {
   const db = useRef()
   const getPosts = async () => {
     const _posts = await db.current.cget("posts", ["date", "desc"], 10)
-    console.log(_posts)
     setPosts(_posts)
   }
   useEffect(() => {
@@ -93,32 +92,38 @@ export default function Home() {
           placeholder="Write your post here..."
           value={body}
           onChange={e => {
-            if (e.target.value.length <= 280) {
+            if (e.target.value.length <= 140) {
               setBody(e.target.value)
             }
           }}
-          maxLength={280}
+          maxLength={140}
         />
         <div
-          className={`char-counter ${body.length > 250 ? "warning" : ""} ${body.length === 280 ? "limit" : ""}`}
+          className={`char-counter ${body.length > 100 ? "warning" : ""} ${body.length === 140 ? "limit" : ""}`}
         >
-          {body.length}/280
+          {body.length}/140
         </div>
       </div>
       <button
         className="post-button"
         disabled={body.trim().length === 0}
         onClick={async () => {
-          const res = await db.current.set("add:post", { body }, "posts")
-          console.log(res)
-          const { success, result } = res
-          console.log(success, result)
-          if (success) {
-            setSlot(result.result.i)
-            setBody("")
-            await getPosts()
-          } else {
-            alert("something went wrong!")
+          if (body.length <= 140) {
+            if (window.arweaveWallet) {
+              await window.arweaveWallet.connect([
+                "ACCESS_ADDRESS",
+                "SIGN_TRANSACTION",
+              ])
+            }
+            const res = await db.current.set("add:post", { body }, "posts")
+            const { success, result } = res
+            if (success) {
+              setSlot(result.result.i)
+              setBody("")
+              await getPosts()
+            } else {
+              alert("something went wrong!")
+            }
           }
         }}
       >
@@ -227,9 +232,15 @@ export default function Home() {
                         }),
                       },
                     ).then(r => r.json())
-                    if (zkp) setProofs({ ...proofs, [v.id]: zkp })
+                    if (zkp) {
+                      setProofs({ ...proofs, [v.id]: zkp })
+                    } else
+                      alert(
+                        "Tx has not been finalized yet. Try again in 30 secs.",
+                      )
                   } catch (e) {
                     console.log(e)
+                    alert("Something went wrong!")
                   } finally {
                     setGeneratingProof({ ...generatingProof, [v.id]: false })
                   }
