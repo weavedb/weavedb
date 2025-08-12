@@ -3,7 +3,7 @@ import zkjson from "../src/zkjson.js"
 import { createPrivateKey } from "node:crypto"
 import { DatabaseSync } from "node:sqlite"
 import { afterEach, after, describe, it, before, beforeEach } from "node:test"
-import sql from "../src/sql.js"
+import { sql, kv } from "../../core/src/index.js"
 import { last, init, clone, map, pluck, prop, slice } from "ramda"
 import { connect, createSigner } from "@permaweb/aoconnect"
 import { AO, HB } from "wao"
@@ -22,7 +22,6 @@ import {
   set,
   get,
 } from "./test-utils.js"
-import kv from "../src/kv.js"
 
 const getKV = ({ dbpath }) => {
   const io = open({ path: dbpath })
@@ -110,6 +109,7 @@ describe("WeaveSQL", () => {
       hb,
       jwk,
     })
+    await wait(10000)
     const rand2 = Math.floor(Math.random() * 100000)
     const _sql2 = new DatabaseSync(`.db/sql.${rand2})}`)
     await checkZK({ pid: validate_pid, hb, sql: _sql2 })

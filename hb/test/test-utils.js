@@ -157,6 +157,7 @@ const deployHB = async ({ port = 10001, sport, type = "nosql", as = [] }) => {
   const hb = `http://localhost:${port}`
   const { pid } = await hbeam.hb.spawn({
     "db-type": "nosql",
+    "execution-device": "weavedb-wal@1.0",
     "device-stack": [
       "wdb-normalize@1.0",
       "wdb-verify@1.0",

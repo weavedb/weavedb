@@ -257,6 +257,7 @@ const zkjson = async ({
   while (!isEmpty(res.assignments)) {
     for (let k in res.assignments ?? {}) {
       const m = res.assignments[k]
+      console.log(m)
       if (io_hb) {
         io_hb.put(["data", m.slot], m)
       }
@@ -300,7 +301,7 @@ const zkjson = async ({
       params.id,
       params.query ? JSON.stringify(params.query) : null,
     ]
-    console.log("generating zkp...")
+    console.log("generating zkp...", dir, doc)
     console.log(params)
     const zkp = io.get(key) ?? (await zkdb.genProof(params))
     io.put(key, zkp)

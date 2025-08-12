@@ -4,7 +4,7 @@ import "@lancedb/lancedb/embedding/transformers"
 import { LanceSchema, getRegistry, register } from "@lancedb/lancedb/embedding"
 import { createPrivateKey } from "node:crypto"
 import { afterEach, after, describe, it, before, beforeEach } from "node:test"
-import vec from "../src/vec.js"
+import { vec, kv } from "../../core/src/index.js"
 import { last, init, clone, map, pluck, prop, slice } from "ramda"
 import { connect, createSigner } from "@permaweb/aoconnect"
 import { AO, HB } from "wao"
@@ -20,12 +20,6 @@ import {
 } from "./test-utils.js"
 import { open } from "lmdb"
 import { Utf8 } from "apache-arrow"
-import {
-  httpbis,
-  createSigner as createHttpSigner,
-} from "http-message-signatures"
-
-import kv from "../src/kv_vec.js"
 
 const getKV = async _vec => {
   const rand = Math.floor(Math.random() * 100000)

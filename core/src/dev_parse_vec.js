@@ -2,8 +2,6 @@ import { of } from "monade"
 import { keys, uniq, concat, compose, is, isNil, includes } from "ramda"
 import _fpjson from "fpjson-lang"
 const fpjson = _fpjson.default || _fpjson
-import sql_parser from "node-sql-parser"
-const _parser = new sql_parser.Parser()
 
 import { replace$ } from "./fpjson.js"
 function fields(ndata, odata) {
