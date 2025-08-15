@@ -1,0 +1,41 @@
+# arjson
+
+## Installation
+
+```bash
+yarn add arjson
+```
+
+## Encode
+
+```js
+import { encode, Encoder } from "arjson"
+let data = { str: "abc", num: 123 }
+let encoder = new Encoder()
+const encoded = encode(data, encoder)
+```
+## Decode
+
+```js
+import { decode, Decoder } from "arjson"
+let dencoder = new Decoder()
+const decoded = decode(encoded, dencoder)
+```
+
+## Delta Upgrade
+
+```js
+import { json } from "arjson"
+const aj = json(null, { val: 1 })
+
+const delta1 = aj.update({ val: 2 })
+// [ 1, Uint8Array(3) [ 194, 13, 160 ] ]
+
+const delta2 = aj.update({ val: 3, val2: 4 })
+// [ 2, Uint8Array(10) [ 195,  13, 184, 129, 202, 155, 123,  82, 236, 128 ]]
+
+const deltas = aj.deltas() // get all delta history
+
+const aj2 = json(deltas) // reconstruct json from deltas
+console.log(aj2.json()) // => { val:3, val2: 4 }
+```

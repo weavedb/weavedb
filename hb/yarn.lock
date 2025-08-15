@@ -1345,18 +1345,18 @@ argparse@^2.0.1:
   resolved "https://registry.yarnpkg.com/argparse/-/argparse-2.0.1.tgz#246f50f3ca78a3240f6c997e8a9bd1eac49e4b38"
   integrity sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==
 
-arjson@^0.0.2:
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/arjson/-/arjson-0.0.2.tgz#52a89750dcdfe357cc0d40d3b72b06f3540028fd"
-  integrity sha512-hMQcsgBZa+fvELtDSPCbH/7o8xj/EcUIYGKu4tv/HzZko9Gdx0RuwgyrRLF8USGwD+VaHzdgF1TY3S7xnPxs2Q==
+arjson@^0.0.10:
+  version "0.0.10"
+  resolved "https://registry.yarnpkg.com/arjson/-/arjson-0.0.10.tgz#f26c7ae4a2e802e6a887169c872c1855007516be"
+  integrity sha512-evgbS0cRYsvI8Jl8WtugSXfLQJelsWU8ewKmQ9KnzN7lIEKlW8cdiVMsY8vjfPV+ti+NLCLP50AV5U22DU1p6g==
   dependencies:
     "@babel/plugin-transform-modules-commonjs" "^7.24.8"
     yargs "^17.7.2"
 
-arjson@^0.0.8:
-  version "0.0.8"
-  resolved "https://registry.yarnpkg.com/arjson/-/arjson-0.0.8.tgz#71f8b894dbcd2f6263246fdce926334b5d9c7a39"
-  integrity sha512-UyumSymMkF9klhRg8FBMSvf/j+7/EeaK7GwWWmvMIXH+DBrJqxzJYPj7dKv8YzdtoxBOdhEbEO5wYAlNx9U0Vw==
+arjson@^0.0.2:
+  version "0.0.2"
+  resolved "https://registry.yarnpkg.com/arjson/-/arjson-0.0.2.tgz#52a89750dcdfe357cc0d40d3b72b06f3540028fd"
+  integrity sha512-hMQcsgBZa+fvELtDSPCbH/7o8xj/EcUIYGKu4tv/HzZko9Gdx0RuwgyrRLF8USGwD+VaHzdgF1TY3S7xnPxs2Q==
   dependencies:
     "@babel/plugin-transform-modules-commonjs" "^7.24.8"
     yargs "^17.7.2"

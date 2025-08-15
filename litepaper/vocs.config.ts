@@ -170,6 +170,10 @@ export default defineConfig({
           text: "wdb-sdk",
           link: "/api/wdb-sdk",
         },
+        {
+          text: "wdb-core",
+          link: "/api/wdb-core",
+        },
 	{
           text: "monade",
           link: "/api/monade",

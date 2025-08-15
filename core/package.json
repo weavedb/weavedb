@@ -1,6 +1,6 @@
 {
   "name": "wdb-core",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "scripts": {
     "build:cjs": "babel src --out-dir dist/cjs --config-file ./.babelrc-cjs",
@@ -30,6 +30,10 @@
     "./devs": {
       "require": "./cjs/devs.js",
       "import": "./esm/devs.js"
+    },
+    "./preset": {
+      "require": "./cjs/preset.js",
+      "import": "./esm/preset.js"
     }
   },
   "devDependencies": {
@@ -45,6 +49,7 @@
     "fast-sha256": "^1.3.0",
     "fpjson-lang": "^0.1.5",
     "hbsig": "^0.1.3",
+    "http-message-signatures": "^1.0.4",
     "jsonschema": "^1.5.0",
     "monade": "^0.0.1",
     "node-sql-parser": "^5.3.11",

@@ -1,0 +1,215 @@
+# wdb-core
+
+`wdb-core` provides the composable devices internally used to build data pipelines.
+
+## Installation
+
+```bash
+yarn add wdb-core
+```
+
+## build()
+
+`build()` is a factory method to construct a data pipeline.
+
+```js
+import { kv, build } from "wdb-core"
+import { signer } from "wdb-core/utils"
+import { init_query } from "wdb-core/preset"
+import {
+  dev_normalize,
+  dev_verify,
+  dev_parse,
+  dev_auth,
+  dev_write,
+  dev_read,
+} from "wdb-core/devs"
+
+function get({ state, msg }) {
+  state.opcode = "get"
+  state.query = ["get", ...msg]
+  return arguments[0]
+}
+
+function cget({ state, msg }) {
+  state.opcode = "cget"
+  state.query = ["cget", ...msg]
+  return arguments[0]
+}
+
+let store = {}
+const io = {
+  put: async (key, val) => (store[key] = val),
+  get: key => store[key] ?? null,
+  transaction: async fn => fn(),
+}
+
+const wdb = build({
+  write: [dev_normalize, dev_verify, dev_parse, dev_auth, dev_write],
+  read: [dev_normalize, dev_parse, dev_read],
+  __read__: {
+    get: [get, dev_parse, dev_read],
+    cget: [cget, dev_parse, dev_read],
+  },
+})
+
+const db = wdb(kv(io, c => {}))
+
+const sign = signer({ jwk: acc[0].jwk, id: "db-1" })
+
+// initializing the database
+const res = await db.write(await sign("init", init_query)).val()
+
+// creating users directory
+await db.write(await sign(
+  "set:dir",
+  {
+    schema: { type: "object", required: ["name", "age"] },
+    auth: [
+      ["set:user,add:user,update:user,upsert:user,del:user", [["allow()"]]],
+    ],
+  },
+  "_",
+  "users",
+))
+
+// adding Bob to users
+const Bob = { name: "Bob", age: 23 }
+await db.write(await sign("set:user", Bob, "users", "Bob"))
+
+console.log(await db.get("users").val()) // => [ Bob ]
+```
+
+## kv()
+
+`kv()` is an adaptor function between in-memory store and the underlying kv storage.
+
+Using an in-memory store:
+
+```js
+import { kv, build } from "wdb-core"
+import { open } from "lmdb"
+
+const wdb = build({
+  write: [dev_normalize, dev_verify, dev_parse, dev_auth, dev_write],
+  read: [dev_normalize, dev_parse, dev_read],
+  __read__: {
+    get: [get, dev_parse, dev_read],
+    cget: [cget, dev_parse, dev_read],
+  },
+})
+
+let store = {}
+const io = {
+  put: async (key, val) => (store[key] = val),
+  get: key => store[key] ?? null,
+  transaction: async (fn)=> fn()
+}
+
+const db = wdb(kv(io, c => { /* callback */ }))
+```
+
+Using LMDB:
+
+```js
+import { kv, build } from "wdb-core"
+import { open } from "lmdb"
+
+const wdb = build({
+  write: [dev_normalize, dev_verify, dev_parse, dev_auth, dev_write],
+  read: [dev_normalize, dev_parse, dev_read],
+  __read__: {
+    get: [get, dev_parse, dev_read],
+    cget: [cget, dev_parse, dev_read],
+  },
+})
+const io = open({ path: "./db" })
+const db = wdb(kv(io, c => { /* callback */ }))
+```
+
+
+## Devices
+
+You can use the preset devices to build data pipelines for NoSQL DBs, RDBs, and experimental vector DBs. You caould easily swap one of the devices and build a custom pipeline.
+
+### Common Devices
+
+- `dev_normalize`
+- `dev_verify`
+- `dev_auth`
+- `dev_read`
+
+### NoSQL Devices
+
+The default NoSQL pipeline uses our own implementation of B+ tree indexers, query parsers, and planners.
+
+- `dev_parse`
+- `dev_write`
+
+```js
+function get({ state, msg }) {
+  state.opcode = "get"
+  state.query = ["get", ...msg]
+  return arguments[0]
+}
+
+function cget({ state, msg }) {
+  state.opcode = "cget"
+  state.query = ["cget", ...msg]
+  return arguments[0]
+}
+
+export default build({
+  write: [dev_normalize, dev_verify, dev_parse, dev_auth, dev_write],
+  read: [dev_normalize, dev_parse, dev_read],
+  __read__: {
+    get: [dev_get, dev_parse, dev_read],
+    cget: [dev_cget, dev_parse, dev_read],
+  },
+})
+```
+### Relational Devices
+
+The default RDB pipeline uses [SQLite](https://www.sqlite.org/).
+
+- `dev_parse_vec`
+- `dev_write_vec`
+
+```js
+function sql({ msg, env: { sql } }) {
+  return sql.prepare(msg[0]).all()
+}
+
+export default build({
+  write: [dev_normalize, dev_verify, dev_parse, dev_write],
+  __read__: { sql: [sql] },
+})
+```
+
+### Vector Devices
+
+The default vector DB pipeline uses [LanceDB](https://lancedb.github.io/lancedb/) with models from [Hugging Face](https://huggingface.co/models).
+
+- `dev_parse_vec`
+- `dev_write_vec`
+
+```js
+function search({ msg, env: { kv } }) {
+  return kv.search(...msg)
+}
+
+function vectorSearch({ msg, env: { kv } }) {
+  return kv.vectorSearch(...msg)
+}
+
+function query({ msg, env: { kv } }) {
+  return kv.query(...msg)
+}
+
+export default build({
+  async: true,
+  write: [dev_normalize, dev_verify, dev_parse, dev_write],
+  __read__: { search: [search], vectorSearch: [vectorSearch], query: [query] },
+})
+```
+
