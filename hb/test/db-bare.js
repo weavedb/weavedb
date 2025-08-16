@@ -2,11 +2,10 @@ import assert from "assert"
 import { afterEach, after, describe, it, before, beforeEach } from "node:test"
 import { of, pof } from "monade"
 import { db as wdb } from "../../core/src/index.js"
-//import db from "../src/db.js"
 import queue from "../src/queue.js"
 import { open } from "lmdb"
 import { resolve } from "path"
-import BPT from "../src/bpt.js"
+import BPT from "../../core/src/bpt.js"
 import { last, init, clone, map, pluck, prop, slice } from "ramda"
 import server from "../src/server.js"
 import recover from "../src/recover.js"
@@ -37,9 +36,9 @@ import {
   addIndex,
   getIndexes,
   removeIndex,
-} from "../src/indexer.js"
+} from "../../core/src/indexer.js"
 
-import parseQuery from "../src/parser.js"
+import parseQuery from "../../core/src/parser.js"
 
 import {
   range,
@@ -47,7 +46,7 @@ import {
   ranges,
   pranges,
   doc,
-} from "../src/planner.js"
+} from "../../core/src/planner.js"
 
 import { connect, createSigner } from "@permaweb/aoconnect"
 import { AO, HB } from "wao"
@@ -56,7 +55,7 @@ import {
   httpbis,
   createSigner as createHttpSigner,
 } from "http-message-signatures"
-import kv from "../src/kv.js"
+import kv from "../../core/src/kv.js"
 
 const getKV = () => {
   const io = open({ path: genDir() })
@@ -64,6 +63,23 @@ const getKV = () => {
 }
 
 describe("WeaveDB Core", () => {
+  it.only("should return write result", async () => {
+    const io = open({
+      path: "/home/basque/db/.cache/g_wtqwjsckainognrqfxunj6rksai3qzb4go3skke-k",
+    })
+    const db = wdb(kv(io, c => {}))
+    console.log(db.get("posts").val())
+    const { jwk, addr } = await new AO().ar.gen()
+    const s = new sign({
+      jwk,
+      id: "g_wtqwjsckainognrqfxunj6rksai3qzb4go3skke-k",
+    })
+    //console.log(await db.get("posts").val())
+    const res = await db
+      .write(await s.sign("add:post", { body: "yo2" }, "posts"))
+      .val()
+    console.log(res)
+  })
   it("should return write result", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })

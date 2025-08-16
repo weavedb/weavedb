@@ -1,0 +1,597 @@
+# zkjson
+
+## Installation
+
+```bash
+yarn add zkjson
+```
+
+
+### Encoder / Decoder
+
+Encode / Decode JSON
+
+```javascript
+const { encode, decode, toSignal, fromSignal } = require("zkjson")
+
+const json = { a : 1 }
+const encoded = encode(json) // [ 1, 1, 97, 2, 1, 0,  1 ]
+const signal = toSignal(encoded) // [ '111129712111011' ]
+const encoded2 = fromSignal(signal) // [ 1, 1, 97, 2, 1, 0, 1 ]
+const decoded = decode(encoded2) // { a : 1 }
+```
+
+Encode / Decode paths
+
+```javascript
+const { toSignal, fromSignal, encodePath, decodePath, path } = require("zkjson")
+
+const _path = "a"
+const encodedPath = encodePath(_path) // [ 1, 1, 97 ]
+const signalPath = toSignal(encodedPath) // [ "1111297" ]
+const encodedPath2 = fromSignal(signalPath) // [ 1, 1, 97 ]
+const decodedPath = decodePath(encodedPath) // "a"
+
+const signalPath2 = path(_path) // [ "1111297" ]
+```
+
+Encode / Decode values
+
+```javascript
+const { toSignal, fromSignal, encodeVal, decodeVal, val } = require("zkjson")
+
+const _val = 1
+const encodedVal = encodeVal(_val) // [ 2, 1, 0, 1 ]
+const signalVal = toSignal(encodedVal) // [ "12111011" ]
+const encodedVal2 = fromSignal(signalVal) // [ 2, 1, 0, 1 ]
+const decodedVal = decodeVal(encodedVal) // 1
+
+const signalVal2 = val(_val) // [ "12111011" ]
+```
+
+Encode / Decode conditional queries
+
+```javascript
+const { toSignal, fromSignal, encodeQuery, decodeQuery, query } = require("zkjson")
+
+const _query = [ "$gt", 1 ]
+const encodedQuery = encodeQuery(_query) // [ 12, 2, 1, 0, 1 ]
+const signalQuery = toSignal(encodedQuery) // [ "21212111011" ]
+const encodedQuery2 = fromSignal(signalQuery) // [ 12, 2, 1, 0, 1 ]
+const decodedQuery = decodeQuery(encodedQuery) // [ "$gt", 1 ]
+
+const signalQuery2 = query(_query) // [ "21212111011" ]
+```
+
+
+### Document ID \<\> Index Conversion
+
+```javascript
+ const { toIndex, fromIndexs } = require("zkjson")
+ 
+ const index = toIndex("zkJSON") // 1513609181413
+ const str = fromIndex(index) // "zkJSON"
+```
+
+### Doc
+
+```javascript
+const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers")
+const { path, Doc } = require("../../sdk")
+const { resolve } = require("path")
+const { expect } = require("chai")
+
+async function deploy() {
+  const Verifier = await ethers.getContractFactory("Groth16VerifierJSON")
+  const verifier = await Verifier.deploy()
+  const MyApp = await ethers.getContractFactory("SimpleJSON")
+  const myapp = await MyApp.deploy(verifier.address)
+  return { myapp }
+}
+
+describe("MyApp", function () {
+  let myapp
+  this.timeout(0)
+
+  beforeEach(async () => {
+    const dep = await loadFixture(deploy)
+    myapp = dep.myapp
+  })
+
+  it("should verify JSON", async function () {
+    const doc = new Doc({
+      wasm: resolve(
+        __dirname,
+        "../../circom/build/circuits/json/index_js/index.wasm"
+      ),
+      zkey: resolve(
+        __dirname,
+        "../../circom/build/circuits/json/index_0001.zkey"
+      ),
+    })
+    const json = {
+      num: 1,
+      float: 1.23,
+      str: "string",
+      bool: true,
+      null: null,
+      array: [1, 2, 3],
+    }
+
+    // query number
+    const zkp = await doc.genProof({ json, path: "num" })
+    expect((await myapp.qInt(path("num"), zkp)).toNumber()).to.eql(1)
+
+    // query string
+    const zkp2 = await doc.genProof({ json, path: "str" })
+    expect(await myapp.qString(path("str"), zkp2)).to.eql("string")
+
+    // query bool
+    const zkp3 = await doc.genProof({ json, path: "bool" })
+    expect(await myapp.qBool(path("bool"), zkp3)).to.eql(true)
+
+    // query null
+    const zkp4 = await doc.genProof({ json, path: "null" })
+    expect(await myapp.qNull(path("null"), zkp4)).to.eql(true)
+
+    // query float
+    const zkp5 = await doc.genProof({ json, path: "float" })
+    expect(
+      (await myapp.qFloat(path("float"), zkp5)).map(f => f.toNumber())
+    ).to.eql([1, 2, 123])
+
+    // query array and get number
+    const zkp6 = await doc.genProof({ json, path: "array" })
+    expect(
+      (await myapp.qCustom(path("array"), path("[1]"), zkp6)).toNumber()
+    ).to.eql(2)
+	
+    // conditional operator
+    const zkp7 = await doc.genProof({ json, path: "num", query: ["$gt", 0] })
+    expect(await myapp.qCond(path("num"), zkp7.slice(15, 21), zkp7)).to.eql(
+      true
+    )
+
+  })
+})
+```
+
+### DB
+
+```javascript
+const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers")
+const { toIndex, path, DB } = require("../../sdk")
+const { resolve } = require("path")
+const { expect } = require("chai")
+
+async function deploy() {
+  const [committer] = await ethers.getSigners()
+  const VerifierRU = await ethers.getContractFactory("Groth16VerifierRU")
+  const verifierRU = await VerifierRU.deploy()
+  const VerifierDB = await ethers.getContractFactory("Groth16VerifierDB")
+  const verifierDB = await VerifierDB.deploy()
+
+  const MyRU = await ethers.getContractFactory("SimpleRU")
+  const myru = await MyRU.deploy(
+    verifierRU.address,
+    verifierDB.address,
+    committer.address
+  )
+  return { myru, committer }
+}
+
+describe("MyRollup", function () {
+  let myru, committer, db, col_id, ru
+  this.timeout(0)
+
+  beforeEach(async () => {
+    const dep = await loadFixture(deploy)
+    myru = dep.myru
+    committer = dep.committer
+  })
+
+  it("should verify rollup transactions", async function () {
+    db = new DB({
+      level: 100,
+      size_path: 5,
+      size_val: 5,
+      size_json: 256,
+      size_txs: 10,
+      level_col: 8,
+      wasmRU: resolve(
+        __dirname,
+        "../../circom/build/circuits/rollup/index_js/index.wasm"
+      ),
+      zkeyRU: resolve(
+        __dirname,
+        "../../circom/build/circuits/rollup/index_0001.zkey"
+      ),
+      wasm: resolve(
+        __dirname,
+        "../../circom/build/circuits/db/index_js/index.wasm"
+      ),
+      zkey: resolve(
+        __dirname,
+        "../../circom/build/circuits/db/index_0001.zkey"
+      ), 
+    })
+    await db.init()
+    col_id = await db.addCollection()
+    const people = [
+      { name: "Bob", age: 10 },
+      { name: "Alice", age: 20 },
+      { name: "Mike", age: 30 },
+      { name: "Beth", age: 40 },
+    ]
+    let txs = people.map(v => {
+      return [col_id, v.name, v]
+    })
+    const zkp = await db.genRollupProof(txs)
+    await myru.commit(zkp)
+
+    const zkp2 = await db.genProof({
+      json: people[0],
+      col_id,
+      path: "age",
+      id: "Bob",
+    })
+
+    expect(
+      (
+        await myru.qInt([col_id, toIndex("Bob"), ...path("age")], zkp2)
+      ).toNumber()
+    ).to.eql(10)
+
+    const zkp3 = await db.genProof({
+      json: people[3],
+      col_id,
+      path: "name",
+      id: "Beth",
+    })
+    expect(
+      await myru.qString([col_id, toIndex("Beth"), ...path("name")], zkp3)
+    ).to.eql("Beth")
+  })
+})
+```
+
+## ZK Circuits
+
+There are 5 main circuits, and each circuit is built on top of the preceding one.
+
+### Circuits
+
+#### JSON.circom
+
+The base building block to prove JSON with an efficient encoding.
+
+- `size_json` : JSON size : default `256`
+- `size_path` : path size : default `4`
+- `size_val` : value size : default `8`
+
+#### Collection.circom
+
+A collection proven by a sparse merkle tree (SMT) can contain many JSON documents (2 ** 168 by default).
+
+- `level` : collection SMT level : default `168`
+- `size_json` : JSON size : default `256`
+- `size_path` : path size : default `4`
+- `size_val` : value size : default `8`
+
+#### DB.circom
+
+A database proven by a sparse merkle tree (SMT) can contain many collections (2 ** 8 by default).
+
+- `level_col` : DB SMT level : default `8`
+- `level` : collection SMT level : default `168`
+- `size_json` : JSON size : default `256`
+- `size_path` : path size : default `4`
+- `size_val` : value size : default `8`
+
+#### Query.circom
+
+Query proves a JSON data insert or update by a single write query.
+
+- `level_col` : DB SMT level : default `8`
+- `level` : collection SMT level : default `168`
+- `size_json` : JSON size : default `256`
+
+#### Rollup.circom
+
+Rollup proves batch data transitions.
+
+- `tx_size` : max number of queries in a batch : default `10`
+- `level_col` : DB SMT level : default `8`
+- `level` : collection SMT level : default `168`
+- `size_json` : JSON size : default `256`
+
+### Powers of Tau
+
+The first thing you need to do is to set up a powers of tau by a ceremony. As the power goes up the generation time and the wasm file size increases exponentially, and what power required for each circuit depends on the parameters above. So you need to find the right balance with the parameters of each circuit for your application. For instance, `power 20` required for the default `Rollup` circuit settings takes hours with a normal consumer computer.
+
+To run a ceremony,
+
+```bash
+yarn ceremony --power 14
+```
+
+Generated files are located at `build/pot`.
+
+You can also specify `entropy` and `name` for the ceremony. Refer to [the Circom docs](https://docs.circom.io/getting-started/proving-circuits/) for what they mean.
+
+```bash
+yarn ceremony --power 14 --name "first contribution" --entropy "some random value"
+```
+
+The same goes with the compiling process below.
+
+### Compile Circuit
+
+You can specify the parameters when compiling a circuit. Unspecified parameters will use the default values.
+
+For instance, to compile the `JSON` circuit,
+
+```bash
+yarn compile --power 14 --circuit json --size_json 256 --size_path 4 --size_val 8
+```
+
+To compile the `Rollup` circuit, you might need to increase `--max-old-space-size` of NodeJS.
+
+```bash
+yarn compile --power 20 --circuit rollup --tx_size 10 --level_col 8 --level 168 --size_json 256
+```
+
+All the generated files are stored at `build/circuits` including a Solidity verifier contract.
+
+### Concept of Some Parameters
+
+#### size
+
+The base unit of `size` is `uint`. Circom by default uses the module of `21888242871839275222246405745257275088548364400416034343698204186575808495617` (77 digits) and Solidity's base storage block is `uint256` and allows 78 digits. So zkJSON efficiently encodes JSON and packs it into blocks of 76 digits, which is one `uint`.
+
+`path_size=5` means, 5 * 76 digits are allowed for the query path when encoded, and it will be represented within `uint[5]` in Solidity. on the Solidity side, however, zkJSON uses dynamic arrays `uint[]`, so it will be more space-efficient than the max set size. But the zk-circuits cannot prove data sizes more than the set size.
+
+The default `json_size` is set `256`, which is 256 * 76 digits and should be sufficient for most JSON data.
+
+#### level
+
+`level` is the level of the sparse merkle tree (SMT). As the litepaper describes, the level of SMT for Collection determines how many alphanumeric characters each document ID can contain. It's determined by
+
+```math
+Number of Characters = \frac{\log_{10}(2^{\text{Level}})}{2}
+```
+
+`level=168` can allow 28 characters in document ID. This is significant because document IDs are often used in access control rules of NoSQL databases (with WeaveDB, for instance).
+
+28 characters can fit compressed Ethereum addresses (20 bytes) in Bse64 format.
+
+For DB, `level_col` determines how many collections the DB can contain. The collection IDs use the direct index numbers and are not converted to an alphanumeric representation, so `level_col=8` (2 ** 8 = 256) collections should be sufficient for most applications. But you are free to set a different value.
+
+### Default Parameters and Required POT
+
+| Circuit | POT | size_json | size_path | size_val | level | level_col | tx_size |
+|---|---|---|---|---|---|---|---|
+| **JSON** | 14 | 256 | 4 | 8 |   |   |   |
+| **Collection** | 16 | 256 | 4 | 8 | 168 |   |   |
+| **DB** | 16 | 256 | 4 | 8 | 168 | 8 |   |
+| **Query** | 17 | 256 |  |   | 168 | 8 |   |
+| **Rollup** | 20 | 256 |  |   | 168 | 8 | 10 |
+
+**Currently the SDK only works with `size_json=256` due to some hash logic. Keep it 256 for now please.**
+
+## Solidity Contracts
+
+### ZKQuery.sol
+
+```solidity
+interface ZKQuery {
+  function toArr(uint[] memory json) internal pure returns (uint[] memory);
+  
+  function _qNull (uint[] memory path, uint[] memory zkp) internal pure returns (bool);
+  function _qBool (uint[] memory path, uint[] memory zkp) internal pure returns (bool);
+  function _qInt (uint[] memory path, uint[] memory zkp) internal pure returns (int);
+  function _qFloat (uint[] memory path, uint[] memory zkp) internal pure returns (uint[3] memory);
+  function _qString (uint[] memory path, uint[] memory zkp) internal pure returns (string memory);
+  function _qRaw (uint[] memory path, uint[] memory zkp) internal pure returns (uint[] memory);
+
+  function getNull (uint[] memory path, uint[] memory raw) internal pure returns (bool);
+  function getBool (uint[] memory path, uint[] memory raw) internal pure returns (bool);
+  function getInt (uint[] memory path, uint[]  memory raw) internal pure returns (int);
+  function getFloat (uint[] memory path, uint[] memory raw) internal pure returns (uint[3] memory);
+  function getString (uint[] memory path, uint[] memory raw) internal pure returns (string memory);
+}
+```
+
+### ZKJson.sol
+
+```solidity
+interface ZKJSON {
+  function _validateQueryJSON(
+    uint[] memory path,
+    uint[] memory zkp,
+    uint size_path,
+    uint size_val
+  ) internal pure returns (uint[] memory);
+}
+```
+
+### ZKRollup.sol
+
+```solidity
+interface ZKRollup {
+  function _validateQueryRU(
+    uint[] memory path,
+    uint[] memory zkp,
+    uint size_path,
+    uint size_val
+  ) internal view returns (uint[] memory);
+
+  function commit (uint[] memory zkp) public returns (uint);
+}
+```
+
+### Examples
+
+`ZKJson` and `ZKRollup` inherit `ZKQuery`. You need to either inherit `ZKJson` or `ZKRollup` to build your own ZKDB-enabled contract. You can install `zkjson` node package and use the contract located at `node_modules/zkjson/contracts` in your Solidity contract. To install the package,
+
+```bash
+yarn add zkjson
+```
+
+#### Simple zkJSON
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.7.0 <0.9.0;
+import "ZKJson.sol";
+
+interface VerifierJSON {
+  function verifyProof(uint[2] calldata _pA, uint[2][2] calldata _pB, uint[2] calldata _pC, uint[12] calldata _pubSignals) view external returns (bool);
+}
+
+contract SimpleJSON is ZKJson {
+  uint constant SIZE_PATH = 5;
+  uint constant SIZE_VAL = 5;
+  
+  constructor (address _verifierJSON){
+    verifierJSON = _verifierJSON;
+  }
+  
+  function verify(uint[] memory zkp) private view returns (bool) {
+    uint[SIZE_PATH + SIZE_VAL + 2] memory sigs;
+    (
+       uint[2] memory _pA,
+       uint[2][2] memory _pB,
+       uint[2] memory _pC,
+       uint[] memory _sigs
+    ) = _parseZKP(zkp);
+    for(uint i = 0; i < sigs.length; i++) sigs[i] = _sigs[i];
+    
+    require(VerifierJSON(verifierJSON).verifyProof(_pA, _pB, _pC, sigs), "invalid proof");
+    return true;
+  }
+
+  function validateQuery(uint[] memory path, uint[] memory zkp) private view returns(uint[] memory){
+    verify(zkp);
+    return _validateQueryJSON(path, zkp, SIZE_PATH, SIZE_VAL);
+  }
+
+  function qInt (uint[] memory path, uint[] memory zkp) public view returns (int) {
+    uint[] memory value = validateQuery(path, zkp);
+    return _qInt(value);
+  }
+
+  function qFloat (uint[] memory path, uint[] memory zkp) public view returns (uint[3] memory) {
+    uint[] memory value = validateQuery(path, zkp);
+    return _qFloat(value);
+  }
+
+  function qRaw (uint[] memory path, uint[] memory zkp) public view returns (uint[] memory) {
+    uint[] memory value = validateQuery(path, zkp);
+    return _qRaw(value);
+  }
+  
+  function qString (uint[] memory path, uint[] memory zkp) public view returns (string memory) {
+    uint[] memory value = validateQuery(path, zkp);
+    return _qString(value);
+  }
+
+  function qBool (uint[] memory path, uint[] memory zkp) public view returns (bool) {
+    uint[] memory value = validateQuery(path, zkp);
+    return _qBool(value);
+  }
+  
+  function qNull (uint[] memory path, uint[] memory zkp) public view returns (bool) {
+    uint[] memory value = validateQuery(path, zkp);
+    return _qNull(value);
+  }
+
+  function qCond (uint[] memory path, uint[] memory cond, uint[] memory zkp) public view returns (bool) {
+    uint[] memory value = validateQuery(path, zkp);
+    return _qCond(value, cond);
+  }
+
+  function qCustom (uint[] memory path, uint[] memory path2, uint[] memory zkp) public view returns (int) {
+    uint[] memory value = validateQuery(path, zkp);
+    return getInt(path2, value);
+  }
+  
+}
+```
+
+#### Simple zkRollup
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.7.0 <0.9.0;
+import "ZKRollup.sol";
+
+interface VerifierDB {
+  function verifyProof(uint[2] calldata _pA, uint[2][2] calldata _pB, uint[2] calldata _pC, uint[14] calldata _pubSignals) view external returns (bool);
+}
+
+contract SimpleRU is ZKRollup {
+  uint constant SIZE_PATH = 5;
+  uint constant SIZE_VAL = 5;
+  address public verifierDB;
+
+  constructor (address _verifierRU, address _verifierDB, address _committer){
+    verifierRU = _verifierRU;
+    verifierDB = _verifierDB;
+    committer = _committer;
+  }
+  
+  function verify(uint[] memory zkp) private view returns (bool) {
+    uint[SIZE_PATH + SIZE_VAL + 4] memory sigs;
+    (
+       uint[2] memory _pA,
+       uint[2][2] memory _pB,
+       uint[2] memory _pC,
+       uint[] memory _sigs
+    ) = _parseZKP(zkp);
+    for(uint i = 0; i < sigs.length; i++) sigs[i] = _sigs[i];
+    require(VerifierDB(verifierDB).verifyProof(_pA, _pB, _pC, sigs), "invalid proof");
+    return true;
+  }
+
+  function validateQuery(uint[] memory path, uint[] memory zkp) private view returns(uint[] memory){
+    verify(zkp);
+    return _validateQueryRU(path, zkp, SIZE_PATH, SIZE_VAL);    
+  }
+
+  function qInt (uint[] memory path, uint[] memory zkp) public view returns (int) {
+    uint[] memory value = validateQuery(path, zkp);
+    return _qInt(value);
+  }
+
+  function qFloat (uint[] memory path, uint[] memory zkp) public view returns (uint[3] memory) {
+    uint[] memory value = validateQuery(path, zkp);
+    return _qFloat(value);
+  }
+
+  function qRaw (uint[] memory path, uint[] memory zkp) public view returns (uint[] memory) {
+    uint[] memory value = validateQuery(path, zkp);
+    return _qRaw(value);
+  }
+  
+  function qString (uint[] memory path, uint[] memory zkp) public view returns (string memory) {
+    uint[] memory value = validateQuery(path, zkp);
+    return _qString(value);
+  }
+
+  function qBool (uint[] memory path, uint[] memory zkp) public view returns (bool) {
+    uint[] memory value = validateQuery(path, zkp);
+    return _qBool(value);
+  }
+
+  function qCond (uint[] memory path, uint[] memory cond, uint[] memory zkp) public view returns (bool) {
+    uint[] memory value = validateQuery(path, zkp);
+    return _qCond(value, cond);
+  }
+
+  function qNull (uint[] memory path, uint[] memory zkp) public view returns (bool) {
+    uint[] memory value = validateQuery(path, zkp);
+    return _qNull(value);
+  }
+}
+```

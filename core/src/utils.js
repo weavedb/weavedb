@@ -1,9 +1,34 @@
+import {
+  httpbis,
+  createSigner as createHttpSigner,
+} from "http-message-signatures"
+import { createPrivateKey } from "node:crypto"
+
 function parseOp(ctx) {
   const { state } = ctx
   state.op = state.query[0]
   state.opcode = state.op.split(":")[0]
   state.operand = state.op.split(":")[1] ?? null
   return arguments[0]
+}
+
+const signer = ({ jwk, id, nonce = 0 }) => {
+  const signer = createHttpSigner(
+    createPrivateKey({ key: jwk, format: "jwk" }),
+    "rsa-pss-sha512",
+    jwk.n,
+  )
+  return async (...query) =>
+    await httpbis.signMessage(
+      { key: signer, fields: ["query", "nonce", "id"] },
+      {
+        headers: {
+          query: JSON.stringify(query),
+          nonce: Number(++nonce).toString(),
+          id,
+        },
+      },
+    )
 }
 
 function initDB({ state: { query, signer, id: _id }, msg, env: { kv, id } }) {
@@ -33,4 +58,4 @@ function initDB({ state: { query, signer, id: _id }, msg, env: { kv, id } }) {
   return arguments[0]
 }
 
-export { parseOp, initDB }
+export { parseOp, initDB, signer }
