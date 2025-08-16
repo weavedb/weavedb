@@ -2,7 +2,8 @@ import { clone } from "ramda"
 const kv_base = (io, fn, sync, methods = {}) => {
   let s = {}
   let l = {}
-  let i = 0
+  const current = io.get(`__meta__/current`)
+  let i = current ? current.i : 0
   let c = []
   let on = false
   const get = k => l[k] ?? s[k] ?? io.get(k) ?? null
@@ -47,7 +48,11 @@ const kv_base = (io, fn, sync, methods = {}) => {
             ts: state?.ts,
             hashpath: state?.hashpath ?? null,
           })
-          if (cb) cb(__data)
+          try {
+            if (cb) cb(__data)
+          } catch (e) {
+            console.log(e)
+          }
           i++
         }
       })

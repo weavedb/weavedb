@@ -1,6 +1,6 @@
 {
   "name": "wdb-core",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "type": "module",
   "scripts": {
     "build:cjs": "babel src --out-dir dist/cjs --config-file ./.babelrc-cjs",
