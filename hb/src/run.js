@@ -5,14 +5,15 @@ import server from "./server.js"
 
 let {
   port = 6364,
-  db = ".cache",
+  db = "../../../cache-db",
   hb = "http://localhost:10001",
   wallet = "../../../.wallet.json",
   test_mode = false,
 } = yargs(process.argv.slice(2)).argv
 
 const run = async () => {
-  const dbpath = resolve(import.meta.dirname, `.db/${db}`)
+  const dbpath = resolve(import.meta.dirname, db)
+  console.log(`dbpath: ${dbpath}`)
   const jwk = JSON.parse(
     readFileSync(resolve(import.meta.dirname, `${wallet}`), "utf8"),
   )

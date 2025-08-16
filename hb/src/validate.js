@@ -191,6 +191,7 @@ const validate = async ({
     let exists = 0
     for (let k in res.assignments ?? {}) {
       const m = res.assignments[k]
+      console.log(m)
       if (m.body.data) {
         isData = true
         for (const v of JSON.parse(m.body.data)) {
