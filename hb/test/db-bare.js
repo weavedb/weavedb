@@ -63,23 +63,6 @@ const getKV = () => {
 }
 
 describe("WeaveDB Core", () => {
-  it.only("should return write result", async () => {
-    const io = open({
-      path: "/home/basque/db/.cache/g_wtqwjsckainognrqfxunj6rksai3qzb4go3skke-k",
-    })
-    const db = wdb(kv(io, c => {}))
-    console.log(db.get("posts").val())
-    const { jwk, addr } = await new AO().ar.gen()
-    const s = new sign({
-      jwk,
-      id: "g_wtqwjsckainognrqfxunj6rksai3qzb4go3skke-k",
-    })
-    //console.log(await db.get("posts").val())
-    const res = await db
-      .write(await s.sign("add:post", { body: "yo2" }, "posts"))
-      .val()
-    console.log(res)
-  })
   it("should return write result", async () => {
     const { jwk, addr } = await new AO().ar.gen()
     const s = new sign({ jwk, id: "db-1" })
