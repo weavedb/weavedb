@@ -9,7 +9,7 @@ import {
   removeIndex as _removeIndex,
   put,
   del,
-} from "../src/indexer.js"
+} from "./indexer.js"
 
 import { isNil } from "ramda"
 
