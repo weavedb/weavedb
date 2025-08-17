@@ -7,7 +7,7 @@ import _Arweave from "arweave"
 const Arweave = _Arweave.default ?? _Arweave
 const arweave = Arweave.init()
 import { connect, createSigner } from "@permaweb/aoconnect"
-import { kv } from "../../core/src/index.js"
+import { kv } from "wdb-core"
 
 const verify = async req => {
   let valid = false

@@ -1,4 +1,4 @@
-import { db as wdb } from "../../core/src/index.js"
+import { db as wdb } from "wdb-core"
 import { getKV2, getKV, getMsgs } from "./server-utils.js"
 import { isEmpty } from "ramda"
 import { open } from "lmdb"
