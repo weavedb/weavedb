@@ -61,6 +61,7 @@ const start = async ({ io, height, pid, hb }) => {
     }
   }
 }
+
 export default async ({ jwk, pid, hb, dbpath }) => {
   const io = open({ path: `${dbpath}/${pid}` })
   let height = io.get("__meta__/height") ?? 0
