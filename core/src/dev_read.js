@@ -1,7 +1,7 @@
 import { of, ka } from "monade"
 import { map, pluck, isNil } from "ramda"
 import parseQuery from "./parser.js"
-import { get } from "../src/planner.js"
+import { get } from "./planner.js"
 
 function getDocs({ state, env }) {
   const { dir, doc } = state
