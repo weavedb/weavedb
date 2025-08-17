@@ -818,40 +818,80 @@
   resolved "https://registry.yarnpkg.com/@lancedb/lancedb-darwin-arm64/-/lancedb-darwin-arm64-0.19.0.tgz#74bede878f2f670e87d59c90bca44b790771a293"
   integrity sha512-XMMC410/ONPnaqINjo1T5vjpgKJ5QzmQrQ16XVoM+qXxZk5FRL8Y5cjEfMX8Rep2R9v5oN/oDroorlE2BwWrWw==
 
+"@lancedb/lancedb-darwin-arm64@0.21.3":
+  version "0.21.3"
+  resolved "https://registry.yarnpkg.com/@lancedb/lancedb-darwin-arm64/-/lancedb-darwin-arm64-0.21.3.tgz#f6e5a2d7af53314c5e58e40f49d81d583fb93b99"
+  integrity sha512-8cq0t64iC2qk3MO2bRLsNPWgwli71KkJJNR47nNdDLoXHWhhkrVZbrEE1BiEkMWAO2sSp98zIyUTDdFvKvjrug==
+
 "@lancedb/lancedb-darwin-x64@0.19.0":
   version "0.19.0"
   resolved "https://registry.yarnpkg.com/@lancedb/lancedb-darwin-x64/-/lancedb-darwin-x64-0.19.0.tgz#054e072ddf66764bed8ee433b49166bcbbd8b5e4"
   integrity sha512-kldJ/zbr8AYOjxMD+oJskEVt3hm88y/nRCU1DAt3CL+NnEIpw0GQmxDoR3O5CcREQ9pXMSTG63HtE7DlnaRd4w==
+
+"@lancedb/lancedb-darwin-x64@0.21.3":
+  version "0.21.3"
+  resolved "https://registry.yarnpkg.com/@lancedb/lancedb-darwin-x64/-/lancedb-darwin-x64-0.21.3.tgz#fd2dab56f482e74c5700a5e99a6a1d53b07f0935"
+  integrity sha512-Er4PMooeMTA+8LvH0H/x6Fk7rggCuYZy8UsJ+v4i6JqEFBUF+t5fkMXRk58BC5Xw7Dd0LEs2ZTJry9N7qSr1Ww==
 
 "@lancedb/lancedb-linux-arm64-gnu@0.19.0":
   version "0.19.0"
   resolved "https://registry.yarnpkg.com/@lancedb/lancedb-linux-arm64-gnu/-/lancedb-linux-arm64-gnu-0.19.0.tgz#1e8a345bb6739016fd86753e36825738b24a489b"
   integrity sha512-G4CSh2HA5ZIw1yPh3khQMIwONgw31uCNkN2Zcu3HI8c56klQXK15Lrw5pvJ8hrxJmUc6N8LgKHcRlgR9NPd3JQ==
 
+"@lancedb/lancedb-linux-arm64-gnu@0.21.3":
+  version "0.21.3"
+  resolved "https://registry.yarnpkg.com/@lancedb/lancedb-linux-arm64-gnu/-/lancedb-linux-arm64-gnu-0.21.3.tgz#7afeb5cdb17c312dd057d4f2b6250b9d0387c8f2"
+  integrity sha512-zeKzfXZBjXW8gsIYVw48aVU4dCQ7ZKuwF0uJHvW+I0+X15rnS21XYgXiOHKSmv6aiFYm0aIowJCLMKBIuwV0IA==
+
 "@lancedb/lancedb-linux-arm64-musl@0.19.0":
   version "0.19.0"
   resolved "https://registry.yarnpkg.com/@lancedb/lancedb-linux-arm64-musl/-/lancedb-linux-arm64-musl-0.19.0.tgz#2860565219ccbc89d4855bfb18dbbbfff5e57c88"
   integrity sha512-h5jjmeDlTbMeYf0S8383717PlzFluIbxlaFdn4+CYse2SnB2vCF32X2XESOAXtQigaOFZJ2U5LUDWr6wBAhVrQ==
+
+"@lancedb/lancedb-linux-arm64-musl@0.21.3":
+  version "0.21.3"
+  resolved "https://registry.yarnpkg.com/@lancedb/lancedb-linux-arm64-musl/-/lancedb-linux-arm64-musl-0.21.3.tgz#eb1564fe4f37e836c793a830b2254d38a016478d"
+  integrity sha512-apE9VIW/AoAKfBFjhiS3bn2Sl7asDKasDzsAt0Ms7rNKYaADfdr2nF8Bi5fOFsajxEQRJrXHCss1eHHxI02zZw==
 
 "@lancedb/lancedb-linux-x64-gnu@0.19.0":
   version "0.19.0"
   resolved "https://registry.yarnpkg.com/@lancedb/lancedb-linux-x64-gnu/-/lancedb-linux-x64-gnu-0.19.0.tgz#c85eae279a59676d76383606bcc3a2422369b044"
   integrity sha512-iTGvsz5WyA0qnkSrZTjZTmsstiGxrTiCJI+zOs0DOPoX09dVtv/iaMR/uzGDznmKzHBTTNectShCR+0ojTeX/Q==
 
+"@lancedb/lancedb-linux-x64-gnu@0.21.3":
+  version "0.21.3"
+  resolved "https://registry.yarnpkg.com/@lancedb/lancedb-linux-x64-gnu/-/lancedb-linux-x64-gnu-0.21.3.tgz#cf866915a5c7e02083fda6042e2a0f9ff3f3d1b3"
+  integrity sha512-ybZTqtYq8tdQLfWFbmUO6EwMz+sFu5zmO5J/H31NpxrtvLTrwG2I6zkq2knJrVI4ZqTcoVb/Gi2bq0pll7PJTg==
+
 "@lancedb/lancedb-linux-x64-musl@0.19.0":
   version "0.19.0"
   resolved "https://registry.yarnpkg.com/@lancedb/lancedb-linux-x64-musl/-/lancedb-linux-x64-musl-0.19.0.tgz#4a13077cffe39ebd419129852a14029c98ca1b64"
   integrity sha512-CsM0hXbW04diLYyIJ4s9dG45g2AUqT4aTOO1Q0WCgwz8of+6urmHDvx00a9N7PRoUevqVrSZmBIqlmWwLeqZgg==
+
+"@lancedb/lancedb-linux-x64-musl@0.21.3":
+  version "0.21.3"
+  resolved "https://registry.yarnpkg.com/@lancedb/lancedb-linux-x64-musl/-/lancedb-linux-x64-musl-0.21.3.tgz#b8fade05af7d63639824833ea3abe2a698db4d27"
+  integrity sha512-6GGNMUZ3y7qm8SNO9VJw/G8JUCkekgJG4iiiKsEbpiAxtbMLgB1x/KrqdLklv5fgHfT4Wr9fJB+TqMpG0c8kmg==
 
 "@lancedb/lancedb-win32-arm64-msvc@0.19.0":
   version "0.19.0"
   resolved "https://registry.yarnpkg.com/@lancedb/lancedb-win32-arm64-msvc/-/lancedb-win32-arm64-msvc-0.19.0.tgz#8f8ac7ec2f4d60b6f30cd114ad2ac84920281492"
   integrity sha512-0CRNu758cte4eA1lUcNwIejf71ShLppQ89kEDEUEEgMiwJ/Mh8oijgAB5k1tELzF7Oce6MRv38F8Kko4I3X1XQ==
 
+"@lancedb/lancedb-win32-arm64-msvc@0.21.3":
+  version "0.21.3"
+  resolved "https://registry.yarnpkg.com/@lancedb/lancedb-win32-arm64-msvc/-/lancedb-win32-arm64-msvc-0.21.3.tgz#53245baa73f920c852b4cc408c66229ed2ce170d"
+  integrity sha512-dEeiIEnoIoLxx81qbzrhjiGJwg4sEE/3o4kKUm4jGw0B5d7GRj624fVQD3p7/C35Bt23yzEKkJ1mSPEjLRowyg==
+
 "@lancedb/lancedb-win32-x64-msvc@0.19.0":
   version "0.19.0"
   resolved "https://registry.yarnpkg.com/@lancedb/lancedb-win32-x64-msvc/-/lancedb-win32-x64-msvc-0.19.0.tgz#149f89c0d69e97e3700e1f739e0697799ffaf9f4"
   integrity sha512-YnRp+pDcxAct7CqZESIflvs1GlLafQHcjYdYKzRTQFB1SxNlKavZhPi36xxE73fsCeGPtOj/alps+Yq99BiDgQ==
+
+"@lancedb/lancedb-win32-x64-msvc@0.21.3":
+  version "0.21.3"
+  resolved "https://registry.yarnpkg.com/@lancedb/lancedb-win32-x64-msvc/-/lancedb-win32-x64-msvc-0.21.3.tgz#4c14ab8c36ea4f3975a0d9a8cafb38dbe6e0284f"
+  integrity sha512-V4rieshQ0VQs+T7X8xBdCL1SDjrU111ahZFPiXs24gfegGMrKi5wLt89aY0B7Zn/QVJWZiHKz8HkKYWNeCoEAw==
 
 "@lancedb/lancedb@^0.19.0":
   version "0.19.0"
@@ -868,6 +908,22 @@
     "@lancedb/lancedb-linux-x64-musl" "0.19.0"
     "@lancedb/lancedb-win32-arm64-msvc" "0.19.0"
     "@lancedb/lancedb-win32-x64-msvc" "0.19.0"
+
+"@lancedb/lancedb@^0.21.2":
+  version "0.21.3"
+  resolved "https://registry.yarnpkg.com/@lancedb/lancedb/-/lancedb-0.21.3.tgz#7bea4620c6a1c3b65bda7a0a6bd3a2467069cd17"
+  integrity sha512-hfzp498BfcCJ730fV1YGGoXVxRgE+W1n0D0KwanKlbt8bBPSQ6E6Tf8mPXc8rKdAXIRR3o5mTzMG3z3Fda+m3Q==
+  dependencies:
+    reflect-metadata "^0.2.2"
+  optionalDependencies:
+    "@lancedb/lancedb-darwin-arm64" "0.21.3"
+    "@lancedb/lancedb-darwin-x64" "0.21.3"
+    "@lancedb/lancedb-linux-arm64-gnu" "0.21.3"
+    "@lancedb/lancedb-linux-arm64-musl" "0.21.3"
+    "@lancedb/lancedb-linux-x64-gnu" "0.21.3"
+    "@lancedb/lancedb-linux-x64-musl" "0.21.3"
+    "@lancedb/lancedb-win32-arm64-msvc" "0.21.3"
+    "@lancedb/lancedb-win32-x64-msvc" "0.21.3"
 
 "@lmdb/lmdb-darwin-arm64@3.3.0":
   version "3.3.0"
@@ -1203,6 +1259,13 @@
   dependencies:
     undici-types "~6.19.2"
 
+"@types/node@^24.0.3":
+  version "24.3.0"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-24.3.0.tgz#89b09f45cb9a8ee69466f18ee5864e4c3eb84dec"
+  integrity sha512-aPTXCrfwnDLj4VvXrm+UUCQjNEvJgNA8s5F1cvwQU+3KNltTOkBm1j30uNLyqqPNe7gE3KFzImYoZEfLhp4Yow==
+  dependencies:
+    undici-types "~7.10.0"
+
 "@types/pegjs@^0.10.0":
   version "0.10.6"
   resolved "https://registry.yarnpkg.com/@types/pegjs/-/pegjs-0.10.6.tgz#bc20fc4809fed4cddab8d0dbee0e568803741a82"
@@ -1303,6 +1366,21 @@ apache-arrow@^20.0.0:
     "@types/command-line-args" "^5.2.3"
     "@types/command-line-usage" "^5.0.4"
     "@types/node" "^20.13.0"
+    command-line-args "^6.0.1"
+    command-line-usage "^7.0.1"
+    flatbuffers "^25.1.24"
+    json-bignum "^0.0.3"
+    tslib "^2.6.2"
+
+apache-arrow@^21.0.0:
+  version "21.0.0"
+  resolved "https://registry.yarnpkg.com/apache-arrow/-/apache-arrow-21.0.0.tgz#e73f0b731511273ab26b576cd4c661213c08d2b1"
+  integrity sha512-UueXr0y7S6SB6ToIEON0ZIwRln1EY05NIMXKfPu8fumASypkXXHEb6LRTZGh7vnYoQ9TgqNMNN1937wyY9lyFQ==
+  dependencies:
+    "@swc/helpers" "^0.5.11"
+    "@types/command-line-args" "^5.2.3"
+    "@types/command-line-usage" "^5.0.4"
+    "@types/node" "^24.0.3"
     command-line-args "^6.0.1"
     command-line-usage "^7.0.1"
     flatbuffers "^25.1.24"
@@ -3126,6 +3204,14 @@ node-gyp-build@^4.2.0, node-gyp-build@^4.2.2:
   resolved "https://registry.yarnpkg.com/node-gyp-build/-/node-gyp-build-4.8.4.tgz#8a70ee85464ae52327772a90d66c6077a900cfc8"
   integrity sha512-LA4ZjwlnUblHVgq0oBF3Jl/6h/Nvs5fzBLwdEF4nuxnFdsfajde4WfxtJr3CaiH+F6ewcIB/q4jQ4UzPyid+CQ==
 
+node-sql-parser@^5.3.11:
+  version "5.3.11"
+  resolved "https://registry.yarnpkg.com/node-sql-parser/-/node-sql-parser-5.3.11.tgz#41b40eb705db5f88f5cc8f1be0b9defe632c6bdc"
+  integrity sha512-1ZcXu2qEFZlMkkaYPpMoTkypTunYTvtnInzVjWDhjc1+FS5h/WqT1rbgP2pP42/nXBWfPVN66mEfidWSpYVs1Q==
+  dependencies:
+    "@types/pegjs" "^0.10.0"
+    big-integer "^1.6.48"
+
 node-sql-parser@^5.3.9:
   version "5.3.9"
   resolved "https://registry.yarnpkg.com/node-sql-parser/-/node-sql-parser-5.3.9.tgz#6475a9fc113a2169acc5d8fafd29276390b02b09"
@@ -4034,6 +4120,11 @@ undici-types@~6.21.0:
   resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-6.21.0.tgz#691d00af3909be93a7faa13be61b3a5b50ef12cb"
   integrity sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==
 
+undici-types@~7.10.0:
+  version "7.10.0"
+  resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-7.10.0.tgz#4ac2e058ce56b462b056e629cc6a02393d3ff350"
+  integrity sha512-t5Fy/nfn+14LuOc2KNYg75vZqClpAiqscVvMygNnlsHBFpSXdJaYtXMcdNLpl/Qvc3P2cB3s6lOV51nqsFq4ag==
+
 undici@^5.19.1:
   version "5.29.0"
   resolved "https://registry.yarnpkg.com/undici/-/undici-5.29.0.tgz#419595449ae3f2cdcba3580a2e8903399bd1f5a3"
@@ -4140,6 +4231,22 @@ wasmcurves@0.2.2:
   integrity sha512-JRY908NkmKjFl4ytnTu5ED6AwPD+8VJ9oc94kdq7h5bIwbj0L4TDJ69mG+2aLs2SoCmGfqIesMWTEJjtYsoQXQ==
   dependencies:
     wasmbuilder "0.0.16"
+
+wdb-core@^0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/wdb-core/-/wdb-core-0.0.3.tgz#7916765e526c06b7e475515be4dd6fb9e53d6845"
+  integrity sha512-fEvB3kdHzC/oY8JiQEmmOqjudKDfdy1xS1gHCzfCVjcZCTQwWox/IATrYZAyYtrmqhEaXeLVRuJopahZnC1N0Q==
+  dependencies:
+    "@lancedb/lancedb" "^0.21.2"
+    apache-arrow "^21.0.0"
+    fast-sha256 "^1.3.0"
+    fpjson-lang "^0.1.5"
+    hbsig "^0.1.3"
+    http-message-signatures "^1.0.4"
+    jsonschema "^1.5.0"
+    monade "^0.0.1"
+    node-sql-parser "^5.3.11"
+    ramda "^0.31.3"
 
 weak-lru-cache@^1.2.2:
   version "1.2.2"
