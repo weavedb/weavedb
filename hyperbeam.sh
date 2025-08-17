@@ -22,7 +22,7 @@ if [ ! -d "$HYPERBEAM_DIR" ]; then
 fi
 
 WEAVEDB_URL="http://localhost:10001/~weavedb@1.0/start"
-MAX_WAIT_TIME=60  # Maximum seconds to wait for service to be ready
+MAX_WAIT_TIME=180  # Maximum seconds to wait for service to be ready
 
 echo "========================================"
 echo "WeaveDB Monitor (Process Group Kill)"
