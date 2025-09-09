@@ -1,6 +1,6 @@
 # monade
 
-`monade` is a language agnostic framework to build [monadiac](https://en.wikipedia.org/wiki/Monad_(functional_programming)) compute pipelines, which is by far the cleanest representation of complex logic.
+`monade` is a language agnostic framework to build [monadic](https://en.wikipedia.org/wiki/Monad_(functional_programming)) compute pipelines, which is by far the cleanest representation of complex logic.
 
 This makes WeaveDB completely modular from the ground up enabling multi-paradigm database types, such as document-based NoSQL, relational, and even vector database for AI.
 
@@ -137,9 +137,9 @@ const calc3 = opt(of(3).map(dec).map(div10By)) // => 5
 ## Devices
 
 ### dev()
-A device is a factory object to effectively construct monadiac pipelines with named functions with an arbitray number of added parameters.
+A device is a factory object to effectively construct monadic pipelines with named functions with an arbitray number of added parameters.
 
-The first argument `ctx` is the context/data passed through the monadiac pipeline, and you can add arbutrary numbr parameter thereafter.
+The first argument `ctx` is the context/data passed through the monadic pipeline, and you can add arbutrary numbr parameter thereafter.
 ```js
 const calc = dev({
   add: (ctx, n) => ctx + n,

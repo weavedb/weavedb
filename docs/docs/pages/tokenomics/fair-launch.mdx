@@ -1,0 +1,126 @@
+## 3. Fair Launch Emission
+
+The **Fair Launch Pool** distributes **30% of the initial total supply (300,000,000 $DB)** to participants through the [**Permaweb Index**](https://www.autonomous.finance/research/en-US/permaweb-index) in a transparent and predictable schedule. This decentralized funding mechanism enables users to allocate AO yield to WeaveDB in exchange for $DB tokens, ensuring ongoing community support rather than one-time investments. Emission follows a **daily exponential decay** model to ensure fairness for early contributors while maintaining long-term sustainability.
+
+### Emission Model
+
+Daily emissions start at 90,000 $DB and decay by 0.03% each day through a mathematical decay function (E_t = E_0 × r^t). This gradual reduction ensures early participants receive higher rewards while preventing sudden inflation spikes. The decay continues smoothly over years, producing approximately **31.2 million $DB in the first year, 56.4 million by year two, 76.8 million by year three**, and ultimately approaching the full 300 million allocation over approximately **30-40 years**.
+
+### Key Properties
+
+* **Decay Rate:** 0.9997 per day (0.03% daily decay)
+* **Initial Daily Emission:** 90,000 $DB
+* **Total Allocation:** 300,000,000 $DB (30% of supply)
+* **Year 1 Distribution:** 31.2M $DB (10.4% of FLP allocation)
+* **Transferability:** Tokens from the Fair Launch Pool become transferable **one year after FLP start**
+
+### Daily Emission Decay
+
+<svg viewBox="0 0 800 400" width="100%" height="400">
+  <rect x="60" y="40" width="680" height="300" fill="#f9fafb" stroke="#e5e7eb"/>
+  
+  <line x1="60" y1="140" x2="740" y2="140" stroke="#e5e7eb" strokeDasharray="2,2"/>
+  <line x1="60" y1="240" x2="740" y2="240" stroke="#e5e7eb" strokeDasharray="2,2"/>
+  <line x1="200" y1="40" x2="200" y2="340" stroke="#e5e7eb" strokeDasharray="2,2"/>
+  <line x1="340" y1="40" x2="340" y2="340" stroke="#e5e7eb" strokeDasharray="2,2"/>
+  <line x1="480" y1="40" x2="480" y2="340" stroke="#e5e7eb" strokeDasharray="2,2"/>
+  <line x1="620" y1="40" x2="620" y2="340" stroke="#e5e7eb" strokeDasharray="2,2"/>
+  
+  <text x="50" y="45" textAnchor="end" fontSize="11" fill="#666">90k</text>
+  <text x="50" y="145" textAnchor="end" fontSize="11" fill="#666">67.5k</text>
+  <text x="50" y="245" textAnchor="end" fontSize="11" fill="#666">45k</text>
+  <text x="50" y="345" textAnchor="end" fontSize="11" fill="#666">22.5k</text>
+  
+  <text x="60" y="365" textAnchor="middle" fontSize="11" fill="#666">0</text>
+  <text x="200" y="365" textAnchor="middle" fontSize="11" fill="#666">Year 5</text>
+  <text x="340" y="365" textAnchor="middle" fontSize="11" fill="#666">Year 10</text>
+  <text x="480" y="365" textAnchor="middle" fontSize="11" fill="#666">Year 15</text>
+  <text x="620" y="365" textAnchor="middle" fontSize="11" fill="#666">Year 20</text>
+  <text x="740" y="365" textAnchor="middle" fontSize="11" fill="#666">Year 25</text>
+  
+  <path d="M 60,40 Q 150,90 200,130 T 340,200 T 480,250 T 620,290 T 740,320" 
+        stroke="#6366F1" strokeWidth="3" fill="none"/>
+  
+  <path d="M 60,40 Q 150,90 200,130 T 340,200 T 480,250 T 620,290 T 740,320 L 740,340 L 60,340 Z" 
+        fill="#6366F1" opacity="0.1"/>
+  
+  <text x="400" y="20" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#333">Daily Emission Rate ($DB/day)</text>
+</svg>
+
+### Cumulative Emission
+
+<svg viewBox="0 0 800 400" width="100%" height="400">
+  <rect x="60" y="40" width="680" height="300" fill="#f9fafb" stroke="#e5e7eb"/>
+  
+  <line x1="60" y1="115" x2="740" y2="115" stroke="#e5e7eb" strokeDasharray="2,2"/>
+  <line x1="60" y1="190" x2="740" y2="190" stroke="#e5e7eb" strokeDasharray="2,2"/>
+  <line x1="60" y1="265" x2="740" y2="265" stroke="#e5e7eb" strokeDasharray="2,2"/>
+  <line x1="200" y1="40" x2="200" y2="340" stroke="#e5e7eb" strokeDasharray="2,2"/>
+  <line x1="340" y1="40" x2="340" y2="340" stroke="#e5e7eb" strokeDasharray="2,2"/>
+  <line x1="480" y1="40" x2="480" y2="340" stroke="#e5e7eb" strokeDasharray="2,2"/>
+  <line x1="620" y1="40" x2="620" y2="340" stroke="#e5e7eb" strokeDasharray="2,2"/>
+  
+  <text x="50" y="45" textAnchor="end" fontSize="11" fill="#666">300M</text>
+  <text x="50" y="120" textAnchor="end" fontSize="11" fill="#666">225M</text>
+  <text x="50" y="195" textAnchor="end" fontSize="11" fill="#666">150M</text>
+  <text x="50" y="270" textAnchor="end" fontSize="11" fill="#666">75M</text>
+  <text x="50" y="345" textAnchor="end" fontSize="11" fill="#666">0</text>
+  
+  <text x="60" y="365" textAnchor="middle" fontSize="11" fill="#666">0</text>
+  <text x="200" y="365" textAnchor="middle" fontSize="11" fill="#666">Year 5</text>
+  <text x="340" y="365" textAnchor="middle" fontSize="11" fill="#666">Year 10</text>
+  <text x="480" y="365" textAnchor="middle" fontSize="11" fill="#666">Year 15</text>
+  <text x="620" y="365" textAnchor="middle" fontSize="11" fill="#666">Year 20</text>
+  <text x="740" y="365" textAnchor="middle" fontSize="11" fill="#666">Year 25</text>
+  
+  <path d="M 60,340 Q 130,310 200,280 T 340,230 T 480,180 T 620,130 T 740,90" 
+        stroke="#10B981" strokeWidth="3" fill="none"/>
+  
+  <path d="M 60,340 Q 130,310 200,280 T 340,230 T 480,180 T 620,130 T 740,90 L 740,340 L 60,340 Z" 
+        fill="#10B981" opacity="0.1"/>
+  
+  <line x1="60" y1="40" x2="740" y2="40" stroke="#ef4444" strokeWidth="1" strokeDasharray="5,5"/>
+  <text x="750" y="45" fontSize="10" fill="#ef4444">Asymptotic: 300M</text>
+  
+  <circle cx="200" cy="280" r="4" fill="#10B981"/>
+  <text x="210" y="270" fontSize="10" fill="#666">~109.2M</text>
+  
+  <circle cx="340" cy="230" r="4" fill="#10B981"/>
+  <text x="350" y="220" fontSize="10" fill="#666">~171.6M</text>
+  
+  <circle cx="480" cy="180" r="4" fill="#10B981"/>
+  <text x="490" y="170" fontSize="10" fill="#666">~214.8M</text>
+  
+  <circle cx="620" cy="130" r="4" fill="#10B981"/>
+  <text x="630" y="120" fontSize="10" fill="#666">~244.8M</text>
+  
+  <circle cx="740" cy="90" r="4" fill="#10B981"/>
+  <text x="680" y="80" fontSize="10" fill="#666">~268.8M</text>
+  
+  <text x="400" y="20" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#333">Cumulative $DB Emitted</text>
+</svg>
+
+### Emission Schedule (Corrected for 0.9997 Decay)
+
+| Timeframe | Daily Emission | Cumulative Emission | % of FLP Allocation | % of Total Supply |
+|---|---:|---:|---:|---:|
+| **Day 1** | 90,000 $DB | 90,000 $DB | 0.03% | 0.009% |
+| **Month 1** | ~89,200 $DB | ~2.68M $DB | 0.89% | 0.27% |
+| **Month 6** | ~86,700 $DB | ~15.78M $DB | 5.26% | 1.58% |
+| **Year 1** | ~82,800 $DB | ~31.2M $DB | 10.4% | 3.12% |
+| **Year 2** | ~70,400 $DB | ~56.4M $DB | 18.8% | 5.64% |
+| **Year 3** | ~59,900 $DB | ~76.8M $DB | 25.6% | 7.68% |
+| **Year 5** | ~43,200 $DB | ~109.2M $DB | 36.4% | 10.92% |
+| **Year 10** | ~22,400 $DB | ~171.6M $DB | 57.2% | 17.16% |
+| **Year 15** | ~11,600 $DB | ~214.8M $DB | 71.6% | 21.48% |
+| **Year 20** | ~6,000 $DB | ~244.8M $DB | 81.6% | 24.48% |
+
+### Mathematical Reality
+
+With the 0.9997 decay rate:
+- **50% of FLP allocation (150M)** distributed in approximately **8 years**
+- **75% of FLP allocation (225M)** distributed in approximately **17 years**  
+- **90% of FLP allocation (270M)** distributed in approximately **35 years**
+- **Never reaches exactly 300M** - approaches asymptotically
+
+This creates a balanced long-term distribution that provides meaningful early rewards while maintaining sustainability over decades. The 0.03% daily decay creates sufficient early participant advantage while avoiding the ultra-aggressive front-loading that can destabilize TGE periods.
