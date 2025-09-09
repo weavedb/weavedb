@@ -1,0 +1,330 @@
+# Litepaper
+
+![](/images/weavedb-litepaper.png)
+
+WeaveDB is the first decentralized, general-purpose modular database protocol that delivers:
+
+- **Full mathematical provability**
+- **Succinct ZK verifiability**
+- **Cloud-grade throughput and latency**
+- **Multi-paradigm support with modular architecture** (NoSQL, Relational, Vector)
+- **Bit-level-optimized encoding** for maximum cost efficiency
+- **Permanent storage** that enables provable data and compute provenance
+- **Indefinite vertical and horizontal scalability**
+- **Economically self-sustaining operations** through DePIN restaking
+- **Autonomy and self-sovereignty** via onchain AI agents
+
+---
+
+## 🔴 The Decentralized Database Problem
+
+Modern applications require databases with web-scale performance, but existing decentralized solutions face critical limitations:
+
+- **Performance bottlenecks** from consensus finality requirements
+- **Limited scalability** due to blockchain constraints
+- **High storage costs** for maintaining redundant copies
+- **Lack of verifiability** when bridging off-chain and on-chain data
+- **Complex infrastructure** requiring continuous maintenance and funding
+
+WeaveDB solves these challenges through a novel architecture that separates immediate query responses from asynchronous finalization, enabling cloud-grade performance while maintaining cryptographic verifiability.
+
+---
+
+## 🌍 Layer-0 Data Hub for All Blockchains
+
+WeaveDB functions as a **Layer-0 data infrastructure** that sits beneath all blockchains, providing a universal off-chain data layer that any chain can access with cryptographic proofs. Rather than each blockchain maintaining its own siloed data, WeaveDB becomes the shared data hub where:
+
+- **AO processes** access data natively without zkProofs (same ecosystem)
+- **EVM chains** (Ethereum, L2 rollups) query user data with zkProofs and assembly-optimized Solidity
+- **Other chains** (Solana, Bitcoin, app chains) query user data with zkProofs
+- **Dapps** achieve cloud-grade performance through rollup architecture
+
+> **Native AO Integration**: Since WeaveDB runs on HyperBEAM/AO infrastructure, AO processes can directly query WeaveDB without needing zero-knowledge proofs—they simply send messages to read data. This makes WeaveDB the natural database layer for all AO applications.
+
+This positions WeaveDB not as another blockchain, but as the **foundational data layer** that all blockchains rely on—making off-chain data as trustless and verifiable as on-chain data. It solves the fundamental problem of blockchain data silos by creating a universal, permanent, and provable data substrate accessible to every chain.
+
+---
+
+## ⚙️ Decentralized Log-Structured-Merge Engine
+
+![](/images/architecture.png)
+
+WeaveDB is a **decentralized log-structured-merge (LSM) storage engine** built on Arweave for permanent storage and the AO Core Protocol for verifiable compute—a breakthrough that enables cloud-grade performance in fully decentralized infrastructure.
+
+Modern databases achieve high performance using log-structured storage engine design: writes are first stored in an in-memory memtable, concurrently written to a write-ahead log (WAL), then flushed to SSTables on disk, with periodic compaction for space efficiency.
+
+**Key Breakthrough**: One of the core bottlenecks in decentralized databases is latency caused by consensus finality. WeaveDB overcomes this by emulating the same proven LSM architecture—using rollup nodes as the in-memory layer, and HyperBEAM and Arweave as the durable storage layer. This enables low-latency responses while asynchronously finalizing data through TEE-backed validators.
+
+### LSM Emulation Across Decentralized Systems
+
+| LSM Component | Traditional Database | WeaveDB Implementation |
+|---------------|---------------------|------------------------|
+| **MemTable** | In-memory writes | Rollup nodes (instant responses) |
+| **WAL** | Write-ahead log | HyperBEAM (cryptographic hashpaths) |
+| **SSTables** | Sorted string tables | Arweave (permanent storage) |
+| **Compaction** | Background merge | ARJSON (bit-level optimization) |
+
+> **Key Innovation**: WeaveDB brings proven LSM architecture to decentralized infrastructure for the first time. By mapping LSM components to distributed systems, WeaveDB delivers sub-second queries with full cryptographic verifiability and permanent storage—achieving cloud-grade performance in a fully decentralized database.
+
+### Rollup Architecture
+
+| Component | Function | Technology |
+|-----------|----------|------------|
+| **Execution Layer** | Sub-second query responses | Rollup nodes (L2) |
+| **Sequencing** | Verifiable compute with cryptographic hashpaths | HyperBEAM (AO) |
+| **Data Preservability** | Permanent immutable storage | Arweave (L1) |
+| **Compression** | Minimal storage with append-only updates | ARJSON encoding |
+| **Query Proofs** | Zero-knowledge proofs for data queries | zkJSON circuits |
+
+### How It Works as an Optimistic ZK Rollup
+
+- **Optimistic execution**: Transactions are executed immediately with optimistic finality
+- **Merkle root commitments**: State root hashes are committed to blockchains for verifiability
+- **State transition proofs**: Can be generated but unnecessary due to validators and Arweave's permanent data
+- **Validators**: TEE-backed validators verify state transitions by replaying from HyperBEAM WAL
+- **Data preservability**: All data permanently stored on Arweave with holographic state, always accessible for verification
+- **zkQuery proofs**: Different from state proofs—these enable smart contracts to query database content with cryptographic certainty
+
+Every query in WeaveDB is an HTTP message signed using the HTTP Message Signatures standard (RFC9421), making WeaveDB fully compatible with web standards rather than requiring proprietary protocols. This integration with established web infrastructure ensures broad compatibility and enables seamless integration with existing web applications.
+
+This optimistic zk rollup design with LSM emulation overcomes the primary bottleneck of decentralized databases—consensus finality latency—while maintaining full verifiability through permanent storage and validator verification, without requiring expensive state transition proofs.
+
+---
+
+## ⚡ Performance and Scalability
+
+WeaveDB achieves cloud-grade performance through:
+
+- **Response time**: 10ms-200ms queries from in-memory rollup nodes
+- **Throughput**: 10,000 TPS per database instance, with collective throughput scaling horizontally across instances
+- **Horizontal scaling**: Unlimited partitioning through KV store distribution
+- **Vertical scaling**: Bounded only by hardware specifications
+- **Permanent availability**: Data accessible forever through Arweave
+
+The protocol's scalability is not limited by blockchain constraints but determined entirely by the underlying infrastructure, enabling indefinite growth.
+
+---
+
+## 🧮 Mathematical Foundation: Monadic Pipelines
+
+WeaveDB is fundamentally a **protocol, not just software**—it's mathematically specified and formally verified using **Lean theorem prover**, with implementations in **Rust** and **JavaScript**. This means WeaveDB's correctness is mathematically proven, not just tested.
+
+Every database operation in WeaveDB is expressed as a mathematical monad following Category Theory. This provides:
+
+- **Formal verification**: Every operation is mathematically provable in Lean
+- **Composability**: Operations combine cleanly through Kleisli arrows
+- **Modularity**: Components are swappable without breaking guarantees
+- **Extensibility**: Custom databases can be built by modifying pipeline components
+- **Language agnostic**: The protocol can be implemented in any language while maintaining mathematical guarantees
+
+> **HyperBEAM Integration**: Each database operation becomes an HTTP message in the AO-Core protocol, generating cryptographic hashpaths that create an immutable chain proving every compute step. This makes every database state transition mathematically verifiable and deterministically reproducible—any node can replay the exact sequence of operations and arrive at the same state.
+
+The monadic architecture enables WeaveDB to support multiple database paradigms (NoSQL, SQL, GraphQL, Vector) on the same substrate while maintaining mathematical correctness.
+
+**📖 [Learn more about Monade →](/tech/monade)**
+
+---
+
+## 🗃️ Multi-Paradigm Database Support
+
+The modular architecture allows developers to implement various database paradigms:
+
+| Paradigm | Description |
+|----------|-------------|
+| **NoSQL** | Firestore-like document database with complex queries |
+| **Relational** | SQL tables with ACID compliance |
+| **Vector** | Embeddings and similarity search for AI applications |
+| **GraphQL** | Query language for flexible data retrieval |
+
+All paradigms share the same underlying distributed database infrastructure while maintaining their specific query languages and optimization strategies.
+
+**📖 [Learn more about wdb-core →](/api/wdb-core)**
+
+---
+
+## 🌍 JSON as the Universal Data Format
+
+JSON has become the lingua franca of modern data exchange—every web API, configuration file, and NoSQL database speaks JSON. WeaveDB embraces JSON as its native format, making it immediately compatible with existing web infrastructure.
+
+By making JSON:
+- **Cryptographically verifiable** through zkJSON
+- **Mathematically transformable** through FPJSON
+- **Efficiently compressible** through ARJSON
+
+WeaveDB transforms the web's most ubiquitous data format into a foundation for decentralized, permanent, and provable data storage. This means developers can work with familiar JSON structures while gaining the benefits of blockchain verification and permanent storage.
+
+---
+
+## 🎮 FPJSON: Functional Programming Code as JSON
+
+WeaveDB's access control and data manipulation layer uses FPJSON—**code as data** expressed through JSON with **250+ composable functions**:
+
+### Core Features
+
+- **Code as data**: Logic expressed as JSON configurations rather than executable code
+- **Mathematical composability**: Functions combine through Category Theory principles without eval
+- **Language agnostic**: JSON-based logic works across any programming language
+- **Permissionless security**: Define precise access rules for anonymous writers
+- **Smart contract logic**: Embed application logic directly in the database
+- **Data mutations**: Transform data during authentication
+- **LLM-friendly**: AI agents can read and generate logic autonomously
+
+FPJSON treats programming logic as mathematical data structures that can be analyzed, transformed, and verified without execution risks. The database itself works as a smart contract, enabling complex applications like social networks to be built entirely within the database layer, eliminating the need for external smart contracts.
+
+**📖 [Learn more about FPJSON →](/tech/fpjson)**
+
+---
+
+## 🔍 zkJSON: Zero Knowledge Provable JSON
+
+zkJSON makes arbitrary JSON data cryptographically provable, enabling smart contracts to query off-chain databases with zero-knowledge proofs.
+
+### Key Innovation
+
+zk circuits only process natural numbers, but JSON contains strings and complex structures. zkJSON's breakthrough is deterministic encoding that transforms JSON into optimized uint packing for efficient zk proof generation.
+
+The result: entire JSON documents compress into minimal uint256 values processed by both zk circuits and assembly-optimized Solidity smart contracts, enabling practical cryptographic verification of specific fields.
+
+### Privacy-Preserving Queries
+
+zkJSON enables selective disclosure - you can prove specific fields exist and have certain values without revealing the entire document structure or other sensitive data.
+
+**📖 [Learn more about zkJSON →](/tech/zkjson)**
+
+---
+
+## 🔐 Zero-Knowledge Database (zkDB)
+
+WeaveDB's zkDB enables smart contracts to query off-chain databases with cryptographic proofs, bridging the gap between traditional databases and blockchain verification:
+
+### Key Capabilities
+
+| Feature | Description |
+|---------|-------------|
+| **Direct blockchain queries** | Smart contracts can query off-chain databases with cryptographic proof |
+| **Selective disclosure** | Prove specific fields without revealing entire documents |
+| **Efficient verification** | Proofs generated in seconds on consumer hardware |
+| **Cross-chain compatibility** | Native support for Ethereum, Solana, and other chains |
+
+The zkDB structure uses nested Sparse Merkle Trees combined with zkJSON encoding, enabling efficient proof and verification of any data within the database without exposing unnecessary information.
+
+**📖 [Learn more about zkDB →](/tech/zkdb)**
+
+---
+
+## 📦 ARJSON: Append-Only Updates for Permanent Storage
+
+ARJSON revolutionizes data storage on immutable systems through:
+
+- **Bit-level optimization**: Variable-length encoding instead of byte-level alignment
+- **Columnar restructuring**: Groups similar data types during encoding
+- **Delta packing**: Stores differences between consecutive values
+- **Append-only updates**: The breakthrough—update databases with absolute minimum bits
+
+> **Key Innovation**: ARJSON's true breakthrough is enabling **append-only updates to permanent storage**. On immutable systems like Arweave, you can't modify data, only add to it. ARJSON solves this by allowing databases to append just the minimal bits needed for changes, not entire documents. This makes permanent database storage practical and cost-effective for the first time.
+
+> **Result**: Efficient initial storage combined with minimal update costs, enabling databases to run permanently on append-only storage systems while maintaining full update capabilities.
+
+**📖 [Learn more about ARJSON →](/tech/arjson)**
+
+---
+
+## 💎 Tokenomics: Self-Sustaining Economics
+
+WeaveDB introduces a revolutionary economic model that fundamentally inverts traditional infrastructure costs through **DePIN x Restaking**:
+
+### DePIN x Restaking Revolution
+
+**Self-Sustainable Infrastructure**: Physical infrastructure providers earn ongoing yields from restaking while providing database services, creating a self-reinforcing economic loop that requires no external funding or manual intervention.
+
+**Autonomous Operations**: The combination of DePIN service rewards and restaking yields generates sufficient revenue to cover all operational costs automatically, enabling databases to run indefinitely without human oversight or continuous capital injection.
+
+**Revolutionary Impact**: For the first time, infrastructure becomes completely self-sustaining - operators profit from both service delivery and economic security provision while databases achieve true autonomy through automated yield generation.
+
+### Economic Inversion Model
+
+| Traditional Infrastructure | WeaveDB Model |
+|---------------------------|---------------|
+| Developers pay monthly hosting costs | Self-sustaining through DePIN + Restaking yields |
+| Success increases operational expenses | Success increases autonomous revenue generation |
+| Requires continuous external funding | Fully autonomous and self-sustaining |
+| Infrastructure as extractive cost center | Infrastructure as autonomous profit center |
+
+### Mathematical Foundation
+
+**Formal Verification**: All economic mechanisms proven correct in Lean theorem prover, eliminating typical vulnerabilities and providing mathematical guarantees of sustainability.
+
+**PoAIA (Protocol owned AI Agents) Optimization**: Protocol-owned agents autonomously manage liquidity and optimize economic parameters for stability and efficiency using AI3 as the onchain agent framework.
+
+**Autonomous DB**: AI agents can autonomously create and manage databases, enabling fully automated data infrastructure that evolves without human intervention while generating profit and maintaining self-sustainability through DePIN infrastructure services and restaking economic security.
+
+This creates profitable opportunities for building valuable applications rather than extracting infrastructure costs, enabling databases to achieve true autonomy while infrastructure providers profit from both service delivery and economic participation.
+
+**📖 [Learn more about $DB Tokenomics →](/tokenomics/allocation)**
+
+**📖 [AI3 Framework →](/tech/ai3)**
+
+---
+
+## 🌟 Novel Use Cases
+
+WeaveDB's unique combination of permanent storage, zero-knowledge proofs, and self-sustaining economics enables entirely new categories of applications:
+
+### Key Applications
+
+**🦅 Decentralized Web2 Alternatives**  
+Build fully decentralized versions of Twitter, Reddit, Instagram, Discord, TikTok, or LinkedIn with just WeaveDB—no infrastructure management required, user-owned data forever. A complete Twitter clone requires only JSON configuration, no backend code.
+
+**🗄️ Verifiable Data Archives**  
+Store critical datasets permanently with cryptographic integrity—scientific research, legal documents, financial records, historical data. Query archived information with zero-knowledge proofs to verify authenticity without exposing sensitive details.
+
+**💰 Verifiable Data Marketplace**  
+Data becomes currency in a new economy where verified information has provable value. Users earn by contributing quality data while applications pay for access through bonding curves. Weather stations, fitness trackers, and IoT devices automatically monetize their data streams with cryptographic proof of accuracy.
+
+**📱 Permanent Mobile & Desktop Apps**  
+Create applications that never go offline or get removed from app stores. Messaging apps, productivity tools, and utilities that exist permanently with user data stored forever.
+
+**🎮 Persistent Virtual Worlds**  
+Game worlds, NFT metadata, and virtual economies that exist permanently across multiple platforms. Player progression and assets persist independently of any single game company. Minecraft servers, MMORPGs, and metaverse platforms become truly persistent and user-owned.
+
+**🌐 Cross-Platform Applications**  
+Build applications that span multiple blockchains with shared, verifiable state. DeFi protocols, social platforms, and games operate seamlessly across Ethereum, Solana, and other chains with unified user experiences and data portability.
+
+**🔮 Universal zkOracles**  
+Smart contracts query any off-chain data with cryptographic proof—weather, prices, IoT sensors, web APIs—without trusting oracle providers. WeaveDB becomes a universal, verifiable data bridge for all blockchains.
+
+**🤖 Autonomous AI Training Pipelines**  
+AI models train on cryptographically verified datasets with permanent provenance. Researchers prove model training integrity while protecting proprietary data through selective disclosure.
+
+**🏭 Industrial IoT Data Markets**  
+Manufacturing and supply chain data automatically priced and sold through bonding curves. Companies monetize sensor data while proving compliance without exposing trade secrets.
+
+**🧬 Scientific Data Commons**  
+Researchers share datasets with cryptographic integrity guarantees. Reproducible research with permanent data availability and verifiable computational results across institutions.
+
+---
+
+## 🤖 DARAG: The Future of AI on WeaveDB
+
+WeaveDB's architecture naturally evolves toward **Decentralized Agentic Retrieval-Augmented Generation** - autonomous agents performing verifiable knowledge retrieval across permanent, cryptographically-secured data.
+
+**Why AI Needs Verifiable Data**: Current AI systems suffer from hallucination and data poisoning. Cryptographically verifiable data with immutable provenance ensures AI systems can prove their reasoning chains and source authenticity.
+
+**WeaveDB's DARAG Evolution**: Permanent knowledge foundation with documents and embeddings stored on Arweave, multi-paradigm agent queries across the same verifiable substrate, complete reasoning paths permanently recorded for auditability, and protocol-owned agents maintaining indexes autonomously.
+
+Traditional RAG retrieves once and generates. DARAG creates networks of agents that plan, verify, and coordinate across permanent, provable knowledge - representing WeaveDB's natural evolution into next-generation AI infrastructure that's both more capable and more trustworthy.
+
+---
+
+## 🎯 Conclusion
+
+WeaveDB is not just a database—it's a **comprehensive data pipeline protocol** that fundamentally reimagines how humanity stores and accesses information. By combining:
+
+- **Mathematical proofs** (Lean-verified protocol)
+- **Web standards** (HTTP signatures, JSON)  
+- **Revolutionary economics** (developers profit instead of pay)
+- **Layer-0 architecture** (universal data hub for all blockchains)
+
+WeaveDB enables entire data architectures that were previously impossible. Applications can process data through mathematically-provable transformations, store it permanently with append-only efficiency, and make it queryable from any blockchain—all while running forever without infrastructure costs.
+
+This positions WeaveDB as the **foundational data layer** for the next generation of applications that require both Web2 performance and Web3 guarantees. The protocol bridges off-chain data and on-chain verification, creating the infrastructure for truly decentralized, verifiable, and permanent data.
