@@ -4,14 +4,258 @@ layout: landing
 
 import { HomePage } from 'vocs/components'
 
-<HomePage.Root>
-  <HomePage.Logo />
-  <HomePage.Tagline>Zero Knowledge Provable Modular Database</HomePage.Tagline>
-  <HomePage.Buttons>
-    <HomePage.Button href="/litepaper" variant="accent">Litepaper</HomePage.Button>
-    <HomePage.Button href="/build/quick-start">Quick Start</HomePage.Button>
-  </HomePage.Buttons>
-  <HomePage.Description>Cloud-like Performance, Layer-0 Blockchain Hub, Economic Sustainability with Restaking</HomePage.Description>
-</HomePage.Root>
+<div className="weavedb-landing">
+  <style jsx global>{`
+    .weavedb-landing {
+      text-align: center !important;
+      padding: 4rem 2rem !important;
+      position: relative !important;
+      background: radial-gradient(ellipse at center, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.05) 40%, rgba(255, 255, 255, 1) 70%) !important;
+      min-height: 70vh !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      overflow: hidden !important;
+    }
 
-::sponsors
+    .weavedb-landing::before {
+      content: '';
+      position: absolute;
+      top: 20%;
+      left: 50%;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, rgba(168, 85, 247, 0.08) 30%, transparent 70%);
+      border-radius: 50%;
+      transform-origin: center;
+      animation: gentlePulse 6s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .weavedb-landing::after {
+      content: '{ "blockchain": true, "zk": "proof" } \\A [1,2,3,4,5] \\A 0x7f3a9bc2... \\A SELECT * FROM blocks \\A { "status": "verified" } \\A hash: 0xab12cd34... \\A INSERT INTO... \\A proof: ✓ verified \\A gas: 21000 \\A nonce: 42 \\A modular_db.query() \\A zkProof.verify() \\A restaking_pool += 100 \\A [ { chain: "ethereum" } ] \\A layer0.connect() \\A performance: "cloud-like" \\A depin.sustain() \\A consensus: "proof-of-stake"';
+      white-space: pre;
+      position: absolute;
+      top: -20%;
+      left: -10%;
+      width: 120%;
+      height: 140%;
+      color: rgba(99, 102, 241, 0.15);
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 14px;
+      line-height: 2.5;
+      animation: floatingData 20s linear infinite;
+      pointer-events: none;
+      z-index: 0;
+      letter-spacing: 1px;
+    }
+
+    @keyframes gentlePulse {
+      0% { 
+        transform: translateX(-50%) scale(1);
+        opacity: 0.8;
+      }
+      50% { 
+        transform: translateX(-50%) scale(1.1);
+        opacity: 0.5;
+      }
+      100% { 
+        transform: translateX(-50%) scale(1);
+        opacity: 0.8;
+      }
+    }
+
+    @keyframes floatingData {
+      0% {
+        transform: translateY(100%) rotate(0deg);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-100%) rotate(360deg);
+        opacity: 0;
+      }
+    }
+
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .weavedb-landing [class*="HomePage_Logo"],
+    .weavedb-landing [data-vocs-homepage-logo],
+    .weavedb-landing .vocs_HomePage_Logo {
+      margin-bottom: 3rem !important;
+      animation: slideInUp 1s ease-out !important;
+      transform: scale(1.2) !important;
+      filter: drop-shadow(0 4px 20px rgba(99, 102, 241, 0.15)) !important;
+      position: relative !important;
+      z-index: 2 !important;
+    }
+
+    .weavedb-landing [class*="HomePage_Tagline"],
+    .weavedb-landing [data-vocs-homepage-tagline],
+    .weavedb-landing .vocs_HomePage_Tagline,
+    .weavedb-landing .vocs_HomePage_tagline,
+    .weavedb-landing h1 {
+      font-size: 2.8rem !important;
+      font-weight: 800 !important;
+      background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      background-clip: text !important;
+      margin-bottom: 2rem !important;
+      line-height: 1.1 !important;
+      animation: slideInUp 1s ease-out 0.2s both !important;
+      position: relative !important;
+      z-index: 2 !important;
+    }
+
+    .weavedb-landing [class*="HomePage_Description"],
+    .weavedb-landing [data-vocs-homepage-description],
+    .weavedb-landing .vocs_HomePage_Description,
+    .weavedb-landing p {
+      font-size: 1.25rem !important;
+      background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      background-clip: text !important;
+      margin-bottom: 3rem !important;
+      line-height: 1.6 !important;
+      font-weight: 600 !important;
+      max-width: 600px !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
+      animation: slideInUp 1s ease-out 0.4s both !important;
+      position: relative !important;
+      z-index: 2 !important;
+    }
+
+    .weavedb-landing [class*="HomePage_Buttons"],
+    .weavedb-landing [data-vocs-homepage-buttons],
+    .weavedb-landing .vocs_HomePage_Buttons {
+      display: flex !important;
+      gap: 1.5rem !important;
+      justify-content: center !important;
+      flex-wrap: wrap !important;
+      animation: slideInUp 1s ease-out 0.6s both !important;
+      margin-bottom: 2rem !important;
+      position: relative !important;
+      z-index: 2 !important;
+    }
+
+    .weavedb-landing [class*="HomePage_Button"],
+    .weavedb-landing [data-vocs-homepage-button],
+    .weavedb-landing .vocs_HomePage_Button,
+    .weavedb-landing a[href*="litepaper"],
+    .weavedb-landing a[href*="quick-start"] {
+      display: inline-flex !important;
+      align-items: center !important;
+      padding: 1rem 2.5rem !important;
+      border-radius: 12px !important;
+      text-decoration: none !important;
+      font-weight: 600 !important;
+      font-size: 1.1rem !important;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      position: relative !important;
+      overflow: hidden !important;
+      min-width: 160px !important;
+      justify-content: center !important;
+      border: none !important;
+    }
+
+    .weavedb-landing a[href*="litepaper"],
+    .weavedb-landing [data-variant="accent"],
+    .weavedb-landing [class*="HomePage_Button"]:first-child {
+      background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%) !important;
+      color: white !important;
+      box-shadow: 0 8px 32px rgba(99, 102, 241, 0.25) !important;
+    }
+
+    .weavedb-landing a[href*="litepaper"]:hover,
+    .weavedb-landing [data-variant="accent"]:hover,
+    .weavedb-landing [class*="HomePage_Button"]:first-child:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 12px 40px rgba(99, 102, 241, 0.35) !important;
+    }
+
+    .weavedb-landing a[href*="quick-start"],
+    .weavedb-landing [class*="HomePage_Button"]:last-child {
+      background: rgba(99, 102, 241, 0.08) !important;
+      color: #6366f1 !important;
+      border: 2px solid rgba(99, 102, 241, 0.2) !important;
+    }
+
+    .weavedb-landing a[href*="quick-start"]:hover,
+    .weavedb-landing [class*="HomePage_Button"]:last-child:hover {
+      background: rgba(99, 102, 241, 0.12) !important;
+      border-color: #6366f1 !important;
+      transform: translateY(-2px) !important;
+    }
+
+    @media (max-width: 768px) {
+      .weavedb-landing h1,
+      .weavedb-landing [class*="HomePage_Tagline"] {
+        font-size: 2rem !important;
+      }
+      
+      .weavedb-landing p,
+      .weavedb-landing [class*="HomePage_Description"] {
+        font-size: 1.1rem !important;
+      }
+      
+      .weavedb-landing [class*="HomePage_Buttons"] {
+        flex-direction: column !important;
+        align-items: center !important;
+      }
+      
+      .weavedb-landing [class*="HomePage_Button"] {
+        width: 100% !important;
+        max-width: 280px !important;
+      }
+
+      .weavedb-landing::before {
+        width: 300px;
+        height: 300px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .weavedb-landing {
+        padding: 2rem 1rem !important;
+      }
+      
+      .weavedb-landing h1,
+      .weavedb-landing [class*="HomePage_Tagline"] {
+        font-size: 1.6rem !important;
+      }
+
+      .weavedb-landing::after {
+        font-size: 10px !important;
+        line-height: 4 !important;
+      }
+    }
+  `}</style>
+
+  <HomePage.Root>
+    <HomePage.Logo />
+    <HomePage.Tagline>Zero Knowledge Provable Modular Database</HomePage.Tagline>
+    <HomePage.Buttons>
+      <HomePage.Button href="/litepaper" variant="accent">Litepaper</HomePage.Button>
+      <HomePage.Button href="/build/quick-start">Quick Start</HomePage.Button>
+    </HomePage.Buttons>
+    <HomePage.Description>Cloud Performance, Layer-0 Data Hub, Self-Sustainable DePIN with Restaking</HomePage.Description>
+  </HomePage.Root>
+</div>
