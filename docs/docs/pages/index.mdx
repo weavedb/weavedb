@@ -34,7 +34,7 @@ import { HomePage } from 'vocs/components'
     }
 
     .weavedb-landing::after {
-      content: '{ "blockchain": true, "zk": "proof" } \\A [1,2,3,4,5] \\A 0x7f3a9bc2... \\A SELECT * FROM blocks \\A { "status": "verified" } \\A hash: 0xab12cd34... \\A INSERT INTO... \\A proof: ✓ verified \\A gas: 21000 \\A nonce: 42 \\A modular_db.query() \\A zkProof.verify() \\A restaking_pool += 100 \\A [ { chain: "ethereum" } ] \\A layer0.connect() \\A performance: "cloud-like" \\A depin.sustain() \\A consensus: "proof-of-stake"';
+      content: '{ "blockchain": true, "zk": "proof" } \\A [1,2,3,4,5] \\A 0x7f3a9bc2... \\A SELECT * FROM blocks \\A { "status": "verified" } \\A hash: 0xab12cd34... \\A INSERT INTO... \\A proof: âœ" verified \\A gas: 21000 \\A nonce: 42 \\A modular_db.query() \\A zkProof.verify() \\A restaking_pool += 100 \\A [ { chain: "ethereum" } ] \\A layer0.connect() \\A performance: "cloud-like" \\A depin.sustain() \\A consensus: "proof-of-stake"';
       white-space: pre;
       position: absolute;
       top: -20%;
@@ -147,7 +147,7 @@ import { HomePage } from 'vocs/components'
     .weavedb-landing [data-vocs-homepage-buttons],
     .weavedb-landing .vocs_HomePage_Buttons {
       display: flex !important;
-      gap: 1.5rem !important;
+      gap: 2.5rem !important;
       justify-content: center !important;
       flex-wrap: wrap !important;
       animation: slideInUp 1s ease-out 0.6s both !important;
@@ -205,6 +205,13 @@ import { HomePage } from 'vocs/components'
       transform: translateY(-2px) !important;
     }
 
+    /* LOGO FIX FOR MOBILE */
+    @media screen and (max-width: 720px) {
+      .vocs_HomePage_logo {
+        height: auto !important;
+      }
+    }
+
     @media (max-width: 768px) {
       .weavedb-landing h1,
       .weavedb-landing [class*="HomePage_Tagline"] {
@@ -245,6 +252,18 @@ import { HomePage } from 'vocs/components'
       .weavedb-landing::after {
         font-size: 10px !important;
         line-height: 4 !important;
+      }
+
+      .weavedb-landing [class*="HomePage_Logo"] {
+        transform: scale(0.8) !important;
+        margin-bottom: 2rem !important;
+      }
+
+      .weavedb-landing [class*="HomePage_Logo"] svg,
+      .weavedb-landing [data-vocs-homepage-logo] svg,
+      .weavedb-landing .vocs_HomePage_Logo svg {
+        max-width: 150px !important;
+        height: auto !important;
       }
     }
   `}</style>
