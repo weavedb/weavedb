@@ -19,7 +19,7 @@ describe("WeaveDB SDK", () => {
     db = await new DB({ hb: hbeam.url, jwk: hbeam.jwk }).ready(true)
   })
   after(() => hbeam.kill())
-  it.only("should deploy a database", async () => {
+  it("should deploy a database", async () => {
     const pid = await db.spawn()
     assert((await db.mkdir(users)).success)
     assert((await db.set("set:user", bob, "users", "bob")).success)
@@ -43,9 +43,49 @@ describe("WeaveDB SDK", () => {
       hb: "http://34.18.53.73:10001",
     })
     const pid = await db.spawn()
-    console.log(pid)
     assert((await db.mkdir(users)).success)
     assert((await db.set("set:user", bob, "users", "bob")).success)
     assert.deepEqual(await db.get("users", "bob"), bob)
+  })
+})
+
+describe("Triggers", () => {
+  it.only("should connect with remote nodes", async () => {
+    const dbpath = genDir()
+    const jwk = acc[0].jwk
+    const node = await server({ dbpath, jwk, hyperbeam: false })
+    const db = new DB({ jwk, hb: null })
+    const pid = await db.init({ id: "test" })
+    assert((await db.mkdir(users)).success)
+    assert((await db.set("set:user", bob, "users", "bob")).success)
+    assert(
+      (
+        await db.addTrigger(
+          {
+            key: "add_age",
+            on: "update,create",
+            fn: [
+              ["add()", [{ name: "Alice", age: 3 }, "users"]],
+              ["update()", [{ age: { _$: ["inc"] } }, "users", "bob"]],
+              [
+                "when",
+                ["both", ["always", true], ["always", true]],
+                ["toBatch", ["update", { age: 5 }, "users", "bob"]],
+                "$data",
+              ],
+            ],
+            fields: ["age", "name"],
+            match: "any",
+          },
+          "users",
+        )
+      ).success,
+    )
+    assert((await db.set("update:user", { age: 3 }, "users", "bob")).success)
+    assert.deepEqual(await db.get("users"), [
+      { age: 3, name: "Alice" },
+      { age: 5, name: "Bob" },
+    ])
+    node.stop()
   })
 })

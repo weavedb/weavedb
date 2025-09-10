@@ -37,12 +37,10 @@ const replace$ = arrs => {
   } else if (is(Array, arrs)) {
     if (arrs[0] === "toBatchAll") {
       return [
-        [
-          "pipe",
-          ["var", "batch"],
-          ["concat", ["__"], arrs[1]],
-          ["let", "batch"],
-        ],
+        "pipe",
+        ["var", "batch"],
+        ["concat", ["__"], ["[]", ...arrs[1]]],
+        ["let", "batch"],
       ]
     } else if (arrs[0] === "toBatch") {
       return [
