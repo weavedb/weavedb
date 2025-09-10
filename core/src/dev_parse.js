@@ -1,6 +1,6 @@
 import { of, ka } from "monade"
 import { keys, uniq, concat, compose, is, isNil, includes } from "ramda"
-import { merge, genDocID } from "./utils.js"
+import { merge, genDocID, checkDocID } from "./utils.js"
 import _fpjson from "fpjson-lang"
 const fpjson = _fpjson.default || _fpjson
 
@@ -34,21 +34,6 @@ const parser = {
   upsert: ka().map(upsertData),
 }
 
-function checkMaxDocID(id, size) {
-  const b64 =
-    id.replace(/-/g, "+").replace(/_/g, "/") + "==".slice((2 * id.length) % 4)
-  const buf = Buffer.from(b64, "base64")
-  return buf.length <= size
-}
-
-function checkDocID(id, db) {
-  if (!/^[A-Za-z0-9\-_]+$/.test(id)) throw Error(`invalid docID: ${id}`)
-  else {
-    const { max_doc_id } = db.get("_config", "config")
-    if (!checkMaxDocID(id, max_doc_id)) throw Error(`docID too large: ${id}`)
-  }
-}
-
 function parse({ state, env }) {
   state.query.shift()
   if (state.opcode === "batch") return arguments[0]
@@ -77,6 +62,7 @@ function parse({ state, env }) {
     ;[data, dir] = state.query
     state.dir = dir
     state.data = data
+    if (state.opcode === "add") state.before = null
   } else if (state.opcode === "del") {
     ;[dir, doc] = state.query
     checkDocID(doc, kv)

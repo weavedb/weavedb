@@ -55,7 +55,6 @@ function setRules({ state, env: { kv } }) {
   const { data, dir } = state
   let conf = kv.get("_", dir)
   if (!conf) throw Error("dir doesn't exist")
-  console.log(conf.auth, data)
   conf.auth = data
   kv.put("_", dir, conf)
   return arguments[0]

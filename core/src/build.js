@@ -56,7 +56,7 @@ const build = ({
             .val()
           return { ...state, msg: msg2 }
         } catch (e) {
-          console.log(e)
+          //console.log(e)
           currentKv.reset()
           throw e
         }
@@ -75,7 +75,7 @@ const build = ({
                 .map(init)
                 .chain(_write.fn())
             } catch (e) {
-              console.log(e)
+              //console.log(e)
               currentKv.reset()
               rej(e)
             }
@@ -161,7 +161,7 @@ const build = ({
           of({ kv: currentKv, msg, opt }).map(init).chain(_write.fn())
           return currentKv
         } catch (e) {
-          console.log(e)
+          //console.log(e)
           currentKv.reset()
           throw e
         }
