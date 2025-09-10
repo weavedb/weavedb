@@ -1,5 +1,7 @@
-import { of, ka } from "monade"
+import { of } from "monade"
+import read from "./dev_read.js"
 import { fpj } from "./fpjson.js"
+import { checkDocID } from "./utils.js"
 import {
   isNil,
   includes,
@@ -42,9 +44,22 @@ function trigger({ state, env }) {
       owner: env.owner,
       before,
     }
+    const kv_dir = {
+      get: k => kv.get("__indexes__", `${dir}/${k}`),
+      put: (k, v, nosave) => kv.put("__indexes__", `${dir}/${k}`, v),
+      del: (k, nosave) => kv.del("__indexes__", `${dir}/${k}`),
+      data: key => ({
+        val: kv.get(dir, key),
+        __id__: key.split("/").pop(),
+      }),
+      putData: (key, val) => kv.put(dir, key, val),
+      delData: key => kv.del(dir, key),
+    }
+    const _env = { kv, kv_dir }
+
     if (op === "del") {
       _state.data = null
-      of({ state: _state, env }).map(delData)
+      of({ state: _state, env: _env }).map(delData)
     } else {
       _state.data = merge(data, _state, undefined, env)
       if (op === "add") {
@@ -53,7 +68,7 @@ function trigger({ state, env }) {
           .tap(validateSchema)
           .map(putData)
       } else {
-        of({ state: _state, env }).tap(validateSchema).map(putData)
+        of({ state: _state, env: _env }).tap(validateSchema).map(putData)
       }
     }
     return [true, false]
@@ -91,8 +106,21 @@ function trigger({ state, env }) {
           }
         }
         if (ok) {
-          let vars = { data: mod, batch: [] }
+          let vars = { ...mod, batch: [] }
           const fns = {
+            get: v => {
+              const [dir, doc] = v
+              if (dir[0] === "_") return [kv.get(...v), false]
+              let state = { opcode: "get" }
+              state.query = v
+              state.dir = dir
+              if (typeof doc === "string") {
+                checkDocID(doc, kv)
+                state.doc = doc
+                state.range = false
+              } else state.range = true
+              return [of({ state, env }).map(read).val(), false]
+            },
             add: v => {
               const { data, dir, before } = checkDir(v, "add")
               return _putData({ before, op: "add", data, dir })

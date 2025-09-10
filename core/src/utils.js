@@ -128,7 +128,7 @@ function genDocID({ state, env }) {
 function putData({ state, env: { kv, kv_dir } }) {
   const { data, dir, doc } = state
   if (isNil(kv.get("_", dir))) throw Error("dir doesn't exist")
-  put(data, doc, [dir.toString()], kv_dir, true)
+  put(data, doc, [dir.toString()], kv_dir, true) // todo: alwas true may not be the best
   return arguments[0]
 }
 
@@ -149,7 +149,23 @@ function validateSchema({ state, env: { kv } }) {
   if (!valid) throw Error("invalid schema")
 }
 
+function checkMaxDocID(id, size) {
+  const b64 =
+    id.replace(/-/g, "+").replace(/_/g, "/") + "==".slice((2 * id.length) % 4)
+  const buf = Buffer.from(b64, "base64")
+  return buf.length <= size
+}
+
+function checkDocID(id, db) {
+  if (!/^[A-Za-z0-9\-_]+$/.test(id)) throw Error(`invalid docID: ${id}`)
+  else {
+    const { max_doc_id } = db.get("_config", "config")
+    if (!checkMaxDocID(id, max_doc_id)) throw Error(`docID too large: ${id}`)
+  }
+}
+
 export {
+  checkDocID,
   parseOp,
   initDB,
   signer,

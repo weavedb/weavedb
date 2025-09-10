@@ -245,7 +245,6 @@ const ac_funcs = {
   denyifany: (v, obj, set) => {
     let val = null
     let isBreak = false
-
     if (fpjson(["any", ["equals", true], v], obj)) {
       obj.allow = false
       isBreak = true

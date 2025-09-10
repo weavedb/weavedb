@@ -1,5 +1,8 @@
 import { includes, isNil, mergeLeft } from "ramda"
+import { of } from "monade"
 import { fpj, ac_funcs } from "./fpjson.js"
+import read from "./dev_read.js"
+import { checkDocID } from "./utils.js"
 
 function anyone() {
   return arguments[0]
@@ -13,8 +16,10 @@ function onlyOwner({ state, env }) {
 function default_auth({
   state: { op, signer, ts, opcode, operand, dir, doc, query, before, data },
   msg,
-  env: { kv, id, owner },
+  env,
 }) {
+  const { kv, id, owner } = env
+  let req = opcode === "del" ? {} : query[0]
   let vars = {
     op,
     opcode,
@@ -26,6 +31,7 @@ function default_auth({
     dir,
     doc,
     query,
+    req,
     before,
     after: data,
     allow: false,
@@ -45,8 +51,19 @@ function default_auth({
     }
   if (isNil(_dir)) throw Error(`dir doesn't exist: ${dir}`)
   let allow = false
-  // only _ prefixed dirs can update without indexes
-  const get = (v, obj, set) => [kv.get(...v), false]
+  const get = (v, obj, set) => {
+    const [dir, doc] = v
+    if (dir[0] === "_") return [kv.get(...v), false]
+    let state = { opcode: "get" }
+    state.query = v
+    state.dir = dir
+    if (typeof doc === "string") {
+      checkDocID(doc, kv)
+      state.doc = doc
+      state.range = false
+    } else state.range = true
+    return [of({ state, env }).map(read).val(), false]
+  }
   const fn =
     dir[0] === "_"
       ? {
