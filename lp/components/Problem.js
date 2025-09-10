@@ -61,7 +61,7 @@ export default function Problem() {
       color: "#ec4899",
       description:
         "Optimistic ZK rollup database combining zkJSON proofs with nested sparse merkle trees. Query any offchain data directly from Solidity contracts with zkJSON.",
-      docLink: "https://docs.wao.eco/",
+      docLink: "https://docs.weavedb.dev/tech/zkdb",
     },
     {
       title: "HyperBEAM WAL",
@@ -82,7 +82,7 @@ export default function Problem() {
       color: "#10b981",
       description:
         "Write-Ahead Log on AO's HyperBEAM for durability and recoverability. In-memory DB rollups and HyperBEAM WAL emulates modern high performance LSM storage engines.",
-      docLink: "https://docs.weavedb.dev/litepaper/wal",
+      docLink: "https://docs.wao.eco",
     },
     {
       title: "ARJSON",

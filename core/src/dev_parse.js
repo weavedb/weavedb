@@ -1,40 +1,10 @@
 import { of, ka } from "monade"
 import { keys, uniq, concat, compose, is, isNil, includes } from "ramda"
+import { merge, genDocID } from "./utils.js"
 import _fpjson from "fpjson-lang"
 const fpjson = _fpjson.default || _fpjson
 
 import { replace$ } from "./fpjson.js"
-function fields(ndata, odata) {
-  let nkeys = keys(ndata)
-  let okeys = keys(odata)
-  return compose(uniq, concat(nkeys))(okeys)
-}
-
-function merge(data, state, old, env) {
-  old ??= state.before
-  let new_data = {}
-  const _fields = fields(data, old)
-  for (const k of _fields) {
-    if (typeof data[k] !== "undefined") {
-      if (data[k] !== null && is(Object, data[k]) && !isNil(data[k]._$)) {
-        let vars = {
-          signer: state.signer,
-          ts: state.ts,
-          id: env.id,
-          owner: env.owner,
-        }
-        if (typeof data[k]._$ === "string") {
-          if (data[k]._$ === "del") continue
-          if (typeof vars[data[k]._$] !== "undefined")
-            new_data[k] = vars[data[k]._$]
-        } else {
-          new_data[k] = fpjson(replace$([data[k]._$, old[k] ?? null]), vars)
-        }
-      } else new_data[k] = data[k]
-    } else new_data[k] = old[k]
-  }
-  return new_data
-}
 
 function setData({ state, env }) {
   const { data, dir } = state
@@ -54,34 +24,6 @@ function upsertData({ state, env }) {
   const { data, dir, doc } = state
   if (isNil(env.kv.get("_", dir))) throw Error("dir doesn't exist:", dir)
   if (!isNil(state.before)) state.data = merge(data, state, undefined, env)
-  return arguments[0]
-}
-
-const BASE64_CHARS =
-  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
-
-function tob64(n) {
-  if (!Number.isInteger(n) || n < 0)
-    throw new Error("Only non-negative integers allowed")
-  if (n === 0) return BASE64_CHARS[0]
-  let result = ""
-  while (n > 0) {
-    result = BASE64_CHARS[n % 64] + result
-    n = Math.floor(n / 64)
-  }
-  return result
-}
-
-function genDocID({ state, env }) {
-  const { dir } = state
-  let _dir = env.kv.get("_", dir)
-  if (isNil(_dir)) throw Error("dir doesn't exist:", dir)
-  let i = isNil(_dir.autoid) ? 0 : _dir.autoid + 1
-  const docs = env.kv[dir] ?? {}
-  while (env.kv.get(dir, tob64(i))) i++
-  state.doc = tob64(i)
-  _dir.autoid = i
-  env.kv.put("_", dir, _dir)
   return arguments[0]
 }
 
@@ -121,7 +63,15 @@ function parse({ state, env }) {
       state.doc = doc
       state.range = false
     } else state.range = true
-  } else if (includes(state.opcode, ["add", "addIndex", "removeIndex"])) {
+  } else if (
+    includes(state.opcode, [
+      "add",
+      "addIndex",
+      "removeIndex",
+      "addTrigger",
+      "removeTrigger",
+    ])
+  ) {
     ;[data, dir] = state.query
     state.dir = dir
     state.data = data
@@ -131,6 +81,7 @@ function parse({ state, env }) {
     state.before = kv.get(dir, doc)
     state.dir = dir
     state.doc = doc
+    state.data = null
   } else {
     ;[data, dir, doc] = state.query
     checkDocID(doc, kv)

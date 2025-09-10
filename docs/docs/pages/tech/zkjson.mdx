@@ -19,7 +19,7 @@ Most offchain data on the web are represented in JSON format, and blockchains ha
 
 As a result, data on web2 (offchain) and web3 (onhain) are divided and web3 is missing a great wide variety of use cases with offchain data. What if we could verify any offchain JSON data in onchain smart contracts, and also build a general-purpose database with web2-like performance and scalability? zkJSON and zkDB will allow direct connections from smartcontract to offchain database.
 
-This entire tech stack will enable novel use cases to web3 such as decentralized oracles and indexers, as well as provide a decentralized database alternative to web2 with the performance and scalability of cloud databases. We could, for instance, build [a fully decentralized Twitter](https://www.jots.social/) without any centralized components.
+This entire tech stack will enable novel use cases to web3 such as decentralized oracles and indexers, as well as provide a decentralized database alternative to web2 with the performance and scalability of cloud databases. We could, for instance, build [a fully decentralized Twitter](https://github.com/weavedb/jots) without any centralized components.
 
 We envision the web where offchain data are seamlessly connected with blockchains. Our ultimate goal is to liberate the web2 data silos and redirect the huge monopolistic web2 revenue models such as ad networks and future AI-based networks to web3. Any offchain data without zkJSON are not legit, since they are not verifiable onchain.
 
@@ -33,14 +33,6 @@ There are 4 steps to build a complete solution.
 2. build a database structure with merkle trees and zkJSON - **zkDB**
 3. commit db states to an EVM blockchain - **zkRollup**
 4. make it queriable with Solidity - **zkQuery**
-
-And 3 bonus steps to make it practical and sustainable (using Arweave & Cosmos IBC).
-
-5. make zkDB feature-rich to bear any web2/web3 usages - **WeaveDB**
-6. make WeaveDB performant, scalable, and secure with Arweave+EVM hybrid rollup - **WeaveDB Rollup**
-7. make the rollups sustainable with Restaking and DePIN - **WeaveAVS**
-
-*This repo contains only the first 4 steps.* You can find the rest [here](https://github.com/weavedb/weavedb).
 
 ## zkJSON
 

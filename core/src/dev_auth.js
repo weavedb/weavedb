@@ -1,5 +1,5 @@
 import { includes, isNil, mergeLeft } from "ramda"
-import { fpj, ac_funcs, replace$ } from "./fpjson.js"
+import { fpj, ac_funcs } from "./fpjson.js"
 
 function anyone() {
   return arguments[0]
@@ -45,35 +45,43 @@ function default_auth({
     }
   if (isNil(_dir)) throw Error(`dir doesn't exist: ${dir}`)
   let allow = false
-  // todo: do these trigger indexers??
-  const fn = {
-    get: (v, obj, set) => [kv.get(...v), false],
-    set: (v, obj, set) => {
-      const [data, dir, doc] = v
-      kv.put(dir, doc, data)
-      return [true, false]
-    },
-    update: (v, obj, set) => {
-      const [data, dir, doc] = v
-      const old = kv.get(dir, doc)
-      if (!old) return [false, false]
-      kv.put(dir, doc, mergeLeft(data, old))
-      return [true, false]
-    },
-    upsert: (v, obj, set) => {
-      const [data, dir, doc] = v
-      const old = kv.get(dir, doc) ?? {}
-      kv.put(dir, doc, mergeLeft(data, old))
-      return [true, false]
-    },
-    del: (v, obj, set) => {
-      const [dir, doc] = v
-      const old = kv.get(dir, doc)
-      if (!old) return [false, false]
-      kv.del(dir, doc)
-      return [true, false]
-    },
-  }
+  // only _ prefixed dirs can update without indexes
+  const get = (v, obj, set) => [kv.get(...v), false]
+  const fn =
+    dir[0] === "_"
+      ? {
+          get,
+          set: (v, obj, set) => {
+            const [data, dir, doc] = v
+            if (dir[0] !== "_") return [false, false]
+            kv.put(dir, doc, data)
+            return [true, false]
+          },
+          update: (v, obj, set) => {
+            const [data, dir, doc] = v
+            if (dir[0] !== "_") return [false, false]
+            const old = kv.get(dir, doc)
+            if (!old) return [false, false]
+            kv.put(dir, doc, mergeLeft(data, old))
+            return [true, false]
+          },
+          upsert: (v, obj, set) => {
+            const [data, dir, doc] = v
+            if (dir[0] !== "_") return [false, false]
+            const old = kv.get(dir, doc) ?? {}
+            kv.put(dir, doc, mergeLeft(data, old))
+            return [true, false]
+          },
+          del: (v, obj, set) => {
+            const [dir, doc] = v
+            if (dir[0] !== "_") return [false, false]
+            const old = kv.get(dir, doc)
+            if (!old) return [false, false]
+            kv.del(dir, doc)
+            return [true, false]
+          },
+        }
+      : { get }
   for (const v of _dir.auth) {
     if (includes(op, v[0].split(","))) {
       try {
@@ -95,6 +103,8 @@ const authenticator = {
   batch: anyone,
   addIndex: onlyOwner,
   removeIndex: onlyOwner,
+  addTrigger: onlyOwner,
+  removeTrigger: onlyOwner,
 }
 
 function auth({ state, env }) {

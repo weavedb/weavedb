@@ -39,7 +39,7 @@ export default class DB {
     if (this.jwk && !this.isArConnect()) this.addr = toAddr(jwk.n)
     this.id = id
     this.url = url
-    this.hb = new HB({ url: hb, jwk: this.jwk })
+    if (hb) this.hb = new HB({ url: hb, jwk: this.jwk })
     this.db = new HB({ url, jwk: this.jwk })
     this._nonce = 0
     this.count = 0
@@ -49,14 +49,17 @@ export default class DB {
   }
   async spawn({ query = init_query, type = "nosql" } = {}) {
     if (this.id) throw Error("db already exists")
-    const { pid } = await this.hb.spawn({
+    const { pid: id } = await this.hb.spawn({
       "db-type": type,
       "execution-device": "weavedb-wal@1.0",
       "device-stack": stack[type],
     })
-    this.id = pid
+    return await this.init({ query, id })
+  }
+  async init({ id, query = init_query }) {
+    this.id = id
     await this.set("init", query)
-    return pid
+    return this.id
   }
   async status() {
     try {
@@ -90,6 +93,18 @@ export default class DB {
   }
   async addIndex(index, dir) {
     const query = ["addIndex", index, dir]
+    return await this.set(...query)
+  }
+  async removeIndex(dir) {
+    const query = ["removeIndex", dir]
+    return await this.set(...query)
+  }
+  async addTrigger(trigger, dir) {
+    const query = ["addTrigger", trigger, dir]
+    return await this.set(...query)
+  }
+  async removeTrigger(dir, key) {
+    const query = ["removeTrigger", dir, key]
     return await this.set(...query)
   }
   async mkdir({ name, schema, auth }) {
@@ -158,6 +173,7 @@ export default class DB {
     }
   }
   async _get(...args) {
+    await wait(0)
     const res = await this.db.get({
       path: "/~weavedb@1.0/get",
       id: this.id,

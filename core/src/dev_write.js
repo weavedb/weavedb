@@ -1,17 +1,46 @@
-import { validate } from "jsonschema"
 import { of, ka } from "monade"
 import parse from "./dev_parse.js"
 import auth from "./dev_auth.js"
-import { parseOp, initDB } from "./utils.js"
-
+import { putData, delData, validateSchema, parseOp, initDB } from "./utils.js"
+import { isNil, includes, difference, equals, keys, uniq } from "ramda"
+import trigger from "./dev_trigger.js"
 import {
   addIndex as _addIndex,
   removeIndex as _removeIndex,
-  put,
-  del,
 } from "./indexer.js"
 
-import { isNil } from "ramda"
+function addTrigger({ state, env: { kv } }) {
+  const { data, dir } = state
+  if (!data.key) throw Error("key doesn't exist")
+  if (!data.on) throw Error("on doesn't exist")
+  if (
+    difference(data.on.split(","), ["create", "update", "delete"]).length > 0
+  ) {
+    throw Error(`the wrong on: ${data.on}`)
+  }
+  if (data.fields) {
+    if (!Array.isArray(data.fields)) throw Error("fields must be Array")
+  }
+  if (data.match) {
+    if (!includes(data.match, ["all", "any", "none"]))
+      throw Error(`the wrong type: ${data.match}`)
+  }
+
+  let conf = kv.get("_", dir)
+  conf.triggers ??= {}
+  conf.triggers[data.key] = {
+    on: data.on,
+    fn: data.fn,
+    match: data.match ?? "all",
+    fields: data.fields ?? null,
+  }
+  kv.put("_", dir, conf)
+  return arguments[0]
+}
+
+function removeTrigger({ state, env }) {
+  return arguments[0]
+}
 
 function addIndex({ state, env }) {
   _addIndex(state.data, [state.dir], env.kv_dir)
@@ -21,30 +50,6 @@ function addIndex({ state, env }) {
 function removeIndex({ state, env }) {
   _removeIndex(state.data, [state.dir], env.kv)
   return arguments[0]
-}
-
-function putData({ state, env: { kv, kv_dir } }) {
-  const { data, dir, doc } = state
-  if (isNil(kv.get("_", dir))) throw Error("dir doesn't exist")
-  put(data, doc, [dir.toString()], kv_dir, true)
-  return arguments[0]
-}
-
-function delData({ state, env }) {
-  const { dir, doc } = state
-  if (isNil(env.kv.get("_", dir))) throw Error("dir doesn't exist")
-  del(doc, [dir], env.kv_dir)
-  return arguments[0]
-}
-
-function validateSchema({ state, env: { kv } }) {
-  let valid = false
-  const { data, dir } = state
-  let _dir = kv.get("_", dir)
-  try {
-    valid = validate(data, _dir.schema).valid
-  } catch (e) {}
-  if (!valid) throw Error("invalid schema")
 }
 
 function batch({ state, env }) {
@@ -70,13 +75,15 @@ function batch({ state, env }) {
 
 const writer = {
   init: ka().map(initDB),
-  set: ka().tap(validateSchema).map(putData),
-  add: ka().tap(validateSchema).map(putData),
-  upsert: ka().tap(validateSchema).map(putData),
-  update: ka().tap(validateSchema).map(putData),
-  del: ka().map(delData),
+  set: ka().tap(validateSchema).map(putData).map(trigger),
+  add: ka().tap(validateSchema).map(putData).map(trigger),
+  upsert: ka().tap(validateSchema).map(putData).map(trigger),
+  update: ka().tap(validateSchema).map(putData).map(trigger),
+  del: ka().map(delData).map(trigger),
   addIndex: ka().map(addIndex),
   removeIndex: ka().map(removeIndex),
+  addTrigger: ka().map(addTrigger),
+  removeTrigger: ka().map(removeTrigger),
   batch: ka().map(batch),
 }
 
