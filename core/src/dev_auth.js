@@ -105,6 +105,8 @@ const authenticator = {
   removeIndex: onlyOwner,
   addTrigger: onlyOwner,
   removeTrigger: onlyOwner,
+  setRules: onlyOwner,
+  setSchema: onlyOwner,
 }
 
 function auth({ state, env }) {

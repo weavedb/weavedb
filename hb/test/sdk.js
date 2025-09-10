@@ -86,6 +86,15 @@ describe("Triggers", () => {
       { age: 3, name: "Alice" },
       { age: 5, name: "Bob" },
     ])
+    assert((await db.removeTrigger({ key: "add_age" }, "users")).success)
+    assert((await db.setSchema({ type: "object" }, "users")).success)
+    assert((await db.set("upsert:user", { age: 3 }, "users", "age")).success)
+    assert.deepEqual(await db.get("users", "age"), { age: 3 })
+    assert((await db.setRules([["set:user", [["allow()"]]]], "users")).success)
+    try {
+      await db.set("upsert:user", { age: 4 }, "users", "age2")
+    } catch (e) {}
+    assert.deepEqual(await db.get("users", "age2"), null)
     node.stop()
   })
 })
