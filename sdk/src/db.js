@@ -91,6 +91,14 @@ export default class DB {
       }
     })
   }
+  async setSchema(schema, dir) {
+    const query = ["setSchema", schema, dir]
+    return await this.set(...query)
+  }
+  async setRules(rules, dir) {
+    const query = ["setRules", rules, dir]
+    return await this.set(...query)
+  }
   async addIndex(index, dir) {
     const query = ["addIndex", index, dir]
     return await this.set(...query)

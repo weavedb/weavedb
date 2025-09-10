@@ -1,4 +1,5 @@
 import { of, ka } from "monade"
+import { validate } from "jsonschema"
 import parse from "./dev_parse.js"
 import auth from "./dev_auth.js"
 import { putData, delData, validateSchema, parseOp, initDB } from "./utils.js"
@@ -27,6 +28,7 @@ function addTrigger({ state, env: { kv } }) {
   }
 
   let conf = kv.get("_", dir)
+  if (!conf) throw Error("dir doesn't exist")
   conf.triggers ??= {}
   conf.triggers[data.key] = {
     on: data.on,
@@ -38,7 +40,33 @@ function addTrigger({ state, env: { kv } }) {
   return arguments[0]
 }
 
-function removeTrigger({ state, env }) {
+function removeTrigger({ state, env: { kv } }) {
+  const { data, dir } = state
+  if (!data.key) throw Error("key doesn't exist")
+  let conf = kv.get("_", dir)
+  conf.triggers ??= {}
+  if (!conf.triggers[data.key]) throw Error("trigger doesn't exist")
+  delete conf.triggers[data.key]
+  kv.put("_", dir, conf)
+  return arguments[0]
+}
+
+function setRules({ state, env: { kv } }) {
+  const { data, dir } = state
+  let conf = kv.get("_", dir)
+  if (!conf) throw Error("dir doesn't exist")
+  console.log(conf.auth, data)
+  conf.auth = data
+  kv.put("_", dir, conf)
+  return arguments[0]
+}
+
+function setSchema({ state, env: { kv } }) {
+  const { data, dir } = state
+  let conf = kv.get("_", dir)
+  if (!conf) throw Error("dir doesn't exist")
+  conf.schema = data
+  kv.put("_", dir, conf)
   return arguments[0]
 }
 
@@ -84,6 +112,8 @@ const writer = {
   removeIndex: ka().map(removeIndex),
   addTrigger: ka().map(addTrigger),
   removeTrigger: ka().map(removeTrigger),
+  setSchema: ka().map(setSchema),
+  setRules: ka().map(setRules),
   batch: ka().map(batch),
 }
 

@@ -70,6 +70,8 @@ function parse({ state, env }) {
       "removeIndex",
       "addTrigger",
       "removeTrigger",
+      "setSchema",
+      "setRules",
     ])
   ) {
     ;[data, dir] = state.query
