@@ -1,0 +1,1167 @@
+# Building Minimum Viable Social Dapp
+
+This tutorial will guide you through building a minimum viable social dapp (a decentralized Twitter/X) with WeaveDB.
+
+## Create Project
+
+create a db project using the `web-cli create` command.
+
+```bash
+npx wdb-cli create social && social
+```
+
+Now you have `db` directory to put config files, and `test` directory to write tests.
+
+Replace `/test/main.test.js` with the following skelton, which initializes a database with the config files in `db`.
+
+```js [/test/main.test.js]
+import assert from "assert"
+import { describe, it } from "node:test"
+import { acc } from "wao/test"
+import { DB } from "wdb-sdk"
+import { init } from "./utils.js"
+
+const actor1 = acc[1]
+const actor2 = acc[2]
+
+describe("Social Dapp", () => {
+  it("should post notes", async () => {
+    const { id, db, q: mem } = await init()
+    const a1 = new DB({ jwk: actor1.jwk, id, mem })
+    const a2 = new DB({ jwk: actor2.jwk, id, mem })
+  })
+})
+```
+
+Now you have 3 clients, the DB owner (`db`) and 2 users (`a1` and `a2`).
+
+Tests can be run with `yarn test-all`.
+
+```bash
+yarn test-all
+```
+
+## Create Notes with `Schema` and `Auth`
+
+What is truly magical about WeaveDB is that you only need JSON configuration files. No smart contracts required to build any complex applications. The DB itself is as powerful as any smart contract, thanks to FPJSON, code as data.
+
+:::info
+FPJSON is extremely friendly to LLMs. We are developing AI solutions where you don't even have to write JSON config files.
+:::
+
+We are going to borrow as much vocabulary as possible from [Activity Streams](https://www.w3.org/TR/activitystreams-core/) and [Activity Vocabulary](https://www.w3.org/TR/activitystreams-vocabulary/), which are web standard protocols for social apps.
+
+Text-based posts are called notes, and users are called actors. Let's create a schema for `notes` using [JSON Schema](https://json-schema.org/).
+
+```js [/db/schema.js]
+export default {
+  notes: {
+    type: "object",
+    required: ["id", "actor", "content", "published"],
+    properties: {
+      id: { type: "string" },
+      actor: { type: "string", pattern: "^[a-zA-Z0-9_-]{43}$" },
+      content: { type: "string", minLength: 1, maxLength: 140 },
+      published: { type: "integer" },
+    },
+    additionalProperties: false,
+  }
+}
+```
+
+Now we can have a note like the following.
+
+```json
+{
+  "id": "A",
+  "actor": "Tbun4iRRQW93gUiSAmTmZJ2PGI-_yYaXsX69ETgzSRE",
+  "content": "Hello, World!",
+  "published": 1757588601
+}
+```
+
+`id` is auto-incremented starting from `A`, `actor` is the `signer` of the query, and `published` is auto-asigned by the auth rules so users cannot set an arbitrary timestamp. The only thing users should specify is `content`.
+
+:::info
+Learn more about [Data Schemas](/build/schemas).
+:::
+
+---
+
+Create a custom query type called `add:note` to achieve this.
+
+```js [/db/auth.js]
+export default {
+  notes: [
+    [
+      "add:note",
+      [
+        ["fields()", ["*content"]],
+        ["mod()", { id: "$doc", actor: "$signer", published: "$ts" }],
+        ["allow()"],
+      ],
+    ],
+  ],
+}
+```
+`fields()` can specify required fields from users, and `*` makes `content` mandatory.
+
+`mod()` modifies the uploaded data by adding values to `id`, `actor`, and `published`.
+
+Finally, `allow()` gives you the access to write the transformed data to the database.
+
+With these schema and rules, users can now add notes.
+
+```js
+await a1.set("add:note", { content: "Hello, World!" }, "notes")
+
+```
+
+:::info
+Learn more about [Auth Rules](/build/auth).
+:::
+
+---
+
+Update the test file.
+
+```js [/test/main.test.js]
+import assert from "assert"
+import { describe, it } from "node:test"
+import { acc } from "wao/test"
+import { DB } from "wdb-sdk"
+import { init } from "./utils.js"
+
+const actor1 = acc[1]
+const actor2 = acc[2]
+
+describe("Social Dapp", () => {
+  it("should post notes", async () => {
+    const { id, db, q: mem } = await init()
+    const a1 = new DB({ jwk: actor1.jwk, id, mem })
+    const a2 = new DB({ jwk: actor2.jwk, id, mem })
+
+    await a1.set("add:note", { content: "Hello, World!" }, "notes")
+    await a2.set("add:note", { content: "GM, World!" }, "notes")
+    console.log(await db.get("notes"))
+  })
+})
+```
+
+## Create Likes and Add Multi-Field `Indexes`
+
+Now, let's add the good old like feature. Users can like notes, and notes will be sorted by like counts.
+
+We will add `likes` dir with `actor`, `object`, and `published`. `object` is the note `id` `actor` likes.
+
+```js [/db/schema.js]
+export default {
+  notes: {
+    type: "object",
+    required: ["id", "actor", "content", "published"],
+    properties: {
+      id: { type: "string" },
+      actor: { type: "string", pattern: "^[a-zA-Z0-9_-]{43}$" },
+      content: { type: "string", minLength: 1, maxLength: 140 },
+      published: { type: "integer" },
+    },
+    additionalProperties: false,
+  },
+  likes: {
+    type: "object",
+    required: ["actor", "object", "published"],
+    properties: {
+      actor: { type: "string", pattern: "^[a-zA-Z0-9_-]{43}$" },
+      object: { type: "string" },
+      published: { type: "integer" },
+    },
+    additionalProperties: false,
+  },
+}
+```
+
+In the auth rules, we should check if the like already exists with the same `actor` and the same `object`.
+
+Create a custom query called `add:like`.
+
+```js [/db/auth.js]
+export default {
+  notes: [
+    [
+      "add:note",
+      [
+        ["fields()", ["*content"]],
+        ["mod()", { id: "$doc", actor: "$signer", published: "$ts", likes: 0 }],
+        ["allow()"],
+      ],
+    ],
+  ],
+  likes: [
+    [
+      "add:like",
+      [
+        ["fields()", ["*object"]],
+        ["mod()", { actor: "$signer", published: "$ts" }],
+        [
+          "=$likes",
+          [
+            "get()",
+            [
+              "likes",
+              ["actor", "==", "$signer"],
+              ["object", "==", "$req.object"],
+            ],
+          ],
+        ],
+        ["=$ok", ["o", ["equals", 0], ["length"], "$likes"]],
+        ["denyifany()", ["!$ok"]],
+        ["allow()"],
+      ],
+    ],
+  ],
+}
+```
+
+`get()` queries where `actor` is the `$signer` and `object` is `$req.object`. This query requires a multi-field index to sort by `actor` first, then by `object`. So let's define the index.
+
+```js [db/indexes.js]
+export default {
+  likes: [[["actor"], ["object"]]],
+}
+```
+
+Now users can like notes.
+
+```js
+await a1.set("add:like", { object: noteID }, "likes")
+```
+
+:::info
+Lern more about [Indexes](/build/indexes).
+:::
+
+---
+
+Update the tests.
+
+```js [/test/main.test.js]
+import assert from "assert"
+import { describe, it } from "node:test"
+import { acc } from "wao/test"
+import { DB } from "wdb-sdk"
+import { init } from "./utils.js"
+
+const actor1 = acc[1]
+const actor2 = acc[2]
+
+describe("Social Dapp", () => {
+  it("should post notes", async () => {
+    const { id, db, q: mem } = await init()
+    const a1 = new DB({ jwk: actor1.jwk, id, mem })
+    const a2 = new DB({ jwk: actor2.jwk, id, mem })
+
+    await a1.set("add:note", { content: "Hello, World!" }, "notes")
+    await a2.set("add:note", { content: "GM, World!" }, "notes")
+    const notes = await db.get("notes", ["published", "desc"])
+
+    await a1.set("add:like", { object: notes[0].id }, "likes")
+    await a2.set("add:like", { object: notes[1].id }, "likes")
+    console.log(await db.get("likes"))
+  })
+})
+```
+
+## Count Likes with `Triggers`
+
+Now, we can add `likes` field to `notes` to count up the likes.
+
+```js [/db/schema.js]
+export default {
+  notes: {
+    type: "object",
+    required: ["id", "actor", "content", "published", "likes"],
+    properties: {
+      id: { type: "string" },
+      actor: { type: "string", pattern: "^[a-zA-Z0-9_-]{43}$" },
+      content: { type: "string", minLength: 1, maxLength: 140 },
+      published: { type: "integer" },
+      likes: { type: "integer" },
+    },
+    additionalProperties: false,
+  },
+  likes: {
+    type: "object",
+    required: ["actor", "object", "published"],
+    properties: {
+      actor: { type: "string", pattern: "^[a-zA-Z0-9_-]{43}$" },
+      object: { type: "string" },
+      published: { type: "integer" },
+    },
+    additionalProperties: false,
+  },
+}
+```
+
+But how do we increment `likes`? It turned out that we can use triggers to execute data transformations on data changes.
+
+```js [/db/triggers.js]
+export default {
+  likes: [
+    {
+      key: "inc_likes",
+      on: "create",
+      fn: [
+        ["update()", [{ likes: { _$: ["inc"] } }, "notes", "$after.object"]],
+      ],
+    },
+  ],
+}
+```
+
+This trigger will increment `likes` of `$after.object` in the `notes` dir, when a new `like` is created.
+
+:::info
+Learn more about [Triggers](/build/triggers).
+:::
+
+---
+
+Update the test file, and see the `likes` counts go up.
+
+```js [/test/main.test.js]
+import assert from "assert"
+import { describe, it } from "node:test"
+import { acc } from "wao/test"
+import { DB } from "wdb-sdk"
+import { init } from "./utils.js"
+
+const actor1 = acc[1]
+const actor2 = acc[2]
+
+describe("Social Dapp", () => {
+  it("should post notes", async () => {
+    const { id, db, q: mem } = await init()
+    const a1 = new DB({ jwk: actor1.jwk, id, mem })
+    const a2 = new DB({ jwk: actor2.jwk, id, mem })
+
+    await a1.set("add:note", { content: "Hello, World!" }, "notes")
+    await a2.set("add:note", { content: "GM, World!" }, "notes")
+    const notes = await db.get("notes", ["published", "desc"])
+
+    await a1.set("add:like", { object: notes[0].id }, "likes")
+    await a2.set("add:like", { object: notes[1].id }, "likes")
+    
+    const notes2 = await db.get("notes", ["published", "desc"])
+    assert.equals(notes2[0].likes, 1)
+    assert.equals(notes2[1].likes, 1)
+  })
+})
+```
+
+## Test and Deploy DB
+
+Finally, run the tests.
+
+```bash
+yarn test-all
+```
+
+Make sure you are running a local rollup node and a HyperBEAM node, then have `.wallet.json` in the app root directory.
+
+Let's deploy the DB.
+
+```bash
+yarn deploy --wallet .wallet.json
+```
+
+If you go to [http://localhost:6364/status](http://localhost:6364/status), you will see your newly deployed DB is listed under `processes`. Save the database ID. You will need it later.
+
+:::info
+Learn more about [wdb-cli](/api/wdb-cli).
+:::
+
+## Build Frontend Dapp
+
+We are going to build the simplest social app ever using NextJS!
+
+For simplicity, use the old `pages` structure insted of `apps`.
+
+```bash
+npx create-next-app myapp && cd myapp
+```
+
+:::code-group
+
+```jsx [/pages/index.js]
+import { useRef, useEffect, useState } from "react"
+import { DB } from "wdb-sdk"
+
+export default function Home() {
+  const [notes, setNotes] = useState([])
+  const [likes, setLikes] = useState([])
+  const [slot, setSlot] = useState(null)
+  const [body, setBody] = useState("")
+  const [likingNotes, setLikingNotes] = useState({})
+  const [showToast, setShowToast] = useState(false)
+  const db = useRef()
+
+  const getNotes = async () => {
+    const _notes = await db.current.cget("notes", ["published", "desc"], 10)
+    const ids = _notes.map(v => v.id)
+    const _likes = await db.current.get("likes", ["object", "in", ids])
+    setNotes(_notes)
+    setLikes(_likes.map(v => v.object))
+  }
+
+  const handleLike = async post => {
+    if (likingNotes[post.id]) return
+    setLikingNotes(prev => ({ ...prev, [post.id]: true }))
+
+    try {
+      if (window.arweaveWallet) {
+        await window.arweaveWallet.connect([
+          "ACCESS_ADDRESS",
+          "SIGN_TRANSACTION",
+        ])
+      }
+      const res = await db.current.set(
+        "add:like",
+        { object: post.data.id },
+        "likes",
+      )
+      const { success, result } = res
+      if (success) {
+        setSlot(result.result.i)
+        await getNotes()
+      } else {
+        alert("Failed to like post!")
+      }
+    } catch (error) {
+      console.error("Error liking post:", error)
+      alert("Something went wrong!")
+    } finally {
+      setLikingNotes(prev => ({ ...prev, [post.id]: false }))
+    }
+  }
+
+  const handlePost = async () => {
+    if (body.length <= 140 && body.trim().length > 0) {
+      try {
+        if (window.arweaveWallet) {
+          await window.arweaveWallet.connect([
+            "ACCESS_ADDRESS",
+            "SIGN_TRANSACTION",
+          ])
+        }
+        const res = await db.current.set("add:note", { content: body }, "notes")
+        const { success, result } = res
+        if (success) {
+          setSlot(result.result.i)
+          setShowToast(true)
+          setBody("")
+          await getNotes()
+          // Auto-close removed - manual close only
+        } else {
+          alert("something went wrong!")
+        }
+      } catch (error) {
+        console.error("Error posting:", error)
+        alert("Something went wrong!")
+      }
+    }
+  }
+
+  const formatTime = date => {
+    const now = new Date()
+    const posted = new Date(date)
+    const diffInMinutes = Math.floor((now - posted) / (1000 * 60))
+    if (diffInMinutes < 1) return "now"
+    if (diffInMinutes < 60) return `${diffInMinutes}m`
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h`
+    return `${Math.floor(diffInMinutes / 1440)}d`
+  }
+
+  const truncateAddress = address => {
+    if (!address) return "Unknown"
+    if (address.length <= 16) return address
+    return `${address.slice(0, 8)}...${address.slice(-8)}`
+  }
+
+  useEffect(() => {
+    void (async () => {
+      db.current = new DB({
+        id: process.env.NEXT_PUBLIC_DB_ID,
+        url: process.env.NEXT_PUBLIC_RU_URL,
+      })
+      await getNotes()
+    })()
+  }, [])
+
+  return (
+    <>
+      <div className="app-container">
+        {/* Header */}
+        <header className="app-header">
+          <div className="logo">W</div>
+          <a
+            href={`${process.env.NEXT_PUBLIC_SCAN_URL}/db/${process.env.NEXT_PUBLIC_DB_ID}?url=${process.env.NEXT_PUBLIC_RU_URL}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="scan-link"
+          >
+            Scan
+          </a>
+        </header>
+
+        {/* Composer */}
+        <div className="composer">
+          <div className="composer-avatar">
+            <div className="avatar">WDB</div>
+          </div>
+          <div className="composer-main">
+            <textarea
+              className="composer-input"
+              placeholder="What's happening?"
+              value={body}
+              onChange={e => {
+                if (e.target.value.length <= 140) {
+                  setBody(e.target.value)
+                }
+              }}
+              maxLength={140}
+            />
+            <div className="composer-footer">
+              <span
+                className={`char-count ${body.length > 120 ? "warning" : ""} ${body.length === 140 ? "danger" : ""}`}
+              >
+                {140 - body.length}
+              </span>
+              <button
+                className="post-btn"
+                disabled={body.trim().length === 0}
+                onClick={handlePost}
+              >
+                Post
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Feed */}
+        <div className="feed">
+          {notes.map(post => (
+            <article key={post.id} className="post">
+              <div className="post-avatar">
+                <div className="avatar">
+                  {post.data.actor?.slice(0, 2).toUpperCase() || "??"}
+                </div>
+              </div>
+              <div className="post-main">
+                <div className="post-header">
+                  <span className="post-author">{post.data.actor}</span>
+                  <span className="post-time">
+                    {formatTime(post.data.published)}
+                  </span>
+                </div>
+                <div className="post-content">{post.data.content}</div>
+                <div className="post-actions">
+                  <button
+                    className={`like-btn ${likes.includes(post.id) ? "liked" : ""} ${likingNotes[post.id] ? "loading" : ""}`}
+                    onClick={() => handleLike(post)}
+                    disabled={likingNotes[post.id]}
+                  >
+                    <svg viewBox="0 0 24 24" className="heart">
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                    </svg>
+                    <span>{post.data.likes || ""}</span>
+                  </button>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <footer className="app-footer">
+          <div className="footer-content">
+            Built by{" "}
+            <a
+              href="https://weavedb.dev"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="footer-brand"
+            >
+              WeaveDB
+            </a>
+          </div>
+        </footer>
+      </div>
+
+      {/* Toast */}
+      {showToast && (
+        <div className="toast-overlay">
+          <div className="toast-card">
+            <div className="toast-icon">✓</div>
+            <div className="toast-content">
+              <div className="toast-title">Post successful!</div>
+              <a
+                href={`${process.env.NEXT_PUBLIC_SCAN_URL}/db/${process.env.NEXT_PUBLIC_DB_ID}/tx/${slot}?url=${process.env.NEXT_PUBLIC_RU_URL}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="toast-link"
+              >
+                View transaction
+              </a>
+            </div>
+            <button className="toast-close" onClick={() => setShowToast(false)}>
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+```
+
+```css [/styles/global.css]
+/* Ultra Sleek WeaveDB Social Network */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 25%, #16213e 50%, #0f0a1f 75%, #000 100%);
+  background-attachment: fixed;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #e7e9ea;
+  line-height: 1.4;
+}
+
+.app-container {
+  max-width: 680px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(20px);
+  border-left: 1px solid rgba(139, 92, 246, 0.1);
+  border-right: 1px solid rgba(139, 92, 246, 0.1);
+}
+
+/* Header */
+.app-header {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+  z-index: 100;
+}
+
+.logo {
+  font-size: 32px;
+  font-weight: 900;
+  color: #8b5cf6;
+  text-shadow: 0 0 30px rgba(139, 92, 246, 0.6);
+  font-family: 'Arial Black', sans-serif;
+}
+
+.scan-link {
+  color: #8b5cf6;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 8px 20px;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 25px;
+  background: rgba(139, 92, 246, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.scan-link:hover {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
+}
+
+/* Composer */
+.composer {
+  display: flex;
+  gap: 16px;
+  padding: 24px;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+  background: rgba(139, 92, 246, 0.02);
+}
+
+.composer-avatar {
+  flex-shrink: 0;
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8b5cf6, #a855f7, #c084fc);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+  border: 2px solid rgba(139, 92, 246, 0.3);
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.2);
+}
+
+.composer-main {
+  flex: 1;
+}
+
+.composer-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #e7e9ea;
+  font-size: 20px;
+  font-family: inherit;
+  resize: none;
+  min-height: 120px;
+  outline: none;
+  line-height: 1.5;
+}
+
+.composer-input::placeholder {
+  color: rgba(231, 233, 234, 0.4);
+}
+
+.composer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.char-count {
+  font-size: 14px;
+  color: rgba(139, 92, 246, 0.6);
+  font-weight: 500;
+}
+
+.char-count.warning {
+  color: #fbbf24;
+}
+
+.char-count.danger {
+  color: #ef4444;
+}
+
+.post-btn {
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+  color: white;
+  border: none;
+  border-radius: 30px;
+  padding: 12px 32px;
+  font-weight: bold;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+}
+
+.post-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(139, 92, 246, 0.4);
+}
+
+.post-btn:disabled {
+  background: rgba(139, 92, 246, 0.2);
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Feed */
+.feed {
+  background: transparent;
+}
+
+/* Post */
+.post {
+  display: flex;
+  gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.08);
+  transition: all 0.3s ease;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.post:hover {
+  background: rgba(139, 92, 246, 0.03);
+  border-bottom-color: rgba(139, 92, 246, 0.15);
+}
+
+.post-avatar {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.post-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.post-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.post-author {
+  color: rgba(139, 92, 246, 0.8);
+  font-weight: 500;
+  font-size: 12px;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  background: rgba(139, 92, 246, 0.08);
+  padding: 2px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  transition: all 0.3s ease;
+  word-break: break-all;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  max-width: none;
+}
+
+.post-author:hover {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.post-time {
+  color: rgba(139, 92, 246, 0.6);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.post-content {
+  color: #e7e9ea;
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 8px 0 6px 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.post-actions {
+  display: flex;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.like-btn {
+  background: transparent;
+  border: none;
+  color: rgba(139, 92, 246, 0.5);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 25px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.heart {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  transition: all 0.3s ease;
+}
+
+.like-btn:hover:not(:disabled) {
+  background: rgba(236, 72, 153, 0.1);
+  color: #ec4899;
+  transform: scale(1.05);
+}
+
+.like-btn:hover:not(:disabled) .heart {
+  fill: rgba(236, 72, 153, 0.2);
+  transform: scale(1.1);
+}
+
+.like-btn.liked {
+  color: #ec4899;
+}
+
+.like-btn.liked .heart {
+  fill: #ec4899;
+  stroke: #ec4899;
+}
+
+.like-btn.loading {
+  opacity: 0.6;
+  cursor: not-allowed;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.8; }
+}
+
+/* Footer */
+.app-footer {
+  border-top: 1px solid rgba(139, 92, 246, 0.1);
+  padding: 24px;
+  background: rgba(139, 92, 246, 0.02);
+  margin-top: auto;
+}
+
+.footer-content {
+  text-align: center;
+  color: rgba(139, 92, 246, 0.6);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.footer-brand {
+  color: #8b5cf6;
+  font-weight: 700;
+  text-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.footer-brand:hover {
+  color: #a855f7;
+  text-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+  transform: translateY(-1px);
+}
+
+/* Toast */
+.toast-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10000;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 30px;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(2px);
+}
+
+.toast-card {
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(30px);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  color: white;
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 0 40px rgba(139, 92, 246, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  animation: slideInToast 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: all;
+  max-width: 380px;
+  transform: translateZ(0);
+  transition: all 0.3s ease;
+}
+
+.toast-card:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 
+    0 25px 80px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 0 60px rgba(139, 92, 246, 0.3);
+}
+
+.toast-icon {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 16px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+}
+
+.toast-content {
+  flex: 1;
+}
+
+.toast-title {
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 4px;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.toast-link {
+  color: rgba(139, 92, 246, 0.9);
+  text-decoration: none;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.toast-link:hover {
+  color: #8b5cf6;
+  border-bottom-color: #8b5cf6;
+}
+
+.toast-close {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toast-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  transform: scale(1.1);
+}
+
+@keyframes slideInToast {
+  from {
+    transform: translateX(120%) translateY(30px) scale(0.9);
+    opacity: 0;
+    filter: blur(8px);
+  }
+  to {
+    transform: translateX(0) translateY(0) scale(1);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .app-container {
+    border-left: none;
+    border-right: none;
+  }
+  
+  .composer,
+  .post {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  
+  .app-header {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  
+  .composer-input {
+    font-size: 18px;
+  }
+  
+  .toast-overlay {
+    padding: 20px;
+  }
+  
+  .toast-card {
+    max-width: calc(100vw - 40px);
+  }
+}
+
+@media (max-width: 480px) {
+  .logo {
+    font-size: 28px;
+  }
+  
+  .avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 12px;
+  }
+  
+  .composer-input {
+    font-size: 16px;
+    min-height: 100px;
+  }
+  
+  .post-author {
+    font-size: 11px;
+    padding: 2px 6px;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .post-content {
+    font-size: 15px;
+  }
+  
+  .like-btn {
+    padding: 6px 12px;
+  }
+  
+  .heart {
+    width: 18px;
+    height: 18px;
+  }
+}
+```
+
+:::
+
+
+Add `.env.local` with your `DB_ID`.
+
+```dotenv [/.env.local]
+NEXT_PUBLIC_DB_ID="c5ulwr94nkxiqkpek9skxzjmmvmfgwluod_btvvqwas"
+NEXT_PUBLIC_RU_URL="http://localhost:6364"
+NEXT_PUBLIC_SCAN_URL="http://localhost:3000"
+```
+
+Run the app.
+
+```bash
+yarn dev --port 4000
+```
+
+Now the app is runnint at [http://localhost:4000](http://localhost:4000).

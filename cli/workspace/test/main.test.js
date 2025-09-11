@@ -7,7 +7,7 @@ import { init } from "./utils.js"
 const actor1 = acc[1]
 const actor2 = acc[2]
 
-describe("Jots", () => {
+describe("Social Dapp", () => {
   it.only("should post notes", async () => {
     const { id, db, q: mem } = await init()
     const a1 = new DB({ jwk: actor1.jwk, id, mem })

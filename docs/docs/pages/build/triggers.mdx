@@ -45,11 +45,16 @@ await db.set("add:like", { object: noteId }, "likes")
 // likes has been incremented
 assert.equal((await db.get("notes", noteId)).likes, 1)
 ```
+## Get Triggers
+
+```js
+const triggers = (await db.stat("likes")).triggers ?? {}
+```
 
 ## Remove Triggers
 
 Specify the trigger key to remove.
 
 ```javascript
-await db.removeTrigger({ key: "inc_likes" }, "like-counts")
+await db.removeTrigger({ key: "inc_likes" }, "likes")
 ```

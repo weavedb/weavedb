@@ -117,6 +117,10 @@ export default defineConfig({
           link: "/build/triggers",
         },
         {
+          text: "Building Social Dapp",
+          link: "/build/social-dapp",
+        },
+        {
           text: "Remote Servers",
           link: "/build/remote-servers",
         },
