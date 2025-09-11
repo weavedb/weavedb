@@ -4,11 +4,12 @@ import vec from "./vec.js"
 
 import kv from "./kv.js"
 import kv_vec from "./kv_vec.js"
-
-export { db, sql, vec, kv, kv_vec }
+import io from "./io.js"
+import mem from "./mem.js"
 
 import bpt from "./bpt.js"
 import parser from "./parser.js"
 import build from "./build.js"
+import queue from "./queue.js"
 
-export { bpt, parser, build }
+export { bpt, parser, build, queue, db, sql, vec, kv, kv_vec, io, mem }

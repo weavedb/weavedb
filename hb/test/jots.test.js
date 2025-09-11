@@ -2,13 +2,11 @@ import assert from "assert"
 import { describe, it } from "node:test"
 import { acc } from "wao/test"
 import { DB } from "../../sdk/src/index.js"
-import server from "../src/server.js"
-import { genDir } from "./test-utils.js"
+import { mem } from "../../core/src/index.js"
 
 const owner = acc[0]
 const actor1 = acc[1]
 const actor2 = acc[2]
-const dbpath = genDir()
 
 const schema = {
   notes: {
@@ -93,11 +91,11 @@ const triggers = {
 
 describe("Jots", () => {
   it.only("should connect with remote nodes", async () => {
-    const node = await server({ dbpath, jwk: owner.jwk, hyperbeam: false })
-    const db = new DB({ jwk: owner.jwk, hb: null })
+    const { q } = mem()
+    const db = new DB({ jwk: owner.jwk, hb: null, mem: q })
     const pid = await db.init({ id: "jots" })
-    const a1 = new DB({ jwk: actor1.jwk, hb: null, id: "jots" })
-    const a2 = new DB({ jwk: actor2.jwk, hb: null, id: "jots" })
+    const a1 = new DB({ jwk: actor1.jwk, hb: null, id: "jots", mem: q })
+    const a2 = new DB({ jwk: actor2.jwk, hb: null, id: "jots", mem: q })
 
     await db.mkdir({ name: "notes", schema: schema.notes, auth: rules.notes })
     await db.mkdir({ name: "likes", schema: schema.likes, auth: rules.likes })
@@ -124,6 +122,6 @@ describe("Jots", () => {
     assert.equal(like3.success, false)
 
     assert.equal((await db.get("notes", ["likes", "desc"], 1))[0].likes, 2)
-    node.stop()
+    console.log(await db.get("notes"))
   })
 })

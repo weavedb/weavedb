@@ -5,6 +5,26 @@ import { dirs_set } from "./rules.js"
 import { includes, filter } from "ramda"
 const init_query = { schema: dir_schema, auth: [dirs_set] }
 const wait = ms => new Promise(res => setTimeout(() => res(), ms))
+import { verify as _verify } from "hbsig"
+
+const verify = async req => {
+  let valid = false
+  let address = null
+  let query = null
+  let ts = Date.now()
+  try {
+    const {
+      valid,
+      keyId,
+      decodedSignatureInput: { components },
+    } = await _verify(req)
+    address = toAddr(keyId)
+    query = JSON.parse(req.headers.query)
+    return { valid, address, query, ts, fields: components }
+  } catch (e) {
+    return { err: true, valid, address, query, ts, fields: null }
+  }
+}
 
 const stack = {
   nosql: [
@@ -33,7 +53,9 @@ export default class DB {
     jwk,
     id,
     hb = `http://localhost:10001`,
+    mem,
   }) {
+    if (mem) this.mem = mem
     if (!jwk && typeof window === "object") jwk = window.arweaveWallet
     this.jwk = jwk
     if (this.jwk && !this.isArConnect()) this.addr = toAddr(jwk.n)
@@ -123,7 +145,7 @@ export default class DB {
     return await this.set("batch", ...queries)
   }
   async set(...args) {
-    const res = await this.db.post(
+    const req = await this.db.sign(
       {
         path: "/~weavedb@1.0/set",
         nonce: ++this._nonce,
@@ -132,7 +154,32 @@ export default class DB {
       },
       { path: false },
     )
-    const json = JSON.parse(res.body)
+    let json = null
+    if (this.mem) {
+      const { valid, query, fields, address } = await verify(req)
+      if (valid) {
+        try {
+          const _res = await this.mem.write(req)
+          if (_res?.success) {
+            json = { success: true, query, result: _res.result }
+          } else {
+            json = { success: false, error: _res.err, query, result: null }
+          }
+        } catch (e) {
+          json = { success: false, query, error: e.toString(), result: null }
+        }
+      } else {
+        json = {
+          success: false,
+          error: "invalid signature",
+          query,
+          result: null,
+        }
+      }
+    } else {
+      const res = await this.db.send(req)
+      json = JSON.parse(res.body)
+    }
     if (
       !json.success &&
       /the wrong nonce/.test(json.error) &&
@@ -182,13 +229,26 @@ export default class DB {
   }
   async _get(...args) {
     await wait(0)
-    const res = await this.db.get({
-      path: "/~weavedb@1.0/get",
-      id: this.id,
-      query: JSON.stringify(args),
-    })
-    const json = JSON.parse(res.body)
+    let json = null
+    let res = null
+    if (this.mem) {
+      const query = args
+      try {
+        res = await this.mem[query[0]](...query.slice(1)).val()
+        json = { success: true, query, res }
+      } catch (e) {
+        console.log(e)
+        json = { success: false, query, error: e.toString() }
+      }
+    } else {
+      const _res = await this.db.get({
+        path: "/~weavedb@1.0/get",
+        id: this.id,
+        query: JSON.stringify(args),
+      })
+      json = JSON.parse(_res.body)
+    }
     if (json.error) throw json.error
-    return JSON.parse(res.body).res
+    return json.res
   }
 }
