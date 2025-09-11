@@ -1,0 +1,156 @@
+# wdb-cli
+
+`wdb-cli` lets you build and test WeaveDB instances in memory.
+
+## Create Project
+
+```bash
+npx wdb-cli create mydb && cd mydb
+```
+
+## DB Settings
+
+Create `schema`, `rules`, `indexes`, and `triggers` files under `/db`.
+
+```js [/db/schema.js]
+export default {
+  notes: {
+    type: "object",
+    required: ["id", "actor", "content", "published", "likes"],
+    properties: {
+      id: { type: "string" },
+      actor: { type: "string", pattern: "^[a-zA-Z0-9_-]{43}$" },
+      content: { type: "string", minLength: 1, maxLength: 140 },
+      published: { type: "integer" },
+      likes: { type: "integer" },
+    },
+    additionalProperties: false,
+  },
+  likes: {
+    type: "object",
+    required: ["actor", "object", "published"],
+    properties: {
+      actor: { type: "string", pattern: "^[a-zA-Z0-9_-]{43}$" },
+      object: { type: "string" },
+      published: { type: "integer" },
+    },
+    additionalProperties: false,
+  },
+}
+```
+
+```js [/db/rules.js]
+export default {
+  notes: [
+    [
+      "add:note",
+      [
+        ["fields()", ["*content"]],
+        ["mod()", { id: "$doc", actor: "$signer", published: "$ts", likes: 0 }],
+        ["allow()"],
+      ],
+    ],
+  ],
+  likes: [
+    [
+      "add:like",
+      [
+        ["fields()", ["*object"]],
+        ["mod()", { actor: "$signer", published: "$ts" }],
+        [
+          "=$likes",
+          [
+            "get()",
+            [
+              "likes",
+              ["actor", "==", "$signer"],
+              ["object", "==", "$req.object"],
+            ],
+          ],
+        ],
+        ["=$ok", ["o", ["equals", 0], ["length"], "$likes"]],
+        ["denyifany()", ["!$ok"]],
+        ["allow()"],
+      ],
+    ],
+  ],
+}
+```
+
+```js [/db/indexes.js]
+export default {
+  notes: [[["actor"], ["published", "desc"]]],
+  likes: [
+    [["object"], ["published", "desc"]],
+    [["actor"], ["object"]],
+  ],
+}
+```
+
+```js [/db/triggers.js]
+export default {
+  likes: [
+    {
+      key: "inc_likes",
+      on: "create",
+      fn: [
+        ["update()", [{ likes: { _$: ["inc"] } }, "notes", "$after.object"]],
+      ],
+    },
+  ],
+}
+```
+
+## Test
+
+Write test files under `/test`.
+
+```js [/test/main.test.js]
+import assert from "assert"
+import { describe, it } from "node:test"
+import { acc } from "wao/test"
+import { DB } from "wdb-sdk"
+import { init } from "./utils.js"
+
+const actor1 = acc[1]
+const actor2 = acc[2]
+
+describe("Jots", () => {
+  it.only("should post notes", async () => {
+    const { id, db, q } = await init()
+    const a1 = new DB({ jwk: actor1.jwk, hb: null, id: "jots", mem: q })
+    const a2 = new DB({ jwk: actor2.jwk, hb: null, id: "jots", mem: q })
+
+    const note1 = await a1.set("add:note", { content: "hello a1" }, "notes")
+    assert(note1.success)
+    const note2 = await a2.set("add:note", { content: "hello a2" }, "notes")
+    assert(note2.success)
+
+    const tl = await db.get("notes", ["published", "desc"])
+    assert(tl.length === 2)
+    const object = tl[0].id
+
+    const like1 = await a1.set("add:like", { object }, "likes")
+    assert(like1.success)
+    const like2 = await a2.set("add:like", { object }, "likes")
+    assert(like2.success)
+    const like3 = await a2.set("add:like", { object }, "likes")
+    assert(!like3.success)
+
+    assert.equal((await db.get("notes", ["likes", "desc"], 1))[0].likes, 2)
+  })
+})
+
+```
+
+Run the tests.
+
+```bash
+yarn test-all
+```
+
+## Deploy
+
+```bash
+yarn deploy --wallet .wallet.json --hb http://localhost:10001 --db http://localhost:6364
+```

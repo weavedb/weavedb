@@ -2,14 +2,13 @@ import assert from "assert"
 import { describe, it } from "node:test"
 import { acc } from "wao/test"
 import { DB } from "wdb-sdk"
-import { mem } from "wdb-core"
 import { init } from "./utils.js"
 
 const actor1 = acc[1]
 const actor2 = acc[2]
 
 describe("Jots", () => {
-  it.only("should connect with remote nodes", async () => {
+  it.only("should post notes", async () => {
     const { id, db, q } = await init()
     const a1 = new DB({ jwk: actor1.jwk, hb: null, id: "jots", mem: q })
     const a2 = new DB({ jwk: actor2.jwk, hb: null, id: "jots", mem: q })
@@ -31,6 +30,5 @@ describe("Jots", () => {
     assert(!like3.success)
 
     assert.equal((await db.get("notes", ["likes", "desc"], 1))[0].likes, 2)
-    console.log(await db.get("notes"))
   })
 })

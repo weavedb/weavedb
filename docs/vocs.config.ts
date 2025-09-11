@@ -115,6 +115,10 @@ export default defineConfig({
           link: "/api/wdb-sdk",
         },
         {
+          text: "wdb-cli",
+          link: "/api/wdb-cli",
+        },
+        {
           text: "wdb-core",
           link: "/api/wdb-core",
         },

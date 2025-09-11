@@ -90,16 +90,17 @@ You can access preset variables in access rule evaluations as explained [here](/
 
 ```js
 let vars = {
-  op, // set:post
+  op, // set:post ( op = opcode:operand )
   opcode, // set
   operand, // post
   id, // database ID
   owner // database owner
   signer, // message signer
   ts, // timestamp
-  dir, // directory
+  dir, // directory ID
   doc, // document ID
-  query, // query
+  query, // query = [ req, dir, doc ]
+  req, // data in request query ( before + req = after )
   before, // data before updating
   after, // data after updating
   allow: false, // auth passes if allow is eventually true

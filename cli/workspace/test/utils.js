@@ -19,7 +19,7 @@ const init = async () => {
   }
   for (const k in indexes) for (const i of indexes[k]) await db.addIndex(i, k)
   for (const k in triggers) {
-    for (const t of triggers[k]) await db.addTrigger(t, k)
+    for (const t of triggers[k]) console.log(await db.addTrigger(t, k))
   }
   return { db, id, q }
 }
