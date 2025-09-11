@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
+    "deploy": "node scripts/deploy.js",
     "test": "node --experimental-sqlite --experimental-wasm-memory64 --test",
     "test-only": "node --experimental-sqlite --experimental-wasm-memory64 --test-only",
     "test-all": "node --experimental-sqlite --experimental-wasm-memory64 --test-only test/*.test.js"

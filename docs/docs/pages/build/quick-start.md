@@ -82,9 +82,16 @@ Currently starting a mainnet process with the `port` setting is necessary since 
 ```bash
 rebar3 as weavedb shell --eval 'hb:start_mainnet(#{ port => 10001, priv_key_location => <<".wallet.json">> })'
 ```
+
 You can explicitlyt start the WeaveDB rollup node by visiting [http://localhost:10001/~weavedb@1.0/start](http://localhost:10001/~weavedb@1.0/start).
 
 Then check the rollup node status at [http://localhost:6364/status](http://localhost:6364/status).
+
+Or simply run `yarn start`, which handles everything above and some HyperBEAM memory leak issues (under investigation).
+
+```bash
+yarn start
+```
 
 Now you can interact with the nodes with `wdb-sdk`.
 
