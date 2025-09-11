@@ -3,15 +3,13 @@ import cors from "cors"
 import bodyParser from "body-parser"
 import { getKV2, verify } from "./server-utils.js"
 //import { db as wdb } from "wdb-core"
-import { db as wdb } from "../../core/src/index.js"
-import queue from "../src/queue.js"
+import { mem, db as wdb, queue, io } from "../../core/src/index.js"
 import { includes, map, fromPairs, isNil } from "ramda"
 import { AR, AO } from "wao"
 import { open } from "lmdb"
 import { toAddr } from "hbsig"
 import recover from "./recover.js"
 import wal from "./wal.js"
-
 let dbs = {}
 let ios = {}
 let dbmap = {}
@@ -29,16 +27,22 @@ const server = async ({
   const started_at = Date.now()
   const addr = (await new AR().init(jwk)).addr
   const app = express()
-  const io = open({ path: `${dbpath}/admin` })
-  let pids = io.get("pids") ?? []
+  const admin_io = dbpath ? open({ path: `${dbpath}/admin` }) : io()
+  let pids = admin_io.get("pids") ?? []
   for (let v of pids) {
     console.log("recovering....", v)
     try {
       const { db: _db, io: _io } = await recover({ pid: v, hb, dbpath, jwk })
       //dbs[v] = _db
-      const wkv = getKV2({ jwk, hb, dbpath, pid: v })
-      dbs[v] = queue(wdb(wkv))
-      ios[v] = _io
+      if (dbpath) {
+        const wkv = getKV2({ jwk, hb, dbpath, pid: v })
+        dbs[v] = queue(wdb(wkv))
+        ios[v] = _io
+      } else {
+        const { q, io } = mem()
+        dbs[v] = q
+        ios[v] = io
+      }
       if (hyperbeam) wal({ jwk, hb, dbpath, pid: v })
     } catch (e) {
       console.log("recover failed:", v)
@@ -84,11 +88,6 @@ const server = async ({
     try {
       query = JSON.parse(req.headers.query ?? req.query.query)
       id = req.headers.id ?? req.query.id
-      let headers = {}
-      for (const k in req.headers) {
-        let lowK = k.toLowerCase()
-        headers[lowK] = req.headers[lowK]
-      }
       const _res = await dbs[id][query[0]](...query.slice(1)).val()
       res.json({ success: true, query, res: _res })
     } catch (e) {
@@ -185,12 +184,18 @@ const server = async ({
             })
           } else {
             console.log(`initializing a new db: ${pid}`)
-            const wkv = getKV2({ jwk, hb, dbpath, pid })
+            if (dbpath) {
+              const wkv = getKV2({ jwk, hb, dbpath, pid })
+              dbs[pid] = queue(wdb(wkv))
+              ios[pid] = wkv.io
+            } else {
+              const { q, io } = mem()
+              dbs[pid] = q
+              ios[pid] = io
+            }
             if (hyperbeam) wal({ jwk, hb, dbpath, pid })
-            dbs[pid] = queue(wdb(wkv))
-            ios[pid] = wkv.io
             pids.push(pid)
-            io.put("pids", pids)
+            admin_io.put("pids", pids)
           }
         }
         if (!err) {
