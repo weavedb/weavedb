@@ -116,8 +116,8 @@ export default class DB {
     const query = ["setSchema", schema, dir]
     return await this.set(...query)
   }
-  async setRules(rules, dir) {
-    const query = ["setRules", rules, dir]
+  async setAuth(rules, dir) {
+    const query = ["setAuth", rules, dir]
     return await this.set(...query)
   }
   async addIndex(index, dir) {
@@ -202,6 +202,7 @@ export default class DB {
       this.addr = await this.jwk.getActiveAddress()
     }
     this._nonce = (await this.get("__accounts__", this.addr))?.nonce ?? 0
+    return this._nonce
   }
   async stat(dir) {
     return await this.get("_", dir)

@@ -56,7 +56,7 @@ function parse({ state, env }) {
       "addTrigger",
       "removeTrigger",
       "setSchema",
-      "setRules",
+      "setAuth",
     ])
   ) {
     ;[data, dir] = state.query

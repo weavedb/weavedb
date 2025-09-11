@@ -4267,10 +4267,10 @@ wasmcurves@0.2.2:
   dependencies:
     wasmbuilder "0.0.16"
 
-wdb-core@^0.0.10:
-  version "0.0.10"
-  resolved "https://registry.yarnpkg.com/wdb-core/-/wdb-core-0.0.10.tgz#464d770f3f327b6196dc2387aa9e27ae979712ba"
-  integrity sha512-qzD7gkZ3IA2XFG+nHV5pUvG/kctj+JKdjNcSkoKZr8SBq0OW3u28yJLzQTignoDJX0CWZBVTPBAhTooiLw7N6g==
+wdb-core@^0.0.11:
+  version "0.0.11"
+  resolved "https://registry.yarnpkg.com/wdb-core/-/wdb-core-0.0.11.tgz#0c00bacb7f5c10c89f8142bea7b4b470d7eab757"
+  integrity sha512-SSUL1seN4yDAbGC+frLKbU/TozsuBmYSA1BR80gI8P8LL+Rjr7SAn/WMZVrjz3sxKKzStDDbmbVNHRBMhzvFHQ==
   dependencies:
     "@lancedb/lancedb" "^0.21.2"
     apache-arrow "^21.0.0"
@@ -4283,10 +4283,10 @@ wdb-core@^0.0.10:
     node-sql-parser "^5.3.11"
     ramda "^0.31.3"
 
-wdb-sdk@^0.0.18:
-  version "0.0.18"
-  resolved "https://registry.yarnpkg.com/wdb-sdk/-/wdb-sdk-0.0.18.tgz#71c5bd8c91044bb5f691b48efd06ea182c3113f6"
-  integrity sha512-08ZTxDQok0M2X0jR57oEzeAZU4mNUJ9j6DsUESM6FTl6wqoBen8M2rOf0gkoAfL9z8A96pNkPUqZR97tc0uwFA==
+wdb-sdk@^0.0.19:
+  version "0.0.19"
+  resolved "https://registry.yarnpkg.com/wdb-sdk/-/wdb-sdk-0.0.19.tgz#f3a97dbe4c8be80b5571f5258444d69c1426769a"
+  integrity sha512-uuMjUy+t0NfP86RpI0fV4aIR6QclVLY93dqK5exE/QOOH2Bs/i3NKqZ1w9bS2S2BRiIeFoUbhyhttBE1AlaHpw==
   dependencies:
     wao "^0.35.6"
 

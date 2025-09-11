@@ -10,7 +10,7 @@ npx wdb-cli create mydb && cd mydb
 
 ## DB Settings
 
-Create `schema`, `rules`, `indexes`, and `triggers` files under `/db`.
+Create `schema`, `auth`, `indexes`, and `triggers` files under `/db`.
 
 ```js [/db/schema.js]
 export default {
@@ -39,7 +39,7 @@ export default {
 }
 ```
 
-```js [/db/rules.js]
+```js [/db/auth.js]
 export default {
   notes: [
     [

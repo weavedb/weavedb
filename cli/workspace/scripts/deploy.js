@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync } from "fs"
 import { toAddr } from "wao/utils"
 import { DB } from "wdb-sdk"
 import schema from "../db/schema.js"
-import rules from "../db/rules.js"
+import auth from "../db/auth.js"
 import indexes from "../db/indexes.js"
 import triggers from "../db/triggers.js"
 
@@ -32,7 +32,7 @@ const main = async () => {
     const res = await db.mkdir({
       name,
       schema: schema[name],
-      auth: rules[name],
+      auth: auth[name],
     })
     if (res.success) console.log(`Dir created: ${name}`)
     else {

@@ -11,17 +11,33 @@ yarn add wdb-sdk
 ```js
 import { DB } from 'wdb-sdk'
 
-const db = new DB({ jwk, url, hb, id })
+const db = new DB({ jwk, url, hb, id, mem })
 ```
 
 - `jwk` : signer Arweave wallet JWK
 - `url` : DB rollup server URL (default: `http://localhost:6364`)`
 - `hb` : HyperBEAM WAL node URL (default: `http://localhost:10001`)`
 - `id` : DB ID, don't specify it when spawning a new DB
+- `mem` : use in-memory DB from `wdb-core`
 
 :::info
 If `jwk` is unspecified in browser environments, [Wander](https://www.wander.app/) will be automatically used.
 :::
+
+
+In-memory DB is useful for lightning-fast testing without a rollup server and HyperBEAM.
+
+```js
+import { DB } from 'wdb-sdk'
+import { mem } from 'wdb-core'
+
+const { q, db, io, kv } = mem() // q (queue) wraps db to prevent conflicts
+const db = new DB({ jwk: owner.jwk, mem: q })
+
+// q can be shared with multiple clients
+const user1 = new DB({ jwk: user1.jwk, mem: q })
+const user2 = new DB({ jwk: user2.jwk, mem: q })
+```
 
 ### ready()
 
@@ -272,6 +288,29 @@ while(isNext) {
 }
 ```
 
+## nonce()
+
+The current `nonce()` of the assigned signer. If the client has the wrong nonce, it auto-sync with the latest nonce and retry the failed query.
+
+```js
+const nonce = await db.nonce()
+```
+
+## stat()
+
+`stat(dir)` returns dir info including `schema`, `auth`, `indexes`, and `triggers`.
+
+`index` is the leaf position of the dir in the zk sparse merkle tree.
+
+`auth` is the FPJSON rules for authentication and data transformations.
+
+`autoid` is the auto-increment id by `add`, the actual dir ids are in base64 form.
+
+```js
+const stat = await db.stat("users")
+// => { schema, auth, indexes, triggers, index, autoid }
+```
+
 ## addIndex()
 
 Multi-field sorting requires adding the index first.
@@ -295,4 +334,56 @@ await db.removeIndex([["age", "desc"], ["name", "desc"]], "users")
 await db.get("users", ["age", "desc"], ["name", "desc"])
 // => Error
 
+```
+
+## setSchema()
+
+Update the JSON schema for the dir.
+
+```js
+await db.setSchema(schema, "users")
+```
+
+:::warning
+Only the database owner can set schemas.
+:::
+
+## setAuth()
+
+Update the auth rules for the dir.
+
+```js
+await db.setAuth(auth, "users")
+```
+
+:::warning
+Only the database owner can set auth rules.
+:::
+
+## addTrigger()
+
+Add a trigger to the dir.
+
+```js
+const trigger = {
+  key: "inc_user_count",
+  on: "create",
+  fn: [
+    ["update()", [{ user_count: { _$: ["inc"] } }, "meta", "app_stats"]],
+  ],
+}
+// increment user_count in meta/app_stats when a user is created
+await db.addTrigger(trigger, "users")
+```
+
+:::warning
+Only the database owner can add/remove triggers.
+:::
+
+## removeTrigger()
+
+Remove a trigger from the dir. Specify a `key` to remove.
+
+```js
+await db.removeTrigger({ key: "inc_user_count" }, "users")
 ```
