@@ -9,9 +9,9 @@ const actor2 = acc[2]
 
 describe("Jots", () => {
   it.only("should post notes", async () => {
-    const { id, db, q } = await init()
-    const a1 = new DB({ jwk: actor1.jwk, hb: null, id: "jots", mem: q })
-    const a2 = new DB({ jwk: actor2.jwk, hb: null, id: "jots", mem: q })
+    const { id, db, q: mem } = await init()
+    const a1 = new DB({ jwk: actor1.jwk, id, mem })
+    const a2 = new DB({ jwk: actor2.jwk, id, mem })
 
     const note1 = await a1.set("add:note", { content: "hello a1" }, "notes")
     assert(note1.success)

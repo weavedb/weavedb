@@ -77,6 +77,9 @@ function parse({ state, env }) {
     state.dir = dir
     state.doc = doc
     state.data = data
+    if (dir === "_") {
+      if (data.schema?.type !== "object") throw Error("type must be object")
+    }
   }
   env.kv_dir = {
     get: k => kv.get("__indexes__", `${dir}/${k}`),

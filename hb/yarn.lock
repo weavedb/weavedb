@@ -4197,6 +4197,41 @@ wao@^0.35.5:
     wasm-brotli "^2.0.2"
     yargs "^17.7.2"
 
+wao@^0.35.6:
+  version "0.35.6"
+  resolved "https://registry.yarnpkg.com/wao/-/wao-0.35.6.tgz#5136f8ae6a275890a0b2de2ac8fa3380f3e37d74"
+  integrity sha512-ZFuSJQOcnH2J0rOMcvAly7+a1d6Xt10X1PfYRhp0buERkVMyoYT8kmBu9iW9IBAjajqPrrfW6EMcPFHKc9gQHQ==
+  dependencies:
+    "@bokuweb/zstd-wasm" "^0.0.22"
+    "@dha-team/arbundles" "^1.0.1"
+    "@permaweb/ao-loader" "^0.0.44"
+    "@permaweb/aoconnect" "^0.0.85"
+    "@permaweb/aoconnect-69" "npm:@permaweb/aoconnect@0.0.69"
+    arbundles "^0.11.1"
+    arjson "^0.0.2"
+    arweave "^1.15.1"
+    base64url "^3.0.1"
+    body-parser "^2.2.0"
+    buffer "^6.0.3"
+    chokidar "^4.0.3"
+    cors "^2.8.5"
+    dotenv "^17.2.0"
+    express "^5.1.0"
+    fast-sha256 "^1.3.0"
+    graphql "^16.10.0"
+    hbsig "^0.1.3"
+    http-message-signatures "^1.0.4"
+    lmdb "^3.2.2"
+    localforage "^1.10.0"
+    lz4-asm "^0.4.2"
+    md5 "^2.3.0"
+    pm2 "^5.4.3"
+    ramda "^0.30.1"
+    structured-headers "1.0.1"
+    warp-arbundles "^1.0.4"
+    wasm-brotli "^2.0.2"
+    yargs "^17.7.2"
+
 warp-arbundles@^1.0.4:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/warp-arbundles/-/warp-arbundles-1.0.4.tgz#10c0cd662ab41b0dabad9159c7110f43425cc5cc"
@@ -4232,10 +4267,10 @@ wasmcurves@0.2.2:
   dependencies:
     wasmbuilder "0.0.16"
 
-wdb-core@^0.0.9:
-  version "0.0.9"
-  resolved "https://registry.yarnpkg.com/wdb-core/-/wdb-core-0.0.9.tgz#02d7d0ce4438c93ac66068ac1b7ca2ad4e85a263"
-  integrity sha512-7AIgQKrtgA1eyBgvocOLFEnNVjPx3WY+qx2L1OS4e4nrt3kRO5IczA8I+tETq2T+70iLoJFU7aly3FQnRCQw8g==
+wdb-core@^0.0.10:
+  version "0.0.10"
+  resolved "https://registry.yarnpkg.com/wdb-core/-/wdb-core-0.0.10.tgz#464d770f3f327b6196dc2387aa9e27ae979712ba"
+  integrity sha512-qzD7gkZ3IA2XFG+nHV5pUvG/kctj+JKdjNcSkoKZr8SBq0OW3u28yJLzQTignoDJX0CWZBVTPBAhTooiLw7N6g==
   dependencies:
     "@lancedb/lancedb" "^0.21.2"
     apache-arrow "^21.0.0"
@@ -4247,6 +4282,13 @@ wdb-core@^0.0.9:
     monade "^0.0.1"
     node-sql-parser "^5.3.11"
     ramda "^0.31.3"
+
+wdb-sdk@^0.0.18:
+  version "0.0.18"
+  resolved "https://registry.yarnpkg.com/wdb-sdk/-/wdb-sdk-0.0.18.tgz#71c5bd8c91044bb5f691b48efd06ea182c3113f6"
+  integrity sha512-08ZTxDQok0M2X0jR57oEzeAZU4mNUJ9j6DsUESM6FTl6wqoBen8M2rOf0gkoAfL9z8A96pNkPUqZR97tc0uwFA==
+  dependencies:
+    wao "^0.35.6"
 
 weak-lru-cache@^1.2.2:
   version "1.2.2"

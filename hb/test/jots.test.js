@@ -92,10 +92,10 @@ const triggers = {
 describe("Jots", () => {
   it.only("should connect with remote nodes", async () => {
     const { q } = mem()
-    const db = new DB({ jwk: owner.jwk, hb: null, mem: q })
+    const db = new DB({ jwk: owner.jwk, mem: q })
     const pid = await db.init({ id: "jots" })
-    const a1 = new DB({ jwk: actor1.jwk, hb: null, id: "jots", mem: q })
-    const a2 = new DB({ jwk: actor2.jwk, hb: null, id: "jots", mem: q })
+    const a1 = new DB({ jwk: actor1.jwk, id: "jots", mem: q })
+    const a2 = new DB({ jwk: actor2.jwk, id: "jots", mem: q })
 
     await db.mkdir({ name: "notes", schema: schema.notes, auth: rules.notes })
     await db.mkdir({ name: "likes", schema: schema.likes, auth: rules.likes })
@@ -122,6 +122,6 @@ describe("Jots", () => {
     assert.equal(like3.success, false)
 
     assert.equal((await db.get("notes", ["likes", "desc"], 1))[0].likes, 2)
-    console.log(await db.get("notes"))
+    console.log(await db.stat("likes"))
   })
 })
