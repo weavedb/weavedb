@@ -1,0 +1,19 @@
+{
+  "name": "mydb",
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-sqlite --experimental-wasm-memory64 --test",
+    "test-only": "node --experimental-sqlite --experimental-wasm-memory64 --test-only",
+    "test-all": "node --experimental-sqlite --experimental-wasm-memory64 --test-only test/*.test.js"
+  },
+  "engines": {
+    "node": ">=22.5.0 <23"
+  },
+  "dependencies": {
+    "ramda": "^0.30.1",
+    "wao": "^0.35.5",
+    "wdb-core": "^0.0.9",
+    "wdb-sdk": "^0.0.16"
+  }
+}
