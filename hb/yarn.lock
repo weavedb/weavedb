@@ -4232,10 +4232,10 @@ wasmcurves@0.2.2:
   dependencies:
     wasmbuilder "0.0.16"
 
-wdb-core@^0.0.5:
-  version "0.0.5"
-  resolved "https://registry.yarnpkg.com/wdb-core/-/wdb-core-0.0.5.tgz#74c3a9a33a3c68b6c0036fbc9e935526909d16a4"
-  integrity sha512-wSlA9paKa1lc15obeEDMZxsgdl8KLlUsglnQQtXn6ZL7SnsxGXEYr6b4vYbskyvS+LnGCXll9mYkPp6t1Gv+Wg==
+wdb-core@^0.0.9:
+  version "0.0.9"
+  resolved "https://registry.yarnpkg.com/wdb-core/-/wdb-core-0.0.9.tgz#02d7d0ce4438c93ac66068ac1b7ca2ad4e85a263"
+  integrity sha512-7AIgQKrtgA1eyBgvocOLFEnNVjPx3WY+qx2L1OS4e4nrt3kRO5IczA8I+tETq2T+70iLoJFU7aly3FQnRCQw8g==
   dependencies:
     "@lancedb/lancedb" "^0.21.2"
     apache-arrow "^21.0.0"
