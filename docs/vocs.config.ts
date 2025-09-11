@@ -101,6 +101,22 @@ export default defineConfig({
           link: "/build/quick-start",
         },
         {
+          text: "Data Schemas",
+          link: "/build/schemas",
+        },
+        {
+          text: "Auth Rules",
+          link: "/build/auth",
+        },
+        {
+          text: "Indexes",
+          link: "/build/indexes",
+        },
+        {
+          text: "Triggers",
+          link: "/build/triggers",
+        },
+        {
           text: "Remote Servers",
           link: "/build/remote-servers",
         },
