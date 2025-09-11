@@ -33,7 +33,7 @@ const schema = {
   },
 }
 
-const rules = {
+const auth = {
   notes: [
     [
       "add:note",
@@ -97,8 +97,8 @@ describe("Jots", () => {
     const a1 = new DB({ jwk: actor1.jwk, id: "jots", mem: q })
     const a2 = new DB({ jwk: actor2.jwk, id: "jots", mem: q })
 
-    await db.mkdir({ name: "notes", schema: schema.notes, auth: rules.notes })
-    await db.mkdir({ name: "likes", schema: schema.likes, auth: rules.likes })
+    await db.mkdir({ name: "notes", schema: schema.notes, auth: auth.notes })
+    await db.mkdir({ name: "likes", schema: schema.likes, auth: auth.likes })
     for (const k in indexes) for (const i of indexes[k]) await db.addIndex(i, k)
     for (const k in triggers) {
       for (const t of triggers[k]) await db.addTrigger(t, k)
@@ -123,5 +123,6 @@ describe("Jots", () => {
 
     assert.equal((await db.get("notes", ["likes", "desc"], 1))[0].likes, 2)
     console.log(await db.stat("likes"))
+    console.log(await db.nonce())
   })
 })

@@ -51,7 +51,7 @@ function removeTrigger({ state, env: { kv } }) {
   return arguments[0]
 }
 
-function setRules({ state, env: { kv } }) {
+function setAuth({ state, env: { kv } }) {
   const { data, dir } = state
   let stat = kv.get("_", dir)
   if (!stat) throw Error("dir doesn't exist")
@@ -147,7 +147,7 @@ const writer = {
   addTrigger: ka().map(addTrigger),
   removeTrigger: ka().map(removeTrigger),
   setSchema: ka().map(setSchema),
-  setRules: ka().map(setRules),
+  setAuth: ka().map(setAuth),
   batch: ka().map(batch),
 }
 
