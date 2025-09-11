@@ -1,0 +1,29 @@
+# Data Schemas
+
+It's essential to set a precise data schema and access controls to each collection as otherwise WeaveDB is permissionless and anyone can put arbitrary data.
+
+To validate write data, WeaveDB uses [jsonschema](https://github.com/tdegrunt/jsonschema) with a restriction that you cannot pass valiator functions.
+
+Set a schema to a collection.
+
+```js
+const schema = {
+  type: "object",
+  required: ["id", "actor", "content", "published", "likes"],
+  properties: {
+    id: { type: "string" },
+    actor: { type: "string", pattern: "^[a-zA-Z0-9_-]{43}$" },
+    content: { type: "string", minLength: 1, maxLength: 140 },
+    published: { type: "integer" },
+    likes: { type: "integer" },
+  },
+  additionalProperties: false,
+}
+await db.setSchema(schema, "notes")
+```
+
+Get the schema of a collection.
+
+```js
+const schema = (await db.stat("bookmarks")).schema
+```
