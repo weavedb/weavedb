@@ -48,20 +48,19 @@ const stack = {
   ],
 }
 export default class DB {
-  constructor({
-    url = `http://localhost:6364`,
-    jwk,
-    id,
-    hb = `http://localhost:10001`,
-    mem,
-  }) {
-    if (mem) this.mem = mem
+  constructor({ url = `http://localhost:6364`, jwk, id, hb, mem }) {
+    let _hb = null
+    if (mem) {
+      this.mem = mem
+    } else {
+      _hb ??= `http://localhost:10001`
+    }
     if (!jwk && typeof window === "object") jwk = window.arweaveWallet
     this.jwk = jwk
     if (this.jwk && !this.isArConnect()) this.addr = toAddr(jwk.n)
     this.id = id
     this.url = url
-    if (hb) this.hb = new HB({ url: hb, jwk: this.jwk })
+    if (_hb) this.hb = new HB({ url: _hb, jwk: this.jwk })
     this.db = new HB({ url, jwk: this.jwk })
     this._nonce = 0
     this.count = 0
@@ -203,6 +202,9 @@ export default class DB {
       this.addr = await this.jwk.getActiveAddress()
     }
     this._nonce = (await this.get("__accounts__", this.addr))?.nonce ?? 0
+  }
+  async stat(dir) {
+    return await this.get("_", dir)
   }
   async get(...args) {
     return await this._get("get", ...args)

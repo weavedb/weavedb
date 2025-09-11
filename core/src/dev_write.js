@@ -27,55 +27,90 @@ function addTrigger({ state, env: { kv } }) {
       throw Error(`the wrong type: ${data.match}`)
   }
 
-  let conf = kv.get("_", dir)
-  if (!conf) throw Error("dir doesn't exist")
-  conf.triggers ??= {}
-  conf.triggers[data.key] = {
+  let stat = kv.get("_", dir)
+  if (!stat) throw Error("dir doesn't exist")
+  stat.triggers ??= {}
+  stat.triggers[data.key] = {
     on: data.on,
     fn: data.fn,
     match: data.match ?? "all",
     fields: data.fields ?? null,
   }
-  kv.put("_", dir, conf)
+  kv.put("_", dir, stat)
   return arguments[0]
 }
 
 function removeTrigger({ state, env: { kv } }) {
   const { data, dir } = state
   if (!data.key) throw Error("key doesn't exist")
-  let conf = kv.get("_", dir)
-  conf.triggers ??= {}
-  if (!conf.triggers[data.key]) throw Error("trigger doesn't exist")
-  delete conf.triggers[data.key]
-  kv.put("_", dir, conf)
+  let stat = kv.get("_", dir)
+  stat.triggers ??= {}
+  if (!stat.triggers[data.key]) throw Error("trigger doesn't exist")
+  delete stat.triggers[data.key]
+  kv.put("_", dir, stat)
   return arguments[0]
 }
 
 function setRules({ state, env: { kv } }) {
   const { data, dir } = state
-  let conf = kv.get("_", dir)
-  if (!conf) throw Error("dir doesn't exist")
-  conf.auth = data
-  kv.put("_", dir, conf)
+  let stat = kv.get("_", dir)
+  if (!stat) throw Error("dir doesn't exist")
+  stat.auth = data
+  kv.put("_", dir, stat)
   return arguments[0]
 }
 
 function setSchema({ state, env: { kv } }) {
   const { data, dir } = state
-  let conf = kv.get("_", dir)
-  if (!conf) throw Error("dir doesn't exist")
-  conf.schema = data
-  kv.put("_", dir, conf)
+  let stat = kv.get("_", dir)
+  if (!stat) throw Error("dir doesn't exist")
+  if (data.type !== "object") throw Error("type must be object")
+  stat.schema = data
+  kv.put("_", dir, stat)
   return arguments[0]
 }
 
-function addIndex({ state, env }) {
-  _addIndex(state.data, [state.dir], env.kv_dir)
+function normalize(index) {
+  for (const i of index) {
+    if (!Array.isArray(i)) throw Error("index must be Array")
+    if (i.length > 2 || i.length < 1) throw Error("the wrong index")
+    if (i.length === 1) i.push("asc")
+  }
+  return index
+}
+function addIndex({ state, env: { kv, kv_dir } }) {
+  const { data, dir } = state
+  if (!Array.isArray(data)) throw Error("index must be Array")
+  if (data.length < 2) throw Error("index must be multi fields")
+  let stat = kv.get("_", dir)
+  if (!stat) throw Error("dir doesn't exist")
+  stat.indexes ??= []
+  const _index = normalize(data)
+  for (let v of stat.indexes) {
+    if (equals(_index, v)) throw Error("index already exists")
+  }
+  stat.indexes.push(_index)
+  _addIndex(data, [dir], kv_dir)
+  kv.put("_", dir, stat)
   return arguments[0]
 }
 
-function removeIndex({ state, env }) {
-  _removeIndex(state.data, [state.dir], env.kv)
+function removeIndex({ state, env: { kv, kv_dir } }) {
+  const { data, dir } = state
+  let stat = kv.get("_", dir)
+  if (!stat) throw Error("dir doesn't exist")
+  stat.indexes ??= []
+  let new_indexes = []
+  const _index = normalize(data)
+  let ex = false
+  for (let v of stat.indexes) {
+    if (equals(_index, v)) ex = true
+    else new_indexes.push(v)
+  }
+  if (!ex) throw Error("index doesn't exist")
+  _removeIndex(data, [dir], kv_dir)
+  stat.indexes = new_indexes
+  kv.put("_", dir, stat)
   return arguments[0]
 }
 
