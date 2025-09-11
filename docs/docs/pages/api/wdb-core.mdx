@@ -127,6 +127,72 @@ const io = open({ path: "./db" })
 const db = wdb(kv(io, c => { /* callback */ }))
 ```
 
+## db()
+
+`db()` is a pre-built NoSQL database.
+
+```js
+import { kv, db as wdb } from "wdb-core"
+import { open } from "lmdb"
+const io = open({ path: "./db" })
+const db = wdb(kv(io, c => { /* callback */ }))
+```
+
+## io()
+
+`io()` gives you an in-memory kv store with the same interface as `lmdb`, which can be passed to `kv()`.
+
+```js
+import { kv, io, db as wdb } from "wdb-core"
+const mem_io = io()
+const db = wdb(kv(mem_io, c => { /* callback */ }))
+```
+
+## queue()
+
+`queue()` wraps `db` to prevent conflicts providing a query queue mechanism. Without queue, it's hard to guarantee ACID to all requests.
+
+```js
+import { kv, io, db as wdb, queue } from "wdb-core"
+const mem_io = io()
+const db = wdb(kv(mem_io, c => { /* callback */ }))
+const q = queue(db)
+```
+
+## mem()
+
+`mem()` conveniently returns a set of in-memory components.
+
+```js
+import { mem } from "wdb-core"
+const { q, db, io, kv } = mem()
+```
+
+## sql()
+
+`sql()` is a pre-built SQL database using [SQLite](https://sqlite.org/).
+
+```js
+import { kv, sql } from "wdb-core"
+import { open } from "lmdb"
+const io = open({ path: "./db" })
+const db = sql(kv(io, c => { /* callback */ }))
+```
+
+## vec()
+
+`vec()` is a pre-built vector database using [LanceDB](https://lancedb.com/).
+
+```js
+import { kv, vec } from "wdb-core"
+import { open } from "lmdb"
+const io = open({ path: "./db" })
+const db = vec(kv(io, c => { /* callback */ }))
+```
+
+:::warning
+`sql()` and `vec()` are highly experimental features that demonstrate building different types of databases.
+:::
 
 ## Devices
 
@@ -212,4 +278,3 @@ export default build({
   __read__: { search: [search], vectorSearch: [vectorSearch], query: [query] },
 })
 ```
-
