@@ -79,7 +79,7 @@ export default function UseCases() {
               style={{ position: "absolute", bottom: "24px", right: "24px" }}
             >
               <a
-                href="https://github.com/weavedb/jots"
+                href="https://social-theta-nine.vercel.app"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{

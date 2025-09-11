@@ -2,7 +2,7 @@
 
 It's essential to set a precise data schema and access controls to each collection as otherwise WeaveDB is permissionless and anyone can put arbitrary data.
 
-To validate write data, WeaveDB uses [jsonschema](https://github.com/tdegrunt/jsonschema) with a restriction that you cannot pass valiator functions.
+To validate write data, WeaveDB uses [JSON Schema](https://json-schema.org) with a restriction that you cannot pass valiator functions.
 
 Set a schema to a collection.
 
@@ -25,5 +25,5 @@ await db.setSchema(schema, "notes")
 Get the schema of a collection.
 
 ```js
-const schema = (await db.stat("bookmarks")).schema
+const schema = (await db.stat("notes")).schema
 ```
