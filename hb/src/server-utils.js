@@ -9,10 +9,13 @@ const arweave = Arweave.init()
 import { connect, createSigner } from "@permaweb/aoconnect"
 import { kv } from "wdb-core"
 //import { kv } from "../../core/src/index.js"
+
 const toMsg = async req => {
   let req2 = {}
   for (const k in req?.headers ?? {}) req2[k] = req.headers[k]
-  if (typeof req.body?.text === "function") {
+  if (typeof req.body?.toString === "function") {
+    req2.body = req.body.toString()
+  } else if (typeof req.body?.text === "function") {
     req2.body = await req.body.text()
   } else if (req.body) req2.body = req.body
   return req2
