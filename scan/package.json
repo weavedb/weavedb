@@ -11,6 +11,7 @@
   "dependencies": {
     "@chakra-ui/react": "^3.23.0",
     "@emotion/react": "^11.14.0",
+    "hbsig": "^0.1.4",
     "next": "15.4.5",
     "next-themes": "^0.4.6",
     "ramda": "^0.31.3",

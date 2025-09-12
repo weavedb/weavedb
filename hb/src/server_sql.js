@@ -145,6 +145,9 @@ const server = async ({
           if (!dbs[pid]) {
             res.json({ success: false, error: `db doesn't exist: ${pid}` })
           } else {
+            if (typeof req.body?.toString === "function") {
+              req.body = req.body.toString()
+            }
             const _res = await dbs[pid].write(req)
             if (_res?.success) {
               res.json({ success: true, query, result: _res.result })
