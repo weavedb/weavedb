@@ -222,7 +222,7 @@ export default function DatabasePage() {
                   : "N/A"}
               </Text>
               <Text fontSize="12px" color="gray.600">
-                Latest Block
+                Latest Block (HyperBEAM WAL)
               </Text>
             </Box>
           </Flex>
@@ -242,7 +242,7 @@ export default function DatabasePage() {
                     <Flex align="center">
                       <Icon as={FiBox} mr={2} color="#6366f1" />
                       <Text fontSize="16px" fontWeight="600" color="gray.800">
-                        Latest Blocks
+                        Latest Blocks ( HyperBEAM )
                       </Text>
                     </Flex>
                     <Button
@@ -343,7 +343,7 @@ export default function DatabasePage() {
                     <Flex align="center">
                       <Icon as={FiActivity} mr={2} color="#8b5cf6" />
                       <Text fontSize="16px" fontWeight="600" color="gray.800">
-                        Latest Transactions
+                        Latest Transactions ( Rollup )
                       </Text>
                     </Flex>
                     <Button
