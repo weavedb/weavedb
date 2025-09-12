@@ -1788,10 +1788,10 @@ hasown@^2.0.2:
   dependencies:
     function-bind "^1.1.2"
 
-hbsig@^0.1.3:
-  version "0.1.3"
-  resolved "https://registry.yarnpkg.com/hbsig/-/hbsig-0.1.3.tgz#bd3d89b81425d656da7c0448f175c1060bd7e3d8"
-  integrity sha512-87NnVgUGkv/+dHHHLn7O/smUPp6pmaD9lltWUGhxCYEhpvjYtBLHbdtpalhMQlJJEcPys1HVMK8yN3Nnk45Glg==
+hbsig@^0.1.4:
+  version "0.1.4"
+  resolved "https://registry.yarnpkg.com/hbsig/-/hbsig-0.1.4.tgz#453c65d0a71bbe1ed5e4230a08690c87617bcb67"
+  integrity sha512-4uv4yGZW8xiU0RVns/VPJLpGIpelFPgc0NBmw1kvdM6j8OYCVqAFWjkuNS07oT+Toxtf85phTAwDPRhZbMaIbg==
   dependencies:
     "@permaweb/aoconnect" "^0.0.85"
     base64url "^3.0.1"
@@ -3071,10 +3071,10 @@ vlq@^2.0.4:
   resolved "https://registry.yarnpkg.com/vlq/-/vlq-2.0.4.tgz#6057b85729245b9829e3cc7755f95b228d4fe041"
   integrity sha512-aodjPa2wPQFkra1G8CzJBTHXhgk3EVSwxSWXNPr1fgdFLUb8kvLV1iEb6rFgasIsjP82HWI6dsb5Io26DDnasA==
 
-wao@^0.35.5:
-  version "0.35.5"
-  resolved "https://registry.yarnpkg.com/wao/-/wao-0.35.5.tgz#07517d1d0cc17dc6228aafc84dd6c02c2bcd12b8"
-  integrity sha512-WUVBlpKhZMgNKSVkcvjpbX0FZM+490XBlDnXN2NSzpeoLCo9Gp6WYZ8yAwt0qLjwRPN8xnG1+NIZB0jT27Mu3w==
+wao@^0.35.7:
+  version "0.35.7"
+  resolved "https://registry.yarnpkg.com/wao/-/wao-0.35.7.tgz#001486af909d8b4e4ae47de76d99a3af84dd7a34"
+  integrity sha512-jHwn+lkz73NCjhO6NzJbXP1oAsTfLq2TLEMB0yrDesdMQ38UoBHWRbccc+hBMfMyOT3emn1alxtxmuRo7nIc8A==
   dependencies:
     "@bokuweb/zstd-wasm" "^0.0.22"
     "@dha-team/arbundles" "^1.0.1"
@@ -3093,42 +3093,7 @@ wao@^0.35.5:
     express "^5.1.0"
     fast-sha256 "^1.3.0"
     graphql "^16.10.0"
-    hbsig "^0.1.3"
-    http-message-signatures "^1.0.4"
-    lmdb "^3.2.2"
-    localforage "^1.10.0"
-    lz4-asm "^0.4.2"
-    md5 "^2.3.0"
-    pm2 "^5.4.3"
-    ramda "^0.30.1"
-    structured-headers "1.0.1"
-    warp-arbundles "^1.0.4"
-    wasm-brotli "^2.0.2"
-    yargs "^17.7.2"
-
-wao@^0.35.6:
-  version "0.35.6"
-  resolved "https://registry.yarnpkg.com/wao/-/wao-0.35.6.tgz#5136f8ae6a275890a0b2de2ac8fa3380f3e37d74"
-  integrity sha512-ZFuSJQOcnH2J0rOMcvAly7+a1d6Xt10X1PfYRhp0buERkVMyoYT8kmBu9iW9IBAjajqPrrfW6EMcPFHKc9gQHQ==
-  dependencies:
-    "@bokuweb/zstd-wasm" "^0.0.22"
-    "@dha-team/arbundles" "^1.0.1"
-    "@permaweb/ao-loader" "^0.0.44"
-    "@permaweb/aoconnect" "^0.0.85"
-    "@permaweb/aoconnect-69" "npm:@permaweb/aoconnect@0.0.69"
-    arbundles "^0.11.1"
-    arjson "^0.0.2"
-    arweave "^1.15.1"
-    base64url "^3.0.1"
-    body-parser "^2.2.0"
-    buffer "^6.0.3"
-    chokidar "^4.0.3"
-    cors "^2.8.5"
-    dotenv "^17.2.0"
-    express "^5.1.0"
-    fast-sha256 "^1.3.0"
-    graphql "^16.10.0"
-    hbsig "^0.1.3"
+    hbsig "^0.1.4"
     http-message-signatures "^1.0.4"
     lmdb "^3.2.2"
     localforage "^1.10.0"
@@ -3164,12 +3129,13 @@ wasm-brotli@^2.0.2:
   resolved "https://registry.yarnpkg.com/wasm-brotli/-/wasm-brotli-2.0.2.tgz#f5317afb0d3e2e5fe90a66b6d61e42939284f1c7"
   integrity sha512-DgjRlpZz9z5br4TjQHSlDHRF9NIuGXHUj3AqO08koDCXz7EYzmPDb7T/6oar5UKLYgPp9Yxc2ImGpx4BMFwbNQ==
 
-wdb-sdk@^0.0.11:
-  version "0.0.11"
-  resolved "https://registry.yarnpkg.com/wdb-sdk/-/wdb-sdk-0.0.11.tgz#6660154bccea0a30a6887f36b577d86e289a4a79"
-  integrity sha512-/I8rdKPkN3/dGRY7QpwpJ2UtTqrViJyO+JVwmp4EmTx9/Xx6HnvZAQxPwwuHLeTXmZlsK7w6DSdYmXxkBFahlQ==
+wdb-sdk@^0.0.20:
+  version "0.0.20"
+  resolved "https://registry.yarnpkg.com/wdb-sdk/-/wdb-sdk-0.0.20.tgz#6706ee5201f5016065f0060be31917ac56e93b76"
+  integrity sha512-80+t5vaQHqV+/2wW8TrInfIJD/HLepgtteE7fOywwQHj6hbv3z67mvLT+fPyLsQCbdLMsJEWAeOhIhY73/Ox1w==
   dependencies:
-    wao "^0.35.6"
+    hbsig "^0.1.4"
+    wao "^0.35.7"
 
 weak-lru-cache@^1.2.2:
   version "1.2.2"

@@ -1788,10 +1788,10 @@ hasown@^2.0.2:
   dependencies:
     function-bind "^1.1.2"
 
-hbsig@^0.1.3:
-  version "0.1.3"
-  resolved "https://registry.yarnpkg.com/hbsig/-/hbsig-0.1.3.tgz#bd3d89b81425d656da7c0448f175c1060bd7e3d8"
-  integrity sha512-87NnVgUGkv/+dHHHLn7O/smUPp6pmaD9lltWUGhxCYEhpvjYtBLHbdtpalhMQlJJEcPys1HVMK8yN3Nnk45Glg==
+hbsig@^0.1.4:
+  version "0.1.4"
+  resolved "https://registry.yarnpkg.com/hbsig/-/hbsig-0.1.4.tgz#453c65d0a71bbe1ed5e4230a08690c87617bcb67"
+  integrity sha512-4uv4yGZW8xiU0RVns/VPJLpGIpelFPgc0NBmw1kvdM6j8OYCVqAFWjkuNS07oT+Toxtf85phTAwDPRhZbMaIbg==
   dependencies:
     "@permaweb/aoconnect" "^0.0.85"
     base64url "^3.0.1"
@@ -3071,10 +3071,10 @@ vlq@^2.0.4:
   resolved "https://registry.yarnpkg.com/vlq/-/vlq-2.0.4.tgz#6057b85729245b9829e3cc7755f95b228d4fe041"
   integrity sha512-aodjPa2wPQFkra1G8CzJBTHXhgk3EVSwxSWXNPr1fgdFLUb8kvLV1iEb6rFgasIsjP82HWI6dsb5Io26DDnasA==
 
-wao@^0.35.0:
-  version "0.35.0"
-  resolved "https://registry.yarnpkg.com/wao/-/wao-0.35.0.tgz#b00a0b725a8123c7aafd46da1c135cef2822daf4"
-  integrity sha512-zbx01WFpl51u5EmKHp4L9rWA4+qakgSC6BAPSDcrrARZCEs+N5gL0M8hUpnxQDMVBZDIAGVTAOF4DI2PXPB1vg==
+wao@^0.35.7:
+  version "0.35.7"
+  resolved "https://registry.yarnpkg.com/wao/-/wao-0.35.7.tgz#001486af909d8b4e4ae47de76d99a3af84dd7a34"
+  integrity sha512-jHwn+lkz73NCjhO6NzJbXP1oAsTfLq2TLEMB0yrDesdMQ38UoBHWRbccc+hBMfMyOT3emn1alxtxmuRo7nIc8A==
   dependencies:
     "@bokuweb/zstd-wasm" "^0.0.22"
     "@dha-team/arbundles" "^1.0.1"
@@ -3093,7 +3093,7 @@ wao@^0.35.0:
     express "^5.1.0"
     fast-sha256 "^1.3.0"
     graphql "^16.10.0"
-    hbsig "^0.1.3"
+    hbsig "^0.1.4"
     http-message-signatures "^1.0.4"
     lmdb "^3.2.2"
     localforage "^1.10.0"
@@ -3129,13 +3129,13 @@ wasm-brotli@^2.0.2:
   resolved "https://registry.yarnpkg.com/wasm-brotli/-/wasm-brotli-2.0.2.tgz#f5317afb0d3e2e5fe90a66b6d61e42939284f1c7"
   integrity sha512-DgjRlpZz9z5br4TjQHSlDHRF9NIuGXHUj3AqO08koDCXz7EYzmPDb7T/6oar5UKLYgPp9Yxc2ImGpx4BMFwbNQ==
 
-wdb-sdk@^0.0.7:
-  version "0.0.7"
-  resolved "https://registry.yarnpkg.com/wdb-sdk/-/wdb-sdk-0.0.7.tgz#32b28d8dc86352184b5de8124184cef8ad4f3ee4"
-  integrity sha512-Kh6od4g3rhCIjawekkVDS0WifQjdonY32d7gbJCEPEc4389nSr+16yN1JWd9aYqiJJaJm/l41PgyC5aUGECPIg==
+wdb-sdk@^0.0.20:
+  version "0.0.20"
+  resolved "https://registry.yarnpkg.com/wdb-sdk/-/wdb-sdk-0.0.20.tgz#6706ee5201f5016065f0060be31917ac56e93b76"
+  integrity sha512-80+t5vaQHqV+/2wW8TrInfIJD/HLepgtteE7fOywwQHj6hbv3z67mvLT+fPyLsQCbdLMsJEWAeOhIhY73/Ox1w==
   dependencies:
-    "@babel/plugin-transform-modules-commonjs" "^7.24.8"
-    wao "^0.35.0"
+    hbsig "^0.1.4"
+    wao "^0.35.7"
 
 weak-lru-cache@^1.2.2:
   version "1.2.2"
