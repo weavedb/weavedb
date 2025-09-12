@@ -1,8 +1,24 @@
 import { includes, isNil } from "ramda"
-import { extractPubKey, rsaid, hmacid, verify, id, base, hashpath } from "hbsig"
+import {
+  extractPubKey,
+  rsaid,
+  hmacid,
+  id,
+  base,
+  hashpath,
+  httpsig_from,
+  structured_to,
+} from "hbsig"
 import { of, ka } from "monade"
 import sha256 from "fast-sha256"
 import { parseOp } from "./utils.js"
+const toMsg = req => {
+  let msg = {}
+  for (const k in req?.headers ?? {}) msg[k] = req.headers[k]
+  if (req.body) msg.body = req.body
+  return msg
+}
+
 function base64urlDecode(str) {
   str = str.replace(/-/g, "+").replace(/_/g, "/")
   const pad = str.length % 4
@@ -150,6 +166,7 @@ function commit(msg, components) {
 
 function pickInput({ state, msg, env }) {
   if (!msg) return arguments[0]
+  let _headers = structured_to(httpsig_from(toMsg(msg)))
   let etc = {}
   const { fields, keyid } = parseSI(msg.headers["signature-input"])
   let headers = {
@@ -164,14 +181,14 @@ function pickInput({ state, msg, env }) {
   const committed = commit(msg, fields)
   let info = env.kv.get("__meta__", "current") ?? {}
   state.hashpath = !info.hashpath
-    ? `${headers.id}/${id(committed)}`
+    ? `${_headers.id}/${id(committed)}`
     : hashpath(info.hashpath, committed)
   state.signer = toAddr(keyid)
-  state.query = JSON.parse(msg.headers.query)
-  if (typeof headers.id === "undefined") throw Error("id missing")
-  if (typeof headers.nonce === "undefined") throw Error("nonce missing")
-  state.id = headers.id
-  state.nonce = headers.nonce
+  state.query = JSON.parse(_headers.query)
+  if (typeof _headers.id === "undefined") throw Error("id missing")
+  if (typeof _headers.nonce === "undefined") throw Error("nonce missing")
+  state.id = _headers.id
+  state.nonce = _headers.nonce
   state.ts = msg.ts ?? Date.now()
   arguments[0].msg = { headers, ...etc }
   return arguments[0]

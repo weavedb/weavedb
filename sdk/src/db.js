@@ -5,7 +5,15 @@ import { dirs_set } from "./rules.js"
 import { includes, filter } from "ramda"
 const init_query = { schema: dir_schema, auth: [dirs_set] }
 const wait = ms => new Promise(res => setTimeout(() => res(), ms))
-import { verify as _verify } from "hbsig"
+import { verify as _verify, httpsig_from, structured_to } from "hbsig"
+const toMsg = async req => {
+  let req2 = {}
+  for (const k in req?.headers ?? {}) req2[k] = req.headers[k]
+  if (typeof req.body?.text === "function") {
+    req2.body = await req.body.text()
+  } else if (req.body) req2.body = req.body
+  return req2
+}
 
 const verify = async req => {
   let valid = false
@@ -19,9 +27,11 @@ const verify = async req => {
       decodedSignatureInput: { components },
     } = await _verify(req)
     address = toAddr(keyId)
-    query = JSON.parse(req.headers.query)
+    const msg = structured_to(httpsig_from(await toMsg(req)))
+    query = JSON.parse(msg.query)
     return { valid, address, query, ts, fields: components }
   } catch (e) {
+    console.log(e)
     return { err: true, valid, address, query, ts, fields: null }
   }
 }
@@ -158,6 +168,9 @@ export default class DB {
       const { valid, query, fields, address } = await verify(req)
       if (valid) {
         try {
+          if (typeof req.body?.text === "function") {
+            req.body = await req.body.text()
+          }
           const _res = await this.mem.write(req)
           if (_res?.success) {
             json = { success: true, query, result: _res.result }

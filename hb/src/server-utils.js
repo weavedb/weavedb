@@ -1,5 +1,5 @@
 import { httpbis, createVerifier } from "http-message-signatures"
-import { verify as _verify, toAddr } from "hbsig"
+import { verify as _verify, httpsig_from, structured_to, toAddr } from "hbsig"
 const { verifyMessage } = httpbis
 import { createPublicKey } from "node:crypto"
 import { open } from "lmdb"
@@ -9,6 +9,15 @@ const arweave = Arweave.init()
 import { connect, createSigner } from "@permaweb/aoconnect"
 import { kv } from "wdb-core"
 //import { kv } from "../../core/src/index.js"
+const toMsg = async req => {
+  let req2 = {}
+  for (const k in req?.headers ?? {}) req2[k] = req.headers[k]
+  if (typeof req.body?.text === "function") {
+    req2.body = await req.body.text()
+  } else if (req.body) req2.body = req.body
+  return req2
+}
+
 const verify = async req => {
   let valid = false
   let address = null
@@ -21,9 +30,11 @@ const verify = async req => {
       decodedSignatureInput: { components },
     } = await _verify(req)
     address = toAddr(keyId)
-    query = JSON.parse(req.headers.query)
+    const msg = structured_to(httpsig_from(await toMsg(req)))
+    query = JSON.parse(msg.query)
     return { valid, address, query, ts, fields: components }
   } catch (e) {
+    console.log(e)
     return { err: true, valid, address, query, ts, fields: null }
   }
 }

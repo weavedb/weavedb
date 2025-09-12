@@ -122,7 +122,5 @@ describe("Jots", () => {
     assert.equal(like3.success, false)
 
     assert.equal((await db.get("notes", ["likes", "desc"], 1))[0].likes, 2)
-    console.log(await db.stat("likes"))
-    console.log(await db.nonce())
   })
 })

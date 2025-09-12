@@ -1,13 +1,14 @@
 {
   "name": "wdb-sdk",
-  "version": "0.0.19",
+  "version": "0.0.20",
   "type": "module",
   "scripts": {
     "build:cjs": "babel src --out-dir dist/cjs --config-file ./.babelrc-cjs",
     "build": "rm -rf dist && npm run build:cjs && cp src -rf dist/esm && node make.js && cp .npmignore dist/"
   },
   "dependencies": {
-    "wao": "^0.35.6"
+    "hbsig": "^0.1.4",
+    "wao": "^0.35.7"
   },
   "devDependencies": {
     "@babel/cli": "^7.24.8",

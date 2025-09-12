@@ -1751,6 +1751,17 @@ hbsig@^0.1.3:
     ramda "^0.31.3"
     structured-headers "1.0.1"
 
+hbsig@^0.1.4:
+  version "0.1.4"
+  resolved "https://registry.yarnpkg.com/hbsig/-/hbsig-0.1.4.tgz#453c65d0a71bbe1ed5e4230a08690c87617bcb67"
+  integrity sha512-4uv4yGZW8xiU0RVns/VPJLpGIpelFPgc0NBmw1kvdM6j8OYCVqAFWjkuNS07oT+Toxtf85phTAwDPRhZbMaIbg==
+  dependencies:
+    "@permaweb/aoconnect" "^0.0.85"
+    base64url "^3.0.1"
+    fast-sha256 "^1.3.0"
+    ramda "^0.31.3"
+    structured-headers "1.0.1"
+
 hi-base32@^0.5.1:
   version "0.5.1"
   resolved "https://registry.yarnpkg.com/hi-base32/-/hi-base32-0.5.1.tgz#1279f2ddae2673219ea5870c2121d2a33132857e"
@@ -3001,10 +3012,10 @@ wao@^0.35.5:
     wasm-brotli "^2.0.2"
     yargs "^17.7.2"
 
-wao@^0.35.6:
-  version "0.35.6"
-  resolved "https://registry.yarnpkg.com/wao/-/wao-0.35.6.tgz#5136f8ae6a275890a0b2de2ac8fa3380f3e37d74"
-  integrity sha512-ZFuSJQOcnH2J0rOMcvAly7+a1d6Xt10X1PfYRhp0buERkVMyoYT8kmBu9iW9IBAjajqPrrfW6EMcPFHKc9gQHQ==
+wao@^0.35.7:
+  version "0.35.7"
+  resolved "https://registry.yarnpkg.com/wao/-/wao-0.35.7.tgz#001486af909d8b4e4ae47de76d99a3af84dd7a34"
+  integrity sha512-jHwn+lkz73NCjhO6NzJbXP1oAsTfLq2TLEMB0yrDesdMQ38UoBHWRbccc+hBMfMyOT3emn1alxtxmuRo7nIc8A==
   dependencies:
     "@bokuweb/zstd-wasm" "^0.0.22"
     "@dha-team/arbundles" "^1.0.1"
@@ -3023,7 +3034,7 @@ wao@^0.35.6:
     express "^5.1.0"
     fast-sha256 "^1.3.0"
     graphql "^16.10.0"
-    hbsig "^0.1.3"
+    hbsig "^0.1.4"
     http-message-signatures "^1.0.4"
     lmdb "^3.2.2"
     localforage "^1.10.0"
@@ -3059,28 +3070,29 @@ wasm-brotli@^2.0.2:
   resolved "https://registry.yarnpkg.com/wasm-brotli/-/wasm-brotli-2.0.2.tgz#f5317afb0d3e2e5fe90a66b6d61e42939284f1c7"
   integrity sha512-DgjRlpZz9z5br4TjQHSlDHRF9NIuGXHUj3AqO08koDCXz7EYzmPDb7T/6oar5UKLYgPp9Yxc2ImGpx4BMFwbNQ==
 
-wdb-core@^0.0.10:
-  version "0.0.10"
-  resolved "https://registry.yarnpkg.com/wdb-core/-/wdb-core-0.0.10.tgz#464d770f3f327b6196dc2387aa9e27ae979712ba"
-  integrity sha512-qzD7gkZ3IA2XFG+nHV5pUvG/kctj+JKdjNcSkoKZr8SBq0OW3u28yJLzQTignoDJX0CWZBVTPBAhTooiLw7N6g==
+wdb-core@^0.0.12:
+  version "0.0.12"
+  resolved "https://registry.yarnpkg.com/wdb-core/-/wdb-core-0.0.12.tgz#10ec1fd7e6a5a3b28cb3c1defcb0dacda7f69977"
+  integrity sha512-AodynuP12Cpd1maCm+7iHjuzqBxAcdnlD23eDtLoffzVcFZRKzbegRTS6YHAkoFeq7CsmNqNHPeuKfF1T8sMZA==
   dependencies:
     "@lancedb/lancedb" "^0.21.2"
     apache-arrow "^21.0.0"
     fast-sha256 "^1.3.0"
     fpjson-lang "^0.1.5"
-    hbsig "^0.1.3"
+    hbsig "^0.1.4"
     http-message-signatures "^1.0.4"
     jsonschema "^1.5.0"
     monade "^0.0.1"
     node-sql-parser "^5.3.11"
     ramda "^0.31.3"
 
-wdb-sdk@^0.0.18:
-  version "0.0.18"
-  resolved "https://registry.yarnpkg.com/wdb-sdk/-/wdb-sdk-0.0.18.tgz#71c5bd8c91044bb5f691b48efd06ea182c3113f6"
-  integrity sha512-08ZTxDQok0M2X0jR57oEzeAZU4mNUJ9j6DsUESM6FTl6wqoBen8M2rOf0gkoAfL9z8A96pNkPUqZR97tc0uwFA==
+wdb-sdk@^0.0.20:
+  version "0.0.20"
+  resolved "https://registry.yarnpkg.com/wdb-sdk/-/wdb-sdk-0.0.20.tgz#6706ee5201f5016065f0060be31917ac56e93b76"
+  integrity sha512-80+t5vaQHqV+/2wW8TrInfIJD/HLepgtteE7fOywwQHj6hbv3z67mvLT+fPyLsQCbdLMsJEWAeOhIhY73/Ox1w==
   dependencies:
-    wao "^0.35.6"
+    hbsig "^0.1.4"
+    wao "^0.35.7"
 
 weak-lru-cache@^1.2.2:
   version "1.2.2"
