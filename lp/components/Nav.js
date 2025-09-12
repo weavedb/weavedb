@@ -21,14 +21,20 @@ export default function Nav() {
             <a href="#economics" className="nav-link">
               Tokenomics
             </a>
-            <a href="#community" className="nav-link">
-              Community
+            <a href="#blog" className="nav-link">
+              Blog
             </a>
             <button
               className="nav-cta"
               onClick={() => window.open("https://docs.weavedb.dev/", "_blank")}
             >
               Docs
+            </button>
+            <button
+              className="nav-cta"
+              onClick={() => window.open("https://scan.weavedb.dev", "_blank")}
+            >
+              Scan
             </button>
           </div>
 
@@ -186,37 +192,68 @@ export default function Nav() {
             >
               Community
             </a>
-            <button
-              onClick={() => {
-                window.open("https://docs.weavedb.dev/", "_blank")
-                setIsMenuOpen(false)
-              }}
-              style={{
-                width: "100%",
-                marginTop: "16px",
-                padding: "8px 20px",
-                background: "rgba(99, 102, 241, 0.1)",
-                border: "1px solid rgba(99, 102, 241, 0.3)",
-                borderRadius: "8px",
-                color: "#818cf8",
-                fontSize: "14px",
-                fontWeight: "500",
-                cursor: "pointer",
-                transition: "all 0.3s ease",
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = "rgba(99, 102, 241, 0.2)"
-                e.currentTarget.style.borderColor = "rgba(99, 102, 241, 0.5)"
-                e.currentTarget.style.transform = "translateY(-1px)"
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = "rgba(99, 102, 241, 0.1)"
-                e.currentTarget.style.borderColor = "rgba(99, 102, 241, 0.3)"
-                e.currentTarget.style.transform = "translateY(0)"
-              }}
-            >
-              Docs
-            </button>
+            <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
+              <button
+                onClick={() => {
+                  window.open("https://docs.weavedb.dev/", "_blank")
+                  setIsMenuOpen(false)
+                }}
+                style={{
+                  flex: 1,
+                  padding: "8px 20px",
+                  background: "rgba(99, 102, 241, 0.1)",
+                  border: "1px solid rgba(99, 102, 241, 0.3)",
+                  borderRadius: "8px",
+                  color: "#818cf8",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = "rgba(99, 102, 241, 0.2)"
+                  e.currentTarget.style.borderColor = "rgba(99, 102, 241, 0.5)"
+                  e.currentTarget.style.transform = "translateY(-1px)"
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = "rgba(99, 102, 241, 0.1)"
+                  e.currentTarget.style.borderColor = "rgba(99, 102, 241, 0.3)"
+                  e.currentTarget.style.transform = "translateY(0)"
+                }}
+              >
+                Docs
+              </button>
+              <button
+                onClick={() => {
+                  window.open("https://scan.weavedb.dev", "_blank")
+                  setIsMenuOpen(false)
+                }}
+                style={{
+                  flex: 1,
+                  padding: "8px 20px",
+                  background: "rgba(99, 102, 241, 0.1)",
+                  border: "1px solid rgba(99, 102, 241, 0.3)",
+                  borderRadius: "8px",
+                  color: "#818cf8",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = "rgba(99, 102, 241, 0.2)"
+                  e.currentTarget.style.borderColor = "rgba(99, 102, 241, 0.5)"
+                  e.currentTarget.style.transform = "translateY(-1px)"
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = "rgba(99, 102, 241, 0.1)"
+                  e.currentTarget.style.borderColor = "rgba(99, 102, 241, 0.3)"
+                  e.currentTarget.style.transform = "translateY(0)"
+                }}
+              >
+                Scan
+              </button>
+            </div>
           </div>
         </div>
       </nav>
