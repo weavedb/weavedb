@@ -20,6 +20,14 @@ import {
   FiChevronUp,
   FiInfo,
 } from "react-icons/fi"
+import { httpsig_from, structured_to } from "hbsig"
+
+const toMsg = req => {
+  let req2 = {}
+  for (const k in req?.headers ?? {}) req2[k] = req.headers[k]
+  if (req.body) req2.body = req.body
+  return req2
+}
 
 export default function TransactionPage() {
   const router = useRouter()
@@ -62,11 +70,13 @@ export default function TransactionPage() {
       [pathKey]: !prevState[pathKey],
     }))
   }
-  let dir, signer, op, signed_fields, algorithm
+
+  let dir, signer, op, signed_fields, algorithm, body, query
   if (tx) {
     try {
-      console.log(tx.opt?.headers)
-      const query = JSON.parse(tx.opt?.headers?.query)
+      const msg = structured_to(httpsig_from(toMsg(tx.opt)))
+      body = tx.opt?.body
+      query = JSON.parse(msg.query)
       const si = tx.opt?.headers?.["signature-input"]
       const { label, fields, keyid, alg } = parseSignatureInput(si)
       signed_fields = fields
@@ -82,6 +92,7 @@ export default function TransactionPage() {
       }
     } catch (e) {}
   }
+
   return (
     <>
       <Header />
@@ -289,7 +300,7 @@ export default function TransactionPage() {
             </Box>
           ) : (
             <Flex gap={6} direction={{ base: "column", lg: "row" }}>
-              {/* Left Column - Metadata and Headers */}
+              {/* Left Column - Metadata and Updated Paths */}
               <Box flex={1}>
                 {/* Metadata Section */}
                 <Box
@@ -307,9 +318,9 @@ export default function TransactionPage() {
                     </Flex>
                   </Box>
                   <Box p={4}>
-                    <Flex direction="column" gap={3}>
+                    <Box mb={4}>
                       {/* Query Type */}
-                      <Flex align="center" justify="space-between">
+                      <Flex align="center" justify="space-between" mb={3}>
                         <Text fontSize="13px" color="gray.500">
                           Query Type
                         </Text>
@@ -327,8 +338,28 @@ export default function TransactionPage() {
                         </Badge>
                       </Flex>
 
+                      {/* Query - Stacked Layout */}
+                      <Box mb={4}>
+                        <Text fontSize="13px" color="gray.500" mb={2}>
+                          Query
+                        </Text>
+                        <Box
+                          bg="#f7fafc"
+                          border="1px solid #e2e8f0"
+                          borderRadius="6px"
+                          p={3}
+                          fontFamily="mono"
+                          fontSize="12px"
+                          color="gray.800"
+                        >
+                          <Text whiteSpace="pre-wrap" wordBreak="break-all">
+                            {query ? JSON.stringify(query) : "—"}
+                          </Text>
+                        </Box>
+                      </Box>
+
                       {/* Dir */}
-                      <Flex align="center" justify="space-between">
+                      <Flex align="center" justify="space-between" mb={3}>
                         <Text fontSize="13px" color="gray.500">
                           Dir
                         </Text>
@@ -342,7 +373,7 @@ export default function TransactionPage() {
                       </Flex>
 
                       {/* Signer */}
-                      <Flex align="center" justify="space-between">
+                      <Flex align="center" justify="space-between" mb={3}>
                         <Text fontSize="13px" color="gray.500">
                           Signer
                         </Text>
@@ -357,7 +388,7 @@ export default function TransactionPage() {
                       </Flex>
 
                       {/* Algorithm */}
-                      <Flex align="center" justify="space-between">
+                      <Flex align="center" justify="space-between" mb={3}>
                         <Text fontSize="13px" color="gray.500">
                           Algorithm
                         </Text>
@@ -379,97 +410,16 @@ export default function TransactionPage() {
                           fontSize="12px"
                           fontFamily="mono"
                           color="gray.800"
-                          maxW="200px"
-                          overflow="hidden"
-                          textOverflow="ellipsis"
-                          whiteSpace="nowrap"
+                          wordBreak="break-all"
                         >
                           {signed_fields ? signed_fields.join(", ") : "—"}
                         </Text>
                       </Flex>
-                    </Flex>
+                    </Box>
                   </Box>
                 </Box>
 
-                {/* Headers Section */}
-                <Box bg="white" border="1px solid #e2e8f0" borderRadius="8px">
-                  <Box p={4} borderBottom="1px solid #e2e8f0" bg="#f7fafc">
-                    <Flex align="center">
-                      <Icon as={FiFileText} mr={2} color="#6366f1" />
-                      <Text fontSize="16px" fontWeight="600" color="gray.800">
-                        Headers
-                      </Text>
-                      {tx.opt?.headers && (
-                        <Badge
-                          ml={2}
-                          bg="#6366f120"
-                          color="#6366f1"
-                          px={2}
-                          py={1}
-                          borderRadius="full"
-                          fontSize="10px"
-                        >
-                          {keys(tx.opt.headers).length} fields
-                        </Badge>
-                      )}
-                    </Flex>
-                  </Box>
-                  <Box p={4}>
-                    {tx.opt?.headers ? (
-                      keys(tx.opt.headers)
-                        .sort()
-                        .map(key => {
-                          const value = tx.opt.headers[key]
-                          return (
-                            <Box key={key} mb={4}>
-                              <Text
-                                fontSize="13px"
-                                fontWeight="600"
-                                color="gray.700"
-                                mb={2}
-                              >
-                                {key}
-                              </Text>
-                              <Box
-                                bg="#f7fafc"
-                                border="1px solid #e2e8f0"
-                                borderRadius="6px"
-                                p={3}
-                                fontFamily="mono"
-                                fontSize="12px"
-                                color="gray.800"
-                                css={{
-                                  overflow: "visible !important",
-                                  maxHeight: "none !important",
-                                  height: "auto !important",
-                                }}
-                              >
-                                <Text
-                                  whiteSpace="pre-wrap"
-                                  wordBreak="break-all"
-                                >
-                                  {value}
-                                </Text>
-                              </Box>
-                            </Box>
-                          )
-                        })
-                    ) : (
-                      <Text
-                        fontSize="13px"
-                        color="gray.500"
-                        textAlign="center"
-                        py={4}
-                      >
-                        No header data available
-                      </Text>
-                    )}
-                  </Box>
-                </Box>
-              </Box>
-
-              {/* Right Column - Updated Paths */}
-              <Box flex={1}>
+                {/* Updated Paths Section */}
                 <Box bg="white" border="1px solid #e2e8f0" borderRadius="8px">
                   <Box p={4} borderBottom="1px solid #e2e8f0" bg="#f7fafc">
                     <Flex align="center">
@@ -536,11 +486,6 @@ export default function TransactionPage() {
                                   fontFamily="mono"
                                   fontSize="12px"
                                   color="gray.800"
-                                  css={{
-                                    overflow: "visible !important",
-                                    maxHeight: "none !important",
-                                    height: "auto !important",
-                                  }}
                                 >
                                   <Text
                                     whiteSpace="pre-wrap"
@@ -565,6 +510,116 @@ export default function TransactionPage() {
                     )}
                   </Box>
                 </Box>
+              </Box>
+
+              {/* Right Column - Headers and Body */}
+              <Box flex={1}>
+                {/* Headers Section */}
+                <Box
+                  bg="white"
+                  border="1px solid #e2e8f0"
+                  borderRadius="8px"
+                  mb={6}
+                >
+                  <Box p={4} borderBottom="1px solid #e2e8f0" bg="#f7fafc">
+                    <Flex align="center">
+                      <Icon as={FiFileText} mr={2} color="#6366f1" />
+                      <Text fontSize="16px" fontWeight="600" color="gray.800">
+                        Headers
+                      </Text>
+                      {tx.opt?.headers && (
+                        <Badge
+                          ml={2}
+                          bg="#6366f120"
+                          color="#6366f1"
+                          px={2}
+                          py={1}
+                          borderRadius="full"
+                          fontSize="10px"
+                        >
+                          {keys(tx.opt.headers).length} fields
+                        </Badge>
+                      )}
+                    </Flex>
+                  </Box>
+                  <Box p={4}>
+                    {tx.opt?.headers ? (
+                      keys(tx.opt.headers)
+                        .sort()
+                        .map(key => {
+                          const value = tx.opt.headers[key]
+                          return (
+                            <Box key={key} mb={4}>
+                              <Text
+                                fontSize="13px"
+                                fontWeight="600"
+                                color="gray.700"
+                                mb={2}
+                              >
+                                {key}
+                              </Text>
+                              <Box
+                                bg="#f7fafc"
+                                border="1px solid #e2e8f0"
+                                borderRadius="6px"
+                                p={3}
+                                fontFamily="mono"
+                                fontSize="12px"
+                                color="gray.800"
+                              >
+                                <Text
+                                  whiteSpace="pre-wrap"
+                                  wordBreak="break-all"
+                                >
+                                  {value}
+                                </Text>
+                              </Box>
+                            </Box>
+                          )
+                        })
+                    ) : (
+                      <Text
+                        fontSize="13px"
+                        color="gray.500"
+                        textAlign="center"
+                        py={4}
+                      >
+                        No header data available
+                      </Text>
+                    )}
+                  </Box>
+                </Box>
+
+                {/* Body Section - Only shows if body exists */}
+                {body && (
+                  <Box bg="white" border="1px solid #e2e8f0" borderRadius="8px">
+                    <Box p={4} borderBottom="1px solid #e2e8f0" bg="#f7fafc">
+                      <Flex align="center">
+                        <Icon as={FiFileText} mr={2} color="#8b5cf6" />
+                        <Text fontSize="16px" fontWeight="600" color="gray.800">
+                          Request Body
+                        </Text>
+                      </Flex>
+                    </Box>
+                    <Box p={4}>
+                      <Box
+                        bg="#f7fafc"
+                        border="1px solid #e2e8f0"
+                        borderRadius="6px"
+                        p={3}
+                        fontFamily="mono"
+                        fontSize="12px"
+                        color="gray.800"
+                      >
+                        <Text whiteSpace="pre-wrap" wordBreak="break-all">
+                          {typeof body === "string"
+                            ? body
+                            : JSON.stringify(body, null, 2)}
+                        </Text>
+                      </Box>
+                    </Box>
+                  </Box>
+                )}
               </Box>
             </Flex>
           )}

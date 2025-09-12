@@ -2780,6 +2780,17 @@ hbsig@^0.1.3:
     ramda "^0.31.3"
     structured-headers "1.0.1"
 
+hbsig@^0.1.4:
+  version "0.1.4"
+  resolved "https://registry.yarnpkg.com/hbsig/-/hbsig-0.1.4.tgz#453c65d0a71bbe1ed5e4230a08690c87617bcb67"
+  integrity sha512-4uv4yGZW8xiU0RVns/VPJLpGIpelFPgc0NBmw1kvdM6j8OYCVqAFWjkuNS07oT+Toxtf85phTAwDPRhZbMaIbg==
+  dependencies:
+    "@permaweb/aoconnect" "^0.0.85"
+    base64url "^3.0.1"
+    fast-sha256 "^1.3.0"
+    ramda "^0.31.3"
+    structured-headers "1.0.1"
+
 hi-base32@^0.5.1:
   version "0.5.1"
   resolved "https://registry.yarnpkg.com/hi-base32/-/hi-base32-0.5.1.tgz#1279f2ddae2673219ea5870c2121d2a33132857e"
