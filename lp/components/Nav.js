@@ -31,7 +31,7 @@ export default function Nav() {
               Docs
             </button>
             <button
-              className="nav-cta"
+              className="nav-cta scan-btn"
               onClick={() => window.open("https://scan.weavedb.dev", "_blank")}
             >
               Scan
@@ -174,7 +174,7 @@ export default function Nav() {
               Tokenomics
             </a>
             <a
-              href="#community"
+              href="#blog"
               className="mobile-nav-link"
               onClick={() => setIsMenuOpen(false)}
               style={{
@@ -190,7 +190,7 @@ export default function Nav() {
               onMouseEnter={e => (e.currentTarget.style.color = "#818cf8")}
               onMouseLeave={e => (e.currentTarget.style.color = "#fff")}
             >
-              Community
+              Blog
             </a>
             <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
               <button
@@ -231,23 +231,23 @@ export default function Nav() {
                 style={{
                   flex: 1,
                   padding: "8px 20px",
-                  background: "rgba(99, 102, 241, 0.1)",
-                  border: "1px solid rgba(99, 102, 241, 0.3)",
+                  background: "rgba(236, 72, 153, 0.1)",
+                  border: "1px solid rgba(236, 72, 153, 0.3)",
                   borderRadius: "8px",
-                  color: "#818cf8",
+                  color: "#ec4899",
                   fontSize: "14px",
                   fontWeight: "500",
                   cursor: "pointer",
                   transition: "all 0.3s ease",
                 }}
                 onMouseEnter={e => {
-                  e.currentTarget.style.background = "rgba(99, 102, 241, 0.2)"
-                  e.currentTarget.style.borderColor = "rgba(99, 102, 241, 0.5)"
+                  e.currentTarget.style.background = "rgba(236, 72, 153, 0.2)"
+                  e.currentTarget.style.borderColor = "rgba(236, 72, 153, 0.5)"
                   e.currentTarget.style.transform = "translateY(-1px)"
                 }}
                 onMouseLeave={e => {
-                  e.currentTarget.style.background = "rgba(99, 102, 241, 0.1)"
-                  e.currentTarget.style.borderColor = "rgba(99, 102, 241, 0.3)"
+                  e.currentTarget.style.background = "rgba(236, 72, 153, 0.1)"
+                  e.currentTarget.style.borderColor = "rgba(236, 72, 153, 0.3)"
                   e.currentTarget.style.transform = "translateY(0)"
                 }}
               >
@@ -280,6 +280,18 @@ export default function Nav() {
           display: flex;
           align-items: center;
           gap: 32px;
+        }
+
+        .scan-btn {
+          background: rgba(236, 72, 153, 0.1) !important;
+          border: 1px solid rgba(236, 72, 153, 0.3) !important;
+          color: #ec4899 !important;
+        }
+
+        .scan-btn:hover {
+          background: rgba(236, 72, 153, 0.2) !important;
+          border-color: rgba(236, 72, 153, 0.5) !important;
+          transform: translateY(-1px) !important;
         }
 
         /* Desktop large screens */

@@ -121,6 +121,10 @@ export default defineConfig({
           link: "/build/social-dapp",
         },
         {
+          text: "ZK Circuits",
+          link: "/build/zk-circuits",
+        },
+        {
           text: "Remote Servers",
           link: "/build/remote-servers",
         },
