@@ -98,7 +98,7 @@ All the generated files are stored at `build/circuits` including a Solidity veri
 
 #### size
 
-The base unit of `size` is `uint`. Circom by default uses the module of `21888242871839275222246405745257275088548364400416034343698204186575808495617` (77 digits) and Solidity's base storage block is `uint256` and allows 78 digits. So zkJSON efficiently encodes JSON and packs it into blocks of 76 digits, which is one `uint`.
+The base unit of `size` is `uint`. Circom by default uses [BN254](https://hackmd.io/@jpw/bn254), the modulus of `21888242871839275222246405745257275088548364400416034343698204186575808495617` (77 digits), and Solidity's base storage block is `uint256` and allows 78 digits. So zkJSON efficiently encodes JSON and packs it into blocks of 76 digits, which is one `uint`.
 
 `path_size=5` means, 5 * 76 digits are allowed for the query path when encoded, and it will be represented within `uint[5]` in Solidity. on the Solidity side, however, zkJSON uses dynamic arrays `uint[]`, so it will be more space-efficient than the max set size. But the zk-circuits cannot prove data sizes more than the set size.
 
@@ -108,8 +108,8 @@ The default `json_size` is set `256`, which is 256 * 76 digits and should be suf
 
 `level` is the level of the sparse merkle tree (SMT). As the litepaper describes, the level of SMT for Collection determines how many alphanumeric characters each document ID can contain. It's determined by
 
-```math
-Number of Characters = \frac{\log_{10}(2^{\text{Level}})}{2}
+```text
+Number of Characters = (log10(2^Level)) / 2
 ```
 
 `level=168` can allow 28 characters in document ID. This is significant because document IDs are often used in access control rules of NoSQL databases (with WeaveDB, for instance).
@@ -141,7 +141,7 @@ We have been experimenting with the right parameters and so far the following se
 | **DB** | 16 | 256 | 32 | 256 | 184 | 24 |
 
 
-- `size_val=32` : about 760 characters in path
+- `size_path=32` : about 760 characters in path
 - `size_val=256` : about 6080 characters in each field
 - `level=184` : max 30 characters in doc ID in base64
 - `level_col=24` : max 16777216 collections in a database

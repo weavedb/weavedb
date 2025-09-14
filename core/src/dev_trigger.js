@@ -39,6 +39,7 @@ function trigger({ state, env }) {
       dir,
       doc,
       signer: state.signer,
+      signer23: state.signer23,
       ts: state.ts,
       id: env.id,
       owner: env.owner,

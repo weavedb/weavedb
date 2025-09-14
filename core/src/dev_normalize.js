@@ -12,6 +12,89 @@ import {
 import { of, ka } from "monade"
 import sha256 from "fast-sha256"
 import { parseOp } from "./utils.js"
+
+function base64urlToBytes(str) {
+  const padded = str + "===".slice((str.length + 3) % 4)
+  const base64 = padded.replace(/-/g, "+").replace(/_/g, "/")
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+  let result = []
+
+  for (let i = 0; i < base64.length; i += 4) {
+    const encoded = base64.slice(i, i + 4)
+    let bits = 0
+    let validBits = 0
+
+    for (let j = 0; j < encoded.length; j++) {
+      if (encoded[j] !== "=") {
+        bits = (bits << 6) | chars.indexOf(encoded[j])
+        validBits += 6
+      }
+    }
+
+    while (validBits >= 8) {
+      validBits -= 8
+      result.push((bits >> validBits) & 0xff)
+    }
+  }
+
+  return new Uint8Array(result)
+}
+
+function bytesToBase64url(bytes) {
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+  let result = ""
+
+  for (let i = 0; i < bytes.length; i += 3) {
+    const a = bytes[i]
+    const b = i + 1 < bytes.length ? bytes[i + 1] : 0
+    const c = i + 2 < bytes.length ? bytes[i + 2] : 0
+
+    const combined = (a << 16) | (b << 8) | c
+
+    result += chars[(combined >> 18) & 0x3f]
+    result += chars[(combined >> 12) & 0x3f]
+    if (i + 1 < bytes.length) result += chars[(combined >> 6) & 0x3f]
+    if (i + 2 < bytes.length) result += chars[combined & 0x3f]
+  }
+
+  return result
+}
+
+function ar2wdb23(arweaveAddress) {
+  if (!arweaveAddress || typeof arweaveAddress !== "string") {
+    throw new Error("Invalid Arweave address: must be a non-empty string")
+  }
+  arweaveAddress = arweaveAddress.trim()
+  if (arweaveAddress.length !== 43) {
+    throw new Error(
+      `Invalid Arweave address length: expected 43 characters, got ${arweaveAddress.length}`,
+    )
+  }
+  const base64urlPattern = /^[A-Za-z0-9\-_]+$/
+  if (!base64urlPattern.test(arweaveAddress)) {
+    throw new Error("Invalid Arweave address: contains invalid characters")
+  }
+
+  try {
+    const arweaveBytes = base64urlToBytes(arweaveAddress)
+    if (arweaveBytes.length !== 32) {
+      throw new Error(
+        `Invalid Arweave address: decoded to ${arweaveBytes.length} bytes, expected 32`,
+      )
+    }
+    const wdb23Bytes = new Uint8Array(23)
+    wdb23Bytes[0] = 0x61 // 'a'
+    wdb23Bytes[1] = 0x72 // 'r'
+    wdb23Bytes[2] = 0x2d // '-'
+    wdb23Bytes.set(arweaveBytes.slice(0, 20), 3)
+    const addressPart = bytesToBase64url(arweaveBytes.slice(0, 20))
+    return `ar--${addressPart}`
+  } catch (error) {
+    throw new Error(`Failed to convert Arweave address: ${error.message}`)
+  }
+}
 const toMsg = req => {
   let msg = {}
   for (const k in req?.headers ?? {}) msg[k] = req.headers[k]
@@ -184,6 +267,7 @@ function pickInput({ state, msg, env }) {
     ? `${_headers.id}/${id(committed)}`
     : hashpath(info.hashpath, committed)
   state.signer = toAddr(keyid)
+  state.signer23 = ar2wdb23(state.signer)
   state.query = JSON.parse(_headers.query)
   if (typeof _headers.id === "undefined") throw Error("id missing")
   if (typeof _headers.nonce === "undefined") throw Error("nonce missing")

@@ -131,6 +131,20 @@ export default defineConfig({
       ],
     },
     {
+      text: "WDB Specs",
+      collapsed: false,
+      items: [
+        {
+          text: "WDB20 Fungible Token",
+          link: "/specs/wdb20",
+        },
+        {
+          text: "WDB23 Address",
+          link: "/specs/wdb23",
+        }
+      ],
+    },
+    {
       text: "API Reference",
       collapsed: false,
       items: [
