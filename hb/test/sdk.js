@@ -1,7 +1,7 @@
 import assert from "assert"
 import { afterEach, after, describe, it, before, beforeEach } from "node:test"
 import { HyperBEAM, wait, acc } from "wao/test"
-import { DB } from "../../sdk/src/index.js"
+import { DB, to23 } from "../../sdk/src/index.js"
 import server from "../src/server.js"
 import { resolve } from "path"
 import { genDir } from "./test-utils.js"
@@ -36,6 +36,9 @@ describe("WeaveDB SDK", () => {
 })
 
 describe("WeaveDB SDK", () => {
+  it("should convert Arweave address to zkp", async () => {
+    assert.equal(to23(acc[0].addr), "ar--Rix7e0HB-8OAaimcoYkxTZB-dSs")
+  })
   it.skip("should connect with remote nodes", async () => {
     const db = new DB({
       jwk: acc[0].jwk,
@@ -50,7 +53,7 @@ describe("WeaveDB SDK", () => {
 })
 
 describe("Triggers", () => {
-  it.only("should connect with remote nodes", async () => {
+  it("should connect with remote nodes", async () => {
     const dbpath = genDir()
     const jwk = acc[0].jwk
     const node = await server({ dbpath, jwk, hyperbeam: false })

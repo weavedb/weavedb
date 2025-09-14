@@ -1,7 +1,7 @@
 import assert from "assert"
 import { describe, it } from "node:test"
 import { acc } from "wao/test"
-import { DB } from "../../sdk/src/index.js"
+import { DB, to23 } from "../../sdk/src/index.js"
 import { mem } from "../../core/src/index.js"
 
 const owner = acc[0]
@@ -14,8 +14,8 @@ const schema = {
     required: ["id", "actor", "content", "published", "likes"],
     properties: {
       id: { type: "string" },
-      actor: { type: "string", pattern: "^[a-zA-Z0-9_-]{43}$" },
-      content: { type: "string", minLength: 1, maxLength: 140 },
+      actor: { type: "string", pattern: "^[a-zA-Z0-9_-]{31}$" },
+      content: { type: "string", minLength: 1, maxLength: 280 },
       published: { type: "integer" },
       likes: { type: "integer" },
     },
@@ -25,7 +25,7 @@ const schema = {
     type: "object",
     required: ["actor", "object", "published"],
     properties: {
-      actor: { type: "string", pattern: "^[a-zA-Z0-9_-]{43}$" },
+      actor: { type: "string", pattern: "^[a-zA-Z0-9_-]{31}$" },
       object: { type: "string" },
       published: { type: "integer" },
     },
@@ -39,7 +39,10 @@ const auth = {
       "add:note",
       [
         ["fields()", ["*content"]],
-        ["mod()", { id: "$doc", actor: "$signer", published: "$ts", likes: 0 }],
+        [
+          "mod()",
+          { id: "$doc", actor: "$signer23", published: "$ts", likes: 0 },
+        ],
         ["allow()"],
       ],
     ],
@@ -49,14 +52,14 @@ const auth = {
       "add:like",
       [
         ["fields()", ["*object"]],
-        ["mod()", { actor: "$signer", published: "$ts" }],
+        ["mod()", { actor: "$signer23", published: "$ts" }],
         [
           "=$likes",
           [
             "get()",
             [
               "likes",
-              ["actor", "==", "$signer"],
+              ["actor", "==", "$signer23"],
               ["object", "==", "$req.object"],
             ],
           ],
@@ -106,6 +109,7 @@ describe("Jots", () => {
 
     const note1 = await a1.set("add:note", { content: "hello a1" }, "notes")
     assert(note1.success)
+
     const note2 = await a2.set("add:note", { content: "hello a2" }, "notes")
     assert(note2.success)
 
@@ -122,5 +126,7 @@ describe("Jots", () => {
     assert.equal(like3.success, false)
 
     assert.equal((await db.get("notes", ["likes", "desc"], 1))[0].likes, 2)
+    console.log(await db.get("notes"))
+    console.log(await db.get("likes"))
   })
 })

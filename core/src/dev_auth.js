@@ -14,7 +14,19 @@ function onlyOwner({ state, env }) {
 }
 
 function default_auth({
-  state: { op, signer, ts, opcode, operand, dir, doc, query, before, data },
+  state: {
+    op,
+    signer,
+    signer23,
+    ts,
+    opcode,
+    operand,
+    dir,
+    doc,
+    query,
+    before,
+    data,
+  },
   msg,
   env,
 }) {
@@ -27,6 +39,7 @@ function default_auth({
     id: id,
     owner: owner,
     signer,
+    signer23,
     ts,
     dir,
     doc,

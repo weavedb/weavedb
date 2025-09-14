@@ -1,0 +1,98 @@
+# WDB23 Universal Address Format
+
+## Overview
+
+WDB23 is a **23-byte universal address format** that provides a unified way to represent wallet addresses from any blockchain. It solves the critical problem of using blockchain addresses as document IDs in WeaveDB while maintaining human readability and cross-chain compatibility.
+
+## The Problem
+
+WeaveDB document IDs are constrained to **254 bits maximum** due to BN254 zk-circuit limitations. This creates a significant issue:
+
+- **Arweave addresses:** 32 bytes = 256 bits (exceeds limit)
+- **Ethereum addresses:** 20 bytes = 160 bits (fits, but no universal format)
+- **Bitcoin addresses:** Variable length (inconsistent)
+
+Without a universal format, structuring user-based documents and directories becomes extremely inconvenient, as different blockchains require different handling.
+
+## The Solution: WDB23
+
+WDB23 creates a **uniform 23-byte format** that works for any blockchain address:
+
+```
+23 bytes = 184 bits < 254 bits ✅ (Fits WeaveDB constraint)
+```
+
+### Structure
+
+```
+[3 bytes: Human-readable prefix] + [20 bytes: Truncated address] = 23 bytes total
+```
+
+### Encoding Format
+
+- **Base64url encoding** (RFC 4648 Section 5)
+- **31 characters total** when displayed
+- **No padding** required (clean format)
+- **URL and filename safe**
+
+### Prefix Rules
+
+The 4-character prefix must use only:
+- **Lowercase letters:** `a-z`
+- **Numbers:** `0-9` 
+- **Hyphen:** `-`
+
+**Total: 37 valid characters**
+
+## Example: Arweave Address Conversion
+
+### Input
+```
+Arweave address: Tbun4iRRQW93gUiSAmTmZJ2PGI-_yYaXsX69ETgzSRE
+Length: 43 characters (32 bytes when decoded)
+```
+
+### Process
+1. **Decode** Arweave address to bytes: 32 bytes
+2. **Truncate** to first 20 bytes
+3. **Encode** 20 bytes to base64url: 27 characters
+4. **Add prefix:** `ar--` + base64url result
+
+### Output
+```
+WDB23 address: ar--Tbun4iRRQW93gUiSAmTmZJ2PGI8
+Length: 31 characters (23 bytes when decoded)
+```
+
+## Universal Blockchain Support
+
+WDB23 uses **algorithm-based prefixes** rather than chain-specific ones:
+
+| Prefix | Algorithm | Compatible Chains |
+|--------|-----------|-------------------|
+| `ar--` | RSA signatures | Arweave, AO networks |
+| `eth-` | ECDSA secp256k1 | Ethereum, Polygon, Arbitrum, BSC, Avalanche |
+| `sol-` | Ed25519 | Solana, Near, Aptos, Sui |
+| `btc-` | Bitcoin ECDSA | Bitcoin, Litecoin, Bitcoin Cash |
+
+## Key Benefits
+
+### ✅ WeaveDB Compatible
+- **184 bits** fits within 254-bit constraint
+- **Uniform length** simplifies database schema
+- **Consistent doc ID format** across all blockchains
+
+### ✅ Human Readable
+- **Instant recognition** of signature algorithm
+- **Clear visual distinction** between address types
+- **URL-safe encoding** for web applications
+
+### ✅ Universal Compatibility
+- **Same address format** across compatible chains
+- **Algorithm-based grouping** enables token aggregation
+- **Future-proof** for new blockchains
+
+### ✅ Collision Resistant
+- **160 bits of address data** = 2^80 collision resistance
+- **Same security level** as Ethereum addresses
+- **No precision loss** in practical use

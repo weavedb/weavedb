@@ -3070,10 +3070,10 @@ wasm-brotli@^2.0.2:
   resolved "https://registry.yarnpkg.com/wasm-brotli/-/wasm-brotli-2.0.2.tgz#f5317afb0d3e2e5fe90a66b6d61e42939284f1c7"
   integrity sha512-DgjRlpZz9z5br4TjQHSlDHRF9NIuGXHUj3AqO08koDCXz7EYzmPDb7T/6oar5UKLYgPp9Yxc2ImGpx4BMFwbNQ==
 
-wdb-core@^0.0.12:
-  version "0.0.12"
-  resolved "https://registry.yarnpkg.com/wdb-core/-/wdb-core-0.0.12.tgz#10ec1fd7e6a5a3b28cb3c1defcb0dacda7f69977"
-  integrity sha512-AodynuP12Cpd1maCm+7iHjuzqBxAcdnlD23eDtLoffzVcFZRKzbegRTS6YHAkoFeq7CsmNqNHPeuKfF1T8sMZA==
+wdb-core@^0.0.13:
+  version "0.0.13"
+  resolved "https://registry.yarnpkg.com/wdb-core/-/wdb-core-0.0.13.tgz#e61ede46e5ecaf5f8c6de2f9770bb4b697994d44"
+  integrity sha512-97yDV21SIR+x++RRi8X+L8AAmmFhfNoK2ejiAnv+coiUfx229n7dh2YS9B/v768W5f0LoO993zx1dvixCc6Sgw==
   dependencies:
     "@lancedb/lancedb" "^0.21.2"
     apache-arrow "^21.0.0"
@@ -3086,10 +3086,10 @@ wdb-core@^0.0.12:
     node-sql-parser "^5.3.11"
     ramda "^0.31.3"
 
-wdb-sdk@^0.0.20:
-  version "0.0.20"
-  resolved "https://registry.yarnpkg.com/wdb-sdk/-/wdb-sdk-0.0.20.tgz#6706ee5201f5016065f0060be31917ac56e93b76"
-  integrity sha512-80+t5vaQHqV+/2wW8TrInfIJD/HLepgtteE7fOywwQHj6hbv3z67mvLT+fPyLsQCbdLMsJEWAeOhIhY73/Ox1w==
+wdb-sdk@^0.0.21:
+  version "0.0.21"
+  resolved "https://registry.yarnpkg.com/wdb-sdk/-/wdb-sdk-0.0.21.tgz#8bebe458f1942ecfc547a4fa63747d8c2beaf1b5"
+  integrity sha512-/nbZqm0S8a6DmWfBOK68meAJYP1myTaOz8RlNBSEU9NtRN1RJxfsjIeVtrGKGmjaV6Y1VkohRAR7u4rHRLY0ZA==
   dependencies:
     hbsig "^0.1.4"
     wao "^0.35.7"

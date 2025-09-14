@@ -121,9 +121,27 @@ export default defineConfig({
           link: "/build/social-dapp",
         },
         {
+          text: "ZK Circuits",
+          link: "/build/zk-circuits",
+        },
+        {
           text: "Remote Servers",
           link: "/build/remote-servers",
         },
+      ],
+    },
+    {
+      text: "WDB Specs",
+      collapsed: false,
+      items: [
+        {
+          text: "WDB20 Fungible Token",
+          link: "/specs/wdb20",
+        },
+        {
+          text: "WDB23 Address",
+          link: "/specs/wdb23",
+        }
       ],
     },
     {

@@ -387,3 +387,15 @@ Remove a trigger from the dir. Specify a `key` to remove.
 ```js
 await db.removeTrigger({ key: "inc_user_count" }, "users")
 ```
+
+## Utilities
+
+### to23()
+
+Convert an Arweave address to a [WDB23](/specs/wdb23) address.
+
+```js
+import { to23 } from "wdb-sdk"
+
+const wdb23 = to23(arweave_address)
+```

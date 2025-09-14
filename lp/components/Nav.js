@@ -24,18 +24,30 @@ export default function Nav() {
             <a href="#blog" className="nav-link">
               Blog
             </a>
-            <button
-              className="nav-cta"
-              onClick={() => window.open("https://docs.weavedb.dev/", "_blank")}
-            >
-              Docs
-            </button>
-            <button
-              className="nav-cta"
-              onClick={() => window.open("https://scan.weavedb.dev", "_blank")}
-            >
-              Scan
-            </button>
+            <div className="nav-buttons">
+              <button
+                className="nav-cta"
+                onClick={() =>
+                  window.open("https://docs.weavedb.dev/", "_blank")
+                }
+              >
+                Docs
+              </button>
+              <button
+                className="nav-cta scan-btn"
+                onClick={() =>
+                  window.open("https://scan.weavedb.dev", "_blank")
+                }
+              >
+                Scan
+              </button>
+              <button
+                className="nav-cta w-btn"
+                onClick={() => window.open("https://w.weavedb.dev", "_blank")}
+              >
+                W
+              </button>
+            </div>
           </div>
 
           {/* Mobile Menu Button */}
@@ -174,7 +186,7 @@ export default function Nav() {
               Tokenomics
             </a>
             <a
-              href="#community"
+              href="#blog"
               className="mobile-nav-link"
               onClick={() => setIsMenuOpen(false)}
               style={{
@@ -190,17 +202,25 @@ export default function Nav() {
               onMouseEnter={e => (e.currentTarget.style.color = "#818cf8")}
               onMouseLeave={e => (e.currentTarget.style.color = "#fff")}
             >
-              Community
+              Blog
             </a>
-            <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: "6px",
+                marginTop: "16px",
+                flexWrap: "wrap",
+              }}
+            >
               <button
                 onClick={() => {
                   window.open("https://docs.weavedb.dev/", "_blank")
                   setIsMenuOpen(false)
                 }}
                 style={{
-                  flex: 1,
-                  padding: "8px 20px",
+                  flex: "1 1 auto",
+                  minWidth: "60px",
+                  padding: "8px 16px",
                   background: "rgba(99, 102, 241, 0.1)",
                   border: "1px solid rgba(99, 102, 241, 0.3)",
                   borderRadius: "8px",
@@ -229,29 +249,60 @@ export default function Nav() {
                   setIsMenuOpen(false)
                 }}
                 style={{
-                  flex: 1,
-                  padding: "8px 20px",
-                  background: "rgba(99, 102, 241, 0.1)",
-                  border: "1px solid rgba(99, 102, 241, 0.3)",
+                  flex: "1 1 auto",
+                  minWidth: "60px",
+                  padding: "8px 16px",
+                  background: "rgba(236, 72, 153, 0.1)",
+                  border: "1px solid rgba(236, 72, 153, 0.3)",
                   borderRadius: "8px",
-                  color: "#818cf8",
+                  color: "#ec4899",
                   fontSize: "14px",
                   fontWeight: "500",
                   cursor: "pointer",
                   transition: "all 0.3s ease",
                 }}
                 onMouseEnter={e => {
-                  e.currentTarget.style.background = "rgba(99, 102, 241, 0.2)"
-                  e.currentTarget.style.borderColor = "rgba(99, 102, 241, 0.5)"
+                  e.currentTarget.style.background = "rgba(236, 72, 153, 0.2)"
+                  e.currentTarget.style.borderColor = "rgba(236, 72, 153, 0.5)"
                   e.currentTarget.style.transform = "translateY(-1px)"
                 }}
                 onMouseLeave={e => {
-                  e.currentTarget.style.background = "rgba(99, 102, 241, 0.1)"
-                  e.currentTarget.style.borderColor = "rgba(99, 102, 241, 0.3)"
+                  e.currentTarget.style.background = "rgba(236, 72, 153, 0.1)"
+                  e.currentTarget.style.borderColor = "rgba(236, 72, 153, 0.3)"
                   e.currentTarget.style.transform = "translateY(0)"
                 }}
               >
                 Scan
+              </button>
+              <button
+                onClick={() => {
+                  window.open("https://w.weavedb.dev", "_blank")
+                  setIsMenuOpen(false)
+                }}
+                style={{
+                  flex: "1",
+                  padding: "8px 16px",
+                  background: "rgba(251, 191, 36, 0.1)",
+                  border: "1px solid rgba(251, 191, 36, 0.3)",
+                  borderRadius: "8px",
+                  color: "#fbbf24",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = "rgba(251, 191, 36, 0.2)"
+                  e.currentTarget.style.borderColor = "rgba(251, 191, 36, 0.5)"
+                  e.currentTarget.style.transform = "translateY(-1px)"
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = "rgba(251, 191, 36, 0.1)"
+                  e.currentTarget.style.borderColor = "rgba(251, 191, 36, 0.3)"
+                  e.currentTarget.style.transform = "translateY(0)"
+                }}
+              >
+                W
               </button>
             </div>
           </div>
@@ -280,6 +331,36 @@ export default function Nav() {
           display: flex;
           align-items: center;
           gap: 32px;
+        }
+
+        .nav-buttons {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .scan-btn {
+          background: rgba(236, 72, 153, 0.1) !important;
+          border: 1px solid rgba(236, 72, 153, 0.3) !important;
+          color: #ec4899 !important;
+        }
+
+        .scan-btn:hover {
+          background: rgba(236, 72, 153, 0.2) !important;
+          border-color: rgba(236, 72, 153, 0.5) !important;
+          transform: translateY(-1px) !important;
+        }
+
+        .w-btn {
+          background: rgba(251, 191, 36, 0.1) !important;
+          border: 1px solid rgba(251, 191, 36, 0.3) !important;
+          color: #fbbf24 !important;
+        }
+
+        .w-btn:hover {
+          background: rgba(251, 191, 36, 0.2) !important;
+          border-color: rgba(251, 191, 36, 0.5) !important;
+          transform: translateY(-1px) !important;
         }
 
         /* Desktop large screens */
