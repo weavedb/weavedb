@@ -1,3 +1,5 @@
+import { keccak256 } from "./keccak.js"
+import { map, is } from "ramda"
 function base64urlToBytes(str) {
   const padded = str + "===".slice((str.length + 3) % 4)
   const base64 = padded.replace(/-/g, "+").replace(/_/g, "/")
@@ -47,7 +49,7 @@ function bytesToBase64url(bytes) {
   return result
 }
 
-function to23(addr) {
+function wdb23(addr) {
   if (!addr || typeof addr !== "string") {
     throw new Error("Invalid Arweave address: must be a non-empty string")
   }
@@ -81,4 +83,65 @@ function to23(addr) {
   }
 }
 
-export { to23 }
+function wdb160(bufs) {
+  let _bufs = map(v => {
+    let type = "utf8"
+    let val = v
+
+    if (is(Array, v)) {
+      val = v[0]
+      type = v[1] ?? "utf8"
+    }
+
+    // Convert any data type to string first
+    if (typeof val !== "string") {
+      if (val === null || val === undefined) {
+        val = String(val)
+      } else if (typeof val === "object") {
+        val = JSON.stringify(val)
+      } else {
+        val = String(val)
+      }
+    }
+
+    // Auto-detect base64url for WDB23 addresses (31 chars = 23 bytes)
+    if (type === "utf8" && val.length === 31 && isBase64url(val)) {
+      type = "base64url"
+    }
+
+    // Handle hex strings
+    if (type === "hex" && val.startsWith("0x")) {
+      val = val.slice(2)
+    }
+
+    // Handle base64url by converting to base64
+    if (type === "base64url") {
+      val = val.replace(/-/g, "+").replace(/_/g, "/")
+      while (val.length % 4) {
+        val += "="
+      }
+      type = "base64"
+    }
+
+    return Buffer.from(val, type)
+  })(bufs)
+
+  return to64(keccak256(Buffer.concat(_bufs)))
+}
+
+function isBase64url(str) {
+  // Base64url character set: A-Z, a-z, 0-9, -, _
+  const base64urlRegex = /^[A-Za-z0-9_-]+$/
+  return base64urlRegex.test(str)
+}
+
+function to64(from) {
+  return Buffer.from(from)
+    .slice(0, 20)
+    .toString("base64")
+    .replace(/\//g, "_")
+    .replace(/\+/g, "-")
+    .replace(/=/g, "")
+}
+
+export { wdb23, wdb160 }

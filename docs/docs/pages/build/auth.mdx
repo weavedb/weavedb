@@ -52,7 +52,7 @@ let vars = {
   op, // set:post ( op = opcode:operand )
   opcode, // set
   operand, // post
-  id, // database ID
+  db, // database ID
   owner // database owner
   signer, // message signer
   signer23, // message signer in WDB23
@@ -76,7 +76,7 @@ For instance, if `{ title: "Title", body: "hellow" }` is already stored, and the
 `mod()` will manipulate the uploading data before commiting permanently.
 
 ```js
-[ "add:post", [ [ "mod()", { id: "$id", owner: "$signer", date: "$ts" } ], ["allow()"] ] ]
+[ "add:post", [ [ "mod()", { id: "$doc", owner: "$signer", date: "$ts" } ], ["allow()"] ] ]
 ```
 
 This will set `id` to the auto-generated docID, `owner` to the transaction signer, and `date` to the transaction timestamp.  
@@ -213,36 +213,33 @@ In this case, the query validity depends on other matched conditions. For exampl
 
 ### Helper Functions
 
-#### split()
-
-It's often useful to make the docID deterministic with some document fields. For example, express follow relationships, you would set the docID `fromUserID:toUserID`, in this case, `split()` comes in handy.
-
-```js
-[
-  "set:follow",
-  [
-    // split docID with ":" and assign to $from_id and $to_id
-    ["split()", [":", "$id", ["=$from_id", "=$to_id"]]],
-	["=$isFromSigner", ["equals", "$from_id", "$signer"]],
-	["mod()", { from: "$from_id", to: "$to_id", date: "$ms" }],
-    ["allowif()", "$isFromSigner"]
-  ],
-]
-```
-
-Now users can send an empty query as long as the docID checks out.
-
-```js
-await db.set("set:follow", {}, "follows", "fromUserID:toUserID")
-```
-
 #### parse()
 
 equivalent to `JSON.parse()`.
 
+```js
+["=$json", ["parse", "$req.json_str"]]
+```
+
 #### stringify()
 
 equivalent to `JSON.stringify()`.
+
+```js
+["=$str", ["stringify", "$req.json"]]
+```
+
+#### wdb23()
+
+```js
+["=$addr23", ["wdb23()", "$signer"]]
+```
+
+#### wdb160()
+
+```js
+["=$hash", ["wdb160()", [["$req.from", "$req.to"]]]]
+```
 
 ## Set Auth Rules
 

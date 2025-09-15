@@ -2,7 +2,7 @@ import { includes, isNil, mergeLeft } from "ramda"
 import { of } from "monade"
 import { fpj, ac_funcs } from "./fpjson.js"
 import read from "./dev_read.js"
-import { checkDocID } from "./utils.js"
+import { wdb160 as _wdb160, wdb23 as _wdb23, checkDocID } from "./utils.js"
 
 function anyone() {
   return arguments[0]
@@ -36,11 +36,11 @@ function default_auth({
     op,
     opcode,
     operand,
-    id: id,
-    owner: owner,
+    owner,
     signer,
     signer23,
     ts,
+    db: id,
     dir,
     doc,
     query,
@@ -75,12 +75,32 @@ function default_auth({
       state.doc = doc
       state.range = false
     } else state.range = true
-    return [of({ state, env }).map(read).val(), false]
+
+    const kv_dir = {
+      get: k => kv.get("__indexes__", `${dir}/${k}`),
+      put: (k, v, nosave) => kv.put("__indexes__", `${dir}/${k}`, v),
+      del: (k, nosave) => kv.del("__indexes__", `${dir}/${k}`),
+      data: key => ({
+        val: kv.get(dir, key),
+        __id__: key.split("/").pop(),
+      }),
+      putData: (key, val) => kv.put(dir, key, val),
+      delData: key => kv.del(dir, key),
+    }
+    return [
+      of({ state, env: { ...env, kv_dir } })
+        .map(read)
+        .val(),
+      false,
+    ]
   }
+  const wdb23 = v => [_wdb23(v), false]
+  const wdb160 = v => [_wdb160(v), false]
+  const fns = { get, wdb23, wdb160 }
   const fn =
     dir[0] === "_"
       ? {
-          get,
+          ...fns,
           set: (v, obj, set) => {
             const [data, dir, doc] = v
             if (dir[0] !== "_") return [false, false]
@@ -111,7 +131,7 @@ function default_auth({
             return [true, false]
           },
         }
-      : { get }
+      : fns
   for (const v of _dir.auth) {
     if (includes(op, v[0].split(","))) {
       try {

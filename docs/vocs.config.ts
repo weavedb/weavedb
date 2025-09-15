@@ -141,7 +141,12 @@ export default defineConfig({
         {
           text: "WDB23 Address",
           link: "/specs/wdb23",
+        },
+        {
+          text: "WDB160 Hash",
+          link: "/specs/wdb160",
         }
+	
       ],
     },
     {

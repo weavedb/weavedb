@@ -390,12 +390,22 @@ await db.removeTrigger({ key: "inc_user_count" }, "users")
 
 ## Utilities
 
-### to23()
+### wdb23()
 
 Convert an Arweave address to a [WDB23](/specs/wdb23) address.
 
 ```js
-import { to23 } from "wdb-sdk"
+import { wdb23 } from "wdb-sdk"
 
-const wdb23 = to23(arweave_address)
+const addr23 = wdb23(arweave_address)
+```
+
+### wdb160()
+
+Generate a [WDB160](/specs/wdb160) hash from multiple imputs.
+
+```js
+import { wdb160 } from "wdb-sdk"
+
+const hash = wdb160(["abc", "def"])
 ```

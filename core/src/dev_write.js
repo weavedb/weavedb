@@ -86,8 +86,8 @@ function addIndex({ state, env: { kv, kv_dir } }) {
   if (!stat) throw Error("dir doesn't exist")
   stat.indexes ??= []
   const _index = normalize(data)
-  for (let v of stat.indexes) {
-    if (equals(_index, v)) throw Error("index already exists")
+  for (let v of stat.indexes || []) {
+    if (equals(_index, v)) throw Error("index already exists:", _index)
   }
   stat.indexes.push(_index)
   _addIndex(data, [dir], kv_dir)

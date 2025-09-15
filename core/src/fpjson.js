@@ -63,24 +63,8 @@ const setElm = (k, d, rule_data) => {
   let elm_path = k.split("#")[0].split(".")
   for (const [i, field] of elm_path.entries()) {
     if (i === elm_path.length - 1) {
-      if (is(Object)(d) && d.__op__ === "union") {
-        if (complement(is)(Array, d.arr)) throw Error("field is not array")
-        if (complement(is)(Array, obj[field])) obj[field] = []
-        obj[field] = concat(obj[field], d.arr)
-      } else if (is(Object)(d) && d.__op__ === "without") {
-        if (complement(is)(Array, d.arr)) throw Error("field is not array")
-        if (complement(is)(Array, obj[field])) obj[field] = []
-        obj[field] = without(d.arr, obj[field])
-      } else if (is(Object)(d) && d.__op__ === "inc") {
-        if (isNaN(d.n)) throw Error("field is not number")
-        if (isNil(obj[field])) obj[field] = 0
-        obj[field] += d.n
-      } else if (is(Object)(d) && d.__op__ === "del") {
+      if (is(Object)(d) && d._$ === "del") {
         delete obj[field]
-      } else if (is(Object)(d) && d.__op__ === "ts") {
-        obj[field] = rule_data.ts
-      } else if (is(Object)(d) && d.__op__ === "from") {
-        obj[field] = rule_data.from
       } else {
         obj[field] = d
       }
@@ -116,11 +100,12 @@ function fpj(arr = [], obj = {}, fn = {}) {
       if (!isBreak) setElm(arr[0].replace(/^=\$/, ""), val, obj)
     } else if (/^.+\(\)$/.test(arr[0])) {
       if (!isNil(fn[arr[0].slice(0, -2)])) {
-        ;[val, isBreak] = fn[arr[0].slice(0, -2)](
+        const res = fn[arr[0].slice(0, -2)](
           parse(replace$(arr[1]), obj),
           obj,
           setElm,
         )
+        ;[val, isBreak] = res
       } else {
         throw Error(`unknown function ${arr[0]}`)
       }

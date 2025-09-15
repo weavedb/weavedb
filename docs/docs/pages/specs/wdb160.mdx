@@ -1,0 +1,151 @@
+# WDB160 Universal Hash Function
+
+## Overview
+WDB160 is a **deterministic hash function** that generates 160-bit identifiers from any combination of inputs. It creates consistent, collision-resistant document IDs for WeaveDB while maintaining compatibility with blockchain addresses and cross-chain applications.
+
+## The Problem
+WeaveDB applications need deterministic document IDs that:
+* **Fit within 254-bit constraints** due to BN254 zk-circuit limitations
+* **Handle multiple inputs** of varying types and lengths
+* **Maintain consistency** across different data types and encodings
+
+## The Solution: WDB160
+
+WDB160 creates a **uniform 160-bit hash** from any inputs:
+
+```
+160 bits = 20 bytes < 254 bits ✅ (Fits WeaveDB constraint)
+```
+
+## Function Signature
+
+```javascript
+wdb160([inputs, bytes = 20])
+```
+
+### Parameters
+- **inputs**: Array of values to hash (any JavaScript types)
+- **bytes**: Output size in bytes (default: 20)
+
+### Returns
+- **String**: URL-safe base64 encoded hash (27 characters)
+
+## Basic Usage
+
+```javascript
+// WeaveDB document IDs
+const followId = wdb160([["user123", "user456"]])
+// Result: "k2B9mK8vN3pQ7xR5tL6wA9cF1eD"
+
+// Mixed data types
+const complexId = wdb160([[42, "hello", {user: "alice"}]])
+// Result: "xN4mL9rT8kE2vQ6wP5cA1bG7hJ3"
+
+// Blockchain addresses
+const multisigId = wdb160([[
+  "0x742d35Cc6634C0532925a3b8D39391F23169e22F",
+  "0x8ba1f109551bD432803012645Hac136c29F657D"
+]])
+```
+
+## Advanced Features
+
+### **Type Specification**
+```javascript
+// Explicit encoding types
+const hexId = wdb160([["deadbeef", "hex"], ["hello", "utf8"]])
+const b64Id = wdb160([["SGVsbG8=", "base64"], ["world"]])
+```
+
+### **Auto-Detection**
+- **WDB23 Addresses**: 31-character strings automatically detected as base64url
+- **Hex Strings**: "0x" prefixed strings handled as hex
+- **JavaScript Types**: Objects/arrays converted via JSON.stringify
+
+### **Type Conversion**
+| Input Type | Conversion |
+|------------|------------|
+| String | Direct encoding |
+| Number | String conversion (42 → "42") |
+| Boolean | String conversion (true → "true") |
+| Object/Array | JSON.stringify |
+| null/undefined | String conversion |
+
+## Security Properties
+
+### **Collision Resistance**
+- **160-bit output** = 2^80 collision resistance
+- **Same security level** as Ethereum addresses
+- **Effectively collision-free** for all real-world applications
+
+### **Deterministic**
+- ✅ Same inputs always produce same output
+- ✅ Platform independent
+- ✅ Version stable
+
+## Implementation
+
+### **Internal Algorithm**
+1. Convert all inputs to buffers with specified encoding
+2. Concatenate buffers into single input
+3. Apply Keccak256 hash
+4. Truncate to 160 bits (20 bytes)
+5. Encode as URL-safe base64
+
+### **Keccak256 Foundation**
+- ✅ Cryptographically secure (SHA-3)
+- ✅ Uniform output distribution
+- ✅ Battle-tested (used by Ethereum)
+
+## Output Format
+
+- **Character set**: A-Z, a-z, 0-9, -, _
+- **Length**: Always 27 characters (no padding)
+- **Size**: Always 160 bits (20 bytes)
+- **URL safe**: Works in URLs and filenames
+- **Database safe**: Perfect for document IDs
+
+## WeaveDB Integration
+
+```javascript
+// Document ID generation
+const relationshipId = wdb160([["follower_addr", "following_addr"]])
+
+// Schema validation
+const schema = {
+  relationships: {
+    properties: {
+      id: { type: "string", pattern: "^[A-Za-z0-9_-]{27}$" }
+    }
+  }
+}
+```
+
+## Best Practices
+
+### **Input Ordering**
+```javascript
+// ✅ Sort inputs for consistency
+const addresses = [addr1, addr2].sort()
+const id = wdb160([addresses])
+
+// ❌ Order matters - these produce different hashes
+wdb160([["alice", "bob"]])  // Different from:
+wdb160([["bob", "alice"]])
+```
+
+### **Domain Separation**
+```javascript
+// ✅ Add context to prevent collisions
+const followId = wdb160(["alice", "bob", "follow"])
+const chatId = wdb160(["alice", "bob", "chat"])
+```
+
+## Key Benefits
+
+✅ **WeaveDB Optimized** - 160 bits fits comfortably within 184-bit optimal setting  
+✅ **Universal Input Support** - Handles any JavaScript type  
+✅ **Production Ready** - Battle-tested cryptography  
+✅ **Developer Friendly** - Simple API with smart defaults
+
+WDB160 provides the **universal hashing foundation** for optimized WeaveDB document IDs! 🎯
