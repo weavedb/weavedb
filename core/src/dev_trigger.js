@@ -1,8 +1,9 @@
 import { of } from "monade"
 import read from "./dev_read.js"
-import { fpj } from "./fpjson.js"
+import { replace$, fpj } from "./fpjson.js"
 import { checkDocID } from "./utils.js"
 import {
+  concat,
   isNil,
   includes,
   intersection,
@@ -10,13 +11,36 @@ import {
   equals,
   keys,
   uniq,
+  map,
+  path,
+  is,
 } from "ramda"
-import { putData, delData, validateSchema, merge, genDocID } from "./utils.js"
+import {
+  putData,
+  delData,
+  validateSchema,
+  merge,
+  genDocID,
+  wdb23,
+  wdb160,
+} from "./utils.js"
 
 function trigger({ state, env }) {
   const { kv, kv_dir } = env
-  const { doc, dir, data, before } = state
-  let mod = { on: null, diff: {}, before, after: data, id: doc }
+  const { doc, dir, data, before, ts } = state
+  let mod = {
+    on: null,
+    diff: {},
+    before,
+    after: data,
+    doc,
+    dir,
+    ts,
+    db: env.id,
+    owner: env.owner,
+    signer: state.signer,
+    signer23: state.signer23,
+  }
   if (before !== null && data === null) {
     mod.on = "delete"
     for (const k in before) mod.diff[k] = { before: before[k], after: null }
@@ -109,6 +133,8 @@ function trigger({ state, env }) {
         if (ok) {
           let vars = { ...mod, batch: [] }
           const fns = {
+            wdb23: v => [wdb23(v), false],
+            wdb160: v => [wdb160(v), false],
             get: v => {
               const [dir, doc] = v
               if (dir[0] === "_") return [kv.get(...v), false]
@@ -120,7 +146,24 @@ function trigger({ state, env }) {
                 state.doc = doc
                 state.range = false
               } else state.range = true
-              return [of({ state, env }).map(read).val(), false]
+              const kv_dir = {
+                get: k => kv.get("__indexes__", `${dir}/${k}`),
+                put: (k, v, nosave) => kv.put("__indexes__", `${dir}/${k}`, v),
+                del: (k, nosave) => kv.del("__indexes__", `${dir}/${k}`),
+                data: key => ({
+                  val: kv.get(dir, key),
+                  __id__: key.split("/").pop(),
+                }),
+                putData: (key, val) => kv.put(dir, key, val),
+                delData: key => kv.del(dir, key),
+              }
+
+              return [
+                of({ state, env: { ...env, kv_dir } })
+                  .map(read)
+                  .val(),
+                false,
+              ]
             },
             add: v => {
               const { data, dir, before } = checkDir(v, "add")
@@ -145,11 +188,40 @@ function trigger({ state, env }) {
               if (!before) throw Error("doc doesn't exist")
               return _putData({ before, op: "del", dir, doc })
             },
+            toBatchAll: (query, obj) => {
+              obj.batch = concat(obj.batch, query)
+              return [true, false]
+            },
+            toBatch: (query, obj) => {
+              obj.batch.push(query)
+              return [true, false]
+            },
           }
           fpj(t.fn, vars, fns)
+          const parse = query => {
+            if (is(Array, query)) {
+              query = map(v => (is(Object, v) ? parse(v) : v))(query)
+            } else if (is(Object, query)) {
+              if (is(String, query.var)) {
+                return path(query.var.split("."))(vars)
+              } else {
+                query = map(v => parse(v))(query)
+              }
+            }
+            return query
+          }
+          let batch = []
           for (const v of vars.batch) {
-            const [op, ...query] = v
-            fns[op](query)
+            if (typeof v === "string") {
+              batch = [...batch, ...parse(replace$(v))]
+            } else {
+              batch.push(v)
+            }
+          }
+          for (const v of batch) {
+            let [op, ...query] = v
+            if (op[0] === "%") op = op.slice(1)
+            fns[op](parse(replace$(query)))
           }
         }
       }

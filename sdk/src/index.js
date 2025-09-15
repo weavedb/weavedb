@@ -1,3 +1,3 @@
 import DB from "./db.js"
-export { to23 } from "./utils.js"
+export { wdb23, wdb160 } from "./utils.js"
 export { DB }
