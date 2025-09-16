@@ -202,6 +202,7 @@ const validate = async ({
       }
       from2++
     }
+    arr = sortBy(prop("slot"), arr)
     for (let v of arr) {
       console.log(`${v.slot}: ${v.headers?.query}`)
       if (type === "vec") await db.pwrite(v)
