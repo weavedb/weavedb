@@ -14,7 +14,7 @@
   "dependencies": {
     "ramda": "^0.30.1",
     "wao": "^0.35.5",
-    "wdb-core": "^0.0.14",
+    "wdb-core": "^0.0.15",
     "wdb-sdk": "^0.0.22"
   }
 }

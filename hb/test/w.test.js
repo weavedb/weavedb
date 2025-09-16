@@ -13,6 +13,24 @@ const users = [user1, user2]
 
 describe("W", () => {
   it.only("should run a social app", async () => {
+    const { id, err, db, q: mem } = await init()
+    const dbs = [
+      new DB({ jwk: user1.jwk, id, mem }),
+      new DB({ jwk: user2.jwk, id, mem }),
+    ]
+    assert.equal(err, null)
+    const txx = await db.set("set:reg_owner", {}, "users", wdb23(owner.addr))
+    console.log("users", await db.get("users"))
+    await db.set(
+      "update:profile",
+      { handle: `handle-a` },
+      "users",
+      wdb23(owner.addr),
+    )
+    console.log("users again...", await db.get("users"))
+  })
+
+  it("should run a social app", async () => {
     // init app
     const { id, err, db, q: mem } = await init()
     const dbs = [

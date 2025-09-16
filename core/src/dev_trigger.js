@@ -80,15 +80,15 @@ function trigger({ state, env }) {
       putData: (key, val) => kv.put(dir, key, val),
       delData: key => kv.del(dir, key),
     }
-    const _env = { kv, kv_dir }
+    const _env = { kv, kv_dir, owner: env.owner, id: env.id }
 
     if (op === "del") {
       _state.data = null
       of({ state: _state, env: _env }).map(delData)
     } else {
-      _state.data = merge(data, _state, undefined, env)
+      _state.data = merge(data, _state, undefined, _env)
       if (op === "add") {
-        of({ state: _state, env })
+        of({ state: _state, env: _env })
           .map(genDocID)
           .tap(validateSchema)
           .map(putData)
@@ -170,17 +170,17 @@ function trigger({ state, env }) {
               return _putData({ before, op: "add", data, dir })
             },
             set: v => {
-              const { data, dir, doc, before } = checkDir(v)
+              const { data, dir, doc, before } = checkDir(v, "set")
               if (before) throw Error("doc exists")
               return _putData({ before, data, dir, doc })
             },
             update: v => {
-              const { data, dir, doc, before } = checkDir(v)
+              const { data, dir, doc, before } = checkDir(v, "update")
               if (!before) throw Error("doc doesn't exist")
               return _putData({ before, data, dir, doc })
             },
             upsert: v => {
-              const { data, dir, doc, before } = checkDir(v)
+              const { data, dir, doc, before } = checkDir(v, "upsert")
               return _putData({ before, data, dir, doc })
             },
             del: v => {
