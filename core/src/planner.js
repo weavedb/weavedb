@@ -42,7 +42,12 @@ const pranges = (_ranges, limit, kv, sortByTail = false, cur = {}) => {
     if (prefix !== "" && suffix !== "") suffix = `/${suffix}`
     prefix += suffix
     checkIndex(prefix, v.path, kv)
-    const tree = new BPT(order, [...v.sort, idsorter], kv, prefix)
+    const tree = new BPT({
+      order,
+      sort_fields: [...v.sort, idsorter],
+      kv,
+      prefix,
+    })
     modOpt(v.opt, cur, tree)
     const _cur = { val: null, tree, cur: tree.range(v.opt, true) }
     curs.push(_cur)
@@ -299,7 +304,12 @@ const range = (
 }
 const doc = (id, path, kv) => {
   const prefix = `${compose(join("/"), flatten)([idsorter])}`
-  const tree = new BPT({ order, sort_fields: [idsorter], kv, prefix })
+  const tree = new BPT({
+    order,
+    sort_fields: [idsorter],
+    kv,
+    prefix,
+  })
   return tree.data(id)
 }
 const get = (parsed, kv) => {
