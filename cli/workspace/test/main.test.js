@@ -9,7 +9,7 @@ const actor2 = acc[2]
 
 describe("Social Dapp", () => {
   it.only("should post notes", async () => {
-    const { id, db, q: mem } = await init()
+    const { id, db, q: mem, err } = await init()
     const a1 = new DB({ jwk: actor1.jwk, id, mem })
     const a2 = new DB({ jwk: actor2.jwk, id, mem })
 
@@ -26,6 +26,7 @@ describe("Social Dapp", () => {
     assert(like1.success)
     const like2 = await a2.set("add:like", { object }, "likes")
     assert(like2.success)
+
     const like3 = await a2.set("add:like", { object }, "likes")
     assert(!like3.success)
 

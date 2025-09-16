@@ -127,9 +127,13 @@ function genDocID({ state, env }) {
 }
 
 function putData({ state, env: { kv, kv_dir } }) {
-  const { data, dir, doc } = state
+  const { data, dir, doc, before } = state
   if (isNil(kv.get("_", dir))) throw Error("dir doesn't exist")
-  put(data, doc, [dir.toString()], kv_dir, true) // todo: alwas true may not be the best
+
+  // Use existing before state to determine create flag
+  const create = isNil(before) // true only if document doesn't exist
+
+  put(data, doc, [dir.toString()], kv_dir, create)
   return arguments[0]
 }
 

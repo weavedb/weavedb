@@ -3,7 +3,7 @@ import { resolve } from "path"
 import { readFileSync, writeFileSync } from "fs"
 import { toAddr } from "wao/utils"
 import { DB } from "wdb-sdk"
-import schema from "../db/schema.js"
+import schemas from "../db/schemas.js"
 import auth from "../db/auth.js"
 import indexes from "../db/indexes.js"
 import triggers from "../db/triggers.js"
@@ -28,10 +28,10 @@ const main = async () => {
   const db = new DB({ jwk, hb, url })
   const id = await db.spawn()
   console.log(`DB deployed: ${id}`)
-  for (const name in schema) {
+  for (const name in schemas) {
     const res = await db.mkdir({
       name,
-      schema: schema[name],
+      schema: schemas[name],
       auth: auth[name],
     })
     if (res.success) console.log(`Dir created: ${name}`)

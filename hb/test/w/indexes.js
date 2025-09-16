@@ -37,11 +37,10 @@ export default {
     [["to"], ["date", "desc"]],
     [["to"], ["last", "desc"]],
   ],
-  /*
   timeline: [
     [
       ["broadcast", "array"],
       ["date", "desc"],
     ],
-  ],*/
+  ],
 }
