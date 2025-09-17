@@ -100,6 +100,10 @@ export default defineConfig({
           text: "Quick Start",
           link: "/build/quick-start",
         },
+	{
+          text: "Advanced Start",
+          link: "/build/advanced-start",
+        },
         {
           text: "Data Schemas",
           link: "/build/schemas",
@@ -115,10 +119,6 @@ export default defineConfig({
         {
           text: "Triggers",
           link: "/build/triggers",
-        },
-        {
-          text: "Building Social Dapp",
-          link: "/build/social-dapp",
         },
         {
           text: "ZK Circuits",
