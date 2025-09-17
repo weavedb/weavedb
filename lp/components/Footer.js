@@ -386,7 +386,7 @@ export default function Footer() {
                 </li>
                 <li style={{ marginBottom: "12px" }}>
                   <a
-                    href="https://docs.weavedb.dev/tokenomics/tokenomics"
+                    href="https://docs.weavedb.dev/tokenomics/allocation"
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{

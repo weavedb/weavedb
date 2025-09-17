@@ -3129,10 +3129,10 @@ wasm-brotli@^2.0.2:
   resolved "https://registry.yarnpkg.com/wasm-brotli/-/wasm-brotli-2.0.2.tgz#f5317afb0d3e2e5fe90a66b6d61e42939284f1c7"
   integrity sha512-DgjRlpZz9z5br4TjQHSlDHRF9NIuGXHUj3AqO08koDCXz7EYzmPDb7T/6oar5UKLYgPp9Yxc2ImGpx4BMFwbNQ==
 
-wdb-sdk@^0.0.20:
-  version "0.0.20"
-  resolved "https://registry.yarnpkg.com/wdb-sdk/-/wdb-sdk-0.0.20.tgz#6706ee5201f5016065f0060be31917ac56e93b76"
-  integrity sha512-80+t5vaQHqV+/2wW8TrInfIJD/HLepgtteE7fOywwQHj6hbv3z67mvLT+fPyLsQCbdLMsJEWAeOhIhY73/Ox1w==
+wdb-sdk@^0.0.24:
+  version "0.0.24"
+  resolved "https://registry.yarnpkg.com/wdb-sdk/-/wdb-sdk-0.0.24.tgz#c683c66a27c9cef108b3093f3c57312eb7bb4a16"
+  integrity sha512-AC3UHtbfAEplKL9JNDS3tdGpivEVzrsGeVQWU3E1jK+D/wiyPT4AyZ6fYCx7v5AAPj7yfhmwvwEwtLQSOIEKHw==
   dependencies:
     hbsig "^0.1.4"
     wao "^0.35.7"
