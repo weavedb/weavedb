@@ -1,6 +1,6 @@
 {
   "name": "wdb-cli",
-  "version": "0.0.14",
+  "version": "0.0.16",
   "main": "index.js",
   "node": "^18",
   "bin": {
