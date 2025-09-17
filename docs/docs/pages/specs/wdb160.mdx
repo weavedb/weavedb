@@ -20,12 +20,11 @@ WDB160 creates a **uniform 160-bit hash** from any inputs:
 ## Function Signature
 
 ```javascript
-wdb160([inputs, bytes = 20])
+wdb160(inputs)
 ```
 
 ### Parameters
 - **inputs**: Array of values to hash (any JavaScript types)
-- **bytes**: Output size in bytes (default: 20)
 
 ### Returns
 - **String**: URL-safe base64 encoded hash (27 characters)
@@ -34,18 +33,18 @@ wdb160([inputs, bytes = 20])
 
 ```javascript
 // WeaveDB document IDs
-const followId = wdb160([["user123", "user456"]])
+const followId = wdb160(["user123", "user456"])
 // Result: "k2B9mK8vN3pQ7xR5tL6wA9cF1eD"
 
 // Mixed data types
-const complexId = wdb160([[42, "hello", {user: "alice"}]])
+const complexId = wdb160([42, "hello", {user: "alice"}])
 // Result: "xN4mL9rT8kE2vQ6wP5cA1bG7hJ3"
 
 // Blockchain addresses
-const multisigId = wdb160([[
+const multisigId = wdb160([
   "0x742d35Cc6634C0532925a3b8D39391F23169e22F",
   "0x8ba1f109551bD432803012645Hac136c29F657D"
-]])
+])
 ```
 
 ## Advanced Features
@@ -109,7 +108,7 @@ const b64Id = wdb160([["SGVsbG8=", "base64"], ["world"]])
 
 ```javascript
 // Document ID generation
-const relationshipId = wdb160([["follower_addr", "following_addr"]])
+const relationshipId = wdb160(["follower_addr", "following_addr"])
 
 // Schema validation
 const schema = {
@@ -130,8 +129,8 @@ const addresses = [addr1, addr2].sort()
 const id = wdb160([addresses])
 
 // ❌ Order matters - these produce different hashes
-wdb160([["alice", "bob"]])  // Different from:
-wdb160([["bob", "alice"]])
+wdb160(["alice", "bob"])  // Different from:
+wdb160(["bob", "alice"])
 ```
 
 ### **Domain Separation**

@@ -63,13 +63,14 @@ export default class DB {
     if (mem) {
       this.mem = mem
     } else {
-      _hb ??= `http://localhost:10001`
+      _hb = hb ?? `http://localhost:10001`
     }
     if (!jwk && typeof window === "object") jwk = window.arweaveWallet
     this.jwk = jwk
     if (this.jwk && !this.isArConnect()) this.addr = toAddr(jwk.n)
     this.id = id
     this.url = url
+
     if (_hb) this.hb = new HB({ url: _hb, jwk: this.jwk })
     this.db = new HB({ url, jwk: this.jwk })
     this._nonce = 0
