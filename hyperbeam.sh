@@ -1,8 +1,9 @@
 #!/bin/bash
 # monitor_weavedb_group.sh - Keeps WeaveDB running with memory monitoring
 
-MAX_MEM_MB=${1:-1800}
-CHECK_INTERVAL=${2:-10}
+COMMAND=${1:-monitor}
+MAX_MEM_MB=${2:-5000}
+CHECK_INTERVAL=${3:-10}
 
 # Determine the correct HyperBEAM directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -21,7 +22,7 @@ if [ ! -d "$HYPERBEAM_DIR" ]; then
     exit 1
 fi
 
-WEAVEDB_URL="http://localhost:10001/~weavedb@1.0/start"
+WEAVEDB_URL="http://localhost:10001/~weavedb@1.0/$COMMAND"
 MAX_WAIT_TIME=180  # Maximum seconds to wait for service to be ready
 
 echo "========================================"
