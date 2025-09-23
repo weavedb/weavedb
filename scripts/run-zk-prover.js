@@ -7,6 +7,7 @@ import { HB } from "wao"
 import zkjson from "../hb/src/zkjson.js"
 let {
   vid,
+  cid = false,
   port = 6365,
   hb = `http://localhost:10001`,
   db = ".db/zk",
@@ -14,6 +15,7 @@ let {
   alchemy_key,
   priv_key,
 } = yargs(process.argv.slice(2)).string("commit").argv
+
 let zkp = null
 const query = async (hb, ...q) => {
   return (
@@ -27,7 +29,7 @@ const query = async (hb, ...q) => {
 }
 const check = async opt => {
   try {
-    await zkjson({ ...opt, port })
+    await zkjson({ ...opt, port, cid })
   } catch (e) {
     console.log(e)
   }

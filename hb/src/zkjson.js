@@ -14,7 +14,7 @@ import {
 } from "ethers"
 let zkhash = null
 import { open } from "lmdb"
-import { DB as ZKDB } from "zkjson"
+import { NFT, DB as ZKDB } from "zkjson"
 let zkdb = null
 let cols = {}
 let io = null
@@ -171,10 +171,26 @@ const decodeBuf = async (buf, sql) => {
   return update
 }
 
-const startServer = ({ port, proof }) => {
+const startServer = ({ port, proof, proof_cid }) => {
   const app = express()
   app.use(cors())
   app.use(bodyParser.json())
+  if (proof_cid) {
+    app.post("/cid", async (req, res) => {
+      let zkp = null
+      let success = false
+      let error = null
+      const { cid } = req.body
+      try {
+        zkp = await proof_cid(req.body)
+        success = true
+      } catch (e) {
+        console.log(e)
+        error = e.toString()
+      }
+      res.json({ success, zkp, error })
+    })
+  }
   app.post("/zkp", async (req, res) => {
     let zkp = null
     let success = false
@@ -219,6 +235,7 @@ const zkjson = async ({
   dbpath,
   hb,
   pid,
+  cid = false,
   sql,
   port,
   dbpath_hb,
@@ -298,16 +315,49 @@ const zkjson = async ({
     const key = [
       params.col_id,
       params.id,
-      params.id,
+      params.path,
       params.query ? JSON.stringify(params.query) : null,
     ]
     console.log("generating zkp...", dir, doc)
     console.log(params)
     const zkp = io.get(key) ?? (await zkdb.genProof(params))
-    io.put(key, zkp)
+    await io.put(key, zkp)
     return zkp
   }
-  if (port && !server) server = startServer({ port, proof })
+  const proof_cid = !cid
+    ? null
+    : async ({ dir, doc, path, cid, query }) => {
+        const json = io.get(`${dir}/${doc}`)
+        console.log("json", dir, doc, json)
+        let params = {
+          json: json?.json ?? null,
+          dir,
+          path,
+          id: doc,
+        }
+        if (query) params.query = query
+        if (json?.cid !== cid) throw Error("No CID found")
+        const key = [
+          "cid",
+          cid,
+          path,
+          params.query ? JSON.stringify(params.query) : null,
+        ]
+        console.log("generating zkp for cid...", key)
+        const zknft = new NFT({
+          wasm: resolve(import.meta.dirname, "circom/ipfs/index_js/index.wasm"),
+          zkey: resolve(import.meta.dirname, "circom/ipfs/index_0001.zkey"),
+          json: params.json,
+          size_val: 34,
+          size_path: 5,
+        })
+
+        const zkp = io.get(key) ?? (await zknft.zkp(path))
+        await io.put(key, zkp)
+        return zkp
+      }
+
+  if (port && !server) server = startServer({ port, proof, proof_cid })
   if (update && commit && committed_height < height) {
     console.log("committing hash...", commit)
     const provider = new JsonRpcProvider(
@@ -324,7 +374,7 @@ const zkjson = async ({
       io_hb.put("committed_height", committed_height)
     }
   }
-  return { server, proof, update }
+  return { server, proof, update, proof_cid }
 }
 
 export default zkjson
