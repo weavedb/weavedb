@@ -46,10 +46,10 @@
     "node-sql-parser": "^5.3.9",
     "ramda": "^0.30.1",
     "wao": "^0.35.5",
-    "wdb-core": "^0.0.16",
+    "wdb-core": "^0.0.17",
     "wdb-sdk": "^0.0.24",
     "yargs": "^17.7.2",
-    "zkjson": "^0.6.1"
+    "zkjson": "^0.7.1"
   },
   "devDependencies": {
     "esbuild": "^0.25.5"

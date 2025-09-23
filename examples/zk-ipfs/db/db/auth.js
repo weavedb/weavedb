@@ -5,8 +5,10 @@ export default {
       [
         ["fields()", ["json"]],
         ["=$cid", ["cid()", "$req.json"]],
+        ["=$json", ["get()", ["ipfs", ["cid", "==", "$cid"]]]],
+        ["=$available", ["isEmpty", "$json"]],
         ["mod()", { cid: "$cid" }],
-        ["allow()"],
+        ["allowifall()", ["$available"]],
       ],
     ],
   ],

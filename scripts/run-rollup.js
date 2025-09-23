@@ -3,7 +3,7 @@ import { resolve } from "path"
 import yargs from "yargs"
 import { readFileSync } from "fs"
 let {
-  port = 6363,
+  port = 6364,
   hb = 10001,
   db = ".db",
   wallet = "HyperBEAM/.wallet.json",

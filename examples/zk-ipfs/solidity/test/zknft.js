@@ -5,11 +5,6 @@ const { readFileSync } = require("fs")
 const { expect } = require("chai")
 const { DB } = require("wdb-sdk")
 
-const jwk = JSON.parse(
-  readFileSync(resolve(__dirname, "../../HyperBEAM/.wallet.json"), "utf8"),
-)
-const id = "qst6b-1ce4wrftig7k0ucnmfmy0bnrk3emazaqgijsq"
-const wait = ms => new Promise(res => setTimeout(() => res(), ms))
 async function deploy() {
   const [owner, user] = await ethers.getSigners()
   const VerifierIPFS = await ethers.getContractFactory(
@@ -22,16 +17,16 @@ async function deploy() {
 }
 const wasm = resolve(
   __dirname,
-  "../../circom/build/circuits/ipfs/index_js/index.wasm",
+  "../../../../circom/build/circuits/ipfs/index_js/index.wasm",
 )
 const zkey = resolve(
   __dirname,
-  "../../circom/build/circuits/ipfs/index_0001.zkey",
+  "../../../../circom/build/circuits/ipfs/index_0001.zkey",
 )
 
-describe("MyRollup", function () {
+describe("zkNFT", function () {
   this.timeout(0)
-  it("should query WeaveDB from Solidity", async function () {
+  it("should query NFT metadata from Solidity", async function () {
     const { zknft, owner, user } = await loadFixture(deploy)
     const json = {
       str: "Hello, World!",
