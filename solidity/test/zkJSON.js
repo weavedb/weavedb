@@ -11,13 +11,12 @@ const jwk = JSON.parse(
 const id = "qst6b-1ce4wrftig7k0ucnmfmy0bnrk3emazaqgijsq"
 const wait = ms => new Promise(res => setTimeout(() => res(), ms))
 async function deploy() {
-  const [committer] = await ethers.getSigners()
   const VerifierDB = await ethers.getContractFactory(
-    "zkjson/contracts/verifiers/verifier_db.sol:Groth16VerifierDB",
+    "contracts/VerifierDB.sol:VerifierDB",
   )
   const verifierDB = await VerifierDB.deploy()
   const ZKDB = await ethers.getContractFactory("NORU")
-  return (zkdb = await ZKDB.deploy(verifierDB.target, committer.address))
+  return (zkdb = await ZKDB.deploy(verifierDB.target))
 }
 
 describe("MyRollup", function () {
