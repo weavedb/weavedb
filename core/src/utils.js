@@ -1,4 +1,5 @@
 import { validate } from "jsonschema"
+import { hash } from "fast-sha256"
 import _fpjson from "fpjson-lang"
 const fpjson = _fpjson.default || _fpjson
 import { replace$ } from "./fpjson.js"
@@ -312,7 +313,63 @@ function to64(from) {
     .replace(/=/g, "")
 }
 
+const ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+const BASE = ALPHABET.length
+const LEADER = ALPHABET.charAt(0)
+const FACTOR = Math.log(BASE) / Math.log(256)
+const iFACTOR = Math.log(256) / Math.log(BASE)
+
+function toCID(source) {
+  if (source instanceof Uint8Array);
+  else if (ArrayBuffer.isView(source)) {
+    source = new Uint8Array(source.buffer, source.byteOffset, source.byteLength)
+  } else if (Array.isArray(source)) source = Uint8Array.from(source)
+  if (!(source instanceof Uint8Array)) {
+    throw new TypeError("Expected Uint8Array")
+  }
+  if (source.length === 0) return ""
+
+  let zeroes = 0
+  let length = 0
+  let pbegin = 0
+  let pend = source.length
+  while (pbegin !== pend && source[pbegin] === 0) {
+    pbegin++
+    zeroes++
+  }
+
+  let size = ((pend - pbegin) * iFACTOR + 1) >>> 0
+  let b58 = new Uint8Array(size)
+  while (pbegin !== pend) {
+    let carry = source[pbegin]
+    let i = 0
+    for (
+      let it1 = size - 1;
+      (carry !== 0 || i < length) && it1 !== -1;
+      it1--, i++
+    ) {
+      carry += (256 * b58[it1]) >>> 0
+      b58[it1] = carry % BASE >>> 0
+      carry = (carry / BASE) >>> 0
+    }
+    if (carry !== 0) throw new Error("Non-zero carry")
+    length = i
+    pbegin++
+  }
+  let it2 = size - length
+  while (it2 !== size && b58[it2] === 0) it2++
+  let str = LEADER.repeat(zeroes)
+  for (; it2 < size; ++it2) str += ALPHABET.charAt(b58[it2])
+  return str
+}
+
+function cid(json) {
+  const hashBytes = hash(new TextEncoder().encode(JSON.stringify(json)))
+  return toCID(new Uint8Array([18, hashBytes.length, ...Array.from(hashBytes)]))
+}
+
 export {
+  cid,
   wdb160,
   wdb23,
   checkDocID,

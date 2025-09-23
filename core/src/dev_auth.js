@@ -2,7 +2,12 @@ import { includes, isNil, mergeLeft } from "ramda"
 import { of } from "monade"
 import { fpj, ac_funcs } from "./fpjson.js"
 import read from "./dev_read.js"
-import { wdb160 as _wdb160, wdb23 as _wdb23, checkDocID } from "./utils.js"
+import {
+  cid as _cid,
+  wdb160 as _wdb160,
+  wdb23 as _wdb23,
+  checkDocID,
+} from "./utils.js"
 
 function anyone() {
   return arguments[0]
@@ -96,7 +101,8 @@ function default_auth({
   }
   const wdb23 = v => [_wdb23(v), false]
   const wdb160 = v => [_wdb160(v), false]
-  const fns = { get, wdb23, wdb160 }
+  const cid = v => [_cid(v), false]
+  const fns = { get, wdb23, wdb160, cid }
   const fn =
     dir[0] === "_"
       ? {

@@ -23,6 +23,7 @@ import {
   genDocID,
   wdb23,
   wdb160,
+  cid,
 } from "./utils.js"
 
 function trigger({ state, env }) {
@@ -135,6 +136,7 @@ function trigger({ state, env }) {
           const fns = {
             wdb23: v => [wdb23(v), false],
             wdb160: v => [wdb160(v), false],
+            cid: v => [cid(v), false],
             get: v => {
               const [dir, doc] = v
               if (dir[0] === "_") return [kv.get(...v), false]
