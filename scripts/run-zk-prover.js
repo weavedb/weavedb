@@ -10,6 +10,7 @@ let {
   cid = false,
   port = 6365,
   hb = `http://localhost:10001`,
+  config,
   db = ".db/zk",
   commit,
   alchemy_key,
@@ -17,6 +18,7 @@ let {
 } = yargs(process.argv.slice(2)).string("commit").argv
 
 let zkp = null
+let _config = null
 const query = async (hb, ...q) => {
   return (
     (
@@ -36,20 +38,31 @@ const check = async opt => {
   setTimeout(() => check(opt), 10000)
 }
 const main = async () => {
-  const dbpath = resolve(process.cwd(), db, "db", vid)
-  const dbpath_hb = resolve(process.cwd(), db, "wal", vid)
-  console.log(`dbpath: ${dbpath}`)
-  const opt = {
-    pid: vid,
-    hb,
-    dbpath,
-    dbpath_hb,
-    commit,
-    alchemy_key,
-    priv_key,
+  if (config) {
+    try {
+      _config = JSON.parse(readFileSync(resolve(process.cwd(), config)))
+    } catch (e) {
+      console.log(e)
+      process.exit()
+    }
   }
-  console.log(`vid: ${vid}`)
-  check(opt)
+  const dbs = _config?.dbs ?? [vid]
+  for (const vid of dbs) {
+    const dbpath = resolve(process.cwd(), db, "db", vid)
+    const dbpath_hb = resolve(process.cwd(), db, "wal", vid)
+    console.log(`dbpath: ${dbpath}`)
+    const opt = {
+      pid: vid,
+      hb,
+      dbpath,
+      dbpath_hb,
+      commit,
+      alchemy_key,
+      priv_key,
+    }
+    console.log(`vid: ${vid}`)
+    check(opt)
+  }
 }
 
 main()

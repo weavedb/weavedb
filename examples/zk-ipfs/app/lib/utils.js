@@ -55,7 +55,7 @@ export const getDB = () => dbInstance
 // Database Functions
 export const fetchPosts = async db => {
   if (!db) return []
-  return await db.cget("ipfs", ["cid"], 10)
+  return await db.cget("ipfs", ["date", "desc"], 10)
 }
 
 export const searchByCID = async (db, cid) => {
@@ -576,6 +576,7 @@ export const generateZKProof = async (cid, docId, tokenId, path) => {
       dir: "ipfs",
       doc: docId || `token-${tokenId}`,
       path: path?.trim() || "root",
+      pid: process.env.NEXT_PUBLIC_ZKP_ID,
     }),
   })
 
