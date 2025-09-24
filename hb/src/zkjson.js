@@ -261,7 +261,6 @@ const zkjson = async ({
       proof: null,
       proof_cid: null,
     }
-    default_pid = pid
   }
   dbs[pid].io ??= open({ path: dbpath })
   dbs[pid].io_hb ??= open({ path: dbpath_hb })
@@ -383,6 +382,7 @@ const zkjson = async ({
   dbs[pid].proof ??= proof
   dbs[pid].proof_cid ??= proof_cid
   if (port && !server) {
+    default_pid = pid
     server = startServer({ port })
     addServer({ port })
   }

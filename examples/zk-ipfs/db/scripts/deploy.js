@@ -12,7 +12,7 @@ const {
   wallet,
   hb = "http://localhost:10001",
   db: url = "http://localhost:6364",
-  id,
+  id: _id,
 } = yargs(process.argv.slice(2)).argv
 let jwk = null
 try {
@@ -21,7 +21,7 @@ try {
   console.log("the wrong wallet location")
   process.exit()
 }
-
+let id = _id
 const main = async () => {
   console.log(`HyperBEAM: ${hb}`)
   console.log(`DB Rollup: ${url}`)
@@ -29,34 +29,6 @@ const main = async () => {
   let db = null
   if (id) {
     db = new DB({ jwk, hb, url, id })
-    const stat = await db.stat("ipfs")
-    console.log(stat.schema)
-    console.log(JSON.stringify(stat.auth[0][1]))
-    console.log(await db.cget("ipfs"))
-    return
-    const res = await db.setSchema(
-      {
-        type: "object",
-        required: ["cid", "json", "date", "owner"],
-        properties: {
-          cid: {
-            type: "string",
-            pattern:
-              "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{46}$",
-          },
-          json: { type: "object" },
-          date: { type: "integer" },
-          owner: {
-            type: "string",
-            pattern: "^[0-9a-zA-Z_-]{43}$",
-          },
-        },
-        additionalProperties: false,
-      },
-      "ipfs",
-    )
-    console.log(res)
-    process.exit()
   } else {
     db = new DB({ jwk, hb, url })
     id = await db.spawn()
