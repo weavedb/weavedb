@@ -5,6 +5,7 @@ import bodyParser from "body-parser"
 import abi from "./zkdb_ab.js"
 import { isNil, isEmpty } from "ramda"
 import { resolve } from "path"
+import { json, encode, Encoder, decode, Decoder } from "arjson"
 import {
   ethers,
   Wallet,
@@ -15,12 +16,11 @@ import {
 let zkhash = null
 import { open } from "lmdb"
 import { NFT, DB as ZKDB } from "zkjson"
-let zkdb = null
-let cols = {}
-let io = null
-let io_hb = null
-import { json, encode, Encoder, decode, Decoder } from "arjson"
-let wkv = io
+
+let dbs = {}
+let app = null
+let default_pid = null
+
 function frombits(bitArray) {
   const bitStr = bitArray.join("")
   const byteCount = Math.ceil(bitStr.length / 8)
@@ -111,14 +111,14 @@ function toInsert(schema, data, primary = "id") {
 }
 
 let schemas = {}
-const decodeBuf = async (buf, sql) => {
+const decodeBuf = async (buf, sql, pid) => {
   let update = false
-  if (!zkdb) {
-    zkdb = new ZKDB({
+  if (!dbs[pid].zkdb) {
+    dbs[pid].zkdb = new ZKDB({
       wasm: resolve(import.meta.dirname, "circom/db/index_js/index.wasm"),
       zkey: resolve(import.meta.dirname, "circom/db/index_0001.zkey"),
     })
-    await zkdb.init()
+    await dbs[pid].zkdb.init()
   }
   const q = Uint8Array.from(buf)
   const d = new Decoder()
@@ -135,75 +135,64 @@ const decodeBuf = async (buf, sql) => {
         if (/^_\//.test(v[0])) {
           if (v[0].split("/")[1][0] !== "_") {
             const table_name = v[0].split("/")[1]
-            console.log("add table:", table_name)
+            console.log(`[${pid}]`, "add table:", table_name)
             schemas[table_name] = { primary: data.primary, schema: data.schema }
             sql.exec(schema2sql(data.schema, data.primary, data.auto_inc))
           }
         } else if (!/^_/.test(v[0])) {
           const table_name = v[0].split("/")[0]
-          console.log("add data:", v[0], data)
+          console.log(`[${pid}]`, "add data:", v[0], data)
           const schema = schemas[table_name]
           const insert = toInsert(schema.schema, data, schema.primary)
           sql.exec(insert)
         }
       } catch (e) {
-        console.log(e)
+        console.log(`[${pid}]`, e)
       }
     }
 
     const [dir, doc] = v[0].split("/")
-    if (!(dir === "_" && isNil(data))) await io.put(v[0], data)
-    if (dir === "_" && !isNil(data?.index) && isNil(cols[doc])) {
-      cols[doc] = data.index
+    if (!(dir === "_" && isNil(data))) await dbs[pid].io.put(v[0], data)
+    if (dir === "_" && !isNil(data?.index) && isNil(dbs[pid].cols[doc])) {
+      dbs[pid].cols[doc] = data.index
       update = true
-      await zkdb.addCollection(data.index)
+      await dbs[pid].zkdb.addCollection(data.index)
     }
     try {
-      await zkdb.insert(cols[dir], doc, data)
+      await dbs[pid].zkdb.insert(dbs[pid].cols[dir], doc, data)
       update = true
-      console.log("added to zk tree", dir, doc, data)
-      //const hash = zkdb.tree.F.toObject(zkdb.tree.root).toString()
+      console.log(`[${pid}]`, "added to zk tree", dir, doc, data)
+      //const hash = dbs[pid].zkdb.tree.F.toObject(dbs[pid].zkdb.tree.root).toString()
     } catch (e) {
-      console.log(e)
-      console.log("zk error", data)
+      console.log(`[${pid}]`, e)
+      console.log(`[${pid}]`, "zk error", data)
     }
   }
   return update
 }
-
-const startServer = ({ port, proof, proof_cid }) => {
-  const app = express()
-  app.use(cors())
-  app.use(bodyParser.json())
-  if (proof_cid) {
-    app.post("/cid", async (req, res) => {
-      let zkp = null
-      let success = false
-      let error = null
-      const { cid } = req.body
-      try {
-        zkp = await proof_cid(req.body)
-        success = true
-      } catch (e) {
-        console.log(e)
-        error = e.toString()
-      }
-      res.json({ success, zkp, error })
-    })
-  }
+const addServer = ({ port }) => {
+  app.post("/cid", async (req, res) => {
+    let zkp = null
+    let success = false
+    let error = null
+    let pid
+    const { cid } = req.body
+    try {
+      pid = req.body.pid ?? default_pid
+      zkp = await dbs[pid].proof_cid(req.body)
+      success = true
+    } catch (e) {
+      console.log(`[${pid}]`, e)
+      error = e.toString()
+    }
+    res.json({ success, zkp, error })
+  })
   app.post("/zkp", async (req, res) => {
     let zkp = null
     let success = false
     let error = null
     let dirid = null
-    try {
-      zkp = await proof(req.body)
-      dirid = io.get(`_/${req.body.dir}`)?.index
-      success = true
-    } catch (e) {
-      console.log(e)
-      error = e.toString()
-    }
+    let pid = null
     const toInt = base64 => {
       const buffer = Buffer.from(base64, "base64")
       let result = 0n
@@ -212,7 +201,18 @@ const startServer = ({ port, proof, proof_cid }) => {
       }
       return result.toString()
     }
-    const hash = zkdb.tree.F.toObject(zkdb.tree.root).toString()
+    try {
+      pid = req.body.pid ?? default_pid
+      zkp = await dbs[pid]?.proof(req.body)
+      dirid = dbs[pid].io.get(`_/${req.body.dir}`)?.index
+      success = true
+      const hash = dbs[pid].zkdb.tree.F.toObject(
+        dbs[pid].zkdb.tree.root,
+      ).toString()
+    } catch (e) {
+      console.log(`[${pid}]`, e)
+      error = e.toString()
+    }
     res.json({
       success,
       zkp,
@@ -222,15 +222,21 @@ const startServer = ({ port, proof, proof_cid }) => {
       dirid,
     })
   })
+}
+const startServer = ({ port }) => {
+  app = express()
+  app.use(cors())
+  app.use(bodyParser.json())
   return app.listen(port, () => console.log(`ZK Prover on port ${port}`))
 }
 
-let i = 0
-let from = 0
-let height = -1
-let committed_height = -1
+//let i = 0
+//let from = 0
+//let height = -1
+//let committed_height = -1
 let server = null
 // preserve zkdb state somehow and continue
+
 const zkjson = async ({
   dbpath,
   hb,
@@ -243,40 +249,50 @@ const zkjson = async ({
   alchemy_key,
   priv_key,
 }) => {
-  io ??= open({ path: dbpath })
-  io_hb ??= open({ path: dbpath_hb })
-  const exists = io_hb.get("height") ?? -1
-  if (committed_height === -1) {
-    committed_height = io_hb.get("committed_height") ?? -1
+  if (!dbs[pid]) {
+    dbs[pid] = {
+      from: 0,
+      height: -1,
+      committed_height: -1,
+      io: null,
+      io_hb: null,
+      zkdb: null,
+      cols: {},
+      proof: null,
+      proof_cid: null,
+    }
+    default_pid = pid
+  }
+  dbs[pid].io ??= open({ path: dbpath })
+  dbs[pid].io_hb ??= open({ path: dbpath_hb })
+  const exists = dbs[pid].io_hb.get("height") ?? -1
+  if (dbs[pid].committed_height === -1) {
+    dbs[pid].committed_height = dbs[pid].io_hb.get("committed_height") ?? -1
   }
   let res = null
   let to = 0
   let plus = 100
-  if (exists > height) {
+  if (exists > dbs[pid].height) {
     plus = 1
     res = { assignments: {} }
-    for (let i = height + 1; i <= exists; i++) {
-      res.assignments[Number(i).toString()] = io_hb.get(["data", i])
+    for (let i = dbs[pid].height + 1; i <= exists; i++) {
+      res.assignments[Number(i).toString()] = dbs[pid].io_hb.get(["data", i])
       to = i
       plus += 1
     }
   }
   if (res === null) {
-    if (height) {
-      from = height + 1
-      i = height + 1
-    }
-    to = from + 99
-
-    res = await getMsgs({ pid, hb, from, to })
+    if (dbs[pid].height) dbs[pid].from = dbs[pid].height + 1
+    to = dbs[pid].from + 99
+    //console.log(`[${pid}]`, "getting...", dbs[pid].from, to)
+    res = await getMsgs({ pid, hb, from: dbs[pid].from, to })
   }
   let update = false
   while (!isEmpty(res.assignments)) {
     for (let k in res.assignments ?? {}) {
       const m = res.assignments[k]
-      console.log(m)
-      if (io_hb) {
-        io_hb.put(["data", m.slot], m)
+      if (dbs[pid].io_hb) {
+        dbs[pid].io_hb.put(["data", m.slot], m)
       }
       if (m.slot === 0) {
         let from = null
@@ -291,20 +307,28 @@ const zkjson = async ({
         if (m.body.zkhash) {
           zkhash = m.body.zkhash
           const buf = Buffer.from(m.body.data, "base64")
-          if (await decodeBuf(buf, sql)) update = true
+          if (await decodeBuf(buf, sql, pid)) update = true
         }
       }
-      height = m.slot
+      dbs[pid].height = m.slot
     }
-    io_hb.put("height", height)
-    from += plus
-    to = from + 100
-    console.log("height", height, "from:", from, "to:", to)
-    res = await getMsgs({ pid, hb, from, to })
+    dbs[pid].io_hb.put("height", dbs[pid].height)
+    dbs[pid].from += plus
+    to = dbs[pid].from + 100
+    console.log(
+      `[${pid}]`,
+      "height",
+      dbs[pid].height,
+      "from:",
+      dbs[pid].from,
+      "to:",
+      to,
+    )
+    res = await getMsgs({ pid, hb, from: dbs[pid].from, to })
   }
   const proof = async ({ dir, doc, path, query }) => {
-    const col_id = cols[dir]
-    const json = io.get(`${dir}/${doc}`)
+    const col_id = dbs[pid].cols[dir]
+    const json = dbs[pid].io.get(`${dir}/${doc}`)
     let params = {
       json,
       col_id,
@@ -318,17 +342,17 @@ const zkjson = async ({
       params.path,
       params.query ? JSON.stringify(params.query) : null,
     ]
-    console.log("generating zkp...", dir, doc)
-    console.log(params)
-    const zkp = io.get(key) ?? (await zkdb.genProof(params))
-    await io.put(key, zkp)
+    console.log(`[${pid}]`, "generating zkp...", dir, doc)
+    console.log(`[${pid}]`, params)
+    const zkp = dbs[pid].io.get(key) ?? (await dbs[pid].zkdb.genProof(params))
+    await dbs[pid].io.put(key, zkp)
     return zkp
   }
   const proof_cid = !cid
     ? null
     : async ({ dir, doc, path, cid, query }) => {
-        const json = io.get(`${dir}/${doc}`)
-        console.log("json", dir, doc, json)
+        const json = dbs[pid].io.get(`${dir}/${doc}`)
+        console.log(`[${pid}]`, "json", dir, doc, json)
         let params = {
           json: json?.json ?? null,
           dir,
@@ -343,7 +367,7 @@ const zkjson = async ({
           path,
           params.query ? JSON.stringify(params.query) : null,
         ]
-        console.log("generating zkp for cid...", key)
+        console.log(`[${pid}]`, "generating zkp for cid...", key)
         const zknft = new NFT({
           wasm: resolve(import.meta.dirname, "circom/ipfs/index_js/index.wasm"),
           zkey: resolve(import.meta.dirname, "circom/ipfs/index_0001.zkey"),
@@ -352,26 +376,32 @@ const zkjson = async ({
           size_path: 5,
         })
 
-        const zkp = io.get(key) ?? (await zknft.zkp(path))
-        await io.put(key, zkp)
+        const zkp = dbs[pid].io.get(key) ?? (await zknft.zkp(path))
+        await dbs[pid].io.put(key, zkp)
         return zkp
       }
-
-  if (port && !server) server = startServer({ port, proof, proof_cid })
-  if (update && commit && committed_height < height) {
-    console.log("committing hash...", commit)
+  dbs[pid].proof ??= proof
+  dbs[pid].proof_cid ??= proof_cid
+  if (port && !server) {
+    server = startServer({ port })
+    addServer({ port })
+  }
+  if (update && commit && dbs[pid].committed_height < dbs[pid].height) {
+    console.log(`[${pid}]`, "committing hash...", commit)
     const provider = new JsonRpcProvider(
       `https://eth-sepolia.g.alchemy.com/v2/${alchemy_key}`,
     )
     const wallet = new Wallet(priv_key, provider)
     const contract = new ethers.Contract(commit, abi, wallet)
-    const hash = zkdb.tree.F.toObject(zkdb.tree.root).toString()
+    const hash = dbs[pid].zkdb.tree.F.toObject(
+      dbs[pid].zkdb.tree.root,
+    ).toString()
     const tx = await contract.commitRoot(hash)
     const receipt = await tx.wait()
     if (receipt.status) {
-      committed_height = height
-      console.log("hash committed!!", hash)
-      io_hb.put("committed_height", committed_height)
+      dbs[pid].committed_height = dbs[pid].height
+      console.log(`[${pid}]`, "hash committed!!", hash)
+      dbs[pid].io_hb.put("committed_height", dbs[pid].committed_height)
     }
   }
   return { server, proof, update, proof_cid }
