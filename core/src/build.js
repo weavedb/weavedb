@@ -56,7 +56,7 @@ const build = ({
             .val()
           return { ...state, msg: msg2 }
         } catch (e) {
-          console.log(e)
+          //console.log(e)
           currentKv.reset()
           throw e
         }

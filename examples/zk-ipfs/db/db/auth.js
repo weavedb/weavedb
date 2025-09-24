@@ -7,7 +7,7 @@ export default {
         ["=$cid", ["cid()", "$req.json"]],
         ["=$json", ["get()", ["ipfs", ["cid", "==", "$cid"]]]],
         ["=$available", ["isEmpty", "$json"]],
-        ["mod()", { cid: "$cid" }],
+        ["mod()", { cid: "$cid", date: "$ts", owner: "$signer" }],
         ["allowifall()", ["$available"]],
       ],
     ],

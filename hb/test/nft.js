@@ -5,6 +5,7 @@ import zkjson from "../src/zkjson.js"
 import { spawn } from "child_process"
 import { acc, HyperBEAM } from "wao/test"
 import { DB } from "../../sdk/src/index.js"
+import { mem } from "../../core/src/index.js"
 import {
   get,
   set,
@@ -96,8 +97,74 @@ const validateDB = async ({ hbeam, pid, hb, jwk }) => {
   return { validate_pid, dbpath2 }
 }
 
+const owner = acc[0]
+const actor1 = acc[1]
+const actor2 = acc[2]
+
 describe("Validator", () => {
-  it.only("should validate HB WAL", async () => {
+  it.only("should connect with remote nodes", async () => {
+    const { q } = mem()
+    const db = new DB({ jwk: owner.jwk, mem: q })
+    const pid = await db.init({ id: "nft" })
+    const a1 = new DB({ jwk: actor1.jwk, id: "nft", mem: q })
+    const a2 = new DB({ jwk: actor2.jwk, id: "nft", mem: q })
+    const schema = {
+      type: "object",
+      required: ["cid", "json", "yo"],
+      properties: {
+        cid: {
+          type: "string",
+          pattern:
+            "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{46}$",
+        },
+        json: { type: "object" },
+      },
+      additionalProperties: false,
+    }
+    const schema2 = {
+      type: "object",
+      required: ["cid", "json"],
+      properties: {
+        cid: {
+          type: "string",
+          pattern:
+            "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{46}$",
+        },
+        json: { type: "object" },
+      },
+      additionalProperties: false,
+    }
+
+    await db.mkdir({
+      name: "ipfs",
+      schema,
+      auth: [
+        [
+          "add:json",
+          [
+            ["fields()", ["json"]],
+            ["=$cid", ["cid()", "$req.json"]],
+            ["=$json", ["get()", ["ipfs", ["cid", "==", "$cid"]]]],
+            ["=$available", ["isEmpty", "$json"]],
+            ["mod()", { cid: "$cid" }],
+            ["allowifall()", ["$available"]],
+          ],
+        ],
+      ],
+    })
+    const stat = await db.stat("ipfs")
+    const auth1 = stat.auth[0][1][4]
+    await db.set("add:json", { json: { a: 1 } }, "ipfs")
+    await db.set("add:json", { json: { a: 1 } }, "ipfs")
+    await db.set("add:json", { json: { a: 1 } }, "ipfs")
+    await db.setSchema(schema2, "ipfs")
+    await db.set("add:json", { json: { a: 1 } }, "ipfs")
+    const stat2 = await db.stat("ipfs")
+    const auth2 = stat2.auth[0][1][4]
+    assert.equal((await db.cget("ipfs"))[0].id, "A")
+  })
+
+  it("should validate HB WAL", async () => {
     const { node, pid, hbeam, jwk, hb } = await deployHB({})
     const _hb = new HB({ url: "http://localhost:6364", jwk })
     let { nonce } = await setup({ pid, request: _hb })

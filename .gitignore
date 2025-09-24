@@ -1,3 +1,4 @@
+.env.*
 hardhat.config.js
 circom/
 .env.hyperbeam
