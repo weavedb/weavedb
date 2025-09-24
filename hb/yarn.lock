@@ -4294,10 +4294,10 @@ wdb-core@^0.0.18:
     node-sql-parser "^5.3.11"
     ramda "^0.31.3"
 
-wdb-sdk@^0.0.24:
-  version "0.0.24"
-  resolved "https://registry.yarnpkg.com/wdb-sdk/-/wdb-sdk-0.0.24.tgz#c683c66a27c9cef108b3093f3c57312eb7bb4a16"
-  integrity sha512-AC3UHtbfAEplKL9JNDS3tdGpivEVzrsGeVQWU3E1jK+D/wiyPT4AyZ6fYCx7v5AAPj7yfhmwvwEwtLQSOIEKHw==
+wdb-sdk@^0.0.25:
+  version "0.0.25"
+  resolved "https://registry.yarnpkg.com/wdb-sdk/-/wdb-sdk-0.0.25.tgz#b28cf379f222ab286358b6c492ca759c3c891cb4"
+  integrity sha512-YgXac/pacEtOGpq4rkDVDbjYuta0r8ISaVN3xse+sDZftJ/MUpHhwwSPIfEkpUYa9NqbsCvdEAzRCjuFmq0dcQ==
   dependencies:
     hbsig "^0.1.4"
     wao "^0.35.7"

@@ -206,6 +206,19 @@ export default class DB {
       return json
     }
   }
+  async admin(...args) {
+    const req = await this.db.sign(
+      {
+        path: "/~weavedb@1.0/admin",
+        query: JSON.stringify(args),
+      },
+      { path: false },
+    )
+    const res = await this.db.send(req)
+    console.log(res)
+    return JSON.parse(res.body)
+  }
+
   async nonce(...args) {
     if (!this.addr && this.isArConnect()) {
       await this.jwk.connect([

@@ -4,7 +4,7 @@ import bodyParser from "body-parser"
 import { getKV2, verify } from "./server-utils.js"
 import { mem, db as wdb, queue, io } from "wdb-core"
 //import { mem, db as wdb, queue, io } from "../../core/src/index.js"
-import { includes, map, fromPairs, isNil } from "ramda"
+import { includes, map, fromPairs, isNil, without } from "ramda"
 import { AR, AO } from "wao"
 import { open } from "lmdb"
 import { toAddr } from "hbsig"
@@ -93,6 +93,35 @@ const server = async ({
     } catch (e) {
       console.log(e)
       res.json({ success: false, query, error: e.toString() })
+    }
+  })
+  app.post("/~weavedb@1.0/admin", async (req, res) => {
+    const q = await verify(req)
+    if (!q.valid || q.address !== toAddr(jwk)) {
+      res.json({ success: false, error: "not authorized" })
+    } else {
+      const [op, opt] = q.query
+      try {
+        switch (op) {
+          case "remove_db":
+            if (!includes(opt.id, pids)) {
+              res.json({ success: false, error: "db not found" })
+            } else {
+              pids = without([opt.id], admin_io.get("pids") ?? [])
+              delete dbmap[opt.id]
+              delete dbs[dbmap[opt.id]]
+              delete dbs[opt.id]
+              delete ios[opt.id]
+              await admin_io.put("pids", pids)
+              res.json({ success: true, processes: pids, error: null })
+            }
+            break
+          default:
+            res.json({ success: false, error: "operation not found" })
+        }
+      } catch (e) {
+        res.json({ success: false, error: e.toString() })
+      }
     }
   })
   app.post("/~weavedb@1.0/get", async (req, res) => {
