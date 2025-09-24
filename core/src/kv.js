@@ -6,7 +6,7 @@ const kv_base = (io, fn, sync, methods = {}) => {
   let i = current ? current.i + 1 : 0
   let c = []
   let on = false
-  const get = k => l[k] ?? s[k] ?? io.get(k) ?? null
+  const get = k => clone(l[k] ?? s[k] ?? io.get(k) ?? null)
   const put = (k, v) => (l[k] = v)
   const del = k => put(k, null)
   const reset = cb => {

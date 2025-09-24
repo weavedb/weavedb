@@ -88,7 +88,8 @@ const parse = (query, vars) => {
   return query
 }
 
-function fpj(arr = [], obj = {}, fn = {}) {
+function fpj(_arr = [], obj = {}, fn = {}) {
+  let arr = clone(_arr)
   const exec = v => fpjson(replace$(clone(v)), obj)
   const cmd = (arr, ctx = {}) => {
     let val = null

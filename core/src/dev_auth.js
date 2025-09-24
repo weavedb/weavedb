@@ -1,4 +1,4 @@
-import { includes, isNil, mergeLeft } from "ramda"
+import { includes, isNil, mergeLeft, clone } from "ramda"
 import { of } from "monade"
 import { fpj, ac_funcs } from "./fpjson.js"
 import read from "./dev_read.js"
@@ -138,6 +138,7 @@ function default_auth({
           },
         }
       : fns
+
   for (const v of _dir.auth) {
     if (includes(op, v[0].split(","))) {
       try {

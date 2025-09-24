@@ -12,6 +12,7 @@ const {
   wallet,
   hb = "http://localhost:10001",
   db: url = "http://localhost:6364",
+  id,
 } = yargs(process.argv.slice(2)).argv
 let jwk = null
 try {
@@ -25,9 +26,42 @@ const main = async () => {
   console.log(`HyperBEAM: ${hb}`)
   console.log(`DB Rollup: ${url}`)
   console.log(`Wallet: ${toAddr(jwk.n)}`)
-  const db = new DB({ jwk, hb, url })
-  const id = await db.spawn()
-  console.log(`DB deployed: ${id}`)
+  let db = null
+  if (id) {
+    db = new DB({ jwk, hb, url, id })
+    const stat = await db.stat("ipfs")
+    console.log(stat.schema)
+    console.log(JSON.stringify(stat.auth[0][1]))
+    console.log(await db.cget("ipfs"))
+    return
+    const res = await db.setSchema(
+      {
+        type: "object",
+        required: ["cid", "json", "date", "owner"],
+        properties: {
+          cid: {
+            type: "string",
+            pattern:
+              "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{46}$",
+          },
+          json: { type: "object" },
+          date: { type: "integer" },
+          owner: {
+            type: "string",
+            pattern: "^[0-9a-zA-Z_-]{43}$",
+          },
+        },
+        additionalProperties: false,
+      },
+      "ipfs",
+    )
+    console.log(res)
+    process.exit()
+  } else {
+    db = new DB({ jwk, hb, url })
+    id = await db.spawn()
+    console.log(`DB deployed: ${id}`)
+  }
   for (const name in schemas) {
     const res = await db.mkdir({
       name,
