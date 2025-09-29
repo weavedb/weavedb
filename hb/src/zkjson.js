@@ -250,6 +250,7 @@ const zkjson = async ({
   priv_key,
 }) => {
   if (!dbs[pid]) {
+    default_pid = pid
     dbs[pid] = {
       from: 0,
       height: -1,
@@ -382,7 +383,6 @@ const zkjson = async ({
   dbs[pid].proof ??= proof
   dbs[pid].proof_cid ??= proof_cid
   if (port && !server) {
-    default_pid = pid
     server = startServer({ port })
     addServer({ port })
   }

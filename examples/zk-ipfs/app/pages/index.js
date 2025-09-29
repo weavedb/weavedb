@@ -1003,8 +1003,8 @@ const AboutContent = () => {
           >
             <h3 style={styles.infoBoxTitle}>🔗 zkCID</h3>
             <p style={styles.infoBoxDescription}>
-              Extension of zkJSON to prove JSON content stored with CID. Anyone
-              can generate proofs.
+              Extension of zkJSON to prove JSON content stored with a CID.
+              Anyone can generate proofs.
             </p>
           </div>
 
@@ -1018,8 +1018,8 @@ const AboutContent = () => {
           >
             <h3 style={styles.infoBoxTitle}>♾️ zkIPFS</h3>
             <p style={styles.infoBoxDescription}>
-              Permanent IPFS node storing data on Arweave via WeaveDB with
-              built-in ZK proof generator.
+              A permanent IPFS node storing data on Arweave with built-in ZK
+              proof generation.
             </p>
           </div>
 
@@ -1033,8 +1033,8 @@ const AboutContent = () => {
           >
             <h3 style={styles.infoBoxTitle}>🎨 zkNFT</h3>
             <p style={styles.infoBoxDescription}>
-              ERC721 NFT with zkCID as tokenURI (ipfs://...) allowing queries to
-              offchain meatada.
+              ERC721 NFT with zkCID as tokenURI (ipfs://...) enabling queries to
+              offchain metadata.
             </p>
           </div>
         </div>

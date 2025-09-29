@@ -1,4 +1,5 @@
 zkp.json
+arguments.js
 .env.*
 hardhat.config.js
 circom/

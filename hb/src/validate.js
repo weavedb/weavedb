@@ -2,7 +2,6 @@ import { HB } from "wao"
 import { DatabaseSync } from "node:sqlite"
 import * as lancedb from "@lancedb/lancedb"
 import { kv, db as wdb, vec, sql } from "wdb-core"
-//import { kv, db as wdb, vec, sql } from "../../core/src/index.js"
 import { getMsgs } from "./server-utils.js"
 import { isEmpty, sortBy, prop, isNil } from "ramda"
 import { json, encode, Encoder } from "arjson"
@@ -88,6 +87,8 @@ const buildBundle = async changes => {
     tags: {
       zkhash,
       Action: "Commit",
+      "Data-Protocol": "ao",
+      Variant: "ao.TN.1",
     },
     data: buf.toString("base64"),
   })
@@ -159,6 +160,7 @@ const validate = async ({
   hb,
   validate_pid,
   type = "nosql",
+  format = "ans104",
 }) => {
   v_pid = validate_pid
   v_hb = hb
@@ -182,7 +184,7 @@ const validate = async ({
     i = height.i + 1
   }
   let to = from + 99
-  if (isNil(request)) if (jwk && hb) request = new HB({ url: hb, jwk })
+  if (isNil(request)) if (jwk && hb) request = new HB({ url: hb, jwk, format })
   let res = await getMsgs({ pid, hb, from, to })
   let isData = false
   let from2 = from

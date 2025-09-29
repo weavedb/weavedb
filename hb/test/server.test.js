@@ -15,6 +15,7 @@ import zkjson from "../src/zkjson.js"
 import { spawn } from "child_process"
 import { readFileSync } from "fs"
 import { HyperBEAM } from "wao/test"
+
 import {
   get,
   set,
@@ -80,7 +81,6 @@ const validateDB = async ({ hbeam, pid, hb, jwk }) => {
   const {
     results: { data },
   } = await hbeam.compute({ pid: validate_pid, slot })
-  console.log("validating.....................................................")
   console.log(data)
   return { validate_pid, dbpath2 }
 }
@@ -101,7 +101,6 @@ const validateDB2 = async ({ hbeam, pid, hb, jwk }) => {
   const {
     results: { data },
   } = await hbeam.compute({ pid: validate_pid, slot })
-  console.log("validating.....................................................")
   console.log(data)
   return { validate_pid, dbpath2 }
 }
