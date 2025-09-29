@@ -223,10 +223,10 @@ const validateDB = async ({ hbeam, pid, hb, jwk }) => {
     "execution-device": "weavedb@1.0",
     db: pid,
   })
-  await wait(5000)
+  await wait(10000)
   const dbpath2 = genDir()
   await validate({ pid, hb, dbpath: dbpath2, jwk, validate_pid })
-  await wait(5000)
+  await wait(10000)
   const { slot } = await hbeam.schedule({
     pid: validate_pid,
     tags: { Action: "Query", Query: JSON.stringify(["users"]) },
@@ -283,47 +283,6 @@ describe("Wal", () => {
     ).then(r => r.json())
     assert.equal(2, wal[0].key[1])
     node.stop()
-    hbeam.kill()
-  })
-})
-
-describe("AOS", () => {
-  it.skip("should serve AOS Legacynet", async () => {
-    const port = 10001
-    const sport = 5000
-    const { node, pid, hbeam, jwk, hb } = await deployHB({ sport })
-    const _hb = new HB({ url: "http://localhost:6364", jwk })
-    let { nonce } = await setup({ pid, request: _hb })
-    const _hbeam = new HB({ url: "http://localhost:10001", jwk })
-    const { validate_pid, dbpath2 } = await validateDB({
-      hbeam: _hbeam,
-      pid,
-      hb,
-      jwk,
-    })
-    const src_data = `
-local count = 0
-Handlers.add("Hello", "Hello", function (msg)
-  local data = Send({ Target = msg.DB, Action = "Query",  Query = msg.Query, __HyperBEAM__ = msg.HyperBEAM }).receive().Data
-  msg.reply({ Data = data })
-end)`
-    const server_aos = new Server({ port: sport, log: true })
-    let ao = await new AO({ port: sport }).init(mu.jwk)
-    await ao.postScheduler({ url: `http://localhost:${sport + 3}` })
-    const { p, pid: pid2 } = await ao.deploy({ src_data })
-    const users = await p.m(
-      "Hello",
-      {
-        DB: validate_pid,
-        Query: JSON.stringify(["users"]),
-        Action: "Hello",
-        HyperBEAM: `http://localhost:${port}`,
-      },
-      { timeout: 3000, get: true },
-    )
-    assert.deepEqual(users, [bob])
-    await wait(5000)
-    server_aos.end()
     hbeam.kill()
   })
 })

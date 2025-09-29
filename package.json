@@ -5,12 +5,13 @@
   "scripts": {
     "start": "./hyperbeam.sh",
     "hb": "node scripts/run-hyperbeam.js",
+    "su": "node scripts/run-su.js",
     "rollup": "node scripts/run-rollup.js",
     "validator": "node --experimental-sqlite scripts/run-validator.js",
     "zkp": "node --experimental-sqlite scripts/run-zk-prover.js"
   },
   "dependencies": {
-    "wao": "^0.35.5",
+    "wao": "^0.36.6",
     "wdb-sdk": "^0.0.9"
   }
 }

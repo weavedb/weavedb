@@ -2,12 +2,11 @@ import express from "express"
 import cors from "cors"
 import bodyParser from "body-parser"
 import { getKV2, verify } from "./server-utils.js"
+import { toAddr, httpsig_from, structured_to } from "hbsig"
 import { mem, db as wdb, queue, io } from "wdb-core"
-//import { mem, db as wdb, queue, io } from "../../core/src/index.js"
 import { includes, map, fromPairs, isNil, without } from "ramda"
 import { AR, AO } from "wao"
 import { open } from "lmdb"
-import { toAddr } from "hbsig"
 import recover from "./recover.js"
 import wal from "./wal.js"
 let dbs = {}
@@ -145,17 +144,22 @@ const server = async ({
       res.json({ success: false, ...q })
     }
   })
+  const toMsg = async req => {
+    let msg = {}
+    req?.headers?.forEach((v, k) => {
+      msg[k] = v
+    })
+    if (req.body) msg.body = await req.text?.()
+    return msg
+  }
   app.post("/weavedb/:mid", async (req, res) => {
     const mid = req.params.mid
     const pid = req.query["process-id"]
     let data = null
     if (!dbmap[pid]) {
-      const json = await fetch(
-        `${hb}/${pid}~process@1.0/compute/serialize~json@1.0?slot=0`,
-      ).then(r => r.json())
-      const {
-        process: { db },
-      } = json
+      const res = await fetch(`${hb}/${pid}~process@1.0/compute?slot=0`)
+      const msg = structured_to(httpsig_from(await toMsg(res)))
+      const { db } = msg
       dbmap[pid] = db
     }
     let msg = []
@@ -256,7 +260,12 @@ const server = async ({
   })
 
   const node = app.listen(port, () => console.log(`WeaveDB on port ${port}`))
-  return { stop: () => node.close() }
+  return {
+    stop: () => {
+      console.log("shutting down server...")
+      node.close()
+    },
+  }
 }
 
 export default server

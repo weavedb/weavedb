@@ -176,7 +176,6 @@ const deployHB = async ({ port = 10001, sport, type = "nosql", as = [] }) => {
     dbpath,
     jwk,
     hb,
-    pid,
     port: port2,
     gateway: sport,
   })

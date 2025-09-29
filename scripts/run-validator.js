@@ -34,10 +34,12 @@ const main = async () => {
   console.log(`pid: ${pid}`)
   const jwk = JSON.parse(readFileSync(resolve(process.cwd(), wallet), "utf8"))
   console.log(toAddr(jwk.n))
-  const _hb = new HB({ jwk, url: hb })
+  const _hb = new HB({ jwk, url: hb, format: "ans104" })
   if (!vid) {
     console.log("spawning...", hb)
     const { pid: _vid } = await _hb.spawn({
+      "data-protocol": "ao",
+      variant: "ao.TN.1",
       "execution-device": "weavedb@1.0",
       db: pid,
     })
