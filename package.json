@@ -6,6 +6,7 @@
     "start": "./hyperbeam.sh",
     "hb": "node scripts/run-hyperbeam.js",
     "su": "node scripts/run-su.js",
+    "bundler": "node scripts/run-bundler.js",
     "rollup": "node scripts/run-rollup.js",
     "validator": "node --experimental-sqlite scripts/run-validator.js",
     "zkp": "node --experimental-sqlite scripts/run-zk-prover.js"

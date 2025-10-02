@@ -306,7 +306,7 @@ const zkjson = async ({
       } else {
         if (m.body.zkhash) {
           zkhash = m.body.zkhash
-          const buf = Buffer.from(m.body.data, "base64")
+          const buf = m.body.data //Buffer.from(m.body.data, "base64")
           if (await decodeBuf(buf, sql, pid)) update = true
         }
       }

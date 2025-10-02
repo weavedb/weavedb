@@ -137,7 +137,8 @@ while true; do
 
     # Start rebar3 with input from the pipe to keep it alive
     # Using setsid to create new process group
-    setsid bash -c "cd '$HYPERBEAM_DIR' && exec rebar3 as weavedb shell --eval 'hb:start_mainnet(#{ port => 10001, priv_key_location => <<\".wallet.json\">> })' < '$PIPE_FILE'" &
+    #setsid bash -c "cd '$HYPERBEAM_DIR' && exec rebar3 as weavedb shell --eval 'hb:start_mainnet(#{ port => 10001, priv_key_location => <<\".wallet.json\">>, bundler_httpsig => <<\"http://localhost:4001\">> })' < '$PIPE_FILE'" &
+    setsid bash -c "cd '$HYPERBEAM_DIR' && exec rebar3 as weavedb shell --eval 'hb:start_mainnet(#{ port => 10001, priv_key_location => <<\".wallet.json\">>, bundler_ans104 => false, bundler_httpsig => <<\"http://localhost:4001\">> })' < '$PIPE_FILE'" &    
     CHILD_PID=$!
 
     # Keep the pipe open

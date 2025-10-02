@@ -1,5 +1,11 @@
 import { httpbis, createVerifier } from "http-message-signatures"
-import { verify as _verify, httpsig_from, structured_to, toAddr } from "hbsig"
+import {
+  verify as _verify,
+  httpsig_from,
+  structured_to,
+  toAddr,
+  result,
+} from "wao"
 const { verifyMessage } = httpbis
 import { createPublicKey } from "node:crypto"
 import { open } from "lmdb"
@@ -8,7 +14,6 @@ const Arweave = _Arweave.default ?? _Arweave
 const arweave = Arweave.init()
 import { connect, createSigner } from "@permaweb/aoconnect"
 import { kv } from "wdb-core"
-//import { kv } from "../../core/src/index.js"
 
 const toMsg = async req => {
   let req2 = {}
@@ -147,10 +152,9 @@ const getMsgs = async ({ hb, pid, from = 0, to = 99 }) => {
   let params = `target=${pid}`
   if (from) params += `&from=${from}`
   if (to) params += `&to=${to}`
-  const res = await fetch(
-    `${hb}/~scheduler@1.0/schedule/serialize~json@1.0?${params}`,
-  ).then(r => r.json())
-  return res
+  const res = await fetch(`${hb}/~scheduler@1.0/schedule?${params}`)
+  const { out } = await result(res)
+  return out
 }
 
 export { verify, parseSI, getKV, getMsgs, getKV2 }
