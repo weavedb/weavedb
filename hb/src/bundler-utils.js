@@ -67,7 +67,8 @@ const _upload = (di, attempt = 0) =>
       }
     }
   })
-export const upload = async di => {
+export const upload = async (di, mock = false) => {
+  if (mock) return { err: false, res: { status: 200 } }
   let res = { err: true, res: { status: 501 } }
   let attempt = 0
   do {

@@ -10,11 +10,13 @@ let timestamp = 0
 let height = 0
 let last_checked = 0
 let nonce = 0
-
+let mock = false
 let msgs = {}
+let assigns = {}
 let ongoing = {}
 let undone = {}
 let unsolved = {}
+let dbs = {}
 let io = null
 let jwk = null
 
@@ -89,6 +91,7 @@ const processMessage = async ({ out, msg, id, data: _data }) => {
       pid: out.process,
       data: _data,
     })
+    console.log(di.id, id)
     const valid = await di.isValid()
     console.log("new message:", valid, id)
     if (!valid) {
@@ -98,10 +101,14 @@ const processMessage = async ({ out, msg, id, data: _data }) => {
       if (typeof msgs[id] === "undefined") {
         msgs[id] = { msg, data: _data, out }
         await io.put(id, msgs[id])
+        await io.put(["assign", out.process, out.slot], { mid: id })
+        assigns[out.process] ??= {}
+        assigns[out.process][out.slot] ??= { mid: id }
+        console.log(assigns)
       }
       if (msgs[id].message !== true) {
         try {
-          const { res, err, errStr } = await upload(di)
+          const { res, err, errStr } = await upload(di, mock)
           if (!err && res?.status === 200) {
             console.log(
               `uploaded ${type} to Arweave (${di.binary.length / 1000} KB):`,
@@ -153,7 +160,7 @@ const processMessage = async ({ out, msg, id, data: _data }) => {
           })
           const id2 = di2.id
           try {
-            const { err, res, errStr } = await upload(di2)
+            const { err, res, errStr } = await upload(di2, mock)
             if (!err && res?.status === 200) {
               console.log(
                 `uploaded Assignment to Arweave (${di2.binary.length / 1000} KB):`,
@@ -198,11 +205,14 @@ const bundler = async ({
   jwk: _jwk,
   timeout: _timeout,
   dbpath,
+  mock: _mock = false,
 } = {}) => {
   if (_timeout) timeout = _timeout
   jwk = _jwk
+  mock = _mock
   io = open({ path: dbpath })
   undone = io.get("undone") ?? {}
+  dbs = io.get("dbs") ?? {}
   unsolved = io.get("unsolved") ?? {}
   processUndone()
   const app = express()
