@@ -2607,7 +2607,7 @@ hasown@^2.0.2:
   dependencies:
     function-bind "^1.1.2"
 
-hbsig@^0.1.4, hbsig@^0.1.5:
+hbsig@^0.1.4:
   version "0.1.5"
   resolved "https://registry.npmjs.org/hbsig/-/hbsig-0.1.5.tgz"
   integrity sha512-4hzdYJgq7fvHG0IOtXyM8pyVcMjZmAB9bzjCf05k7yCeHtS/a8DvmpkXnvTkqFArT8jWKW3zHWMLJzyQBeai/g==
@@ -2615,6 +2615,29 @@ hbsig@^0.1.4, hbsig@^0.1.5:
     "@permaweb/aoconnect" "^0.0.85"
     base64url "^3.0.1"
     fast-sha256 "^1.3.0"
+    ramda "^0.31.3"
+    structured-headers "1.0.1"
+
+hbsig@^0.1.5:
+  version "0.1.5"
+  resolved "https://registry.npmjs.org/hbsig/-/hbsig-0.1.5.tgz"
+  integrity sha512-4hzdYJgq7fvHG0IOtXyM8pyVcMjZmAB9bzjCf05k7yCeHtS/a8DvmpkXnvTkqFArT8jWKW3zHWMLJzyQBeai/g==
+  dependencies:
+    "@permaweb/aoconnect" "^0.0.85"
+    base64url "^3.0.1"
+    fast-sha256 "^1.3.0"
+    ramda "^0.31.3"
+    structured-headers "1.0.1"
+
+hbsig@^0.2.5:
+  version "0.2.5"
+  resolved "https://registry.npmjs.org/hbsig/-/hbsig-0.2.5.tgz"
+  integrity sha512-Ga9Itd5iygT7P2fnA4Fvq/aWL9kMQWVUbnULOoR3ZdloTZmuyguGUlBCtBT2bIYq6vSEKGxQfPRFWn7GM34Tcg==
+  dependencies:
+    "@permaweb/aoconnect" "^0.0.85"
+    base64url "^3.0.1"
+    fast-sha256 "^1.3.0"
+    hbsig "^0.1.5"
     ramda "^0.31.3"
     structured-headers "1.0.1"
 
@@ -4545,10 +4568,10 @@ wao@^0.35.2:
     wasm-brotli "^2.0.2"
     yargs "^17.7.2"
 
-wao@^0.36.6:
-  version "0.36.6"
-  resolved "https://registry.npmjs.org/wao/-/wao-0.36.6.tgz"
-  integrity sha512-8Bu/PyJoY58Iy28iq/rLpLbiQa+cfBvbypLff++3rQ8nOR0pMmutaQW92mgV9FdojvaJDqC03OIwoVX0Hxa31w==
+wao@^0.37.7:
+  version "0.37.7"
+  resolved "https://registry.npmjs.org/wao/-/wao-0.37.7.tgz"
+  integrity sha512-Y3O0kEmyaC1mEFffR9Pgp3p7oQFB+OOgxnBnHoiTPvj17hhXdQPSEfS1VauxcrpzAGwAI18tSg+9aqE0EbHcdg==
   dependencies:
     "@ar.io/sdk" "^3.20.0"
     "@ardrive/turbo-sdk" "^1.31.1"
@@ -4569,7 +4592,7 @@ wao@^0.36.6:
     express "^5.1.0"
     fast-sha256 "^1.3.0"
     graphql "^16.10.0"
-    hbsig "^0.1.5"
+    hbsig "^0.2.5"
     http-message-signatures "^1.0.4"
     lmdb "^3.2.2"
     localforage "^1.10.0"

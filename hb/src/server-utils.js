@@ -5,7 +5,7 @@ import {
   structured_to,
   toAddr,
   result,
-} from "wao"
+} from "hbsig"
 const { verifyMessage } = httpbis
 import { createPublicKey } from "node:crypto"
 import { open } from "lmdb"

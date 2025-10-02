@@ -1,7 +1,6 @@
 import assert from "assert"
 import { afterEach, after, describe, it, before, beforeEach } from "node:test"
 import server from "../src/server.js"
-import validate from "../src/validate2.js"
 import { Validator } from "../src/validate.js"
 import bundler from "../src/bundler.js"
 import { HyperBEAM } from "wao/test"

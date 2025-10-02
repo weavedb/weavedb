@@ -45,8 +45,8 @@ export const item = async ({ pid, msg, data }) => {
 
 const _upload = (di, attempt = 0) =>
   new Promise(async res => {
-    if (Math.random() > 0) {
-      res({ err: true, res: { status: 501 }, attempts: attempt })
+    if (Math.random() > 0.8) {
+      res({ err: false, res: { status: 200 }, attempts: attempt })
     } else {
       try {
         const _res = await fetch("https://up.arweave.net:443/tx", {
