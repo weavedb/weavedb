@@ -9,13 +9,14 @@ let {
   port = 4001,
   wallet = "HyperBEAM/.wallet.json",
   dbpath = ".db",
+  mock = false,
 } = yargs(process.argv.slice(2)).argv
 
 const main = async () => {
   const jwk = JSON.parse(readFileSync(resolve(process.cwd(), wallet), "utf8"))
   const _dbpath = resolve(process.cwd(), dbpath, "bundler")
   console.log("signer:", toAddr(jwk.n))
-  const su = BD({ port, jwk, dbpath: _dbpath })
+  const su = BD({ port, jwk, dbpath: _dbpath, mock })
 }
 
 main()
