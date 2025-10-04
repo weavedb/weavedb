@@ -58,7 +58,7 @@ const stack = {
   ],
 }
 export default class DB {
-  constructor({ url = `http://localhost:6364`, jwk, id, hb, mem }) {
+  constructor({ url = `http://localhost:6364`, jwk, id, hb, mem, nonce }) {
     let _hb = null
     if (mem) {
       this.mem = mem
@@ -73,7 +73,7 @@ export default class DB {
 
     if (_hb) this.hb = new HB({ url: _hb, jwk: this.jwk })
     this.db = new HB({ url, jwk: this.jwk })
-    this._nonce = 0
+    this._nonce = nonce ?? 0
     this.count = 0
   }
   isArConnect() {
@@ -147,42 +147,69 @@ export default class DB {
     const query = ["removeTrigger", dir, key]
     return await this.set(...query)
   }
-  async mkdir({ name, schema, auth }) {
+  async mkdir({ name, schema = { type: "object" }, auth = [] }) {
     const query = ["set:dir", { schema, auth }, "_", name]
     return await this.set(...query)
   }
   async batch(queries) {
     return await this.set("batch", ...queries)
   }
-  async set(...args) {
+  async sign({
+    path = "/~weavedb@1.0/set",
+    nonce: _nonce,
+    query,
+    id: _id,
+    parse = false,
+  }) {
+    const nonce = _nonce ?? ++this._nonce
+    const id = _id ?? this.id
     const req = await this.db.sign(
-      {
-        path: "/~weavedb@1.0/set",
-        nonce: ++this._nonce,
-        id: this.id,
-        query: JSON.stringify(args),
-      },
+      { path, nonce, id, query: JSON.stringify(query) },
       { path: false },
     )
+    return { id, nonce, req: parse ? this.parse(req) : req }
+  }
+  async parse(msg) {
+    const { valid, query, fields, address } = await verify(msg)
+    if (typeof msg.body?.text === "function") {
+      msg.body = await msg.body.text()
+    }
+    return { valid, query, msg }
+  }
+  async set(...query) {
+    const { id, req, nonce } = await this.sign({ query })
     let json = null
     if (this.mem) {
-      const { valid, query, fields, address } = await verify(req)
+      const { valid, query, msg } = await this.parse(req)
       if (valid) {
         try {
-          if (typeof req.body?.text === "function") {
-            req.body = await req.body.text()
-          }
-          const _res = await this.mem.write(req)
+          const _res = await this.mem.write(msg)
           if (_res?.success) {
-            json = { success: true, query, result: _res.result }
+            json = { success: true, id, query, result: _res.result, nonce }
           } else {
-            json = { success: false, error: _res.err, query, result: null }
+            json = {
+              success: false,
+              id,
+              error: _res.err,
+              query,
+              result: null,
+              nonce,
+            }
           }
         } catch (e) {
-          json = { success: false, query, error: e.toString(), result: null }
+          json = {
+            success: false,
+            id,
+            query,
+            error: e.toString(),
+            result: null,
+            nonce,
+          }
         }
       } else {
         json = {
+          id,
+          nonce,
           success: false,
           error: "invalid signature",
           query,
@@ -200,25 +227,20 @@ export default class DB {
     ) {
       await this.nonce()
       this.count++
-      return await this.set(...args)
+      return await this.set(...query)
     } else {
       this.count = 0
       return json
     }
   }
   async admin(...args) {
-    const req = await this.db.sign(
-      {
-        path: "/~weavedb@1.0/admin",
-        query: JSON.stringify(args),
-      },
-      { path: false },
-    )
-    const res = await this.db.send(req)
-    console.log(res)
+    const { msg } = await this.sign({
+      path: "/~weavedb@1.0/admin",
+      query: JSON.stringify(args),
+    })
+    const res = await this.db.send(msg)
     return JSON.parse(res.body)
   }
-
   async nonce(...args) {
     if (!this.addr && this.isArConnect()) {
       await this.jwk.connect([

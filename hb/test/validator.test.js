@@ -20,8 +20,7 @@ import {
   users_query,
   sign,
 } from "./test-utils.js"
-//import { HB } from "wao"
-import { HB } from "../../../wao/src/index.js"
+import { HB } from "wao"
 const q1 = users_query
 const q2 = ["set:user", bob, "users", "bob"]
 const q3 = ["set:user", alice, "users", "alice"]

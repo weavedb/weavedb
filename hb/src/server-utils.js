@@ -14,6 +14,46 @@ const Arweave = _Arweave.default ?? _Arweave
 const arweave = Arweave.init()
 import { connect, createSigner } from "@permaweb/aoconnect"
 import { kv } from "wdb-core"
+import draft_07 from "./jsonschema-draft-07.js"
+
+const dir_schema = {
+  type: "object",
+  required: ["index", "schema", "auth"],
+  properties: {
+    index: { type: "number" },
+    schema: { $ref: "http://json-schema.org/draft-07/schema#" },
+    docs: {
+      type: "object",
+      propertyNames: {
+        type: "string",
+        pattern: "^[A-Za-z0-9_-]+$",
+        maxLength: 42,
+      },
+      additionalProperties: {
+        type: "object",
+        required: ["schema"],
+        properties: {
+          schema: { $ref: "http://json-schema.org/draft-07/schema#" },
+        },
+      },
+    },
+    auth: { type: "array" },
+  },
+  definitions: { draft_07 },
+}
+const dirs_set = [
+  "set:dir",
+  [
+    ["=$isOwner", ["equals", "$signer", "$owner"]],
+    ["=$dir", ["get()", ["_config", "info"]]],
+    ["=$dirid", ["inc", "$dir.last_dir_id"]],
+    ["mod()", { index: "$dirid" }],
+    ["update()", [{ last_dir_id: "$dirid" }, "_config", "info"]],
+    ["allowif()", "$isOwner"],
+  ],
+]
+export { dirs_set }
+export const init_query = { schema: dir_schema, auth: [dirs_set] }
 
 const toMsg = async req => {
   let req2 = {}
@@ -98,7 +138,7 @@ function parseSI(input) {
 
   return obj
 }
-const getKV2 = ({ jwk, pid, hb, dbpath }) => {
+const getKV2 = ({ pid, dbpath }) => {
   const io = open({ path: `${dbpath}/${pid}` })
   return kv(io, async c => {})
 }

@@ -1,22 +1,18 @@
-import { map, mergeLeft } from "ramda"
-import { spawn } from "child_process"
-import { readFileSync } from "fs"
 import { createPrivateKey } from "node:crypto"
-import { connect, createSigner } from "@permaweb/aoconnect"
-import {
-  httpbis,
-  createSigner as createHttpSigner,
-} from "http-message-signatures"
+import { httpbis, createSigner } from "http-message-signatures"
+import { dir_schema } from "../src/schemas.js"
+import { dirs_set } from "../src/rules.js"
+import { resolve } from "path"
+import server from "../src/server.js"
+import server_sql from "../src/server_sql.js"
+import server_vec from "../src/server_vec.js"
+import { HyperBEAM } from "wao/test"
 
 const bob = { name: "Bob" }
 const alice = { name: "Alice" }
 const mike = { name: "Mike" }
 const beth = { name: "Beth" }
 const john = { name: "John" }
-import server from "../src/server.js"
-import server_sql from "../src/server_sql.js"
-import server_vec from "../src/server_vec.js"
-import { HyperBEAM } from "wao/test"
 let devices = [
   "ans104",
   "compute",
@@ -60,6 +56,7 @@ let devices = [
   "flat",
   "structured",
 ]
+
 const devmap = {
   flat: { dev: "codec_flat" },
   structured: { dev: "codec_structured" },
@@ -77,8 +74,6 @@ const devmap = {
   lua: { ver: "5.3a" },
   ans104: { dev: "codec_ans104" },
 }
-
-import { resolve } from "path"
 const genDir = () =>
   resolve(
     import.meta.dirname,
@@ -99,6 +94,7 @@ const set = async (hb, q, nonce, id) => {
 
   return JSON.parse(res.body)
 }
+
 const get = async (hb, q, id) => {
   const { body } = await hb.get({
     path: "/~weavedb@1.0/get",
@@ -107,8 +103,7 @@ const get = async (hb, q, id) => {
   })
   return JSON.parse(body)
 }
-import { dir_schema } from "../src/schemas.js"
-import { dirs_set } from "../src/rules.js"
+
 const init_query = { schema: dir_schema, auth: [dirs_set] }
 const users_query = [
   "set:dir",
@@ -127,7 +122,7 @@ class sign {
     this.jwk = jwk
     this.id = id
     this.nonce = 0
-    this.signer = createHttpSigner(
+    this.signer = createSigner(
       createPrivateKey({ key: jwk, format: "jwk" }),
       "rsa-pss-sha512",
       jwk.n,
