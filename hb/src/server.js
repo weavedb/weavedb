@@ -16,7 +16,7 @@ const _tags = tags => fromPairs(map(v => [v.name, v.value])(tags))
 
 const server = async ({
   jwk,
-  hb,
+  hb = "http://localhost:10001",
   dbpath,
   port = 6364,
   gateway = 5000,
@@ -155,15 +155,16 @@ const server = async ({
   app.post("/weavedb/:mid", async (req, res) => {
     const mid = req.params.mid
     const pid = req.query["process-id"]
+    console.log(mid, pid)
     let data = null
-    if (!dbmap[pid]) {
-      const res = await fetch(`${hb}/${pid}~process@1.0/compute?slot=0`)
-      const msg = structured_to(httpsig_from(await toMsg(res)))
-      const { db } = msg
-      dbmap[pid] = db
-    }
     let msg = []
     try {
+      if (!dbmap[pid]) {
+        const res = await fetch(`${hb}/${pid}~process@1.0/compute?slot=0`)
+        const msg = structured_to(httpsig_from(await toMsg(res)))
+        const { db } = msg
+        dbmap[pid] = db
+      }
       const { assignment, message } = JSON.parse(req.body.toString()).edges[0]
         .node
       const tags_a = _tags(assignment.Tags)

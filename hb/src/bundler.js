@@ -30,7 +30,7 @@ import {
   upload,
   assignment,
 } from "./bundler-utils.js"
-import { range, pick, keys, without } from "ramda"
+import { range, pick, keys, without, includes } from "ramda"
 
 const delDone = k => {
   let d = dbs[k]
@@ -225,8 +225,11 @@ const processMessage = async ({ out, msg, id, data: _data }) => {
         dbs[out.process] ??= { min: -1, current: -1, missing: [], done: {} }
         if (dbs[out.process].current + 1 < +out.slot) {
           for (let i = dbs[out.process].current + 1; i < +out.slot; i++) {
-            if (dbs[out.process].done[i] !== true)
-              dbs[out.process].missing.push(i)
+            if (dbs[out.process].done[i] !== true) {
+              if (!includes(i, dbs[out.process].missing)) {
+                dbs[out.process].missing.push(i)
+              }
+            }
           }
         } else {
           dbs[out.process].missing = without(

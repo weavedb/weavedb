@@ -2607,17 +2607,6 @@ hasown@^2.0.2:
   dependencies:
     function-bind "^1.1.2"
 
-hbsig@^0.1.4:
-  version "0.1.5"
-  resolved "https://registry.npmjs.org/hbsig/-/hbsig-0.1.5.tgz"
-  integrity sha512-4hzdYJgq7fvHG0IOtXyM8pyVcMjZmAB9bzjCf05k7yCeHtS/a8DvmpkXnvTkqFArT8jWKW3zHWMLJzyQBeai/g==
-  dependencies:
-    "@permaweb/aoconnect" "^0.0.85"
-    base64url "^3.0.1"
-    fast-sha256 "^1.3.0"
-    ramda "^0.31.3"
-    structured-headers "1.0.1"
-
 hbsig@^0.1.5:
   version "0.1.5"
   resolved "https://registry.npmjs.org/hbsig/-/hbsig-0.1.5.tgz"
@@ -4533,41 +4522,6 @@ vlq@^2.0.4:
   resolved "https://registry.npmjs.org/vlq/-/vlq-2.0.4.tgz"
   integrity sha512-aodjPa2wPQFkra1G8CzJBTHXhgk3EVSwxSWXNPr1fgdFLUb8kvLV1iEb6rFgasIsjP82HWI6dsb5Io26DDnasA==
 
-wao@^0.35.2:
-  version "0.35.7"
-  resolved "https://registry.npmjs.org/wao/-/wao-0.35.7.tgz"
-  integrity sha512-jHwn+lkz73NCjhO6NzJbXP1oAsTfLq2TLEMB0yrDesdMQ38UoBHWRbccc+hBMfMyOT3emn1alxtxmuRo7nIc8A==
-  dependencies:
-    "@bokuweb/zstd-wasm" "^0.0.22"
-    "@dha-team/arbundles" "^1.0.1"
-    "@permaweb/ao-loader" "^0.0.44"
-    "@permaweb/aoconnect" "^0.0.85"
-    "@permaweb/aoconnect-69" "npm:@permaweb/aoconnect@0.0.69"
-    arbundles "^0.11.1"
-    arjson "^0.0.2"
-    arweave "^1.15.1"
-    base64url "^3.0.1"
-    body-parser "^2.2.0"
-    buffer "^6.0.3"
-    chokidar "^4.0.3"
-    cors "^2.8.5"
-    dotenv "^17.2.0"
-    express "^5.1.0"
-    fast-sha256 "^1.3.0"
-    graphql "^16.10.0"
-    hbsig "^0.1.4"
-    http-message-signatures "^1.0.4"
-    lmdb "^3.2.2"
-    localforage "^1.10.0"
-    lz4-asm "^0.4.2"
-    md5 "^2.3.0"
-    pm2 "^5.4.3"
-    ramda "^0.30.1"
-    structured-headers "1.0.1"
-    warp-arbundles "^1.0.4"
-    wasm-brotli "^2.0.2"
-    yargs "^17.7.2"
-
 wao@^0.37.7:
   version "0.37.7"
   resolved "https://registry.npmjs.org/wao/-/wao-0.37.7.tgz"
@@ -4628,12 +4582,13 @@ wasm-brotli@^2.0.2:
   resolved "https://registry.npmjs.org/wasm-brotli/-/wasm-brotli-2.0.2.tgz"
   integrity sha512-DgjRlpZz9z5br4TjQHSlDHRF9NIuGXHUj3AqO08koDCXz7EYzmPDb7T/6oar5UKLYgPp9Yxc2ImGpx4BMFwbNQ==
 
-wdb-sdk@^0.0.9:
-  version "0.0.9"
-  resolved "https://registry.npmjs.org/wdb-sdk/-/wdb-sdk-0.0.9.tgz"
-  integrity sha512-eProWbs7mPYWZ7OWa20Fvdyeekz0xt6vKl7pCuWLzziz4hOa9t0Ojd9NlRkPV+y7EqXgMeQF/+HdvZ/3EVtYpg==
+wdb-sdk@^0.0.26:
+  version "0.0.26"
+  resolved "https://registry.npmjs.org/wdb-sdk/-/wdb-sdk-0.0.26.tgz"
+  integrity sha512-wgYJGsywnM9fUGhOtqHsl0j/b7tlId+biN70RjluSRCdXGzPNrz9m2vgMHemmur1rpjqvLZvUoJVw+HTpEw4sg==
   dependencies:
-    wao "^0.35.2"
+    hbsig "^0.2.5"
+    wao "^0.37.7"
 
 weak-lru-cache@^1.2.2:
   version "1.2.2"

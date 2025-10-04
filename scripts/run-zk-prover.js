@@ -1,5 +1,4 @@
 import { HyperBEAM } from "wao/test"
-import validate from "../hb/src/validate.js"
 import { resolve } from "path"
 import yargs from "yargs"
 import { readFileSync } from "fs"

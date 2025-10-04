@@ -33,6 +33,7 @@ let ongoing = false
 
 const calcZKHash = async changes => {
   if (!zkdb) {
+    // upgrade to db2
     zkdb = new ZKDB({
       wasm: resolve(import.meta.dirname, "circom/db/index_js/index.wasm"),
       zkey: resolve(import.meta.dirname, "circom/db/index_0001.zkey"),
@@ -49,7 +50,8 @@ const calcZKHash = async changes => {
       await zkdb.insert(cols[dir], doc, v.data)
       console.log("added to zk tree", dir, doc)
     } catch (e) {
-      console.log("zk error", v.data)
+      console.log("zk error:", JSON.stringify(v.data).length, v.data)
+      console.log(e)
     }
   }
   return to64(zkdb.tree.F.toObject(zkdb.tree.root).toString())
@@ -127,7 +129,9 @@ const getKV = obj => {
         let dir = false
         if (k.split("/")[0] === "_") {
           dir = true
-          let clk = { index: d.cl[k].index }
+          let clk = d.cl[k] //{ index: d.cl[k].index }
+          console.log(JSON.stringify(clk).length)
+          //if (d.cl[k].indexes) clk.indexes = d.cl[k].indexes
           // sql requires schema to recover and process zkp
           if (
             obj.type === "sql" &&
@@ -180,8 +184,8 @@ export class Validator {
     pid,
     jwk,
     dbpath,
-    hb,
     vid,
+    hb = "http://localhost:10001",
     type = "nosql",
     format = "ans104",
     max_msgs = 100,

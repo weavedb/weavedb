@@ -1,11 +1,22 @@
-import { getMsgs } from "./server-utils.js"
+import { init_query, getMsgs } from "./server-utils.js"
 import express from "express"
 import cors from "cors"
 import bodyParser from "body-parser"
-import abi from "./zkdb_ab.js"
-import { isNil, isEmpty } from "ramda"
+import { isNil, isEmpty, sortBy, prop, o, filter } from "ramda"
 import { resolve } from "path"
-import { json, encode, Encoder, decode, Decoder } from "arjson"
+import {
+  json as arjson,
+  encode,
+  Encoder,
+  decode,
+  Decoder,
+  Parser,
+} from "arjson"
+import { kv, db as wdb, queue } from "wdb-core"
+import { DB } from "wdb-sdk"
+import { verify } from "hbsig"
+import { wait } from "wao/test"
+
 import {
   ethers,
   Wallet,
@@ -15,7 +26,6 @@ import {
 } from "ethers"
 let zkhash = null
 import { open } from "lmdb"
-import { NFT, DB as ZKDB } from "zkjson"
 
 let dbs = {}
 let app = null
@@ -33,6 +43,7 @@ function frombits(bitArray) {
   }
   return result
 }
+
 function schema2sql(schema, primary = "id", auto_inc = false) {
   if (
     !schema ||
@@ -110,29 +121,47 @@ function toInsert(schema, data, primary = "id") {
   return sql
 }
 
+const getKV = ({ pid, dbpath }) => {
+  const io = open({ path: `${dbpath}/kv/${pid}` })
+  return kv(io, async c => {})
+}
+
+const genDir = () =>
+  resolve(
+    import.meta.dirname,
+    `.db/mydb-${Math.floor(Math.random() * 1000000000)}`,
+  )
+
 let schemas = {}
-const decodeBuf = async (buf, sql, pid) => {
+const decodeBuf = async (buf, sql, pid, dbpath, jwk, n = 1) => {
   let update = false
-  if (!dbs[pid].zkdb) {
-    // upgrade to db2
-    dbs[pid].zkdb = new ZKDB({
-      wasm: resolve(import.meta.dirname, "circom/db/index_js/index.wasm"),
-      zkey: resolve(import.meta.dirname, "circom/db/index_0001.zkey"),
-    })
-    await dbs[pid].zkdb.init()
+  if (!dbs[pid].db) {
+    const dbpath = genDir()
+    const wkv = getKV({ dbpath, pid })
+    const q = queue(wdb(wkv))
+    dbs[pid].io = open({ path: `${dbpath}/cu/${pid}` })
+    dbs[pid].db = new DB({ jwk, mem: q })
+    await dbs[pid].db.init({ id: pid })
+    dbs[pid].arjson = {} // Store arjson deltas per document
+    dbs[pid].dirMetadata = {} // Cache for directory metadata
   }
+
   const q = Uint8Array.from(buf)
   const d = new Decoder()
   const left = d.decode(q, null)
   let json = d.json
   if (left[0].length !== 8) left.shift()
   let start = 0
+  let changes = { dirs: {}, docs: {} }
+
   for (let v of json) {
     const arr8 = frombits(left.slice(start, start + v[2]))
     start += v[2]
-    const data = decode(arr8, d)
+    const [dir, doc] = v[0].split("/")
+    const key = v[0]
     if (sql) {
       try {
+        const data = decode(arr8, d)
         if (/^_\//.test(v[0])) {
           if (v[0].split("/")[1][0] !== "_") {
             const table_name = v[0].split("/")[1]
@@ -152,78 +181,157 @@ const decodeBuf = async (buf, sql, pid) => {
       }
     }
 
-    const [dir, doc] = v[0].split("/")
-    if (!(dir === "_" && isNil(data))) await dbs[pid].io.put(v[0], data)
-    if (dir === "_" && !isNil(data?.index) && isNil(dbs[pid].cols[doc])) {
-      dbs[pid].cols[doc] = data.index
+    console.log(dir, doc)
+
+    // Handle arjson delta encoding
+    if (dir === "_") {
+      // Directory metadata needs delta storage for recovery
+      const deltas = (await dbs[pid].io.get([key, "deltas"])) || []
+
+      // Get old data before applying delta
+      const oldData = dbs[pid].arjson[key]?.json() || null
+
+      if (v[1] === 1) {
+        // Initial full document
+        deltas.push([0, arr8])
+        dbs[pid].arjson[key] = arjson(deltas, undefined, n)
+      } else {
+        // Delta update
+        deltas.push([1, arr8])
+        dbs[pid].arjson[key] = arjson(deltas, undefined, n)
+      }
+
+      await dbs[pid].io.put([key, "deltas"], deltas)
+      const newData = dbs[pid].arjson[key].json()
+
+      if (!(dir === "_" && isNil(newData))) {
+        await dbs[pid].io.put(v[0], newData)
+      }
+
+      if (!/^_/.test(doc[0])) {
+        console.log("yooooooooooooooooooooooooooo", doc, newData)
+      }
+
+      // Track collection metadata with old and new data for later comparison
+      if (!isNil(newData?.index)) {
+        if (isNil(dbs[pid].cols[doc])) {
+          dbs[pid].cols[doc] = newData.index
+        }
+        changes.dirs[doc] = {
+          index: newData.index,
+          oldData: oldData,
+          newData: newData,
+        }
+        update = true
+        console.log(newData.index, doc)
+      }
+    } else if (!/^_/.test(v[0])) {
+      // Persist deltas to storage for recovery
+      const deltas = (await dbs[pid].io.get([key, "deltas"])) || []
+
+      if (v[1] === 1) {
+        // Initial full document
+        deltas.push([0, arr8])
+        dbs[pid].arjson[key] = arjson(deltas, undefined, n)
+      } else {
+        // Delta update
+        deltas.push([1, arr8])
+        dbs[pid].arjson[key] = arjson(deltas, undefined, n)
+      }
+
+      await dbs[pid].io.put([key, "deltas"], deltas)
+      const currentData = dbs[pid].arjson[key].json()
+
       update = true
-      await dbs[pid].zkdb.addCollection(data.index)
-    }
-    try {
-      await dbs[pid].zkdb.insert(dbs[pid].cols[dir], doc, data)
-      update = true
-      console.log(`[${pid}]`, "added to zk tree", dir, doc, data)
-      //const hash = dbs[pid].zkdb.tree.F.toObject(dbs[pid].zkdb.tree.root).toString()
-    } catch (e) {
-      console.log(`[${pid}]`, e)
-      console.log(`[${pid}]`, "zk error", data)
+      console.log(`[${pid}]`, "added to zk tree", dir, doc, currentData)
+      changes.docs[dir] ??= {}
+      changes.docs[dir][doc] = currentData
     }
   }
+
+  let dirs = []
+  for (let k in changes.dirs) {
+    const dirData = changes.dirs[k]
+    dirs.push({ index: dirData.index, name: k })
+  }
+
+  const _dirs = o(
+    sortBy(prop("index")),
+    filter(v => v.name[0] !== "_"),
+  )(dirs)
+
+  for (let dir of _dirs) {
+    console.log("mkdir", dir)
+    await dbs[pid].db.mkdir({
+      name: dir.name,
+      auth: [["add:add,set:set,update:update,del:del", [["allow()"]]]],
+    })
+  }
+
+  // Handle index operations for collections
+  for (let k in changes.dirs) {
+    if (k[0] !== "_") {
+      const dirData = changes.dirs[k]
+      const oldIndexes = dirData.oldData?.indexes || []
+      const newIndexes = dirData.newData?.indexes || []
+      const colIndex = dirData.index
+
+      // Convert to Set for comparison
+      const oldIndexSet = new Set(oldIndexes.map(idx => JSON.stringify(idx)))
+      const newIndexSet = new Set(newIndexes.map(idx => JSON.stringify(idx)))
+
+      // Find removed indexes
+      for (const oldIdx of oldIndexes) {
+        const idxKey = JSON.stringify(oldIdx)
+        if (!newIndexSet.has(idxKey)) {
+          console.log("removeIndex", k, oldIdx)
+          console.log(await dbs[pid].db.removeIndex(colIndex, oldIdx))
+        }
+      }
+
+      // Find added indexes
+      for (const newIdx of newIndexes) {
+        const idxKey = JSON.stringify(newIdx)
+        if (!oldIndexSet.has(idxKey)) {
+          console.log("addIndex", k, newIdx)
+          console.log(await dbs[pid].db.addIndex(colIndex, newIdx))
+        }
+      }
+
+      if (newIndexes.length > 0) {
+        if (!dbs[pid].indexes) dbs[pid].indexes = {}
+        dbs[pid].indexes[k] = newIndexes
+        console.log("indexes for", k, newIndexes)
+      }
+    }
+  }
+
+  for (let k in changes.docs) {
+    const dir = changes.docs[k]
+    for (let k2 in dir) {
+      if (k[0] !== "_") {
+        const doc = dir[k2]
+        console.log(k, k2, doc, typeof doc)
+
+        if (doc === null) {
+          console.log("delete doc", k, k2)
+          await dbs[pid].db.set("del:del", k, k2)
+        } else if (typeof doc === "object" && doc !== null) {
+          console.log("set doc", k, k2, doc)
+          await dbs[pid].db.set("set:set", doc, k, k2)
+        } else {
+          console.log("............", k, k2, doc)
+        }
+      }
+    }
+  }
+
+  console.log(_dirs)
+  console.log(changes)
   return update
 }
-const addServer = ({ port }) => {
-  app.post("/cid", async (req, res) => {
-    let zkp = null
-    let success = false
-    let error = null
-    let pid
-    const { cid } = req.body
-    try {
-      pid = req.body.pid ?? default_pid
-      zkp = await dbs[pid].proof_cid(req.body)
-      success = true
-    } catch (e) {
-      console.log(`[${pid}]`, e)
-      error = e.toString()
-    }
-    res.json({ success, zkp, error })
-  })
-  app.post("/zkp", async (req, res) => {
-    let zkp = null
-    let success = false
-    let error = null
-    let dirid = null
-    let pid = null
-    const toInt = base64 => {
-      const buffer = Buffer.from(base64, "base64")
-      let result = 0n
-      for (const byte of buffer) {
-        result = (result << 8n) | BigInt(byte)
-      }
-      return result.toString()
-    }
-    try {
-      pid = req.body.pid ?? default_pid
-      zkp = await dbs[pid]?.proof(req.body)
-      dirid = dbs[pid].io.get(`_/${req.body.dir}`)?.index
-      success = true
-      const hash = dbs[pid].zkdb.tree.F.toObject(
-        dbs[pid].zkdb.tree.root,
-      ).toString()
-    } catch (e) {
-      console.log(`[${pid}]`, e)
-      error = e.toString()
-    }
-    res.json({
-      success,
-      zkp,
-      error,
-      query: req.body,
-      zkhash: toInt(zkhash),
-      dirid,
-    })
-  })
-}
+
+const addServer = ({ port }) => {}
 const startServer = ({ port }) => {
   app = express()
   app.use(cors())
@@ -231,24 +339,17 @@ const startServer = ({ port }) => {
   return app.listen(port, () => console.log(`ZK Prover on port ${port}`))
 }
 
-//let i = 0
-//let from = 0
-//let height = -1
-//let committed_height = -1
 let server = null
-// preserve zkdb state somehow and continue
 
-const zkjson = async ({
+export default async ({
   dbpath,
   hb = "http://localhost:10001",
   pid,
-  cid = false,
   sql,
   port = 6365,
   dbpath_hb,
-  commit,
-  alchemy_key,
-  priv_key,
+  jwk,
+  n = 1,
 }) => {
   if (!dbs[pid]) {
     default_pid = pid
@@ -260,6 +361,7 @@ const zkjson = async ({
       io_hb: null,
       zkdb: null,
       cols: {},
+      indexes: {},
       proof: null,
       proof_cid: null,
     }
@@ -270,6 +372,13 @@ const zkjson = async ({
   if (dbs[pid].committed_height === -1) {
     dbs[pid].committed_height = dbs[pid].io_hb.get("committed_height") ?? -1
   }
+
+  // Recover encoded documents from storage on restart
+  if (dbs[pid].io) {
+    // LMDB doesn't have a getKeys() method, skip recovery for now
+    // Documents will be rebuilt from the event stream
+  }
+
   let res = null
   let to = 0
   let plus = 100
@@ -285,9 +394,9 @@ const zkjson = async ({
   if (res === null) {
     if (dbs[pid].height) dbs[pid].from = dbs[pid].height + 1
     to = dbs[pid].from + 99
-    //console.log(`[${pid}]`, "getting...", dbs[pid].from, to)
     res = await getMsgs({ pid, hb, from: dbs[pid].from, to })
   }
+
   let update = false
   while (!isEmpty(res.assignments)) {
     for (let k in res.assignments ?? {}) {
@@ -307,8 +416,8 @@ const zkjson = async ({
       } else {
         if (m.body.zkhash) {
           zkhash = m.body.zkhash
-          const buf = m.body.data //Buffer.from(m.body.data, "base64")
-          if (await decodeBuf(buf, sql, pid)) update = true
+          const buf = m.body.data
+          if (await decodeBuf(buf, sql, pid, dbpath, jwk, n)) update = true
         }
       }
       dbs[pid].height = m.slot
@@ -327,85 +436,17 @@ const zkjson = async ({
     )
     res = await getMsgs({ pid, hb, from: dbs[pid].from, to })
   }
+
   const proof = async ({ dir, doc, path, query }) => {
     const col_id = dbs[pid].cols[dir]
-    const json = dbs[pid].io.get(`${dir}/${doc}`)
-    let params = {
-      json,
-      col_id,
-      path,
-      id: doc,
-    }
-    if (query) params.query = query
-    const key = [
-      params.col_id,
-      params.id,
-      params.path,
-      params.query ? JSON.stringify(params.query) : null,
-    ]
-    console.log(`[${pid}]`, "generating zkp...", dir, doc)
-    console.log(`[${pid}]`, params)
-    const zkp = dbs[pid].io.get(key) ?? (await dbs[pid].zkdb.genProof(params))
-    await dbs[pid].io.put(key, zkp)
-    return zkp
+    const key = `${dir}/${doc}`
+    return dbs[pid].arjson[key]?.json() || null
   }
-  const proof_cid = !cid
-    ? null
-    : async ({ dir, doc, path, cid, query }) => {
-        const json = dbs[pid].io.get(`${dir}/${doc}`)
-        console.log(`[${pid}]`, "json", dir, doc, json)
-        let params = {
-          json: json?.json ?? null,
-          dir,
-          path,
-          id: doc,
-        }
-        if (query) params.query = query
-        if (json?.cid !== cid) throw Error("No CID found")
-        const key = [
-          "cid",
-          cid,
-          path,
-          params.query ? JSON.stringify(params.query) : null,
-        ]
-        console.log(`[${pid}]`, "generating zkp for cid...", key)
-        const zknft = new NFT({
-          wasm: resolve(import.meta.dirname, "circom/ipfs/index_js/index.wasm"),
-          zkey: resolve(import.meta.dirname, "circom/ipfs/index_0001.zkey"),
-          json: params.json,
-          size_val: 34,
-          size_path: 5,
-        })
 
-        const zkp = dbs[pid].io.get(key) ?? (await zknft.zkp(path))
-        await dbs[pid].io.put(key, zkp)
-        return zkp
-      }
   dbs[pid].proof ??= proof
-  dbs[pid].proof_cid ??= proof_cid
   if (port && !server) {
     server = startServer({ port })
     addServer({ port })
   }
-  if (update && commit && dbs[pid].committed_height < dbs[pid].height) {
-    console.log(`[${pid}]`, "committing hash...", commit)
-    const provider = new JsonRpcProvider(
-      `https://eth-sepolia.g.alchemy.com/v2/${alchemy_key}`,
-    )
-    const wallet = new Wallet(priv_key, provider)
-    const contract = new ethers.Contract(commit, abi, wallet)
-    const hash = dbs[pid].zkdb.tree.F.toObject(
-      dbs[pid].zkdb.tree.root,
-    ).toString()
-    const tx = await contract.commitRoot(hash)
-    const receipt = await tx.wait()
-    if (receipt.status) {
-      dbs[pid].committed_height = dbs[pid].height
-      console.log(`[${pid}]`, "hash committed!!", hash)
-      dbs[pid].io_hb.put("committed_height", dbs[pid].committed_height)
-    }
-  }
-  return { server, proof, update, proof_cid }
+  return { server, proof, update }
 }
-
-export default zkjson
