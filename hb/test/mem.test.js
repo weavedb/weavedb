@@ -25,17 +25,24 @@ describe("Mem", () => {
     const q = queue(wdb(wkv))
     const db = new DB({ jwk: owner.jwk, mem: q })
     const id = await db.init({ id: "wdb" })
-    console.log(
-      await db.mkdir({
-        name: "users",
-        auth: [["add:add,set:set,update:update,del:del", [["allow()"]]]],
-      }),
-    )
+    await db.mkdir({
+      name: "users",
+      auth: [["add:add,set:set,update:update,del:del", [["allow()"]]]],
+    })
+    const trigger = {
+      key: "inc_age",
+      on: "create",
+      fields: ["age"],
+      fn: [["update()", [{ age: { _$: ["inc"] } }, "users", "$doc"]]],
+    }
+    await db.addTrigger(trigger, "users")
     await db.set("add:add", { name: "Bob", age: 23 }, "users")
+    await db.removeTrigger({ key: "inc_age" }, "users")
     await db.set("add:add", { name: "Bob", age: 24 }, "users")
     await db.addIndex([["name"], ["age", "desc"]], "users")
     await db.setAuth([], "users")
     await db.stat("users")
+
     console.log(await db.get("users", ["name"], ["age", "desc"]))
   })
 })

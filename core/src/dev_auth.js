@@ -78,7 +78,7 @@ function default_auth({
       get: k => kv.get("__indexes__", `${dir}/${k}`),
       put: (k, v, nosave) => kv.put("__indexes__", `${dir}/${k}`, v),
       del: (k, nosave) => kv.del("__indexes__", `${dir}/${k}`),
-      data: key => ({
+      twdata: key => ({
         val: kv.get(dir, key),
         __id__: key.split("/").pop(),
       }),

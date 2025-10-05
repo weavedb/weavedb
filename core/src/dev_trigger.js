@@ -28,7 +28,7 @@ import {
 
 function trigger({ state, env }) {
   const { kv, kv_dir } = env
-  const { doc, dir, data, before, ts } = state
+  const { doc, dir, data, before, ts, dirinfo } = state
   let mod = {
     on: null,
     diff: {},
@@ -63,6 +63,7 @@ function trigger({ state, env }) {
     let _state = {
       dir,
       doc,
+      dirinfo: state.dirinfo,
       signer: state.signer,
       signer23: state.signer23,
       ts: state.ts,
@@ -100,7 +101,7 @@ function trigger({ state, env }) {
     return [true, false]
   }
   const checkDir = (v, op) => {
-    let data, dir, doc
+    let data, dir, doc, dirinfo
     if (op === "del") [dir, doc] = v
     else [data, dir, doc] = v
     if (isNil(kv.get("_", dir))) throw Error("dir doesn't exist:", dir)
@@ -108,7 +109,14 @@ function trigger({ state, env }) {
     return { data, dir, doc, before }
   }
   if (mod.on) {
-    let { triggers } = kv.get("_", dir)
+    //let { triggers } = kv.get("_", dir)
+    let triggers = {}
+    for (let k in dirinfo.triggers || {}) {
+      triggers[k] = kv.get(
+        "_config",
+        `triggers_${dirinfo.index}_${dirinfo.triggers[k]}`,
+      )
+    }
     for (const k in triggers ?? {}) {
       const t = triggers[k]
       let ons = t.on.split(",")
@@ -143,6 +151,7 @@ function trigger({ state, env }) {
               let state = { opcode: "get" }
               state.query = v
               state.dir = dir
+              state.dirinfo = kv.get("_", dir)
               if (typeof doc === "string") {
                 checkDocID(doc, kv)
                 state.doc = doc
