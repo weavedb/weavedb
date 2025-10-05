@@ -42,6 +42,7 @@ const signer = ({ jwk, id, nonce = 0 }) => {
 
 function initDB({ state: { query, signer, id: _id }, msg, env: { kv, id } }) {
   if (id) throw Error("already initialized")
+  console.log(query[0])
   kv.put("_", "_", { ...query[0], index: 0 })
   kv.put("_", "_config", {
     index: 1,

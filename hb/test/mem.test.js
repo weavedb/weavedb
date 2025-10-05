@@ -29,7 +29,9 @@ describe("Mem", () => {
       name: "users",
       auth: [["add:add,set:set,update:update,del:del", [["allow()"]]]],
     })
-    console.log(await db.set("set:set", { name: "Bob", age: 23 }, "users", "A"))
-    console.log(await db.get("users"))
+    await db.set("add:add", { name: "Bob", age: 23 }, "users")
+    await db.set("add:add", { name: "Bob", age: 24 }, "users")
+    console.log(await db.addIndex([["name"], ["age", "desc"]], "users"))
+    console.log(await db.get("users", ["name"], ["age", "desc"]))
   })
 })

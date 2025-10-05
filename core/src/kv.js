@@ -52,8 +52,6 @@ const kv_base = (io, fn, sync, methods = {}) => {
             ts: state?.ts,
             hashpath: state?.hashpath ?? null,
           }
-          console.log(__priv_data)
-          console.log("this is wal...", __data)
           data.push(__data)
           io.put(["__wal__", i], __data)
           io.put(["__priv_wal__", i], __data)
