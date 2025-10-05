@@ -31,6 +31,7 @@ function default_auth({
     query,
     before,
     data,
+    dirinfo,
   },
   msg,
   env,
@@ -54,20 +55,12 @@ function default_auth({
     after: data,
     allow: false,
   }
-  let _dir = kv.get("_", dir)
-  if (!_dir && dir === "_")
-    _dir = {
-      auth: [
-        [
-          "set:init",
-          [
-            ["=$isOwner", ["equals", "$signer", "$owner"]],
-            ["allowif()", "$isOwner"],
-          ],
-        ],
-      ],
-    }
-  if (isNil(_dir)) throw Error(`dir doesn't exist: ${dir}`)
+  let auth = []
+  if (isNil(dirinfo)) throw Error(`dir doesn't exist: ${dir}`)
+  for (const k in dirinfo.auth) {
+    const _auth = kv.get("_config", `auth_${dirinfo.index}_${dirinfo.auth[k]}`)
+    if (_auth) auth.push(_auth.auth)
+  }
   let allow = false
   const get = (v, obj, set) => {
     const [dir, doc] = v
@@ -138,8 +131,7 @@ function default_auth({
           },
         }
       : fns
-
-  for (const v of _dir.auth) {
+  for (const v of auth) {
     if (includes(op, v[0].split(","))) {
       try {
         fpj(v[1], vars, { ...ac_funcs, ...fn })
@@ -162,7 +154,7 @@ const authenticator = {
   removeIndex: onlyOwner,
   addTrigger: onlyOwner,
   removeTrigger: onlyOwner,
-  setRules: onlyOwner,
+  setAuth: onlyOwner,
   setSchema: onlyOwner,
 }
 

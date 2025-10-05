@@ -1,4 +1,5 @@
 import { of, ka } from "monade"
+import draft_07 from "./jsonschema-draft-07.js"
 import { validate } from "jsonschema"
 import parse from "./dev_parse.js"
 import auth from "./dev_auth.js"
@@ -52,21 +53,36 @@ function removeTrigger({ state, env: { kv } }) {
 }
 
 function setAuth({ state, env: { kv } }) {
-  const { data, dir } = state
-  let stat = kv.get("_", dir)
-  if (!stat) throw Error("dir doesn't exist")
-  stat.auth = data
-  kv.put("_", dir, stat)
+  const { data, dir, dirinfo } = state
+  let auth = {}
+  let auth_index = -1
+  let len = data.length
+  let old_len = (dirinfo.auth_index ?? -1) + 1
+  if (!Array.isArray(data)) throw Error("auth must be an array")
+  if (old_len > len) {
+    for (let i = len; i < old_len; i++) {
+      if (i >= len) kv.del("_config", `auth_${dirinfo.index}_${i - 1}`)
+    }
+  }
+  for (let v of data) {
+    if (!Array.isArray(v)) throw Error("auth must be an array")
+    auth[v[0]] = ++auth_index
+    kv.put("_config", `auth_${dirinfo.index}_${auth_index}`, { auth: v })
+  }
+  dirinfo.auth_index = auth_index
+  dirinfo.auth = auth
+  kv.put("_", dir, dirinfo)
   return arguments[0]
 }
 
 function setSchema({ state, env: { kv } }) {
-  const { data, dir } = state
-  let stat = kv.get("_", dir)
-  if (!stat) throw Error("dir doesn't exist")
-  if (data.type !== "object") throw Error("type must be object")
-  stat.schema = data
-  kv.put("_", dir, stat)
+  const { data, dir, dirinfo } = state
+  let valid = false
+  try {
+    valid = validate(data, draft_07).valid
+  } catch (e) {}
+  if (!valid) throw Error("invalid schema")
+  kv.put("_config", `schema_${dirinfo.index}`, data)
   return arguments[0]
 }
 
@@ -79,11 +95,9 @@ function normalize(index) {
   return index
 }
 function addIndex({ state, env: { kv, kv_dir } }) {
-  const { data, dir } = state
+  const { data, dir, dirinfo } = state
   if (!Array.isArray(data)) throw Error("index must be Array")
   if (data.length < 2) throw Error("index must be multi fields")
-  let stat = kv.get("_", dir)
-  if (!stat) throw Error("dir doesn't exist")
   let indexes = kv.get("_config", `indexes_${state.index}`) ?? { indexes: [] }
   const _index = normalize(data)
   for (let v of indexes.indexes || []) {
@@ -91,15 +105,15 @@ function addIndex({ state, env: { kv, kv_dir } }) {
   }
   indexes.indexes.push(_index)
   _addIndex(data, [dir], kv_dir)
-  kv.put("_config", `indexes_${state.index}`, indexes)
+  kv.put("_config", `indexes_${dirinfo.index}`, indexes)
   return arguments[0]
 }
 
 function removeIndex({ state, env: { kv, kv_dir } }) {
-  const { data, dir } = state
-  let stat = kv.get("_", dir)
-  if (!stat) throw Error("dir doesn't exist")
-  let indexes = kv.get("_config", `indexes_${state.index}`) ?? { indexes: [] }
+  const { data, dir, dirinfo } = state
+  let indexes = kv.get("_config", `indexes_${dirinfo.index}`) ?? {
+    indexes: [],
+  }
   let new_indexes = []
   const _index = normalize(data)
   let ex = false

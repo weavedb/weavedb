@@ -25,13 +25,17 @@ describe("Mem", () => {
     const q = queue(wdb(wkv))
     const db = new DB({ jwk: owner.jwk, mem: q })
     const id = await db.init({ id: "wdb" })
-    await db.mkdir({
-      name: "users",
-      auth: [["add:add,set:set,update:update,del:del", [["allow()"]]]],
-    })
+    console.log(
+      await db.mkdir({
+        name: "users",
+        auth: [["add:add,set:set,update:update,del:del", [["allow()"]]]],
+      }),
+    )
     await db.set("add:add", { name: "Bob", age: 23 }, "users")
     await db.set("add:add", { name: "Bob", age: 24 }, "users")
-    console.log(await db.addIndex([["name"], ["age", "desc"]], "users"))
+    await db.addIndex([["name"], ["age", "desc"]], "users")
+    await db.setAuth([], "users")
+    await db.stat("users")
     console.log(await db.get("users", ["name"], ["age", "desc"]))
   })
 })
