@@ -84,14 +84,14 @@ function addIndex({ state, env: { kv, kv_dir } }) {
   if (data.length < 2) throw Error("index must be multi fields")
   let stat = kv.get("_", dir)
   if (!stat) throw Error("dir doesn't exist")
-  stat.indexes ??= []
+  let indexes = kv.get("_config", `indexes_${state.index}`) ?? { indexes: [] }
   const _index = normalize(data)
-  for (let v of stat.indexes || []) {
+  for (let v of indexes.indexes || []) {
     if (equals(_index, v)) throw Error("index already exists:", _index)
   }
-  stat.indexes.push(_index)
+  indexes.indexes.push(_index)
   _addIndex(data, [dir], kv_dir)
-  kv.put("_", dir, stat)
+  kv.put("_config", `indexes_${state.index}`, indexes)
   return arguments[0]
 }
 
@@ -99,18 +99,18 @@ function removeIndex({ state, env: { kv, kv_dir } }) {
   const { data, dir } = state
   let stat = kv.get("_", dir)
   if (!stat) throw Error("dir doesn't exist")
-  stat.indexes ??= []
+  let indexes = kv.get("_config", `indexes_${state.index}`) ?? { indexes: [] }
   let new_indexes = []
   const _index = normalize(data)
   let ex = false
-  for (let v of stat.indexes) {
+  for (let v of indexes.indexes) {
     if (equals(_index, v)) ex = true
     else new_indexes.push(v)
   }
   if (!ex) throw Error("index doesn't exist")
   _removeIndex(data, [dir], kv_dir)
-  stat.indexes = new_indexes
-  kv.put("_", dir, stat)
+  indexes.indexes = new_indexes
+  kv.put("_config", `indexes_${state.index}`, indexes)
   return arguments[0]
 }
 
