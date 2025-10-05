@@ -1,4 +1,4 @@
-import { clone } from "ramda"
+import { filter, clone } from "ramda"
 const kv_base = (io, fn, sync, methods = {}) => {
   let s = {}
   let l = {}
@@ -28,21 +28,35 @@ const kv_base = (io, fn, sync, methods = {}) => {
           ;({ i, cl, opt, cb, state } = c.shift())
           if (!from) from = i
           to = i
+          let public_cl = {}
+          let priv_cl = {}
           for (const k in cl ?? {}) {
             if (opt.delta) old[k] = io.get(k) ?? null
             if (cl[k] === null) io.remove(k)
             else io.put(k, cl[k])
+            if ((k, /^__.*$/.test(k))) priv_cl[k] = cl[k]
+            else public_cl[k] = cl[k]
             count++
           }
           const __data = {
             i,
             opt,
-            cl,
+            cl: public_cl,
             ts: state?.ts,
             hashpath: state?.hashpath ?? null,
           }
+          const __priv_data = {
+            i,
+            opt,
+            cl: priv_cl,
+            ts: state?.ts,
+            hashpath: state?.hashpath ?? null,
+          }
+          console.log(__priv_data)
+          console.log("this is wal...", __data)
           data.push(__data)
           io.put(["__wal__", i], __data)
+          io.put(["__priv_wal__", i], __data)
           io.put(`__meta__/current`, {
             i,
             ts: state?.ts,

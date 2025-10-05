@@ -208,10 +208,6 @@ const decodeBuf = async (buf, sql, pid, dbpath, jwk, n = 1) => {
         await dbs[pid].io.put(v[0], newData)
       }
 
-      if (!/^_/.test(doc[0])) {
-        console.log("yooooooooooooooooooooooooooo", doc, newData)
-      }
-
       // Track collection metadata with old and new data for later comparison
       if (!isNil(newData?.index)) {
         if (isNil(dbs[pid].cols[doc])) {
@@ -320,7 +316,7 @@ const decodeBuf = async (buf, sql, pid, dbpath, jwk, n = 1) => {
           console.log("set doc", k, k2, doc)
           await dbs[pid].db.set("set:set", doc, k, k2)
         } else {
-          console.log("............", k, k2, doc)
+          console.log("unknown............", k, k2, doc)
         }
       }
     }

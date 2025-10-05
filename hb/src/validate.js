@@ -129,9 +129,8 @@ const getKV = obj => {
         let dir = false
         if (k.split("/")[0] === "_") {
           dir = true
-          let clk = d.cl[k] //{ index: d.cl[k].index }
-          console.log(JSON.stringify(clk).length)
-          //if (d.cl[k].indexes) clk.indexes = d.cl[k].indexes
+          let clk = { index: d.cl[k].index }
+          if (d.cl[k].indexes) clk.indexes = d.cl[k].indexes
           // sql requires schema to recover and process zkp
           if (
             obj.type === "sql" &&
