@@ -76,7 +76,7 @@ function genDocID({ state, env }) {
   const { dir } = state
   let _dir = env.kv.get("_", dir)
   if (isNil(_dir)) throw Error("dir doesn't exist")
-  let i = isNil(_dir.autoid) ? 0 : _dir.autoid + 1
+  let i = isNil(_dir.__autoid__) ? 0 : _dir.__autoid__ + 1
   const docs = env.kv[dir] ?? {}
   while (env.kv.get(dir, tob64(i))) i++
   state.doc = tob64(i)

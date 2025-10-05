@@ -83,9 +83,11 @@ DocIDs are in `base64url` format rather than `utf8`, which are also converted to
 
 ![](/images/zkjson-5.png)
 
-### AutoID
+### \_\_AutoID__
 
-When executing an `add` operation, an auto-incremental docID will be assigned, which is tracked by `_/[dirname]/autoid`. The first docID will be `A (= 0)`, the second docID will be `B (= 1)`, and so on. You can assign arbitrary docIDs with other operations such as `set`, `update`, and `upsert`.
+When executing an `add` operation, an auto-incremental docID will be assigned, which is tracked by `_/[dirname]/__autoid__`. The first docID will be `A (= 0)`, the second docID will be `B (= 1)`, and so on. You can assign arbitrary docIDs with other operations such as `set`, `update`, and `upsert`.
+
+Any field prefixed with `__` in the `_` dir will be excluded from being uploaded to the final bits. `__autoid__` is excluded because it's recomputable and causes unnecessary updates on every doc addition.
 
 ## System Dirs
 

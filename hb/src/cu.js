@@ -152,7 +152,7 @@ const decodeBuf = async (buf, sql, pid, dbpath, jwk, n = 1) => {
   let json = d.json
   if (left[0].length !== 8) left.shift()
   let start = 0
-  let changes = { dirs: {}, docs: {} }
+  let changes = { dirs: {}, docs: {}, indexes: {} }
 
   for (let v of json) {
     const arr8 = frombits(left.slice(start, start + v[2]))
@@ -180,9 +180,6 @@ const decodeBuf = async (buf, sql, pid, dbpath, jwk, n = 1) => {
         console.log(`[${pid}]`, e)
       }
     }
-
-    console.log(dir, doc)
-
     // Handle arjson delta encoding
     if (dir === "_") {
       // Directory metadata needs delta storage for recovery
@@ -213,13 +210,50 @@ const decodeBuf = async (buf, sql, pid, dbpath, jwk, n = 1) => {
         if (isNil(dbs[pid].cols[doc])) {
           dbs[pid].cols[doc] = newData.index
         }
+        // Persist dirid→dirname mapping
+        const mappings = (await dbs[pid].io.get("dirid_mappings")) || {}
+        mappings[newData.index] = doc
+        await dbs[pid].io.put("dirid_mappings", mappings)
         changes.dirs[doc] = {
           index: newData.index,
           oldData: oldData,
           newData: newData,
         }
         update = true
-        console.log(newData.index, doc)
+      }
+    } else if (dir === "_config") {
+      // Handle _config directory
+      const deltas = (await dbs[pid].io.get([key, "deltas"])) || []
+
+      // Get old data before applying delta
+      const oldData = dbs[pid].arjson[key]?.json() || null
+
+      if (v[1] === 1) {
+        // Initial full document
+        deltas.push([0, arr8])
+        dbs[pid].arjson[key] = arjson(deltas, undefined, n)
+      } else {
+        // Delta update
+        deltas.push([1, arr8])
+        dbs[pid].arjson[key] = arjson(deltas, undefined, n)
+      }
+
+      await dbs[pid].io.put([key, "deltas"], deltas)
+      const newData = dbs[pid].arjson[key].json()
+
+      if (!isNil(newData)) {
+        await dbs[pid].io.put(v[0], newData)
+      }
+
+      // Handle indexes_[dirid] documents
+      if (/^indexes_\d+$/.test(doc)) {
+        const dirid = doc.replace("indexes_", "")
+        changes.indexes[dirid] = {
+          oldData: oldData,
+          newData: newData,
+        }
+        update = true
+        console.log("indexes metadata for dirid", dirid, newData)
       }
     } else if (!/^_/.test(v[0])) {
       // Persist deltas to storage for recovery
@@ -244,7 +278,6 @@ const decodeBuf = async (buf, sql, pid, dbpath, jwk, n = 1) => {
       changes.docs[dir][doc] = currentData
     }
   }
-
   let dirs = []
   for (let k in changes.dirs) {
     const dirData = changes.dirs[k]
@@ -264,14 +297,37 @@ const decodeBuf = async (buf, sql, pid, dbpath, jwk, n = 1) => {
     })
   }
 
-  // Handle index operations for collections
-  for (let k in changes.dirs) {
-    if (k[0] !== "_") {
-      const dirData = changes.dirs[k]
-      const oldIndexes = dirData.oldData?.indexes || []
-      const newIndexes = dirData.newData?.indexes || []
-      const colIndex = dirData.index
+  // Handle index operations from _config/indexes_[dirid]
+  for (let dirid in changes.indexes) {
+    const indexData = changes.indexes[dirid]
+    const oldIndexes = indexData.oldData?.indexes || []
+    const newIndexes = indexData.newData?.indexes || []
 
+    // Find the directory name from dirid
+    let dirName = null
+    for (let k in changes.dirs) {
+      if (changes.dirs[k].index === parseInt(dirid)) {
+        dirName = k
+        break
+      }
+    }
+
+    // If directory not in current changes, check cached cols
+    if (!dirName) {
+      for (let k in dbs[pid].cols) {
+        if (dbs[pid].cols[k] === parseInt(dirid)) {
+          dirName = k
+          break
+        }
+      }
+    }
+
+    // If still not found, load from persistent storage
+    if (!dirName) {
+      dirName = await dbs[pid].io.get(["dirid_map", parseInt(dirid)])
+    }
+
+    if (dirName && dirName[0] !== "_") {
       // Convert to Set for comparison
       const oldIndexSet = new Set(oldIndexes.map(idx => JSON.stringify(idx)))
       const newIndexSet = new Set(newIndexes.map(idx => JSON.stringify(idx)))
@@ -280,8 +336,8 @@ const decodeBuf = async (buf, sql, pid, dbpath, jwk, n = 1) => {
       for (const oldIdx of oldIndexes) {
         const idxKey = JSON.stringify(oldIdx)
         if (!newIndexSet.has(idxKey)) {
-          console.log("removeIndex", k, oldIdx)
-          console.log(await dbs[pid].db.removeIndex(colIndex, oldIdx))
+          console.log("removeIndex", dirName, oldIdx)
+          console.log(await dbs[pid].db.removeIndex(oldIdx, dirName))
         }
       }
 
@@ -289,15 +345,16 @@ const decodeBuf = async (buf, sql, pid, dbpath, jwk, n = 1) => {
       for (const newIdx of newIndexes) {
         const idxKey = JSON.stringify(newIdx)
         if (!oldIndexSet.has(idxKey)) {
-          console.log("addIndex", k, newIdx)
-          console.log(await dbs[pid].db.addIndex(colIndex, newIdx))
+          console.log("addIndex", dirName, newIdx)
+          await dbs[pid].db.addIndex(newIdx, dirName)
+          console.log(await dbs[pid].db.get("users", ...newIdx))
         }
       }
 
       if (newIndexes.length > 0) {
         if (!dbs[pid].indexes) dbs[pid].indexes = {}
-        dbs[pid].indexes[k] = newIndexes
-        console.log("indexes for", k, newIndexes)
+        dbs[pid].indexes[dirName] = newIndexes
+        console.log("indexes for", dirName, newIndexes)
       }
     }
   }
@@ -308,7 +365,6 @@ const decodeBuf = async (buf, sql, pid, dbpath, jwk, n = 1) => {
       if (k[0] !== "_") {
         const doc = dir[k2]
         console.log(k, k2, doc, typeof doc)
-
         if (doc === null) {
           console.log("delete doc", k, k2)
           await dbs[pid].db.set("del:del", k, k2)
@@ -316,14 +372,11 @@ const decodeBuf = async (buf, sql, pid, dbpath, jwk, n = 1) => {
           console.log("set doc", k, k2, doc)
           await dbs[pid].db.set("set:set", doc, k, k2)
         } else {
-          console.log("unknown............", k, k2, doc)
+          console.log("unknown:", k2, doc)
         }
       }
     }
   }
-
-  console.log(_dirs)
-  console.log(changes)
   return update
 }
 
@@ -369,10 +422,15 @@ export default async ({
     dbs[pid].committed_height = dbs[pid].io_hb.get("committed_height") ?? -1
   }
 
-  // Recover encoded documents from storage on restart
+  // Load dirid→dirname mappings on startup
   if (dbs[pid].io) {
-    // LMDB doesn't have a getKeys() method, skip recovery for now
-    // Documents will be rebuilt from the event stream
+    const storedMappings = await dbs[pid].io.get("dirid_mappings")
+    if (storedMappings) {
+      for (const [dirid, dirname] of Object.entries(storedMappings)) {
+        dbs[pid].cols[dirname] = parseInt(dirid)
+      }
+      console.log(`[${pid}]`, "Loaded dirid mappings:", storedMappings)
+    }
   }
 
   let res = null
