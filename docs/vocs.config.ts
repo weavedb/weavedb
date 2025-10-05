@@ -105,6 +105,10 @@ export default defineConfig({
           link: "/build/advanced-start",
         },
         {
+          text: "DB Structure",
+          link: "/build/structure",
+        },
+        {
           text: "Data Schemas",
           link: "/build/schemas",
         },
@@ -124,12 +128,46 @@ export default defineConfig({
           text: "ZK Circuits",
           link: "/build/zk-circuits",
         },
-        {
-          text: "Remote Servers",
-          link: "/build/remote-servers",
-        },
       ],
     },
+    /*{
+      text: "Node Operator Guide",
+      collapsed: false,
+      items: [
+        {
+          text: "DB Rollup",
+          link: "/ops/rollup",
+        },
+	{
+          text: "HyperBEAM",
+          link: "/ops/hyperbeam",
+        },
+        {
+          text: "Httpsig Bundler",
+          link: "/ops/bundler",
+        },
+        {
+          text: "Scheduler Unit",
+          link: "/ops/su",
+        },
+        {
+          text: "Compute Unit",
+          link: "/ops/cu",
+        },
+        {
+          text: "Validator Node",
+          link: "/ops/validator",
+        },
+        {
+          text: "ZK Proover Node",
+          link: "/ops/zk-proover",
+        },
+        {
+          text: "Remote Servers",
+          link: "/ops/remote-servers",
+        },
+      ],
+    },*/
     {
       text: "WDB Specs",
       collapsed: false,

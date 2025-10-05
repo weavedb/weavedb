@@ -48,7 +48,7 @@ function initDB({ state: { query, signer, id: _id }, msg, env: { kv, id } }) {
   let auth_index = -1
   for (let v of query[0].auth) {
     auth[v[0]] = ++auth_index
-    kv.put("_config", `auth_0_${auth_index}`, { auth: v })
+    kv.put("_config", `auth_0_${auth_index}`, { rules: v })
   }
 
   kv.put("_", "_", { auth, triggers: {}, index: 0, auth_index })
@@ -57,20 +57,10 @@ function initDB({ state: { query, signer, id: _id }, msg, env: { kv, id } }) {
     schema: { type: "object", additionalProperties: false },
     auth: [],
   })
-  kv.put("_", "__indexes__", {
-    index: 2,
-    schema: { type: "object" },
-    auth: [],
-  })
-  kv.put("_", "__accounts__", {
-    index: 3,
-    schema: { type: "object" },
-    auth: [],
-  })
   kv.put("_config", "info", {
     id: _id,
     owner: signer,
-    last_dir_id: 3,
+    last_dir_id: 1,
   })
   kv.put("_config", "config", { max_doc_id: 168, max_dir_id: 8 })
   kv.put("_config", "schema_0", query[0].schema)
