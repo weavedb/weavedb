@@ -42,8 +42,16 @@ const signer = ({ jwk, id, nonce = 0 }) => {
 
 function initDB({ state: { query, signer, id: _id }, msg, env: { kv, id } }) {
   if (id) throw Error("already initialized")
-  console.log(query[0])
-  kv.put("_", "_", { ...query[0], index: 0 })
+  if (!query[0].schema) throw Error("schema is missing")
+  if (!query[0].auth) throw Error("auth is missing")
+  let auth = {}
+  let auth_index = -1
+  for (let v of query[0].auth) {
+    auth[v[0]] = ++auth_index
+    kv.put("_config", `auth_0_${auth_index}`, { auth: v })
+  }
+
+  kv.put("_", "_", { auth, triggers: {}, index: 0, auth_index })
   kv.put("_", "_config", {
     index: 1,
     schema: { type: "object", additionalProperties: false },
@@ -65,6 +73,7 @@ function initDB({ state: { query, signer, id: _id }, msg, env: { kv, id } }) {
     last_dir_id: 3,
   })
   kv.put("_config", "config", { max_doc_id: 168, max_dir_id: 8 })
+  kv.put("_config", "schema_0", query[0].schema)
   return arguments[0]
 }
 
@@ -149,9 +158,9 @@ function delData({ state, env }) {
 function validateSchema({ state, env: { kv } }) {
   let valid = false
   const { data, dir } = state
-  let _dir = kv.get("_", dir)
+  let schema = kv.get("_config", `schema_${state.dirinfo.index}`)
   try {
-    valid = validate(data, _dir.schema).valid
+    valid = validate(data, schema).valid
   } catch (e) {}
   if (!valid) throw Error("invalid schema")
 }

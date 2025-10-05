@@ -148,8 +148,13 @@ export default class DB {
     return await this.set(...query)
   }
   async mkdir({ name, schema = { type: "object" }, auth = [] }) {
-    const query = ["set:dir", { schema, auth }, "_", name]
-    return await this.set(...query)
+    const query = ["set:dir", {}, "_", name]
+    const res = await this.set(...query)
+    if (res.success) {
+      await this.setSchema(schema, name)
+      await this.setAuth(auth, name)
+    }
+    return res
   }
   async batch(queries) {
     return await this.set("batch", ...queries)
