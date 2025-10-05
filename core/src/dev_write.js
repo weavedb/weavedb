@@ -12,7 +12,7 @@ import {
 } from "./indexer.js"
 
 function addTrigger({ state, env: { kv } }) {
-  const { data, dir } = state
+  const { data, dir, dirinfo } = state
   if (!data.key) throw Error("key doesn't exist")
   if (!data.on) throw Error("on doesn't exist")
   if (
@@ -28,27 +28,32 @@ function addTrigger({ state, env: { kv } }) {
       throw Error(`the wrong type: ${data.match}`)
   }
 
-  let stat = kv.get("_", dir)
-  if (!stat) throw Error("dir doesn't exist")
-  stat.triggers ??= {}
-  stat.triggers[data.key] = {
+  dirinfo.triggers ??= {}
+  dirinfo.triggers_index = -1
+  dirinfo.triggers[data.key] = ++dirinfo.triggers_index
+  const triggers = {
     on: data.on,
     fn: data.fn,
     match: data.match ?? "all",
     fields: data.fields ?? null,
   }
-  kv.put("_", dir, stat)
+  kv.put("_", dir, dirinfo)
+  kv.put(
+    "_config",
+    `triggers_${dirinfo.index}_${dirinfo.triggers[data.key]}`,
+    triggers,
+  )
   return arguments[0]
 }
 
 function removeTrigger({ state, env: { kv } }) {
-  const { data, dir } = state
+  const { data, dir, dirinfo } = state
   if (!data.key) throw Error("key doesn't exist")
-  let stat = kv.get("_", dir)
-  stat.triggers ??= {}
-  if (!stat.triggers[data.key]) throw Error("trigger doesn't exist")
-  delete stat.triggers[data.key]
-  kv.put("_", dir, stat)
+  dirinfo.triggers ??= {}
+  if (isNil(dirinfo.triggers[data.key])) throw Error("trigger doesn't exist")
+  delete dirinfo.triggers[data.key]
+  kv.del("_config", `triggers_${dirinfo.index}_${dirinfo.triggers[data.key]}`)
+  kv.put("_", dir, dirinfo)
   return arguments[0]
 }
 
