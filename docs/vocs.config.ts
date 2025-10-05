@@ -130,11 +130,11 @@ export default defineConfig({
         },
       ],
     },
-    /*{
+    {
       text: "Node Operator Guide",
       collapsed: false,
       items: [
-        {
+        /*{
           text: "DB Rollup",
           link: "/ops/rollup",
         },
@@ -161,13 +161,13 @@ export default defineConfig({
         {
           text: "ZK Proover Node",
           link: "/ops/zk-proover",
-        },
+        },*/
         {
           text: "Remote Servers",
           link: "/ops/remote-servers",
         },
       ],
-    },*/
+    },
     {
       text: "WDB Specs",
       collapsed: false,

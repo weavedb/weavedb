@@ -1,6 +1,6 @@
 {
   "name": "wdb-sdk",
-  "version": "0.0.26",
+  "version": "0.0.27",
   "type": "module",
   "scripts": {
     "build:cjs": "babel src --out-dir dist/cjs --config-file ./.babelrc-cjs",

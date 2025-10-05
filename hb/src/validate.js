@@ -1,9 +1,10 @@
 import { HB } from "wao"
 import { DatabaseSync } from "node:sqlite"
 import * as lancedb from "@lancedb/lancedb"
-import { kv, db as wdb, vec, sql } from "wdb-core"
+//import { kv, db as wdb, vec, sql } from "wdb-core"
+import { kv, db as wdb, vec, sql } from "../../core/src/index.js"
 import { getMsgs } from "./server-utils.js"
-import { isEmpty, sortBy, prop, isNil, keys, pluck } from "ramda"
+import { isEmpty, sortBy, prop, isNil, keys, pluck, clone } from "ramda"
 import { json, encode, Encoder } from "arjson"
 import { open } from "lmdb"
 import { DB as ZKDB } from "zkjson"
@@ -129,8 +130,8 @@ const getKV = obj => {
         let dir = false
         if (k.split("/")[0] === "_") {
           dir = true
-          let clk = { index: d.cl[k].index }
-          if (d.cl[k].indexes) clk.indexes = d.cl[k].indexes
+          const clk = clone(d.cl[k])
+          for (let k in obj) if (/^__/.test(k)) delete obj[k]
           // sql requires schema to recover and process zkp
           if (
             obj.type === "sql" &&
@@ -141,7 +142,7 @@ const getKV = obj => {
           }
           d.cl[k] = clk
         }
-        if (dir || !/^_/.test(k.split("/")[0])) {
+        if (true /*|| dir || !/^_/.test(k.split("/")[0])*/) {
           let delta = null
           if (!obj.deltas[k]) {
             let cache = obj.io.get(obj.key(`__deltas__/${k}`))
