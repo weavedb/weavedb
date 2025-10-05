@@ -32,7 +32,6 @@ describe("Mem", () => {
     const trigger = {
       key: "inc_age",
       on: "create",
-      fields: ["age"],
       fn: [["update()", [{ age: { _$: ["inc"] } }, "users", "$doc"]]],
     }
     await db.addTrigger(trigger, "users")

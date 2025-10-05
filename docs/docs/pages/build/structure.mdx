@@ -1,0 +1,133 @@
+# Database Structure
+
+The entire WeaveDB instance is represented as a self-contained gigantic JSON. Top-level keys are `dirs`, which contain a collection of `docs`. Self-contained means all the configurations and bookkeeping of the internal state are also within this JSON, which makes every aspect of the database verifiable by zero-knowledge proofs.
+
+This JSON object is never loaded entirely into memory. Instead, the [wdb-kv](/api/wdb-core#kv) adapter stores each doc in the underlying kv storage (`lmdb` by default) and intelligently handles atomic state updates after every transaction. Atomic update means if something fails during a single transaction, nothing will be updated and the entire state of the database rolls back to the old one before starting the transaction.
+
+```javascript
+const wdb = {
+      "_" : {
+        "_": { index: 0 },
+        "_config": { index: 1 },
+        "users": {
+          index: 2,
+          auth: { "set:user": 0 },
+          triggers: { "inc_age": 0 }
+        },
+        "posts": { index: 3, autoid: 2, auth: { "add:post": 0 } }
+      },
+      _config: {
+        info: { id: "abc...", owner: "xyz...", last_dir_id: 3 },
+        config: { max_doc_id: 184, max_dir_id: 24 },
+        schema_4: { type: "object" },
+        auth_4_0": { rules: [ "set:user", [["allow()"]]] },	
+        indexes_4: { indexes: [[[ "name", "asc" ], [ "age", "desc" ]]] },
+        triggers_4_0: {
+          name "inc_age",
+          on: "create"
+          fn: [["update()", [{ age: { _$: ["inc"] } }, "users", "$doc"]]],
+        },
+        schema_5: { type: "object" },
+        auth_5_0": { rules: [ "add:post", [["allow()"]]] },
+      },
+      users: {
+        bob: { name: "Bob", age: 21 },
+        alice: { name: "Alice", age: 31 }
+      },
+      posts: {
+        A: { body: "Hello" },
+        B: { body: "World" }
+      },
+      ...
+}
+```
+
+State transitions are handled in memory and queries are served at lightning speed by a rollup node, while WAL is sent to a HyperBEAM node. Validators download the WAL from the HyperBEAM node and compact the data with ARJSON, then upload the absolute minimum bits to an AO database process, which in turn commits the bits to Arweave permanent storage. The entire JSON structure is recoverable from the WAL, the AO process, or the bits stored on Arweave.
+
+
+## zkDB and Sparse Merkle Trees
+
+The JSON structure is also represented by nested sparse merkle trees to provide novel zk provability with the [zkJSON](/tech/zkjson) circuit. Some database constraints come from the accompanying [zk circuit limitations](/build/zk-circuits).
+
+![](/images/zkjson-4.png)
+
+## DirID and DocID
+
+Each dir has a key in the JSON, but the actual IDs are numeric, representing leaf positions in the [zkDB merkle tree](/tech/zkdb).
+
+![](/images/zkjson-6.png)
+
+`_/[dirname]/index` assigns the lowest available leaf position, which means it's auto-incremental. For example, `_` is `0`, `_config` is `1`, `user` is `2`, and `post` is `3` from the DB instance above.
+
+`_config/info/last_dir_id` keeps track of the current leaf position when `dirs` are added.
+
+`_config/config/max_dir_id` restricts the maximum number of `dirs` in the DB, which is 2 to the power of the value. For example, `max_dir_id=24` allows `2 ** 24 = 16777216` dirs. `24` is the number of levels in the merkle tree, so the number of leaves is `2 ** 24`.
+
+The following is the default auth rule for dir creation:
+
+```js
+[
+  "set:dir",
+  [
+    ["=$isOwner", ["equals", "$signer", "$owner"]],
+    ["=$dir", ["get()", ["_config", "info"]]],
+    ["=$dirid", ["inc", "$dir.last_dir_id"]],
+    ["mod()", { index: "$dirid" }],
+    ["update()", [{ last_dir_id: "$dirid" }, "_config", "info"]],
+    ["allowif()", "$isOwner"],
+  ],
+]
+```
+
+DocIDs are in `base64url` format rather than `utf8`, which are also converted to numeric values to fall into merkle tree leaf positions. So only `A-Za-z0-9_-` are allowed. For example, `max_doc_id=184` means the tree has `184` levels, which contains `2 ** 184` leaves. If we convert the max position to `base64url`, 31 characters are allowed, which can contain [WDB23](/specs/wdb23).
+
+![](/images/zkjson-5.png)
+
+### AutoID
+
+When executing an `add` operation, an auto-incremental docID will be assigned, which is tracked by `_/[dirname]/autoid`. The first docID will be `A (= 0)`, the second docID will be `B (= 1)`, and so on. You can assign arbitrary docIDs with other operations such as `set`, `update`, and `upsert`.
+
+## System Dirs
+
+System dirs are prefixed by `_` and are only updatable internally by the DB owner. The docs are not indexed, meaning you can only query directly by specifying a docid.
+
+### `_` (underscore)
+
+The `_` dir keeps track of the `dirs` in the database. To add any `docs`, an entry for the `dir` must exist here. The configurations for dirs such as `schema`, `auth`, `indexes`, and `triggers` are stored separately in the `_config` dir due to zkJSON constraints (around 6000 characters worth of data for one JSON doc).
+
+- `index`: dir index of the leaf in the zkDB merkle tree
+- `auth`: refs to auth rules in the `_config` dir
+- `triggers`: refs to triggers in the `_config` dir
+
+### `_config`
+
+- `info`: DB info such as the AO process `id`, `owner`, and `last_dir_id`
+- `config`: db-wide configs such as `max_doc_id` and `max_dir_id`
+- `indexes_[dirid]`: [multi-field indexes](/build/indexes) for a dir
+- `schema_[dirid]`: [JSON schema](/build/schemas) for a dir
+- `auth_[dirid]_[auth_ref]`: [FPJSON auth rules](/build/auth) for a dir
+- `triggers_[dirid]_[trigger_ref]`: [a trigger](/build/triggers) for a dir
+
+## Private Dirs
+
+There are private dirs excluded during the compaction process. These are prefixed by `__`.
+
+- `__indexes__`: B+ tree indexers (recomputable)
+- `__accounts__`: tracking nonces to avoid replay attacks
+- `__meta__`: tracking metadata such as hashpath and transaction height
+- `__wal__`: copies of WAL sent to HyperBEAM and state changes (available for [explorer](https://scan.weavedb.dev))
+- `__priv_wal__`: state changes of private dirs
+
+## Custom Dirs
+
+The rest are the dirs added by the DB `owner`, such as `users` and `posts` for a social app.
+
+You can use [wdb-sdk](/api/wdb-sdk) to:
+
+- [create dirs](/api/wdb-sdk#mkdir)
+- [set schema](/api/wdb-sdk#setschema)
+- [set auth rules](/api/wdb-sdk#setauth)
+- [add/remove multi-field indexes](/api/wdb-sdk#addindex)
+- [add/remove triggers](/api/wdb-sdk#addtrigger)
+- [set data](/api/wdb-sdk#set) (add / set / update / upsert / del / batch)
+- [get data](/api/wdb-sdk#get) (get / cget)

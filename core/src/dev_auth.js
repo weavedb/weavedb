@@ -59,7 +59,7 @@ function default_auth({
   if (isNil(dirinfo)) throw Error(`dir doesn't exist: ${dir}`)
   for (const k in dirinfo.auth) {
     const _auth = kv.get("_config", `auth_${dirinfo.index}_${dirinfo.auth[k]}`)
-    if (_auth) auth.push(_auth.auth)
+    if (_auth) auth.push(_auth.rules)
   }
   let allow = false
   const get = (v, obj, set) => {

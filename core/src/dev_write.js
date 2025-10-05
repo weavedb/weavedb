@@ -51,8 +51,8 @@ function removeTrigger({ state, env: { kv } }) {
   if (!data.key) throw Error("key doesn't exist")
   dirinfo.triggers ??= {}
   if (isNil(dirinfo.triggers[data.key])) throw Error("trigger doesn't exist")
-  delete dirinfo.triggers[data.key]
   kv.del("_config", `triggers_${dirinfo.index}_${dirinfo.triggers[data.key]}`)
+  delete dirinfo.triggers[data.key]
   kv.put("_", dir, dirinfo)
   return arguments[0]
 }
@@ -66,15 +66,18 @@ function setAuth({ state, env: { kv } }) {
   if (!Array.isArray(data)) throw Error("auth must be an array")
   if (old_len > len) {
     for (let i = len; i < old_len; i++) {
-      if (i >= len) kv.del("_config", `auth_${dirinfo.index}_${i - 1}`)
+      if (i >= len) kv.del("_config", `auth_${dirinfo.index}_${i}`)
     }
   }
   for (let v of data) {
     if (!Array.isArray(v)) throw Error("auth must be an array")
     auth[v[0]] = ++auth_index
-    kv.put("_config", `auth_${dirinfo.index}_${auth_index}`, { auth: v })
+    kv.put("_config", `auth_${dirinfo.index}_${auth_index}`, { rules: v })
   }
-  dirinfo.auth_index = auth_index
+  if (auth_index === -1) delete dirinfo.auth_index
+  else {
+    dirinfo.auth_index = auth_index
+  }
   dirinfo.auth = auth
   kv.put("_", dir, dirinfo)
   return arguments[0]
