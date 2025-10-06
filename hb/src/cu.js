@@ -1,8 +1,11 @@
 import { init_query, getMsgs } from "./server-utils.js"
+import { toAddr, httpsig_from, structured_to } from "hbsig"
 import express from "express"
+import { isNil, isEmpty, sortBy, prop, o, filter, map, fromPairs } from "ramda"
+const _tags = tags => fromPairs(map(v => [v.name, v.value])(tags))
 import cors from "cors"
 import bodyParser from "body-parser"
-import { isNil, isEmpty, sortBy, prop, o, filter } from "ramda"
+
 import { resolve } from "path"
 import {
   json as arjson,
@@ -380,127 +383,213 @@ const decodeBuf = async (buf, sql, pid, dbpath, jwk, n = 1) => {
   return update
 }
 
+let server = null
+let update = null
+
 const addServer = ({ port }) => {}
 const startServer = ({ port }) => {
   app = express()
   app.use(cors())
   app.use(bodyParser.json())
-  return app.listen(port, () => console.log(`ZK Prover on port ${port}`))
+  app.post("/weavedb/:mid", async (req, res) => {
+    const mid = req.params.mid
+    const pid = req.query["process-id"]
+    console.log(mid, pid)
+    let data = null
+    let msg = []
+    let done = false
+    try {
+      const { assignment, message } = req.body.edges[0].node
+      const tags_a = _tags(assignment.Tags)
+      const tags_m = _tags(message.Tags)
+      let query = null
+      let id = null
+      const slot = req.body.edges[0].cursor
+      let timeout = false
+      const to = setTimeout(() => {
+        if (!done) {
+          timeout = true
+          res.status(500)
+          res.json({ error: "timeout" })
+        }
+      }, 10000)
+      await update(pid, slot, r => {
+        if (!timeout) {
+          done = true
+          const { error, res: res2 } = r
+          data = res2
+          if (error) {
+            res.status(500)
+            res.json({ error: "unknown error" })
+          } else res.json({ Output: { data }, Messages: msg })
+        }
+      })
+    } catch (e) {
+      console.log(e)
+      if (!done) {
+        res.status(500)
+        res.json({ error: "unknown error" })
+      }
+    }
+  })
+
+  return app.listen(port, () => console.log(`CU on port ${port}`))
 }
 
-let server = null
-
+let qs = {}
+let ongoing = {}
 export default async ({
   dbpath,
   hb = "http://localhost:10001",
   pid,
   sql,
-  port = 6365,
+  port = 6366,
   dbpath_hb,
   jwk,
   n = 1,
 }) => {
-  if (!dbs[pid]) {
-    default_pid = pid
-    dbs[pid] = {
-      from: 0,
-      height: -1,
-      committed_height: -1,
-      io: null,
-      io_hb: null,
-      zkdb: null,
-      cols: {},
-      indexes: {},
-      proof: null,
-      proof_cid: null,
-    }
-  }
-  dbs[pid].io ??= open({ path: dbpath })
-  dbs[pid].io_hb ??= open({ path: dbpath_hb })
-  const exists = dbs[pid].io_hb.get("height") ?? -1
-  if (dbs[pid].committed_height === -1) {
-    dbs[pid].committed_height = dbs[pid].io_hb.get("committed_height") ?? -1
-  }
-
-  // Load dirid→dirname mappings on startup
-  if (dbs[pid].io) {
-    const storedMappings = await dbs[pid].io.get("dirid_mappings")
-    if (storedMappings) {
-      for (const [dirid, dirname] of Object.entries(storedMappings)) {
-        dbs[pid].cols[dirname] = parseInt(dirid)
+  update = async (pid, slot, cb) => {
+    qs[pid] ??= {}
+    if (!dbs[pid]) {
+      default_pid = pid
+      dbs[pid] = {
+        from: 0,
+        height: -1,
+        committed_height: -1,
+        io: null,
+        io_hb: null,
+        zkdb: null,
+        cols: {},
+        indexes: {},
+        proof: null,
+        proof_cid: null,
       }
-      console.log(`[${pid}]`, "Loaded dirid mappings:", storedMappings)
     }
-  }
-
-  let res = null
-  let to = 0
-  let plus = 100
-  if (exists > dbs[pid].height) {
-    plus = 1
-    res = { assignments: {} }
-    for (let i = dbs[pid].height + 1; i <= exists; i++) {
-      res.assignments[Number(i).toString()] = dbs[pid].io_hb.get(["data", i])
-      to = i
-      plus += 1
+    dbs[pid].io ??= open({ path: dbpath })
+    dbs[pid].io_hb ??= open({ path: dbpath_hb })
+    const exists = dbs[pid].io_hb.get("height") ?? -1
+    if (dbs[pid].committed_height === -1) {
+      dbs[pid].committed_height = dbs[pid].io_hb.get("committed_height") ?? -1
     }
-  }
-  if (res === null) {
-    if (dbs[pid].height) dbs[pid].from = dbs[pid].height + 1
-    to = dbs[pid].from + 99
-    res = await getMsgs({ pid, hb, from: dbs[pid].from, to })
-  }
-
-  let update = false
-  while (!isEmpty(res.assignments)) {
-    for (let k in res.assignments ?? {}) {
-      const m = res.assignments[k]
-      if (dbs[pid].io_hb) {
-        dbs[pid].io_hb.put(["data", m.slot], m)
+    // Load dirid→dirname mappings on startup
+    if (dbs[pid].io) {
+      const storedMappings = await dbs[pid].io.get("dirid_mappings")
+      if (storedMappings) {
+        for (const [dirid, dirname] of Object.entries(storedMappings)) {
+          dbs[pid].cols[dirname] = parseInt(dirid)
+        }
+        console.log(`[${pid}]`, "Loaded dirid mappings:", storedMappings)
       }
-      if (m.slot === 0) {
-        let from = null
-        for (const k in m.body.commitments) {
-          const c = m.body.commitments[k]
-          if (c.committer) {
-            from = c.committer
-            break
+    }
+    if (!isNil(slot) && cb) {
+      const r = dbs[pid].io_hb.get(["result", slot])
+      if (r) cb(r)
+      else {
+        qs[pid][slot] ??= []
+        qs[pid][slot].push(cb)
+      }
+    }
+    let res = null
+    let to = 0
+    let plus = 100
+    if (exists > dbs[pid].height) {
+      plus = 1
+      res = { assignments: {} }
+      for (let i = dbs[pid].height + 1; i <= exists; i++) {
+        res.assignments[Number(i).toString()] = dbs[pid].io_hb.get(["data", i])
+        to = i
+        plus += 1
+      }
+    }
+    let proof = null
+    if (ongoing[pid] !== true) {
+      ongoing[pid] = true
+      try {
+        if (res === null) {
+          if (dbs[pid].height) dbs[pid].from = dbs[pid].height + 1
+          to = dbs[pid].from + 99
+          res = await getMsgs({ pid, hb, from: dbs[pid].from, to })
+        }
+
+        let update = false
+        while (!isEmpty(res.assignments)) {
+          for (let k in res.assignments ?? {}) {
+            const m = res.assignments[k]
+            if (dbs[pid].io_hb) await dbs[pid].io_hb.put(["data", m.slot], m)
+            if (m.slot === 0) {
+              let from = null
+              for (const k in m.body.commitments) {
+                const c = m.body.commitments[k]
+                if (c.committer) {
+                  from = c.committer
+                  break
+                }
+              }
+            } else {
+              if (m.body.zkhash) {
+                zkhash = m.body.zkhash
+                const buf = m.body.data
+                if (await decodeBuf(buf, sql, pid, dbpath, jwk, n))
+                  update = true
+              } else if (m.body.action === "Query") {
+                let query = null
+                let msg = null
+                try {
+                  query = JSON.parse(m.body.query)
+                  const res = await dbs[pid].db.get(...query)
+                  console.log(`query[${m.slot}]`, query, res)
+                  msg = { res: res, error: null, query }
+                  await dbs[pid].io_hb.put(["result", m.slot], msg)
+                  if (qs[pid][m.slot]) {
+                    for (const v of qs[pid][m.slot]) {
+                      try {
+                        v(msg)
+                      } catch (e) {}
+                    }
+                    delete qs[pid][m.slot]
+                  }
+                } catch (e) {
+                  await dbs[pid].io_hb.put(["result", m.slot], {
+                    res: null,
+                    error: e.toString(),
+                    query,
+                  })
+                }
+              }
+            }
+            dbs[pid].height = m.slot
           }
+          await dbs[pid].io_hb.put("height", dbs[pid].height)
+          dbs[pid].from += plus
+          to = dbs[pid].from + 100
+          console.log(
+            `[${pid}]`,
+            "height",
+            dbs[pid].height,
+            "from:",
+            dbs[pid].from,
+            "to:",
+            to,
+          )
+          res = await getMsgs({ pid, hb, from: dbs[pid].from, to })
         }
-      } else {
-        if (m.body.zkhash) {
-          zkhash = m.body.zkhash
-          const buf = m.body.data
-          if (await decodeBuf(buf, sql, pid, dbpath, jwk, n)) update = true
+
+        proof = async ({ dir, doc, path, query }) => {
+          const col_id = dbs[pid].cols[dir]
+          const key = `${dir}/${doc}`
+          return dbs[pid].arjson[key]?.json() || null
         }
-      }
-      dbs[pid].height = m.slot
+
+        dbs[pid].proof ??= proof
+        if (port && !server) {
+          server = startServer({ port })
+          addServer({ port })
+        }
+        if (!isEmpty(qs[pid])) update()
+        else ongoing[pid] = false
+      } catch (e) {}
+      return { server, proof, update }
     }
-    dbs[pid].io_hb.put("height", dbs[pid].height)
-    dbs[pid].from += plus
-    to = dbs[pid].from + 100
-    console.log(
-      `[${pid}]`,
-      "height",
-      dbs[pid].height,
-      "from:",
-      dbs[pid].from,
-      "to:",
-      to,
-    )
-    res = await getMsgs({ pid, hb, from: dbs[pid].from, to })
   }
-
-  const proof = async ({ dir, doc, path, query }) => {
-    const col_id = dbs[pid].cols[dir]
-    const key = `${dir}/${doc}`
-    return dbs[pid].arjson[key]?.json() || null
-  }
-
-  dbs[pid].proof ??= proof
-  if (port && !server) {
-    server = startServer({ port })
-    addServer({ port })
-  }
-  return { server, proof, update }
+  return await update(pid)
 }
