@@ -5,6 +5,7 @@ import auth from "./dev_auth.js"
 import write from "./dev_write.js"
 import read from "./dev_read.js"
 import build from "./build.js"
+import kv from "./kv_nosql.js"
 
 function get({ state, msg }) {
   state.opcode = "get"
@@ -19,6 +20,7 @@ function cget({ state, msg }) {
 }
 
 export default build({
+  kv,
   write: [normalize, verify, parse, auth, write],
   read: [normalize, parse, read],
   __read__: {

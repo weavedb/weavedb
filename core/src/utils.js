@@ -7,63 +7,11 @@ import { keys, uniq, concat, compose, is, isNil, includes, map } from "ramda"
 import { put, del } from "./indexer.js"
 import { keccak256 } from "./keccak.js"
 
-import {
-  httpbis,
-  createSigner as createHttpSigner,
-} from "http-message-signatures"
-import { createPrivateKey } from "node:crypto"
-
 function parseOp(ctx) {
   const { state } = ctx
   state.op = state.query[0]
   state.opcode = state.op.split(":")[0]
   state.operand = state.op.split(":")[1] ?? null
-  return arguments[0]
-}
-
-const signer = ({ jwk, id, nonce = 0 }) => {
-  const signer = createHttpSigner(
-    createPrivateKey({ key: jwk, format: "jwk" }),
-    "rsa-pss-sha512",
-    jwk.n,
-  )
-  return async (...query) =>
-    await httpbis.signMessage(
-      { key: signer, fields: ["query", "nonce", "id"] },
-      {
-        headers: {
-          query: JSON.stringify(query),
-          nonce: Number(++nonce).toString(),
-          id,
-        },
-      },
-    )
-}
-
-function initDB({ state: { query, signer, id: _id }, msg, env: { kv, id } }) {
-  if (id) throw Error("already initialized")
-  if (!query[0].schema) throw Error("schema is missing")
-  if (!query[0].auth) throw Error("auth is missing")
-  let auth = {}
-  let auth_index = -1
-  for (let v of query[0].auth) {
-    auth[v[0]] = ++auth_index
-    kv.put("_config", `auth_0_${auth_index}`, { rules: v })
-  }
-
-  kv.put("_", "_", { auth, triggers: {}, index: 0, auth_index })
-  kv.put("_", "_config", {
-    index: 1,
-    schema: { type: "object", additionalProperties: false },
-    auth: [],
-  })
-  kv.put("_config", "info", {
-    id: _id,
-    owner: signer,
-    last_dir_id: 1,
-  })
-  kv.put("_config", "config", { max_doc_id: 168, max_dir_id: 8 })
-  kv.put("_config", "schema_0", query[0].schema)
   return arguments[0]
 }
 
@@ -84,7 +32,7 @@ function merge(data, state, old, env) {
           signer: state.signer,
           ts: state.ts,
           id: env.id,
-          owner: env.owner,
+          owner: env.info.owner,
         }
         if (typeof data[k]._$ === "string") {
           if (data[k]._$ === "del") continue
@@ -118,11 +66,11 @@ function genDocID({ state, env }) {
   const { dir } = state
   let _dir = env.kv.get("_", dir)
   if (isNil(_dir)) throw Error("dir doesn't exist:", dir)
-  let i = isNil(_dir.__autoid__) ? 0 : _dir.__autoid__ + 1
+  let i = isNil(_dir.autoid) ? 0 : _dir.autoid + 1
   const docs = env.kv[dir] ?? {}
   while (env.kv.get(dir, tob64(i))) i++
   state.doc = tob64(i)
-  _dir.__autoid__ = i
+  _dir.autoid = i
   env.kv.put("_", dir, _dir)
   return arguments[0]
 }
@@ -145,14 +93,19 @@ function delData({ state, env }) {
   return arguments[0]
 }
 
-function validateSchema({ state, env: { kv } }) {
+function validateSchema({ state, env: { kv, info } }) {
   let valid = false
   const { data, dir } = state
   let schema = kv.get("_config", `schema_${state.dirinfo.index}`)
   try {
     valid = validate(data, schema).valid
   } catch (e) {}
+  const len = JSON.stringify(data).length
   if (!valid) throw Error("invalid schema")
+  if (info.max_doc_size * 20 < len)
+    throw Error(
+      `data too large: ${len} bytes (max: ${info.max_data_size * 20})`,
+    )
 }
 
 function checkMaxDocID(id, size) {
@@ -165,7 +118,7 @@ function checkMaxDocID(id, size) {
 function checkDocID(id, db) {
   if (!/^[A-Za-z0-9\-_]+$/.test(id)) throw Error(`invalid docID: ${id}`)
   else {
-    const { max_doc_id } = db.get("_config", "config")
+    const { max_doc_id } = db.get("_config", "info")
     if (!checkMaxDocID(id, max_doc_id)) throw Error(`docID too large: ${id}`)
   }
 }
@@ -374,8 +327,6 @@ export {
   wdb23,
   checkDocID,
   parseOp,
-  initDB,
-  signer,
   fields,
   merge,
   genDocID,

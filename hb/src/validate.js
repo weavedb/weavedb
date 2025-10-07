@@ -1,8 +1,8 @@
 import { HB } from "wao"
 import { DatabaseSync } from "node:sqlite"
 import * as lancedb from "@lancedb/lancedb"
-//import { kv, db as wdb, vec, sql } from "wdb-core"
-import { kv, db as wdb, vec, sql } from "../../core/src/index.js"
+import { kv, db as wdb, vec, sql } from "wdb-core"
+//import { kv, db as wdb, vec, sql } from "../../core/src/index.js"
 import { getMsgs } from "./server-utils.js"
 import { isEmpty, sortBy, prop, isNil, keys, pluck, clone } from "ramda"
 import { json, encode, Encoder } from "arjson"
@@ -120,7 +120,6 @@ const buildBundle = async (changes, request, vid, cslot) => {
 }
 
 const getKV = obj => {
-  let addr = null
   return kv(obj.io, async c => {
     let changes = {}
     let slot = null

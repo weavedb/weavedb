@@ -6,19 +6,28 @@ This JSON object is never loaded entirely into memory. Instead, the [wdb-kv](/ap
 
 ```javascript
 const wdb = {
-      "_" : {
-        "_": { index: 0 },
-        "_config": { index: 1 },
-        "users": {
+      _: {
+        _: { index: 0 },
+        _config: { index: 1 },
+        users: {
           index: 2,
           auth: { "set:user": 0 },
           triggers: { "inc_age": 0 }
         },
-        "posts": { index: 3, __autoid__: 2, auth: { "add:post": 0 } }
+        posts: { index: 3, autoid: 2, auth: { "add:post": 0 } }
       },
       _config: {
-        info: { id: "abc...", owner: "xyz...", last_dir_id: 3 },
-        config: { max_doc_id: 184, max_dir_id: 24 },
+        info: {
+          i: 4,
+          ts 1759771428592,
+          id: "abc...",
+          owner: "xyz...",
+          hashpath: "xyz...",
+          dirs: 3 ,
+          max_doc_id: 184,
+          max_dir_id: 24,
+          max_doc_size: 256  
+        },
         schema_4: { type: "object" },
         auth_4_0": { rules: [ "set:user", [["allow()"]]] },	
         indexes_4: { indexes: [[[ "name", "asc" ], [ "age", "desc" ]]] },
@@ -61,7 +70,7 @@ Each dir has a key in the JSON, but the actual IDs are numeric, representing lea
 
 `_config/info/last_dir_id` keeps track of the current leaf position when `dirs` are added.
 
-`_config/config/max_dir_id` restricts the maximum number of `dirs` in the DB, which is 2 to the power of the value. For example, `max_dir_id=24` allows `2 ** 24 = 16777216` dirs. `24` is the number of levels in the merkle tree, so the number of leaves is `2 ** 24`.
+`_config/info/max_dir_id` restricts the maximum number of `dirs` in the DB, which is 2 to the power of the value. For example, `max_dir_id=24` allows `2 ** 24 = 16777216` dirs. `24` is the number of levels in the merkle tree, so the number of leaves is `2 ** 24`.
 
 The following is the default auth rule for dir creation:
 
@@ -83,11 +92,9 @@ DocIDs are in `base64url` format rather than `utf8`, which are also converted to
 
 ![](/images/zkjson-5.png)
 
-### \_\_AutoID__
+### AutoID
 
-When executing an `add` operation, an auto-incremental docID will be assigned, which is tracked by `_/[dirname]/__autoid__`. The first docID will be `A (= 0)`, the second docID will be `B (= 1)`, and so on. You can assign arbitrary docIDs with other operations such as `set`, `update`, and `upsert`.
-
-Any field prefixed with `__` in the `_` dir will be excluded from being uploaded to the final bits. `__autoid__` is excluded because it's recomputable and causes unnecessary updates on every doc addition.
+When executing an `add` operation, an auto-incremental docID will be assigned, which is tracked by `_/[dirname]/autoid`. The first docID will be `A (= 0)`, the second docID will be `B (= 1)`, and so on. You can assign arbitrary docIDs with other operations such as `set`, `update`, and `upsert`.
 
 ## System Dirs
 
@@ -103,8 +110,7 @@ The `_` dir keeps track of the `dirs` in the database. To add any `docs`, an ent
 
 ### `_config`
 
-- `info`: DB info such as the AO process `id`, `owner`, and `last_dir_id`
-- `config`: db-wide configs such as `max_doc_id` and `max_dir_id`
+- `info`: DB info and configs such as the AO process `id`, `owner`, and `dirs` count
 - `indexes_[dirid]`: [multi-field indexes](/build/indexes) for a dir
 - `schema_[dirid]`: [JSON schema](/build/schemas) for a dir
 - `auth_[dirid]_[auth_ref]`: [FPJSON auth rules](/build/auth) for a dir
@@ -119,6 +125,10 @@ There are private dirs excluded during the compaction process. These are prefixe
 - `__meta__`: tracking metadata such as hashpath and transaction height
 - `__wal__`: copies of WAL sent to HyperBEAM and state changes (available for [explorer](https://scan.weavedb.dev))
 - `__priv_wal__`: state changes of private dirs
+
+:::info
+Any field prefixed with `__` in the `_` dir will also be excluded from being uploaded to the final bits.
+:::
 
 ## Custom Dirs
 

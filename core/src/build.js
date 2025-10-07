@@ -1,4 +1,5 @@
 import { pof, of, ka, dev, pdev } from "monade"
+import wkv from "./weavekv.js"
 
 const _store = _kv => {
   const get = (dir, doc) => _kv.get(`${dir}/${doc}`)
@@ -12,10 +13,11 @@ const _store = _kv => {
 const _init = ({ kv, msg, opt }) => ({
   state: {},
   msg,
-  env: { ...opt, kv, ...kv.get("_config", "info") },
+  env: { ...opt, kv, info: kv.get("_config", "info") },
 })
 
 const build = ({
+  kv: kv_db,
   async = false,
   write,
   read,
@@ -24,7 +26,8 @@ const build = ({
   init = _init,
   store = _store,
 }) => {
-  return (kv, opt = {}) => {
+  return (kv_custom, opt = {}) => {
+    const kv = kv_custom.init(kv_db)(wkv)
     // Build all methods for the device
     const methods = {}
 

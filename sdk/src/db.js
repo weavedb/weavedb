@@ -79,17 +79,18 @@ export default class DB {
   isArConnect() {
     return this.jwk?.id || this.jwk?.walletName === "ArConnect"
   }
-  async spawn({ query = init_query, type = "nosql" } = {}) {
+  async spawn({ query = init_query, version, type = "nosql" } = {}) {
     if (this.id) throw Error("db already exists")
     const { pid: id } = await this.hb.spawn({
       "db-type": type,
       "execution-device": "weavedb-wal@1.0",
       "device-stack": stack[type],
     })
-    return await this.init({ query, id })
+    return await this.init({ query, id, version })
   }
-  async init({ id, query = init_query }) {
+  async init({ id, version, query = init_query }) {
     this.id = id
+    if (version) query.version = version
     await this.set("init", query)
     return this.id
   }
@@ -255,7 +256,7 @@ export default class DB {
       ])
       this.addr = await this.jwk.getActiveAddress()
     }
-    this._nonce = (await this.get("__accounts__", this.addr))?.nonce ?? 0
+    this._nonce = (await this.get("_accounts", this.addr))?.nonce ?? 0
     return this._nonce
   }
   async stat(dir) {

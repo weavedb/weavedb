@@ -27,8 +27,8 @@ import {
 } from "./utils.js"
 
 function trigger({ state, env }) {
-  const { kv, kv_dir } = env
-  const { doc, dir, data, before, ts, dirinfo } = state
+  const { kv, kv_dir, info } = env
+  const { doc, dir, data, before, dirinfo } = state
   let mod = {
     on: null,
     diff: {},
@@ -36,9 +36,10 @@ function trigger({ state, env }) {
     after: data,
     doc,
     dir,
-    ts,
-    db: env.id,
-    owner: env.owner,
+    i: info.i,
+    ts: info.ts,
+    db: info.id,
+    owner: info.owner,
     signer: state.signer,
     signer23: state.signer23,
   }
@@ -66,9 +67,10 @@ function trigger({ state, env }) {
       dirinfo: state.dirinfo,
       signer: state.signer,
       signer23: state.signer23,
-      ts: state.ts,
-      id: env.id,
-      owner: env.owner,
+      i: info.i,
+      ts: info.ts,
+      id: info.id,
+      owner: info.owner,
       before,
     }
     const kv_dir = {
@@ -82,7 +84,7 @@ function trigger({ state, env }) {
       putData: (key, val) => kv.put(dir, key, val),
       delData: key => kv.del(dir, key),
     }
-    const _env = { kv, kv_dir, owner: env.owner, id: env.id }
+    const _env = { kv, kv_dir, info }
 
     if (op === "del") {
       _state.data = null

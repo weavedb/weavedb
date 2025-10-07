@@ -3,7 +3,7 @@ import verify from "./dev_verify.js"
 import write from "./dev_write_vec.js"
 import parse from "./dev_parse_vec.js"
 import build from "./build.js"
-
+import kv from "./kv_vec.js"
 function search({ msg, env: { kv } }) {
   return kv.search(...msg)
 }
@@ -17,6 +17,7 @@ function query({ msg, env: { kv } }) {
 }
 
 export default build({
+  kv,
   async: true,
   write: [normalize, verify, parse, write],
   __read__: { search: [search], vectorSearch: [vectorSearch], query: [query] },

@@ -3,9 +3,9 @@ const dirs_set = [
   [
     ["=$isOwner", ["equals", "$signer", "$owner"]],
     ["=$dir", ["get()", ["_config", "info"]]],
-    ["=$dirid", ["inc", "$dir.last_dir_id"]],
-    ["mod()", { index: "$dirid" }],
-    ["update()", [{ last_dir_id: "$dirid" }, "_config", "info"]],
+    ["=$dirid", ["inc", "$dir.dirs"]],
+    ["mod()", { index: "$dir.dirs" }],
+    ["update()", [{ dirs: "$dirid" }, "_config", "info"]],
     ["allowif()", "$isOwner"],
   ],
 ]

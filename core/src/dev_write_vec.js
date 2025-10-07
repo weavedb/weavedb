@@ -1,5 +1,6 @@
 import { of, ka } from "monade"
-import { parseOp, initDB } from "./utils.js"
+import { parseOp } from "./utils.js"
+import init from "./dev_init.js"
 import parse from "./dev_parse.js"
 import auth from "./dev_auth.js"
 import write from "./dev_write.js"
@@ -71,7 +72,7 @@ function syncAdd({
 }
 
 const writer = {
-  init: ka().map(initDB),
+  init: ka().map(init),
   createTable: ka().map(syncTable).map(syncAdd),
   add: ka().map(syncAdd),
 }

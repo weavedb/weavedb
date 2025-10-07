@@ -1,8 +1,7 @@
-import kv from "./kv.js"
 import { Utf8 } from "apache-arrow"
 import { LanceSchema, getRegistry } from "@lancedb/lancedb/embedding"
 
-const kv_vec = (io, vec, fn) => {
+const kv_vec = (_methods, io, vec, fn) => {
   let tables = {}
   let func = null
   let schema = null
@@ -79,7 +78,11 @@ const kv_vec = (io, vec, fn) => {
       return await table.query().where(query).toArray()
     },
   }
-  return kv(io, fn, sync, methods)
+  return wkv => {
+    const kv = wkv(_methods.io, fn, sync, methods)
+    for (let k in kv) _methods[k] = kv[k]
+    return _methods
+  }
 }
 
 export default kv_vec

@@ -1,10 +1,11 @@
 {
   "name": "wdb-core",
-  "version": "0.0.19",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "build:cjs": "babel src --out-dir dist/cjs --config-file ./.babelrc-cjs",
-    "build": "rm -rf dist && npm run build:cjs && cp src -rf dist/esm && node make.js && cp .npmignore dist/"
+    "build": "rm -rf dist && npm run build:cjs && cp src -rf dist/esm && node make.js && cp .npmignore dist/",
+    "bundle": "esbuild src/db.js --bundle --format=esm --outfile=wdb.min.js --minify && brotli-cli compress wdb.min.js"
   },
   "exports": {
     ".": {
@@ -40,15 +41,16 @@
     "@babel/cli": "^7.24.8",
     "@babel/core": "^7.25.2",
     "@babel/plugin-transform-modules-commonjs": "^7.24.8",
-    "@babel/preset-env": "^7.25.3"
+    "@babel/preset-env": "^7.25.3",
+    "esbuild": "^0.25.10",
+    "brotli-cli": "^1.2.0"
   },
   "license": "MIT",
   "dependencies": {
     "@lancedb/lancedb": "^0.21.2",
-    "apache-arrow": "^21.0.0",
     "fast-sha256": "^1.3.0",
     "fpjson-lang": "^0.1.5",
-    "hbsig": "^0.1.4",
+    "hbsig": "^0.2.8",
     "http-message-signatures": "^1.0.4",
     "jsonschema": "^1.5.0",
     "monade": "^0.0.1",

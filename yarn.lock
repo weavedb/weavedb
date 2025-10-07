@@ -4582,10 +4582,10 @@ wasm-brotli@^2.0.2:
   resolved "https://registry.npmjs.org/wasm-brotli/-/wasm-brotli-2.0.2.tgz"
   integrity sha512-DgjRlpZz9z5br4TjQHSlDHRF9NIuGXHUj3AqO08koDCXz7EYzmPDb7T/6oar5UKLYgPp9Yxc2ImGpx4BMFwbNQ==
 
-wdb-sdk@^0.0.26:
-  version "0.0.26"
-  resolved "https://registry.npmjs.org/wdb-sdk/-/wdb-sdk-0.0.26.tgz"
-  integrity sha512-wgYJGsywnM9fUGhOtqHsl0j/b7tlId+biN70RjluSRCdXGzPNrz9m2vgMHemmur1rpjqvLZvUoJVw+HTpEw4sg==
+wdb-sdk@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.npmjs.org/wdb-sdk/-/wdb-sdk-0.1.0.tgz"
+  integrity sha512-gBPWDd10HhQQHEX7vpJzEVI2dcBgBKTl6U1WLbbCgwEPIyTWGoddGvIVPg5txLdCLuuDEokpetGmuRcysRVZdA==
   dependencies:
     hbsig "^0.2.5"
     wao "^0.37.7"

@@ -1,5 +1,6 @@
 import { of, ka } from "monade"
-import { initDB, parseOp } from "./utils.js"
+import { parseOp } from "./utils.js"
+import init from "./dev_init.js"
 import parse from "./dev_parse.js"
 import auth from "./dev_auth.js"
 import write from "./dev_write.js"
@@ -45,6 +46,7 @@ function ast2schema(ast) {
 
   return schema
 }
+
 function sync({
   state: { ts, nonce, op, query, ast },
   msg,
@@ -133,7 +135,7 @@ function sync({
 }
 
 const writer = {
-  init: ka().map(initDB),
+  init: ka().map(init),
   sql: ka().map(sync),
 }
 

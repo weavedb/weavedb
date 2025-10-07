@@ -4,14 +4,14 @@ import {
   rsaid,
   hmacid,
   id,
-  base,
   hashpath,
   httpsig_from,
   structured_to,
-} from "hbsig"
+} from "hbsig/nocrypto"
 import { of, ka } from "monade"
 import sha256 from "fast-sha256"
 import { parseOp, wdb23 } from "./utils.js"
+import version from "./version.js"
 
 function base64urlDecode(str) {
   str = str.replace(/-/g, "+").replace(/_/g, "/")
@@ -180,18 +180,27 @@ function pickInput({ state, msg, env }) {
     if (v.toLowerCase() === "content-digest") etc.body = msg.body
   }
   const committed = commit(msg, fields)
-  let info = env.kv.get("__meta__", "current") ?? {}
-  state.hashpath = !info.hashpath
+  env.info ??= { i: -1 }
+  env.info.hashpath = !env.info.hashpath
     ? `${_headers.id}/${id(committed)}`
-    : hashpath(info.hashpath, committed)
+    : hashpath(env.info.hashpath, committed)
   state.signer = toAddr(keyid)
   state.signer23 = wdb23(state.signer)
   state.query = JSON.parse(_headers.query)
+  env.info.i++
   if (typeof _headers.id === "undefined") throw Error("id missing")
   if (typeof _headers.nonce === "undefined") throw Error("nonce missing")
   state.id = _headers.id
   state.nonce = _headers.nonce
-  state.ts = msg.ts ?? Date.now()
+  env.info.ts = msg.ts ?? Date.now()
+  if (env.info.id && env.info.version) {
+    if (version !== env.info.version && env.ignore_version !== true) {
+      throw Error(
+        `the wrong version: ${env.info.version} running on ${version}`,
+      )
+    }
+  }
+  env.kv.put("_config", "info", env.info)
   arguments[0].msg = { headers, ...etc }
   return arguments[0]
 }
