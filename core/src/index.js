@@ -12,4 +12,6 @@ import bpt from "./bpt.js"
 import parser from "./parser.js"
 import build from "./build.js"
 
-export { bpt, parser, build, queue, db, sql, vec, kv, kv_vec, io, mem }
+import Core from "./core.js"
+
+export { bpt, parser, build, queue, db, sql, vec, kv, kv_vec, io, mem, Core }

@@ -14,7 +14,7 @@ function anyone() {
 }
 
 function onlyOwner({ state, env }) {
-  if (state.signer !== env.owner) throw Error("only owner can execute")
+  if (state.signer !== env.info.owner) throw Error("only owner can execute")
   return arguments[0]
 }
 
@@ -23,7 +23,6 @@ function default_auth({
     op,
     signer,
     signer23,
-    ts,
     opcode,
     operand,
     dir,
@@ -36,7 +35,10 @@ function default_auth({
   msg,
   env,
 }) {
-  const { kv, id, owner } = env
+  const {
+    kv,
+    info: { id, owner, ts, i },
+  } = env
   let req = opcode === "del" ? {} : query[0]
   let vars = {
     op,
@@ -46,6 +48,7 @@ function default_auth({
     signer,
     signer23,
     ts,
+    i,
     db: id,
     dir,
     doc,

@@ -4,7 +4,8 @@ import server from "../src/server.js"
 import { Validator } from "../src/validate.js"
 import CU from "../src/cu.js"
 import { HyperBEAM } from "wao/test"
-import { DB } from "wdb-sdk"
+//import { DB } from "wdb-sdk"
+import { DB } from "../../sdk/src/index.js"
 import { wait, genDir } from "./test-utils.js"
 import { HB } from "wao"
 
@@ -50,8 +51,6 @@ describe("Validator", () => {
     const cu = await CU({ pid: vid, dbpath: genDir(), jwk })
     await wait(5000)
     console.log("vid", await vget(vhb, vid, ["users"]))
-    console.log(await cu.proof({ dir: "users", doc: "A", path: "name" }))
-    console.log(await cu.proof({ dir: "users", doc: "B", path: "name" }))
     ;(node.stop(), os.kill(), cu.server.close(), process.exit())
   })
 })

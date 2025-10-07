@@ -21,7 +21,7 @@ function merge(data, state, old, env) {
           signer: state.signer,
           ts: state.ts,
           id: env.id,
-          owner: env.owner,
+          owner: env.info.owner,
         }
         if (typeof data[k]._$ === "string") {
           if (data[k]._$ === "del") continue
@@ -76,7 +76,7 @@ function genDocID({ state, env }) {
   const { dir } = state
   let _dir = env.kv.get("_", dir)
   if (isNil(_dir)) throw Error("dir doesn't exist")
-  let i = isNil(_dir.__autoid__) ? 0 : _dir.__autoid__ + 1
+  let i = isNil(_dir.autoid) ? 0 : _dir.autoid + 1
   const docs = env.kv[dir] ?? {}
   while (env.kv.get(dir, tob64(i))) i++
   state.doc = tob64(i)
@@ -97,7 +97,7 @@ function checkMaxDocID(id, size) {
 function checkDocID(id, db) {
   if (!/^[A-Za-z0-9\-_]+$/.test(id)) throw Error(`invalid docID: ${id}`)
   else {
-    const { max_doc_id } = db.get("_config", "config")
+    const { max_doc_id } = db.get("_config", "info")
     if (!checkMaxDocID(id, max_doc_id)) throw Error(`docID too large: ${id}`)
   }
 }

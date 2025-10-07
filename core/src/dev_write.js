@@ -3,7 +3,8 @@ import draft_07 from "./jsonschema-draft-07.js"
 import { validate } from "jsonschema"
 import parse from "./dev_parse.js"
 import auth from "./dev_auth.js"
-import { putData, delData, validateSchema, parseOp, initDB } from "./utils.js"
+import { putData, delData, validateSchema, parseOp } from "./utils.js"
+import init from "./dev_init.js"
 import { isNil, includes, difference, equals, keys, uniq } from "ramda"
 import trigger from "./dev_trigger.js"
 import {
@@ -158,7 +159,7 @@ function batch({ state, env }) {
 }
 
 const writer = {
-  init: ka().map(initDB),
+  init: ka().map(init),
   set: ka().tap(validateSchema).map(putData).map(trigger),
   add: ka().tap(validateSchema).map(putData).map(trigger),
   upsert: ka().tap(validateSchema).map(putData).map(trigger),
@@ -173,10 +174,10 @@ const writer = {
   batch: ka().map(batch),
 }
 
-function write({ state, msg, env: { no_commit, kv } }) {
+function write({ state, msg, env: { no_commit, kv, info } }) {
   if (writer[state.opcode]) of(arguments[0]).chain(writer[state.opcode].fn())
   let result = null
-  if (no_commit !== true) result = kv.commit(msg, null, state)
+  if (no_commit !== true) result = kv.commit(msg, null, state, info)
   state.result = result
   return arguments[0]
 }

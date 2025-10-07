@@ -15,7 +15,9 @@ import {
   Decoder,
   Parser,
 } from "arjson"
+//import { kv, db as wdb, queue } from "../../core/src/index.js"
 import { kv, db as wdb, queue } from "wdb-core"
+//import { DB } from "../../sdk/src/index.js"
 import { DB } from "wdb-sdk"
 import { verify } from "hbsig"
 import { wait } from "wao/test"
@@ -574,22 +576,17 @@ export default async ({
           res = await getMsgs({ pid, hb, from: dbs[pid].from, to })
         }
 
-        proof = async ({ dir, doc, path, query }) => {
-          const col_id = dbs[pid].cols[dir]
-          const key = `${dir}/${doc}`
-          return dbs[pid].arjson[key]?.json() || null
-        }
-
         dbs[pid].proof ??= proof
-        if (port && !server) {
-          server = startServer({ port })
-          addServer({ port })
-        }
         if (!isEmpty(qs[pid])) update()
         else ongoing[pid] = false
       } catch (e) {}
       return { server, proof, update }
     }
   }
-  return await update(pid)
+  if (port && !server) {
+    server = startServer({ port })
+    addServer({ port })
+  }
+
+  return pid ? await update(pid) : { server }
 }
