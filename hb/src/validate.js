@@ -1,16 +1,16 @@
+import { DatabaseSync } from "node:sqlite"
+import { HB } from "wao"
+import * as lancedb from "@lancedb/lancedb"
+import Sync from "./sync.js"
 import zlib from "zlib"
 import { promisify } from "util"
 const brotliCompress = promisify(zlib.brotliCompress)
 const brotliDecompress = promisify(zlib.brotliDecompress)
-import { HB } from "wao"
-import { DatabaseSync } from "node:sqlite"
-import * as lancedb from "@lancedb/lancedb"
 import { kv, db as wdb, vec, sql } from "wdb-core"
 //import { kv, db as wdb, vec, sql } from "../../core/src/index.js"
 import { getMsgs } from "./server-utils.js"
 import { isEmpty, sortBy, prop, isNil, keys, pluck, clone } from "ramda"
 import { json, encode, Encoder } from "arjson"
-import { open } from "lmdb"
 import { DB as ZKDB } from "zkjson"
 import { resolve } from "path"
 import { connect, createSigner } from "@permaweb/aoconnect"
@@ -155,21 +155,18 @@ const getKV = obj => {
         if (true /*|| dir || !/^_/.test(k.split("/")[0])*/) {
           let delta = null
           if (!obj.deltas[k]) {
-            let cache = obj.io.get(obj.key(`__deltas__/${k}`))
+            let cache = obj.io.get(`__deltas__/${k}`)
             if (cache) {
               for (let v of cache) v[1] = Uint8Array.from(v[1])
               obj.deltas[k] = json(cache, undefined, 2)
             } else {
               obj.deltas[k] = json(null, d.cl[k], 2)
               delta = obj.deltas[k].deltas()[0]
-              await obj.io.put(
-                obj.key(`__deltas__/${k}`),
-                obj.deltas[k].deltas(),
-              )
+              await obj.io.put(`__deltas__/${k}`, obj.deltas[k].deltas())
             }
           } else {
             delta = obj.deltas[k].update(d.cl[k])
-            await obj.io.put(obj.key(`__deltas__/${k}`), obj.deltas[k].deltas())
+            await obj.io.put(`__deltas__/${k}`, obj.deltas[k].deltas())
           }
           if (delta && delta[1].length > 0) {
             changes[k] = { from: c.old[k], to: d.cl[k], delta }
@@ -178,18 +175,12 @@ const getKV = obj => {
       }
     }
     obj.ch++
-    await obj.io.put(obj.key(`__ch__`), obj.ch)
-    await obj.io.put(obj.key(`__changes__/${obj.ch}`), changes)
+    await obj.io.put(`__ch__`, obj.ch)
+    await obj.io.put(`__changes__/${obj.ch}`, changes)
   })
 }
 
-// modularize further to handle multi DBs
-// 0. controller + classify + utils
-// 1. fetch messages
-// 2. process DB
-// 3. bundle commit
-
-export class Validator {
+export class Validator extends Sync {
   constructor({
     pid,
     jwk,
@@ -199,107 +190,53 @@ export class Validator {
     type = "nosql",
     format = "ans104",
     max_msgs = 20,
+    limit = 20,
+    autosync,
   }) {
+    dbpath = `${dbpath}/${pid}/${vid}`
+    super({ pid, dbpath, vid, hb, format, limit, dbpath, autosync })
+    this.dbpath = dbpath
     this.max_msgs = max_msgs
-    this.deltas = {}
-    this.pid = pid
-    this.jwk = jwk
-    this.dbpath = dbpath
-    this.hb = hb
-    this.vid = vid
+    this.wslot = this.io.get("__wslot__") ?? -1
+    this.cslot = this.io.get("__cslot__") ?? -1
+    this.ch = this.io.get("__ch__") ?? -1
     this.type = type
+    this.hb = hb
     this.format = format
-    this.isInit = false
-    this.dbpath = dbpath
-    this.io = open({ path: `${dbpath}/${this.pid}/${this.vid}` })
-  }
-  key(name) {
-    return name
+    this.jwk = jwk
+    this.request = new HB({ url: this.hb, jwk: this.jwk, format: this.format })
   }
   async init(io) {
-    this.request = new HB({ url: this.hb, jwk: this.jwk, format: this.format })
-    this.height = this.io.get(this.key("__height__")) ?? -1
-    this.slot = this.io.get(this.key("__slot__")) ?? -1
-    this.wslot = this.io.get(this.key("__wslot__")) ?? -1
-    this.cslot = this.io.get(this.key("__cslot__")) ?? -1
-    this.ch = this.io.get(this.key("__ch__")) ?? -1
+    await super.init(io)
     this.wkv = getKV(this)
     if (this.type === "vec") {
       const _vec = await lancedb.connect(`${this.dbpath}-${this.pid}.vec`)
-      this.db = await vec(this.wkv, { no_commit: true, sql: _vec })
+      this.db = await vec(this.wkv, { no_commit: true, sql: _vec }) // ??
     } else if (this.type === "sql") {
       const _sql = new DatabaseSync(`${this.dbpath}.sql`)
       this.db = sql(this.wkv, { no_commit: true, sql: _sql })
     } else this.db = wdb(this.wkv, { no_commit: true })
-    this.isInit = true
+    this.isInitDB = true
     return this
-  }
-  async get() {
-    if (!this.isInit) return console.log("not initialized yet...")
-    if (this.ongoing) return console.log("getMsgs ongoing...")
-    this.ongoing = true
-    try {
-      let from = 0
-      from = this.height + 1
-      let from2 = from
-      let to = from + 99
-      let res = await getMsgs({ pid: this.pid, hb: this.hb, from, to })
-      console.log(
-        `[${this.pid}:${this.vid}]  ${from} - ${to} (${keys(res?.assignments ?? {}).length})`,
-      )
-      while (!isEmpty(res.assignments)) {
-        let arr = []
-        let slots = {}
-        for (let k in res.assignments ?? {}) {
-          const m = res.assignments[k]
-          if (this.height + 1 === m.slot) this.height = m.slot
-          if (m.body.data) {
-            for (const v of JSON.parse(m.body.data)) {
-              if (typeof slots[v.slot] === "undefined") {
-                slots[v.slot] = true
-                arr.push(v)
-                await this.io.put(this.key(`__msg__/${v.slot}`), v)
-              }
-            }
-          }
-          from2++
-        }
-        arr = sortBy(prop("slot"), arr)
-        for (let v of arr) {
-          if (v.slot === this.slot + 1) this.slot = v.slot
-        }
-        await this.io.put(this.key("__height__"), this.height)
-        await this.io.put(this.key("__slot__"), this.slot)
-        if (from2 - from >= 100) {
-          from = from2
-          to = from + 100
-          res = await getMsgs({ pid: this.pid, hb: this.hb, from, to })
-        } else break
-      }
-    } catch (e) {
-      console.log(e)
-    }
-    this.ongoing = false
-    return { height: this.height, slot: this.slot }
   }
   async write(force = false) {
     return new Promise(async res => {
-      if (!this.isInit) return console.log("not initialized yet...")
+      if (!this.isInitDB) return console.log("not initialized yet...")
       if (this.ongoing_write && force !== true)
         return console.log("getMsgs ongoing...")
       this.ongoing_write = true
       let isData = false
       let i = 0
       try {
-        let msg = this.io.get(this.key(`__msg__/${this.wslot + 1}`)) ?? null
+        let msg = this.io.get(`__msg__/${this.wslot + 1}`) ?? null
         while (msg && i < this.max_msgs) {
           console.log(`${msg.slot}: ${msg.headers?.query}`)
           if (this.type === "vec") await this.db.pwrite(msg)
           else this.db.write(msg)
           isData = true
           this.wslot += 1
-          await this.io.put(this.key("__wslot__"), this.wslot)
-          msg = this.io.get(this.key(`__msg__/${this.wslot + 1}`)) ?? null
+          await this.io.put("__wslot__", this.wslot)
+          msg = this.io.get(`__msg__/${this.wslot + 1}`) ?? null
           i++
         }
       } catch (e) {
@@ -320,13 +257,12 @@ export class Validator {
     })
   }
   async commit() {
-    if (!this.isInit) return console.log("not initialized yet...")
+    if (!this.isInitDB) return console.log("not initialized yet...")
     if (this.ongoing_commit) return console.log("getMsgs ongoing...")
     this.ongoing_commit = true
     let hashes = {}
     try {
-      let changes =
-        this.io.get(this.key(`__changes__/${this.cslot + 1}`)) ?? null
+      let changes = this.io.get(`__changes__/${this.cslot + 1}`) ?? null
       while (changes) {
         const { buf, zkhash } = await buildBundle(
           changes,
@@ -334,11 +270,11 @@ export class Validator {
           this.vid,
           this.cslot + 1,
         )
-        await this.io.put(this.key("__bundle__"), { zkhash, buf })
+        await this.io.put("__bundle__", { zkhash, buf })
         hashes[this.cslot + 1] = { zkhash, size: buf.length }
         this.cslot += 1
-        await this.io.put(this.key("__cslot__"), this.cslot)
-        changes = this.io.get(this.key(`__changes__/${this.cslot + 1}`)) ?? null
+        await this.io.put("__cslot__", this.cslot)
+        changes = this.io.get(`__changes__/${this.cslot + 1}`) ?? null
       }
     } catch (e) {
       console.log(e)
