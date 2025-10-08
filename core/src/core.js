@@ -17,8 +17,8 @@ export default class Core {
     this.env = env
     if (module) {
       try {
-        const bin = readFileSync(
-          resolve(import.meta.dirname, "../wdb.min.js.br"),
+        const bin = await fetch(`${this.gateway}/${module}`).then(r =>
+          r.arrayBuffer(),
         )
         const src = (await promisify(zlib.brotliDecompress)(bin)).toString()
         const { tmpdir } = await import("os")

@@ -1,3 +1,8 @@
+import zlib from "zlib"
+import { promisify } from "util"
+const brotliCompress = promisify(zlib.brotliCompress)
+const brotliDecompress = promisify(zlib.brotliDecompress)
+
 import { init_query, getMsgs } from "./server-utils.js"
 import { toAddr, httpsig_from, structured_to } from "hbsig"
 import express from "express"
@@ -138,7 +143,8 @@ const genDir = () =>
   )
 
 let schemas = {}
-const decodeBuf = async (buf, sql, pid, dbpath, jwk, n = 1) => {
+const decodeBuf = async (_buf, sql, pid, dbpath, jwk, n = 1) => {
+  const buf = await brotliDecompress(_buf)
   let update = false
   if (!dbs[pid].db) {
     const dbpath = genDir()
@@ -450,7 +456,8 @@ export default async ({
   jwk,
   n = 1,
 }) => {
-  update = async (pid, slot, cb) => {
+  update = async (pid, slot, cb, force) => {
+    console.log("update.........", slot, pid, force)
     qs[pid] ??= {}
     if (!dbs[pid]) {
       default_pid = pid
@@ -488,12 +495,13 @@ export default async ({
       if (r) cb(r)
       else {
         qs[pid][slot] ??= []
+        console.log("putting....", slot, ongoing[pid])
         qs[pid][slot].push(cb)
       }
     }
     let res = null
     let to = 0
-    let plus = 100
+    let plus = 10
     if (exists > dbs[pid].height) {
       plus = 1
       res = { assignments: {} }
@@ -504,12 +512,13 @@ export default async ({
       }
     }
     let proof = null
-    if (ongoing[pid] !== true) {
+    if (ongoing[pid] !== true || force) {
+      console.log("ongoing go.................")
       ongoing[pid] = true
       try {
         if (res === null) {
           if (dbs[pid].height) dbs[pid].from = dbs[pid].height + 1
-          to = dbs[pid].from + 99
+          to = dbs[pid].from + (plus - 1)
           res = await getMsgs({ pid, hb, from: dbs[pid].from, to })
         }
 
@@ -539,7 +548,7 @@ export default async ({
                 try {
                   query = JSON.parse(m.body.query)
                   const res = await dbs[pid].db.get(...query)
-                  console.log(`query[${m.slot}]`, query, res)
+                  console.log(`query [${m.slot}]`, query, res)
                   msg = { res: res, error: null, query }
                   await dbs[pid].io_hb.put(["result", m.slot], msg)
                   if (qs[pid][m.slot]) {
@@ -563,7 +572,7 @@ export default async ({
           }
           await dbs[pid].io_hb.put("height", dbs[pid].height)
           dbs[pid].from += plus
-          to = dbs[pid].from + 100
+          to = dbs[pid].from + plus
           console.log(
             `[${pid}]`,
             "height",
@@ -577,9 +586,12 @@ export default async ({
         }
 
         dbs[pid].proof ??= proof
-        if (!isEmpty(qs[pid])) update()
-        else ongoing[pid] = false
-      } catch (e) {}
+        if (!isEmpty(qs[pid])) update(null, null, null, true)
+        ongoing[pid] = false
+      } catch (e) {
+        console.log(e)
+        ongoing[pid] = false
+      }
       return { server, proof, update }
     }
   }
@@ -587,6 +599,5 @@ export default async ({
     server = startServer({ port })
     addServer({ port })
   }
-
   return pid ? await update(pid) : { server }
 }

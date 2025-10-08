@@ -22,13 +22,10 @@ describe("Mem", () => {
     const pid = "abc"
     const io = open({ path: `${dbpath}/${pid}` })
     const wkv = kv(io, async c => {})
-    const module = null //"EJ-YCX7uCYuYJu12p8gzF-rvi6VTfdCCselW1zoRP0g"
-    const core = await new Core({ io }).init({
-      module,
-      env: { ignore_version: true },
-    })
+    const module = "qNsozxWTsmIEy0AaaDsbEBqD-nnn5qZ8KIMdzzu0Fa8"
+    const core = await new Core({ io }).init({ module })
     const db = new DB({ jwk: owner.jwk, mem: core.db })
-    const id = await db.init({ id: "wdb", version: "0.1.1" })
+    const id = await db.init({ id: "wdb", version: "0.1.0" })
     await db.mkdir({
       name: "users",
       auth: [["add:add,set:set,update:update,del:del", [["allow()"]]]],

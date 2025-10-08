@@ -103,9 +103,7 @@ function validateSchema({ state, env: { kv, info } }) {
   const len = JSON.stringify(data).length
   if (!valid) throw Error("invalid schema")
   if (info.max_doc_size * 20 < len)
-    throw Error(
-      `data too large: ${len} bytes (max: ${info.max_data_size * 20})`,
-    )
+    throw Error(`data too large: ${len} bytes (max: ${info.max_doc_size * 20})`)
 }
 
 function checkMaxDocID(id, size) {
