@@ -1,3 +1,7 @@
+import zlib from "zlib"
+import { promisify } from "util"
+const brotliCompress = promisify(zlib.brotliCompress)
+const brotliDecompress = promisify(zlib.brotliDecompress)
 import { HB } from "wao"
 import { DatabaseSync } from "node:sqlite"
 import * as lancedb from "@lancedb/lancedb"
@@ -100,7 +104,14 @@ const buildBundle = async (changes, request, vid, cslot) => {
   }
   const zkhash = await calcZKHash(_changes)
   //console.log(buf.toString("base64"))
-
+  const params = {
+    [zlib.constants.BROTLI_PARAM_QUALITY]: 11, // Maximum quality
+    [zlib.constants.BROTLI_PARAM_MODE]: zlib.constants.BROTLI_MODE_GENERIC,
+    [zlib.constants.BROTLI_PARAM_LGWIN]: 24, // Maximum window size (16MB)
+    [zlib.constants.BROTLI_PARAM_LGBLOCK]: 24, // Maximum block size
+    [zlib.constants.BROTLI_PARAM_SIZE_HINT]: buf.length,
+  }
+  const compressed = await brotliCompress(buf, params)
   const { err, res } = await schedule(request, {
     pid: vid,
     tags: {
@@ -109,7 +120,7 @@ const buildBundle = async (changes, request, vid, cslot) => {
       "Data-Protocol": "ao",
       Variant: "ao.TN.1",
     },
-    data: buf, //buf.toString("base64"),
+    data: compressed,
   })
   if (err) console.log("this is stuck....")
   console.log()
@@ -187,7 +198,7 @@ export class Validator {
     hb = "http://localhost:10001",
     type = "nosql",
     format = "ans104",
-    max_msgs = 100,
+    max_msgs = 20,
   }) {
     this.max_msgs = max_msgs
     this.deltas = {}
