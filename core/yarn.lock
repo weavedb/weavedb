@@ -1483,6 +1483,14 @@ arconnect@^0.4.2:
   dependencies:
     arweave "^1.10.13"
 
+arjson@^0.0.10:
+  version "0.0.10"
+  resolved "https://registry.npmjs.org/arjson/-/arjson-0.0.10.tgz"
+  integrity sha512-evgbS0cRYsvI8Jl8WtugSXfLQJelsWU8ewKmQ9KnzN7lIEKlW8cdiVMsY8vjfPV+ti+NLCLP50AV5U22DU1p6g==
+  dependencies:
+    "@babel/plugin-transform-modules-commonjs" "^7.24.8"
+    yargs "^17.7.2"
+
 array-back@^3.0.1:
   version "3.1.0"
   resolved "https://registry.npmjs.org/array-back/-/array-back-3.1.0.tgz"

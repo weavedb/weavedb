@@ -6,8 +6,8 @@ import zlib from "zlib"
 import { promisify } from "util"
 const brotliCompress = promisify(zlib.brotliCompress)
 const brotliDecompress = promisify(zlib.brotliDecompress)
-import { kv, db as wdb, vec, sql } from "wdb-core"
-//import { kv, db as wdb, vec, sql } from "../../core/src/index.js"
+//import { kv, db as wdb, vec, sql } from "wdb-core"
+import { kv, db as wdb, vec, sql } from "../../core/src/index.js"
 import { getMsgs } from "./server-utils.js"
 import { isEmpty, sortBy, prop, isNil, keys, pluck, clone } from "ramda"
 import { json, encode, Encoder } from "arjson"
@@ -194,7 +194,14 @@ export class Validator extends Sync {
     autosync,
   }) {
     dbpath = `${dbpath}/${pid}/${vid}`
-    super({ pid, dbpath, vid, hb, format, limit, dbpath, autosync })
+    const onslot = async m => {
+      if (m.body.data) {
+        for (const v of JSON.parse(m.body.data)) {
+          await this.io.put(`__wmsg__/${v.slot}`, v)
+        }
+      }
+    }
+    super({ pid, dbpath, vid, hb, limit, dbpath, autosync, onslot })
     this.dbpath = dbpath
     this.max_msgs = max_msgs
     this.wslot = this.io.get("__wslot__") ?? -1
@@ -206,8 +213,8 @@ export class Validator extends Sync {
     this.jwk = jwk
     this.request = new HB({ url: this.hb, jwk: this.jwk, format: this.format })
   }
-  async init(io) {
-    await super.init(io)
+  async init() {
+    await super.init()
     this.wkv = getKV(this)
     if (this.type === "vec") {
       const _vec = await lancedb.connect(`${this.dbpath}-${this.pid}.vec`)
@@ -228,7 +235,7 @@ export class Validator extends Sync {
       let isData = false
       let i = 0
       try {
-        let msg = this.io.get(`__msg__/${this.wslot + 1}`) ?? null
+        let msg = this.io.get(`__wmsg__/${this.wslot + 1}`) ?? null
         while (msg && i < this.max_msgs) {
           console.log(`${msg.slot}: ${msg.headers?.query}`)
           if (this.type === "vec") await this.db.pwrite(msg)
@@ -236,7 +243,7 @@ export class Validator extends Sync {
           isData = true
           this.wslot += 1
           await this.io.put("__wslot__", this.wslot)
-          msg = this.io.get(`__msg__/${this.wslot + 1}`) ?? null
+          msg = this.io.get(`__wmsg__/${this.wslot + 1}`) ?? null
           i++
         }
       } catch (e) {
