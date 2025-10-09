@@ -7,6 +7,8 @@ import { putData, delData, validateSchema, parseOp } from "./utils.js"
 import init from "./dev_init.js"
 import { isNil, includes, difference, equals, keys, uniq } from "ramda"
 import trigger from "./dev_trigger.js"
+import migrate from "./dev_migrate.js"
+
 import {
   addIndex as _addIndex,
   removeIndex as _removeIndex,
@@ -159,12 +161,28 @@ function batch({ state, env }) {
   return arguments[0]
 }
 
+function upgrade({ state, env: { kv, kv_dir, info } }) {
+  info.upgrading = state.data
+  kv.put("_config", `info`, info)
+  return arguments[0]
+}
+
+function revert({ state, env: { kv, kv_dir, info } }) {
+  if (!info.upgrading) throw Error("not in the process of upgrading")
+  delete info.upgrading
+  kv.put("_config", `info`, info)
+  return arguments[0]
+}
+
 const writer = {
   init: ka().map(init),
   set: ka().tap(validateSchema).map(putData).map(trigger),
   add: ka().tap(validateSchema).map(putData).map(trigger),
   upsert: ka().tap(validateSchema).map(putData).map(trigger),
   update: ka().tap(validateSchema).map(putData).map(trigger),
+  upgrade: ka().map(upgrade),
+  revert: ka().map(revert),
+  migrate: ka().map(migrate),
   del: ka().map(delData).map(trigger),
   addIndex: ka().map(addIndex),
   removeIndex: ka().map(removeIndex),

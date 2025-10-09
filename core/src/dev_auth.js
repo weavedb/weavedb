@@ -157,6 +157,9 @@ const authenticator = {
   removeIndex: onlyOwner,
   addTrigger: onlyOwner,
   removeTrigger: onlyOwner,
+  migrate: onlyOwner,
+  revert: onlyOwner,
+  upgrade: onlyOwner,
   setAuth: onlyOwner,
   setSchema: onlyOwner,
 }

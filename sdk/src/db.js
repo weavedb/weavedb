@@ -136,6 +136,18 @@ export default class DB {
     const query = ["addIndex", index, dir]
     return await this.set(...query)
   }
+  async upgrade(version) {
+    const query = ["upgrade", version]
+    return await this.set(...query)
+  }
+  async revert() {
+    const query = ["revert"]
+    return await this.set(...query)
+  }
+  async migrate() {
+    const query = ["migrate"]
+    return await this.set(...query)
+  }
   async removeIndex(dir) {
     const query = ["removeIndex", dir]
     return await this.set(...query)
@@ -231,6 +243,7 @@ export default class DB {
       /the wrong nonce/.test(json.error) &&
       this.count === 0
     ) {
+      console.log(".........................go again", query)
       await this.nonce()
       this.count++
       return await this.set(...query)

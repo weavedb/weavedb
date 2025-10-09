@@ -8,8 +8,6 @@ import { pluck } from "ramda"
 import { kv, db as wdb, queue, mem } from "../../core/src/index.js"
 import { Core } from "../../core/src/index.js"
 
-//import wdb from "../../core/wdb.min.js"
-
 const owner = acc[0]
 const user1 = acc[1]
 const user2 = acc[2]
@@ -23,7 +21,7 @@ describe("Mem", () => {
     const io = open({ path: `${dbpath}/${pid}` })
     const wkv = kv(io, async c => {})
     const module = "qNsozxWTsmIEy0AaaDsbEBqD-nnn5qZ8KIMdzzu0Fa8"
-    const core = await new Core({ io }).init({ module })
+    const core = await new Core({ io }).init({ version: "0.1.0" })
     const db = new DB({ jwk: owner.jwk, mem: core.db })
     const id = await db.init({ id: "wdb", version: "0.1.0" })
     await db.mkdir({
@@ -40,9 +38,19 @@ describe("Mem", () => {
     await db.removeTrigger({ key: "inc_age" }, "users")
     await db.set("add:add", { name: "Bob", age: 24 }, "users")
     await db.addIndex([["name"], ["age", "desc"]], "users")
-    await db.setAuth([], "users")
+    //await db.setAuth([], "users")
     await db.stat("users")
-
+    await db.upgrade("0.1.1")
+    try {
+      await db.set("add:add", { name: "Bob", age: 23 }, "users")
+    } catch (e) {
+      console.log(e)
+    }
+    await db.revert()
+    console.log(await db.set("add:add", { name: "Bob", age: 23 }, "users"))
     console.log(await db.get("users", ["name"], ["age", "desc"]))
+    await db.upgrade("0.1.1")
+    await db.migrate()
+    console.log(await db.set("add:add", { name: "Bob", age: 23 }, "users"))
   })
 })

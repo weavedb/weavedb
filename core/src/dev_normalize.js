@@ -151,13 +151,6 @@ function pickInput({ state, msg, env }) {
   state.id = _headers.id
   state.nonce = _headers.nonce
   env.info.ts = msg.ts ?? Date.now()
-  if (env.info.id && env.info.version) {
-    if (version !== env.info.version && env.ignore_version !== true) {
-      throw Error(
-        `the wrong version: ${env.info.version} running on ${version}`,
-      )
-    }
-  }
   env.kv.put("_config", "info", env.info)
   arguments[0].msg = { headers, ...etc }
   return arguments[0]
