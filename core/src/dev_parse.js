@@ -3,6 +3,7 @@ import { keys, uniq, concat, compose, is, isNil, includes } from "ramda"
 import { merge, genDocID, checkDocID } from "./utils.js"
 import _fpjson from "fpjson-lang"
 const fpjson = _fpjson.default || _fpjson
+import version from "./version.js"
 
 import { replace$ } from "./fpjson.js"
 
@@ -39,7 +40,10 @@ function parse({ state, env }) {
   if (state.opcode === "batch") return arguments[0]
   const { kv } = env
   let data, dir, doc
-  if (state.opcode === "init") {
+  if (includes(state.opcode, ["upgrade"])) {
+    ;[data] = state.query
+    state.data = data
+  } else if (includes(state.opcode, [, "revert", "migrate", "init"])) {
   } else if (state.opcode === "get" || state.opcode === "cget") {
     ;[dir, doc] = state.query
     state.dir = dir
@@ -77,6 +81,39 @@ function parse({ state, env }) {
     state.dir = dir
     state.doc = doc
     state.data = data
+  }
+
+  if (
+    env.info.id &&
+    env.info.version &&
+    env.ignore_version !== true &&
+    !includes(state.opcode, ["get", "cget"])
+  ) {
+    if (version !== env.info.version) {
+      if (env.info.upgrading) {
+        if (!includes(state.opcode, ["revert", "migrate"])) {
+          throw Error(
+            `only revert or migrate is possithe during upgrade: ${env.info.version} => ${env.info.upgrading}`,
+          )
+        } else if (version !== env.info.upgrading) {
+          throw Error(
+            `the wrong version: ${env.info.version} running on ${version}`,
+          )
+        }
+      } else {
+        throw Error(
+          `the wrong version: ${env.info.version} running on ${version}`,
+        )
+      }
+    } else {
+      if (env.info.upgrading) {
+        if (!includes(state.opcode, ["revert"])) {
+          throw Error(
+            `only revert or migrate is possithe during upgrade: ${env.info.version} => ${env.info.upgrading}`,
+          )
+        }
+      }
+    }
   }
   if (dir) state.dirinfo = kv.get("_", dir)
   env.kv_dir = {
