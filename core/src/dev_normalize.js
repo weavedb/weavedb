@@ -1,4 +1,3 @@
-import { includes, isNil } from "ramda"
 import {
   extractPubKey,
   rsaid,
@@ -9,38 +8,9 @@ import {
   structured_to,
 } from "hbsig/nocrypto"
 import { of, ka } from "monade"
-import sha256 from "fast-sha256"
-import { parseOp, wdb23 } from "./utils.js"
+import { toAddr, parseOp, wdb23 } from "./utils.js"
 import version from "./version.js"
-
-function base64urlDecode(str) {
-  str = str.replace(/-/g, "+").replace(/_/g, "/")
-  const pad = str.length % 4
-  if (pad === 2) str += "=="
-  else if (pad === 3) str += "="
-  else if (pad !== 0) throw new Error("Invalid base64url string")
-  const bin = atob(str)
-  const bytes = new Uint8Array(bin.length)
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
-  return bytes
-}
-
-function base64urlEncode(bytes) {
-  let bin = ""
-  for (const b of bytes) bin += String.fromCharCode(b)
-  let b64 = btoa(bin)
-  return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "")
-}
-
-function toAddr(n) {
-  const pubBytes = base64urlDecode(n)
-  const hash = sha256(pubBytes)
-  return base64urlEncode(hash)
-}
-
-const BASE64_CHARS =
-  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
-
+import { includes } from "ramda"
 function parseSI(input) {
   const eq = input.indexOf("=")
   if (eq < 0) throw new Error("Invalid Signature-Input (no `=` found)")
@@ -91,18 +61,6 @@ function parseSI(input) {
   if (!obj.keyid) throw new Error("Missing `keyid` in Signature-Input")
 
   return obj
-}
-
-function tob64(n) {
-  if (!Number.isInteger(n) || n < 0)
-    throw new Error("Only non-negative integers allowed")
-  if (n === 0) return BASE64_CHARS[0]
-  let result = ""
-  while (n > 0) {
-    result = BASE64_CHARS[n % 64] + result
-    n = Math.floor(n / 64)
-  }
-  return result
 }
 
 function toLower({ msg, env }) {

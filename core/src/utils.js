@@ -1,4 +1,5 @@
 import { validate } from "jsonschema"
+import sha256 from "fast-sha256"
 import { hash } from "fast-sha256"
 import _fpjson from "fpjson-lang"
 const fpjson = _fpjson.default || _fpjson
@@ -319,7 +320,33 @@ function cid(json) {
   return toCID(new Uint8Array([18, hashBytes.length, ...Array.from(hashBytes)]))
 }
 
+function base64urlDecode(str) {
+  str = str.replace(/-/g, "+").replace(/_/g, "/")
+  const pad = str.length % 4
+  if (pad === 2) str += "=="
+  else if (pad === 3) str += "="
+  else if (pad !== 0) throw new Error("Invalid base64url string")
+  const bin = atob(str)
+  const bytes = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+  return bytes
+}
+
+function base64urlEncode(bytes) {
+  let bin = ""
+  for (const b of bytes) bin += String.fromCharCode(b)
+  let b64 = btoa(bin)
+  return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "")
+}
+
+function toAddr(n) {
+  const pubBytes = base64urlDecode(n)
+  const hash = sha256(pubBytes)
+  return base64urlEncode(hash)
+}
+
 export {
+  toAddr,
   cid,
   wdb160,
   wdb23,

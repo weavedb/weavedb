@@ -10,6 +10,7 @@ export default class Sync {
     vid,
     hb = "http://localhost:10001",
     limit = 20,
+    onslot,
   }) {
     this.autosync = autosync
     this.limit = limit
@@ -20,8 +21,9 @@ export default class Sync {
     this.vid = vid
     this.io = open({ path: this.dbpath })
     this.isInit = false
+    this.onslot = onslot
   }
-  async init(io) {
+  async init() {
     this.slot = this.io.get("__slot__") ?? -1
     this.isInit = true
     this.get()
@@ -44,23 +46,13 @@ export default class Sync {
         `[${this.pid}:${this.vid}]  ${from} - ${to} (${keys(res?.assignments ?? {}).length})`,
       )
       while (!isEmpty(res.assignments)) {
-        let arr = []
-        let slots = {}
         for (let k in res.assignments ?? {}) {
           const m = res.assignments[k]
           if (this.slot + 1 === m.slot) this.slot = m.slot
-          if (m.body.data) {
-            for (const v of JSON.parse(m.body.data)) {
-              if (typeof slots[v.slot] === "undefined") {
-                slots[v.slot] = true
-                arr.push(v)
-                await this.io.put(`__msg__/${v.slot}`, v)
-              }
-            }
-          }
+          await this.io.put(`__msg__/${m.slot}`, m)
+          if (typeof this.onslot === "function") await this.onslot(m)
           from2++
         }
-        arr = sortBy(prop("slot"), arr)
         await this.io.put("__slot__", this.slot)
         if (from2 - from >= this.limit) {
           from = from2

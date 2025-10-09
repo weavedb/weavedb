@@ -1,7 +1,7 @@
 import version from "./version.js"
 
 function dev_init({
-  state: { query, signer, id: _id, module },
+  state: { query, signer, id: _id },
   msg,
   env: {
     ignore_version,
@@ -26,7 +26,6 @@ function dev_init({
   })
   let info = {
     dirs: 3,
-    hashpath,
     i,
     id: _id,
     owner: signer,
@@ -35,6 +34,7 @@ function dev_init({
     max_dir_id: 8,
     max_doc_size: 256,
   }
+  if (hashpath) info.hashpath = hashpath
   if (query[0].version) {
     if (version !== query[0].version && ignore_version !== true) {
       throw Error(

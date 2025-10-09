@@ -57,7 +57,7 @@ const build = ({
             .map(init)
             .chain(_write.fn())
             .val()
-          return { ...state, msg: msg2 }
+          return state
         } catch (e) {
           console.log(e)
           currentKv.reset()

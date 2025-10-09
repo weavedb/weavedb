@@ -1,4 +1,6 @@
 import { of, ka } from "monade"
+import write_core from "./dev_write.js"
+import read from "./dev_read.js"
 import draft_07 from "./jsonschema-draft-07.js"
 import { validate } from "jsonschema"
 import parse from "./dev_parse.js"
@@ -153,26 +155,75 @@ function batch({ state, env }) {
     })
       .map(parseOp)
       .map(parse)
-      .map(auth)
-      .map(write)
+      .map(write_core)
   }
+  return arguments[0]
+}
+
+function commit({ state, env }) {
+  let _batch = []
+  for (const v of state.updates) {
+    const [op, query] = v
+    if (op === "mkdir") {
+      const index = env.info.dirs++
+      env.kv.put("_", query[0].name, { auth: query[0].auth, index })
+      env.kv.put("_config", `schema_${index}`, query[0].schema)
+      env.kv.put("_config", "info", env.info)
+    } else if (op === "addIndex" || op === "removeIndex") {
+      const dir = query[1]
+      const dirinfo = env.kv.get("_", dir)
+      const kv_dir = {
+        get: k => env.kv.get("__indexes__", `${dir}/${k}`),
+        put: (k, v, nosave) => env.kv.put("__indexes__", `${dir}/${k}`, v),
+        del: (k, nosave) => env.kv.del("__indexes__", `${dir}/${k}`),
+        data: key => ({
+          val: env.kv.get(dir, key),
+          __id__: key.split("/").pop(),
+        }),
+        putData: (key, val) => env.kv.put(dir, key, val),
+        delData: key => env.kv.del(dir, key),
+      }
+      of({
+        state: {
+          dir,
+          dirinfo,
+          data: query[0],
+          nonce: state.nonce,
+          ts: state.ts,
+          signer: state.signer,
+          signer23: state.signer23,
+          id: state.id,
+          query: v,
+        },
+        msg: null,
+        env: { info: env.info, kv: env.kv, kv_dir, no_commit: true },
+      }).map(op === "addIndex" ? addIndex : removeIndex)
+    } else _batch.push([op, ...query])
+  }
+  of({
+    state: {
+      nonce: state.nonce,
+      ts: state.ts,
+      signer: state.signer,
+      signer23: state.signer23,
+      id: state.id,
+      query: _batch,
+    },
+    msg: null,
+    env: env,
+  }).map(batch)
+  return arguments[0]
+}
+function get({ state, env }) {
+  state.result = of(arguments[0]).map(parse).map(read).val()
+  env.kv.put("__results__", `${env.info.i}`, state.result)
   return arguments[0]
 }
 
 const writer = {
   init: ka().map(init),
-  set: ka().tap(validateSchema).map(putData).map(trigger),
-  add: ka().tap(validateSchema).map(putData).map(trigger),
-  upsert: ka().tap(validateSchema).map(putData).map(trigger),
-  update: ka().tap(validateSchema).map(putData).map(trigger),
-  del: ka().map(delData).map(trigger),
-  addIndex: ka().map(addIndex),
-  removeIndex: ka().map(removeIndex),
-  addTrigger: ka().map(addTrigger),
-  removeTrigger: ka().map(removeTrigger),
-  setSchema: ka().map(setSchema),
-  setAuth: ka().map(setAuth),
-  batch: ka().map(batch),
+  commit: ka().map(commit),
+  get: ka().map(get),
 }
 
 function write({ state, msg, env: { no_commit, kv, info } }) {
