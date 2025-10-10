@@ -25,7 +25,7 @@ function frombits(bitArray) {
 
 function decodeData({ state, msg, env }) {
   if (state.opcode !== "commit") return arguments[0]
-  const n = 2
+  const n = 3
   const cols = env.kv.get("__cols__", "cols") ?? {}
   const buf = msg.data
   const _buf = zlib.brotliDecompressSync(buf)

@@ -35,7 +35,7 @@ const from64 = b64 => {
 let zkdb = null
 let cols = {}
 let ongoing = false
-let nonce = 3
+let nonce = 2
 
 const calcZKHash = async changes => {
   if (!zkdb) {

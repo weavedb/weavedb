@@ -7,7 +7,7 @@ import { validate } from "jsonschema"
 import parse from "./dev_parse.js"
 import auth from "./dev_auth.js"
 import { putData, delData, validateSchema, parseOp } from "./utils.js"
-import init from "./dev_init.js"
+import init from "./dev_init_sst.js"
 import { isNil, includes, difference, equals, keys, uniq } from "ramda"
 import trigger from "./dev_trigger.js"
 import {

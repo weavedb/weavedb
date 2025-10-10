@@ -49,6 +49,11 @@ function pickInput({ state, msg, env }) {
   return arguments[0]
 }
 
-const normalize = ka().map(pickInput)
+function setEnv({ state, msg, env }) {
+  env.info = env.kv.get("__sst__", "info")
+  return arguments[0]
+}
+
+const normalize = ka().map(setEnv).map(pickInput)
 
 export default normalize
