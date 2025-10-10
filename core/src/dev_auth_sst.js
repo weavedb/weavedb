@@ -14,13 +14,14 @@ function anyone() {
 }
 
 function onlyOwner({ state, env }) {
-  console.log(state.signer, env.info.owner)
   if (state.signer !== env.info.owner) throw Error("only owner can execute")
   return arguments[0]
 }
 
 const authenticator = {
   init: anyone,
+  set: onlyOwner,
+  del: onlyOwner,
   commit: onlyOwner,
   migrate: onlyOwner,
   revert: onlyOwner,

@@ -68,7 +68,6 @@ const schedule = async (request, obj, attempts = 0) => {
   try {
     // decode_error <= hbsig parse error?
     res = await request.message(obj)
-    console.log(res.res)
     const decode = JSON.parse(res.res?.results?.data).decode
     if (decode === false) return { err: true, res }
     if (decode !== true) throw Error("decode not found")
