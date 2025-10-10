@@ -13,7 +13,7 @@ const _store = _kv => {
 const _init = ({ kv, msg, opt }) => ({
   state: {},
   msg,
-  env: { ...opt, kv, info: kv.get("_config", "info") },
+  env: { ...opt, kv },
 })
 
 const build = ({
