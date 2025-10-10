@@ -243,7 +243,6 @@ export default class DB {
       /the wrong nonce/.test(json.error) &&
       this.count === 0
     ) {
-      console.log(".........................go again", query)
       await this.nonce()
       this.count++
       return await this.set(...query)

@@ -18,10 +18,9 @@ function pickInput({ state, msg, env }) {
     const action = msg.action?.toLowerCase?.()
     state.id = msg.target.toString("base64url")
     if (action === "query") {
-      const q = JSON.parse(msg.query)
-      state.query = ["get", ...q]
-      state.op = "get"
-      state.opcode = "get"
+      state.query = JSON.parse(msg.query)
+      state.op = state.query[0]
+      state.opcode = state.query[0]
     } else {
       state.query = []
       state.op = "commit"
