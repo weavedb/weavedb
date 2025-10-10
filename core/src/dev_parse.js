@@ -2,8 +2,8 @@ import { of, ka } from "monade"
 import { keys, uniq, concat, compose, is, isNil, includes } from "ramda"
 import { merge, genDocID, checkDocID } from "./utils.js"
 import _fpjson from "fpjson-lang"
+import version from "./dev_version.js"
 const fpjson = _fpjson.default || _fpjson
-import version from "./version.js"
 
 import { replace$ } from "./fpjson.js"
 
@@ -83,39 +83,10 @@ function parse({ state, env }) {
     state.data = data
   }
 
-  if (
-    env.info.id &&
-    env.info.version &&
-    env.ignore_version !== true &&
-    !includes(state.opcode, ["get", "cget"])
-  ) {
-    if (version !== env.info.version) {
-      if (env.info.upgrading) {
-        if (!includes(state.opcode, ["revert", "migrate"])) {
-          throw Error(
-            `only revert or migrate is possithe during upgrade: ${env.info.version} => ${env.info.upgrading}`,
-          )
-        } else if (version !== env.info.upgrading) {
-          throw Error(
-            `the wrong version: ${env.info.version} running on ${version}`,
-          )
-        }
-      } else {
-        throw Error(
-          `the wrong version: ${env.info.version} running on ${version}`,
-        )
-      }
-    } else {
-      if (env.info.upgrading) {
-        if (!includes(state.opcode, ["revert"])) {
-          throw Error(
-            `only revert or migrate is possithe during upgrade: ${env.info.version} => ${env.info.upgrading}`,
-          )
-        }
-      }
-    }
-  }
+  of(arguments[0]).map(version)
+
   if (dir) state.dirinfo = kv.get("_", dir)
+
   env.kv_dir = {
     get: k => kv.get("__indexes__", `${dir}/${k}`),
     put: (k, v, nosave) => kv.put("__indexes__", `${dir}/${k}`, v),

@@ -5,8 +5,8 @@ const _tags = tags => fromPairs(map(v => [v.name, v.value])(tags))
 import cors from "cors"
 import bodyParser from "body-parser"
 
-//import { kv, db_sst, queue } from "../../core/src/index.js"
-import { kv, db_sst, queue } from "wdb-core"
+import { kv, db_sst, queue } from "../../core/src/index.js"
+//import { kv, db_sst, queue } from "wdb-core"
 
 let dbs = {}
 let app = null
@@ -25,12 +25,16 @@ const startServer = ({ port }) => {
     let msg = []
     let done = false
     try {
+      /*
       const { assignment, message } = req.body.edges[0].node
       const tags_a = _tags(assignment.Tags)
       const tags_m = _tags(message.Tags)
       let query = null
       let id = null
       const slot = req.body.edges[0].cursor
+      */
+      const slot = mid
+      console.log("slot...", slot)
       let timeout = false
       const to = setTimeout(() => {
         if (!done) {
@@ -129,7 +133,7 @@ export class CU extends Sync {
   }
 
   async result(slot, cb) {
-    const res = await this.io.get(`__result__/${slot}`)
+    const res = await this.io.get(`__results__/${slot}`)
     if (res) cb(res)
     else {
       this.next_write = true
@@ -152,26 +156,23 @@ export class CU extends Sync {
           if (m.slot !== 0) {
             if (m.body.action === "Commit") {
             } else if (m.body.action === "Query") {
-              let query = null
-              try {
-                query = JSON.parse(m.body.query)
-                const msg = { res: result.result, error: null, query }
-                if (this.subs[m.slot]) {
-                  for (const v of this.subs[m.slot]) {
-                    try {
-                      v(msg)
-                    } catch (e) {}
-                  }
-                  delete this.subs[m.slot]
-                }
-              } catch (e) {
-                await this.io.put(["__result__", m.slot], {
-                  res: null,
-                  error: e.toString(),
-                  query,
-                })
-              }
             }
+          }
+          try {
+            const msg = { res: result.result, error: null }
+            if (this.subs[m.slot]) {
+              for (const v of this.subs[m.slot]) {
+                try {
+                  v(msg)
+                } catch (e) {}
+              }
+              delete this.subs[m.slot]
+            }
+          } catch (e) {
+            await this.io.put(["__results__", m.slot], {
+              res: null,
+              error: e.toString(),
+            })
           }
           this.wslot += 1
           await this.io.put("__wslot__", this.wslot)
