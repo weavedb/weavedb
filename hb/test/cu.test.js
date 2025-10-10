@@ -54,10 +54,15 @@ describe("Validator", () => {
     ;(await wait(3000), await val.commit())
     const vcu = await cu.add(vid, 3000)
     await wait(5000)
-    console.log(await vget(vhb, vid, ["users", 1]))
-    console.log(await vget(vhb, vid, ["users", 2]))
+    console.log(await vget(vhb, vid, ["get", "users", 1]))
+    console.log(await vget(vhb, vid, ["cget", "users", 2]))
     console.log(
-      await vget(vhb, vid, ["users", ["tags", "array-contains", "user"], 10]),
+      await vget(vhb, vid, [
+        "get",
+        "users",
+        ["tags", "array-contains", "user"],
+        10,
+      ]),
     )
     await val.stopSync()
     await vcu.stopSync()

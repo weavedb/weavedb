@@ -86,7 +86,6 @@ function parse({ state, env }) {
   of(arguments[0]).map(version)
 
   if (dir) state.dirinfo = kv.get("_", dir)
-
   env.kv_dir = {
     get: k => kv.get("__indexes__", `${dir}/${k}`),
     put: (k, v, nosave) => kv.put("__indexes__", `${dir}/${k}`, v),

@@ -151,7 +151,6 @@ function decodeData({ state, msg, env }) {
     state.decode_error = true
   }
   env.info = env.kv.get("_config", "info")
-  console.log(env.info)
   return arguments[0]
 }
 

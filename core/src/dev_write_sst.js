@@ -241,6 +241,7 @@ const writer = {
   init: ka().map(init),
   commit: ka().map(commit),
   get: ka().map(get),
+  cget: ka().map(get),
   upgrade: ka().map(upgrade),
   revert: ka().map(revert),
   migrate: ka().map(migrate),
