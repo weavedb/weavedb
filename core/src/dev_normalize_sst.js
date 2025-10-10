@@ -17,15 +17,16 @@ function pickInput({ state, msg, env }) {
   } else {
     const action = msg.action?.toLowerCase?.()
     state.id = msg.target.toString("base64url")
+    if (env.info.id && env.info.id !== state.id) throw Error("the wrong id")
     if (action === "query") {
       state.query = JSON.parse(msg.query)
       state.op = state.query[0]
       state.opcode = state.query[0]
     } else {
       state.query = []
-      state.op = "commit"
-      state.opcode = "commit"
-      env.info.zkhash = msg.zkhash
+      state.op = action
+      state.opcode = action
+      if (action === "commit") env.info.zkhash = msg.zkhash
     }
   }
   for (const k in msg.commitments) {

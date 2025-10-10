@@ -25,16 +25,7 @@ const startServer = ({ port }) => {
     let msg = []
     let done = false
     try {
-      /*
-      const { assignment, message } = req.body.edges[0].node
-      const tags_a = _tags(assignment.Tags)
-      const tags_m = _tags(message.Tags)
-      let query = null
-      let id = null
-      const slot = req.body.edges[0].cursor
-      */
       const slot = mid
-      console.log("slot...", slot)
       let timeout = false
       const to = setTimeout(() => {
         if (!done) {
@@ -133,7 +124,7 @@ export class CU extends Sync {
   }
 
   async result(slot, cb) {
-    const res = await this.io.get(`__results__/${slot}`)
+    const res = this.io.get([`__results__`, +slot])
     if (res) cb(res)
     else {
       this.next_write = true
@@ -153,8 +144,10 @@ export class CU extends Sync {
         if (m) {
           isData = true
           let _result = null
-          const { success, err, result } = await this.db.write(m.body)
+          const res = await this.db.write(m.body)
+          const { success, err, result } = res
           if (success === false) {
+            _result = { success, err, res: null }
             if (m.body.action === "Commit") {
               if (/wrong nonce/.test(err)) {
                 const regex = /correct:\s*(\d+)/
@@ -164,14 +157,8 @@ export class CU extends Sync {
                 if (match) correct = +match[1]
                 _result = { success, err, res: { nonce: false, correct } }
               } else _result = { success, err, res: { decode: false } }
-              await this.io.put(["__results__", m.slot], _result)
-            } else if (m.body.action === "Query") {
-              await this.io.put(["__results__", m.slot], {
-                success,
-                err,
-                result: null,
-              })
             }
+            await this.io.put(["__results__", m.slot], _result)
           } else if (success === true) {
             _result = { err: null, success: true, res: result?.result ?? null }
             await this.io.put(["__results__", m.slot], _result)

@@ -18,8 +18,16 @@ function onlyOwner({ state, env }) {
   return arguments[0]
 }
 
+function auth_default({ state, env }) {
+  throw Error("operation not allowed:", state.opcode)
+  return arguments[0]
+}
+
 const authenticator = {
+  auth_default,
   init: anyone,
+  get: anyone,
+  cget: anyone,
   set: onlyOwner,
   del: onlyOwner,
   commit: onlyOwner,
@@ -29,7 +37,7 @@ const authenticator = {
 }
 
 function auth({ state, env }) {
-  const func = authenticator[state.opcode]
+  const func = authenticator[state.opcode] ?? authenticator.auth_default
   if (func) func(arguments[0])
   return arguments[0]
 }

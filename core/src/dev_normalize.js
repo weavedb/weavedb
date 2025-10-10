@@ -148,6 +148,7 @@ function pickInput({ state, msg, env }) {
   env.info.i++
   if (typeof _headers.id === "undefined") throw Error("id missing")
   if (typeof _headers.nonce === "undefined") throw Error("nonce missing")
+  if (env.info.id && env.info.id !== _headers.id) throw Error("the wrong id")
   state.id = _headers.id
   state.nonce = _headers.nonce
   env.info.ts = msg.ts ?? Date.now()
