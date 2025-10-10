@@ -152,28 +152,40 @@ export class CU extends Sync {
         let m = this.io.get(`__msg__/${this.wslot + 1}`) ?? null
         if (m) {
           isData = true
-          const { result } = await this.db.write(m.body)
-          if (m.slot !== 0) {
+          let _result = null
+          const { success, err, result } = await this.db.write(m.body)
+          if (success === false) {
             if (m.body.action === "Commit") {
+              if (/wrong nonce/.test(err)) {
+                const regex = /correct:\s*(\d+)/
+                const errorMessage = "Error: the wrong nonce: 3 (correct: 2)"
+                const match = errorMessage.match(regex)
+                let correct = null
+                if (match) correct = +match[1]
+                _result = { success, err, res: { nonce: false, correct } }
+              } else _result = { success, err, res: { decode: false } }
+              await this.io.put(["__results__", m.slot], _result)
             } else if (m.body.action === "Query") {
+              await this.io.put(["__results__", m.slot], {
+                success,
+                err,
+                result: null,
+              })
             }
+          } else if (success === true) {
+            _result = { err: null, success: true, res: result?.result ?? null }
+            await this.io.put(["__results__", m.slot], _result)
           }
           try {
-            const msg = { res: result.result, error: null }
-            if (this.subs[m.slot]) {
+            if (this.subs[m.slot] && _result) {
               for (const v of this.subs[m.slot]) {
                 try {
-                  v(msg)
+                  v(_result)
                 } catch (e) {}
               }
               delete this.subs[m.slot]
             }
-          } catch (e) {
-            await this.io.put(["__results__", m.slot], {
-              res: null,
-              error: e.toString(),
-            })
-          }
+          } catch (e) {}
           this.wslot += 1
           await this.io.put("__wslot__", this.wslot)
         }
