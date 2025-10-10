@@ -66,7 +66,12 @@ const schedule = async (request, obj, attempts = 0) => {
   let res
   let err = false
   try {
-    res = await request.schedule(obj)
+    // decode_error <= hbsig parse error?
+    res = await request.message(obj)
+    console.log(res.res)
+    const decode = JSON.parse(res.res?.results?.data).decode
+    if (decode === false) return { err: true, res }
+    if (decode !== true) throw Error("decode not found")
   } catch (e) {
     console.log("error:", attempts, e?.toString())
     err = true

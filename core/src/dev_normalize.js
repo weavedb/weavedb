@@ -9,8 +9,8 @@ import {
 } from "hbsig/nocrypto"
 import { of, ka } from "monade"
 import { toAddr, parseOp, wdb23 } from "./utils.js"
-import version from "./version.js"
 import { includes } from "ramda"
+
 function parseSI(input) {
   const eq = input.indexOf("=")
   if (eq < 0) throw new Error("Invalid Signature-Input (no `=` found)")
