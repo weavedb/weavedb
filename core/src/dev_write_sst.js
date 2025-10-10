@@ -170,12 +170,7 @@ function commit({ state, env }) {
     let _batch = []
     for (const v of state.updates) {
       const [op, query] = v
-      if (op === "mkdir") {
-        const index = env.info.dirs++
-        env.kv.put("_", query[0].name, { auth: query[0].auth, index })
-        env.kv.put("_config", `schema_${index}`, query[0].schema)
-        env.kv.put("_config", "info", env.info)
-      } else if (op === "addIndex" || op === "removeIndex") {
+      if (op === "addIndex" || op === "removeIndex") {
         const dir = query[1]
         const dirinfo = env.kv.get("_", dir)
         const kv_dir = {

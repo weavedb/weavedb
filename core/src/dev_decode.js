@@ -36,7 +36,7 @@ function decodeData({ state, msg, env }) {
     let json = d.json
     if (left[0].length !== 8) left.shift()
     let start = 0
-    let changes = { dirs: {}, docs: {}, indexes: {} }
+    let changes = { dirs: {}, docs: {}, indexes: {}, _: {} }
     for (let v of json) {
       const arr8 = frombits(left.slice(start, start + v[2]))
       start += v[2]
@@ -44,7 +44,7 @@ function decodeData({ state, msg, env }) {
       const key = v[0]
       const getData = key => {
         let _arjson = null
-        const deltas = env.kv.get("__deltal__", key) || []
+        const deltas = env.kv.get("__deltas__", key) || []
         if (v[1] === 1) {
           deltas.push([0, arr8])
           _arjson = arjson(deltas, undefined, n)
@@ -55,8 +55,8 @@ function decodeData({ state, msg, env }) {
         env.kv.put("__deltas__", key, deltas)
         return _arjson.json()
       }
+      const newData = getData(key)
       if (dir === "_") {
-        const newData = getData(key)
         if (!isNil(newData?.index)) {
           if (isNil(cols[doc])) {
             cols[doc] = newData.index
@@ -64,18 +64,29 @@ function decodeData({ state, msg, env }) {
           }
           changes.dirs[doc] = { index: newData.index, newData: newData }
         }
+        changes._[key] = { dir, doc, newData: newData }
       } else if (dir === "_config") {
-        const newData = getData(key)
         if (/^indexes_\d+$/.test(doc)) {
           const dirid = doc.replace("indexes_", "")
           changes.indexes[dirid] = {
             newData: newData,
           }
+        } else {
+          changes._[key] = { dir, doc, newData: newData }
         }
       } else if (!/^_/.test(v[0])) {
-        const newData = getData(key)
         changes.docs[dir] ??= {}
         changes.docs[dir][doc] = newData
+      } else {
+        changes._[key] = { dir, doc, newData: newData }
+      }
+    }
+    for (let k in changes._) {
+      const ch = changes._[k]
+      if (isNil(ch.newData)) {
+        env.kv.del(ch.dir, ch.doc)
+      } else {
+        env.kv.put(ch.dir, ch.doc, ch.newData)
       }
     }
     let dirs = []
@@ -89,18 +100,6 @@ function decodeData({ state, msg, env }) {
       filter(v => v.name[0] !== "_"),
     )(dirs)
 
-    for (let dir of _dirs) {
-      msgs.push([
-        "mkdir",
-        [
-          {
-            name: dir.name,
-            auth: [["add:add,set:set,update:update,del:del", [["allow()"]]]],
-            schema: { type: "object" },
-          },
-        ],
-      ])
-    }
     for (let dirid in changes.indexes) {
       const indexData = changes.indexes[dirid]
       const oldIndexes = env.kv.get("_config", `indexes_${dirid}`) ?? []
@@ -151,6 +150,8 @@ function decodeData({ state, msg, env }) {
   } catch (e) {
     state.decode_error = true
   }
+  env.info = env.kv.get("_config", "info")
+  console.log(env.info)
   return arguments[0]
 }
 
