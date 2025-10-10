@@ -33,6 +33,7 @@ function pickInput({ state, msg, env }) {
     break
   }
   state.signer23 = wdb23(state.signer)
+  state.nonce = msg.nonce
   env.info ??= { i: -1 }
   env.info.i++
   env.info.ts = msg.ts ?? Date.now()

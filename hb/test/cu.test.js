@@ -14,7 +14,9 @@ const vspawn = async ({ pid: db, jwk }) => {
   const vhb = new HB({ jwk, format: "ans104" })
   let vid = null
   let i = 0
-  do vid = (await vhb.spawn({ "execution-device": "weavedb@1.0", db })).pid
+  do
+    vid = (await vhb.spawn({ "execution-device": "weavedb@1.0", db, nonce: 1 }))
+      .pid
   while (!vid && ++i < 5 && (await wait(3000)))
   return { vhb, vid }
 }

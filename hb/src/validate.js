@@ -35,6 +35,7 @@ const from64 = b64 => {
 let zkdb = null
 let cols = {}
 let ongoing = false
+let nonce = 3
 
 const calcZKHash = async changes => {
   if (!zkdb) {
@@ -68,9 +69,16 @@ const schedule = async (request, obj, attempts = 0) => {
   try {
     // decode_error <= hbsig parse error?
     res = await request.message(obj)
-    const decode = JSON.parse(res.res?.results?.data).decode
-    if (decode === false) return { err: true, res }
-    if (decode !== true) throw Error("decode not found")
+    const json = JSON.parse(res.res?.results?.data)
+    if (json.nonce === false) {
+      if (json.correct) {
+        nonce = json.correct
+        obj.tags.nonce = nonce
+      }
+      throw Error("nonce error")
+    }
+    if (json.decode === false) return { err: true, res }
+    if (json.decode !== true) throw Error("decode not found")
   } catch (e) {
     console.log("error:", attempts, e?.toString())
     err = true
@@ -119,6 +127,7 @@ const buildBundle = async (changes, request, vid, cslot) => {
   const { err, res } = await schedule(request, {
     pid: vid,
     tags: {
+      nonce,
       zkhash,
       Action: "Commit",
       "Data-Protocol": "ao",
@@ -126,7 +135,11 @@ const buildBundle = async (changes, request, vid, cslot) => {
     },
     data: compressed,
   })
-  if (err) console.log("this is stuck....")
+  if (err) {
+    console.log("this is stuck....")
+  } else {
+    nonce += 1
+  }
   console.log()
   console.log(
     `[${cslot}] ${res?.pid} <zkhash: ${zkhash}> : ${buf.length} bytes`,
