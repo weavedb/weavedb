@@ -21,8 +21,8 @@ const vspawn = async ({ pid: db, jwk }) => {
   return { vhb, vid }
 }
 
-const vget = async (vhb, pid, q) => {
-  const tags = { Action: "Query", Query: JSON.stringify(q) }
+const vget = async (vhb, pid, q, act = "Query") => {
+  const tags = { Action: act, Query: JSON.stringify(q) }
   return (await vhb.message({ pid, tags })).res.results.data
 }
 
@@ -39,9 +39,13 @@ describe("Validator", () => {
     const db = new DB({ jwk })
     const pid = await db.spawn()
     await db.mkdir({ name: "users", auth })
-    await db.set("add:user", { name: "Bob", age: 23, tags: ["user"] }, "users")
+    await db.set(
+      "add:user",
+      { name: "Bob", age: 23, male: true, tags: ["user"] },
+      "users",
+    )
     await db.set("add:user", { name: "Alice", age: 30 }, "users")
-    for (let i = 0; i < 10; i++) await db.set("add:user", genUser(), "users")
+    //for (let i = 0; i < 10; i++) await db.set("add:user", genUser(), "users")
     const cu = await CU({ dbpath: genDir(), jwk, autosync: 3000 })
     const { vhb, vid } = await vspawn({ pid, jwk })
     const val = await new Validator({ autosync, pid, jwk, dbpath, vid }).init()
@@ -57,6 +61,7 @@ describe("Validator", () => {
     const vcu = await cu.add(vid, 3000)
     await wait(5000)
     console.log(await vget(vhb, vid, ["get", "users", 1]))
+    console.log(await vget(vhb, vid, ["cget", "users", 2]))
     console.log(await vget(vhb, vid, ["cget", "users", 2]))
     console.log(
       await vget(vhb, vid, [
