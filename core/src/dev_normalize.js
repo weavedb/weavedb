@@ -10,6 +10,7 @@ import {
 import { of, ka } from "monade"
 import { toAddr, parseOp, wdb23 } from "./utils.js"
 import { includes } from "ramda"
+import version from "./version.js"
 
 function parseSI(input) {
   const eq = input.indexOf("=")
@@ -139,6 +140,7 @@ function pickInput({ state, msg, env }) {
   }
   const committed = commit(msg, fields)
   env.info ??= { i: -1 }
+  env.module_version = version
   env.info.hashpath = !env.info.hashpath
     ? `${_headers.id}/${id(committed)}`
     : hashpath(env.info.hashpath, committed)

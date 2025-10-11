@@ -138,14 +138,13 @@ function decodeData({ state, msg, env }) {
     for (let k2 in dir) {
       if (k[0] !== "_") {
         const doc = dir[k2]
-        if (doc === null) msgs.push(["del:del", [k, k2]])
+        if (doc === null) msgs.push(["del", [k, k2]])
         else if (typeof doc === "object" && doc !== null)
-          msgs.push(["set:set", [doc, k, k2]])
+          msgs.push(["set", [doc, k, k2]])
       }
     }
   }
   state.updates = msgs
-  env.info = env.kv.get("_config", "info")
   return arguments[0]
 }
 

@@ -43,7 +43,7 @@ function parse({ state, env }) {
   if (includes(state.opcode, ["upgrade"])) {
     ;[data] = state.query
     state.data = data
-  } else if (includes(state.opcode, [, "revert", "migrate", "init"])) {
+  } else if (includes(state.opcode, ["revert", "migrate", "init"])) {
   } else if (state.opcode === "get" || state.opcode === "cget") {
     ;[dir, doc] = state.query
     state.dir = dir
