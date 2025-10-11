@@ -43,14 +43,6 @@ function pickInput({ state, msg, env }) {
   env.info.i++
   env.info.ts = msg.ts ?? Date.now()
   env.kv.put("__sst__", "info", env.info)
-  if (env.info.id && env.info.version) {
-    if (version !== env.info.version && env.ignore_version !== true) {
-      throw Error(
-        `the wrong version: ${env.info.version} running on ${version}`,
-      )
-    }
-  }
-
   return arguments[0]
 }
 

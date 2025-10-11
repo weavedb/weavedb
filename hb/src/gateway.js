@@ -7,6 +7,12 @@ import { resolve, join } from "path"
 const files = {
   "0.1.0": readFileSync(resolve(import.meta.dirname, ".modules/wdb.0.1.0.br")),
   "0.1.1": readFileSync(resolve(import.meta.dirname, ".modules/wdb.0.1.1.br")),
+  "sst-0.1.0": readFileSync(
+    resolve(import.meta.dirname, ".modules/sst.0.1.0.br"),
+  ),
+  "sst-0.1.1": readFileSync(
+    resolve(import.meta.dirname, ".modules/sst.0.1.1.br"),
+  ),
 }
 const gateway = async ({ port = 5000 }) => {
   const app = express()
@@ -14,6 +20,7 @@ const gateway = async ({ port = 5000 }) => {
   app.use(bodyParser.raw({ type: "*/*", limit: "100mb" }))
   app.get("/:txid", async (req, res) => {
     const { txid } = req.params
+    console.log(files[txid])
     res.send(files[txid])
   })
   const node = app.listen(port, () => console.log(`Gateway on port ${port}`))

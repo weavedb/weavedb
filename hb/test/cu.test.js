@@ -39,7 +39,7 @@ const dbpath = genDir()
 const dbpath_server = genDir()
 
 describe("Validator", () => {
-  it.only("should upgrade", async () => {
+  it("should upgrade", async () => {
     const os = await new HyperBEAM({ bundler_ans104: false }).ready()
     const jwk = os.jwk
     const node = await server({
@@ -73,7 +73,7 @@ describe("Validator", () => {
     await wait(3000)
   })
 
-  it("should validate HB WAL", async () => {
+  it.only("should validate HB WAL", async () => {
     const os = await new HyperBEAM({ bundler_ans104: false }).ready()
     const jwk = os.jwk
     const node = await server({
@@ -91,12 +91,16 @@ describe("Validator", () => {
       "users",
     )
     await db.set("add:user", { name: "Alice", age: 30 }, "users")
-    await db.set("upgrade", "0.1.1")
-    console.log(await db.set("migrate"))
+    //await db.set("upgrade", "0.1.1")
+    //console.log(await db.set("migrate"))
     for (let i = 0; i < 10; i++) await db.set("add:user", genUser(), "users")
     console.log(await db.get("users"))
-    /*
-    const cu = await CU({ dbpath: genDir(), jwk, autosync: 3000 })
+    const cu = await CU({
+      dbpath: genDir(),
+      jwk,
+      autosync: 3000,
+      gateway: "http://localhost:5000",
+    })
     const { vhb, vid } = await vspawn({ pid, jwk })
     const val = await new Validator({ autosync, pid, jwk, dbpath, vid }).init()
     ;(await wait(3000), await val.write(), await wait(3000), await val.commit())
@@ -109,32 +113,31 @@ describe("Validator", () => {
     ;(await wait(3000), await val.get(), await val.write())
     ;(await wait(3000), await val.commit())
     const vcu = await cu.add(vid, 3000)
-    await wait(5000)*/
+    await wait(5000)
     //console.log(await vget(vhb, vid, ["get", "users", 1]))
     //console.log(await vget(vhb, vid, ["cget", "users", 2]))
     //console.log(await vget(vhb, vid, ["cget", "users", 2]))
-    /*console.log(
+    console.log(
       await vget(vhb, vid, [
         "get",
         "users",
         ["tags", "array-contains", "user"],
         10,
       ]),
-    )*/
-    //console.log(await vget(vhb, vid, ["upgrade", "0.2.0"], "Query"))
+    )
+    console.log(await vget(vhb, vid, ["upgrade", "0.1.1"], "Query"))
     //console.log(await vget(vhb, vid, ["revert"], "Query"))
-    /*
     console.log(await vget(vhb, vid, ["migrate"], "Query"))
+    await wait(3000)
     for (let i = 0; i < 10; i++) await db.set("add:user", genUser(), "users")
     await wait(3000)
     ;(await wait(3000), await val.get(), await val.write())
     ;(await wait(3000), await val.commit())
-
+    console.log(await vget(vhb, vid, ["get", "users"], "Query"))
     await val.stopSync()
     await vcu.stopSync()
     await vcu.stopWrite()
-    await wait(5000)*/
-    //;(node.stop(), os.kill(), cu.server.close(), process.exit())
-    ;(node.stop(), os.kill(), process.exit())
+    await wait(5000)
+    ;(node.stop(), os.kill(), cu.server.close(), process.exit())
   })
 })

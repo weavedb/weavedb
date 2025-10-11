@@ -5,7 +5,7 @@ const _tags = tags => fromPairs(map(v => [v.name, v.value])(tags))
 import cors from "cors"
 import bodyParser from "body-parser"
 
-import { kv, db_sst, queue } from "../../core/src/index.js"
+import { Core, kv, db_sst, queue } from "../../core/src/index.js"
 //import { kv, db_sst, queue } from "wdb-core"
 
 let dbs = {}
@@ -60,6 +60,7 @@ const startServer = ({ port }) => {
 export default async ({
   dbpath,
   hb = "http://localhost:10001",
+  gateway = "https://arweave.net",
   sql,
   port = 6366,
   jwk,
@@ -68,6 +69,7 @@ export default async ({
   const add = async (pid, autowrite) => {
     if (!dbs[pid]) {
       const cu = await new CU({
+        gateway,
         jwk,
         autowrite,
         hb,
@@ -98,9 +100,11 @@ export class CU extends Sync {
     jwk,
     sql,
     n = 2,
+    gateway = "https://arweave.net",
   }) {
     dbpath = `${dbpath}/${pid}/${vid}`
     super({ pid, dbpath, vid, hb, limit, dbpath, autosync })
+    this.gateway = gateway
     this.autowrite = autowrite
     this.dbpath = dbpath
     this.n = n
@@ -116,7 +120,17 @@ export class CU extends Sync {
     this.cols = this.io.get("__cols__") ?? {}
     this.wslot = this.io.get("__wslot__") ?? -1
     this.wkv = kv(this.io, async c => {})
-    this.db = queue(db_sst(this.wkv))
+    if (this.wslot >= 0) {
+      //this.db = queue(db_sst(this.wkv))
+      let info = this.io.get("__sst__/info")
+      let version = info?.version
+      let opt = {}
+      if (version) opt.version = version
+      const core = await new Core({ io: this.io, gateway: this.gateway }).init(
+        opt,
+      )
+      this.db = core.db
+    }
     this.arjson = {}
     this.isInitDB = true
     if (this.autowrite) this.write()
@@ -144,6 +158,17 @@ export class CU extends Sync {
         if (m) {
           isData = true
           let _result = null
+          if (m.slot === 0) {
+            const version = m.body?.version
+            let opt = {}
+            if (version) opt.version = version
+            const core = await new Core({
+              type: "sst",
+              io: this.io,
+              gateway: this.gateway,
+            }).init(opt)
+            this.db = core.db
+          }
           const res = await this.db.write(m.body)
           const { success, err, result } = res
           if (success === false) {

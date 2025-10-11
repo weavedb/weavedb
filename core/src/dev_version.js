@@ -2,6 +2,7 @@ import { includes } from "ramda"
 
 export default function dev_version({ state, env, msg }) {
   if (
+    env.module_version &&
     !includes(state.opcode, ["get", "cget"]) &&
     env.info.id &&
     env.info.version &&
@@ -15,7 +16,7 @@ export default function dev_version({ state, env, msg }) {
           )
         } else if (env.module_version !== env.info.upgrading) {
           throw Error(
-            `the wrong version: ${env.info.version} running on ${env.module_version}`,
+            `the wrong version: upgrade to ${env.info.upgrading} is migrating on ${env.module_version}`,
           )
         }
       } else {

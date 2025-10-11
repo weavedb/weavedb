@@ -2,11 +2,14 @@ import kv from "./kv.js"
 import mem from "./mem.js"
 import queue from "./queue.js"
 import wdb from "./db.js"
+import sst from "./db_sst.js"
+
 import zlib from "zlib"
 import { readFileSync, writeFileSync } from "fs"
 import { resolve, join } from "path"
 const modules = {
   core: { "0.1.0": "0.1.0", "0.1.1": "0.1.1" },
+  sst: { "0.1.0": "sst-0.1.0", "0.1.1": "sst-0.1.1" },
 }
 const _fetchFile = async ver => {
   console.log("fetching...", ver)
@@ -24,10 +27,11 @@ const _fetchFile = async ver => {
 }
 
 const _fetch = async (gateway, type, ver) => {
-  console.log("fetching...", ver)
+  console.log("fetching...", type, ver, modules[type][ver])
   const bin = Buffer.from(
     await fetch(`${gateway}/${modules[type][ver]}`).then(r => r.arrayBuffer()),
   )
+  console.log("got it", bin)
   const src = zlib.brotliDecompressSync(bin).toString()
   const { tmpdir } = await import("os")
   const { pathToFileURL } = await import("url")
@@ -42,6 +46,7 @@ export default class Core {
     this.gateway = gateway
     this.type = type
     this.io = io
+    this.wdb = type === "core" ? wdb : sst
     if (this.io) this.kv = kv(this.io, async c => {})
   }
   async init({ version, env = {} }) {
@@ -52,7 +57,7 @@ export default class Core {
         this._db = this.kv ? queue(db(this.kv, env)) : mem().q
       } catch (e) {}
     } else {
-      this._db = this.kv ? queue(wdb(this.kv, env)) : mem().q
+      this._db = this.kv ? queue(this.wdb(this.kv, env)) : mem().q
     }
     this.db = {
       sql: (...q) => this._db.sql(...q),
