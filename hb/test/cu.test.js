@@ -61,6 +61,16 @@ describe("Validator", () => {
     console.log(await db.set("migrate"))
     for (let i = 0; i < 10; i++) await db.set("add:user", genUser(), "users")
     console.log(await db.get("users"))
+    await wait(5000)
+    node.stop()
+    await wait(5000)
+    // recovery
+    const node2 = await server({
+      dbpath: dbpath_server,
+      jwk,
+      gateway: "http://localhost:5000",
+    })
+    await wait(3000)
   })
 
   it("should validate HB WAL", async () => {
