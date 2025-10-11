@@ -53,7 +53,7 @@ const recover = async ({
                 const core = await new Core({ io, gateway }).init(opt)
                 db = core.db
               }
-              db.write(v)
+              await db.write(v)
               height = i
               console.log()
               console.log("[writing...]", i, "<", height, pid)

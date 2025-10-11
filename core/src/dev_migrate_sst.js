@@ -5,7 +5,7 @@ function migrate_0_1_0({ state, env }) {
 }
 
 const migrator = {
-  //"0.1.0": migrate_0_1_0,
+  "0.1.0": migrate_0_1_0,
 }
 
 export default function migrate({
