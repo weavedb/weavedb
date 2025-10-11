@@ -1,27 +1,26 @@
-import version from "./version.js"
 import { includes } from "ramda"
 
-export default function dev_version({ state, env }) {
+export default function dev_version({ state, env, msg }) {
   if (
     env.info.id &&
     env.info.version &&
     env.ignore_version !== true &&
     !includes(state.opcode, ["get", "cget"])
   ) {
-    if (version !== env.info.version) {
+    if (env.module_version !== env.info.version) {
       if (env.info.upgrading) {
         if (!includes(state.opcode, ["revert", "migrate"])) {
           throw Error(
             `only revert or migrate is possithe during upgrade: ${env.info.version} => ${env.info.upgrading}`,
           )
-        } else if (version !== env.info.upgrading) {
+        } else if (env.module_version !== env.info.upgrading) {
           throw Error(
-            `the wrong version: ${env.info.version} running on ${version}`,
+            `the wrong version: ${env.info.version} running on ${env.module_version}`,
           )
         }
       } else {
         throw Error(
-          `the wrong version: ${env.info.version} running on ${version}`,
+          `the wrong version: ${env.info.version} running on ${env.module_version}`,
         )
       }
     } else {

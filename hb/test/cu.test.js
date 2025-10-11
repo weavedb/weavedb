@@ -15,15 +15,21 @@ const vspawn = async ({ pid: db, jwk }) => {
   let vid = null
   let i = 0
   do
-    vid = (await vhb.spawn({ "execution-device": "weavedb@1.0", db, nonce: 1 }))
-      .pid
+    vid = (
+      await vhb.spawn({
+        "execution-device": "weavedb@1.0",
+        db,
+        nonce: 1,
+        version: "0.1.0",
+      })
+    ).pid
   while (!vid && ++i < 5 && (await wait(3000)))
   return { vhb, vid }
 }
 
 const vget = async (vhb, pid, q, act = "Query") => {
   const tags = { Action: act, Query: JSON.stringify(q) }
-  return (await vhb.message({ pid, tags })).res.results.data
+  return JSON.parse((await vhb.message({ pid, tags })).res.results.data)
 }
 
 const auth = [["add:user,update:user,del:user", [["allow()"]]]]
@@ -45,7 +51,7 @@ describe("Validator", () => {
       "users",
     )
     await db.set("add:user", { name: "Alice", age: 30 }, "users")
-    //for (let i = 0; i < 10; i++) await db.set("add:user", genUser(), "users")
+    for (let i = 0; i < 10; i++) await db.set("add:user", genUser(), "users")
     const cu = await CU({ dbpath: genDir(), jwk, autosync: 3000 })
     const { vhb, vid } = await vspawn({ pid, jwk })
     const val = await new Validator({ autosync, pid, jwk, dbpath, vid }).init()
@@ -60,17 +66,25 @@ describe("Validator", () => {
     ;(await wait(3000), await val.commit())
     const vcu = await cu.add(vid, 3000)
     await wait(5000)
-    console.log(await vget(vhb, vid, ["get", "users", 1]))
-    console.log(await vget(vhb, vid, ["cget", "users", 2]))
-    console.log(await vget(vhb, vid, ["cget", "users", 2]))
-    console.log(
+    //console.log(await vget(vhb, vid, ["get", "users", 1]))
+    //console.log(await vget(vhb, vid, ["cget", "users", 2]))
+    //console.log(await vget(vhb, vid, ["cget", "users", 2]))
+    /*console.log(
       await vget(vhb, vid, [
         "get",
         "users",
         ["tags", "array-contains", "user"],
         10,
       ]),
-    )
+    )*/
+    console.log(await vget(vhb, vid, ["upgrade", "0.2.0"], "Query"))
+    //console.log(await vget(vhb, vid, ["revert"], "Query"))
+    console.log(await vget(vhb, vid, ["migrate"], "Query"))
+    for (let i = 0; i < 10; i++) await db.set("add:user", genUser(), "users")
+    await wait(3000)
+    ;(await wait(3000), await val.get(), await val.write())
+    ;(await wait(3000), await val.commit())
+
     await val.stopSync()
     await vcu.stopSync()
     await vcu.stopWrite()

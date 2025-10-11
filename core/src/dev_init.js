@@ -1,9 +1,8 @@
-import version from "./version.js"
-
 function dev_init({
   state: { query, signer, id: _id },
   msg,
   env: {
+    module_version,
     ignore_version,
     kv,
     info: { id, i, hashpath, ts },
@@ -36,9 +35,9 @@ function dev_init({
   }
   if (hashpath) info.hashpath = hashpath
   if (query[0].version) {
-    if (version !== query[0].version && ignore_version !== true) {
+    if (module_version !== query[0].version && ignore_version !== true) {
       throw Error(
-        `the wrong version: ${query[0].version} running on ${version}`,
+        `the wrong version: ${query[0].version} running on ${module_version}`,
       )
     }
     info.version = query[0].version

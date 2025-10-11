@@ -1,8 +1,9 @@
 import normalize from "./dev_normalize.js"
 import verify from "./dev_verify.js"
-import parse from "./dev_parse.js"
 import auth from "./dev_auth.js"
 import write from "./dev_write.js"
+
+import parse from "./dev_parse.js"
 import read from "./dev_read.js"
 import build from "./build.js"
 import kv from "./kv_nosql.js"

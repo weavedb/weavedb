@@ -152,7 +152,7 @@ function batch({ state, env }) {
         query: v,
       },
       msg: null,
-      env: { kv: env.kv, no_commit: true, info: env.info },
+      env: { kv: env.kv, no_commit: true, info: env.kv.get("_config", "info") },
     })
       .map(parseOp)
       .map(parse)
@@ -192,7 +192,12 @@ function commit({ state, env }) {
           query: v,
         },
         msg: null,
-        env: { info: env.info, kv: env.kv, kv_dir, no_commit: true },
+        env: {
+          info: env.kv.get("_config", "info"),
+          kv: env.kv,
+          kv_dir,
+          no_commit: true,
+        },
       }).map(op === "addIndex" ? addIndex : removeIndex)
     } else _batch.push([op, ...query])
   }
@@ -218,14 +223,14 @@ function get({ state, env }) {
 
 function upgrade({ state, env: { kv, kv_dir, info } }) {
   info.upgrading = state.data
-  kv.put("_config", `info`, info)
+  kv.put("__sst__", `info`, info)
   return arguments[0]
 }
 
 function revert({ state, env: { kv, kv_dir, info } }) {
   if (!info.upgrading) throw Error("not in the process of upgrading")
   delete info.upgrading
-  kv.put("_config", `info`, info)
+  kv.put("__sst__", `info`, info)
   return arguments[0]
 }
 

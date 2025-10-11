@@ -1,9 +1,8 @@
-import version from "./version_sst.js"
-
 function dev_init({
-  state: { query, signer, id: _id },
+  state: { query, signer, id: _id, version: _version },
   msg: { db },
   env: {
+    module_version,
     ignore_version,
     kv,
     info: { id, i, ts },
@@ -12,13 +11,11 @@ function dev_init({
   if (id) throw Error("already initialized")
   if (!db) throw Error("db is missing")
   let info = { i, id: _id, owner: signer, ts, db }
-  if (query[0].version) {
-    if (version !== query[0].version && ignore_version !== true) {
-      throw Error(
-        `the wrong version: ${query[0].version} running on ${version}`,
-      )
+  if (_version) {
+    if (module_version !== _version && ignore_version !== true) {
+      throw Error(`the wrong version: ${_version} running on ${module_version}`)
     }
-    info.version = query[0].version
+    info.version = _version
   }
   kv.put("__sst__", "info", info)
   return arguments[0]
