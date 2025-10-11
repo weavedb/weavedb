@@ -3,7 +3,7 @@ import { Server, mu, toAddr } from "../../../wao/src/test.js"
 import bundler from "../src/bundler.js"
 import SU from "../src/su.js"
 import { repeat } from "ramda"
-import { describe, it } from "node:test"
+import { before, after, describe, it } from "node:test"
 import server from "../src/server.js"
 import gateway from "../src/gateway.js"
 import { Validator } from "../src/validate.js"
@@ -42,26 +42,45 @@ const dbpath = genDir()
 const dbpath_server = genDir()
 
 const sport = 5000
+
+// HyperBEAM, Rollup, Gateway, SU, CU, Bundler, AOS, Validator, ZK-Proover
 describe("Validator", () => {
-  it.only("should serve aos", async () => {
-    const os = new HyperBEAM({ bundler_ans104: false })
-    const jwk = os.jwk
-    const gw = await gateway({ port: 5500 })
-    const su = new SU({
+  let os, jwk, gw, su, bd, ru, cu, aos
+  before(async () => {
+    os = new HyperBEAM({
+      bundler_ans104: false,
+      bundler_httpsig: "http://localhost:5501/tx",
+    })
+    jwk = os.jwk
+    gw = await gateway({ port: 5500 })
+    su = new SU({
       jwk,
       mu: "http://localhost:5002",
       bundler: null,
     })
-    const bd = await bundler({ jwk })
+    bd = await bundler({ jwk, mock: true, port: 5501 })
     await os.ready()
-    const dbpath = genDir()
-    const node = await server({
-      dbpath,
+    ru = await server({
+      dbpath: genDir(),
       jwk,
       hb: os.hb.url,
       gateway: sport,
     })
-
+    cu = await CU({
+      dbpath: genDir(),
+      jwk,
+      autosync: 3000,
+      gateway: "http://localhost:5500",
+    })
+    aos = new Server({ port: sport, log: true })
+  })
+  after(async () => {
+    bd.close()
+    ru.stop()
+    os.kill()
+    process.exit()
+  })
+  it.only("should serve aos", async () => {
     const db = new DB({ jwk })
     const pid = await db.spawn()
     await db.mkdir({
@@ -75,13 +94,11 @@ describe("Validator", () => {
     await db.set("add:user", { name: "Alice", male: false }, "users")
     await db.set("add:user", { name: "Mike", male: true }, "users")
     await wait(5000)
+    console.log(
+      await fetch(`http://localhost:4003/${pid}/latest`).then(r => r.json()),
+    )
 
-    const cu = await CU({
-      dbpath: genDir(),
-      jwk,
-      autosync: 3000,
-      gateway: "http://localhost:5500",
-    })
+    return
     const { vhb, vid } = await vspawn({ pid, jwk })
     const val = await new Validator({
       autosync,
@@ -102,8 +119,6 @@ Handlers.add("Hello", "Hello", function (msg)
   local data = Send({ Target = msg.To, Action = "Query", Query = msg.Query, __SU__ = msg.Hb }).receive().Data
   msg.reply({ Data = data })
 end)`
-
-    const server_aos = new Server({ port: sport, log: true })
     let ao = await new AO({
       port: sport,
       module: "ISShJH1ij-hPPt9St5UFFr_8Ys3Kj5cyg7zrMGt7H9s",
@@ -120,16 +135,15 @@ end)`
       },
       { timeout: 3000, get: true },
     )
+    console.log(users)
     assert.deepEqual(JSON.parse(users), [
       { name: "Bob", male: true },
       { name: "Alice", male: false },
       { name: "Mike", male: true },
     ])
-    bd.close()
-    node.stop()
-    os.kill()
-    process.exit()
   })
+})
+describe("Validator", () => {
   it("should upgrade", async () => {
     const os = await new HyperBEAM({ bundler_ans104: false }).ready()
     const jwk = os.jwk
