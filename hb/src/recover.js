@@ -1,20 +1,33 @@
 //import { db as wdb } from "wdb-core"
-import { db as wdb } from "../../core/src/index.js"
+import { Core, db as wdb } from "../../core/src/index.js"
 import { getKV2, getKV, getMsgs } from "./server-utils.js"
 import { isEmpty } from "ramda"
 import { open } from "lmdb"
 
-const recover = async ({ pid, jwk, dbpath, hb }) => {
+const recover = async ({
+  pid,
+  jwk,
+  dbpath,
+  hb,
+  gateway = "https://arweave.net",
+  limit = 20,
+}) => {
   let i = 0
   let db = null
   let from = 0
-  let to = 99
+  let to = limit - 1
   let res = await getMsgs({ pid, hb })
   const io = open({ path: `${dbpath}/${pid}` })
   let height = io.get("__meta__/height") ?? 0
   console.log(`recover: ${pid}, height: ${height}`)
-  const kv2 = getKV2({ jwk, hb, dbpath, pid })
-  db = wdb(kv2)
+  if (height > 0) {
+    let info = io.get("_config/info")
+    let version = info?.version
+    let opt = {}
+    if (version) opt.version = version
+    const core = await new Core({ io, gateway }).init(opt)
+    db = core.db
+  }
   while (!isEmpty(res.assignments)) {
     for (let k in res.assignments ?? {}) {
       const m = res.assignments[k]
@@ -27,12 +40,19 @@ const recover = async ({ pid, jwk, dbpath, hb }) => {
             break
           }
         }
-        console.log("initializing...", pid)
+        console.log("initializing on wal...", pid)
       }
       if (m.body.data) {
         for (const v of JSON.parse(m.body.data)) {
           try {
             if (i >= height) {
+              if (v.slot === 1) {
+                const [op, { version }] = JSON.parse(v.headers.query)
+                let opt = {}
+                if (version) opt.version = version
+                const core = await new Core({ io, gateway }).init(opt)
+                db = core.db
+              }
               db.write(v)
               height = i
               console.log()
@@ -49,11 +69,11 @@ const recover = async ({ pid, jwk, dbpath, hb }) => {
       }
     }
     if (i > height) io.put("__meta__/height", i)
-    from += 100
-    to += 100
+    from += limit
+    to += limit
     res = await getMsgs({ pid, hb, from, to })
   }
-  return { db, io: kv2.io }
+  return { db, io }
 }
 
 export default recover

@@ -32,8 +32,17 @@ const server = async ({
   for (let v of pids) {
     console.log("recovering....", v)
     try {
-      const { db: _db, io: _io } = await recover({ pid: v, hb, dbpath, jwk })
-      //dbs[v] = _db
+      const { db: _db, io: _io } = await recover({
+        gateway,
+        pid: v,
+        hb,
+        dbpath,
+        jwk,
+      })
+      console.log("recoverd!", v)
+      dbs[v] = _db
+      ios[v] = _io
+      /*
       if (dbpath) {
         //const wkv = getKV2({ jwk, hb, dbpath, pid: v })
         const io = open({ path: `${dbpath}/${v}` })
@@ -45,9 +54,10 @@ const server = async ({
         const { q, io } = mem()
         dbs[v] = q
         ios[v] = io
-      }
+      }*/
       if (hyperbeam) wal({ jwk, hb, dbpath, pid: v })
     } catch (e) {
+      console.log(e)
       console.log("recover failed:", v)
     }
   }
