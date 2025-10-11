@@ -3,8 +3,8 @@ import cors from "cors"
 import bodyParser from "body-parser"
 import { getKV2, verify } from "./server-utils.js"
 import { toAddr, httpsig_from, structured_to } from "hbsig"
-import { mem, db as wdb, queue, io } from "wdb-core"
-//import { mem, db as wdb, queue, io } from "../../core/src/index.js"
+//import { kv,Core,mem, db as wdb, queue, io } from "wdb-core"
+import { kv, Core, mem, db as wdb, queue, io } from "../../core/src/index.js"
 import { includes, map, fromPairs, isNil, without } from "ramda"
 import { AR, AO } from "wao"
 import { open } from "lmdb"
@@ -20,7 +20,7 @@ const server = async ({
   hb = "http://localhost:10001",
   dbpath,
   port = 6364,
-  gateway = 5000,
+  gateway = "https://arweave.net",
   admin_only = true,
   hyperbeam = true,
 }) => {
@@ -35,8 +35,11 @@ const server = async ({
       const { db: _db, io: _io } = await recover({ pid: v, hb, dbpath, jwk })
       //dbs[v] = _db
       if (dbpath) {
-        const wkv = getKV2({ jwk, hb, dbpath, pid: v })
-        dbs[v] = queue(wdb(wkv))
+        //const wkv = getKV2({ jwk, hb, dbpath, pid: v })
+        const io = open({ path: `${dbpath}/${v}` })
+        const core = await new Core({ io, gateway }).init({})
+        //dbs[v] = queue(wdb(wkv))
+        dbs[v] = core.db
         ios[v] = _io
       } else {
         const { q, io } = mem()
@@ -152,11 +155,10 @@ const server = async ({
     })
     if (req.body) msg.body = await req.text?.()
     return msg
-  }
+  } /*
   app.post("/weavedb/:mid", async (req, res) => {
     const mid = req.params.mid
     const pid = req.query["process-id"]
-    console.log(mid, pid)
     let data = null
     let msg = []
     try {
@@ -201,7 +203,7 @@ const server = async ({
     }
     res.json({ Output: { data }, Messages: msg })
   })
-
+   */
   app.post("/~weavedb@1.0/set", async (req, res) => {
     const { valid, query, fields, address } = await verify(req)
     if (valid) {
@@ -220,9 +222,15 @@ const server = async ({
           } else {
             console.log(`initializing a new db: ${pid}`)
             if (dbpath) {
-              const wkv = getKV2({ jwk, hb, dbpath, pid })
-              dbs[pid] = queue(wdb(wkv))
-              ios[pid] = wkv.io
+              //const wkv = getKV2({ jwk, hb, dbpath, pid })
+              const io = open({ path: `${dbpath}/${pid}` })
+              const [op, { version }] = JSON.parse(req.headers.query)
+              let opt = {}
+              if (version) opt.version = version
+              const core = await new Core({ io, gateway }).init(opt)
+              //dbs[pid] = queue(wdb(wkv))
+              dbs[pid] = core.db
+              ios[pid] = io
             } else {
               const { q, io } = mem()
               dbs[pid] = q

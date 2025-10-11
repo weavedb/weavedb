@@ -5,8 +5,10 @@ import wdb from "./db.js"
 import zlib from "zlib"
 import { readFileSync, writeFileSync } from "fs"
 import { resolve, join } from "path"
-
-const _fetch = async ver => {
+const modules = {
+  core: { "0.1.0": "0.1.0", "0.1.1": "0.1.1" },
+}
+const _fetchFile = async ver => {
   console.log("fetching...", ver)
   const bin = readFileSync(
     resolve(import.meta.dirname, `../build/wdb.${ver}.min.js.br`),
@@ -20,21 +22,33 @@ const _fetch = async ver => {
   if (ver === "0.1.1") return wdb
   return db
 }
-const versions = {}
+
+const _fetch = async (gateway, type, ver) => {
+  console.log("fetching...", ver)
+  const bin = Buffer.from(
+    await fetch(`${gateway}/${modules[type][ver]}`).then(r => r.arrayBuffer()),
+  )
+  const src = zlib.brotliDecompressSync(bin).toString()
+  const { tmpdir } = await import("os")
+  const { pathToFileURL } = await import("url")
+  const tempFile = join(tmpdir(), `wdb-${Date.now()}.mjs`)
+  writeFileSync(tempFile, src)
+  const { default: db } = await import(pathToFileURL(tempFile).href)
+  return db
+}
+
 export default class Core {
-  constructor({ io, gateway = "https://arweave.net" }) {
+  constructor({ io, gateway = "https://arweave.net", type = "core" }) {
     this.gateway = gateway
+    this.type = type
     this.io = io
     if (this.io) this.kv = kv(this.io, async c => {})
-    versions["v0_1_0"] = readFileSync(
-      resolve(import.meta.dirname, "../build/wdb.0.1.0.min.js.br"),
-    )
   }
   async init({ version, env = {} }) {
     this.env = env
     if (version) {
       try {
-        const db = await _fetch(version)
+        const db = await _fetch(this.gateway, this.type, version)
         this._db = this.kv ? queue(db(this.kv, env)) : mem().q
       } catch (e) {}
     } else {
@@ -58,7 +72,7 @@ export default class Core {
             this.upgrading,
           )
           try {
-            const db = await _fetch(this.upgrading)
+            const db = await _fetch(this.gateway, this.type, this.upgrading)
             this.old_db = this._db
             this._db = this.kv ? queue(db(this.kv, env)) : mem().q
             this.upgrading = false
