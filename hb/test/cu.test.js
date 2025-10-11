@@ -93,7 +93,7 @@ describe("Validator", () => {
     await db.set("add:user", { name: "Alice", age: 30 }, "users")
     //await db.set("upgrade", "0.1.1")
     //console.log(await db.set("migrate"))
-    for (let i = 0; i < 10; i++) await db.set("add:user", genUser(), "users")
+    //for (let i = 0; i < 10; i++) await db.set("add:user", genUser(), "users")
     console.log(await db.get("users"))
     const cu = await CU({
       dbpath: genDir(),
@@ -102,7 +102,14 @@ describe("Validator", () => {
       gateway: "http://localhost:5000",
     })
     const { vhb, vid } = await vspawn({ pid, jwk })
-    const val = await new Validator({ autosync, pid, jwk, dbpath, vid }).init()
+    const val = await new Validator({
+      autosync,
+      pid,
+      jwk,
+      dbpath,
+      vid,
+      gateway: "http://localhost:5000",
+    }).init()
     ;(await wait(3000), await val.write(), await wait(3000), await val.commit())
     await db.set("update:user", { age: 35 }, "users", "A")
     await db.set("update:user", { age: { _$: "del" } }, "users", "B")
