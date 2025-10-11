@@ -6,8 +6,8 @@ import zlib from "zlib"
 import { promisify } from "util"
 const brotliCompress = promisify(zlib.brotliCompress)
 const brotliDecompress = promisify(zlib.brotliDecompress)
-//import { kv, db as wdb, vec, sql } from "wdb-core"
-import { kv, db as wdb, vec, sql } from "../../core/src/index.js"
+//import { Core,kv, db as wdb, vec, sql } from "wdb-core"
+import { Core, kv, db as wdb, vec, sql } from "../../core/src/index.js"
 import { getMsgs } from "./server-utils.js"
 import { isEmpty, sortBy, prop, isNil, keys, pluck, clone } from "ramda"
 import { json, encode, Encoder } from "arjson"
@@ -51,6 +51,7 @@ const calcZKHash = async changes => {
     if (dir === "_" && isNil(cols[doc]) && !isNil(v.data?.index)) {
       cols[doc] = v.data.index
       await zkdb.addCollection(v.data.index)
+      console.log("collection added to zk tree", doc, v.data.index)
     }
     try {
       await zkdb.insert(cols[dir], doc, v.data)
@@ -187,6 +188,7 @@ const getKV = obj => {
           }
           if (delta && delta[1].length > 0) {
             changes[k] = { from: c.old[k], to: d.cl[k], delta }
+          } else {
           }
         }
       }
@@ -209,6 +211,7 @@ export class Validator extends Sync {
     max_msgs = 20,
     limit = 20,
     autosync,
+    gateway = "https://arweave.net",
   }) {
     dbpath = `${dbpath}/${pid}/${vid}`
     const onslot = async m => {
@@ -219,6 +222,8 @@ export class Validator extends Sync {
       }
     }
     super({ pid, dbpath, vid, hb, limit, dbpath, autosync, onslot })
+    this.deltas = {}
+    this.gateway = gateway
     this.dbpath = dbpath
     this.max_msgs = max_msgs
     this.wslot = this.io.get("__wslot__") ?? -1
@@ -239,7 +244,21 @@ export class Validator extends Sync {
     } else if (this.type === "sql") {
       const _sql = new DatabaseSync(`${this.dbpath}.sql`)
       this.db = sql(this.wkv, { no_commit: true, sql: _sql })
-    } else this.db = wdb(this.wkv, { no_commit: true })
+    } else {
+      //this.db = wdb(this.wkv, { no_commit: true })
+      if (this.wslot >= 0) {
+        let opt = { env: { no_commit: true } }
+        let info = this.io.get("_config/info")
+        let version = info?.version
+        if (version) opt.version = version
+        const core = await new Core({
+          io: this.io,
+          gateway: this.gateway,
+          kv: this.wkv,
+        }).init(opt)
+        this.db = core.db
+      }
+    }
     this.isInitDB = true
     return this
   }
@@ -253,6 +272,17 @@ export class Validator extends Sync {
       let i = 0
       try {
         let msg = this.io.get(`__wmsg__/${this.wslot + 1}`) ?? null
+        if (this.wslot + 1 === 0 && msg) {
+          let opt = { env: { no_commit: true } }
+          const [op, { version }] = JSON.parse(msg.headers.query)
+          if (version) opt.version = version
+          const core = await new Core({
+            io: this.io,
+            gateway: this.gateway,
+            kv: this.wkv,
+          }).init(opt)
+          this.db = core.db
+        }
         while (msg && i < this.max_msgs) {
           console.log(`${msg.slot}: ${msg.headers?.query}`)
           if (this.type === "vec") await this.db.pwrite(msg)

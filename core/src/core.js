@@ -31,7 +31,6 @@ const _fetch = async (gateway, type, ver) => {
   const bin = Buffer.from(
     await fetch(`${gateway}/${modules[type][ver]}`).then(r => r.arrayBuffer()),
   )
-  console.log("got it", bin)
   const src = zlib.brotliDecompressSync(bin).toString()
   const { tmpdir } = await import("os")
   const { pathToFileURL } = await import("url")
@@ -42,12 +41,13 @@ const _fetch = async (gateway, type, ver) => {
 }
 
 export default class Core {
-  constructor({ io, gateway = "https://arweave.net", type = "core" }) {
+  constructor({ io, gateway = "https://arweave.net", type = "core", kv: _kv }) {
     this.gateway = gateway
     this.type = type
     this.io = io
     this.wdb = type === "core" ? wdb : sst
-    if (this.io) this.kv = kv(this.io, async c => {})
+    this.kv = _kv
+    if (this.io && !this.kv) this.kv = kv(this.io, async c => {})
   }
   async init({ version, env = {} }) {
     this.env = env
@@ -56,9 +56,8 @@ export default class Core {
         const db = await _fetch(this.gateway, this.type, version)
         this._db = this.kv ? queue(db(this.kv, env)) : mem().q
       } catch (e) {}
-    } else {
-      this._db = this.kv ? queue(this.wdb(this.kv, env)) : mem().q
-    }
+    } else this._db = this.kv ? queue(this.wdb(this.kv, env)) : mem().q
+
     this.db = {
       sql: (...q) => this._db.sql(...q),
       get: (...q) => this._db.get(...q),
