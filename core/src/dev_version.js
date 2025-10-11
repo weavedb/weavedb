@@ -2,10 +2,10 @@ import { includes } from "ramda"
 
 export default function dev_version({ state, env, msg }) {
   if (
+    !includes(state.opcode, ["get", "cget"]) &&
     env.info.id &&
     env.info.version &&
-    env.ignore_version !== true &&
-    !includes(state.opcode, ["get", "cget"])
+    env.ignore_version !== true
   ) {
     if (env.module_version !== env.info.version) {
       if (env.info.upgrading) {

@@ -1,4 +1,5 @@
 wdb.min.js
+.modules/
 zkp.json
 arguments.js
 .env.*
