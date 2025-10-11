@@ -3,10 +3,11 @@ import { createData } from "@dha-team/arbundles"
 import { toAddr, tags } from "wao/utils"
 import { DataItem } from "@dha-team/arbundles"
 import { ArweaveSigner } from "@ar.io/sdk"
-import { HB } from "wao"
+import { HB } from "../../../wao/src/index.js"
 let procs = []
 let msgs = {}
 let ongoing = {}
+import { isNil } from "ramda"
 import { open } from "lmdb"
 export default class SU {
   constructor({
@@ -15,7 +16,7 @@ export default class SU {
     db = "http://localhost:6364",
     hb = "http://localhost:10001",
     mu = "https://mu.ao-testnet.xyz",
-    bundler = "https://up.arweave.net:443/tx",
+    bundler = false,
     dbpath,
   }) {
     this.io = open({ path: dbpath })
@@ -35,12 +36,49 @@ export default class SU {
     })
 
     app.get("/", async (req, res) => {
-      res.json({
-        Unit: "Scheduler",
-        Timestamp: Date.now(),
-        Address: toAddr(jwk.n),
-        Processes: [],
-      })
+      res.json({ timestamp: Date.now(), address: toAddr(jwk.n) })
+    })
+    app.get("/:pid", async (req, res) => {
+      const { pid } = req.params
+      const { from, to } = req.query
+      let opt = { pid }
+      if (!isNil(from)) opt.from = +from
+      if (!isNil(to)) opt.to = +to
+      let err = null
+      let json = null
+      try {
+        json = await this.hb.messages(opt)
+      } catch (e) {
+        err = e
+      }
+      if (err) {
+        res.status(400)
+        res.json({ error: "Message or Process not found" })
+      } else res.json(json)
+    })
+    app.get("/:pid/latest", async (req, res) => {
+      const { pid } = req.params
+      let err = null
+      let msg = null
+      try {
+        const { current } = await this.hb.slot({ pid })
+        if (!isNil(current)) {
+          const msgs = await this.hb.messages({
+            pid,
+            from: current,
+            to: current,
+          })
+          msg = msgs?.edges?.[0]?.node
+        }
+      } catch (e) {
+        err = e
+        console.log(e)
+      }
+      if (msg) res.json(msg)
+      else {
+        res.status(400)
+        res.json({ error: "Latest message not available" })
+      }
     })
 
     app.post("/", async (req, res) => {
@@ -111,7 +149,7 @@ export default class SU {
       }
       try {
         if (msgs[id].aos !== true) {
-          const di2 = createData(JSON.stringify(_data), signer, {
+          const di2 = createData(_data, signer, {
             target: _tags["From-Process"],
             tags: [
               { name: "Data-Protocol", value: "ao" },
