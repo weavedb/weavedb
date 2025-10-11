@@ -20,7 +20,6 @@ const startServer = ({ port }) => {
   app.post("/weavedb/:mid", async (req, res) => {
     const mid = req.params.mid
     const pid = req.query["process-id"]
-    console.log(mid, pid)
     let data = null
     let msg = []
     let done = false
@@ -42,7 +41,7 @@ const startServer = ({ port }) => {
           if (error) {
             res.status(500)
             res.json({ error: "unknown error" })
-          } else res.json({ Output: { data }, Messages: msg })
+          } else res.json({ Output: { data: JSON.stringify(data) } })
         }
       })
     } catch (e) {

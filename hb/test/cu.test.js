@@ -1,4 +1,7 @@
 import assert from "assert"
+import { Server, mu, toAddr } from "../../../wao/src/test.js"
+import bundler from "../src/bundler.js"
+import SU from "../src/su.js"
 import { repeat } from "ramda"
 import { describe, it } from "node:test"
 import server from "../src/server.js"
@@ -9,7 +12,7 @@ import { HyperBEAM } from "wao/test"
 //import { DB } from "wdb-sdk"
 import { DB } from "../../sdk/src/index.js"
 import { wait, genDir, genUser } from "./test-utils.js"
-import { HB } from "wao"
+import { HB, AO } from "wao"
 
 const vspawn = async ({ pid: db, jwk }) => {
   const vhb = new HB({ jwk, format: "ans104" })
@@ -38,7 +41,95 @@ const autosync = 3000
 const dbpath = genDir()
 const dbpath_server = genDir()
 
+const sport = 5000
 describe("Validator", () => {
+  it.only("should serve aos", async () => {
+    const os = new HyperBEAM({ bundler_ans104: false })
+    const jwk = os.jwk
+    const gw = await gateway({ port: 5500 })
+    const su = new SU({
+      jwk,
+      mu: "http://localhost:5002",
+      bundler: null,
+    })
+    const bd = await bundler({ jwk })
+    await os.ready()
+    const dbpath = genDir()
+    const node = await server({
+      dbpath,
+      jwk,
+      hb: os.hb.url,
+      gateway: sport,
+    })
+
+    const db = new DB({ jwk })
+    const pid = await db.spawn()
+    await db.mkdir({
+      name: "users",
+      schema: { type: "object", required: ["name"] },
+      auth: [
+        ["set:user,add:user,update:user,upsert:user,del:user", [["allow()"]]],
+      ],
+    })
+    await db.set("add:user", { name: "Bob", male: true }, "users")
+    await db.set("add:user", { name: "Alice", male: false }, "users")
+    await db.set("add:user", { name: "Mike", male: true }, "users")
+    await wait(5000)
+
+    const cu = await CU({
+      dbpath: genDir(),
+      jwk,
+      autosync: 3000,
+      gateway: "http://localhost:5500",
+    })
+    const { vhb, vid } = await vspawn({ pid, jwk })
+    const val = await new Validator({
+      autosync,
+      pid,
+      jwk,
+      dbpath,
+      vid,
+      gateway: "http://localhost:5500",
+    }).init()
+    ;(await wait(3000), await val.write(), await wait(3000), await val.commit())
+    const vcu = await cu.add(vid, 3000)
+    await wait(5000)
+
+    const src_data = `
+ao.authorities = { "${toAddr(mu.jwk.n)}", "${toAddr(jwk.n)}" }
+local json = require("json")
+Handlers.add("Hello", "Hello", function (msg)
+  local data = Send({ Target = msg.To, Action = "Query", Query = msg.Query, __SU__ = msg.Hb }).receive().Data
+  msg.reply({ Data = data })
+end)`
+
+    const server_aos = new Server({ port: sport, log: true })
+    let ao = await new AO({
+      port: sport,
+      module: "ISShJH1ij-hPPt9St5UFFr_8Ys3Kj5cyg7zrMGt7H9s",
+    }).init(mu.jwk)
+    await ao.postScheduler({ url: `http://localhost:${sport + 3}` })
+    const { p, pid: pid2 } = await ao.deploy({ src_data })
+    const users = await p.m(
+      "Hello",
+      {
+        To: vid,
+        Query: JSON.stringify(["get", "users"]),
+        Action: "Hello",
+        Hb: `http://localhost:4003`,
+      },
+      { timeout: 3000, get: true },
+    )
+    assert.deepEqual(JSON.parse(users), [
+      { name: "Bob", male: true },
+      { name: "Alice", male: false },
+      { name: "Mike", male: true },
+    ])
+    bd.close()
+    node.stop()
+    os.kill()
+    process.exit()
+  })
   it("should upgrade", async () => {
     const os = await new HyperBEAM({ bundler_ans104: false }).ready()
     const jwk = os.jwk
@@ -73,7 +164,7 @@ describe("Validator", () => {
     await wait(3000)
   })
 
-  it.only("should validate HB WAL", async () => {
+  it("should validate HB WAL", async () => {
     const os = await new HyperBEAM({ bundler_ans104: false }).ready()
     const jwk = os.jwk
     const node = await server({
