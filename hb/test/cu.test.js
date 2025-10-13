@@ -8,6 +8,7 @@ import server from "../src/server.js"
 import gateway from "../src/gateway.js"
 import { Validator } from "../src/validate.js"
 import CU from "../src/cu.js"
+import ZKP from "../src/zkp.js"
 import { HyperBEAM } from "wao/test"
 //import { DB } from "wdb-sdk"
 import { DB } from "../../sdk/src/index.js"
@@ -24,7 +25,7 @@ const vspawn = async ({ pid: db, jwk }) => {
         "execution-device": "weavedb@1.0",
         db,
         nonce: 1,
-        version: "0.1.0",
+        //version: "0.1.0",
       })
     ).pid
   while (!vid && ++i < 5 && (await wait(3000)))
@@ -80,7 +81,7 @@ describe("Validator", () => {
     os.kill()
     process.exit()
   })
-  it.only("should serve aos", async () => {
+  it("should serve aos", async () => {
     const db = new DB({ jwk })
     const pid = await db.spawn()
     await db.mkdir({
@@ -94,11 +95,6 @@ describe("Validator", () => {
     await db.set("add:user", { name: "Alice", male: false }, "users")
     await db.set("add:user", { name: "Mike", male: true }, "users")
     await wait(5000)
-    console.log(
-      await fetch(`http://localhost:4003/${pid}/latest`).then(r => r.json()),
-    )
-
-    return
     const { vhb, vid } = await vspawn({ pid, jwk })
     const val = await new Validator({
       autosync,
@@ -162,8 +158,8 @@ describe("Validator", () => {
       "users",
     )
     await db.set("add:user", { name: "Alice", age: 30 }, "users")
-    await db.set("upgrade", "0.1.1")
-    console.log(await db.set("migrate"))
+    //await db.set("upgrade", "0.1.1")
+    //console.log(await db.set("migrate"))
     for (let i = 0; i < 10; i++) await db.set("add:user", genUser(), "users")
     console.log(await db.get("users"))
     await wait(5000)
@@ -178,8 +174,11 @@ describe("Validator", () => {
     await wait(3000)
   })
 
-  it("should validate HB WAL", async () => {
-    const os = await new HyperBEAM({ bundler_ans104: false }).ready()
+  it.only("should validate HB WAL", async () => {
+    const os = await new HyperBEAM({
+      bundler_ans104: false,
+      logs: false,
+    }).ready()
     const jwk = os.jwk
     const node = await server({
       dbpath: dbpath_server,
@@ -188,7 +187,9 @@ describe("Validator", () => {
     })
     const gw = await gateway({})
     const db = new DB({ jwk })
-    const pid = await db.spawn({ version: "0.1.0" })
+    const pid = await db.spawn({
+      /*version: "0.1.0"*/
+    })
     await db.mkdir({ name: "users", auth })
     await db.set(
       "add:user",
@@ -237,19 +238,28 @@ describe("Validator", () => {
         10,
       ]),
     )
-    console.log(await vget(vhb, vid, ["upgrade", "0.1.1"], "Query"))
+    //console.log(await vget(vhb, vid, ["upgrade", "0.1.1"], "Query"))
     //console.log(await vget(vhb, vid, ["revert"], "Query"))
-    console.log(await vget(vhb, vid, ["migrate"], "Query"))
+    //console.log(await vget(vhb, vid, ["migrate"], "Query"))
     await wait(3000)
-    for (let i = 0; i < 10; i++) await db.set("add:user", genUser(), "users")
+    for (let i = 0; i < 1; i++) await db.set("add:user", genUser(), "users")
     await wait(3000)
     ;(await wait(3000), await val.get(), await val.write())
     ;(await wait(3000), await val.commit())
     console.log(await vget(vhb, vid, ["get", "users"], "Query"))
+    console.log("now zkp............................................")
+    const zkp = await ZKP({
+      dbpath: genDir(),
+      jwk,
+      autosync: 3000,
+      gateway: "http://localhost:5000",
+    })
+    const zk = await zkp.add(vid, 3000)
+    await wait(5000)
     await val.stopSync()
     await vcu.stopSync()
     await vcu.stopWrite()
-    await wait(5000)
+    await wait(30000)
     ;(node.stop(), os.kill(), cu.server.close(), process.exit())
   })
 })

@@ -52,7 +52,7 @@
   "license": "MIT",
   "dependencies": {
     "@lancedb/lancedb": "^0.21.2",
-    "arjson": "^0.0.10",
+    "arjson": "^0.0.13",
     "brotli-cli": "^2.1.1",
     "fast-sha256": "^1.3.0",
     "fpjson-lang": "^0.1.5",
@@ -61,6 +61,7 @@
     "jsonschema": "^1.5.0",
     "monade": "^0.0.1",
     "node-sql-parser": "^5.3.11",
-    "ramda": "^0.31.3"
+    "ramda": "^0.31.3",
+    "zkjson": "^0.8.2"
   }
 }

@@ -41,7 +41,8 @@ function pickInput({ state, msg, env }) {
   env.info ??= { i: -1 }
   env.module_version = version
   env.info.i++
-  env.info.ts = msg.ts ?? Date.now()
+  const now = Date.now()
+  env.info.ts = msg.ts ?? now
   env.kv.put("__sst__", "info", env.info)
   return arguments[0]
 }
