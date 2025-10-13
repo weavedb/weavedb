@@ -1,4 +1,4 @@
-import { pof, of, ka, dev, pdev } from "monade"
+import { pof, of, pka, ka, dev, pdev } from "monade"
 import wkv from "./weavekv.js"
 
 const _store = _kv => {
@@ -33,7 +33,7 @@ const build = ({
 
     // Build write method
     if (write) {
-      let _write = ka()
+      let _write = async ? pka() : ka()
       for (const dev of write) {
         if (dev.__ka__) {
           // If dev is a Kleisli arrow, convert to function and chain
@@ -68,17 +68,19 @@ const build = ({
       // Add pwrite for async version
       if (async) {
         methods.pwrite = (currentKv, msg, _opt) => {
-          return new Promise((cb, rej) => {
+          return new Promise(async (cb, rej) => {
             try {
-              of({
+              const { state } = await pof({
                 kv: currentKv,
                 msg,
                 opt: { ...opt, ..._opt, cb },
               })
                 .map(init)
                 .chain(_write.fn())
+                .val()
+              cb(state)
             } catch (e) {
-              //console.log(e)
+              console.log(e)
               currentKv.reset()
               rej(e)
             }

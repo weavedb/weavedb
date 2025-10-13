@@ -5,9 +5,10 @@ const queue = wdb => {
     if (!on) {
       on = true
       while (qs.length > 0) {
-        const { resolve, args } = qs.shift()
+        const { resolve, args, async } = qs.shift()
         try {
-          const result = await wdb.write(...args).val()
+          let func = async ? wdb.pwrite : wdb.write
+          const result = await func(...args).val()
           resolve({ success: true, err: null, result })
         } catch (e) {
           resolve({
@@ -35,6 +36,11 @@ const queue = wdb => {
     write: (...args) =>
       new Promise(resolve => {
         qs.push({ resolve, args })
+        exec()
+      }),
+    pwrite: (...args) =>
+      new Promise(resolve => {
+        qs.push({ resolve, args, async: true })
         exec()
       }),
   }

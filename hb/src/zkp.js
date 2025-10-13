@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto"
+const hex = buf => createHash("sha256").update(buf).digest("hex")
 import Sync from "./sync.js"
 import express from "express"
 import { map, fromPairs } from "ramda"
@@ -17,7 +19,7 @@ const startServer = ({ port }) => {
   app = express()
   app.use(cors())
   app.use(bodyParser.json())
-  app.post("/weavedb/:mid", async (req, res) => {
+  app.post("/zkp", async (req, res) => {
     const mid = req.params.mid
     const pid = req.query["process-id"]
     let data = null
@@ -61,13 +63,13 @@ export default async ({
   hb = "http://localhost:10001",
   gateway = "https://arweave.net",
   sql,
-  port = 6366,
+  port = 6365,
   jwk,
   n = 4,
 }) => {
   const add = async (pid, autowrite) => {
     if (!dbs[pid]) {
-      const cu = await new CU({
+      const cu = await new ZKP({
         gateway,
         jwk,
         autowrite,
@@ -87,7 +89,8 @@ export default async ({
   if (port && !server) server = startServer({ port })
   return { server, add }
 }
-export class CU extends Sync {
+
+export class ZKP extends Sync {
   constructor({
     pid,
     dbpath,
@@ -126,9 +129,11 @@ export class CU extends Sync {
       let opt = {}
       if (version) opt.version = version
       const core = await new Core({
+        async: true,
         io: this.io,
         gateway: this.gateway,
-        type: "sst",
+        kv: this.wkv,
+        type: "zkp",
       }).init(opt)
       this.db = core.db
     }
@@ -164,9 +169,11 @@ export class CU extends Sync {
             let opt = {}
             if (version) opt.version = version
             const core = await new Core({
-              type: "sst",
+              async: true,
+              type: "zkp",
               io: this.io,
               gateway: this.gateway,
+              kv: this.wkv,
             }).init(opt)
             this.db = core.db
           }

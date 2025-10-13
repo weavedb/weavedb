@@ -42,9 +42,9 @@ export default class Sync {
       let from2 = from
       let to = from + (this.limit - 1)
       let res = await getMsgs({ pid: this.pid, hb: this.hb, from, to })
-      console.log(
+      /*console.log(
         `[${this.pid}:${this.vid}]  ${from} - ${to} (${keys(res?.assignments ?? {}).length})`,
-      )
+      )*/
       while (!isEmpty(res.assignments)) {
         for (let k in res.assignments ?? {}) {
           const m = res.assignments[k]

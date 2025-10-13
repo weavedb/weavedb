@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto"
+const hex = buf => createHash("sha256").update(buf).digest("hex")
 import { DatabaseSync } from "node:sqlite"
 import { HB } from "wao"
 import * as lancedb from "@lancedb/lancedb"
@@ -11,7 +13,7 @@ import { Core, kv, db as wdb, vec, sql } from "../../core/src/index.js"
 import { getMsgs } from "./server-utils.js"
 import { isEmpty, sortBy, prop, isNil, keys, pluck, clone } from "ramda"
 import { json, encode, Encoder } from "arjson"
-import { DB as ZKDB } from "zkjson"
+import { DBTree as ZKDB } from "zkjson"
 import { resolve } from "path"
 import { connect, createSigner } from "@permaweb/aoconnect"
 
@@ -37,31 +39,29 @@ let cols = {}
 let ongoing = false
 let nonce = 2
 
-const calcZKHash = async changes => {
-  if (!zkdb) {
-    // upgrade to db2
-    zkdb = new ZKDB({
-      wasm: resolve(import.meta.dirname, "circom/db/index_js/index.wasm"),
-      zkey: resolve(import.meta.dirname, "circom/db/index_0001.zkey"),
-    })
-    await zkdb.init()
-  }
+const calcZKHash = async (changes, cols, zkdb, io) => {
   for (const v of changes) {
     const [dir, doc] = v.key.split("/")
     if (dir === "_" && isNil(cols[doc]) && !isNil(v.data?.index)) {
       cols[doc] = v.data.index
+      await io.put("__zkp__", "cols", cols)
       await zkdb.addCollection(v.data.index)
       console.log("collection added to zk tree", doc, v.data.index)
     }
     try {
-      await zkdb.insert(cols[dir], doc, v.data)
-      console.log("added to zk tree", dir, doc)
+      if (isNil(v.data)) {
+        await zkdb.delete(cols[dir], doc)
+        console.log("deleted from zk tree", dir, doc)
+      } else {
+        await zkdb.insert(cols[dir], doc, v.data)
+        console.log("added to zk tree", dir, doc)
+      }
     } catch (e) {
-      console.log("zk error:", JSON.stringify(v.data).length, v.data)
+      console.log("zk error:", JSON.stringify(v.data).length)
       console.log(e)
     }
   }
-  return to64(zkdb.tree.F.toObject(zkdb.tree.root).toString())
+  return zkdb.hash()
 }
 
 const schedule = async (request, obj, attempts = 0) => {
@@ -91,7 +91,7 @@ const schedule = async (request, obj, attempts = 0) => {
     : { erro: false, res }
 }
 
-const buildBundle = async (changes, request, vid, cslot) => {
+const buildBundle = async (changes, request, vid, cslot, cols, zkdb, io) => {
   let _changes = []
   for (const k in changes) {
     _changes.push({ key: k, delta: changes[k].delta, data: changes[k].to })
@@ -101,11 +101,11 @@ const buildBundle = async (changes, request, vid, cslot) => {
   let bytes = []
   let i = 0
   for (const v of _changes) {
-    header.push([v.key, v.delta[0] + 1, v.delta[1].length])
+    header.push([v.key, v.delta[0], v.delta[1].length])
     bytes.push(v.delta[1])
     i++
   }
-  let u = new Encoder(2)
+  let u = new Encoder(3)
   const enc = encode(header, u)
   bytes.unshift(enc)
   const totalLen = bytes.reduce((sum, arr) => sum + arr.length, 0)
@@ -115,7 +115,7 @@ const buildBundle = async (changes, request, vid, cslot) => {
     buf.set(arr, offset)
     offset += arr.length
   }
-  const zkhash = await calcZKHash(_changes)
+  const zkhash = await calcZKHash(_changes, cols, zkdb, io)
   //console.log(buf.toString("base64"))
   const params = {
     [zlib.constants.BROTLI_PARAM_QUALITY]: 11, // Maximum quality
@@ -152,6 +152,7 @@ const getKV = obj => {
   return kv(obj.io, async c => {
     let changes = {}
     let slot = null
+    let n = 3
     for (const d of c.data) {
       slot = d.opt.slot
       for (const k in d.cl) {
@@ -170,26 +171,23 @@ const getKV = obj => {
           }
           d.cl[k] = clk
         }
-        if (true /*|| dir || !/^_/.test(k.split("/")[0])*/) {
-          let delta = null
-          if (!obj.deltas[k]) {
-            let cache = obj.io.get(`__deltas__/${k}`)
-            if (cache) {
-              for (let v of cache) v[1] = Uint8Array.from(v[1])
-              obj.deltas[k] = json(cache, undefined, 2)
-            } else {
-              obj.deltas[k] = json(null, d.cl[k], 2)
-              delta = obj.deltas[k].deltas()[0]
-              await obj.io.put(`__deltas__/${k}`, obj.deltas[k].deltas())
-            }
+        let delta = null
+        if (!obj.deltas[k]) {
+          let cache = obj.io.get(`__deltas__/${k}`)
+          if (cache) {
+            for (let v of cache) v[1] = Uint8Array.from(v[1])
+            obj.deltas[k] = json(cache, undefined, n)
           } else {
-            delta = obj.deltas[k].update(d.cl[k])
+            obj.deltas[k] = json(null, d.cl[k], n)
+            delta = obj.deltas[k].deltas()[0]
             await obj.io.put(`__deltas__/${k}`, obj.deltas[k].deltas())
           }
-          if (delta && delta[1].length > 0) {
-            changes[k] = { from: c.old[k], to: d.cl[k], delta }
-          } else {
-          }
+        } else {
+          delta = obj.deltas[k].update(d.cl[k])
+          await obj.io.put(`__deltas__/${k}`, obj.deltas[k].deltas())
+        }
+        if (delta && delta[1].length > 0) {
+          changes[k] = { from: c.old[k], to: d.cl[k], delta }
         }
       }
     }
@@ -222,7 +220,7 @@ export class Validator extends Sync {
       }
     }
     super({ pid, dbpath, vid, hb, limit, dbpath, autosync, onslot })
-    this.deltas = {}
+    this.zkdb = this.deltas = {}
     this.gateway = gateway
     this.dbpath = dbpath
     this.max_msgs = max_msgs
@@ -238,6 +236,15 @@ export class Validator extends Sync {
   async init() {
     await super.init()
     this.wkv = getKV(this)
+    this.cols = this.io.get("__zkp__/cols") ?? {}
+    const kv_zkp = key => ({
+      get: k => this.io.get(`__zkp__/${key}_${k}`),
+      put: async (k, v) => await this.io.put(`__zkp__/${key}_${k}`, v),
+      del: async k => await this.io.del(`__zkp__/${key}_${k}`),
+    })
+    this.zkdb = new ZKDB({ kv: kv_zkp })
+    await this.zkdb.init()
+
     if (this.type === "vec") {
       const _vec = await lancedb.connect(`${this.dbpath}-${this.pid}.vec`)
       this.db = await vec(this.wkv, { no_commit: true, sql: _vec }) // ??
@@ -284,7 +291,6 @@ export class Validator extends Sync {
           this.db = core.db
         }
         while (msg && i < this.max_msgs) {
-          console.log(`${msg.slot}: ${msg.headers?.query}`)
           if (this.type === "vec") await this.db.pwrite(msg)
           else this.db.write(msg)
           isData = true
@@ -323,6 +329,9 @@ export class Validator extends Sync {
           this.request,
           this.vid,
           this.cslot + 1,
+          this.cols,
+          this.zkdb,
+          this.io,
         )
         await this.io.put("__bundle__", { zkhash, buf })
         hashes[this.cslot + 1] = { zkhash, size: buf.length }

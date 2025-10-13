@@ -3,6 +3,7 @@ import mem from "./mem.js"
 import queue from "./queue.js"
 import wdb from "./db.js"
 import sst from "./db_sst.js"
+import zkp from "./db_zkp.js"
 
 import zlib from "zlib"
 import { readFileSync, writeFileSync } from "fs"
@@ -10,6 +11,7 @@ import { resolve, join } from "path"
 const modules = {
   core: { "0.1.0": "0.1.0", "0.1.1": "0.1.1" },
   sst: { "0.1.0": "sst-0.1.0", "0.1.1": "sst-0.1.1" },
+  zkp: { "0.1.0": "zkp-0.1.0", "0.1.1": "zkp-0.1.1" },
 }
 const _fetchFile = async ver => {
   console.log("fetching...", ver)
@@ -41,17 +43,24 @@ const _fetch = async (gateway, type, ver) => {
 }
 
 export default class Core {
-  constructor({ io, gateway = "https://arweave.net", type = "core", kv: _kv }) {
+  constructor({
+    io,
+    gateway = "https://arweave.net",
+    type = "core",
+    kv: _kv,
+    async = false,
+  }) {
+    this.async = async
     this.gateway = gateway
     this.type = type
     this.io = io
-    this.wdb = type === "core" ? wdb : sst
+    this.wdb = type === "core" ? wdb : type === "zkp" ? zkp : sst
     this.kv = _kv
     if (this.io && !this.kv) this.kv = kv(this.io, async c => {})
   }
   async init({ version, env = {} }) {
     this.env = env
-    if (version) {
+    if (version && this.type !== "zkp") {
       try {
         const db = await _fetch(this.gateway, this.type, version)
         this._db = this.kv ? queue(db(this.kv, env)) : mem().q
@@ -64,7 +73,7 @@ export default class Core {
       cget: (...q) => this._db.cget(...q),
       read: (...q) => this._db.read(...q),
       write: async (...q) => {
-        const res = await this._db.write(...q)
+        const res = await this._db[this.async ? "pwrite" : "write"](...q)
         if (res.success && res.result.opcode === "revert") {
           console.log("reverting...........................")
           this._db = this.old_db

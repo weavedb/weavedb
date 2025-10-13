@@ -1,4 +1,6 @@
-import { of, ka } from "monade"
+import { createHash } from "node:crypto"
+const hex = buf => createHash("sha256").update(buf).digest("hex")
+import { of, pka } from "monade"
 import { prop, sortBy, o, filter, isNil } from "ramda"
 import zlib from "zlib"
 import {
@@ -9,7 +11,7 @@ import {
   Decoder,
   Parser,
 } from "arjson"
-
+import { DBTree } from "zkjson"
 function frombits(bitArray) {
   const bitStr = bitArray.join("")
   const byteCount = Math.ceil(bitStr.length / 8)
@@ -23,10 +25,18 @@ function frombits(bitArray) {
   return result
 }
 
-function decodeData({ state, msg, env }) {
+async function decodeData({ state, msg, env }) {
   if (state.opcode !== "commit") return arguments[0]
+  const { kv } = env
+  const kv_zkp = key => ({
+    get: k => kv.get("__zkp__", `${key}_${k}`),
+    put: (k, v) => kv.put("__zkp__", `${key}_${k}`, v),
+    del: k => kv.del("__zkp__", `${key}_${k}`),
+  })
+  const zkdb = new DBTree({ kv: kv_zkp })
+  await zkdb.init()
   const n = 3
-  const cols = env.kv.get("__cols__", "cols") ?? {}
+  const cols = env.kv.get("__zkp__", "cols") ?? {}
   const buf = msg.data
   const _buf = zlib.brotliDecompressSync(buf)
   const msgs = []
@@ -36,6 +46,7 @@ function decodeData({ state, msg, env }) {
   if (left[0].length !== 8) left.shift()
   let start = 0
   let changes = { dirs: {}, docs: {}, indexes: {}, _: {} }
+  let update = false
   for (let v of json) {
     const arr8 = frombits(left.slice(start, start + v[2]))
     start += v[2]
@@ -50,11 +61,33 @@ function decodeData({ state, msg, env }) {
       return _arjson.json()
     }
     const newData = getData(key)
+    if (dir === "_" && !isNil(newData?.index) && isNil(cols[doc])) {
+      cols[doc] = newData.index
+      update = true
+      await zkdb.addCollection(newData.index)
+      console.log("new dir added to zk tree", newData.index)
+      env.kv.put("__zkp__", "cols", cols)
+    }
+    try {
+      if (isNil(newData)) {
+        await zkdb.delete(cols[dir], doc)
+        console.log("deleted from zk tree", dir, doc)
+      } else {
+        await zkdb.insert(cols[dir], doc, newData)
+        console.log("added to zk tree", dir, doc)
+      }
+
+      update = true
+    } catch (e) {
+      console.log(e)
+      console.log("zk error", dir, doc, newData)
+    }
+
     if (dir === "_") {
       if (!isNil(newData?.index)) {
         if (isNil(cols[doc])) {
           cols[doc] = newData.index
-          env.kv.put("__cols__", "cols", cols)
+          env.kv.put("__zkp__", "cols", cols)
         }
         changes.dirs[doc] = { index: newData.index, newData: newData }
       }
@@ -62,33 +95,18 @@ function decodeData({ state, msg, env }) {
     } else if (dir === "_config") {
       if (/^indexes_\d+$/.test(doc)) {
         const dirid = doc.replace("indexes_", "")
-        changes.indexes[dirid] = {
-          newData: newData,
-        }
-      } else {
-        changes._[key] = { dir, doc, newData: newData }
-      }
+        changes.indexes[dirid] = { newData: newData }
+      } else changes._[key] = { dir, doc, newData: newData }
     } else if (!/^_/.test(v[0])) {
       changes.docs[dir] ??= {}
       changes.docs[dir][doc] = newData
-    } else {
-      changes._[key] = { dir, doc, newData: newData }
-    }
-  }
-  for (let k in changes._) {
-    const ch = changes._[k]
-    if (isNil(ch.newData)) {
-      env.kv.del(ch.dir, ch.doc)
-    } else {
-      env.kv.put(ch.dir, ch.doc, ch.newData)
-    }
+    } else changes._[key] = { dir, doc, newData: newData }
   }
   let dirs = []
   for (let k in changes.dirs) {
     const dirData = changes.dirs[k]
     dirs.push({ index: dirData.index, name: k })
   }
-
   const _dirs = o(
     sortBy(prop("index")),
     filter(v => v.name[0] !== "_"),
@@ -127,6 +145,11 @@ function decodeData({ state, msg, env }) {
       }
     }
   }
+  for (let k in changes._) {
+    const ch = changes._[k]
+    if (isNil(ch.newData)) env.kv.del(ch.dir, ch.doc)
+    else env.kv.put(ch.dir, ch.doc, ch.newData)
+  }
 
   for (let k in changes.docs) {
     const dir = changes.docs[k]
@@ -140,9 +163,18 @@ function decodeData({ state, msg, env }) {
     }
   }
   state.updates = msgs
+  const hash = zkdb.tree.F.toObject(zkdb.tree.root).toString()
+  const to64 = hash => {
+    const n = BigInt(hash)
+    let hex = n.toString(16)
+    if (hex.length % 2) hex = "0" + hex
+    const buf = Buffer.from(hex, "hex")
+    return buf.toString("base64")
+  }
+  if (zkdb.hash(hash) !== msg.zkhash) throw Error("hash mismatch")
   return arguments[0]
 }
 
-const decoder = ka().map(decodeData)
+const decoder = pka().map(decodeData)
 
 export default decoder
