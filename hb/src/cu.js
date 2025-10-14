@@ -4,7 +4,9 @@ import { map, fromPairs } from "ramda"
 const _tags = tags => fromPairs(map(v => [v.name, v.value])(tags))
 import cors from "cors"
 import bodyParser from "body-parser"
-
+import { resolve } from "path"
+import { Prover } from "zkjson"
+import { DB } from "../../sdk/src/index.js"
 import { Core, kv, db_sst, queue } from "../../core/src/index.js"
 //import { kv, db_sst, queue } from "wdb-core"
 
@@ -13,10 +15,37 @@ let app = null
 let server = null
 let result = null
 
-const startServer = ({ port }) => {
+const startServer = ({ port, jwk }) => {
   app = express()
   app.use(cors())
   app.use(bodyParser.json())
+  app.get("/zkp", async (req, res) => {
+    const pid = req.query["pid"]
+    const info = dbs[pid].io.get("_config/info")
+    let proof = null
+    let zkhash = null
+    try {
+      const db = new DB({ id: info.id, jwk })
+      const {
+        id,
+        nonce,
+        req: msg,
+      } = await db.sign({
+        query: ["getInputs", { path: "name" }, "users", "A"],
+      })
+      const { result } = await dbs[pid].db.pread(msg)
+      zkhash = result.hash
+      const prover = new Prover({
+        wasm: resolve(import.meta.dirname, "./circom/db3/index_js/index.wasm"),
+        zkey: resolve(import.meta.dirname, "./circom/db3/index_0001.zkey"),
+      })
+      proof = await prover.genProof(result.inputs)
+    } catch (e) {
+      console.log(e)
+    }
+    res.json({ proof })
+  })
+
   app.post("/weavedb/:mid", async (req, res) => {
     const mid = req.params.mid
     const pid = req.query["process-id"]
@@ -84,7 +113,7 @@ export default async ({
     return dbs[pid]
   }
   result = async (pid, slot, cb) => (await add(pid, 3000)).result(slot, cb)
-  if (port && !server) server = startServer({ port })
+  if (port && !server) server = startServer({ port, jwk })
   return { server, add }
 }
 export class CU extends Sync {

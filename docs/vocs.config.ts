@@ -181,6 +181,10 @@ export default defineConfig({
           link: "/specs/wdb23",
         },
         {
+          text: "WDB64 Timestamp",
+          link: "/specs/wdb64",
+        },
+        {
           text: "WDB160 Hash",
           link: "/specs/wdb160",
         }

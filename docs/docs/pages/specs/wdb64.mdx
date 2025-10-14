@@ -1,0 +1,24 @@
+# WDB64 Timestamp
+
+## Overview
+WDB64 is a **deterministic timestamp system** that generates unique 64-bit timestamps for WeaveDB transactions. It ensures every document has a distinct timestamp by combining millisecond precision with transaction counting, eliminating sorting ambiguity in concurrent operations.
+
+## The Problem
+WeaveDB applications face timestamp challenges:
+* **Duplicate timestamps** when multiple transactions occur in the same millisecond
+* **Ambiguous sorting** when documents share identical timestamps
+* **Ordering conflicts** in high-throughput scenarios
+* **Lost precision** in timestamp-based indexing
+
+## The Solution: WDB64
+
+WDB64 creates **guaranteed unique timestamps** by encoding microsecond-level precision:
+
+```
+64 bits = Milliseconds × 1000 + Transaction Counter
+```
+
+This ensures:
+- ✅ **No duplicate timestamps** even in burst operations
+- ✅ **Deterministic ordering** for all documents
+- ✅ **Microsecond precision** while maintaining compatibility

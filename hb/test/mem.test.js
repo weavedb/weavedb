@@ -15,12 +15,60 @@ const user2 = acc[2]
 const users = [user1, user2]
 
 describe("Mem", () => {
-  it.only("should run DB in memory", async () => {
+  it.only("should measure tps", async () => {
     const dbpath = genDir()
     const pid = "abc"
     const io = open({ path: `${dbpath}/${pid}` })
     const wkv = kv(io, async c => {})
-    const module = "qNsozxWTsmIEy0AaaDsbEBqD-nnn5qZ8KIMdzzu0Fa8"
+    const core = await new Core({ io }).init({})
+    const db = new DB({ jwk: owner.jwk, mem: core.db })
+    const id = await db.init({ id: "wdb" })
+    await db.mkdir({
+      name: "users",
+      auth: [["add:add,set:set,update:update,del:del", [["allow()"]]]],
+    })
+    const start = Date.now()
+    for (let i = 0; i < 1000; i++) {
+      await db.set("add:add", { name: "Bob" }, "users")
+    }
+    console.log(Math.floor(1000 / ((Date.now() - start) / 1000)), "tps")
+  })
+
+  it("should give microsecond timestamps", async () => {
+    const dbpath = genDir()
+    const pid = "abc"
+    const io = open({ path: `${dbpath}/${pid}` })
+    const wkv = kv(io, async c => {})
+    const core = await new Core({ io }).init({})
+    const db = new DB({ jwk: owner.jwk, mem: core.db })
+    const id = await db.init({ id: "wdb" })
+    await db.mkdir({
+      name: "users",
+      auth: [
+        [
+          "add:add,set:set,update:update,del:del",
+          [["mod()", { ts: "$ts" }], ["allow()"]],
+        ],
+      ],
+    })
+    const trigger = {
+      key: "add_user",
+      on: "create",
+      fn: [["add()", [{ name: "Alice", age: 32, ts: "$ts" }, "users"]]],
+    }
+    await db.addTrigger(trigger, "users")
+    const start = Date.now()
+    for (let i = 0; i < 1000; i++) {
+      await db.set("add:add", { name: "Bob", age: 23 }, "users")
+    }
+    console.log(Math.floor(1000 / ((Date.now() - start) / 1000)), "tps")
+    console.log(await db.get("users", ["ts", "desc"], 3))
+  })
+  it("should run DB in memory", async () => {
+    const dbpath = genDir()
+    const pid = "abc"
+    const io = open({ path: `${dbpath}/${pid}` })
+    const wkv = kv(io, async c => {})
     const core = await new Core({ io }).init({ version: "0.1.0" })
     const db = new DB({ jwk: owner.jwk, mem: core.db })
     const id = await db.init({ id: "wdb", version: "0.1.0" })

@@ -31,13 +31,14 @@ function default_auth({
     before,
     data,
     dirinfo,
+    ts,
   },
   msg,
   env,
 }) {
   const {
     kv,
-    info: { id, owner, ts, i },
+    info: { id, owner, i },
   } = env
   let req = opcode === "del" ? {} : query[0]
   let vars = {
