@@ -163,7 +163,6 @@ async function decodeData({ state, msg, env }) {
     }
   }
   state.updates = msgs
-  const hash = zkdb.tree.F.toObject(zkdb.tree.root).toString()
   const to64 = hash => {
     const n = BigInt(hash)
     let hex = n.toString(16)
@@ -171,7 +170,7 @@ async function decodeData({ state, msg, env }) {
     const buf = Buffer.from(hex, "hex")
     return buf.toString("base64")
   }
-  if (zkdb.hash(hash) !== msg.zkhash) throw Error("hash mismatch")
+  if (zkdb.hash() !== msg.zkhash) throw Error("hash mismatch")
   return arguments[0]
 }
 

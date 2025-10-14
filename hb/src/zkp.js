@@ -6,8 +6,10 @@ import { map, fromPairs } from "ramda"
 const _tags = tags => fromPairs(map(v => [v.name, v.value])(tags))
 import cors from "cors"
 import bodyParser from "body-parser"
-
+import { DB } from "../../sdk/src/index.js"
 import { Core, kv, db_sst, queue } from "../../core/src/index.js"
+import { Prover } from "zkjson"
+import { resolve } from "path"
 //import { kv, db_sst, queue } from "wdb-core"
 
 let dbs = {}
@@ -15,47 +17,38 @@ let app = null
 let server = null
 let result = null
 
-const startServer = ({ port }) => {
+const startServer = ({ port, jwk }) => {
   app = express()
   app.use(cors())
   app.use(bodyParser.json())
-  app.post("/zkp", async (req, res) => {
-    const mid = req.params.mid
-    const pid = req.query["process-id"]
-    let data = null
-    let msg = []
-    let done = false
+  app.get("/zkp", async (req, res) => {
+    const pid = req.query["pid"]
+    const info = dbs[pid].io.get("_config/info")
+    let proof = null
+    let zkhash = null
     try {
-      const slot = mid
-      let timeout = false
-      const to = setTimeout(() => {
-        if (!done) {
-          timeout = true
-          res.status(500)
-          res.json({ error: "timeout" })
-        }
-      }, 10000)
-      await result(pid, slot, r => {
-        if (!timeout) {
-          done = true
-          const { error, res: res2 } = r
-          data = res2
-          if (error) {
-            res.status(500)
-            res.json({ error: "unknown error" })
-          } else res.json({ Output: { data: JSON.stringify(data) } })
-        }
+      const db = new DB({ id: info.id, jwk })
+      const {
+        id,
+        nonce,
+        req: msg,
+      } = await db.sign({
+        query: ["getInputs", { path: "name" }, "users", "A"],
       })
+      const { result } = await dbs[pid].db.pread(msg)
+      zkhash = result.hash
+      const prover = new Prover({
+        wasm: resolve(import.meta.dirname, "./circom/db3/index_js/index.wasm"),
+        zkey: resolve(import.meta.dirname, "./circom/db3/index_0001.zkey"),
+      })
+      proof = await prover.genProof(result.inputs)
     } catch (e) {
       console.log(e)
-      if (!done) {
-        res.status(500)
-        res.json({ error: "unknown error" })
-      }
     }
+    res.json({ proof })
   })
 
-  return app.listen(port, () => console.log(`CU on port ${port}`))
+  return app.listen(port, () => console.log(`ZK Prover on port ${port}`))
 }
 
 export default async ({
@@ -86,7 +79,7 @@ export default async ({
     return dbs[pid]
   }
   result = async (pid, slot, cb) => (await add(pid, 3000)).result(slot, cb)
-  if (port && !server) server = startServer({ port })
+  if (port && !server) server = startServer({ port, jwk })
   return { server, add }
 }
 
