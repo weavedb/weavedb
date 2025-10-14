@@ -3,7 +3,6 @@ import mem from "./mem.js"
 import queue from "./queue.js"
 import wdb from "./db.js"
 import sst from "./db_sst.js"
-import zkp from "./db_zkp.js"
 
 import zlib from "zlib"
 import { readFileSync, writeFileSync } from "fs"
@@ -11,7 +10,6 @@ import { resolve, join } from "path"
 const modules = {
   core: { "0.1.0": "0.1.0", "0.1.1": "0.1.1" },
   sst: { "0.1.0": "sst-0.1.0", "0.1.1": "sst-0.1.1" },
-  zkp: { "0.1.0": "zkp-0.1.0", "0.1.1": "zkp-0.1.1" },
 }
 const _fetchFile = async ver => {
   console.log("fetching...", ver)
@@ -54,13 +52,13 @@ export default class Core {
     this.gateway = gateway
     this.type = type
     this.io = io
-    this.wdb = type === "core" ? wdb : type === "zkp" ? zkp : sst
+    this.wdb = type === "core" ? wdb : sst
     this.kv = _kv
     if (this.io && !this.kv) this.kv = kv(this.io, async c => {})
   }
   async init({ version, env = {} }) {
     this.env = env
-    if (version && this.type !== "zkp") {
+    if (version) {
       try {
         const db = await _fetch(this.gateway, this.type, version)
         this._db = this.kv ? queue(db(this.kv, env)) : mem().q
@@ -72,11 +70,7 @@ export default class Core {
       get: (...q) => this._db.get(...q),
       cget: (...q) => this._db.cget(...q),
       read: (...q) => this._db.read(...q),
-      pread: async (...q) => {
-        const res = await this._db.pread(...q)
-        console.log("need to get res....")
-        return res
-      },
+      pread: async (...q) => await this._db.pread(...q),
       write: async (...q) => {
         const res = await this._db[this.async ? "pwrite" : "write"](...q)
         if (res.success && res.result.opcode === "revert") {

@@ -126,6 +126,7 @@ export class CU extends Sync {
       let opt = {}
       if (version) opt.version = version
       const core = await new Core({
+        async: true,
         io: this.io,
         gateway: this.gateway,
         type: "sst",
@@ -164,6 +165,7 @@ export class CU extends Sync {
             let opt = {}
             if (version) opt.version = version
             const core = await new Core({
+              async: true,
               type: "sst",
               io: this.io,
               gateway: this.gateway,

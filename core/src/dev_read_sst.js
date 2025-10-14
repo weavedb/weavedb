@@ -1,5 +1,5 @@
 import { pof, pka } from "monade"
-import { map, pluck, isNil } from "ramda"
+import { map, pluck, isNil, pick } from "ramda"
 import parseQuery from "./parser.js"
 import { get } from "./planner.js"
 import { DBTree } from "zkjson"
@@ -12,13 +12,18 @@ async function getInputs({ state, env }) {
     put: (k, v) => kv.put("__zkp__", `${key}_${k}`, v),
     del: k => kv.del("__zkp__", `${key}_${k}`),
   })
-  const zkdb = new DBTree({ kv: kv_zkp })
+  let params = pick(
+    ["size_json", "level_col", "level", "size_val", "size_path"],
+    data,
+  )
+  let params_input = pick(["query", "path"], data)
+  const zkdb = new DBTree({ kv: kv_zkp, ...params })
   await zkdb.init()
   const inputs = await zkdb.getInputs({
     json: json,
     col_id: dirinfo.index,
     id: doc,
-    ...data,
+    ...params_input,
   })
   state.result = {
     i: env.info.i,

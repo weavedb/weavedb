@@ -126,7 +126,7 @@ export class ZKP extends Sync {
         io: this.io,
         gateway: this.gateway,
         kv: this.wkv,
-        type: "zkp",
+        type: "sst",
       }).init(opt)
       this.db = core.db
     }
@@ -163,7 +163,7 @@ export class ZKP extends Sync {
             if (version) opt.version = version
             const core = await new Core({
               async: true,
-              type: "zkp",
+              type: "sst",
               io: this.io,
               gateway: this.gateway,
               kv: this.wkv,
