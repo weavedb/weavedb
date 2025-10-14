@@ -155,6 +155,10 @@ function pickInput({ state, msg, env }) {
   state.id = _headers.id
   state.nonce = _headers.nonce
   env.info.ts = msg.ts ?? Date.now()
+  let ts_count = env.kv.get("__ts__", env.info.ts) ?? { count: -1 }
+  ts_count.count += 1
+  env.kv.put("__ts__", ts_count)
+  state.ts = env.info.ts * 1000 + ts_count.count
   env.kv.put("_config", "info", env.info)
   arguments[0].msg = { headers, ...etc }
   return arguments[0]
