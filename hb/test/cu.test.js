@@ -247,7 +247,6 @@ describe("Validator", () => {
     ;(await wait(3000), await val.get(), await val.write())
     ;(await wait(3000), await val.commit())
     console.log(await vget(vhb, vid, ["get", "users"], "Query"))
-    console.log("now zkp............................................")
     const zkp = await ZKP({
       dbpath: genDir(),
       jwk,
@@ -255,7 +254,7 @@ describe("Validator", () => {
       gateway: "http://localhost:5000",
     })
     const zk = await zkp.add(vid, 3000)
-    await wait(10000)
+    await wait(20000)
     console.log("now fetching inputs")
     console.log(
       await fetch(`http://localhost:6365/zkp?pid=${vid}`).then(r => r.json()),
@@ -263,7 +262,6 @@ describe("Validator", () => {
     await val.stopSync()
     await vcu.stopSync()
     await vcu.stopWrite()
-    await wait(30000)
     ;(node.stop(), os.kill(), cu.server.close(), process.exit())
   })
 })
