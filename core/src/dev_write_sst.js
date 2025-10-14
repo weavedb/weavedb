@@ -145,7 +145,7 @@ function batch({ state, env }) {
     of({
       state: {
         nonce: state.nonce,
-        ts: state.ts,
+        ts64: state.ts64,
         signer: state.signer,
         signer23: state.signer23,
         id: state.id,
@@ -185,7 +185,7 @@ function commit({ state, env }) {
           dirinfo,
           data: query[0],
           nonce: state.nonce,
-          ts: state.ts,
+          ts64: state.ts64,
           signer: state.signer,
           signer23: state.signer23,
           id: state.id,
@@ -204,7 +204,7 @@ function commit({ state, env }) {
   of({
     state: {
       nonce: state.nonce,
-      ts: state.ts,
+      ts64: state.ts64,
       signer: state.signer,
       signer23: state.signer23,
       id: state.id,

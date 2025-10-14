@@ -28,7 +28,7 @@ import {
 
 function trigger({ state, env }) {
   const { kv, kv_dir, info } = env
-  const { ts, doc, dir, data, before, dirinfo } = state
+  const { ts64, doc, dir, data, before, dirinfo } = state
   let mod = {
     on: null,
     diff: {},
@@ -37,7 +37,8 @@ function trigger({ state, env }) {
     doc,
     dir,
     i: info.i,
-    ts,
+    ts64,
+    ts: info.ts,
     db: info.id,
     owner: info.owner,
     signer: state.signer,
@@ -68,7 +69,8 @@ function trigger({ state, env }) {
       signer: state.signer,
       signer23: state.signer23,
       i: info.i,
-      ts,
+      ts: info.ts,
+      ts64,
       id: info.id,
       owner: info.owner,
       before,
