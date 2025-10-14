@@ -81,6 +81,7 @@ function parse({ state, env }) {
     state.dir = dir
     state.doc = doc
     state.data = data
+    if (state.opcode === "getInputs") state.query.shift()
   }
 
   of(arguments[0]).map(version)

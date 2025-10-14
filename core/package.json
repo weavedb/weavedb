@@ -62,6 +62,6 @@
     "monade": "^0.0.1",
     "node-sql-parser": "^5.3.11",
     "ramda": "^0.31.3",
-    "zkjson": "^0.8.2"
+    "zkjson": "^0.8.3"
   }
 }

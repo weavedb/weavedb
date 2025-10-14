@@ -72,6 +72,11 @@ export default class Core {
       get: (...q) => this._db.get(...q),
       cget: (...q) => this._db.cget(...q),
       read: (...q) => this._db.read(...q),
+      pread: async (...q) => {
+        const res = await this._db.pread(...q)
+        console.log("need to get res....")
+        return res
+      },
       write: async (...q) => {
         const res = await this._db[this.async ? "pwrite" : "write"](...q)
         if (res.success && res.result.opcode === "revert") {

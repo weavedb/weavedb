@@ -1,13 +1,14 @@
 import decode from "./dev_decode_zkp.js"
 
-import normalize from "./dev_normalize_sst.js"
+import normalize_sst from "./dev_normalize_sst.js"
+import normalize from "./dev_normalize.js"
 import verify from "./dev_verify_sst.js"
 import auth from "./dev_auth_sst.js"
 import write from "./dev_write_sst.js"
 import parse_sst from "./dev_parse_sst.js"
 
 import parse from "./dev_parse.js"
-import read from "./dev_read.js"
+import read from "./dev_read_zkp.js"
 import build from "./build.js"
 import kv from "./kv_nosql.js"
 
@@ -26,7 +27,7 @@ function cget({ state, msg }) {
 export default build({
   kv,
   async: true,
-  write: [normalize, verify, decode, parse_sst, auth, write],
+  write: [normalize_sst, verify, decode, parse_sst, auth, write],
   read: [normalize, parse, read],
   __read__: {
     get: [get, parse, read],

@@ -35,16 +35,9 @@ const build = ({
     if (write) {
       let _write = async ? pka() : ka()
       for (const dev of write) {
-        if (dev.__ka__) {
-          // If dev is a Kleisli arrow, convert to function and chain
-          _write = _write.chain(dev.fn())
-        } else if (dev.__monad__) {
-          // If dev is a monad (function that returns a monad), chain it
-          _write = _write.chain(dev)
-        } else {
-          // Otherwise, it's a regular function, use map
-          _write = _write.map(dev)
-        }
+        if (dev.__ka__) _write = _write.chain(dev.fn())
+        else if (dev.__monad__) _write = _write.chain(dev)
+        else _write = _write.map(dev)
       }
 
       methods.write = (currentKv, msg, _opt) => {
@@ -91,15 +84,11 @@ const build = ({
 
     // Build read method
     if (read) {
-      let _read = ka()
+      let _read = async ? pka() : ka()
       for (const dev of read) {
-        if (dev.__ka__) {
-          _read = _read.chain(dev.fn())
-        } else if (dev.__monad__) {
-          _read = _read.chain(dev)
-        } else {
-          _read = _read.map(dev)
-        }
+        if (dev.__ka__) _read = _read.chain(dev.fn())
+        else if (dev.__monad__) _read = _read.chain(dev)
+        else _read = _read.map(dev)
       }
 
       methods.read = (currentKv, msg, _opt) => {
@@ -110,6 +99,27 @@ const build = ({
             .val()
         } catch (e) {
           throw e
+        }
+      }
+      if (async) {
+        methods.pread = (currentKv, msg, _opt) => {
+          return new Promise(async (cb, rej) => {
+            try {
+              const result = await pof({
+                kv: currentKv,
+                msg,
+                opt: { ...opt, ..._opt, cb },
+              })
+                .map(init)
+                .chain(_read.fn())
+                .val()
+              cb(result)
+            } catch (e) {
+              console.log(e)
+              currentKv.reset()
+              rej(e)
+            }
+          })
         }
       }
     }

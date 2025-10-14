@@ -136,11 +136,8 @@ const buildBundle = async (changes, request, vid, cslot, cols, zkdb, io) => {
     },
     data: compressed,
   })
-  if (err) {
-    console.log("this is stuck....")
-  } else {
-    nonce += 1
-  }
+  if (err) console.log("this is stuck....")
+  else nonce += 1
   console.log()
   console.log(
     `[${cslot}] ${res?.pid} <zkhash: ${zkhash}> : ${buf.length} bytes`,
