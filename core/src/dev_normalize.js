@@ -138,9 +138,10 @@ function pickInput({ state, msg, env }) {
     headers[v] = msg.headers[v]
     if (v.toLowerCase() === "content-digest") etc.body = msg.body
   }
-  const committed = commit(msg, fields)
   env.info ??= { i: -1 }
   env.module_version = version
+
+  const committed = commit(msg, fields)
   env.info.hashpath = !env.info.hashpath
     ? `${_headers.id}/${id(committed)}`
     : hashpath(env.info.hashpath, committed)
