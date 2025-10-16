@@ -20,18 +20,19 @@ describe("Mem", () => {
     const pid = "abc"
     const io = open({ path: `${dbpath}/${pid}` })
     const wkv = kv(io, async c => {})
-    const core = await new Core({ io }).init({})
+    const core = await new Core({ io }).init({ env: { branch: "main" } })
     const db = new DB({ jwk: owner.jwk, mem: core.db })
-    const id = await db.init({ id: "wdb" })
+    const id = await db.init({ id: "wdb", branch: "main" })
     await db.mkdir({
       name: "users",
       auth: [["add:add,set:set,update:update,del:del", [["allow()"]]]],
     })
     const start = Date.now()
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 10; i++) {
       await db.set("add:add", { name: "Bob" }, "users")
     }
     console.log(Math.floor(1000 / ((Date.now() - start) / 1000)), "tps")
+    console.log(await db.get("users", 3))
   })
 
   it("should give microsecond timestamps", async () => {

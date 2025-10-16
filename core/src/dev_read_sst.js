@@ -60,10 +60,8 @@ const reader = {
   getInputs: pka().map(getDocs).map(getInputs),
 }
 
-const toResult = ({ state }) => state.result
-
 function read({ state }) {
-  return pof(arguments[0]).chain(reader[state.opcode].fn()).to(toResult)
+  return pof(arguments[0]).chain(reader[state.opcode].fn()).val()
 }
 
 export default read

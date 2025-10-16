@@ -7,7 +7,7 @@ import bodyParser from "body-parser"
 import { resolve } from "path"
 import { Prover } from "zkjson"
 import { DB } from "../../sdk/src/index.js"
-import { Core, kv, db_sst, queue } from "../../core/src/index.js"
+import { Core, kv, queue } from "../../core/src/index.js"
 //import { kv, db_sst, queue } from "wdb-core"
 
 let dbs = {}
@@ -33,7 +33,11 @@ const startServer = ({ port, jwk }) => {
       } = await db.sign({
         query: ["getInputs", { path: "name" }, "users", "A"],
       })
-      const { result } = await dbs[pid].db.pread(msg)
+      console.log("lets go het.........................input")
+      const {
+        res: { result },
+      } = await dbs[pid].db.pread(msg)
+      console.log("result", result)
       zkhash = result.hash
       const prover = new Prover({
         wasm: resolve(import.meta.dirname, "./circom/db3/index_js/index.wasm"),
@@ -152,13 +156,11 @@ export class CU extends Sync {
       //this.db = queue(db_sst(this.wkv))
       let info = this.io.get("__sst__/info")
       let version = info?.version
-      let opt = {}
+      let opt = { env: { branch: "sst" } }
       if (version) opt.version = version
       const core = await new Core({
-        async: true,
         io: this.io,
         gateway: this.gateway,
-        type: "sst",
       }).init(opt)
       this.db = core.db
     }
@@ -191,25 +193,21 @@ export class CU extends Sync {
           let _result = null
           if (m.slot === 0) {
             const version = m.body?.version
-            let opt = {}
+            let opt = { env: { branch: "sst" } }
             if (version) opt.version = version
             const core = await new Core({
-              async: true,
-              type: "sst",
               io: this.io,
               gateway: this.gateway,
             }).init(opt)
             this.db = core.db
           }
-          const res = await this.db.write(m.body)
-          const { success, err, result } = res
+          const { success, err, res } = await this.db.pwrite(m.body)
           if (success === false) {
             _result = { success, err, res: null }
             if (m.body.action === "Commit") {
               if (/wrong nonce/.test(err)) {
                 const regex = /correct:\s*(\d+)/
-                const errorMessage = "Error: the wrong nonce: 3 (correct: 2)"
-                const match = errorMessage.match(regex)
+                const match = err.match(regex)
                 let correct = null
                 if (match) correct = +match[1]
                 _result = { success, err, res: { nonce: false, correct } }
@@ -217,7 +215,7 @@ export class CU extends Sync {
             }
             await this.io.put(["__results__", m.slot], _result)
           } else if (success === true) {
-            _result = { err: null, success: true, res: result?.result ?? null }
+            _result = { err: null, success: true, res: res?.result ?? null }
             await this.io.put(["__results__", m.slot], _result)
           }
           try {

@@ -1,6 +1,6 @@
 import { pof, of, pka, ka, dev, pdev } from "monade"
 import wkv from "./weavekv.js"
-
+import { is } from "ramda"
 const _store = _kv => {
   const get = (dir, doc) => _kv.get(`${dir}/${doc}`)
   const put = (dir, doc, data) => _kv.put(`${dir}/${doc}`, data)
@@ -10,181 +10,81 @@ const _store = _kv => {
   return { ..._kv, get, put, del, commit, reset }
 }
 
-const _init = ({ kv, msg, opt }) => ({
-  state: {},
-  msg,
-  env: { ...opt, kv },
-})
+const _init = ({ kv, msg, opt }) => ({ state: {}, msg, env: { ...opt, kv } })
 
-const build = ({
-  kv: kv_db,
-  async = false,
-  write,
-  read,
-  __write__ = {},
-  __read__ = {},
-  init = _init,
-  store = _store,
-}) => {
+const build = ({ kv: kv_db, init = _init, store = _store, routes }) => {
   return (kv_custom, opt = {}) => {
+    opt.branch ??= "main"
     const kv = kv_custom.init(kv_db)(wkv)
-    // Build all methods for the device
-    const methods = {}
+    let methods = {}
+    const exec = (mon, dev) => (dev.__ka__ ? mon.chain(dev.fn()) : mon.map(dev))
+    const iterate = (mon, devs) => devs.reduce((m, v) => match(m, v), mon)
+    const match = (mon, v) =>
+      is(Array, v)
+        ? iterate(mon, v)
+        : is(Function, v)
+          ? exec(mon, v)
+          : is(Object, v)
+            ? checkout(mon, v)
+            : mon
 
-    // Build write method
-    if (write) {
-      let _write = async ? pka() : ka()
-      for (const dev of write) {
-        if (dev.__ka__) _write = _write.chain(dev.fn())
-        else if (dev.__monad__) _write = _write.chain(dev)
-        else _write = _write.map(dev)
-      }
-
-      methods.write = (currentKv, msg, _opt) => {
-        try {
-          const { state, msg: msg2 } = of({
-            kv: currentKv,
-            msg,
-            opt: { ...opt, ..._opt },
-          })
-            .map(init)
-            .chain(_write.fn())
-            .val()
-          return state
-        } catch (e) {
-          console.log(e)
-          currentKv.reset()
-          throw e
-        }
-      }
-
-      // Add pwrite for async version
-      if (async) {
-        methods.pwrite = (currentKv, msg, _opt) => {
-          return new Promise(async (cb, rej) => {
-            try {
-              const { state } = await pof({
-                kv: currentKv,
-                msg,
-                opt: { ...opt, ..._opt, cb },
-              })
-                .map(init)
-                .chain(_write.fn())
-                .val()
-              cb(state)
-            } catch (e) {
-              console.log(e)
-              currentKv.reset()
-              rej(e)
-            }
-          })
-        }
-      }
+    const checkout = (mon, devs) => {
+      const res = mon.val()
+      const { state, env } = res
+      return match(mon, devs[state.branch ?? env.branch ?? "main"])
     }
 
-    // Build read method
-    if (read) {
-      let _read = async ? pka() : ka()
-      for (const dev of read) {
-        if (dev.__ka__) _read = _read.chain(dev.fn())
-        else if (dev.__monad__) _read = _read.chain(dev)
-        else _read = _read.map(dev)
-      }
+    const piterate = async (mon, devs) => {
+      for (const v of devs) mon = await pmatch(mon, v)
+      return mon
+    }
+    const pmatch = async (mon, v) =>
+      is(Array, v)
+        ? await piterate(mon, v)
+        : is(Function, v)
+          ? exec(mon, v)
+          : is(Object, v)
+            ? await pcheckout(mon, v)
+            : mon
 
-      methods.read = (currentKv, msg, _opt) => {
-        try {
-          return of({ kv: currentKv, msg, opt: { ...opt, ..._opt } })
-            .map(init)
-            .chain(_read.fn())
-            .val()
-        } catch (e) {
-          throw e
-        }
-      }
-      if (async) {
-        methods.pread = (currentKv, msg, _opt) => {
-          return new Promise(async (cb, rej) => {
-            try {
-              const result = await pof({
-                kv: currentKv,
-                msg,
-                opt: { ...opt, ..._opt, cb },
-              })
-                .map(init)
-                .chain(_read.fn())
-                .val()
-              cb(result)
-            } catch (e) {
-              console.log(e)
-              currentKv.reset()
-              rej(e)
-            }
-          })
-        }
-      }
+    const pcheckout = async (mon, devs) => {
+      const res = await mon.val()
+      const { state, env } = res
+      return await pmatch(mon, devs[state.branch ?? env.branch ?? "main"])
     }
 
-    // Build custom read methods
-    for (const k in __read__) {
-      const read = __read__[k]
-      let _read = ka()
-      for (const dev of read) {
-        if (dev.__ka__) {
-          _read = _read.chain(dev.fn())
-        } else if (dev.__monad__) {
-          _read = _read.chain(dev)
-        } else {
-          _read = _read.map(dev)
-        }
-      }
+    const _of = (kv, msg, _opt) =>
+      of({ kv, msg, opt: { ...opt, ..._opt } }).map(init)
 
-      methods[k] = async (currentKv, ...msg) => {
-        try {
-          // For async operations, we might need to await
-          const result = of({ kv: currentKv, msg, opt })
-            .map(init)
-            .chain(_read.fn())
-            .val()
+    const _pof = (kv, msg, _opt, cb) =>
+      pof({ kv, msg, opt: { ...opt, ..._opt, cb } }).map(init)
 
-          // If the result is a promise (for async operations), await it
-          if (result && typeof result.then === "function") {
-            return await result
+    for (const k in routes) {
+      if (routes[k].async) {
+        methods[k] = (...args) =>
+          new Promise(async (res, rej) => {
+            try {
+              const m = await pmatch(_pof(...args, res), routes[k].devs)
+              const _res = (await m.val()).state
+              res(_res)
+            } catch (e) {
+              ;(console.log(e), kv.reset(), rej(e))
+            }
+          })
+      } else {
+        methods[k] = (...args) => {
+          try {
+            return match(_of(...args), routes[k].devs).val().state
+          } catch (e) {
+            ;(console.log(e), args[0].reset())
+            throw e
           }
-          return result
-        } catch (e) {
-          throw e
         }
       }
     }
 
-    // Build custom write methods
-    for (const k in __write__) {
-      const write = __write__[k]
-      let _write = ka()
-      for (const dev of write) {
-        if (dev.__ka__) {
-          _write = _write.chain(dev.fn())
-        } else if (dev.__monad__) {
-          _write = _write.chain(dev)
-        } else {
-          _write = _write.map(dev)
-        }
-      }
-
-      methods[k] = (currentKv, ...msg) => {
-        try {
-          of({ kv: currentKv, msg, opt }).map(init).chain(_write.fn())
-          return currentKv
-        } catch (e) {
-          //console.log(e)
-          currentKv.reset()
-          throw e
-        }
-      }
-    }
-
-    // Use dev or pdev to create the device
-    const deviceCreator = async ? pdev(methods) : dev(methods)
+    //const deviceCreator = async ? pdev(methods) : dev(methods)
+    const deviceCreator = pdev(methods)
     return deviceCreator(store(kv))
   }
 }

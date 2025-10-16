@@ -31,10 +31,7 @@ export default class Sync {
   }
   async get() {
     if (!this.isInit) return console.log("not initialized yet...")
-    if (this.ongoing) {
-      this.next = true
-      return console.log("getMsgs ongoing...")
-    }
+    if (this.ongoing) return void (this.next = true)
     this.ongoing = true
     try {
       let from = 0

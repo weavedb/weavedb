@@ -9,7 +9,7 @@ import {
 } from "hbsig/nocrypto"
 import { of, ka } from "monade"
 import { toAddr, parseOp, wdb23 } from "./utils.js"
-import { includes } from "ramda"
+import { includes, isNil } from "ramda"
 import version from "./version.js"
 
 function parseSI(input) {
@@ -144,6 +144,7 @@ function pickInput({ state, msg, env }) {
   env.info.hashpath = !env.info.hashpath
     ? `${_headers.id}/${id(committed)}`
     : hashpath(env.info.hashpath, committed)
+  if (env.info.branch) state.branch = env.info.branch
   state.signer = toAddr(keyid)
   state.signer23 = wdb23(state.signer)
   state.query = JSON.parse(_headers.query)
@@ -154,10 +155,16 @@ function pickInput({ state, msg, env }) {
     throw Error(`the wrong id: ${env.info.id}, ${_headers.id}`)
   state.id = _headers.id
   state.nonce = _headers.nonce
+  if (!isNil(_headers.nonce)) state.nonce = _headers.nonce
   env.info.ts = msg.ts ?? Date.now()
-  let ts_count = env.kv.get("__ts__", env.info.ts) ?? { count: -1 }
-  ts_count.count += 1
-  env.kv.put("__ts__", ts_count)
+  let ts_count = env.kv.get("__ts__", "latest") ?? {
+    count: -1,
+    ts: env.info.ts,
+  }
+  if (ts_count.ts === env.info.ts) ts_count.count += 1
+  else ((ts_count.count = 0), (ts_count.ts = env.info.ts))
+  env.kv.put("__ts__", "latest", ts_count)
+  state.ts = env.info.ts
   state.ts64 = env.info.ts * 1000 + ts_count.count
   env.kv.put("_config", "info", env.info)
   arguments[0].msg = { headers, ...etc }
@@ -168,6 +175,7 @@ function setEnv({ state, msg, env }) {
   env.info = env.kv.get("_config", "info")
   return arguments[0]
 }
+
 const normalize = ka().map(setEnv).map(toLower).map(pickInput).map(parseOp)
 
 export default normalize

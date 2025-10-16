@@ -88,9 +88,10 @@ export default class DB {
     })
     return await this.init({ query, id, version })
   }
-  async init({ id, version, query = init_query }) {
+  async init({ id, version, branch, query = init_query }) {
     this.id = id
     if (version) query.version = version
+    if (branch) query.branch = branch
     await this.set("init", query)
     return this.id
   }
@@ -156,10 +157,12 @@ export default class DB {
     const query = ["addTrigger", trigger, dir]
     return await this.set(...query)
   }
+
   async removeTrigger(dir, key) {
     const query = ["removeTrigger", dir, key]
     return await this.set(...query)
   }
+
   async mkdir({ name, schema = { type: "object" }, auth = [] }) {
     const query = ["set:dir", {}, "_", name]
     let res = await this.set(...query)
@@ -169,9 +172,11 @@ export default class DB {
     }
     return res
   }
+
   async batch(queries) {
     return await this.set("batch", ...queries)
   }
+
   async sign({
     path = "/~weavedb@1.0/set",
     nonce: _nonce,
@@ -187,13 +192,13 @@ export default class DB {
     )
     return { id, nonce, req: parse ? this.parse(req) : req }
   }
+
   async parse(msg) {
     const { valid, query, fields, address } = await verify(msg)
-    if (typeof msg.body?.text === "function") {
-      msg.body = await msg.body.text()
-    }
+    if (typeof msg.body?.text === "function") msg.body = await msg.body.text()
     return { valid, query, msg }
   }
+
   async set(...query) {
     const { id, req, nonce } = await this.sign({ query })
     let json = null
@@ -203,14 +208,14 @@ export default class DB {
         try {
           const _res = await this.mem.write(msg)
           if (_res?.success) {
-            json = { success: true, id, query, result: _res.result, nonce }
+            json = { success: true, id, query, res: _res.res, nonce }
           } else {
             json = {
               success: false,
               id,
-              error: _res.err,
+              err: _res.err,
               query,
-              result: null,
+              res: null,
               nonce,
             }
           }
@@ -219,8 +224,8 @@ export default class DB {
             success: false,
             id,
             query,
-            error: e.toString(),
-            result: null,
+            err: e.toString(),
+            res: null,
             nonce,
           }
         }
@@ -229,20 +234,16 @@ export default class DB {
           id,
           nonce,
           success: false,
-          error: "invalid signature",
+          err: "invalid signature",
           query,
-          result: null,
+          res: null,
         }
       }
     } else {
       const res = await this.db.send(req)
       json = JSON.parse(res.body)
     }
-    if (
-      !json.success &&
-      /the wrong nonce/.test(json.error) &&
-      this.count === 0
-    ) {
+    if (!json.success && /the wrong nonce/.test(json.err) && this.count === 0) {
       await this.nonce()
       this.count++
       return await this.set(...query)
@@ -304,21 +305,24 @@ export default class DB {
     if (this.mem) {
       const query = args
       try {
-        res = await this.mem[query[0]](...query.slice(1)).val()
-        json = { success: true, query, res }
+        res = await this.mem[query[0]](query.slice(1))
+        json = res
       } catch (e) {
         console.log(e)
-        json = { success: false, query, error: e.toString() }
+        json = { success: false, query, err: e.toString() }
       }
     } else {
-      const _res = await this.db.get({
-        path: "/~weavedb@1.0/get",
-        id: this.id,
-        query: JSON.stringify(args),
-      })
-      json = JSON.parse(_res.body)
+      json = JSON.parse(
+        (
+          await this.db.get({
+            path: "/~weavedb@1.0/get",
+            id: this.id,
+            query: JSON.stringify(args),
+          })
+        ).body,
+      )
     }
-    if (json.error) throw json.error
-    return json.res
+    if (json.er) throw json.err
+    return json?.res?.result
   }
 }

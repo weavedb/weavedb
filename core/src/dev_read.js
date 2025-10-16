@@ -13,21 +13,14 @@ function getDocs({ state, env }) {
     state.result = state.range
       ? map(v => ({ __cursor__: true, dir: dir, id: v.key, data: v.val }))(res)
       : { __cursor__: true, dir: dir, id: res.key, data: res.val }
-  } else {
-    state.result = state.range ? pluck("val")(res) : res.val
-  }
+  } else state.result = state.range ? pluck("val")(res) : res.val
   return arguments[0]
 }
 
-const reader = {
-  get: ka().map(getDocs),
-  cget: ka().map(getDocs),
-}
-
-const toResult = ({ state }) => state.result
+const reader = { get: ka().map(getDocs), cget: ka().map(getDocs) }
 
 function read({ state }) {
-  return of(arguments[0]).chain(reader[state.opcode].fn()).to(toResult)
+  return of(arguments[0]).chain(reader[state.opcode].fn()).val()
 }
 
 export default read

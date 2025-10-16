@@ -175,7 +175,6 @@ function revert({ state, env: { kv, kv_dir, info } }) {
 }
 
 const writer = {
-  init: ka().map(init),
   set: ka().tap(validateSchema).map(putData).map(trigger),
   add: ka().tap(validateSchema).map(putData).map(trigger),
   upsert: ka().tap(validateSchema).map(putData).map(trigger),
@@ -193,15 +192,9 @@ const writer = {
   batch: ka().map(batch),
 }
 
-function write({ state, msg, env: { no_commit, kv, info } }) {
+function write({ state, msg, env: { no_commit, kv, info, branch } }) {
   if (writer[state.opcode]) of(arguments[0]).chain(writer[state.opcode].fn())
-  if (no_commit !== true) {
-    const { data } = kv.commit(msg, null, state, info)
-    state.updates = data
-  }
-  state.result ??= null
-  state.i = info.i
-  state.ts = info.ts
+  if (state.opcode === "init") state.branch = `${branch}/init`
   return arguments[0]
 }
 

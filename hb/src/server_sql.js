@@ -60,7 +60,7 @@ const server = async ({
         headers[lowK] = req.headers[lowK]
       }
       const _res = await dbs[id].sql(query[0])
-      res.json({ success: true, query, res: await _res.val() })
+      res.json({ success: true, query, result: await _res.val() })
     } catch (e) {
       console.log(e)
       res.json({ success: false, query, error: e.toString() })

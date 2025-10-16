@@ -345,7 +345,15 @@ function toAddr(n) {
   return base64urlEncode(hash)
 }
 
+const withOp = op =>
+  function ({ state, msg }) {
+    state.opcode = op
+    state.query = [op, ...msg]
+    return arguments[0]
+  }
+
 export {
+  withOp,
   toAddr,
   cid,
   wdb160,

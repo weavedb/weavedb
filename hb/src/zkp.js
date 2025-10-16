@@ -7,10 +7,10 @@ const _tags = tags => fromPairs(map(v => [v.name, v.value])(tags))
 import cors from "cors"
 import bodyParser from "body-parser"
 import { DB } from "../../sdk/src/index.js"
-import { Core, kv, db_sst, queue } from "../../core/src/index.js"
+import { Core, kv, queue } from "../../core/src/index.js"
 import { Prover } from "zkjson"
 import { resolve } from "path"
-//import { kv, db_sst, queue } from "wdb-core"
+//import { kv, queue } from "wdb-core"
 
 let dbs = {}
 let app = null
@@ -35,7 +35,9 @@ const startServer = ({ port, jwk }) => {
       } = await db.sign({
         query: ["getInputs", { path: "name" }, "users", "A"],
       })
-      const { result } = await dbs[pid].db.pread(msg)
+      const {
+        res: { result },
+      } = await dbs[pid].db.pread(msg)
       zkhash = result.hash
       const prover = new Prover({
         wasm: resolve(import.meta.dirname, "./circom/db3/index_js/index.wasm"),
@@ -45,7 +47,7 @@ const startServer = ({ port, jwk }) => {
     } catch (e) {
       console.log(e)
     }
-    res.json({ proof })
+    res.json({ proof, zkhash })
   })
 
   return app.listen(port, () => console.log(`ZK Prover on port ${port}`))
@@ -119,14 +121,12 @@ export class ZKP extends Sync {
       //this.db = queue(db_sst(this.wkv))
       let info = this.io.get("__sst__/info")
       let version = info?.version
-      let opt = {}
+      let opt = { env: { branch: "sst" } }
       if (version) opt.version = version
       const core = await new Core({
-        async: true,
         io: this.io,
         gateway: this.gateway,
         kv: this.wkv,
-        type: "sst",
       }).init(opt)
       this.db = core.db
     }
@@ -159,19 +159,17 @@ export class ZKP extends Sync {
           let _result = null
           if (m.slot === 0) {
             const version = m.body?.version
-            let opt = {}
+            let opt = { env: { branch: "sst" } }
             if (version) opt.version = version
             const core = await new Core({
-              async: true,
-              type: "sst",
               io: this.io,
               gateway: this.gateway,
               kv: this.wkv,
             }).init(opt)
             this.db = core.db
           }
-          const res = await this.db.write(m.body)
-          const { success, err, result } = res
+
+          const { success, err, res } = await this.db.pwrite(m.body)
           if (success === false) {
             _result = { success, err, res: null }
             if (m.body.action === "Commit") {
@@ -186,7 +184,7 @@ export class ZKP extends Sync {
             }
             await this.io.put(["__results__", m.slot], _result)
           } else if (success === true) {
-            _result = { err: null, success: true, res: result?.result ?? null }
+            _result = { err: null, success: true, res: res?.result ?? null }
             await this.io.put(["__results__", m.slot], _result)
           }
           try {

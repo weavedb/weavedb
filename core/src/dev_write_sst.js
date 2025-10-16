@@ -5,6 +5,7 @@ import read from "./dev_read.js"
 import draft_07 from "./jsonschema-draft-07.js"
 import { validate } from "jsonschema"
 import parse from "./dev_parse.js"
+import result from "./dev_result.js"
 import auth from "./dev_auth.js"
 import { putData, delData, validateSchema, parseOp } from "./utils.js"
 import init from "./dev_init_sst.js"
@@ -217,7 +218,7 @@ function commit({ state, env }) {
   return arguments[0]
 }
 function get({ state, env }) {
-  state.result = of(arguments[0]).map(parse).map(read).val()
+  of(arguments[0]).map(parse).map(read).val()
   return arguments[0]
 }
 

@@ -1,5 +1,4 @@
 import db from "./db.js"
-import db_sst from "./db_sst.js"
 import sql from "./sql.js"
 import vec from "./vec.js"
 
@@ -15,18 +14,4 @@ import build from "./build.js"
 
 import Core from "./core.js"
 
-export {
-  bpt,
-  parser,
-  build,
-  queue,
-  db,
-  sql,
-  vec,
-  kv,
-  kv_vec,
-  io,
-  mem,
-  Core,
-  db_sst,
-}
+export { bpt, parser, build, queue, db, sql, vec, kv, kv_vec, io, mem, Core }

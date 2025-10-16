@@ -42,19 +42,6 @@ const server = async ({
       console.log("recoverd!", v)
       dbs[v] = _db
       ios[v] = _io
-      /*
-      if (dbpath) {
-        //const wkv = getKV2({ jwk, hb, dbpath, pid: v })
-        const io = open({ path: `${dbpath}/${v}` })
-        const core = await new Core({ io, gateway }).init({})
-        //dbs[v] = queue(wdb(wkv))
-        dbs[v] = core.db
-        ios[v] = _io
-      } else {
-        const { q, io } = mem()
-        dbs[v] = q
-        ios[v] = io
-      }*/
       if (hyperbeam) wal({ jwk, hb, dbpath, pid: v })
     } catch (e) {
       console.log(e)
@@ -101,8 +88,8 @@ const server = async ({
     try {
       query = JSON.parse(req.headers.query ?? req.query.query)
       id = req.headers.id ?? req.query.id
-      const _res = await dbs[id][query[0]](...query.slice(1)).val()
-      res.json({ success: true, query, res: _res })
+      const _res = await dbs[id][query[0]](query.slice(1))
+      res.json({ success: true, query, result: _res })
     } catch (e) {
       console.log(e)
       res.json({ success: false, query, error: e.toString() })
@@ -146,10 +133,9 @@ const server = async ({
           let lowK = k.toLowerCase()
           headers[lowK] = req.headers[lowK]
         }
-        const _res = await dbs[headers.id]
-          [q.query[0]](...q.query.slice(1))
-          .val()
-        res.json({ success: true, ...q, res: _res })
+        const _res = await dbs[headers.id][q.query[0]](...q.query.slice(1))
+
+        res.json({ success: true, ...q, result: _res })
       } catch (e) {
         console.log(e)
         res.json({ success: false, ...q, error: e.toString() })
@@ -165,55 +151,7 @@ const server = async ({
     })
     if (req.body) msg.body = await req.text?.()
     return msg
-  } /*
-  app.post("/weavedb/:mid", async (req, res) => {
-    const mid = req.params.mid
-    const pid = req.query["process-id"]
-    let data = null
-    let msg = []
-    try {
-      if (!dbmap[pid]) {
-        const res = await fetch(`${hb}/${pid}~process@1.0/compute?slot=0`)
-        const msg = structured_to(httpsig_from(await toMsg(res)))
-        const { db } = msg
-        dbmap[pid] = db
-      }
-      const { assignment, message } = JSON.parse(req.body.toString()).edges[0]
-        .node
-      const tags_a = _tags(assignment.Tags)
-      const tags_m = _tags(message.Tags)
-      let query = null
-      let id = null
-      if (tags_m?.Query) query = JSON.parse(tags_m.Query)
-
-      if (query) data = await dbs[dbmap[pid]].get(...query).val()
-      if (tags_m["From-Process"]) {
-        const r_tags = [
-          { name: "Type", value: "Message" },
-          { name: "Data-Protocol", value: tags_m["Data-Protocol"] },
-          { name: "Variant", value: tags_m["Variant"] },
-          { name: "X-Reference", value: tags_m["Reference"] },
-          { name: "From-Process", value: pid },
-        ]
-        msg.push({
-          Target: tags_m["From-Process"],
-          Tags: r_tags,
-          Data: data,
-        })
-        const ao = await new AO({ port: gateway }).init(jwk)
-        const res = await ao.msg({
-          pid: tags_m["From-Process"],
-          data: JSON.stringify(data),
-          act: null,
-          tags: _tags(r_tags),
-        })
-      }
-    } catch (e) {
-      console.log(e)
-    }
-    res.json({ Output: { data }, Messages: msg })
-  })
-   */
+  }
   app.post("/~weavedb@1.0/set", async (req, res) => {
     const { valid, query, fields, address } = await verify(req)
     if (valid) {
@@ -232,13 +170,11 @@ const server = async ({
           } else {
             console.log(`initializing a new db: ${pid}`)
             if (dbpath) {
-              //const wkv = getKV2({ jwk, hb, dbpath, pid })
               const io = open({ path: `${dbpath}/${pid}` })
               const [op, { version }] = JSON.parse(req.headers.query)
               let opt = {}
               if (version) opt.version = version
               const core = await new Core({ io, gateway }).init(opt)
-              //dbs[pid] = queue(wdb(wkv))
               dbs[pid] = core.db
               ios[pid] = io
             } else {
