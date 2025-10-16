@@ -174,7 +174,7 @@ const dev =
     d.val = () => current
 
     // Convert to monad
-    d.monad = () => of(current)
+    d.mon = () => of(current)
 
     // Add custom chainable methods (maps)
     for (const [name, fn] of Object.entries(maps)) {
@@ -227,7 +227,7 @@ const pdev =
     d.val = () => run
 
     // Convert to async monad
-    d.monad = () => pof(run)
+    d.mon = () => pof(run)
 
     // Add async custom chainable methods (maps)
     for (const [name, fn] of Object.entries(maps)) {

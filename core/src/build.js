@@ -1,6 +1,7 @@
 import { pof, of, pka, ka, dev, pdev } from "monade"
 import wkv from "./weavekv.js"
 import { is } from "ramda"
+
 const _store = _kv => {
   const get = (dir, doc) => _kv.get(`${dir}/${doc}`)
   const put = (dir, doc, data) => _kv.put(`${dir}/${doc}`, data)
@@ -84,8 +85,7 @@ const build = ({ kv: kv_db, init = _init, store = _store, routes }) => {
     }
 
     //const deviceCreator = async ? pdev(methods) : dev(methods)
-    const deviceCreator = pdev(methods)
-    return deviceCreator(store(kv))
+    return pdev(methods)(store(kv))
   }
 }
 
