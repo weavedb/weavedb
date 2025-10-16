@@ -289,7 +289,7 @@ export class Validator extends Sync {
         }
         while (msg && i < this.max_msgs) {
           if (this.type === "vec") await this.db.pwrite(msg)
-          else this.db.write(msg)
+          else await this.db.write(msg)
           isData = true
           this.wslot += 1
           await this.io.put("__wslot__", this.wslot)

@@ -1,3 +1,4 @@
+import { includes } from "ramda"
 const queue = wdb => {
   let qs = []
   let qs_read = []
@@ -7,71 +8,24 @@ const queue = wdb => {
     if (!on) {
       on = true
       while (qs.length > 0) {
-        const { resolve, args, async } = qs.shift()
+        const { res, args, k } = qs.shift()
         try {
-          let func = async ? wdb.pwrite : wdb.write
-          const result = await func(...args).val()
-          resolve({ success: true, err: null, result })
+          res({ success: true, err: null, res: await wdb[k](...args).val() })
         } catch (e) {
-          resolve({
-            success: false,
-            err: e?.toString?.() ?? true,
-            result: null,
-          })
+          res({ success: false, err: e?.toString?.() ?? true, res: null })
         }
       }
       on = false
     }
   }
-  const read = (fn, args) => {
-    try {
-      return fn(...args)
-    } catch (e) {
-      throw e
+  let db = {}
+  for (const k in wdb) {
+    if (
+      !includes(k, ["__device__", "map", "tap", "chain", "to", "val", "monad"])
+    ) {
+      db[k] = (...args) =>
+        new Promise(res => void (qs.push({ res, args, k }), exec()))
     }
-  }
-  const exec_read = async () => {
-    if (!on_read) {
-      on_read = true
-      while (qs_read.length > 0) {
-        const { resolve, args, async } = qs_read.shift()
-        try {
-          let func = async ? wdb.pread : wdb.read
-          const result = await func(...args).val()
-          resolve({ success: true, err: null, result })
-        } catch (e) {
-          console.log(e)
-          resolve({
-            success: false,
-            err: e?.toString?.() ?? true,
-            result: null,
-          })
-        }
-      }
-      on_read = false
-    }
-  }
-  const db = {
-    sql: (...args) => read(wdb.sql, args),
-    get: (...args) => read(wdb.get, args),
-    cget: (...args) => read(wdb.cget, args),
-    read: (...args) => read(wdb.read, args),
-    write: (...args) =>
-      new Promise(resolve => {
-        qs.push({ resolve, args })
-        exec()
-      }),
-    pwrite: (...args) =>
-      new Promise(resolve => {
-        console.log("it will execute in async")
-        qs.push({ resolve, args, async: true })
-        exec()
-      }),
-    pread: (...args) =>
-      new Promise(resolve => {
-        qs_read.push({ resolve, args, async: true })
-        exec_read()
-      }),
   }
   return db
 }

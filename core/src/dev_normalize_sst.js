@@ -1,7 +1,7 @@
 import { of, ka } from "monade"
 import { wdb23, toAddr } from "./utils.js"
 import version from "./version_sst.js"
-
+import { isNil } from "ramda"
 function pickInput({ state, msg, env }) {
   if (!msg) return arguments[0]
   let id = null
@@ -37,12 +37,21 @@ function pickInput({ state, msg, env }) {
     break
   }
   state.signer23 = wdb23(state.signer)
-  state.nonce = msg.nonce
+  if (!isNil(msg.nonce)) state.nonce = msg.nonce
   env.info ??= { i: -1 }
   env.module_version = version
   env.info.i++
   const now = Date.now()
-  env.info.ts64 = msg.ts ?? now
+  env.info.ts = msg.ts ?? now
+  let ts_count = env.kv.get("__ts__", "latest") ?? {
+    count: -1,
+    ts: env.info.ts,
+  }
+  if (ts_count.ts === env.info.ts) ts_count.count += 1
+  else ((ts_count.count = 0), (ts_count.ts = env.info.ts))
+  env.kv.put("__ts__", "latest", ts_count)
+  state.ts = env.info.ts ?? now
+  state.ts64 = env.info.ts * 1000 + ts_count.count
   env.kv.put("__sst__", "info", env.info)
   return arguments[0]
 }

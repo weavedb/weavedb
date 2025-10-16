@@ -33,6 +33,7 @@ function dev_init({
     max_dir_id: 8,
     max_doc_size: 256,
   }
+  if (query[0].branch) info.branch = query[0].branch
   if (hashpath) info.hashpath = hashpath
   if (query[0].version) {
     if (module_version !== query[0].version && ignore_version !== true) {

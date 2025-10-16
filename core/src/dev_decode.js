@@ -41,6 +41,7 @@ async function decodeData({ state, msg, env }) {
   const d = new Decoder()
   const left = d.decode(Uint8Array.from(_buf), null)
   let json = d.json
+  // handle left[0] undefined error
   if (left[0].length !== 8) left.shift()
   let start = 0
   let changes = { dirs: {}, docs: {}, indexes: {}, _: {} }
