@@ -33,11 +33,9 @@ const startServer = ({ port, jwk }) => {
       } = await db.sign({
         query: ["getInputs", { path: "name" }, "users", "A"],
       })
-      console.log("lets go het.........................input")
       const {
         res: { result },
       } = await dbs[pid].db.pread(msg)
-      console.log("result", result)
       zkhash = result.hash
       const prover = new Prover({
         wasm: resolve(import.meta.dirname, "./circom/db3/index_js/index.wasm"),

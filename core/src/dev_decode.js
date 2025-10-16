@@ -1,6 +1,6 @@
 import { of, pka } from "monade"
 import { prop, sortBy, o, filter, isNil } from "ramda"
-import zlib from "zlib"
+import brotliDecompress from "brotli/decompress.js"
 import {
   json as arjson,
   encode,
@@ -9,7 +9,8 @@ import {
   Decoder,
   Parser,
 } from "arjson"
-import { DBTree } from "zkjson"
+import DBTree from "zkjson/smt"
+
 function frombits(bitArray) {
   const bitStr = bitArray.join("")
   const byteCount = Math.ceil(bitStr.length / 8)
@@ -36,7 +37,10 @@ async function decodeData({ state, msg, env }) {
   const n = 3
   const cols = env.kv.get("__zkp__", "cols") ?? {}
   const buf = msg.data
-  const _buf = zlib.brotliDecompressSync(buf)
+  //const _buf = zlib.brotliDecompressSync(buf)
+  const _buf = brotliDecompress(
+    buf instanceof Uint8Array ? buf : new Uint8Array(buf),
+  )
   const msgs = []
   const d = new Decoder()
   const left = d.decode(Uint8Array.from(_buf), null)

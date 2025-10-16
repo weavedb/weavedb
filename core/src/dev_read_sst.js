@@ -2,7 +2,7 @@ import { pof, pka } from "monade"
 import { map, pluck, isNil, pick } from "ramda"
 import parseQuery from "./parser.js"
 import { get } from "./planner.js"
-import { DBTree } from "zkjson"
+import DBTree from "zkjson/smt"
 
 async function getInputs({ state, env }) {
   const { dirinfo, doc, data, json } = state
