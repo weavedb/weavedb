@@ -60,17 +60,18 @@ function setTS64({ state, msg, env }) {
   return arguments[0]
 }
 
-function setState({ state, msg, env }) {
+function setMeta({ state, msg, env }) {
   if (!isNil(msg.headers.nonce)) state.nonce = msg.headers.nonce
   if (env.info.branch) state.branch = env.info.branch
   state.id = msg.headers.id
   state.nonce = msg.headers.nonce
-  of(arguments[0]).map(setTS64)
   state.signer = toAddr(msg.keyid)
   state.signer23 = wdb23(state.signer)
   state.query = JSON.parse(msg.headers.query)
   return arguments[0]
 }
+
+const setState = ka().map(setMeta).map(setTS64).map(parseOp)
 
 function setHashpath({ state, msg, env }) {
   const committed = commit(msg)
@@ -86,15 +87,9 @@ function setEnv({ state, msg, env }) {
   env.module_version = version
   of(arguments[0]).map(setHashpath)
   env.info.i++
-  if (env.info.id && env.info.id !== msg.headers.id)
-    throw Error(`the wrong id: ${env.info.id}, ${msg.headers.id}`)
   env.info.ts = msg.ts ?? Date.now()
   env.kv.put("_config", "info", env.info)
   return arguments[0]
 }
 
-export default ka()
-  .chain(normalize_httpsig.k)
-  .map(setEnv)
-  .map(setState)
-  .map(parseOp)
+export default ka().chain(normalize_httpsig.k).map(setEnv).chain(setState.k)

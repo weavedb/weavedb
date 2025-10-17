@@ -1,11 +1,6 @@
 import { of, ka } from "monade"
 import { keys, uniq, concat, compose, is, isNil, includes } from "ramda"
 import { merge, genDocID, checkDocID } from "./utils.js"
-import _fpjson from "fpjson-lang"
-import version from "./dev_version.js"
-const fpjson = _fpjson.default || _fpjson
-
-import { replace$ } from "./fpjson.js"
 
 function setData({ state, env }) {
   const { data, dir } = state
@@ -83,8 +78,6 @@ function parse({ state, env }) {
     state.data = data
     if (state.opcode === "getInputs") state.query.shift()
   }
-
-  of(arguments[0]).map(version)
 
   if (dir) state.dirinfo = kv.get("_", dir)
   env.kv_dir = {

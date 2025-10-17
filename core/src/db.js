@@ -7,6 +7,19 @@ import write_sst from "./dev_write_sst.js"
 import parse_sst from "./dev_parse_sst.js"
 
 import init from "./dev_init.js"
+import put from "./dev_put.js"
+import del from "./dev_del.js"
+import upgrade from "./dev_upgrade.js"
+import batch from "./dev_batch.js"
+import revert from "./dev_revert.js"
+import migrate from "./dev_migrate.js"
+import add_index from "./dev_add_index.js"
+import remove_index from "./dev_remove_index.js"
+import set_auth from "./dev_set_auth.js"
+import set_schema from "./dev_set_schema.js"
+import add_trigger from "./dev_add_trigger.js"
+import remove_trigger from "./dev_remove_trigger.js"
+
 import normalize from "./dev_normalize.js"
 import verify from "./dev_verify.js"
 import parse from "./dev_parse.js"
@@ -29,7 +42,21 @@ const routes = {
       parse,
       auth,
       write,
-      { "main/init": init },
+      {
+        init,
+        put,
+        del,
+        batch,
+        upgrade,
+        revert,
+        migrate,
+        add_index,
+        remove_index,
+        set_auth,
+        set_schema,
+        add_trigger,
+        remove_trigger,
+      },
       result,
     ],
   },

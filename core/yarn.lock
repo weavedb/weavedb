@@ -2852,10 +2852,10 @@ mnemonist@^0.39.8:
   dependencies:
     obliterator "^2.0.1"
 
-monade@^0.0.5:
-  version "0.0.5"
-  resolved "https://registry.npmjs.org/monade/-/monade-0.0.5.tgz"
-  integrity sha512-ZWL70Z526qWUP1+BTyhoK+pb4nukDAr5TgEMneZhTTuDGH5BOZkxyWn9Y//4FTfaW/T4Zu1FgQNHWVzJf7/rpA==
+monade@^0.0.6:
+  version "0.0.6"
+  resolved "https://registry.npmjs.org/monade/-/monade-0.0.6.tgz"
+  integrity sha512-UShqqZdhVer2mkOXpBN1aZ9WlwZ/hnXC5rjP4acSApat3ABxbpG9ZOVjBY5cEZzO+wxYARSputrAtC4ZvFhFLg==
 
 ms@^2.1.3:
   version "2.1.3"

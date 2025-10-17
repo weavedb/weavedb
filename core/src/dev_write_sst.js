@@ -1,13 +1,13 @@
 import { of, ka } from "monade"
 import migrate from "./dev_migrate_sst.js"
-import write_core from "./dev_write.js"
+import batch from "./dev_batch_sst.js"
 import read from "./dev_read.js"
 import draft_07 from "./jsonschema-draft-07.js"
 import { validate } from "jsonschema"
 import parse from "./dev_parse.js"
 import result from "./dev_result.js"
 import auth from "./dev_auth.js"
-import { putData, delData, validateSchema, parseOp } from "./utils.js"
+import { putData, delData, parseOp } from "./utils.js"
 import init from "./dev_init_sst.js"
 import { isNil, includes, difference, equals, keys, uniq } from "ramda"
 import trigger from "./dev_trigger.js"
@@ -138,27 +138,6 @@ function removeIndex({ state, env: { kv, kv_dir } }) {
   _removeIndex(data, [dir], kv_dir)
   indexes.indexes = new_indexes
   kv.put("_config", `indexes_${dirinfo.index}`, indexes)
-  return arguments[0]
-}
-
-function batch({ state, env }) {
-  for (const v of state.query) {
-    of({
-      state: {
-        nonce: state.nonce,
-        ts64: state.ts64,
-        signer: state.signer,
-        signer23: state.signer23,
-        id: state.id,
-        query: v,
-      },
-      msg: null,
-      env: { kv: env.kv, no_commit: true, info: env.kv.get("_config", "info") },
-    })
-      .map(parseOp)
-      .map(parse)
-      .map(write_core)
-  }
   return arguments[0]
 }
 
