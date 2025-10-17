@@ -2,6 +2,7 @@ import { of } from "monade"
 import read from "./dev_read.js"
 import { replace$, fpj } from "./fpjson.js"
 import { checkDocID } from "./utils.js"
+import schema from "./dev_schema.js"
 import {
   concat,
   isNil,
@@ -18,7 +19,6 @@ import {
 import {
   putData,
   delData,
-  validateSchema,
   merge,
   genDocID,
   wdb23,
@@ -94,12 +94,9 @@ function trigger({ state, env }) {
     } else {
       _state.data = merge(data, _state, undefined, _env)
       if (op === "add") {
-        of({ state: _state, env: _env })
-          .map(genDocID)
-          .tap(validateSchema)
-          .map(putData)
+        of({ state: _state, env: _env }).map(genDocID).map(schema).map(putData)
       } else {
-        of({ state: _state, env: _env }).tap(validateSchema).map(putData)
+        of({ state: _state, env: _env }).map(schema).map(putData)
       }
     }
     return [true, false]

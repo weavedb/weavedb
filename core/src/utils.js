@@ -8,8 +8,7 @@ import { keys, uniq, concat, compose, is, isNil, includes, map } from "ramda"
 import { put, del } from "./indexer.js"
 import { keccak256 } from "./keccak.js"
 
-function parseOp(ctx) {
-  const { state } = ctx
+function parseOp({ state }) {
   state.op = state.query[0]
   state.opcode = state.op.split(":")[0]
   state.operand = state.op.split(":")[1] ?? null
@@ -92,19 +91,6 @@ function delData({ state, env }) {
   if (isNil(env.kv.get("_", dir))) throw Error("dir doesn't exist")
   del(doc, [dir], env.kv_dir)
   return arguments[0]
-}
-
-function validateSchema({ state, env: { kv, info } }) {
-  let valid = false
-  const { data, dir } = state
-  let schema = kv.get("_config", `schema_${state.dirinfo.index}`)
-  try {
-    valid = validate(data, schema).valid
-  } catch (e) {}
-  const len = JSON.stringify(data).length
-  if (!valid) throw Error("invalid schema")
-  if (info.max_doc_size * 20 < len)
-    throw Error(`data too large: ${len} bytes (max: ${info.max_doc_size * 20})`)
 }
 
 function checkMaxDocID(id, size) {
@@ -352,7 +338,17 @@ const withOp = op =>
     return arguments[0]
   }
 
+function normalizeIndex(index) {
+  for (const i of index) {
+    if (!Array.isArray(i)) throw Error("index must be Array")
+    if (i.length > 2 || i.length < 1) throw Error("the wrong index")
+    if (i.length === 1) i.push("asc")
+  }
+  return index
+}
+
 export {
+  normalizeIndex,
   withOp,
   toAddr,
   cid,
@@ -365,5 +361,4 @@ export {
   genDocID,
   putData,
   delData,
-  validateSchema,
 }

@@ -1,15 +1,5 @@
-import {
-  pof,
-  of,
-  pka,
-  ka,
-  dev,
-  pdev,
-  flow,
-  pflow,
-} from "../../monade/src/index.js"
+import { pof, of, pka, ka, dev, pdev, flow, pflow } from "monade"
 import wkv from "./weavekv.js"
-import { is } from "ramda"
 
 const _store = _kv => {
   const get = (dir, doc) => _kv.get(`${dir}/${doc}`)
@@ -39,20 +29,15 @@ const build = ({ kv: kv_db, init = _init, store = _store, routes }) => {
       return devs[state.branch ?? env.branch ?? "main"]
     }
 
-    const _of = (kv, msg, _opt) =>
-      of({ kv, msg, opt: { ...opt, ..._opt } }).map(init)
-
-    const _pof = (kv, msg, _opt, cb) =>
-      pof({ kv, msg, opt: { ...opt, ..._opt, cb } }).map(init)
-
     for (const k in routes) {
       if (routes[k].async) {
-        pmethods[k] = (...args) => {
+        pmethods[k] = (kv, msg, _opt, cb) => {
           return new Promise(async (res, rej) => {
             try {
               res(
                 (
-                  await _pof(...args, res)
+                  await pof({ kv, msg, opt: { ...opt, ..._opt, cb } })
+                    .map(init)
                     .chain(pflow(routes[k].devs, ppred).k)
                     .val()
                 ).state,
@@ -63,13 +48,14 @@ const build = ({ kv: kv_db, init = _init, store = _store, routes }) => {
           })
         }
       } else {
-        methods[k] = (...args) => {
+        methods[k] = (kv, msg, _opt) => {
           try {
-            return _of(...args)
+            return of({ kv, msg, opt: { ...opt, ..._opt } })
+              .map(init)
               .chain(flow(routes[k].devs, pred).k)
               .val().state
           } catch (e) {
-            ;(console.log(e), args[0].reset())
+            ;(console.log(e), kv.reset())
             throw e
           }
         }
