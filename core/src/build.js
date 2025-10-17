@@ -1,4 +1,13 @@
-import { pof, of, pka, ka, dev, pdev } from "monade"
+import {
+  pof,
+  of,
+  pka,
+  ka,
+  dev,
+  pdev,
+  flow,
+  pflow,
+} from "../../monade/src/index.js"
 import wkv from "./weavekv.js"
 import { is } from "ramda"
 
@@ -18,40 +27,16 @@ const build = ({ kv: kv_db, init = _init, store = _store, routes }) => {
     opt.branch ??= "main"
     const kv = kv_custom.init(kv_db)(wkv)
     let methods = {}
-    const exec = (mon, dev) => (dev.__ka__ ? mon.chain(dev.fn()) : mon.map(dev))
-    const iterate = (mon, devs) => devs.reduce((m, v) => match(m, v), mon)
-    const match = (mon, v) =>
-      is(Array, v)
-        ? iterate(mon, v)
-        : is(Function, v)
-          ? exec(mon, v)
-          : is(Object, v)
-            ? checkout(mon, v)
-            : mon
+    let pmethods = {}
 
-    const checkout = (mon, devs) => {
-      const res = mon.val()
-      const { state, env } = res
-      return match(mon, devs[state.branch ?? env.branch ?? "main"])
+    const pred = (mon, devs) => {
+      const { state, env } = mon.val()
+      return devs[state.branch ?? env.branch ?? "main"]
     }
 
-    const piterate = async (mon, devs) => {
-      for (const v of devs) mon = await pmatch(mon, v)
-      return mon
-    }
-    const pmatch = async (mon, v) =>
-      is(Array, v)
-        ? await piterate(mon, v)
-        : is(Function, v)
-          ? exec(mon, v)
-          : is(Object, v)
-            ? await pcheckout(mon, v)
-            : mon
-
-    const pcheckout = async (mon, devs) => {
-      const res = await mon.val()
-      const { state, env } = res
-      return await pmatch(mon, devs[state.branch ?? env.branch ?? "main"])
+    const ppred = async (mon, devs) => {
+      const { state, env } = await mon.val()
+      return devs[state.branch ?? env.branch ?? "main"]
     }
 
     const _of = (kv, msg, _opt) =>
@@ -62,20 +47,25 @@ const build = ({ kv: kv_db, init = _init, store = _store, routes }) => {
 
     for (const k in routes) {
       if (routes[k].async) {
-        methods[k] = (...args) =>
-          new Promise(async (res, rej) => {
+        pmethods[k] = (...args) => {
+          return new Promise(async (res, rej) => {
             try {
-              const m = await pmatch(_pof(...args, res), routes[k].devs)
-              const _res = (await m.val()).state
-              res(_res)
+              res(
+                (
+                  await (
+                    await pflow(_pof(...args, res), routes[k].devs, ppred)
+                  ).val()
+                ).state,
+              )
             } catch (e) {
               ;(console.log(e), kv.reset(), rej(e))
             }
           })
+        }
       } else {
         methods[k] = (...args) => {
           try {
-            return match(_of(...args), routes[k].devs).val().state
+            return flow(_of(...args), routes[k].devs, pred).val().state
           } catch (e) {
             ;(console.log(e), args[0].reset())
             throw e
@@ -83,9 +73,26 @@ const build = ({ kv: kv_db, init = _init, store = _store, routes }) => {
         }
       }
     }
-
-    //const deviceCreator = async ? pdev(methods) : dev(methods)
-    return pdev(methods)(store(kv))
+    const kv_store = store(kv)
+    const db = dev(methods)
+    const dbp = pdev(pmethods)
+    const ops = {}
+    for (const k in routes) {
+      if (routes[k].async) {
+        ops[k] = async (...args) =>
+          await dbp()
+            [k](...args)
+            .k(kv_store)
+            .val()
+      } else {
+        ops[k] = (...args) =>
+          db()
+            [k](...args)
+            .k(kv_store)
+            .val()
+      }
+    }
+    return ops
   }
 }
 

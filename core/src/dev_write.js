@@ -193,7 +193,7 @@ const writer = {
 }
 
 function write({ state, msg, env: { no_commit, kv, info, branch } }) {
-  if (writer[state.opcode]) of(arguments[0]).chain(writer[state.opcode].fn())
+  if (writer[state.opcode]) of(arguments[0]).chain(writer[state.opcode].k)
   if (state.opcode === "init") state.branch = `${branch}/init`
   return arguments[0]
 }

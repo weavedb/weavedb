@@ -246,7 +246,7 @@ const writer = {
 }
 
 function write({ state, msg, env: { no_commit, kv, info } }) {
-  if (writer[state.opcode]) of(arguments[0]).chain(writer[state.opcode].fn())
+  if (writer[state.opcode]) of(arguments[0]).chain(writer[state.opcode].k)
   if (no_commit !== true) {
     const { data } = kv.commit(msg, null, state, info)
     state.updates = data

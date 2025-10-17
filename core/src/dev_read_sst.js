@@ -61,7 +61,7 @@ const reader = {
 }
 
 function read({ state }) {
-  return pof(arguments[0]).chain(reader[state.opcode].fn()).val()
+  return pof(arguments[0]).chain(reader[state.opcode].k).val()
 }
 
 export default read
