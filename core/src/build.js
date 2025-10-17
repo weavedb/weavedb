@@ -52,9 +52,9 @@ const build = ({ kv: kv_db, init = _init, store = _store, routes }) => {
             try {
               res(
                 (
-                  await (
-                    await pflow(_pof(...args, res), routes[k].devs, ppred)
-                  ).val()
+                  await _pof(...args, res)
+                    .chain(pflow(routes[k].devs, ppred).k)
+                    .val()
                 ).state,
               )
             } catch (e) {
@@ -65,7 +65,9 @@ const build = ({ kv: kv_db, init = _init, store = _store, routes }) => {
       } else {
         methods[k] = (...args) => {
           try {
-            return flow(_of(...args), routes[k].devs, pred).val().state
+            return _of(...args)
+              .chain(flow(routes[k].devs, pred).k)
+              .val().state
           } catch (e) {
             ;(console.log(e), args[0].reset())
             throw e

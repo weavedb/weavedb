@@ -41,7 +41,16 @@ const pcheckout = async (mon, devs, pred) => {
   const _pred = devs.$pred ?? pred
   return await pmatch(mon, await _pred?.(mon, devs), pred)
 }
-const flow = (mon, devs, pred) => match(mon, devs, pred)
-const pflow = (mon, devs, pred) => pmatch(mon, devs, pred)
 
+const flow = (devs, pred) => {
+  const arr = ka()
+  arr.k = ctx => match(of(ctx), devs, pred)
+  return arr
+}
+
+const pflow = (devs, pred) => {
+  const arr = pka()
+  arr.k = ctx => pmatch(pof(ctx), devs, pred)
+  return arr
+}
 export { flow, pflow }
