@@ -7,96 +7,26 @@ import {
   httpsig_from,
   structured_to,
 } from "hbsig/nocrypto"
+
 import { of, ka } from "monade"
 import { toAddr, parseOp, wdb23 } from "./utils.js"
 import { includes, isNil } from "ramda"
 import version from "./version.js"
+import normalize_httpsig from "./dev_normalize_httpsig.js"
 
-function parseSI(input) {
-  const eq = input.indexOf("=")
-  if (eq < 0) throw new Error("Invalid Signature-Input (no `=` found)")
-  const label = input.slice(0, eq).trim()
-  let rest = input.slice(eq + 1).trim()
-
-  if (!rest.startsWith("(")) {
-    throw new Error("Invalid Signature-Input (fields list missing)")
-  }
-  const endFields = rest.indexOf(")")
-  if (endFields < 0) {
-    throw new Error("Invalid Signature-Input (unclosed fields list)")
-  }
-  const fieldsRaw = rest.slice(1, endFields)
-  const fields = fieldsRaw
-    .split(/\s+/)
-    .map(f => f.replace(/^"|"$/g, "").toLowerCase())
-
-  rest = rest.slice(endFields + 1)
-
-  const params = []
-  rest.split(";").forEach(part => {
-    const p = part.trim()
-    if (!p) return
-
-    const m = p.match(
-      /^([a-z0-9-]+)=(?:"((?:[^"\\]|\\.)*)"|([0-9]+|[A-Za-z0-9-._~]+))$/i,
-    )
-    if (!m) {
-      throw new Error(`Invalid parameter in Signature-Input: ${p}`)
-    }
-    const key = m[1].toLowerCase()
-    const val =
-      m[2] != null ? m[2].replace(/\\"/g, '"').replace(/\\\\/g, "\\") : m[3]
-    params.push({ key, val })
-  })
-
-  const obj = { label, fields }
-  for (const { key, val } of params) {
-    if (key === "alg") obj.alg = val
-    if (key === "keyid") obj.keyid = val
-    if (key === "created") obj.created = Number(val)
-    if (key === "expires") obj.expires = Number(val)
-    if (key === "nonce") obj.nonce = val
-  }
-
-  if (!obj.alg) throw new Error("Missing `alg` in Signature-Input")
-  if (!obj.keyid) throw new Error("Missing `keyid` in Signature-Input")
-
-  return obj
-}
-
-function toLower({ msg, env }) {
-  if (!msg) return arguments[0]
-  let lowers = { signature: null, "signature-input": null }
-  for (const k in msg.headers) {
-    const lower = k.toLowerCase()
-    if (includes(lower, ["signature", "signature-input"])) {
-      lowers[lower] = msg.headers[k]
-      delete msg.headers[k]
-    }
-  }
-  msg.headers = { ...msg.headers, ...lowers }
-  return arguments[0]
-}
-
-function commit(msg, components) {
+function commit(msg) {
   let body = {}
   const inlineBodyKey = msg.headers["inline-body-key"]
-  for (const v of components) {
+  for (const v of msg.fields) {
     const key = v === "@path" ? "path" : v
     body[key] = msg.headers[key]
   }
   if (msg.body) {
     let bodyContent = msg.body
-    if (inlineBodyKey === "data") {
-      body.data = bodyContent
-    } else {
-      body.body = bodyContent
-    }
+    if (inlineBodyKey === "data") body.data = bodyContent
+    else body.body = bodyContent
   }
-
-  // Remove inline-body-key from the final body as it's just metadata
   delete body["inline-body-key"]
-
   const hmacId = hmacid(msg.headers)
   const rsaId = rsaid(msg.headers)
   const pub = extractPubKey(msg.headers)
@@ -117,47 +47,8 @@ function commit(msg, components) {
   return committed
 }
 
-const toMsg = req => {
-  let msg = {}
-  for (const k in req?.headers ?? {}) msg[k] = req.headers[k]
-  if (req.body) msg.body = req.body
-  return msg
-}
-
-function pickInput({ state, msg, env }) {
-  if (!msg) return arguments[0]
-  let _headers = structured_to(httpsig_from(toMsg(msg)))
-  let etc = {}
-  const { fields, keyid } = parseSI(msg.headers["signature-input"])
-  let headers = {
-    signature: msg.headers.signature,
-    ["signature-input"]: msg.headers["signature-input"],
-  }
-  for (const v of fields) {
-    if (typeof msg.headers[v] === "undefined") throw Error("invalid signature")
-    headers[v] = msg.headers[v]
-    if (v.toLowerCase() === "content-digest") etc.body = msg.body
-  }
-  env.info ??= { i: -1 }
-  env.module_version = version
-
-  const committed = commit(msg, fields)
-  env.info.hashpath = !env.info.hashpath
-    ? `${_headers.id}/${id(committed)}`
-    : hashpath(env.info.hashpath, committed)
-  if (env.info.branch) state.branch = env.info.branch
-  state.signer = toAddr(keyid)
-  state.signer23 = wdb23(state.signer)
-  state.query = JSON.parse(_headers.query)
-  env.info.i++
-  if (typeof _headers.id === "undefined") throw Error("id missing")
-  if (typeof _headers.nonce === "undefined") throw Error("nonce missing")
-  if (env.info.id && env.info.id !== _headers.id)
-    throw Error(`the wrong id: ${env.info.id}, ${_headers.id}`)
-  state.id = _headers.id
-  state.nonce = _headers.nonce
-  if (!isNil(_headers.nonce)) state.nonce = _headers.nonce
-  env.info.ts = msg.ts ?? Date.now()
+function setTS64({ state, msg, env }) {
+  state.ts = env.info.ts
   let ts_count = env.kv.get("__ts__", "latest") ?? {
     count: -1,
     ts: env.info.ts,
@@ -165,18 +56,45 @@ function pickInput({ state, msg, env }) {
   if (ts_count.ts === env.info.ts) ts_count.count += 1
   else ((ts_count.count = 0), (ts_count.ts = env.info.ts))
   env.kv.put("__ts__", "latest", ts_count)
-  state.ts = env.info.ts
   state.ts64 = env.info.ts * 1000 + ts_count.count
-  env.kv.put("_config", "info", env.info)
-  arguments[0].msg = { headers, ...etc }
+  return arguments[0]
+}
+
+function setState({ state, msg, env }) {
+  if (!isNil(msg.headers.nonce)) state.nonce = msg.headers.nonce
+  if (env.info.branch) state.branch = env.info.branch
+  state.id = msg.headers.id
+  state.nonce = msg.headers.nonce
+  of(arguments[0]).map(setTS64)
+  state.signer = toAddr(msg.keyid)
+  state.signer23 = wdb23(state.signer)
+  state.query = JSON.parse(msg.headers.query)
+  return arguments[0]
+}
+
+function setHashpath({ state, msg, env }) {
+  const committed = commit(msg)
+  env.info.hashpath = !env.info.hashpath
+    ? `${msg.headers.id}/${id(committed)}`
+    : hashpath(env.info.hashpath, committed)
   return arguments[0]
 }
 
 function setEnv({ state, msg, env }) {
-  env.info = env.kv.get("_config", "info")
+  if (!msg) return arguments[0]
+  env.info = env.kv.get("_config", "info") ?? { i: -1 }
+  env.module_version = version
+  of(arguments[0]).map(setHashpath)
+  env.info.i++
+  if (env.info.id && env.info.id !== msg.headers.id)
+    throw Error(`the wrong id: ${env.info.id}, ${msg.headers.id}`)
+  env.info.ts = msg.ts ?? Date.now()
+  env.kv.put("_config", "info", env.info)
   return arguments[0]
 }
 
-const normalize = ka().map(setEnv).map(toLower).map(pickInput).map(parseOp)
-
-export default normalize
+export default ka()
+  .chain(normalize_httpsig.k)
+  .map(setEnv)
+  .map(setState)
+  .map(parseOp)

@@ -10,8 +10,9 @@ const queue = wdb => {
       while (qs.length > 0) {
         const { res, args, k } = qs.shift()
         try {
-          res({ success: true, err: null, res: await wdb[k](...args).val() })
+          res({ success: true, err: null, res: await wdb[k](...args) })
         } catch (e) {
+          console.log(e)
           res({ success: false, err: e?.toString?.() ?? true, res: null })
         }
       }

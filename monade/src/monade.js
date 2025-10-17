@@ -1,13 +1,8 @@
-// monade.js - Language-agnostic, type-safe monad implementation
-
-// === Core Monads ===
-
 const of = (ctx, copy = false, m = null) => {
   m = copy && m ? m : { __monad__: true }
   m.map = fn => of(fn(ctx), true, m)
   m.tap = fn => (fn(ctx), of(ctx, true, m))
   m.chain = fn => {
-    // Prevent passing arrows directly - must use .fn()
     if (fn.__ka__)
       throw new Error(
         "Cannot chain arrow directly. Use arrow.fn() to convert to function",
@@ -42,7 +37,6 @@ const pof = (ctx, copy = false, m = null) => {
   m.chain = fn =>
     pof(
       run.then(async x => {
-        // Prevent passing arrows directly - must use .fn()
         if (fn.__ka__)
           throw new Error(
             "Cannot chain arrow directly. Use arrow.fn() to convert to function",
@@ -59,191 +53,96 @@ const pof = (ctx, copy = false, m = null) => {
   return m
 }
 
-// === Kleisli Arrows (Builders) ===
+const _ka = (steps, m) => {
+  steps ??= []
+  m ??= {}
+  m.__ka__ = true
+  m.map = fn => _ka([...steps, ctx => fn(ctx)], m)
+  m.tap = fn => {
+    const f = ctx => {
+      fn(ctx)
+      return ctx
+    }
+    return _ka([...steps, f], m)
+  }
+  m.chain = k => {
+    const f = ctx => {
+      const res = k(ctx)
+      if (!res?.__monad__) throw new Error("fn must return monad")
+      return res.val()
+    }
+    return _ka([...steps, f], m)
+  }
 
-const _ka = (m, steps) => {
+  m.k = ctx => {
+    for (const v of steps) ctx = v(ctx)
+    return of(ctx)
+  }
+  return m
+}
+
+const ka = () => _ka()
+
+const _pka = (steps, m) => {
+  steps ??= []
+  m ??= {}
   m.__ka__ = true
   m.map = fn => {
     const f = ctx => fn(ctx)
-    steps.push(f)
-    return m
+    return _pka([...steps, f], m)
   }
   m.tap = fn => {
     const f = ctx => {
       fn(ctx)
       return ctx
     }
-    steps.push(f)
-    return m
+    return _pka([...steps, f], m)
   }
-  m.chain = fn => {
+  m.chain = k => {
     const f = ctx => {
-      // If fn is a Kleisli arrow, use its function form
-      const actualFn = fn.__ka__ ? fn.fn() : fn
-      const res = actualFn(ctx)
+      const res = k(ctx)
       if (!res?.__monad__) throw new Error("fn must return monad")
       return res.val()
     }
-    steps.push(f)
-    return m
+    return _pka([...steps, f], m)
   }
-  // Add fn() method to convert to function
-  m.fn = () => ctx => {
-    for (const v of steps) ctx = v(ctx)
-    return of(ctx)
-  }
-}
 
-const ka = () => {
-  const steps = []
-  const m = ctx => {
-    for (const v of steps) ctx = v(ctx)
-    return of(ctx)
+  m.k = ctx => {
+    let mon = pof(ctx)
+    for (const f of steps) mon = mon.chain(v => pof(f(v)))
+    return mon
   }
-  _ka(m, steps)
   return m
 }
 
-const _pka = (m, steps) => {
-  m.__ka__ = true
-  m.__async__ = true
-  m.map = fn => {
-    const f = ctx => fn(ctx)
-    steps.push(f)
-    return m
-  }
-  m.tap = fn => {
-    const f = ctx => {
-      fn(ctx)
-      return ctx
-    }
-    steps.push(f)
-    return m
-  }
-  m.chain = fn => {
-    const f = ctx => {
-      // If fn is an async Kleisli arrow, use its function form
-      const actualFn = fn.__ka__ && fn.__async__ ? fn.fn() : fn
-      const res = actualFn(ctx)
-      if (!res?.__monad__) throw new Error("fn must return monad")
-      return res.val()
-    }
-    steps.push(f)
-    return m
-  }
-  // Add fn() method to convert to function
-  m.fn = () => ctx => {
-    let mon = pof(ctx)
-    for (const f of steps) mon = mon.chain(v => of(f(v)))
-    return mon
-  }
-}
-
-const pka = () => {
-  const steps = []
-  const m = ctx => {
-    let mon = pof(ctx)
-    for (const f of steps) mon = mon.chain(v => of(f(v)))
-    return mon
-  }
-  _pka(m, steps)
-  return m
-}
-
-// === Devices (Domain-Specific Wrappers) ===
-
+const pka = () => _pka()
 const dev =
-  (maps = {}, tos = {}) =>
-  ctx => {
-    let d = { __device__: true }
-    let current = ctx
-
-    // Core monad operations
-    d.map = fn => dev(maps, tos)(fn(current))
-    d.tap = fn => (fn(current), dev(maps, tos)(current))
-    d.chain = fn => {
-      if (fn.__ka__)
-        throw new Error(
-          "Cannot chain arrow directly. Use arrow.fn() to convert to function",
-        )
-      const res = fn(current)
-      if (!res?.__monad__) throw new Error("fn must return monad")
-      return dev(maps, tos)(res.val())
-    }
-    d.to = fn => fn(current)
-    d.val = () => current
-
-    // Convert to monad
-    d.mon = () => of(current)
-
-    // Add custom chainable methods (maps)
+  (maps = {}) =>
+  _ka => {
+    _ka ??= ka()
+    if (!_ka.__ka__) throw new Error("ka must be arrow")
     for (const [name, fn] of Object.entries(maps)) {
-      d[name] = (...args) => dev(maps, tos)(fn(current, ...args))
+      _ka[name] = (...args) =>
+        fn.__ka__
+          ? _ka.chain(ctx => fn.k(ctx, ...args))
+          : _ka.map(ctx => fn(ctx, ...args))
     }
-
-    // Add custom terminal methods (tos)
-    for (const [name, fn] of Object.entries(tos)) {
-      d[name] = (...args) => fn(current, ...args)
-    }
-
-    return d
+    return _ka
   }
 
 const pdev =
-  (maps = {}, tos = {}) =>
-  ctx => {
-    let d = { __device__: true, __async__: true }
-    const run = Promise.resolve(ctx)
-
-    // Core async monad operations
-    d.map = fn => pdev(maps, tos)(run.then(v => fn(v)))
-    d.tap = fn =>
-      pdev(
-        maps,
-        tos,
-      )(
-        run.then(v => {
-          fn(v)
-          return v
-        }),
-      )
-    d.chain = fn => {
-      if (fn.__ka__)
-        throw new Error(
-          "Cannot chain arrow directly. Use arrow.fn() to convert to function",
-        )
-      return pdev(
-        maps,
-        tos,
-      )(
-        run.then(async v => {
-          const res = await fn(v)
-          if (!res?.__monad__) throw new Error("fn must return monad")
-          return res.val()
-        }),
-      )
-    }
-    d.to = fn => run.then(v => fn(v))
-    d.val = () => run
-
-    // Convert to async monad
-    d.mon = () => pof(run)
-
-    // Add async custom chainable methods (maps)
+  (maps = {}) =>
+  _pka => {
+    _pka ??= pka()
+    if (!_pka.__ka__) throw new Error("pka must be arrow")
     for (const [name, fn] of Object.entries(maps)) {
-      d[name] = (...args) =>
-        pdev(maps, tos)(run.then(async v => await fn(v, ...args)))
+      _pka[name] = (...args) =>
+        fn.__ka__
+          ? _pka.chain(async ctx => await fn.k(ctx, ...args))
+          : _pka.map(async ctx => await fn(ctx, ...args))
     }
-
-    // Add async custom terminal methods (tos)
-    for (const [name, fn] of Object.entries(tos)) {
-      d[name] = (...args) => run.then(async v => await fn(v, ...args))
-    }
-
-    return d
+    return _pka
   }
-
-// === Option handling ===
 
 const opt = monad => {
   try {
@@ -263,5 +162,4 @@ const popt = async pmonad => {
   }
 }
 
-// Export
 export { of, pof, ka, pka, dev, pdev, opt, popt }

@@ -20,7 +20,7 @@ function getDocs({ state, env }) {
 const reader = { get: ka().map(getDocs), cget: ka().map(getDocs) }
 
 function read({ state }) {
-  return of(arguments[0]).chain(reader[state.opcode].fn()).val()
+  return of(arguments[0]).chain(reader[state.opcode].k).val()
 }
 
 export default read

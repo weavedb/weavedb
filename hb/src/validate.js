@@ -136,7 +136,7 @@ const buildBundle = async (changes, request, vid, cslot, cols, zkdb, io) => {
     },
     data: compressed,
   })
-  if (err) console.log("this is stuck....")
+  if (err) console.log("this is stuck....", err)
   else nonce += 1
   console.log()
   console.log(

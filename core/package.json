@@ -59,7 +59,7 @@
     "hbsig": "^0.2.8",
     "http-message-signatures": "^1.0.4",
     "jsonschema": "^1.5.0",
-    "monade": "^0.0.1",
+    "monade": "^0.0.5",
     "node-sql-parser": "^5.3.11",
     "ramda": "^0.31.3",
     "zkjson": "^0.8.4"

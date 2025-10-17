@@ -150,7 +150,7 @@ describe("Monade Test Suite", () => {
     describe("ka (sync arrows)", () => {
       it("should create identity arrow", () => {
         const arrow = ka()
-        const result = arrow(5).val()
+        const result = arrow.k(5).val()
         assert.equal(result, 5)
       })
 
@@ -159,13 +159,13 @@ describe("Monade Test Suite", () => {
           .map(x => x * 2)
           .map(x => x + 10)
 
-        const result = arrow(5).val()
+        const result = arrow.k(5).val()
         assert.equal(result, 20)
       })
 
-      it("should convert to function with fn()", () => {
+      it("should convert to function with k()", () => {
         const arrow = ka().map(x => x * 2)
-        const fn = arrow.fn()
+        const fn = arrow.k
 
         assert.equal(typeof fn, "function")
         assert.equal(fn(5).val(), 10)
@@ -179,7 +179,7 @@ describe("Monade Test Suite", () => {
           })
           .map(x => x * 2)
 
-        const result = arrow(5).val()
+        const result = arrow.k(5).val()
         assert.equal(result, 10)
         assert.equal(sideEffect, 5)
       })
@@ -188,8 +188,8 @@ describe("Monade Test Suite", () => {
         const double = ka().map(x => x * 2)
         const addTen = ka().map(x => x + 10)
 
-        const combined = double.chain(addTen)
-        const result = combined(5).val()
+        const combined = double.chain(addTen.k)
+        const result = combined.k(5).val()
         assert.equal(result, 20)
       })
 
@@ -198,22 +198,20 @@ describe("Monade Test Suite", () => {
           .chain(x => of(x * 2))
           .chain(x => of(x + 10))
 
-        const result = arrow(5).val()
+        const result = arrow.k(5).val()
         assert.equal(result, 20)
       })
 
       it("should be reusable", () => {
         const arrow = ka().map(x => x * 2)
 
-        assert.equal(arrow(5).val(), 10)
-        assert.equal(arrow(10).val(), 20)
-        assert.equal(arrow(15).val(), 30)
+        assert.equal(arrow.k(5).val(), 10)
+        assert.equal(arrow.k(10).val(), 20)
+        assert.equal(arrow.k(15).val(), 30)
       })
 
       it("should work with of().chain()", () => {
-        const arrow = ka()
-          .map(x => x * 2)
-          .fn()
+        const arrow = ka().map(x => x * 2).k
         const result = of(5).chain(arrow).val()
         assert.equal(result, 10)
       })
@@ -227,7 +225,7 @@ describe("Monade Test Suite", () => {
     describe("pka (async arrows)", () => {
       it("should create async identity arrow", async () => {
         const arrow = pka()
-        const result = await arrow(5).val()
+        const result = await arrow.k(5).val()
         assert.equal(result, 5)
       })
 
@@ -236,7 +234,7 @@ describe("Monade Test Suite", () => {
           .map(x => x * 2)
           .map(x => x + 10)
 
-        const result = await arrow(5).val()
+        const result = await arrow.k(5).val()
         assert.equal(result, 20)
       })
 
@@ -245,7 +243,7 @@ describe("Monade Test Suite", () => {
           .chain(x => pof(x * 2))
           .map(x => x + 10)
 
-        const result = await arrow(5).val()
+        const result = await arrow.k(5).val()
         assert.equal(result, 20)
       })
 
@@ -253,16 +251,14 @@ describe("Monade Test Suite", () => {
         const fetchDouble = pka().chain(x => pof(x * 2))
         const fetchAddTen = pka().chain(x => pof(x + 10))
 
-        const combined = fetchDouble.chain(fetchAddTen)
-        const result = await combined(5).val()
+        const combined = fetchDouble.chain(fetchAddTen.k)
+        const result = await combined.k(5).val()
         assert.equal(result, 20)
       })
 
       it("should work with pof().chain()", async () => {
-        const arrow = pka()
-          .map(x => x * 2)
-          .fn()
-        const result = await pof(5).chain(arrow).val()
+        const arrow = pka().map(x => x * 2)
+        const result = await pof(5).chain(arrow.k).val()
         assert.equal(result, 10)
       })
     })
@@ -276,9 +272,8 @@ describe("Monade Test Suite", () => {
           square: x => x * x,
         })
 
-        const device = mathDev(5)
-        assert.equal(device.val(), 5)
-        assert.equal(device.__device__, true)
+        const device = mathDev()
+        assert.equal(device.k(5).val(), 5)
       })
 
       it("should use custom methods", () => {
@@ -287,7 +282,7 @@ describe("Monade Test Suite", () => {
           square: x => x * x,
         })
 
-        const result = mathDev(5).double().square().val()
+        const result = mathDev().double().square().k(5).val()
         assert.equal(result, 100)
       })
 
@@ -297,7 +292,7 @@ describe("Monade Test Suite", () => {
           multiply: (x, n) => x * n,
         })
 
-        const result = mathDev(5).add(10).multiply(3).val()
+        const result = mathDev().add(10).multiply(3).k(5).val()
         assert.equal(result, 45)
       })
 
@@ -306,10 +301,11 @@ describe("Monade Test Suite", () => {
           double: x => x * 2,
         })
 
-        const result = mathDev(5)
+        const result = mathDev()
           .double()
           .map(x => x + 5)
           .double()
+          .k(5)
           .val()
         assert.equal(result, 30)
       })
@@ -320,11 +316,12 @@ describe("Monade Test Suite", () => {
           double: x => x * 2,
         })
 
-        const result = mathDev(5)
+        const result = mathDev()
           .tap(x => {
             sideEffect = x
           })
           .double()
+          .k(5)
           .val()
 
         assert.equal(result, 10)
@@ -338,9 +335,10 @@ describe("Monade Test Suite", () => {
 
         const addAge = u => of({ ...u, age: 30 })
 
-        const result = userDev({ name: "john" })
+        const result = userDev()
           .capitalize()
           .chain(addAge)
+          .k({ name: "john" })
           .val()
 
         assert.deepEqual(result, { name: "JOHN", age: 30 })
@@ -348,28 +346,8 @@ describe("Monade Test Suite", () => {
 
       it("should convert to monad", () => {
         const mathDev = dev({ double: x => x * 2 })
-        const monad = mathDev(5).double().monad()
-
-        assert.equal(monad.__monad__, true)
+        const monad = mathDev().double().k(5)
         assert.equal(monad.val(), 10)
-      })
-
-      it("should extract with to()", () => {
-        const mathDev = dev({ double: x => x * 2 })
-        const result = mathDev(5)
-          .double()
-          .to(x => `Result: ${x}`)
-        assert.equal(result, "Result: 10")
-      })
-
-      it("should prevent chaining arrows directly", () => {
-        const mathDev = dev({})
-        const arrow = ka().map(x => x * 2)
-
-        assert.throws(
-          () => mathDev(5).chain(arrow),
-          /Cannot chain arrow directly/,
-        )
       })
 
       it("should be reusable", () => {
@@ -378,9 +356,9 @@ describe("Monade Test Suite", () => {
           square: x => x * x,
         })
 
-        assert.equal(mathDev(5).double().val(), 10)
-        assert.equal(mathDev(3).square().val(), 9)
-        assert.equal(mathDev(4).double().square().val(), 64)
+        assert.equal(mathDev().double().k(5).val(), 10)
+        assert.equal(mathDev().square().k(3).val(), 9)
+        assert.equal(mathDev().double().square().k(4).val(), 64)
       })
     })
 
@@ -390,9 +368,11 @@ describe("Monade Test Suite", () => {
           withPath: (cfg, path) => ({ ...cfg, path }),
         })
 
-        const result = await apiDev({
-          baseUrl: "https://api.example.com",
-        }).val()
+        const result = await apiDev()
+          .k({
+            baseUrl: "https://api.example.com",
+          })
+          .val()
         assert.deepEqual(result, { baseUrl: "https://api.example.com" })
       })
 
@@ -402,7 +382,7 @@ describe("Monade Test Suite", () => {
           fetchSquare: async x => x * x,
         })
 
-        const result = await apiDev(5).fetchDouble().fetchSquare().val()
+        const result = await apiDev().fetchDouble().fetchSquare().k(5).val()
 
         assert.equal(result, 100)
       })
@@ -416,7 +396,7 @@ describe("Monade Test Suite", () => {
           },
         })
 
-        const result = await apiDev(10).fetchAdd(5).delay(10).val()
+        const result = await apiDev().fetchAdd(5).delay(10).k(10).val()
 
         assert.equal(result, 15)
       })
@@ -426,9 +406,10 @@ describe("Monade Test Suite", () => {
           fetchDouble: async x => x * 2,
         })
 
-        const result = await apiDev(5)
+        const result = await apiDev()
           .fetchDouble()
           .map(x => x + 10)
+          .k(5)
           .val()
 
         assert.equal(result, 20)
@@ -441,16 +422,19 @@ describe("Monade Test Suite", () => {
 
         const fetchTriple = x => pof(x * 3)
 
-        const result = await apiDev(5).fetchDouble().chain(fetchTriple).val()
+        const result = await apiDev()
+          .fetchDouble()
+          .chain(fetchTriple)
+          .k(5)
+          .val()
 
         assert.equal(result, 30)
       })
 
       it("should convert to async monad", async () => {
         const apiDev = pdev({ fetchDouble: async x => x * 2 })
-        const monad = apiDev(5).fetchDouble().monad()
+        const monad = apiDev().fetchDouble().k(5)
 
-        assert.equal(monad.__monad__, true)
         assert.equal(await monad.val(), 10)
       })
 
@@ -460,9 +444,9 @@ describe("Monade Test Suite", () => {
           fetchSquare: async x => x * x,
         })
 
-        assert.equal(await apiDev(5).fetchDouble().val(), 10)
-        assert.equal(await apiDev(3).fetchSquare().val(), 9)
-        assert.equal(await apiDev(4).fetchDouble().fetchSquare().val(), 64)
+        assert.equal(await apiDev().fetchDouble().k(5).val(), 10)
+        assert.equal(await apiDev().fetchSquare().k(3).val(), 9)
+        assert.equal(await apiDev().fetchDouble().fetchSquare().k(4).val(), 64)
       })
     })
   })
@@ -522,9 +506,9 @@ describe("Monade Test Suite", () => {
       const double = ka().map(x => x * 2)
       const format = ka().map(x => `Result: ${x}`)
 
-      const pipeline = validate.chain(double.fn()).chain(format.fn())
+      const pipeline = validate.chain(double.k).chain(format.k)
 
-      const result = pipeline(5).val()
+      const result = pipeline.k(5).val()
       assert.equal(result, "Result: 10")
     })
 
@@ -537,10 +521,9 @@ describe("Monade Test Suite", () => {
         })
         .map(x => 100 / x)
 
-      const result = await pipeline(5).val()
+      const result = await pipeline.k(5).val()
       assert.equal(result, 20)
-
-      await assert.rejects(pipeline(0).val(), /Zero not allowed/)
+      await assert.rejects(pipeline.k(0).val(), /Zero not allowed/)
     })
 
     it("should handle device method chaining with state", () => {
@@ -555,10 +538,11 @@ describe("Monade Test Suite", () => {
         }),
       })
 
-      const result = stateDev({ count: 0, history: [] })
+      const result = stateDev()
         .increment()
         .increment()
         .double()
+        .k({ count: 0, history: [] })
         .val()
 
       assert.deepEqual(result, {
@@ -571,10 +555,7 @@ describe("Monade Test Suite", () => {
       const syncTransform = ka().map(x => x * 2)
       const asyncFetch = x => pof(x + 10)
 
-      const result = await pof(5)
-        .chain(syncTransform.fn())
-        .chain(asyncFetch)
-        .val()
+      const result = await pof(5).chain(syncTransform.k).chain(asyncFetch).val()
 
       assert.equal(result, 20)
     })
@@ -594,7 +575,7 @@ describe("Monade Test Suite", () => {
       for (let i = 0; i < 1000; i++) {
         arrow = arrow.map(x => x + 1)
       }
-      assert.equal(arrow(1).val(), 1001)
+      assert.equal(arrow.k(1).val(), 1001)
     })
   })
 
@@ -639,10 +620,10 @@ describe("Monade Test Suite", () => {
 
       const dev_calc = dev({ mul, add })
 
-      const calc = dev_calc(1)
+      const calc = dev_calc()
 
-      assert.equal(calc.mul(2, 3).val(), 6)
-      assert.equal(calc.add(2, 3).val(), 5)
+      assert.equal(calc.mul(2, 3).k(1).val(), 6)
+      assert.equal(calc.add(2, 3).k(1).val(), 5)
     })
   })
 })

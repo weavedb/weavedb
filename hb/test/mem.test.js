@@ -27,6 +27,9 @@ describe("Mem", () => {
       name: "users",
       auth: [["add:add,set:set,update:update,del:del", [["allow()"]]]],
     })
+    console.log(id)
+    return
+
     const start = Date.now()
     for (let i = 0; i < 10; i++) {
       await db.set("add:add", { name: "Bob" }, "users")

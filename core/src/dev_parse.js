@@ -98,7 +98,7 @@ function parse({ state, env }) {
     putData: (key, val) => kv.put(dir, key, val),
     delData: key => kv.del(dir, key),
   }
-  if (parser[state.opcode]) of(arguments[0]).chain(parser[state.opcode].fn())
+  if (parser[state.opcode]) of(arguments[0]).chain(parser[state.opcode].k)
   return arguments[0]
 }
 export default parse
