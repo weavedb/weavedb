@@ -5,7 +5,7 @@ const br = {
   revert: "revert",
   get: "get",
   cget: "get",
-  commit: "commit",
+  commit: "load",
 }
 
 function write({ state, msg, env: { no_commit, kv, info } }) {

@@ -11,7 +11,7 @@ const _store = _kv => {
 }
 
 const _init = ({ kv, msg, opt }) => ({ state: {}, msg, env: { ...opt, kv } })
-
+const devs = o => (Array.isArray(o) ? o : o.devs)
 const build = ({ kv: kv_db, init = _init, store = _store, routes }) => {
   return (kv_custom, opt = {}) => {
     opt.branch ??= "main"
@@ -32,29 +32,25 @@ const build = ({ kv: kv_db, init = _init, store = _store, routes }) => {
 
     for (const k in _routes) {
       if (_routes[k].async) {
-        pmethods[k] = (kv, msg, _opt, cb) => {
+        pmethods[k] = ({ kv }, msg, _opt, cb) => {
           return new Promise(async (res, rej) => {
             try {
-              res(
-                (
-                  await pof({ kv, msg, opt: { ...opt, ..._opt, cb } })
-                    .map(init)
-                    .chain(pflow(_routes[k].devs, ppred).k)
-                    .val()
-                ).state,
-              )
+              const _res = await pof({ kv, msg, opt: { ...opt, ..._opt, cb } })
+                .map(init)
+                .chain(pflow(devs(_routes[k]), ppred).k)
+              res({ kv, res: (await _res.val()).state })
             } catch (e) {
               ;(console.log(e), kv.reset(), rej(e))
             }
           })
         }
       } else {
-        methods[k] = (kv, msg, _opt) => {
+        methods[k] = ({ kv }, msg, _opt) => {
           try {
-            return of({ kv, msg, opt: { ...opt, ..._opt } })
+            const res = of({ kv, msg, opt: { ...opt, ..._opt } })
               .map(init)
-              .chain(flow(_routes[k].devs, pred).k)
-              .val().state
+              .chain(flow(devs(_routes[k]), pred).k)
+            return { kv, res: res.val().state }
           } catch (e) {
             ;(console.log(e), kv.reset())
             throw e
@@ -64,20 +60,21 @@ const build = ({ kv: kv_db, init = _init, store = _store, routes }) => {
     }
     const kv_store = store(kv)
     const db = dev(methods)
-    const dbp = pdev(pmethods)
-    const ops = {}
+    const pdb = pdev(pmethods)
+    const ops = { db: db, pdb: pdb, kv: kv_store }
+    const kval = { kv: kv_store }
     for (const k in _routes) {
       if (_routes[k].async) {
         ops[k] = async (...args) =>
-          await dbp()
+          await pdb()
             [k](...args)
-            .k(kv_store)
+            .k(kval)
             .val()
       } else {
         ops[k] = (...args) =>
           db()
             [k](...args)
-            .k(kv_store)
+            .k(kval)
             .val()
       }
     }

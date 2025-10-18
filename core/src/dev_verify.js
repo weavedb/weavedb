@@ -1,7 +1,7 @@
 import version from "./dev_version.js"
 import { of } from "monade"
 function verify({ state, msg, env: { kv, info } }) {
-  if (info.id && info.id !== msg.headers.id)
+  if (info.id && info.id !== state.id)
     throw Error(`the wrong id: ${info.id}, ${msg.headers.id}`)
   of(arguments[0]).map(version)
   const acc = kv.get("_accounts", state.signer)
