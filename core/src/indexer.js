@@ -616,4 +616,13 @@ const put = (_data, id, path, kv, create = false) => {
   return { before: old_data, after: { key: id, val: _data } }
 }
 
-export { put, mod, del, addIndex, getIndexes, removeIndex }
+function normalizeIndex(index) {
+  for (const i of index) {
+    if (!Array.isArray(i)) throw Error("index must be Array")
+    if (i.length > 2 || i.length < 1) throw Error("the wrong index")
+    if (i.length === 1) i.push("asc")
+  }
+  return index
+}
+
+export { put, mod, del, addIndex, getIndexes, removeIndex, normalizeIndex }

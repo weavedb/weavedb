@@ -1,7 +1,12 @@
-export default function result({ state, msg, env: { no_commit, kv, info } }) {
+export default function result({
+  state,
+  msg,
+  env: { no_commit, kv, info, branch },
+}) {
   if (no_commit !== true) state.updates = kv.commit(msg, null, state, info).data
   state.result ??= null
   state.i = info.i
   state.ts = info.ts
+  state.branch = branch
   return arguments[0]
 }

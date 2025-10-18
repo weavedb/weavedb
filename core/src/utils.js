@@ -347,7 +347,21 @@ function normalizeIndex(index) {
   return index
 }
 
+function setTS64({ state, msg, env }) {
+  state.ts = env.info.ts
+  let ts_count = env.kv.get("__ts__", "latest") ?? {
+    count: -1,
+    ts: env.info.ts,
+  }
+  if (ts_count.ts === env.info.ts) ts_count.count += 1
+  else ((ts_count.count = 0), (ts_count.ts = env.info.ts))
+  env.kv.put("__ts__", "latest", ts_count)
+  state.ts64 = env.info.ts * 1000 + ts_count.count
+  return arguments[0]
+}
+
 export {
+  setTS64,
   normalizeIndex,
   withOp,
   toAddr,
