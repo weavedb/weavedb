@@ -5,16 +5,39 @@ import { open } from "lmdb"
 import { wait, genDir } from "./test-utils.js"
 import { DB, wdb23, wdb160 } from "../../sdk/src/index.js"
 import { pluck } from "ramda"
-import { kv, db as wdb, queue, mem } from "../../core/src/index.js"
+import { kv, io, db as wdb, queue, mem } from "../../core/src/index.js"
 import { Core } from "../../core/src/index.js"
-
+import { dir_schema } from "../../sdk/src/schemas.js"
+import { dirs_set } from "../../sdk/src/rules.js"
+const init_query = { schema: dir_schema, auth: [dirs_set] }
 const owner = acc[0]
 const user1 = acc[1]
 const user2 = acc[2]
 
 const users = [user1, user2]
-
+let nonce = 0
+const q = query => {
+  return {
+    headers: {
+      id: "wdb",
+      nonce: ++nonce,
+      query: JSON.stringify(query),
+    },
+    keyid: acc[0].jwk.n,
+  }
+}
 describe("Mem", () => {
+  it.only("should be able to chain with bare core", async () => {
+    const wkv = kv(io(), async c => {})
+    const db = wdb(wkv, { branch: "noauth" })
+    const res = db
+      .db()
+      .write(q(["init", init_query]))
+      .write(q(["set:dir", {}, "_", "users"]))
+      .k({ kv: db.kv })
+      .val()
+    console.log(db.get(["_config", "info"]).res.result)
+  })
   it("should measure tps", async () => {
     const dbpath = genDir()
     const pid = "abc"
@@ -65,7 +88,7 @@ describe("Mem", () => {
     console.log(Math.floor(1000 / ((Date.now() - start) / 1000)), "tps")
     console.log(await db.get("users", ["ts", "desc"], 3))
   })
-  it.only("should run DB in memory", async () => {
+  it("should run DB in memory", async () => {
     const dbpath = genDir()
     const pid = "abc"
     const io = open({ path: `${dbpath}/${pid}` })

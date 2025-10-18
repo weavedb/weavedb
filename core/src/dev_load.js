@@ -45,7 +45,7 @@ function removeIndex({ state, env: { kv, kv_dir } }) {
   return arguments[0]
 }
 
-export default function commit({ state, env }) {
+export default function load({ state, env }) {
   let _batch = []
   for (const v of state.updates) {
     const [op, query] = v
