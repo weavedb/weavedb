@@ -33,10 +33,10 @@ describe("Mem", () => {
     const res = db
       .db()
       .write(q(["init", init_query]))
-      .write(q(["set:dir", {}, "_", "users"]))
+      .write(q(["mkdir", "users"]))
       .k({ kv: db.kv })
       .val()
-    console.log(db.get(["_config", "info"]).res.result)
+    console.log(db.get(["_", "users"]).res.result)
   })
   it("should measure tps", async () => {
     const dbpath = genDir()

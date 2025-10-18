@@ -1,9 +1,6 @@
 import { HB } from "wao"
 import { toAddr } from "wao/utils"
-import { dir_schema } from "./schemas.js"
-import { dirs_set } from "./rules.js"
 import { includes, filter } from "ramda"
-const init_query = { schema: dir_schema, auth: [dirs_set] }
 const wait = ms => new Promise(res => setTimeout(() => res(), ms))
 import { verify as _verify, httpsig_from, structured_to } from "hbsig"
 const toMsg = async req => {
@@ -79,7 +76,7 @@ export default class DB {
   isArConnect() {
     return this.jwk?.id || this.jwk?.walletName === "ArConnect"
   }
-  async spawn({ query = init_query, version, type = "nosql" } = {}) {
+  async spawn({ query = {}, version, type = "nosql" } = {}) {
     if (this.id) throw Error("db already exists")
     const { pid: id } = await this.hb.spawn({
       "db-type": type,
@@ -88,7 +85,7 @@ export default class DB {
     })
     return await this.init({ query, id, version })
   }
-  async init({ id, version, branch, query = init_query }) {
+  async init({ id, version, branch, query = {} }) {
     this.id = id
     if (version) query.version = version
     if (branch) query.branch = branch
@@ -164,7 +161,7 @@ export default class DB {
   }
 
   async mkdir({ name, schema = { type: "object" }, auth = [] }) {
-    const query = ["set:dir", {}, "_", name]
+    const query = ["mkdir", name]
     let res = await this.set(...query)
     if (res.success) {
       res.schema = await this.setSchema(schema, name)

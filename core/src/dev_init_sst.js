@@ -1,5 +1,5 @@
 function dev_init({
-  state: { query, signer, id: _id, version: _version },
+  state: { signer, id: _id, version: _version },
   msg: { db },
   env: {
     module_version,

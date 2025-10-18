@@ -35,7 +35,10 @@ function parse({ state, env }) {
   if (state.opcode === "batch") return arguments[0]
   const { kv } = env
   let data, dir, doc
-  if (includes(state.opcode, ["upgrade"])) {
+  if (includes(state.opcode, ["mkdir"])) {
+    ;[dir] = state.query
+    state.dir = dir
+  } else if (includes(state.opcode, ["upgrade"])) {
     ;[data] = state.query
     state.data = data
   } else if (includes(state.opcode, ["revert", "migrate", "init"])) {
