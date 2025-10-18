@@ -10,7 +10,7 @@ function dev_init({
 }) {
   if (id) throw Error("already initialized")
   if (!db) throw Error("db is missing")
-  let info = { i, id: _id, owner: signer, ts, db }
+  let info = { i, id: _id, owner: signer, ts, db, total_size: 0 }
   if (_version) {
     if (module_version !== _version && ignore_version !== true) {
       throw Error(`the wrong version: ${_version} running on ${module_version}`)

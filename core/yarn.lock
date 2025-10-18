@@ -2412,10 +2412,10 @@ formidable@^1.2.2:
   resolved "https://registry.npmjs.org/formidable/-/formidable-1.2.6.tgz"
   integrity sha512-KcpbcpuLNOwrEjnbpMC0gS+X8ciDoZE1kkqzat4a8vrprf+s9pKNQ/QIwWfbfs4ltgmFl3MD177SNTkve3BwGQ==
 
-fpjson-lang@^0.1.5:
-  version "0.1.5"
-  resolved "https://registry.npmjs.org/fpjson-lang/-/fpjson-lang-0.1.5.tgz"
-  integrity sha512-+YvA1HbmUfJxAsFvkPwCRPQbNYU/0sJ9ffORMCykT5rQAj7YDl0ShA3ZWgGxMSmu4JcHDWXao1c2ddWw3IZupQ==
+fpjson-lang@^0.1.6:
+  version "0.1.6"
+  resolved "https://registry.npmjs.org/fpjson-lang/-/fpjson-lang-0.1.6.tgz"
+  integrity sha512-YuBQv5t4axeQLyVFfwbfLrLZYvLEqu2lTcEyTZX6NTp9opM25PwlgD6b9uKNqyMKR6NlhJLdsCA8SNHjYXLABw==
   dependencies:
     ramda "^0.28.0"
 
