@@ -15,6 +15,7 @@ const br = {
   revert: "revert",
   migrate: "migrate",
   batch: "batch",
+  mkdir: "mkdir",
 }
 
 function write({ state, msg, env: { no_commit, kv, info, branch } }) {

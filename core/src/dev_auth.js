@@ -164,6 +164,7 @@ const authenticator = {
   upgrade: onlyOwner,
   setAuth: onlyOwner,
   setSchema: onlyOwner,
+  mkdir: onlyOwner,
 }
 
 function auth({ state, env }) {

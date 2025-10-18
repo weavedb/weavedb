@@ -7,6 +7,7 @@ import revert from "./dev_revert.js"
 import migrate from "./dev_migrate.js"
 import add_index from "./dev_add_index.js"
 import remove_index from "./dev_remove_index.js"
+import mkdir from "./dev_mkdir.js"
 import set_auth from "./dev_set_auth.js"
 import set_schema from "./dev_set_schema.js"
 import add_trigger from "./dev_add_trigger.js"
@@ -63,6 +64,7 @@ const main = {
       set_schema,
       add_trigger,
       remove_trigger,
+      mkdir,
     },
     result,
   ],
@@ -119,6 +121,7 @@ const noauth = {
       set_schema,
       add_trigger,
       remove_trigger,
+      mkdir,
     },
     result,
   ],

@@ -9,11 +9,20 @@ function dev_init({
   },
 }) {
   if (id) throw Error("already initialized")
-  if (!query[0].schema) throw Error("schema is missing")
-  if (!query[0].auth) throw Error("auth is missing")
+  const _auth = [["add,set,update,upsert,del", [["deny()"]]]]
+  const _schema = {
+    type: "object",
+    required: ["index"],
+    properties: {
+      index: { type: "number" },
+      auth: { type: "object" },
+      triggers: { type: "object" },
+    },
+  }
+
   let auth = {}
   let auth_index = -1
-  for (let v of query[0].auth) {
+  for (let v of _auth) {
     auth[v[0]] = ++auth_index
     kv.put("_config", `auth_0_${auth_index}`, { rules: v })
   }
@@ -49,7 +58,7 @@ function dev_init({
     schema: { type: "object", additionalProperties: false },
     auth: [],
   })
-  kv.put("_config", "schema_0", query[0].schema)
+  kv.put("_config", "schema_0", _schema)
   return arguments[0]
 }
 

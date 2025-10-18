@@ -3,6 +3,7 @@ export default function schema({ state, env: { kv, info } }) {
   let valid = false
   const { data, dir } = state
   let _schema = kv.get("_config", `schema_${state.dirinfo.index}`)
+  if (!_schema) throw Error("schema missing")
   try {
     valid = validate(data, _schema).valid
   } catch (e) {}
