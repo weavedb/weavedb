@@ -7,10 +7,11 @@ import write_sst from "./dev_write_sst.js"
 import parse_sst from "./dev_parse_sst.js"
 
 import init from "./dev_init.js"
+import init_sst from "./dev_init_sst.js"
 import put from "./dev_put.js"
 import del from "./dev_del.js"
-import upgrade from "./dev_upgrade.js"
 import batch from "./dev_batch.js"
+import upgrade from "./dev_upgrade.js"
 import revert from "./dev_revert.js"
 import migrate from "./dev_migrate.js"
 import add_index from "./dev_add_index.js"
@@ -28,7 +29,15 @@ import write from "./dev_write.js"
 import result from "./dev_result.js"
 
 import read from "./dev_read.js"
+import get from "./dev_get.js"
+import get_zkp_inputs from "./dev_get_zkp_inputs.js"
 import read_sst from "./dev_read_sst.js"
+
+import upgrade_sst from "./dev_upgrade_sst.js"
+import revert_sst from "./dev_revert_sst.js"
+import migrate_sst from "./dev_migrate_sst.js"
+import commit from "./dev_commit.js"
+
 import build from "./build.js"
 import kv from "./kv_nosql.js"
 
@@ -60,18 +69,35 @@ const routes = {
       result,
     ],
   },
+  read: { devs: [normalize, parse, read, { get }] },
   pwrite: {
     async: true,
     devs: {
-      sst: [normalize_sst, verify_sst, decode, parse_sst, auth_sst, write_sst],
+      sst: [
+        normalize_sst,
+        verify_sst,
+        decode,
+        parse_sst,
+        auth_sst,
+        write_sst,
+        {
+          init: init_sst,
+          migrate: migrate_sst,
+          upgrade: upgrade_sst,
+          revert: revert_sst,
+          get,
+          commit,
+        },
+        result,
+      ],
     },
   },
-  read: {
-    devs: { main: [normalize, parse, read], sst: [normalize, parse, read_sst] },
+  pread: {
+    async: true,
+    devs: { sst: [normalize, parse, read_sst, { get, get_zkp_inputs }] },
   },
-  pread: { async: true, devs: { sst: [normalize, parse, read_sst] } },
-  get: { devs: [withOp("get"), parse, read] },
-  cget: { devs: [withOp("cget"), parse, read] },
+  get: { devs: [withOp("get"), parse, read, { get }] },
+  cget: { devs: [withOp("cget"), parse, read, { get }] },
 }
 
 export default build({ kv, routes })

@@ -1,9 +1,9 @@
 import { of, ka } from "monade"
-import { wdb23, toAddr } from "./utils.js"
+import { wdb23, toAddr, setTS64 } from "./utils.js"
 import version from "./version_sst.js"
 import { isNil } from "ramda"
-function pickInput({ state, msg, env }) {
-  if (!msg) return arguments[0]
+
+function setMeta({ state, msg, env }) {
   let id = null
   for (const k in msg.commitments) {
     id = k
@@ -18,7 +18,6 @@ function pickInput({ state, msg, env }) {
   } else {
     const action = msg.action?.toLowerCase?.()
     state.id = msg.target.toString("base64url")
-    if (env.info.id && env.info.id !== state.id) throw Error("the wrong id")
     if (action === "query") {
       state.query = JSON.parse(msg?.query ?? [])
       state.op = state.query[0]
@@ -38,29 +37,19 @@ function pickInput({ state, msg, env }) {
   }
   state.signer23 = wdb23(state.signer)
   if (!isNil(msg.nonce)) state.nonce = msg.nonce
-  env.info ??= { i: -1 }
+  return arguments[0]
+}
+
+const setState = ka().map(setMeta).map(setTS64)
+
+function setEnv({ state, msg, env }) {
+  if (!msg) return arguments[0]
+  env.info = env.kv.get("__sst__", "info") ?? { i: -1 }
   env.module_version = version
+  env.info.ts = msg.ts ?? Date.now()
   env.info.i++
-  const now = Date.now()
-  env.info.ts = msg.ts ?? now
-  let ts_count = env.kv.get("__ts__", "latest") ?? {
-    count: -1,
-    ts: env.info.ts,
-  }
-  if (ts_count.ts === env.info.ts) ts_count.count += 1
-  else ((ts_count.count = 0), (ts_count.ts = env.info.ts))
-  env.kv.put("__ts__", "latest", ts_count)
-  state.ts = env.info.ts ?? now
-  state.ts64 = env.info.ts * 1000 + ts_count.count
   env.kv.put("__sst__", "info", env.info)
   return arguments[0]
 }
 
-function setEnv({ state, msg, env }) {
-  env.info = env.kv.get("__sst__", "info")
-  return arguments[0]
-}
-
-const normalize = ka().map(setEnv).map(pickInput)
-
-export default normalize
+export default ka().map(setEnv).chain(setState.k)
