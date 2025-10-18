@@ -51,7 +51,7 @@
     "wdb-core": "^0.1.0",
     "wdb-sdk": "^0.1.0",
     "yargs": "^17.7.2",
-    "zkjson": "^0.8.3"
+    "zkjson": "^0.8.4"
   },
   "devDependencies": {
     "esbuild": "^0.25.5"
