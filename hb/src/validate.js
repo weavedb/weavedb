@@ -288,7 +288,7 @@ export class Validator extends Sync {
           this.db = core.db
         }
         while (msg && i < this.max_msgs) {
-          if (this.type === "vec") await this.db.pwrite(msg)
+          if (this.type === "vec") await this.db.write(msg)
           else await this.db.write(msg)
           isData = true
           this.wslot += 1

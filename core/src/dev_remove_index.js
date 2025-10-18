@@ -1,6 +1,5 @@
-import { normalizeIndex } from "./utils.js"
 import { equals } from "ramda"
-import { removeIndex } from "./indexer.js"
+import { removeIndex, normalizeIndex } from "./indexer.js"
 
 export default function remove_index({ state, env: { kv, kv_dir } }) {
   const { data, dir, dirinfo } = state

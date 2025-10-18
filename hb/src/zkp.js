@@ -37,7 +37,7 @@ const startServer = ({ port, jwk }) => {
       })
       const {
         res: { result },
-      } = await dbs[pid].db.pread(msg)
+      } = await dbs[pid].db.read(msg)
       zkhash = result.hash
       const prover = new Prover({
         wasm: resolve(import.meta.dirname, "./circom/db3/index_js/index.wasm"),
@@ -169,7 +169,7 @@ export class ZKP extends Sync {
             this.db = core.db
           }
 
-          const { success, err, res } = await this.db.pwrite(m.body)
+          const { success, err, res } = await this.db.write(m.body)
           if (success === false) {
             _result = { success, err, res: null }
             if (m.body.action === "Commit") {

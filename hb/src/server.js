@@ -13,7 +13,6 @@ import wal from "./wal.js"
 let dbs = {}
 let ios = {}
 let dbmap = {}
-const _tags = tags => fromPairs(map(v => [v.name, v.value])(tags))
 
 const server = async ({
   jwk,
@@ -62,6 +61,7 @@ const server = async ({
       status: "ok",
     })
   })
+
   app.get("/wal/:pid", async (req, res) => {
     const { pid } = req.params
     const { start, end, limit, order, offset } = req.query
@@ -82,30 +82,31 @@ const server = async ({
     for (let v of ios[pid].getRange(obj)) wal.push(v)
     res.json({ wal })
   })
+
   app.get("/~weavedb@1.0/get", async (req, res) => {
     let query = []
     let id = null
     try {
       query = JSON.parse(req.headers.query ?? req.query.query)
       id = req.headers.id ?? req.query.id
-      const _res = await dbs[id][query[0]](query.slice(1))
-      res.json({ success: true, query, result: _res })
+      res.json(await dbs[id][query[0]](query.slice(1)))
     } catch (e) {
       console.log(e)
-      res.json({ success: false, query, error: e.toString() })
+      res.json({ success: false, query, err: e.toString() })
     }
   })
+
   app.post("/~weavedb@1.0/admin", async (req, res) => {
     const q = await verify(req)
     if (!q.valid || q.address !== toAddr(jwk)) {
-      res.json({ success: false, error: "not authorized" })
+      res.json({ success: false, err: "not authorized" })
     } else {
       const [op, opt] = q.query
       try {
         switch (op) {
           case "remove_db":
             if (!includes(opt.id, pids)) {
-              res.json({ success: false, error: "db not found" })
+              res.json({ success: false, err: "db not found" })
             } else {
               pids = without([opt.id], admin_io.get("pids") ?? [])
               delete dbmap[opt.id]
@@ -113,45 +114,18 @@ const server = async ({
               delete dbs[opt.id]
               delete ios[opt.id]
               await admin_io.put("pids", pids)
-              res.json({ success: true, processes: pids, error: null })
+              res.json({ success: true, processes: pids, err: null })
             }
             break
           default:
-            res.json({ success: false, error: "operation not found" })
+            res.json({ success: false, err: "operation not found" })
         }
       } catch (e) {
-        res.json({ success: false, error: e.toString() })
+        res.json({ success: false, err: e.toString() })
       }
     }
   })
-  app.post("/~weavedb@1.0/get", async (req, res) => {
-    const q = await verify(req)
-    if (q.valid) {
-      try {
-        let headers = {}
-        for (const k in req.headers) {
-          let lowK = k.toLowerCase()
-          headers[lowK] = req.headers[lowK]
-        }
-        const _res = await dbs[headers.id][q.query[0]](...q.query.slice(1))
 
-        res.json({ success: true, ...q, result: _res })
-      } catch (e) {
-        console.log(e)
-        res.json({ success: false, ...q, error: e.toString() })
-      }
-    } else {
-      res.json({ success: false, ...q })
-    }
-  })
-  const toMsg = async req => {
-    let msg = {}
-    req?.headers?.forEach((v, k) => {
-      msg[k] = v
-    })
-    if (req.body) msg.body = await req.text?.()
-    return msg
-  }
   app.post("/~weavedb@1.0/set", async (req, res) => {
     const { valid, query, fields, address } = await verify(req)
     if (valid) {
@@ -164,8 +138,8 @@ const server = async ({
             err = true
             res.json({
               success: false,
-              error: "only node admin can add instances",
-              result: null,
+              err: "only node admin can add instances",
+              res: null,
             })
           } else {
             console.log(`initializing a new db: ${pid}`)
@@ -189,28 +163,28 @@ const server = async ({
         }
         if (!err) {
           if (!dbs[pid]) {
-            res.json({ success: false, error: `db doesn't exist: ${pid}` })
+            res.json({ success: false, err: `db doesn't exist: ${pid}` })
           } else {
             if (typeof req.body?.toString === "function") {
               req.body = req.body.toString()
             }
             const _res = await dbs[pid].write(req)
             if (_res?.success) {
-              res.json({ success: true, query, result: _res.result })
+              res.json({ success: true, query, res: _res.result })
             } else {
-              res.json({ success: false, error: _res.err, query, result: null })
+              res.json({ success: false, err: _res.err, query, res: null })
             }
           }
         }
       } catch (e) {
-        res.json({ success: false, query, error: e.toString(), result: null })
+        res.json({ success: false, query, err: e.toString(), res: null })
       }
     } else {
       res.json({
         success: false,
-        error: "invalid signature",
+        err: "invalid signature",
         query,
-        result: null,
+        res: null,
       })
     }
   })
