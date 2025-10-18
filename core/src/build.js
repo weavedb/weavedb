@@ -15,6 +15,7 @@ const _init = ({ kv, msg, opt }) => ({ state: {}, msg, env: { ...opt, kv } })
 const build = ({ kv: kv_db, init = _init, store = _store, routes }) => {
   return (kv_custom, opt = {}) => {
     opt.branch ??= "main"
+    const _routes = routes[opt.branch]
     const kv = kv_custom.init(kv_db)(wkv)
     let methods = {}
     let pmethods = {}
@@ -29,8 +30,8 @@ const build = ({ kv: kv_db, init = _init, store = _store, routes }) => {
       return devs[state.branch ?? env.branch ?? "main"]
     }
 
-    for (const k in routes) {
-      if (routes[k].async) {
+    for (const k in _routes) {
+      if (_routes[k].async) {
         pmethods[k] = (kv, msg, _opt, cb) => {
           return new Promise(async (res, rej) => {
             try {
@@ -38,7 +39,7 @@ const build = ({ kv: kv_db, init = _init, store = _store, routes }) => {
                 (
                   await pof({ kv, msg, opt: { ...opt, ..._opt, cb } })
                     .map(init)
-                    .chain(pflow(routes[k].devs, ppred).k)
+                    .chain(pflow(_routes[k].devs, ppred).k)
                     .val()
                 ).state,
               )
@@ -52,7 +53,7 @@ const build = ({ kv: kv_db, init = _init, store = _store, routes }) => {
           try {
             return of({ kv, msg, opt: { ...opt, ..._opt } })
               .map(init)
-              .chain(flow(routes[k].devs, pred).k)
+              .chain(flow(_routes[k].devs, pred).k)
               .val().state
           } catch (e) {
             ;(console.log(e), kv.reset())
@@ -65,8 +66,8 @@ const build = ({ kv: kv_db, init = _init, store = _store, routes }) => {
     const db = dev(methods)
     const dbp = pdev(pmethods)
     const ops = {}
-    for (const k in routes) {
-      if (routes[k].async) {
+    for (const k in _routes) {
+      if (_routes[k].async) {
         ops[k] = async (...args) =>
           await dbp()
             [k](...args)

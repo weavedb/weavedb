@@ -1,6 +1,6 @@
 import { of, ka } from "monade"
 import { wdb23, toAddr, setTS64 } from "./utils.js"
-import version from "./version_sst.js"
+import version from "./version.js"
 import { isNil } from "ramda"
 
 function setMeta({ state, msg, env }) {

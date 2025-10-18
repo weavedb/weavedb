@@ -331,22 +331,6 @@ function toAddr(n) {
   return base64urlEncode(hash)
 }
 
-const withOp = op =>
-  function ({ state, msg }) {
-    state.opcode = op
-    state.query = [op, ...msg]
-    return arguments[0]
-  }
-
-function normalizeIndex(index) {
-  for (const i of index) {
-    if (!Array.isArray(i)) throw Error("index must be Array")
-    if (i.length > 2 || i.length < 1) throw Error("the wrong index")
-    if (i.length === 1) i.push("asc")
-  }
-  return index
-}
-
 function setTS64({ state, msg, env }) {
   state.ts = env.info.ts
   let ts_count = env.kv.get("__ts__", "latest") ?? {
@@ -362,8 +346,6 @@ function setTS64({ state, msg, env }) {
 
 export {
   setTS64,
-  normalizeIndex,
-  withOp,
   toAddr,
   cid,
   wdb160,

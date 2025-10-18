@@ -1,5 +1,4 @@
-import { normalizeIndex } from "./utils.js"
-import { addIndex } from "./indexer.js"
+import { addIndex, normalizeIndex } from "./indexer.js"
 import { equals } from "ramda"
 
 export default function add_index({ state, env: { kv, kv_dir } }) {

@@ -312,17 +312,15 @@ export default class DB {
         json = { success: false, query, err: e.toString() }
       }
     } else {
-      json = JSON.parse(
-        (
-          await this.db.get({
-            path: "/~weavedb@1.0/get",
-            id: this.id,
-            query: JSON.stringify(args),
-          })
-        ).body,
-      )
+      const res = await this.db.get({
+        path: "/~weavedb@1.0/get",
+        id: this.id,
+        query: JSON.stringify(args),
+      })
+      json = JSON.parse(res.body)
+      console.log(json)
     }
-    if (json.er) throw json.err
+    if (json.err) throw json.err
     return json?.res?.result
   }
 }
