@@ -1,6 +1,6 @@
 import { of, pka } from "monade"
 import { prop, sortBy, o, filter, isNil } from "ramda"
-import brotliDecompress from "brotli/decompress.js"
+import zlib from "zlib"
 import {
   json as arjson,
   encode,
@@ -8,9 +8,8 @@ import {
   decode,
   Decoder,
   Parser,
-} from "../../../arjson/sdk/src/index.js"
-import DBTree from "zkjson/smt"
-
+} from "arjson"
+import { DBTree } from "zkjson"
 function frombits(bitArray) {
   const bitStr = bitArray.join("")
   const byteCount = Math.ceil(bitStr.length / 8)
@@ -32,20 +31,16 @@ async function decodeData({ state, msg, env }) {
     put: (k, v) => kv.put("__zkp__", `${key}_${k}`, v),
     del: k => kv.del("__zkp__", `${key}_${k}`),
   })
-  let zkc = env.kv.get("__zkp__", "zkc") ?? 0
   const zkdb = new DBTree({ kv: kv_zkp })
   await zkdb.init()
-  const n = 1
+  const n = 2
   const cols = env.kv.get("__zkp__", "cols") ?? {}
   const buf = msg.data
-  env.info.total_size += buf.length
-  kv.put("__sst__", "info", env.info)
-  const _buf = brotliDecompress(buf)
+  const _buf = zlib.brotliDecompressSync(buf)
   const msgs = []
   const d = new Decoder()
-  const left = d.decode(_buf, null)
+  const left = d.decode(Uint8Array.from(_buf), null)
   let json = d.json
-  // handle left[0] undefined error
   if (left[0].length !== 8) left.shift()
   let start = 0
   let changes = { dirs: {}, docs: {}, indexes: {}, _: {} }
@@ -68,27 +63,22 @@ async function decodeData({ state, msg, env }) {
       cols[doc] = newData.index
       update = true
       await zkdb.addCollection(newData.index)
-      console.log(
-        `<${zkc++}> new dir added to zk tree`,
-        newData.index,
-        zkdb.hash(),
-      )
+      console.log("new dir added to zk tree", newData.index)
       env.kv.put("__zkp__", "cols", cols)
     }
     try {
       if (isNil(newData)) {
         await zkdb.delete(cols[dir], doc)
-        console.log(`<${zkc++}> deleted from zk tree`, dir, doc, zkdb.hash())
+        console.log("deleted from zk tree", dir, doc)
       } else {
         await zkdb.insert(cols[dir], doc, newData)
-        console.log(`<${zkc++}> added to zk tree`, dir, doc, zkdb.hash())
-        console.log(newData)
+        console.log("added to zk tree", dir, doc)
       }
 
       update = true
     } catch (e) {
       console.log(e)
-      console.log("zk error", JSON.stringify(newData).length, dir, doc, newData)
+      console.log("zk error", dir, doc, newData)
     }
 
     if (dir === "_") {
@@ -179,7 +169,6 @@ async function decodeData({ state, msg, env }) {
     return buf.toString("base64")
   }
   if (zkdb.hash() !== msg.zkhash) throw Error("hash mismatch")
-  env.kv.put("__zkp__", "zkc", zkc)
   return arguments[0]
 }
 

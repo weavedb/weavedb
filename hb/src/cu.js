@@ -51,6 +51,7 @@ const startServer = ({ port, jwk }) => {
   app.post("/weavedb/:mid", async (req, res) => {
     const mid = req.params.mid
     const pid = req.query["process-id"]
+    console.log("new request", mid, pid)
     let data = null
     let msg = []
     let done = false
@@ -63,7 +64,7 @@ const startServer = ({ port, jwk }) => {
           res.status(500)
           res.json({ error: "timeout" })
         }
-      }, 10000)
+      }, 60000)
       await result(pid, slot, r => {
         if (!timeout) {
           done = true

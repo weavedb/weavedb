@@ -1,21 +1,17 @@
-import { createHash } from "node:crypto"
-const hex = buf => createHash("sha256").update(buf).digest("hex")
 import { DatabaseSync } from "node:sqlite"
 import { HB } from "wao"
+import { wait } from "wao/test"
 import * as lancedb from "@lancedb/lancedb"
 import Sync from "./sync.js"
 import zlib from "zlib"
 import { promisify } from "util"
 const brotliCompress = promisify(zlib.brotliCompress)
-const brotliDecompress = promisify(zlib.brotliDecompress)
 //import { Core,kv, db as wdb, vec, sql } from "wdb-core"
 import { Core, kv, db as wdb, vec, sql } from "../../core/src/index.js"
 import { getMsgs } from "./server-utils.js"
 import { isEmpty, sortBy, prop, isNil, keys, pluck, clone } from "ramda"
-import { json, encode, Encoder } from "arjson"
+import { json, encode, Encoder } from "../../../arjson/sdk/src/index.js"
 import { DBTree as ZKDB } from "zkjson"
-import { resolve } from "path"
-import { connect, createSigner } from "@permaweb/aoconnect"
 
 let io = null
 let request = null
@@ -27,6 +23,15 @@ const to64 = hash => {
   const buf = Buffer.from(hex, "hex")
   return buf.toString("base64")
 }
+function estimateN(
+  value,
+  { k = 28, headroom = 1.2, min = 1, max = 2048 } = {},
+) {
+  const bytes = Buffer.byteLength(JSON.stringify(value), "utf8")
+  const nRaw = Math.ceil(bytes / k)
+  return Math.max(min, Math.min(max, Math.ceil(nRaw * headroom)))
+}
+
 const from64 = b64 => {
   const buf = Buffer.from(b64, "base64")
   const hex = buf.toString("hex")
@@ -38,6 +43,7 @@ let zkdb = null
 let cols = {}
 let ongoing = false
 let nonce = 2
+let zkc = 0
 
 const calcZKHash = async (changes, cols, zkdb, io) => {
   for (const v of changes) {
@@ -46,30 +52,72 @@ const calcZKHash = async (changes, cols, zkdb, io) => {
       cols[doc] = v.data.index
       await io.put("__zkp__", "cols", cols)
       await zkdb.addCollection(v.data.index)
-      console.log("collection added to zk tree", doc, v.data.index)
+      console.log(
+        `[${zkc++}] collection added to zk tree`,
+        doc,
+        v.data.index,
+        zkdb.hash(),
+      )
     }
     try {
       if (isNil(v.data)) {
         await zkdb.delete(cols[dir], doc)
-        console.log("deleted from zk tree", dir, doc)
+        console.log(`[${zkc++}] deleted from zk tree`, dir, doc, zkdb.hash())
       } else {
         await zkdb.insert(cols[dir], doc, v.data)
-        console.log("added to zk tree", dir, doc)
+        console.log(`[${zkc++}] added to zk tree`, dir, doc, zkdb.hash())
+        console.log(v.data)
       }
     } catch (e) {
-      console.log("zk error:", JSON.stringify(v.data).length)
+      console.log("zk error:", JSON.stringify(v.data).length, dir, doc, v.data)
       console.log(e)
     }
   }
   return zkdb.hash()
 }
-
-const schedule = async (request, obj, attempts = 0) => {
-  let res
+const compute = async (request, pid, slot, obj, attempts = 0) => {
+  console.log("timeout....", pid, slot)
+  let res = null
+  let timeout = false
   let err = false
+  try {
+    res = await request.compute({ pid, slot })
+    const json = JSON.parse(res.results?.data)
+    if (json.nonce === false) {
+      if (json.correct) {
+        nonce = json.correct
+        obj.tags.nonce = nonce
+      }
+      throw Error("nonce error")
+    }
+    if (json.decode === false) return { err: true, res }
+    if (json.decode !== true) throw Error("decode not found")
+  } catch (e) {
+    console.log(e, res)
+    try {
+      timeout = /timeout/.test(res.res.body.toString())
+    } catch (e) {}
+    console.log("error:", attempts, e?.toString())
+    err = true
+  }
+  return err
+    ? attempts > 5
+      ? { err: true, res: { slot, pid, res } }
+      : (await wait(timeout ? 10000 : 0),
+        await compute(request, pid, slot, obj, attempts + 1))
+    : { erro: false, res: { slot, pid, res } }
+}
+const schedule = async (request, obj, attempts = 0) => {
+  let res = null
+  let err = false
+  let timeout = false
+  let slot = null
+  let pid = null
   try {
     // decode_error <= hbsig parse error?
     res = await request.message(obj)
+    slot = res.slot
+    pid = res.pid
     const json = JSON.parse(res.res?.results?.data)
     if (json.nonce === false) {
       if (json.correct) {
@@ -81,13 +129,18 @@ const schedule = async (request, obj, attempts = 0) => {
     if (json.decode === false) return { err: true, res }
     if (json.decode !== true) throw Error("decode not found")
   } catch (e) {
+    console.log(e, res)
+    try {
+      timeout = /timeout/.test(res.res.body.toString())
+    } catch (e) {}
     console.log("error:", attempts, e?.toString())
     err = true
   }
   return err
     ? attempts > 5
       ? { err: true, res }
-      : await schedule(request, obj, attempts + 1)
+      : (await wait(timeout ? 10000 : 0),
+        await compute(request, pid, slot, obj, attempts + 1))
     : { erro: false, res }
 }
 
@@ -105,7 +158,7 @@ const buildBundle = async (changes, request, vid, cslot, cols, zkdb, io) => {
     bytes.push(v.delta[1])
     i++
   }
-  let u = new Encoder(3)
+  let u = new Encoder(4)
   const enc = encode(header, u)
   bytes.unshift(enc)
   const totalLen = bytes.reduce((sum, arr) => sum + arr.length, 0)
@@ -136,8 +189,10 @@ const buildBundle = async (changes, request, vid, cslot, cols, zkdb, io) => {
     },
     data: compressed,
   })
-  if (err) console.log("this is stuck....", err)
-  else nonce += 1
+  if (err) {
+    console.log("this is stuck....", err)
+    //process.exit()
+  } else nonce += 1
   console.log()
   console.log(
     `[${cslot}] ${res?.pid} <zkhash: ${zkhash}> : ${buf.length} bytes`,
@@ -149,7 +204,6 @@ const getKV = obj => {
   return kv(obj.io, async c => {
     let changes = {}
     let slot = null
-    let n = 3
     for (const d of c.data) {
       slot = d.opt.slot
       for (const k in d.cl) {
@@ -168,6 +222,7 @@ const getKV = obj => {
           }
           d.cl[k] = clk
         }
+        const n = 1
         let delta = null
         if (!obj.deltas[k]) {
           let cache = obj.io.get(`__deltas__/${k}`)
@@ -191,6 +246,10 @@ const getKV = obj => {
     obj.ch++
     await obj.io.put(`__ch__`, obj.ch)
     await obj.io.put(`__changes__/${obj.ch}`, changes)
+    if (obj.resolve) {
+      obj.resolve()
+      obj.resolve = null
+    }
   })
 }
 
@@ -203,7 +262,7 @@ export class Validator extends Sync {
     hb = "http://localhost:10001",
     type = "nosql",
     format = "ans104",
-    max_msgs = 20,
+    max_msgs = 100,
     limit = 20,
     autosync,
     gateway = "https://arweave.net",
@@ -267,6 +326,59 @@ export class Validator extends Sync {
     return this
   }
   async write(force = false) {
+    return new Promise(async res => {
+      if (!this.isInitDB) return console.log("not initialized yet...")
+      if (this.ongoing_write && force !== true)
+        return console.log("getMsgs ongoing...")
+      this.ongoing_write = true
+      let isData = false
+      let i = 0
+      try {
+        let msg = this.io.get(`__wmsg__/${this.wslot + 1}`) ?? null
+        if (this.wslot + 1 === 0 && msg) {
+          let opt = { env: { no_commit: true } }
+          const [op, { version }] = JSON.parse(msg.headers.query)
+          if (version) opt.version = version
+          const core = await new Core({
+            io: this.io,
+            gateway: this.gateway,
+            kv: this.wkv,
+          }).init(opt)
+          this.db = core.db
+        }
+        while (msg && i < this.max_msgs) {
+          if (this.type === "vec") await this.db.write(msg)
+          else await this.db.write(msg)
+          isData = true
+          this.wslot += 1
+          await this.io.put("__wslot__", this.wslot)
+          msg = this.io.get(`__wmsg__/${this.wslot + 1}`) ?? null
+          i++
+        }
+      } catch (e) {
+        console.log(e)
+      }
+      if (isData) {
+        const commitPromise = new Promise(resolve => (this.resolve = resolve))
+
+        await this.wkv.commit({ delta: true, slot: this.wslot }, async () => {})
+
+        await commitPromise
+
+        if (i >= this.max_msgs) {
+          this.ongoing_write = false
+          res(await this.write(true))
+        } else {
+          this.ongoing_write = false
+          res(this.wslot)
+        }
+      } else {
+        this.ongoing_write = false
+        res(this.wslot)
+      }
+    })
+  }
+  async write2(force = false) {
     return new Promise(async res => {
       if (!this.isInitDB) return console.log("not initialized yet...")
       if (this.ongoing_write && force !== true)

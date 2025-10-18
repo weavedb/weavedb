@@ -199,7 +199,7 @@ describe("Validator", () => {
     await db.set("add:user", { name: "Alice", age: 30 }, "users")
     //await db.set("upgrade", "0.1.1")
     //console.log(await db.set("migrate"))
-    for (let i = 0; i < 10; i++) await db.set("add:user", genUser(), "users")
+    for (let i = 0; i < 2000; i++) await db.set("add:user", genUser(), "users")
     console.log(await db.get("users", 2))
     const cu = await CU({
       dbpath: genDir(),
@@ -256,9 +256,15 @@ describe("Validator", () => {
     const zk = await zkp.add(vid, 3000)
     await wait(20000)
     console.log("now fetching inputs")
-    console.log(
-      await fetch(`http://localhost:6365/zkp?pid=${vid}`).then(r => r.json()),
+    const p1 = await fetch(`http://localhost:6365/zkp?pid=${vid}`).then(r =>
+      r.json(),
     )
+
+    const p2 = await fetch(`http://localhost:6366/zkp?pid=${vid}`).then(r =>
+      r.json(),
+    )
+    assert.equal(p1.proof[9], p2.proof[9])
+    console.log("success!!", p1.zkhash, p2.zkhash)
     await val.stopSync()
     await vcu.stopSync()
     await vcu.stopWrite()
