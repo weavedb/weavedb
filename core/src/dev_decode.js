@@ -37,6 +37,8 @@ async function decodeData({ state, msg, env }) {
   const n = 3
   const cols = env.kv.get("__zkp__", "cols") ?? {}
   const buf = msg.data
+  env.info.total_size += buf.length
+  kv.put("__sst__", "info", env.info)
   const _buf = brotliDecompress(
     buf instanceof Uint8Array ? buf : new Uint8Array(buf),
   )

@@ -7,9 +7,6 @@ import { DB, wdb23, wdb160 } from "../../sdk/src/index.js"
 import { pluck } from "ramda"
 import { kv, io, db as wdb, queue, mem } from "../../core/src/index.js"
 import { Core } from "../../core/src/index.js"
-import { dir_schema } from "../../sdk/src/schemas.js"
-import { dirs_set } from "../../sdk/src/rules.js"
-const init_query = { schema: dir_schema, auth: [dirs_set] }
 const owner = acc[0]
 const user1 = acc[1]
 const user2 = acc[2]
@@ -32,7 +29,7 @@ describe("Mem", () => {
     const db = wdb(wkv, { branch: "noauth" })
     const res = db
       .db()
-      .write(q(["init", init_query]))
+      .write(q(["init", {}]))
       .write(q(["mkdir", "users"]))
       .k({ kv: db.kv })
       .val()
