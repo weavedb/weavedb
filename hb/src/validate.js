@@ -10,8 +10,9 @@ const brotliCompress = promisify(zlib.brotliCompress)
 import { Core, kv, db as wdb, vec, sql } from "../../core/src/index.js"
 import { getMsgs } from "./server-utils.js"
 import { isEmpty, sortBy, prop, isNil, keys, pluck, clone } from "ramda"
-import { json, encode, Encoder } from "../../../arjson/sdk/src/index.js"
+import { json, encode, Encoder } from "arjson"
 import { DBTree as ZKDB } from "zkjson"
+import { readFileSync, writeFileSync } from "fs"
 
 let io = null
 let request = null
@@ -52,21 +53,15 @@ const calcZKHash = async (changes, cols, zkdb, io) => {
       cols[doc] = v.data.index
       await io.put("__zkp__", "cols", cols)
       await zkdb.addCollection(v.data.index)
-      console.log(
-        `[${zkc++}] collection added to zk tree`,
-        doc,
-        v.data.index,
-        zkdb.hash(),
-      )
+      console.log(`[${zkc++}] collection added to zk tree`, doc, v.data.index)
     }
     try {
       if (isNil(v.data)) {
         await zkdb.delete(cols[dir], doc)
-        console.log(`[${zkc++}] deleted from zk tree`, dir, doc, zkdb.hash())
+        console.log(`[${zkc++}] deleted from zk tree`, dir, doc)
       } else {
         await zkdb.insert(cols[dir], doc, v.data)
-        console.log(`[${zkc++}] added to zk tree`, dir, doc, zkdb.hash())
-        console.log(v.data)
+        console.log(`[${zkc++}] added to zk tree`, dir, doc)
       }
     } catch (e) {
       console.log("zk error:", JSON.stringify(v.data).length, dir, doc, v.data)
@@ -169,7 +164,6 @@ const buildBundle = async (changes, request, vid, cslot, cols, zkdb, io) => {
     offset += arr.length
   }
   const zkhash = await calcZKHash(_changes, cols, zkdb, io)
-  //console.log(buf.toString("base64"))
   const params = {
     [zlib.constants.BROTLI_PARAM_QUALITY]: 11, // Maximum quality
     [zlib.constants.BROTLI_PARAM_MODE]: zlib.constants.BROTLI_MODE_GENERIC,
@@ -178,20 +172,22 @@ const buildBundle = async (changes, request, vid, cslot, cols, zkdb, io) => {
     [zlib.constants.BROTLI_PARAM_SIZE_HINT]: buf.length,
   }
   const compressed = await brotliCompress(buf, params)
+  const data = Buffer.concat([compressed, Buffer.alloc(1)])
   const { err, res } = await schedule(request, {
     pid: vid,
     tags: {
       nonce,
       zkhash,
+      bytelen: compressed.length,
       Action: "Commit",
       "Data-Protocol": "ao",
       Variant: "ao.TN.1",
     },
-    data: compressed,
+    data,
   })
   if (err) {
     console.log("this is stuck....", err)
-    //process.exit()
+    process.exit()
   } else nonce += 1
   console.log()
   console.log(

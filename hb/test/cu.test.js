@@ -199,7 +199,7 @@ describe("Validator", () => {
     await db.set("add:user", { name: "Alice", age: 30 }, "users")
     //await db.set("upgrade", "0.1.1")
     //console.log(await db.set("migrate"))
-    for (let i = 0; i < 2000; i++) await db.set("add:user", genUser(), "users")
+    for (let i = 0; i < 5000; i++) await db.set("add:user", genUser(), "users")
     console.log(await db.get("users", 2))
     const cu = await CU({
       dbpath: genDir(),

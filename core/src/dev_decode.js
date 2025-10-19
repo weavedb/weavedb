@@ -8,7 +8,7 @@ import {
   decode,
   Decoder,
   Parser,
-} from "../../../arjson/sdk/src/index.js"
+} from "arjson"
 import DBTree from "zkjson/smt"
 
 function frombits(bitArray) {
@@ -32,12 +32,12 @@ async function decodeData({ state, msg, env }) {
     put: (k, v) => kv.put("__zkp__", `${key}_${k}`, v),
     del: k => kv.del("__zkp__", `${key}_${k}`),
   })
-  let zkc = env.kv.get("__zkp__", "zkc") ?? 0
   const zkdb = new DBTree({ kv: kv_zkp })
   await zkdb.init()
   const n = 1
   const cols = env.kv.get("__zkp__", "cols") ?? {}
-  const buf = msg.data
+  let buf = msg.data
+  if (msg.bytelen) buf = buf.slice(0, msg.bytelen)
   env.info.total_size += buf.length
   kv.put("__sst__", "info", env.info)
   const _buf = brotliDecompress(buf)
@@ -68,21 +68,16 @@ async function decodeData({ state, msg, env }) {
       cols[doc] = newData.index
       update = true
       await zkdb.addCollection(newData.index)
-      console.log(
-        `<${zkc++}> new dir added to zk tree`,
-        newData.index,
-        zkdb.hash(),
-      )
+      console.log(`new dir added to zk tree`, newData.index)
       env.kv.put("__zkp__", "cols", cols)
     }
     try {
       if (isNil(newData)) {
         await zkdb.delete(cols[dir], doc)
-        console.log(`<${zkc++}> deleted from zk tree`, dir, doc, zkdb.hash())
+        console.log(`deleted from zk tree`, dir, doc)
       } else {
         await zkdb.insert(cols[dir], doc, newData)
-        console.log(`<${zkc++}> added to zk tree`, dir, doc, zkdb.hash())
-        console.log(newData)
+        console.log(`added to zk tree`, dir, doc)
       }
 
       update = true
@@ -171,15 +166,7 @@ async function decodeData({ state, msg, env }) {
     }
   }
   state.updates = msgs
-  const to64 = hash => {
-    const n = BigInt(hash)
-    let hex = n.toString(16)
-    if (hex.length % 2) hex = "0" + hex
-    const buf = Buffer.from(hex, "hex")
-    return buf.toString("base64")
-  }
   if (zkdb.hash() !== msg.zkhash) throw Error("hash mismatch")
-  env.kv.put("__zkp__", "zkc", zkc)
   return arguments[0]
 }
 
