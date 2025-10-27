@@ -6,11 +6,10 @@ import Sync from "./sync.js"
 import zlib from "zlib"
 import { promisify } from "util"
 const brotliCompress = promisify(zlib.brotliCompress)
-//import { Core,kv, db as wdb, vec, sql } from "wdb-core"
-import { Core, kv, db as wdb, vec, sql } from "../../core/src/index.js"
+import { Core, kv, db as wdb, vec, sql } from "wdb-core"
 import { getMsgs } from "./server-utils.js"
 import { isEmpty, sortBy, prop, isNil, keys, pluck, clone } from "ramda"
-import { json, encode, Encoder } from "arjson"
+import { encode, Encoder, ARJSON, enc } from "arjson"
 import { DBTree as ZKDB } from "zkjson"
 import { readFileSync, writeFileSync } from "fs"
 
@@ -102,6 +101,7 @@ const compute = async (request, pid, slot, obj, attempts = 0) => {
         await compute(request, pid, slot, obj, attempts + 1))
     : { erro: false, res: { slot, pid, res } }
 }
+
 const schedule = async (request, obj, attempts = 0) => {
   let res = null
   let err = false
@@ -142,20 +142,17 @@ const schedule = async (request, obj, attempts = 0) => {
 const buildBundle = async (changes, request, vid, cslot, cols, zkdb, io) => {
   let _changes = []
   for (const k in changes) {
-    _changes.push({ key: k, delta: changes[k].delta, data: changes[k].to })
+    _changes.push({ key: k, deltas: changes[k].deltas, data: changes[k].to })
   }
   _changes = sortBy(prop("key"), _changes)
   let header = []
   let bytes = []
-  let i = 0
   for (const v of _changes) {
-    header.push([v.key, v.delta[0], v.delta[1].length])
-    bytes.push(v.delta[1])
-    i++
+    header.push([v.key, v.deltas.length])
+    bytes.push(ARJSON.toBuffer(v.deltas))
   }
-  let u = new Encoder(4)
-  const enc = encode(header, u)
-  bytes.unshift(enc)
+  const _enc = enc(header)
+  bytes.unshift(_enc)
   const totalLen = bytes.reduce((sum, arr) => sum + arr.length, 0)
   const buf = Buffer.alloc(totalLen)
   let offset = 0
@@ -218,24 +215,19 @@ const getKV = obj => {
           }
           d.cl[k] = clk
         }
-        const n = 1
-        let delta = null
-        if (!obj.deltas[k]) {
-          let cache = obj.io.get(`__deltas__/${k}`)
-          if (cache) {
-            for (let v of cache) v[1] = Uint8Array.from(v[1])
-            obj.deltas[k] = json(cache, undefined, n)
-          } else {
-            obj.deltas[k] = json(null, d.cl[k], n)
-            delta = obj.deltas[k].deltas()[0]
-            await obj.io.put(`__deltas__/${k}`, obj.deltas[k].deltas())
-          }
+        let cache = obj.io.get(`__deltas__/${k}`)
+        let arj = null
+        let deltas = null
+        if (!cache) {
+          arj = new ARJSON({ json: d.cl[k] })
+          deltas = arj.deltas
         } else {
-          delta = obj.deltas[k].update(d.cl[k])
-          await obj.io.put(`__deltas__/${k}`, obj.deltas[k].deltas())
+          arj = new ARJSON({ table: cache })
+          deltas = arj.update(d.cl[k])
         }
-        if (delta && delta[1].length > 0) {
-          changes[k] = { from: c.old[k], to: d.cl[k], delta }
+        if (deltas && deltas.length > 0) {
+          await obj.io.put(`__deltas__/${k}`, arj.artable.table())
+          changes[k] = { to: d.cl[k], deltas }
         }
       }
     }

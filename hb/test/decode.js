@@ -1,13 +1,7 @@
 import zlib from "zlib"
+import { readFileSync, writeFileSync } from "fs"
 import { prop, sortBy, o, filter, isNil } from "ramda"
-import {
-  json as arjson,
-  encode,
-  Encoder,
-  decode,
-  Decoder,
-  Parser,
-} from "../../../arjson/sdk/src/index.js"
+import { enc, dec, encode, Encoder, Decoder, ARTable, ARJSON } from "arjson"
 function frombits(bitArray) {
   const bitStr = bitArray.join("")
   const byteCount = Math.ceil(bitStr.length / 8)
@@ -26,12 +20,10 @@ import { promisify } from "util"
 const brotliCompress = promisify(zlib.brotliCompress)
 import assert from "assert"
 import { describe, it } from "node:test"
-import { json } from "../../../arjson/sdk/src/index.js"
 import { wait, genDir, genUser } from "./test-utils.js"
 import { isEmpty, keys, pluck, clone } from "ramda"
 import brotliDecompress from "brotli/decompress.js"
 let zkc = 0
-let zkc2 = 0
 import DBTree from "zkjson/smt"
 
 const calcZKHash = async (changes, cols, zkdb, io) => {
@@ -55,7 +47,6 @@ const calcZKHash = async (changes, cols, zkdb, io) => {
       } else {
         await zkdb.insert(cols[dir], doc, v.data)
         console.log(`[${zkc++}] added to zk tree`, dir, doc, zkdb.hash())
-        //console.log(v.data)
       }
     } catch (e) {
       console.log("zk error:", JSON.stringify(v.data).length, dir, doc, v.data)
@@ -65,28 +56,53 @@ const calcZKHash = async (changes, cols, zkdb, io) => {
   return zkdb.hash()
 }
 
-const add = async (dcl, obj, old) => {
+const add = async (dcl, obj) => {
   let changes = {}
   for (const k in dcl) {
-    const n = 1
-    let delta = null
-    if (!obj.deltas[k]) {
-      let cache = obj.io.get(`__deltas__/${k}`)
-      if (cache) {
-        for (let v of cache) v[1] = Uint8Array.from(v[1])
-        obj.deltas[k] = json(cache, undefined, n)
-      } else {
-        obj.deltas[k] = json(null, dcl[k], n)
-        delta = obj.deltas[k].deltas()[0]
-        await obj.io.put(`__deltas__/${k}`, obj.deltas[k].deltas())
-      }
+    let cache = obj.io.get(`__deltas__/${k}`)
+    let arj = null
+    let deltas = null
+    if (!cache) {
+      arj = new ARJSON({ json: dcl[k] })
+      deltas = arj.deltas
     } else {
-      delta = obj.deltas[k].update(dcl[k])
-      await obj.io.put(`__deltas__/${k}`, obj.deltas[k].deltas())
+      arj = new ARJSON({ table: cache })
+      deltas = arj.update(dcl[k])
     }
-    if (delta && delta[1].length > 0) {
-      changes[k] = { from: old[k] ?? null, to: dcl[k], delta }
+    if (deltas && deltas.length > 0) {
+      await obj.io.put(`__deltas__/${k}`, arj.artable.table())
+      changes[k] = { to: dcl[k], deltas }
     }
+  }
+  return changes
+}
+
+const decodeBuf = buf => {
+  const d = new Decoder()
+  const left = d.decode(buf, null)
+  let header = d.json
+  //if (left[0].length !== 8) left.shift()
+  const deltaBytes = frombits(left)
+  const changes = []
+  let offset = 0
+  for (const [key, numDeltas] of header) {
+    const deltas = []
+    for (let i = 0; i < numDeltas; i++) {
+      let deltaLen = 0
+      let shift = 0
+      let byte
+
+      do {
+        byte = deltaBytes[offset++]
+        deltaLen += (byte & 0x7f) * Math.pow(2, shift)
+        shift += 7
+      } while (byte & 0x80)
+
+      const delta = deltaBytes.slice(offset, offset + deltaLen)
+      deltas.push(delta)
+      offset += deltaLen
+    }
+    changes.push({ key, deltas })
   }
   return changes
 }
@@ -94,20 +110,17 @@ const add = async (dcl, obj, old) => {
 const buildBundle = async (changes, cols, zkdb, io) => {
   let _changes = []
   for (const k in changes) {
-    _changes.push({ key: k, delta: changes[k].delta, data: changes[k].to })
+    _changes.push({ key: k, deltas: changes[k].deltas, data: changes[k].to })
   }
   _changes = sortBy(prop("key"), _changes)
   let header = []
   let bytes = []
-  let i = 0
   for (const v of _changes) {
-    header.push([v.key, v.delta[0], v.delta[1].length])
-    bytes.push(v.delta[1])
-    i++
+    header.push([v.key, v.deltas.length])
+    bytes.push(ARJSON.toBuffer(v.deltas))
   }
-  let u = new Encoder(4)
-  const enc = encode(header, u)
-  bytes.unshift(enc)
+  const _enc = enc(header)
+  bytes.unshift(_enc)
   const totalLen = bytes.reduce((sum, arr) => sum + arr.length, 0)
   const buf = Buffer.alloc(totalLen)
   let offset = 0
@@ -115,7 +128,6 @@ const buildBundle = async (changes, cols, zkdb, io) => {
     buf.set(arr, offset)
     offset += arr.length
   }
-  //console.log(_changes)
   const zkhash = await calcZKHash(_changes, cols, zkdb, io)
   const params = {
     [zlib.constants.BROTLI_PARAM_QUALITY]: 11,
@@ -127,12 +139,137 @@ const buildBundle = async (changes, cols, zkdb, io) => {
   const compressed = await brotliCompress(buf, params)
   console.log()
   console.log(`<zkhash: ${zkhash}> : ${buf.length} bytes`)
-  return { buf, zkhash, compressed }
+  return { buf, zkhash, compressed, changes }
 }
 
 let io1, io2, obj, zkdb, cols
 let i2 = 0
+const prepare = async () => {
+  const getIO = () => {
+    const store = {}
+    const io = {
+      get: k => store[k],
+      put: async (k, v) => (store[k] = v),
+      del: async k => delete store[k],
+    }
+    return io
+  }
+  io1 = getIO()
+  io2 = getIO()
+  obj = { deltas: {}, io: io1 }
+
+  cols = {}
+  const kv_zkp = key => ({
+    get: k => io1.get(`__zkp__/${key}_${k}`),
+    put: async (k, v) => await io1.put(`__zkp__/${key}_${k}`, v),
+    del: async k => await io1.del(`__zkp__/${key}_${k}`),
+  })
+  zkdb = new ZKDB({ kv: kv_zkp })
+  await zkdb.init()
+}
+const arr = [
+  {
+    id: "ooXIc8o9EvuQBYxAHo",
+    username: "1AiOz1Gh5YC5",
+    name: "Alice Miller",
+    bio: "UEDy2Lj1tZD9LWqd X73HQ5TSOnJrgqMtGJl9vHeAnUphwl gqdxhE88cfg6fMvenLxaXdvoVxov5zDe4cQb",
+    age: 60,
+    role: "engineer",
+    active: false,
+    metadata: { department: "admin", level: 3, certified: false },
+    preferences: { theme: "light", notifications: false, language: "en" },
+    tags: ["guest", "designer"],
+  },
+  { name: "Henry Jones", age: 29, role: "user", id: 82447 },
+  {
+    username: "D2XqIb4s",
+    name: "Henry Miller",
+    email: "UAawx4@example.com",
+    age: 22,
+    active: true,
+    score: 961,
+    role: "guest",
+    tags: ["developer", "developer", "guest"],
+  },
+]
+
 describe("Decode", () => {
+  it("should encode and decode", async () => {
+    const arr = [{ a: 1 }, { b: 2, d: "a", e: 3 }, { c: 4 }]
+    let aj = null
+    for (let data of arr) {
+      if (!aj) aj = new ARJSON({ json: data })
+      else aj.update(data)
+    }
+    assert.deepEqual(aj.json, arr[arr.length - 1])
+  })
+
+  it("should encode and decode", async () => {
+    await prepare()
+    const xio = [
+      {
+        changes: {
+          "users/1": {
+            id: "ooXIc8o9EvuQBYxAHo",
+            username: "1AiOz1Gh5YC5",
+            name: "Alice Miller",
+            bio: "UEDy2Lj1tZD9LWqd X73HQ5TSOnJrgqMtGJl9vHeAnUphwl gqdxhE88cfg6fMvenLxaXdvoVxov5zDe4cQb",
+            age: 60,
+            role: "engineer",
+            active: false,
+            metadata: { department: "admin", level: 3, certified: false },
+            preferences: {
+              theme: "light",
+              notifications: false,
+              language: "en",
+            },
+            tags: ["guest", "designer"],
+          },
+        },
+      },
+      {
+        changes: {
+          "users/1": { name: "Henry Jones", age: 29, role: "user", id: 82447 },
+        },
+      },
+      {
+        changes: {
+          "users/1": {
+            username: "D2XqIb4s",
+            name: "Henry Miller",
+            email: "UAawx4@example.com",
+            age: 22,
+            active: true,
+            score: 961,
+            role: "guest",
+            tags: ["developer", "developer", "guest"],
+          },
+        },
+      },
+    ]
+
+    let aj = null
+    let json = null
+    for (let v of xio) {
+      for (let k in v.changes) {
+        if (k === "users/1") {
+          let data = v.changes[k].to
+          if (!aj) aj = new ARJSON({ json: data })
+          else aj.update(data)
+          json = data
+        }
+      }
+    }
+    assert.deepEqual(aj.json, json)
+    const newjson = new ARJSON({ arj: aj.toBuffer() })
+    assert.deepEqual(newjson.json, json)
+    const cols2 = {}
+    for (let v of xio) {
+      const { zkhash, compressed, changes } = await gen({ init: true })
+      await decoder({ io: io2, cols: cols2, buf: compressed })
+    }
+  })
+
   it("should encode and decode", async () => {
     const getIO = () => {
       const store = {}
@@ -156,23 +293,28 @@ describe("Decode", () => {
     zkdb = new ZKDB({ kv: kv_zkp })
     await zkdb.init()
     let i = 0
-    const { zkhash, compressed } = await gen({ init: true })
+    const { zkhash, compressed, changes } = await gen({ init: true })
     const cols2 = {}
-    const ok = await decoder({ io: io2, cols: cols2, buf: compressed, zkhash })
-    console.log(ok)
+    const ok = await decoder({
+      io: io2,
+      cols: cols2,
+      buf: compressed,
+      zkhash,
+      changes,
+    })
     while (true) {
-      console.log(".....................................................")
-      const { zkhash, compressed } = await gen({ num: 300 })
+      const { zkhash, compressed, changes } = await gen({ num: 300 })
       const ok = await decoder({
         io: io2,
         cols: cols2,
         buf: compressed,
         zkhash,
+        changes,
       })
-      console.log(ok)
     }
   })
 })
+
 const gen = async ({ init, num = 10 }) => {
   let ch = init
     ? {
@@ -184,16 +326,11 @@ const gen = async ({ init, num = 10 }) => {
     : { "_config/info": { i: i2, ts: Date.now() } }
   for (let i = 0; i < num + i2; i++) ch["users/" + i] = genUser()
   i2 += num
-  const changes = await add(ch, obj, {})
+  const changes = await add(ch, obj)
   return await buildBundle(changes, cols, zkdb, io1)
 }
-const decoder = async ({ io, cols, buf, zkhash }) => {
-  const kv_zkp = key => ({
-    get: k => io.get(`__zkp__/${key}_${k}`),
-    put: async (k, v) => await io.put(`__zkp__/${key}_${k}`, v),
-    del: async k => await io.del(`__zkp__/${key}_${k}`),
-  })
 
+const decoder = async ({ io, cols, buf }) => {
   const _store = _kv => {
     const get = (dir, doc) => _kv.get(`${dir}/${doc}`)
     const put = (dir, doc, data) => _kv.put(`${dir}/${doc}`, data)
@@ -203,69 +340,20 @@ const decoder = async ({ io, cols, buf, zkhash }) => {
     return { ..._kv, get, put, del, commit, reset }
   }
   const kv = _store(io)
-  const zkdb = new DBTree({ kv: kv_zkp })
-  await zkdb.init()
   const n = 1
-  let xio = []
-  try {
-    xio = JSON.parse(readFileSync("/home/basque/bug.json", "utf8"))
-  } catch (e) {}
-  xio.push({ zkhash, bits: Array.from(compressed) })
-  writeFileSync("/home/basque/bug.json", JSON.stringify(xio))
-
   const _buf = brotliDecompress(buf)
-  const msgs = []
-  const d = new Decoder()
-  const left = d.decode(_buf, null)
-  let json = d.json
-  console.log("left zero.............", left[0], left[0].length)
-  if (left[0].length !== 8) left.shift()
-  let start = 0
-  let changes = { dirs: {}, docs: {}, indexes: {}, _: {} }
-  let update = false
-  for (let v of json) {
-    const arr8 = frombits(left.slice(start, start + v[2]))
-    start += v[2]
-    const [dir, doc] = v[0].split("/")
-    const key = v[0]
-    const getData = key => {
-      let _arjson = null
-      const deltas = kv.get("__deltas__", key) || []
-      deltas.push([v[1], arr8])
-      //console.log("deltas", key, deltas, n)
-      console.log(deltas)
-      _arjson = arjson(deltas, undefined, n)
-      kv.put("__deltas__", key, deltas)
-      return _arjson.json()
+  const decoded = decodeBuf(_buf)
+  for (let v of decoded) {
+    const key = v.key
+    const [dir, doc] = key.split("/")
+    let arj = null
+    const cache = kv.get("__deltas__", key)
+    if (cache) arj = new ARJSON({ table: cache })
+    for (let v2 of v.deltas) {
+      if (!arj) arj = new ARJSON({ arj: ARJSON.toBuffer([v2]) })
+      else arj.load(Buffer.from(v2))
     }
-    const newData = getData(key)
-    //console.log(dir, doc, newData)
-    if (dir === "_" && !isNil(newData?.index) && isNil(cols[doc])) {
-      cols[doc] = newData.index
-      update = true
-      await zkdb.addCollection(newData.index)
-      console.log(
-        `<${zkc2++}> new dir added to zk tree`,
-        newData.index,
-        zkdb.hash(),
-      )
-    }
-    try {
-      if (isNil(newData)) {
-        await zkdb.delete(cols[dir], doc)
-        console.log(`<${zkc2++}> deleted from zk tree`, dir, doc, zkdb.hash())
-      } else {
-        await zkdb.insert(cols[dir], doc, newData)
-        console.log(`<${zkc2++}> added to zk tree`, dir, doc, zkdb.hash())
-        //console.log(newData)
-      }
-
-      update = true
-    } catch (e) {
-      console.log(e)
-      console.log("zk error", JSON.stringify(newData).length, dir, doc, newData)
-    }
+    kv.put("__deltas__", key, arj.artable.table())
   }
-  if (zkdb.hash() !== zkhash) throw Error("hash mismatch")
   return true
 }

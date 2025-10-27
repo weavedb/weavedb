@@ -31,7 +31,7 @@
     "@huggingface/transformers": "^3.5.1",
     "@lancedb/lancedb": "^0.22.1",
     "@permaweb/aoconnect": "^0.0.83",
-    "arjson": "^0.0.14",
+    "arjson": "^0.1.3",
     "arweave": "^1.15.7",
     "body-parser": "^2.2.0",
     "brotli": "^1.3.3",
@@ -49,7 +49,7 @@
     "node-sql-parser": "^5.3.9",
     "ramda": "^0.30.1",
     "wao": "^0.37.8",
-    "wdb-core": "^0.1.0",
+    "wdb-core": "^0.1.1",
     "wdb-sdk": "^0.1.0",
     "yargs": "^17.7.2",
     "zkjson": "^0.8.4"

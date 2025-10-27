@@ -6,11 +6,10 @@ import { map, fromPairs } from "ramda"
 const _tags = tags => fromPairs(map(v => [v.name, v.value])(tags))
 import cors from "cors"
 import bodyParser from "body-parser"
-import { DB } from "../../sdk/src/index.js"
-import { Core, kv, queue } from "../../core/src/index.js"
+import { DB } from "wdb-sdk"
+import { Core, kv, queue } from "wdb-core"
 import { Prover } from "zkjson"
 import { resolve } from "path"
-//import { kv, queue } from "wdb-core"
 
 let dbs = {}
 let app = null
