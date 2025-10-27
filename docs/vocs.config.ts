@@ -134,21 +134,21 @@ export default defineConfig({
       text: "Node Operator Guide",
       collapsed: false,
       items: [
-        /*{
-          text: "DB Rollup",
-          link: "/ops/rollup",
-        },
 	{
           text: "HyperBEAM",
           link: "/ops/hyperbeam",
         },
         {
-          text: "Httpsig Bundler",
-          link: "/ops/bundler",
+          text: "DB Rollup",
+          link: "/ops/rollup",
+        },
+	{
+          text: "WeaveDB Scan",
+          link: "/ops/scan",
         },
         {
-          text: "Scheduler Unit",
-          link: "/ops/su",
+          text: "Httpsig Bundler",
+          link: "/ops/bundler",
         },
         {
           text: "Compute Unit",
@@ -159,11 +159,15 @@ export default defineConfig({
           link: "/ops/validator",
         },
         {
-          text: "ZK Proover Node",
-          link: "/ops/zk-proover",
-        },*/
+          text: "Scheduler Unit",
+          link: "/ops/su",
+        },
         {
-          text: "Remote Servers",
+          text: "ZK Proover",
+          link: "/ops/zkp",
+        },
+        {
+          text: "Remote Domains",
           link: "/ops/remote-servers",
         },
       ],

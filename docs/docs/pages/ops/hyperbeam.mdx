@@ -1,0 +1,31 @@
+# HyperBEAM Node
+
+Clonne the repo.
+
+```bash
+git clone https://github.com/weavedb/weavedb.git
+cd weavedb && git submodule update --init --recursive && npm install
+```
+
+Create `.env.hyperbeam` if environment variables are required to run `rabar3`.
+
+```dotenv [.env.hyperbeam]
+CC=gcc-12
+CXX=g++-12
+CMAKE_POLICY_VERSION_MINIMUM=3.5
+CWD=./HyperBEAM
+```
+
+Put the HyperBEAM operator `.wallet.json` to `./HyperBEAM/wallet.json`.
+
+```bash
+cp WALLET_PATH HyperBEAM/.wallet.json
+```
+
+Run.
+
+```bash
+yarn hyperbeam
+```
+
+Now, a HyperBEAM node with `weavedb` / `weavedb-wal` devices should be running at [localhost:10001](http://localhost:10001).
