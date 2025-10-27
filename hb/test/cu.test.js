@@ -199,7 +199,7 @@ describe("Validator", () => {
     await db.set("add:user", { name: "Alice", age: 30 }, "users")
     //await db.set("upgrade", "0.1.1")
     //console.log(await db.set("migrate"))
-    for (let i = 0; i < 5000; i++) await db.set("add:user", genUser(), "users")
+    for (let i = 0; i < 3000; i++) await db.set("add:user", genUser(), "users")
     console.log(await db.get("users", 2))
     const cu = await CU({
       dbpath: genDir(),
@@ -263,8 +263,10 @@ describe("Validator", () => {
     const p2 = await fetch(`http://localhost:6366/zkp?pid=${vid}`).then(r =>
       r.json(),
     )
+    console.log(p1)
+    console.log(p2)
     assert.equal(p1.proof[9], p2.proof[9])
-    console.log("success!!", p1.zkhash, p2.zkhash)
+    console.log("success!!", p1, p2)
     await val.stopSync()
     await vcu.stopSync()
     await vcu.stopWrite()

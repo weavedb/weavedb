@@ -6,9 +6,8 @@ import cors from "cors"
 import bodyParser from "body-parser"
 import { resolve } from "path"
 import { Prover } from "zkjson"
-import { DB } from "../../sdk/src/index.js"
-import { Core, kv, queue } from "../../core/src/index.js"
-//import { kv, db_sst, queue } from "wdb-core"
+import { DB } from "wdb-sdk"
+import { Core, kv, queue } from "wdb-core"
 
 let dbs = {}
 let app = null

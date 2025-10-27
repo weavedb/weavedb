@@ -5,8 +5,7 @@ import { open } from "lmdb"
 import { wait, genDir } from "./test-utils.js"
 import { DB, wdb23, wdb160 } from "../../sdk/src/index.js"
 import { pluck } from "ramda"
-import { kv, io, db as wdb, queue, mem } from "../../core/src/index.js"
-import { Core } from "../../core/src/index.js"
+import { Core, kv, io, db as wdb, queue, mem } from "../../core/src/index.js"
 const owner = acc[0]
 const user1 = acc[1]
 const user2 = acc[2]
@@ -15,11 +14,7 @@ const users = [user1, user2]
 let nonce = 0
 const q = query => {
   return {
-    headers: {
-      id: "wdb",
-      nonce: ++nonce,
-      query: JSON.stringify(query),
-    },
+    headers: { id: "wdb", nonce: ++nonce, query: JSON.stringify(query) },
     keyid: acc[0].jwk.n,
   }
 }

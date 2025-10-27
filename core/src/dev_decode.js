@@ -1,14 +1,7 @@
 import { of, pka } from "monade"
 import { prop, sortBy, o, filter, isNil } from "ramda"
 import brotliDecompress from "brotli/decompress.js"
-import {
-  json as arjson,
-  encode,
-  Encoder,
-  decode,
-  Decoder,
-  Parser,
-} from "arjson"
+import { ARJSON, encode, Encoder, Decoder } from "arjson"
 import DBTree from "zkjson/smt"
 
 function frombits(bitArray) {
@@ -22,6 +15,35 @@ function frombits(bitArray) {
     result[i] = parseInt(bits, 2)
   }
   return result
+}
+
+const decodeBuf = buf => {
+  const d = new Decoder()
+  const left = d.decode(buf, null)
+  let header = d.json
+  //if (left[0].length !== 8) left.shift()
+  const deltaBytes = frombits(left)
+  const changes = []
+  let offset = 0
+  for (const [key, numDeltas] of header) {
+    const deltas = []
+    for (let i = 0; i < numDeltas; i++) {
+      let deltaLen = 0
+      let shift = 0
+      let byte
+      do {
+        byte = deltaBytes[offset++]
+        deltaLen += (byte & 0x7f) * Math.pow(2, shift)
+        shift += 7
+      } while (byte & 0x80)
+
+      const delta = deltaBytes.slice(offset, offset + deltaLen)
+      deltas.push(delta)
+      offset += deltaLen
+    }
+    changes.push({ key, deltas })
+  }
+  return changes
 }
 
 async function decodeData({ state, msg, env }) {
@@ -41,29 +63,23 @@ async function decodeData({ state, msg, env }) {
   env.info.total_size += buf.length
   kv.put("__sst__", "info", env.info)
   const _buf = brotliDecompress(buf)
+  const decoded = decodeBuf(_buf)
   const msgs = []
-  const d = new Decoder()
-  const left = d.decode(_buf, null)
-  let json = d.json
-  // handle left[0] undefined error
-  if (left[0].length !== 8) left.shift()
   let start = 0
   let changes = { dirs: {}, docs: {}, indexes: {}, _: {} }
   let update = false
-  for (let v of json) {
-    const arr8 = frombits(left.slice(start, start + v[2]))
-    start += v[2]
-    const [dir, doc] = v[0].split("/")
-    const key = v[0]
-    const getData = key => {
-      let _arjson = null
-      const deltas = env.kv.get("__deltas__", key) || []
-      deltas.push([v[1], arr8])
-      _arjson = arjson(deltas, undefined, n)
-      env.kv.put("__deltas__", key, deltas)
-      return _arjson.json()
+  for (let v of decoded) {
+    const key = v.key
+    const [dir, doc] = key.split("/")
+    let arj = null
+    const cache = kv.get("__deltas__", key)
+    if (cache) arj = new ARJSON({ table: cache })
+    for (let v2 of v.deltas) {
+      if (!arj) arj = new ARJSON({ arj: ARJSON.toBuffer([v2]) })
+      else arj.load(Buffer.from(v2))
     }
-    const newData = getData(key)
+    kv.put("__deltas__", key, arj.artable.table())
+    const newData = arj.json
     if (dir === "_" && !isNil(newData?.index) && isNil(cols[doc])) {
       cols[doc] = newData.index
       update = true

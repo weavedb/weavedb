@@ -1,6 +1,6 @@
 {
   "name": "wdb-core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "scripts": {
     "build:cjs": "babel src --out-dir dist/cjs --config-file ./.babelrc-cjs",
@@ -51,7 +51,7 @@
   "license": "MIT",
   "dependencies": {
     "@lancedb/lancedb": "^0.21.2",
-    "arjson": "^0.0.14",
+    "arjson": "^0.1.3",
     "brotli": "^1.3.3",
     "brotli-cli": "^2.1.1",
     "fast-sha256": "^1.3.0",
