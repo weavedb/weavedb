@@ -3,12 +3,11 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "start": "./hyperbeam.sh",
-    "hb": "node scripts/run-hyperbeam.js",
+    "hyperbeam": "./hyperbeam.sh",
+    "rollup": "node scripts/run-rollup.js",
     "su": "node scripts/run-su.js",
     "cu": "node --experimental-sqlite scripts/run-cu.js",
     "bundler": "node scripts/run-bundler.js",
-    "rollup": "node scripts/run-rollup.js",
     "validator": "node --experimental-sqlite scripts/run-validator.js",
     "zkp": "node --experimental-sqlite scripts/run-zk-prover.js"
   },

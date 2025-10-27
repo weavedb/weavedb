@@ -1,12 +1,21 @@
 #!/bin/bash
 # monitor_weavedb_group.sh - Keeps WeaveDB running with memory monitoring
 
-COMMAND=${1:-monitor}
+COMMAND=${1:-start}
 MAX_MEM_MB=${2:-5000}
 CHECK_INTERVAL=${3:-10}
 
 # Determine the correct HyperBEAM directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Load environment variables from .env.hyperbeam if it exists
+if [ -f "$SCRIPT_DIR/.env.hyperbeam" ]; then
+    echo "Loading environment from .env.hyperbeam..."
+    set -a  # automatically export all variables
+    source "$SCRIPT_DIR/.env.hyperbeam"
+    set +a
+fi
+
 if [ -d "$SCRIPT_DIR/HyperBEAM" ]; then
     HYPERBEAM_DIR="$SCRIPT_DIR/HyperBEAM"
 elif [ -d "/home/basque/dev/weavedb/HyperBEAM" ]; then
@@ -14,6 +23,11 @@ elif [ -d "/home/basque/dev/weavedb/HyperBEAM" ]; then
 else
     # Try relative path from current location
     HYPERBEAM_DIR="./HyperBEAM"
+fi
+
+# Override with CWD from .env if set
+if [ -n "$CWD" ]; then
+    HYPERBEAM_DIR="$SCRIPT_DIR/$CWD"
 fi
 
 if [ ! -d "$HYPERBEAM_DIR" ]; then
@@ -27,8 +41,15 @@ MAX_WAIT_TIME=180  # Maximum seconds to wait for service to be ready
 
 echo "========================================"
 echo "WeaveDB Monitor (Process Group Kill)"
+echo "Command: $COMMAND"
 echo "Memory limit: ${MAX_MEM_MB}MB"
 echo "Using HyperBEAM directory: $HYPERBEAM_DIR"
+if [ -n "$CC" ]; then
+    echo "CC: $CC"
+fi
+if [ -n "$CXX" ]; then
+    echo "CXX: $CXX"
+fi
 echo "========================================"
 
 # Kill entire process group on exit
@@ -70,7 +91,7 @@ wait_and_ping_service() {
 	fi
 
 	if [ "$port_open" = true ]; then
-	    echo "$(date): Port 10001 is open, pinging WeaveDB start endpoint..."
+	    echo "$(date): Port 10001 is open, pinging WeaveDB $COMMAND endpoint..."
 
 	    # Try to ping the start endpoint and check for {"status":true}
 	    response=$(curl -s --connect-timeout 5 "$WEAVEDB_URL" 2>/dev/null)
@@ -137,8 +158,8 @@ while true; do
 
     # Start rebar3 with input from the pipe to keep it alive
     # Using setsid to create new process group
-    #setsid bash -c "cd '$HYPERBEAM_DIR' && exec rebar3 as weavedb shell --eval 'hb:start_mainnet(#{ port => 10001, priv_key_location => <<\".wallet.json\">>, bundler_httpsig => <<\"http://localhost:4001\">> })' < '$PIPE_FILE'" &
-    setsid bash -c "cd '$HYPERBEAM_DIR' && exec rebar3 as weavedb shell --eval 'hb:start_mainnet(#{ port => 10001, priv_key_location => <<\".wallet.json\">>, bundler_ans104 => false, bundler_httpsig => <<\"http://localhost:4001\">> })' < '$PIPE_FILE'" &    
+    # Export environment variables for the child process
+    setsid bash -c "export CC='$CC' CXX='$CXX' CMAKE_POLICY_VERSION_MINIMUM='$CMAKE_POLICY_VERSION_MINIMUM' && cd '$HYPERBEAM_DIR' && exec rebar3 as weavedb shell --eval 'hb:start_mainnet(#{ port => 10001, priv_key_location => <<\".wallet.json\">>, bundler_ans104 => false, bundler_httpsig => <<\"http://localhost:4001\">> })' < '$PIPE_FILE'" &    
     CHILD_PID=$!
 
     # Keep the pipe open
