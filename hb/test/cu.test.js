@@ -1,15 +1,17 @@
 import assert from "assert"
 import { Server, mu, toAddr } from "../../../wao/src/test.js"
+import { resolve } from "path"
 import bundler from "../src/bundler.js"
 import SU from "../src/su.js"
 import { repeat } from "ramda"
 import { before, after, describe, it } from "node:test"
 import server from "../src/server.js"
-import gateway from "../src/gateway.js"
+import _gw from "../src/gateway.js"
 import { Validator } from "../src/validate.js"
+import validator from "../src/validator.js"
 import CU from "../src/cu.js"
 import ZKP from "../src/zkp.js"
-import { HyperBEAM } from "wao/test"
+import { acc, HyperBEAM } from "wao/test"
 //import { DB } from "wdb-sdk"
 import { DB } from "../../sdk/src/index.js"
 import { wait, genDir, genUser } from "./test-utils.js"
@@ -49,11 +51,12 @@ describe("Validator", () => {
   let os, jwk, gw, su, bd, ru, cu, aos
   before(async () => {
     os = new HyperBEAM({
+      faff: [HyperBEAM.OPERATOR],
       bundler_ans104: false,
       bundler_httpsig: "http://localhost:5501/tx",
     })
     jwk = os.jwk
-    gw = await gateway({ port: 5500 })
+    gw = await _gw({ port: 5500 })
     su = new SU({
       jwk,
       mu: "http://localhost:5002",
@@ -61,12 +64,7 @@ describe("Validator", () => {
     })
     bd = await bundler({ jwk, mock: true, port: 5501 })
     await os.ready()
-    ru = await server({
-      dbpath: genDir(),
-      jwk,
-      hb: os.hb.url,
-      gateway: sport,
-    })
+    ru = await server({ dbpath: genDir(), jwk, hb: os.hb.url, gateway: sport })
     cu = await CU({
       dbpath: genDir(),
       jwk,
@@ -75,12 +73,8 @@ describe("Validator", () => {
     })
     aos = new Server({ port: sport, log: true })
   })
-  after(async () => {
-    bd.close()
-    ru.stop()
-    os.kill()
-    process.exit()
-  })
+  after(async () => (bd.close(), ru.stop(), os.kill(), process.exit()))
+
   it("should serve aos", async () => {
     const db = new DB({ jwk })
     const pid = await db.spawn()
@@ -148,7 +142,7 @@ describe("Validator", () => {
       jwk,
       gateway: "http://localhost:5000",
     })
-    const gw = await gateway({})
+    const gw = await _gw({})
     const db = new DB({ jwk })
     const pid = await db.spawn({ version: "0.1.0" })
     await db.mkdir({ name: "users", auth })
@@ -174,18 +168,20 @@ describe("Validator", () => {
     await wait(3000)
   })
 
-  it.only("should validate HB WAL", async () => {
+  it.only("should run multiple validators", async () => {
     const os = await new HyperBEAM({
       bundler_ans104: false,
       logs: false,
     }).ready()
+    const gateway = "http://localhost:5000"
     const jwk = os.jwk
+    const val = validator({ jwk })
     const node = await server({
       dbpath: dbpath_server,
       jwk,
-      gateway: "http://localhost:5000",
+      gateway,
     })
-    const gw = await gateway({})
+    const gw = await _gw({})
     const db = new DB({ jwk })
     const pid = await db.spawn({
       /*version: "0.1.0"*/
@@ -199,13 +195,53 @@ describe("Validator", () => {
     await db.set("add:user", { name: "Alice", age: 30 }, "users")
     //await db.set("upgrade", "0.1.1")
     //console.log(await db.set("migrate"))
-    for (let i = 0; i < 3000; i++) await db.set("add:user", genUser(), "users")
+    for (let i = 0; i < 3; i++) await db.set("add:user", genUser(), "users")
     console.log(await db.get("users", 2))
+    const _zkp = resolve(import.meta.dirname, "../src/circom/db3")
     const cu = await CU({
       dbpath: genDir(),
       jwk,
       autosync: 3000,
-      gateway: "http://localhost:5000",
+      gateway,
+      zkp: _zkp,
+    })
+    await wait(30000)
+    const status = await fetch(`http://localhost:6367`).then(r => r.json())
+    console.log(status)
+    ;(node.stop(), val.stop(), os.kill(), cu.server.close(), process.exit())
+  })
+
+  it("should validate HB WAL", async () => {
+    const os = await new HyperBEAM({
+      bundler_ans104: false,
+      logs: false,
+    }).ready()
+    const gateway = "http://localhost:5000"
+    const jwk = os.jwk
+    const node = await server({ dbpath: dbpath_server, jwk, gateway })
+    const gw = await _gw({})
+    const db = new DB({ jwk })
+    const pid = await db.spawn({
+      /*version: "0.1.0"*/
+    })
+    await db.mkdir({ name: "users", auth })
+    await db.set(
+      "add:user",
+      { name: "Bob", age: 23, male: true, tags: ["user"] },
+      "users",
+    )
+    await db.set("add:user", { name: "Alice", age: 30 }, "users")
+    //await db.set("upgrade", "0.1.1")
+    //console.log(await db.set("migrate"))
+    for (let i = 0; i < 3; i++) await db.set("add:user", genUser(), "users")
+    console.log(await db.get("users", 2))
+    const _zkp = resolve(import.meta.dirname, "../src/circom/db3")
+    const cu = await CU({
+      dbpath: genDir(),
+      jwk,
+      autosync: 3000,
+      gateway,
+      zkp: _zkp,
     })
     const { vhb, vid } = await vspawn({ pid, jwk })
     const val = await new Validator({
@@ -214,7 +250,7 @@ describe("Validator", () => {
       jwk,
       dbpath,
       vid,
-      gateway: "http://localhost:5000",
+      gateway,
     }).init()
     ;(await wait(3000), await val.write(), await wait(3000), await val.commit())
     await db.set("update:user", { age: 35 }, "users", "A")

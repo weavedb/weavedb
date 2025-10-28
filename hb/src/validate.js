@@ -366,53 +366,6 @@ export class Validator extends Sync {
       }
     })
   }
-  async write2(force = false) {
-    return new Promise(async res => {
-      if (!this.isInitDB) return console.log("not initialized yet...")
-      if (this.ongoing_write && force !== true)
-        return console.log("getMsgs ongoing...")
-      this.ongoing_write = true
-      let isData = false
-      let i = 0
-      try {
-        let msg = this.io.get(`__wmsg__/${this.wslot + 1}`) ?? null
-        if (this.wslot + 1 === 0 && msg) {
-          let opt = { env: { no_commit: true } }
-          const [op, { version }] = JSON.parse(msg.headers.query)
-          if (version) opt.version = version
-          const core = await new Core({
-            io: this.io,
-            gateway: this.gateway,
-            kv: this.wkv,
-          }).init(opt)
-          this.db = core.db
-        }
-        while (msg && i < this.max_msgs) {
-          if (this.type === "vec") await this.db.write(msg)
-          else await this.db.write(msg)
-          isData = true
-          this.wslot += 1
-          await this.io.put("__wslot__", this.wslot)
-          msg = this.io.get(`__wmsg__/${this.wslot + 1}`) ?? null
-          i++
-        }
-      } catch (e) {
-        console.log(e)
-      }
-      if (isData) {
-        await this.wkv.commit({ delta: true, slot: this.wslot }, async () => {
-          if (i >= this.max_msgs) res(await this.write(true))
-          else {
-            this.ongoing_write = false
-            res(this.wslot)
-          }
-        })
-      } else {
-        this.ongoing_write = false
-        res(this.wslot)
-      }
-    })
-  }
   async commit() {
     if (!this.isInitDB) return console.log("not initialized yet...")
     if (this.ongoing_commit) return console.log("getMsgs ongoing...")
