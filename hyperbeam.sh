@@ -1,9 +1,42 @@
 #!/bin/bash
 # monitor_weavedb_group.sh - Keeps WeaveDB running with memory monitoring
 
-COMMAND=${1:-start}
-MAX_MEM_MB=${2:-5000}
-CHECK_INTERVAL=${3:-10}
+# Default values
+MAX_MEM_MB=5000
+CHECK_INTERVAL=10
+FAFF_ALLOW_LIST=""
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --max-mb)
+            MAX_MEM_MB="$2"
+            shift 2
+            ;;
+        --interval)
+            CHECK_INTERVAL="$2"
+            shift 2
+            ;;
+        --faff)
+            FAFF_ALLOW_LIST="$2"
+            shift 2
+            ;;
+        -h|--help)
+            echo "Usage: $0 [OPTIONS]"
+            echo "Options:"
+            echo "  --max-mb MB        Maximum memory in MB (default: 5000)"
+            echo "  --interval SEC     Check interval in seconds (default: 10)"
+            echo "  --faff ADDRS       Comma-separated list of addresses for FAFF allow list"
+            echo "  -h, --help         Show this help message"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
 
 # Determine the correct HyperBEAM directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -36,12 +69,11 @@ if [ ! -d "$HYPERBEAM_DIR" ]; then
     exit 1
 fi
 
-WEAVEDB_URL="http://localhost:10001/~weavedb@1.0/$COMMAND"
+WEAVEDB_URL="http://localhost:10001/~weavedb@1.0/start"
 MAX_WAIT_TIME=180  # Maximum seconds to wait for service to be ready
 
 echo "========================================"
 echo "WeaveDB Monitor (Process Group Kill)"
-echo "Command: $COMMAND"
 echo "Memory limit: ${MAX_MEM_MB}MB"
 echo "Using HyperBEAM directory: $HYPERBEAM_DIR"
 if [ -n "$CC" ]; then
@@ -49,6 +81,9 @@ if [ -n "$CC" ]; then
 fi
 if [ -n "$CXX" ]; then
     echo "CXX: $CXX"
+fi
+if [ -n "$FAFF_ALLOW_LIST" ]; then
+    echo "FAFF Allow List: $FAFF_ALLOW_LIST"
 fi
 echo "========================================"
 
@@ -91,7 +126,7 @@ wait_and_ping_service() {
 	fi
 
 	if [ "$port_open" = true ]; then
-	    echo "$(date): Port 10001 is open, pinging WeaveDB $COMMAND endpoint..."
+	    echo "$(date): Port 10001 is open, pinging WeaveDB start endpoint..."
 
 	    # Try to ping the start endpoint and check for {"status":true}
 	    response=$(curl -s --connect-timeout 5 "$WEAVEDB_URL" 2>/dev/null)
@@ -153,13 +188,30 @@ while true; do
     cd "$HYPERBEAM_DIR" || exit 1
 
     # Create a named pipe for keeping the shell alive
-    PIPE_FILE="/tmp/weavedb_pipe_$$"
+    PIPE_FILE="/tmp/weavedb_pipe_$"
     mkfifo "$PIPE_FILE"
+
+    # Build FAFF allow list for rebar3 config
+    FAFF_CONFIG=""
+    if [ -n "$FAFF_ALLOW_LIST" ]; then
+        # Convert comma-separated addresses to Erlang binary list format
+        IFS=',' read -ra ADDRS <<< "$FAFF_ALLOW_LIST"
+        FAFF_ERLANG=""
+        for addr in "${ADDRS[@]}"; do
+            # Trim whitespace
+            addr=$(echo "$addr" | xargs)
+            if [ -n "$FAFF_ERLANG" ]; then
+                FAFF_ERLANG="$FAFF_ERLANG, "
+            fi
+            FAFF_ERLANG="${FAFF_ERLANG}<<\"${addr}\">>"
+        done
+        FAFF_CONFIG=", faff_allow_list => [ $FAFF_ERLANG ]"
+    fi
 
     # Start rebar3 with input from the pipe to keep it alive
     # Using setsid to create new process group
     # Export environment variables for the child process
-    setsid bash -c "export CC='$CC' CXX='$CXX' CMAKE_POLICY_VERSION_MINIMUM='$CMAKE_POLICY_VERSION_MINIMUM' && cd '$HYPERBEAM_DIR' && exec rebar3 as weavedb shell --eval 'hb:start_mainnet(#{ port => 10001, priv_key_location => <<\".wallet.json\">>, bundler_ans104 => false, bundler_httpsig => <<\"http://localhost:4001\">> })' < '$PIPE_FILE'" &    
+    setsid bash -c "export CC='$CC' CXX='$CXX' CMAKE_POLICY_VERSION_MINIMUM='$CMAKE_POLICY_VERSION_MINIMUM' && cd '$HYPERBEAM_DIR' && exec rebar3 as weavedb shell --eval 'hb:start_mainnet(#{ port => 10001, priv_key_location => <<\".wallet.json\">>, bundler_ans104 => false, bundler_httpsig => <<\"http://localhost:4001\">>$FAFF_CONFIG })' < '$PIPE_FILE'" &    
     CHILD_PID=$!
 
     # Keep the pipe open
