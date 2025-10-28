@@ -7,46 +7,47 @@ import bodyParser from "body-parser"
 import { resolve } from "path"
 import { Prover } from "zkjson"
 import { DB } from "wdb-sdk"
-import { Core, kv, queue } from "wdb-core"
+import { Core, kv } from "wdb-core"
 
 let dbs = {}
 let app = null
 let server = null
 let result = null
 
-const startServer = ({ port, jwk }) => {
+const startServer = ({ port, jwk, zkp }) => {
   app = express()
   app.use(cors())
   app.use(bodyParser.json())
-  app.get("/zkp", async (req, res) => {
-    const pid = req.query["pid"]
-    const info = dbs[pid].io.get("_config/info")
-    let proof = null
-    let zkhash = null
-    try {
-      const db = new DB({ id: info.id, jwk })
-      const {
-        id,
-        nonce,
-        req: msg,
-      } = await db.sign({
-        query: ["getInputs", { path: "name" }, "users", "A"],
-      })
-      const {
-        res: { result },
-      } = await dbs[pid].db.read(msg)
-      zkhash = result.hash
-      const prover = new Prover({
-        wasm: resolve(import.meta.dirname, "./circom/db3/index_js/index.wasm"),
-        zkey: resolve(import.meta.dirname, "./circom/db3/index_0001.zkey"),
-      })
-      proof = await prover.genProof(result.inputs)
-    } catch (e) {
-      console.log(e)
-    }
-    res.json({ proof })
-  })
-
+  if (zkp) {
+    app.get("/zkp", async (req, res) => {
+      const pid = req.query["pid"]
+      const info = dbs[pid].io.get("_config/info")
+      let proof = null
+      let zkhash = null
+      try {
+        const db = new DB({ id: info.id, jwk })
+        const {
+          id,
+          nonce,
+          req: msg,
+        } = await db.sign({
+          query: ["getInputs", { path: "name" }, "users", "A"],
+        })
+        const {
+          res: { result },
+        } = await dbs[pid].db.read(msg)
+        zkhash = result.hash
+        const prover = new Prover({
+          wasm: resolve(zkp, "index_js/index.wasm"),
+          zkey: resolve(zkp, "index_0001.zkey"),
+        })
+        proof = await prover.genProof(result.inputs)
+      } catch (e) {
+        console.log(e)
+      }
+      res.json({ proof })
+    })
+  }
   app.post("/weavedb/:mid", async (req, res) => {
     const mid = req.params.mid
     const pid = req.query["process-id"]
@@ -95,6 +96,7 @@ export default async ({
   port = 6366,
   jwk,
   n = 4,
+  zkp,
 }) => {
   const add = async (pid, autowrite) => {
     if (!dbs[pid]) {
@@ -115,7 +117,7 @@ export default async ({
     return dbs[pid]
   }
   result = async (pid, slot, cb) => (await add(pid, 3000)).result(slot, cb)
-  if (port && !server) server = startServer({ port, jwk })
+  if (port && !server) server = startServer({ port, jwk, zkp })
   return { server, add }
 }
 export class CU extends Sync {
@@ -151,7 +153,6 @@ export class CU extends Sync {
     this.wslot = this.io.get("__wslot__") ?? -1
     this.wkv = kv(this.io, async c => {})
     if (this.wslot >= 0) {
-      //this.db = queue(db_sst(this.wkv))
       let info = this.io.get("__sst__/info")
       let version = info?.version
       let opt = { env: { branch: "sst" } }

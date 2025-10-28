@@ -1,18 +1,17 @@
 import express from "express"
 import cors from "cors"
 import bodyParser from "body-parser"
-import { getKV2, verify } from "./server-utils.js"
-import { toAddr, httpsig_from, structured_to } from "hbsig"
-//import { kv,Core,mem, db as wdb, queue, io } from "wdb-core"
-import { kv, Core, mem, db as wdb, queue, io } from "../../core/src/index.js"
+import { verify } from "./server-utils.js"
+import { toAddr } from "hbsig"
+import { Core, mem, io } from "wdb-core"
 import { includes, map, fromPairs, isNil, without } from "ramda"
-import { AR, AO } from "wao"
 import { open } from "lmdb"
 import recover from "./recover.js"
 import wal from "./wal.js"
 let dbs = {}
 let ios = {}
 let dbmap = {}
+let vals = {}
 
 const server = async ({
   jwk,
@@ -22,9 +21,10 @@ const server = async ({
   gateway = "https://arweave.net",
   admin_only = true,
   hyperbeam = true,
+  validator = "http://localhost:6367",
 }) => {
   const started_at = Date.now()
-  const addr = (await new AR().init(jwk)).addr
+  const addr = toAddr(jwk)
   const app = express()
   const admin_io = dbpath ? open({ path: `${dbpath}/admin` }) : io()
   let pids = admin_io.get("pids") ?? []
@@ -42,6 +42,14 @@ const server = async ({
       dbs[v] = _db
       ios[v] = _io
       if (hyperbeam) wal({ jwk, hb, dbpath, pid: v })
+      if (validator) {
+        try {
+          const res = await fetch(`${validator}/spawn?id=${v}`).then(r =>
+            r.json(),
+          )
+          if (res.success) vals[v] = res.vid
+        } catch (e) {}
+      }
     } catch (e) {
       console.log(e)
       console.log("recover failed:", v)
@@ -142,7 +150,7 @@ const server = async ({
               res: null,
             })
           } else {
-            console.log(`initializing a new db: ${pid}`)
+            console.log(`initializing a new db: ${pid} by ${address}`)
             if (dbpath) {
               const io = open({ path: `${dbpath}/${pid}` })
               const [op, { version }] = JSON.parse(req.headers.query)
@@ -159,6 +167,14 @@ const server = async ({
             if (hyperbeam) wal({ jwk, hb, dbpath, pid })
             pids.push(pid)
             admin_io.put("pids", pids)
+            if (validator) {
+              try {
+                const res = await fetch(`${validator}/spawn?id=${pid}`).then(
+                  r => r.json(),
+                )
+                if (res.success) vals[pid] = res.vid
+              } catch (e) {}
+            }
           }
         }
         if (!err) {

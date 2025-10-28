@@ -78,18 +78,21 @@ export default class DB {
   }
   async spawn({ query = {}, version, type = "nosql" } = {}) {
     if (this.id) throw Error("db already exists")
-    const { pid: id } = await this.hb.spawn({
+    const res = await this.hb.spawn({
+      Variant: "ao.TN.1",
       "db-type": type,
       "execution-device": "weavedb-wal@1.0",
       "device-stack": stack[type],
     })
+    const { pid: id } = res
     return await this.init({ query, id, version })
   }
   async init({ id, version, branch, query = {} }) {
     this.id = id
     if (version) query.version = version
     if (branch) query.branch = branch
-    await this.set("init", query)
+    const res = await this.set("init", query)
+    if (!res.success) throw Error(res.err)
     return this.id
   }
   async status() {
@@ -315,7 +318,6 @@ export default class DB {
         query: JSON.stringify(args),
       })
       json = JSON.parse(res.body)
-      console.log(json)
     }
     if (json.err) throw json.err
     return json?.res?.result
