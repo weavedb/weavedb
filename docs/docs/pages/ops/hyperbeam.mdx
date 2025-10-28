@@ -22,10 +22,10 @@ Put the HyperBEAM operator `.wallet.json` to `./HyperBEAM/wallet.json`.
 cp WALLET_PATH HyperBEAM/.wallet.json
 ```
 
-Run.
+Run. `--faff` restricts write access to the comma separated admin addresses only.
 
 ```bash
-yarn hyperbeam
+yarn hyperbeam --faff ADMIN_ADDRESS
 ```
 
 Now, a HyperBEAM node with `weavedb` / `weavedb-wal` devices should be running at [localhost:10001](http://localhost:10001).
