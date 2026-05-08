@@ -97,6 +97,9 @@ The Solidity verifiers (`ZKDB.sol`, `NORU.sol`, `VerifierDB.sol`) are deployed p
 
 External team packages required for the integration to function. All resolved from npm registry.
 
+> **Local-source caveat for `wdb-core`.** The repo's `core/` directory is what gets published as `wdb-core`, but `hb/package.json` depends on `wdb-core` from npm — so changes to `core/src/*` don't reach `hb/src/*` (server, validator, cu, zkp, server-sql, server-vec) until the package is republished. While iterating locally, mirror edits with `cp core/src/dev_*.js hb/node_modules/wdb-core/esm/`. The proper fix is a workspace / `file:../core` setup, but that's a packaging change beyond this snapshot.
+
+
 | Package | Role | Used by |
 |---|---|---|
 | `zkjson` (^0.8.4) | SMT + Groth16 proof system; `ZKDB`, `NFT`, `Prover` classes; ships Solidity base contracts | core, hb |
@@ -163,7 +166,16 @@ For internet-exposed deployments, the NGINX + Let's Encrypt setup in `docs/docs/
 [ ] git submodule update --init --recursive          # populates HyperBEAM/
 [ ] npm install                                       # populates node_modules + circom artifacts
 [ ] Arweave JWK at HyperBEAM/.wallet.json
-[ ] (Optional) .env.hyperbeam with compiler overrides
+[ ] .env.hyperbeam at repo root (CC, CXX, CFLAGS=-Wno-error=incompatible-pointer-types -Wno-error=pointer-sign on modern GCC)
+[ ] hb/.env.hyperbeam with CWD=../HyperBEAM (wao reads it from the test's cwd)
+[ ] Module bundles for the gateway (cu/db-token tests fail with ENOENT '.modules/wdb.0.1.0.br' otherwise):
+       cd core && npx esbuild src/db.js --bundle --format=esm --platform=node --outfile=wdb.min.js --minify
+       cd core && npx brotli-cli compress wdb.min.js
+       mkdir -p hb/src/.modules
+       cp core/wdb.min.js.br  hb/src/.modules/wdb.0.1.0.br
+       cp core/wdb.min.js.br  hb/src/.modules/wdb.0.1.1.br
+       cp core/sst.min.js.br  hb/src/.modules/sst.0.1.0.br
+       cp core/sst.min.js.br  hb/src/.modules/sst.0.1.1.br
 [ ] (Optional) Sepolia RPC + private key for ZK commits
 [ ] Solidity contracts deployed on target chain (only if commitRoot is desired)
 [ ] Boot order: hyperbeam → rollup → su → cu → bundler → validator → zkp
