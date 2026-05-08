@@ -7,6 +7,38 @@ import { replace$ } from "./fpjson.js"
 import { keys, uniq, concat, compose, is, isNil, includes, map } from "ramda"
 import { put, del } from "./indexer.js"
 import { keccak256 } from "./keccak.js"
+import { createPrivateKey } from "node:crypto"
+import { httpbis, createSigner } from "http-message-signatures"
+
+// Sign requests with an RSA-PSS-SHA512 HTTP message signature, the shape
+// hbsig.verify accepts. Returns an object with `sign(...query)` that
+// produces { headers } ready to attach to a fetch/Express request.
+// Mirrors the inline `class sign` in hb/test/test-utils.js so tests can
+// import it from core/src/utils.js.
+function signer({ jwk, id }) {
+  let nonce = 0
+  const sig = createSigner(
+    createPrivateKey({ key: jwk, format: "jwk" }),
+    "rsa-pss-sha512",
+    jwk.n,
+  )
+  const sign = async (...query) =>
+    await httpbis.signMessage(
+      { key: sig, fields: ["query", "nonce", "id"] },
+      {
+        headers: {
+          query: JSON.stringify(query),
+          nonce: Number(++nonce).toString(),
+          id,
+        },
+      },
+    )
+  // Both call patterns work:
+  //   const s = signer({jwk, id}); await s("init", q)
+  //   const s = signer({jwk, id}); await s.sign("init", q)
+  sign.sign = sign
+  return sign
+}
 
 function parseOp({ state }) {
   state.op = state.query[0]
@@ -357,4 +389,5 @@ export {
   genDocID,
   putData,
   delData,
+  signer,
 }
