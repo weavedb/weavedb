@@ -65,7 +65,10 @@ function trigger({ state, env }) {
     let _state = {
       dir,
       doc,
-      dirinfo: state.dirinfo,
+      // The trigger's source dirinfo is on `state.dirinfo`; this write
+      // targets a (possibly different) dir, so look up its own dirinfo
+      // — otherwise schema validation runs against the source's schema.
+      dirinfo: kv.get("_", dir),
       signer: state.signer,
       signer23: state.signer23,
       i: info.i,
