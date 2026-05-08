@@ -1,0 +1,22 @@
+{
+  "name": "weavedb-cf",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Cloudflare Worker + Durable Object rollup for WeaveDB. Default deployment target. Coexists with the Node/Express rollup in hb/src/server.js (run via `yarn rollup`).",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node --test test/do-kv.test.js test/process-do.test.js test/wal-do.test.js test/recover-do.test.js test/process-do-alarm.test.js test/worker.test.js",
+    "test:integration": "node --test test/miniflare.test.js test/miniflare-pipeline.test.js",
+    "test:all": "npm test && npm run test:integration"
+  },
+  "dependencies": {
+    "hbsig": "^0.2.8",
+    "http-message-signatures": "^1.0.4"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260101.0",
+    "wrangler": "^4.0.0"
+  }
+}

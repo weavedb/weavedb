@@ -1,0 +1,28 @@
+name = "weavedb-rollup"
+main = "src/worker.js"
+compatibility_date = "2026-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[durable_objects.bindings]]
+name = "PROCESS_DO"
+class_name = "ProcessDO"
+
+# SQLite-backed DO storage class. Gives us both:
+#   - state.storage.{get,put,delete,list}  (KV API)
+#   - state.storage.sql                    (SQL when needed)
+# Both surfaces share the same underlying DB.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ProcessDO"]
+
+[vars]
+# Public HTTPS proxy for HyperBEAM, per docs.weavedb.dev/ops/remote-servers.
+# For local dev, override with:
+#   wrangler dev --var HB_URL:http://localhost:10001
+HB_URL = "https://hb.wdb.ae:10002"
+BUNDLER_URL = ""
+VALIDATOR_URL = ""
+
+# JWK signing key is provisioned via:
+#   wrangler secret put JWK
+# Never commit the JWK to wrangler.toml.
