@@ -1,5 +1,6 @@
 import { of } from "monade"
 import read from "./dev_read.js"
+import _get from "./dev_get.js"
 import { replace$, fpj } from "./fpjson.js"
 import { checkDocID } from "./utils.js"
 import schema from "./dev_schema.js"
@@ -172,13 +173,15 @@ function trigger({ state, env }) {
                 putData: (key, val) => kv.put(dir, key, val),
                 delData: key => kv.del(dir, key),
               }
-
-              return [
-                of({ state, env: { ...env, kv_dir } })
+              try {
+                const res = of({ state, env: { ...env, kv_dir } })
                   .map(read)
-                  .val(),
-                false,
-              ]
+                  .map(_get)
+                  .val()
+                return [res.state.result ?? null, false]
+              } catch (e) {
+                return [null, false]
+              }
             },
             add: v => {
               const { data, dir, before } = checkDir(v, "add")
@@ -236,6 +239,9 @@ function trigger({ state, env }) {
           for (const v of batch) {
             let [op, ...query] = v
             if (op[0] === "%") op = op.slice(1)
+            // Triggers historically use "delete" while the local fns map
+            // exposes "del"; alias so toBatch(["delete", ...]) works.
+            if (op === "delete") op = "del"
             fns[op](parse(replace$(query)))
           }
         }

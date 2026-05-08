@@ -208,7 +208,9 @@ export default class DB {
         try {
           const _res = await this.mem.write(msg)
           if (_res?.success) {
-            json = { success: true, id, query, res: _res.res, nonce }
+            // `result` is an alias for `res` retained from the original SDK
+            // shape; existing tests reach for both names.
+            json = { success: true, id, query, res: _res.res, result: _res.res, nonce }
           } else {
             json = {
               success: false,
