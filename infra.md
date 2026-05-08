@@ -188,9 +188,12 @@ For internet-exposed deployments, the NGINX + Let's Encrypt setup in `docs/docs/
        3. Write a per-parameterization index.circom (e.g. db2/index.circom →
           `component main {public [col_key, key, path, val, col_root]} = DB(24, 184, 256, 32, 256);`).
        4. `circom index.circom --r1cs --wasm --sym` (~1 min).
-       5. Get a powers-of-tau file large enough for the constraint count
-          (db2 ≫ pot18). Hermez's `powersOfTau28_hez_final_NN.ptau`; the
-          public S3 bucket flips to 403 sometimes — `https://storage.googleapis.com/zkevm/ptau/...` is a working mirror.
+       5. Get a powers-of-tau file large enough for the constraint count.
+          Verified locally: db (DB(8,168,256,4,8)) is 134k constraints,
+          db2 (DB(24,184,256,32,256)) is 152k — both fit comfortably in
+          pot18 (262k cap). Hermez's `powersOfTau28_hez_final_NN.ptau`;
+          the public S3 bucket flips to 403 sometimes —
+          `https://storage.googleapis.com/zkevm/ptau/...` is a working mirror.
        6. `npx snarkjs groth16 setup index.r1cs pot.ptau index_0000.zkey`
           + `npx snarkjs zkey contribute index_0000.zkey index_0001.zkey -e<entropy>` (slow).
        7. Drop `index.r1cs`, `index_js/index.wasm`, `index_0001.zkey` into hb/src/circom/db2/ (and db, db3).
