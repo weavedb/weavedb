@@ -16,7 +16,9 @@ export default build({
   kv,
   routes: {
     main: {
-      write: { async: true, devs: [test, test2] },
+      // route name is `pwrite` (not `write`) to match the API the
+      // hb/test/async.test.js test expects: `q.pwrite(3)`.
+      pwrite: { async: true, devs: [test, test2] },
     },
   },
 })
