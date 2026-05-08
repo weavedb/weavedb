@@ -2,6 +2,7 @@ import { includes, isNil, mergeLeft, clone } from "ramda"
 import { of } from "monade"
 import { fpj, ac_funcs } from "./fpjson.js"
 import read from "./dev_read.js"
+import _get from "./dev_get.js"
 import {
   cid as _cid,
   wdb160 as _wdb160,
@@ -83,19 +84,24 @@ function default_auth({
       get: k => kv.get("__indexes__", `${dir}/${k}`),
       put: (k, v, nosave) => kv.put("__indexes__", `${dir}/${k}`, v),
       del: (k, nosave) => kv.del("__indexes__", `${dir}/${k}`),
-      twdata: key => ({
+      data: key => ({
         val: kv.get(dir, key),
         __id__: key.split("/").pop(),
       }),
       putData: (key, val) => kv.put(dir, key, val),
       delData: key => kv.del(dir, key),
     }
-    return [
-      of({ state, env: { ...env, kv_dir } })
+    // dev_read is a router stub; dev_get does the actual fetch. Without it,
+    // $user ends up bound to the monade chain so `x$user` (isNil) is false.
+    try {
+      const res = of({ state, env: { ...env, kv_dir } })
         .map(read)
-        .val(),
-      false,
-    ]
+        .map(_get)
+        .val()
+      return [res.state.result ?? null, false]
+    } catch (e) {
+      return [null, false]
+    }
   }
   const wdb23 = v => [_wdb23(v), false]
   const wdb160 = v => [_wdb160(v), false]
