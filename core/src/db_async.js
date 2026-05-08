@@ -14,6 +14,9 @@ async function test2({ state, msg, env }) {
 
 export default build({
   kv,
-  async: true,
-  write: [test, test2],
+  routes: {
+    main: {
+      write: { async: true, devs: [test, test2] },
+    },
+  },
 })
