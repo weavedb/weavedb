@@ -26,7 +26,9 @@ import {
 let worker
 let jwk
 let signer
-const PID = "test-pipeline-pid"
+// Per-run unique pid so a prior run's persisted DO state in
+// .wrangler/state doesn't replay "already initialized" on init.
+const PID = `test-pipeline-pid-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
 before(async () => {
   jwk = genJWK()
