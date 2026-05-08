@@ -37,7 +37,7 @@ Without these installed, the integration won't compile or start.
 | Node.js | `>=22.5.0 <23` | All JS services | Strict pin in `hb/package.json:26`. Tests need `--experimental-sqlite --experimental-wasm-memory64`. |
 | Erlang/OTP | OTP-26+ (matches HyperBEAM target) | HyperBEAM | Required to run BEAM. |
 | rebar3 | latest | HyperBEAM | `rebar3 compile`, `rebar3 as weavedb shell`. |
-| gcc-12 / g++-12 | 12+ | HyperBEAM native deps | Hardcoded in `hb/package.json:20-22` and `hyperbeam.sh:79-83`. |
+| gcc-12 / g++-12 | 12+ | HyperBEAM native deps | Hardcoded in `hb/package.json:20-22` and `hyperbeam.sh:79-83`. On newer GCC (15+) the HyperBEAM C sources fail with `-Wincompatible-pointer-types` / `-Wpointer-sign` errors; export `CFLAGS="-Wno-error=incompatible-pointer-types -Wno-error=pointer-sign"` before `rebar3 compile` to build with stock GCC. |
 | CMake | with `CMAKE_POLICY_VERSION_MINIMUM=3.5` | HyperBEAM native deps | Set via `.env.hyperbeam`. |
 | Rust toolchain | latest stable | `rollup/` (prototype only) | Not required for HyperBEAM-mode production; only for the Rust prototype. |
 | Foundry / Hardhat | latest | `solidity/` | Required only when (re)deploying the onchain verifiers. |
@@ -159,7 +159,7 @@ For internet-exposed deployments, the NGINX + Let's Encrypt setup in `docs/docs/
 ## Bring-up checklist
 
 ```
-[ ] System packages: Node 22.5, Erlang/OTP, rebar3, gcc-12, CMake
+[ ] System packages: Node 22.5, Erlang/OTP, rebar3, gcc (12 or any newer with CFLAGS workaround above), CMake
 [ ] git submodule update --init --recursive          # populates HyperBEAM/
 [ ] npm install                                       # populates node_modules + circom artifacts
 [ ] Arweave JWK at HyperBEAM/.wallet.json
