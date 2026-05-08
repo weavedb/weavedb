@@ -176,6 +176,24 @@ For internet-exposed deployments, the NGINX + Let's Encrypt setup in `docs/docs/
        cp core/wdb.min.js.br  hb/src/.modules/wdb.0.1.1.br
        cp core/sst.min.js.br  hb/src/.modules/sst.0.1.0.br
        cp core/sst.min.js.br  hb/src/.modules/sst.0.1.1.br
+[ ] ZK circuit artifacts (only needed for zkjson.test.js, server.test.js's "multiple zk proovers", or running the ZK Prover service):
+       Source lives in https://github.com/weavedb/zkjson under `circom/{db,ipfs,query,rollup,json,collection}/`.
+       hb expects three parameterizations under hb/src/circom/{db,db2,db3}/, which do NOT match the upstream
+       `circom/db/index.circom` (it ships `DB(8, 168, 256, 4, 8)`). hb's defaults — set in
+       node_modules/zkjson/esm/db.js — are `DB(level_col=24, level=184, size_json=256, size_path=32, size_val=256)`.
+       To build:
+       1. Install: `cargo install --git https://github.com/iden3/circom.git --locked` (gives circom 2.2.3+).
+       2. Clone zkjson, install circomlib alongside: `cd circom && yarn add circomlib && mkdir ../node_modules
+          && ln -s circom/node_modules/circomlib ../node_modules/circomlib`.
+       3. Write a per-parameterization index.circom (e.g. db2/index.circom →
+          `component main {public [col_key, key, path, val, col_root]} = DB(24, 184, 256, 32, 256);`).
+       4. `circom index.circom --r1cs --wasm --sym` (~1 min).
+       5. Get a powers-of-tau file large enough for the constraint count
+          (db2 ≫ pot18). Hermez's `powersOfTau28_hez_final_NN.ptau`; the
+          public S3 bucket flips to 403 sometimes — `https://storage.googleapis.com/zkevm/ptau/...` is a working mirror.
+       6. `npx snarkjs groth16 setup index.r1cs pot.ptau index_0000.zkey`
+          + `npx snarkjs zkey contribute index_0000.zkey index_0001.zkey -e<entropy>` (slow).
+       7. Drop `index.r1cs`, `index_js/index.wasm`, `index_0001.zkey` into hb/src/circom/db2/ (and db, db3).
 [ ] (Optional) Sepolia RPC + private key for ZK commits
 [ ] Solidity contracts deployed on target chain (only if commitRoot is desired)
 [ ] Boot order: hyperbeam → rollup → su → cu → bundler → validator → zkp
