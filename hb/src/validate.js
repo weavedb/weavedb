@@ -396,3 +396,22 @@ export class Validator extends Sync {
     return hashes
   }
 }
+
+// Default export — convenience wrapper used by tests. Mirrors validate2.js.
+export default async function validate({
+  pid,
+  hb,
+  dbpath,
+  jwk,
+  validate_pid,
+  autosync = 3000,
+}) {
+  return await new Validator({
+    jwk,
+    pid,
+    dbpath,
+    vid: validate_pid,
+    hb,
+    autosync,
+  }).init()
+}

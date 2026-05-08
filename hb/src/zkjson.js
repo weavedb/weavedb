@@ -5,7 +5,14 @@ import bodyParser from "body-parser"
 import abi from "./zkdb_ab.js"
 import { isNil, isEmpty } from "ramda"
 import { resolve } from "path"
-import { json, encode, Encoder, decode, Decoder } from "arjson"
+import { encode, Encoder, Decoder } from "arjson"
+// arjson 0.1.3 dropped the standalone `decode(buf, decoderInstance)` free
+// function in favor of Decoder instance methods. This shim preserves the
+// "decode using an existing decoder" semantic the call sites here use.
+const decode = (buf, d) => {
+  d.decode(buf, null)
+  return d.json
+}
 import {
   ethers,
   Wallet,
