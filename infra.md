@@ -89,7 +89,7 @@ The Solidity verifiers (`ZKDB.sol`, `NORU.sol`, `VerifierDB.sol`) are deployed p
 | `.db/validator/` | Validator LMDB (state replicas, ZK tree, `__wslot__`, `__cslot__`) | Validator, CU |
 | `.db/zk/` | ZK prover cache | ZK Prover |
 | `.weavedb/` | Misc runtime state | Tools |
-| `.env.hyperbeam` | Compiler env (`CC`, `CXX`, `CMAKE_POLICY_VERSION_MINIMUM`, `CWD`) | `hyperbeam.sh:44-49` |
+| `.env.hyperbeam` | Compiler env (`CC`, `CXX`, `CFLAGS`, `CMAKE_POLICY_VERSION_MINIMUM`, `CWD`) | `hyperbeam.sh:44-49`; `wao` reads it via `dotenv.config({ path: ".env.hyperbeam" })` from the test's cwd, so to run HyperBEAM-spawning tests from `hb/` you also need a copy at `hb/.env.hyperbeam` with `CWD=../HyperBEAM`. Both files are gitignored. |
 | `zkp.json` | ZK prover config | ZK Prover |
 | `logs/`, `*.log` | Runtime logs | All |
 
