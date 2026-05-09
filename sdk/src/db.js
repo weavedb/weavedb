@@ -313,9 +313,12 @@ export default class DB {
       try {
         res = await this.mem[query[0]](query.slice(1))
         json = res
+        if (json.err) throw json.err
+        return json?.res?.result
       } catch (e) {
         console.log(e)
         json = { success: false, query, err: e.toString() }
+        if (json.err) throw json.err
       }
     } else {
       const res = await this.db.get({
@@ -324,8 +327,8 @@ export default class DB {
         query: JSON.stringify(args),
       })
       json = JSON.parse(res.body)
+      if (json.err) throw json.err
+      return json?.res
     }
-    if (json.err) throw json.err
-    return json?.res?.result
   }
 }

@@ -50,7 +50,7 @@ const flow = (devs, pred) => {
 
 const pflow = (devs, pred) => {
   const arr = pka()
-  arr.k = ctx => pmatch(pof(ctx), devs, pred)
+  arr.k = ctx => pof(pmatch(pof(ctx), devs, pred).then(m => m.val()))
   return arr
 }
 export { flow, pflow }
