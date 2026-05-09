@@ -97,7 +97,17 @@ The Solidity verifiers (`ZKDB.sol`, `NORU.sol`, `VerifierDB.sol`) are deployed p
 
 External team packages required for the integration to function. All resolved from npm registry.
 
-> **Local-source caveat for `wdb-core`.** The repo's `core/` directory is what gets published as `wdb-core`, but `hb/package.json` depends on `wdb-core` from npm — so changes to `core/src/*` don't reach `hb/src/*` (server, validator, cu, zkp, server-sql, server-vec) until the package is republished. While iterating locally, mirror edits with `cp core/src/dev_*.js hb/node_modules/wdb-core/esm/`. The proper fix is a workspace / `file:../core` setup, but that's a packaging change beyond this snapshot.
+> **`wdb-core` is linked locally.** `hb/package.json` depends on
+> `"wdb-core": "link:../core/dist"`, so any change to `core/src/*` reaches
+> `hb/src/*` (server, validator, cu, zkp, server-sql, server-vec) after
+> a single `cd core && npm run build` — no need to mirror files into
+> `node_modules`. The first checkout sequence is therefore:
+>
+> ```
+> cd core && npm install && npm run build
+> cd ../hb && yarn install --ignore-engines  # produces the symlink
+> ```
+
 
 
 | Package | Role | Used by |
