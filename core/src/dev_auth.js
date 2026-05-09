@@ -63,9 +63,19 @@ function default_auth({
   }
   let auth = []
   if (isNil(dirinfo)) throw Error(`dir doesn't exist: ${dir}`)
-  for (const k in dirinfo.auth) {
-    const _auth = kv.get("_config", `auth_${dirinfo.index}_${dirinfo.auth[k]}`)
-    if (_auth) auth.push(_auth.rules)
+  // Two on-disk shapes for dirinfo.auth:
+  //   1. {key: idx} map → look up rules at _config/auth_<dir>_<idx>.
+  //      This is what dev_set_auth produces.
+  //   2. Array of [key, rules] pairs stored inline. This is what set:dir
+  //      produces when its data carries an `auth` field directly (e.g.,
+  //      hb/test users_query). Use the pairs as-is.
+  if (Array.isArray(dirinfo.auth)) {
+    for (const v of dirinfo.auth) if (Array.isArray(v)) auth.push(v)
+  } else {
+    for (const k in dirinfo.auth) {
+      const _auth = kv.get("_config", `auth_${dirinfo.index}_${dirinfo.auth[k]}`)
+      if (_auth) auth.push(_auth.rules)
+    }
   }
   let allow = false
   const get = (v, obj, set) => {
