@@ -172,7 +172,13 @@ For internet-exposed deployments, the NGINX + Let's Encrypt setup in `docs/docs/
 ## Bring-up checklist
 
 ```
-[ ] System packages: Node 22.5, Erlang/OTP, rebar3, gcc (12 or any newer with CFLAGS workaround above), CMake
+[ ] System packages: Node 22.x (NOT 26 — better-sqlite3 11.8.0 in genesis-wasm-server fails to build on 26),
+    Erlang/OTP, rebar3, gcc (12 or any newer with CFLAGS workaround above), CMake
+[ ] (For db-token.test.js / legacynet AO) Genesis-wasm CU bootstrap:
+       cd HyperBEAM && make setup-genesis-wasm   # clones https://github.com/permaweb/local-aos servers/cu
+       # If make's `command -v node` check fails despite Node being installed, do it manually:
+       cp HyperBEAM/native/genesis-wasm/launch-monitored.sh HyperBEAM/_build/genesis-wasm-server/
+       cd HyperBEAM/_build/genesis-wasm-server && npm install   # MUST be Node 22 — Node 26 fails on better-sqlite3 gyp build
 [ ] git submodule update --init --recursive          # populates HyperBEAM/
 [ ] npm install                                       # populates node_modules + circom artifacts
 [ ] Arweave JWK at HyperBEAM/.wallet.json
