@@ -5,6 +5,12 @@ import { resolve } from "path"
 import { repeat } from "ramda"
 
 describe("Server", () => {
+  // snarkjs/ffjavascript keeps wasm + worker handles open after genProof,
+  // which prevents Node from exiting once the suite finishes. Force exit
+  // when the suite is done so the test runner emits its summary cleanly.
+  // Defer the exit slightly so the reporter has time to flush each subtest's
+  // ok/not-ok line before the process tears down.
+  after(() => setTimeout(() => process.exit(0), 500))
   it("should connect with a remote server", async () => {
     const zkdb = new ZKDB({
       level: 184,
