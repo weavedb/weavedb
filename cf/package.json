@@ -7,13 +7,15 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "test": "node --test test/do-kv.test.js test/process-do.test.js test/wal-do.test.js test/recover-do.test.js test/process-do-alarm.test.js test/worker.test.js test/r2-archive.test.js",
+    "test": "node --test test/do-kv.test.js test/process-do.test.js test/wal-do.test.js test/recover-do.test.js test/process-do-alarm.test.js test/worker.test.js test/r2-archive.test.js test/zkp-inputs.test.js",
     "test:integration": "node --test test/miniflare.test.js test/miniflare-pipeline.test.js",
     "test:all": "npm test && npm run test:integration"
   },
   "dependencies": {
     "hbsig": "^0.2.8",
-    "http-message-signatures": "^1.0.4"
+    "http-message-signatures": "^1.0.4",
+    "ramda": "^0.30.1",
+    "zkjson": "^0.8.4"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260101.0",

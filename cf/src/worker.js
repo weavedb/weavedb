@@ -11,10 +11,12 @@ import "./atob-polyfill.js"
 // Routes forwarded to the per-pid DO (id from request header `id`):
 //   GET  /~weavedb@1.0/get          → DO /get
 //   POST /~weavedb@1.0/set          → DO /set
+//   GET  /~weavedb@1.0/zkp-inputs   → DO /zkp-inputs   (PR 3 of plan-cf.md)
 //
 // Not yet implemented (deferred):
-//   POST /~weavedb@1.0/admin        — global admin (PR 3)
-//   GET  /wal/:pid                  — WAL range read (PR 3)
+//   POST /~weavedb@1.0/admin        — global admin
+//   GET  /wal/:pid                  — WAL range read
+//   GET  /~weavedb@1.0/replay       — replay bundle stream (PR 5 of plan-cf.md)
 
 export { ProcessDO } from "./process-do.js"
 
@@ -47,14 +49,20 @@ export default {
 
     if (
       (method === "GET" && path === "/~weavedb@1.0/get") ||
-      (method === "POST" && path === "/~weavedb@1.0/set")
+      (method === "POST" && path === "/~weavedb@1.0/set") ||
+      (method === "GET" && path === "/~weavedb@1.0/zkp-inputs")
     ) {
       const pid = req.headers.get("id")
       if (!pid) {
         return jsonResponse({ success: false, err: "missing id header" }, 400)
       }
       // Rewrite the path so the DO sees a simple internal route.
-      const innerPath = method === "GET" ? "/get" : "/set"
+      const innerPath =
+        path === "/~weavedb@1.0/get"
+          ? "/get"
+          : path === "/~weavedb@1.0/set"
+            ? "/set"
+            : "/zkp-inputs"
       const innerUrl = new URL(req.url)
       innerUrl.pathname = innerPath
       const innerReq = new Request(innerUrl, req)

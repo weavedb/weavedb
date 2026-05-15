@@ -72,6 +72,104 @@ describe("ProcessDO: routing", () => {
     assert.equal(j.success, false)
     assert.match(j.err, /invalid signature/)
   })
+
+  it("GET /zkp-inputs on uninitialized DB returns 400", async () => {
+    const res = await p.fetch(
+      new Request("http://do/zkp-inputs?dir=users&doc=alice", { method: "GET" }),
+    )
+    assert.equal(res.status, 400)
+    const j = await readJson(res)
+    assert.equal(j.success, false)
+    assert.match(j.err, /not initialized/)
+  })
+})
+
+describe("ProcessDO: /zkp-inputs handler", () => {
+  let p
+
+  beforeEach(async () => {
+    const result = await newMockedDO(env)
+    p = result.p
+    p.io.put("__cf_meta__/initialized", true)
+    p.io.put(["_", "users"], { index: 3, schema: { type: "object" }, auth: [] })
+    p.io.put(["users", "alice"], { name: "Alice", age: 30 })
+    await p.io.flush()
+  })
+
+  it("returns inputs for a valid dir/doc/path", async () => {
+    const res = await p.fetch(
+      new Request("http://do/zkp-inputs?dir=users&doc=alice&path=name", {
+        method: "GET",
+      }),
+    )
+    assert.equal(res.status, 200)
+    const j = await readJson(res)
+    assert.equal(j.success, true)
+    assert.equal(j.inputs.col_key, 3)
+    assert.equal(j.inputs.json.length, 256)
+    assert.equal(j.inputs.path.length, 4)
+    assert.equal(j.inputs.val.length, 8)
+    assert.equal(j.meta.dir, "users")
+    assert.equal(j.meta.doc, "alice")
+    assert.equal(j.meta.complete, false)
+  })
+
+  it("missing dir returns 400", async () => {
+    const res = await p.fetch(
+      new Request("http://do/zkp-inputs?doc=alice&path=name", { method: "GET" }),
+    )
+    assert.equal(res.status, 400)
+    const j = await readJson(res)
+    assert.match(j.err, /dir is required/)
+  })
+
+  it("invalid query json returns 400", async () => {
+    const res = await p.fetch(
+      new Request("http://do/zkp-inputs?dir=users&doc=alice&query=NOT_JSON", {
+        method: "GET",
+      }),
+    )
+    assert.equal(res.status, 400)
+    const j = await readJson(res)
+    assert.match(j.err, /invalid query json/)
+  })
+
+  it("invalid params json returns 400", async () => {
+    const res = await p.fetch(
+      new Request("http://do/zkp-inputs?dir=users&doc=alice&params={broken", {
+        method: "GET",
+      }),
+    )
+    assert.equal(res.status, 400)
+    const j = await readJson(res)
+    assert.match(j.err, /invalid params json/)
+  })
+
+  it("custom params override defaults via query string", async () => {
+    const params = JSON.stringify({ size_path: 32 })
+    const res = await p.fetch(
+      new Request(
+        `http://do/zkp-inputs?dir=users&doc=alice&path=name&params=${encodeURIComponent(params)}`,
+        { method: "GET" },
+      ),
+    )
+    assert.equal(res.status, 200)
+    const j = await readJson(res)
+    assert.equal(j.inputs.path.length, 32)
+    assert.equal(j.meta.params.size_path, 32)
+  })
+
+  it("accepts header form of dir/doc/path", async () => {
+    const res = await p.fetch(
+      new Request("http://do/zkp-inputs", {
+        method: "GET",
+        headers: { dir: "users", doc: "alice", path: "name" },
+      }),
+    )
+    assert.equal(res.status, 200)
+    const j = await readJson(res)
+    assert.equal(j.success, true)
+  })
 })
 
 describe("ProcessDO: state mechanics", () => {

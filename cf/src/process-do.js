@@ -23,6 +23,7 @@ import { hbClientFromEnv, HBClient } from "./hb-client.js"
 import { walFlush, rescheduleWalAlarm } from "./wal-do.js"
 import { recover } from "./recover-do.js"
 import { R2Archive } from "./r2-archive.js"
+import { computeZkpInputs } from "./zkp-inputs.js"
 // wdb-core is loaded via dynamic import inside ensureDB() so:
 //   1. Tests that don't exercise the db (routing/state-only tests) don't
 //      pull in core/'s transitive deps.
@@ -160,6 +161,7 @@ export class ProcessDO {
     if (method === "GET" && path === "/status") return this.handleStatus()
     if (method === "GET" && path === "/get") return this.handleGet(req)
     if (method === "POST" && path === "/set") return this.handleSet(req)
+    if (method === "GET" && path === "/zkp-inputs") return this.handleZkpInputs(req)
     return jsonResponse({ success: false, err: "not found" }, 404)
   }
 
@@ -253,6 +255,62 @@ export class ProcessDO {
     } catch (e) {
       return jsonResponse({ success: false, err: String(e) }, 500)
     }
+  }
+
+  /**
+   * GET /zkp-inputs — return circuit inputs for client-side proving.
+   *
+   * Public, unsigned, idempotent. Mirrors the per-doc proof witness
+   * pipeline in core/src/dev_get_zkp_inputs.js, but stops short of the
+   * SMT siblings (no live SMT in CF mode yet — PR 4 territory).
+   *
+   * Query params (header or URL):
+   *   dir    — required, collection name (non-underscore-prefixed)
+   *   doc    — required, document id
+   *   path   — optional, "a.b.c" path into the doc; default ""
+   *   query  — optional JSON; if present, treated as a range query
+   *   params — optional JSON, circuit size overrides (size_json, ...)
+   *
+   * Response shape:
+   *   { success: true, inputs: {...}, meta: {...} }
+   *   { success: false, err: "..." }
+   */
+  async handleZkpInputs(req) {
+    if (!this.io.get(META_INITIALIZED)) {
+      return jsonResponse({ success: false, err: "db not initialized" }, 400)
+    }
+    const url = new URL(req.url)
+    const get = k => req.headers.get(k) ?? url.searchParams.get(k)
+    const dir = get("dir")
+    const doc = get("doc")
+    const path = get("path") ?? ""
+    let query = null
+    const queryRaw = get("query")
+    if (queryRaw) {
+      try {
+        query = JSON.parse(queryRaw)
+      } catch (e) {
+        return jsonResponse(
+          { success: false, err: "invalid query json" },
+          400,
+        )
+      }
+    }
+    let params = undefined
+    const paramsRaw = get("params")
+    if (paramsRaw) {
+      try {
+        params = JSON.parse(paramsRaw)
+      } catch (e) {
+        return jsonResponse(
+          { success: false, err: "invalid params json" },
+          400,
+        )
+      }
+    }
+
+    const out = computeZkpInputs({ io: this.io, dir, doc, path, query, params })
+    return jsonResponse(out, out.success ? 200 : 400)
   }
 
   /**

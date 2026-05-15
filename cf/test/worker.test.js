@@ -126,4 +126,50 @@ describe("Worker: WeaveDB routes", () => {
     )
     assert.equal(res.status, 404)
   })
+
+  it("forwards /zkp-inputs with id header to the per-pid DO", async () => {
+    let seenName = null
+    let seenInnerPath = null
+    let seenSearch = null
+    const env = {
+      ...baseEnv,
+      PROCESS_DO: mockNamespace(async (req, id) => {
+        seenName = id.name
+        const u = new URL(req.url)
+        seenInnerPath = u.pathname
+        seenSearch = u.search
+        return new Response(
+          JSON.stringify({ success: true, inputs: {}, meta: {} }),
+          { headers: { "content-type": "application/json" } },
+        )
+      }),
+    }
+    const res = await worker.fetch(
+      new Request("http://w/~weavedb@1.0/zkp-inputs?dir=users&doc=alice&path=name", {
+        method: "GET",
+        headers: { id: "pid-zkp" },
+      }),
+      env,
+      {},
+    )
+    assert.equal(res.status, 200)
+    assert.equal(seenName, "pid-zkp")
+    assert.equal(seenInnerPath, "/zkp-inputs")
+    assert.match(seenSearch, /dir=users/)
+    assert.match(seenSearch, /doc=alice/)
+  })
+
+  it("returns 400 when id header is missing on /zkp-inputs", async () => {
+    const env = { ...baseEnv, PROCESS_DO: mockNamespace() }
+    const res = await worker.fetch(
+      new Request("http://w/~weavedb@1.0/zkp-inputs?dir=users&doc=alice", {
+        method: "GET",
+      }),
+      env,
+      {},
+    )
+    assert.equal(res.status, 400)
+    const j = await readJson(res)
+    assert.match(j.err, /missing id header/)
+  })
 })
