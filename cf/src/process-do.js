@@ -22,6 +22,7 @@ import { verify, toAddr } from "./auth.js"
 import { hbClientFromEnv, HBClient } from "./hb-client.js"
 import { walFlush, rescheduleWalAlarm } from "./wal-do.js"
 import { recover } from "./recover-do.js"
+import { R2Archive } from "./r2-archive.js"
 // wdb-core is loaded via dynamic import inside ensureDB() so:
 //   1. Tests that don't exercise the db (routing/state-only tests) don't
 //      pull in core/'s transitive deps.
@@ -49,6 +50,8 @@ export class ProcessDO {
     this.initPromise = null
     /** HBClient instance (lazy). Override-able in tests via `_setHBClient`. */
     this._hbClient = null
+    /** R2Archive instance (lazy). Override-able in tests via `_setR2Archive`. */
+    this._r2Archive = null
   }
 
   /** Test hook. */
@@ -56,11 +59,32 @@ export class ProcessDO {
     this._hbClient = client
   }
 
+  /** Test hook. */
+  _setR2Archive(archive) {
+    this._r2Archive = archive
+  }
+
   hbClient() {
     if (!this._hbClient) {
       this._hbClient = this.env?.HB_URL ? hbClientFromEnv(this.env) : null
     }
     return this._hbClient
+  }
+
+  /**
+   * Lazily construct the R2Archive when an `env.BUNDLES` R2 binding is
+   * configured. Absence is fine — the alarm just falls back to the
+   * HB-only path if R2 isn't bound. Wired into wrangler.toml as:
+   *   [[r2_buckets]]
+   *   binding = "BUNDLES"
+   *   bucket_name = "weavedb-bundles"
+   */
+  r2Archive() {
+    if (this._r2Archive) return this._r2Archive
+    if (this.env?.BUNDLES) {
+      this._r2Archive = new R2Archive(this.env.BUNDLES)
+    }
+    return this._r2Archive
   }
 
   /**
@@ -141,16 +165,35 @@ export class ProcessDO {
 
   /**
    * DO alarm callback — invoked by the runtime when the scheduled alarm
-   * fires. Flushes the WAL to HyperBEAM. Reschedules if more work remains
-   * or if the flush failed (so the next attempt happens within the interval).
+   * fires. Flushes the WAL to whichever commit destinations are
+   * configured: HyperBEAM (env.HB_URL → HBClient.sendBundle) and/or
+   * R2 (env.BUNDLES → R2Archive.archiveBundle). At least one must be
+   * present, otherwise the WAL would silently grow.
+   *
+   * Reschedules if more work remains or if the flush failed (so the next
+   * attempt happens within the interval).
    */
   async alarm() {
     await this.ensureDB()
     const pid = this._knownPid()
     const client = this.hbClient()
-    if (!pid || !client) return
+    const archive = this.r2Archive()
+    if (!pid) return
+    if (!client && !archive) {
+      // Nothing to flush to. The deployment is misconfigured; log and
+      // reschedule (in case the binding shows up between attempts).
+      // eslint-disable-next-line no-console
+      console.log("wal flush: no commit destination (HB_URL or BUNDLES)")
+      await rescheduleWalAlarm(this.state.storage)
+      return
+    }
     try {
-      const { flushed } = await walFlush({ io: this.io, hbClient: client, pid })
+      const { flushed } = await walFlush({
+        io: this.io,
+        hbClient: client,
+        r2Archive: archive,
+        pid,
+      })
       if (flushed > 0) {
         // More may have arrived during the flush; queue another in case.
         await rescheduleWalAlarm(this.state.storage)
