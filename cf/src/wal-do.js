@@ -6,9 +6,14 @@
 //   3. Skip if the entry has no signed headers (not yet ready to flush)
 //   4. Bundle contiguous valid entries
 //   5. Commit the bundle. Two modes, configurable per-DO:
-//        - hbClient.sendBundle (Arweave-anchored mode, hb-parity)
 //        - r2Archive.archiveBundle (CF-native mode, per plan-cf.md PR 2)
+//        - hbClient.sendBundle (Arweave-anchored mode — only if the
+//          caller's HB client implements sendBundle. The cf/src
+//          HBClient is read-only in CF; the hb/ rollup is what
+//          actually anchors to HB.)
 //      Either or both can be provided; both run on each flush when set.
+//      At least one write destination must be available, otherwise
+//      walFlush throws so the WAL doesn't silently grow.
 //   6. On success, advance __meta__/height past the flushed range and,
 //      for the R2 path, record __cf_meta__/last_archived_slot.
 //
@@ -81,13 +86,18 @@ export async function walFlush({ io, hbClient, r2Archive, pid }) {
   if (bundle.length === 0) {
     return { flushed: 0, height, newHeight: height, archived: false }
   }
-  if (!hbClient && !r2Archive) {
+  // An HBClient without sendBundle is the canonical CF-native shape
+  // (PR 6 of plan-cf.md — read-only HB, R2 owns the write path).
+  // Treat it as "no HB write" and require R2 instead.
+  const hbCanWrite =
+    hbClient && typeof hbClient.sendBundle === "function"
+  if (!hbCanWrite && !r2Archive) {
     throw new Error(
-      "walFlush: at least one of hbClient or r2Archive must be provided",
+      "walFlush: no commit destination — pass an r2Archive, or an hbClient with sendBundle",
     )
   }
 
-  if (hbClient) await hbClient.sendBundle({ pid, bundle })
+  if (hbCanWrite) await hbClient.sendBundle({ pid, bundle })
 
   let archived = false
   if (r2Archive) {

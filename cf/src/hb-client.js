@@ -1,21 +1,24 @@
-// HBClient — abstracts the Worker's HTTP conversation with HyperBEAM.
+// HBClient — read-only HyperBEAM client for the CF rollup.
 //
-// Read side (getMsgs) — plain HTTPS GET, fully implemented, used by recover.
-// Write side (sendBundle) — needs a signed ANS-104 DataItem POSTed to HB,
-//   which currently lives in @permaweb/aoconnect. PR 4 will wire that in
-//   (either via wao under nodejs_compat or via a Web-Crypto port). Until
-//   then sendBundle throws — the WAL alarm calls it but tests inject a
-//   fake client.
+// In CF-native mode (plan-cf.md), the WAL commits to R2 via R2Archive,
+// not to HyperBEAM. HBClient is therefore read-side only: it's used by
+// recover-do.js to backfill missed messages from an HB-source pid at
+// cold start, and is unused on the hot write path.
 //
-// Mirrors the surface of hb/src/server-utils.js#getMsgs and the
-// hb/src/wal.js#commit hb.message() call site, kept compatible so that
-// PR 4 can swap implementations without changes upstream.
+// Write side (sendBundle) was previously a throwing stub waiting on a
+// signed ANS-104 DataItem path; PR 6 of plan-cf.md removed it. If you
+// need a deployment that commits to HB, run the Node/Express rollup
+// at `hb/src/server.js` instead — it has the full AO/Turbo write path
+// via aoconnect.
+//
+// Mirrors the surface of hb/src/server-utils.js#getMsgs.
 
 export class HBClient {
   /**
    * @param {object} opts
    * @param {string} opts.url     base URL, e.g. https://hb.wdb.ae:10002
-   * @param {object} [opts.jwk]   operator JWK (used by sendBundle in PR 4)
+   * @param {object} [opts.jwk]   operator JWK (kept for forward compat;
+   *                              unused by getMsgs)
    * @param {typeof fetch} [opts.fetch] override (for tests)
    */
   constructor({ url, jwk, fetch: _fetch }) {
@@ -43,21 +46,6 @@ export class HBClient {
       throw new Error(`HB getMsgs failed: ${res.status} ${await res.text()}`)
     }
     return await res.json()
-  }
-
-  /**
-   * Send a WAL bundle to HyperBEAM.
-   *
-   * Today: NOT implemented. Throws so the WAL alarm logs and reschedules
-   * cleanly. PR 4 wires the signed-DataItem path.
-   *
-   * @param {{pid: string, bundle: any[]}} args
-   * @returns {Promise<{slot: number, pid: string}>}
-   */
-  async sendBundle(/* { pid, bundle } */) {
-    throw new Error(
-      "HBClient.sendBundle not yet implemented (PR 4: signed AO DataItem path)",
-    )
   }
 }
 

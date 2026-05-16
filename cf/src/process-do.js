@@ -182,11 +182,15 @@ export class ProcessDO {
     const client = this.hbClient()
     const archive = this.r2Archive()
     if (!pid) return
-    if (!client && !archive) {
+    // R2 owns the write path in CF-native mode; the cf HBClient is
+    // read-only (PR 6 dropped sendBundle). Treat a write-capable HB
+    // client as the optional anchor mode.
+    const hbCanWrite = client && typeof client.sendBundle === "function"
+    if (!hbCanWrite && !archive) {
       // Nothing to flush to. The deployment is misconfigured; log and
       // reschedule (in case the binding shows up between attempts).
       // eslint-disable-next-line no-console
-      console.log("wal flush: no commit destination (HB_URL or BUNDLES)")
+      console.log("wal flush: no commit destination (BUNDLES R2 binding required for CF-native)")
       await rescheduleWalAlarm(this.state.storage)
       return
     }

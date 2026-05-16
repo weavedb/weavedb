@@ -130,6 +130,23 @@ describe("ProcessDO.alarm()", () => {
       "alarm should be rescheduled to retry once binding shows up",
     )
   })
+
+  it("is a noop with reschedule when hbClient is read-only and R2 is absent", async () => {
+    // Post-PR-6 HBClient has getMsgs but no sendBundle. With no R2
+    // there's nowhere to commit; alarm must not throw, just reschedule.
+    p._hbClient = { getMsgs: async () => ({ assignments: {} }) }
+    p._r2Archive = null
+    p.io.put("__cf_meta__/pid", "p1")
+    p.io.put(["__wal__", 0], {
+      opt: { headers: { signature: "sig-0" } },
+      hashpath: "h0",
+      ts: 1,
+    })
+    await p.io.flush()
+    await p.alarm()
+    assert.equal(sentBundles.length, 0)
+    assert.ok(state._alarmAt() !== null)
+  })
 })
 
 describe("ProcessDO.alarm() — CF-native (R2 only)", () => {

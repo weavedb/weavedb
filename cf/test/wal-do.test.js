@@ -165,9 +165,22 @@ describe("walFlush", () => {
     await io.flush()
     await assert.rejects(
       () => walFlush({ io, pid: "p1" }),
-      /at least one of hbClient or r2Archive/,
+      /no commit destination/,
     )
     // Height not advanced
+    assert.equal(io.get("__meta__/height"), null)
+  })
+
+  it("throws when hbClient lacks sendBundle and r2Archive is absent", async () => {
+    io.put(["__wal__", 0], signedEntry(0))
+    await io.flush()
+    // Read-only HBClient — getMsgs but no sendBundle (CF-native shape
+    // post PR 6). Without R2 there's nowhere to commit.
+    const readOnlyHB = { getMsgs: async () => ({ assignments: {} }) }
+    await assert.rejects(
+      () => walFlush({ io, hbClient: readOnlyHB, pid: "p1" }),
+      /no commit destination/,
+    )
     assert.equal(io.get("__meta__/height"), null)
   })
 })
@@ -276,6 +289,24 @@ describe("walFlush: R2 mode (CF-native)", () => {
     })
     assert.deepEqual(order, ["hb", "r2"])
     assert.equal(await storage.get(META_LAST_ARCHIVED_SLOT), 0)
+  })
+
+  it("read-only hbClient + r2Archive = R2-only commit (CF-native default)", async () => {
+    io.put(["__wal__", 0], signedEntry(0))
+    await io.flush()
+    // HBClient with only getMsgs — the post-PR-6 shape.
+    const readOnlyHB = { getMsgs: async () => ({ assignments: {} }) }
+    const r = await walFlush({
+      io,
+      hbClient: readOnlyHB,
+      r2Archive: archive,
+      pid: "p1",
+    })
+    assert.equal(r.flushed, 1)
+    assert.equal(r.archived, true)
+    const bundles = await archive.listBundles({ pid: "p1" })
+    assert.equal(bundles.length, 1)
+    assert.equal(bundles[0].slot, 0)
   })
 
   it("does not archive when HB errors before R2 runs", async () => {
