@@ -129,11 +129,23 @@ export class ProcessDO {
       // hb/src/server.js.
       this.db = queue(wdb(_methods))
       // Replay any messages we missed while down. Best-effort.
+      // Sources: HB scheduler (if HBClient is configured) AND/OR R2
+      // archive (if env.BUNDLES is bound). recover() is idempotent and
+      // additive — either path advances the height past whatever the
+      // other left behind.
       const pid = this._knownPid()
       const client = this.hbClient()
-      if (pid && client && this.env?.SKIP_RECOVERY !== "true") {
+      const archive = this.r2Archive()
+      const haveRecoverySource = client || archive
+      if (pid && haveRecoverySource && this.env?.SKIP_RECOVERY !== "true") {
         try {
-          await recover({ io: this.io, hbClient: client, pid, db: this.db })
+          await recover({
+            io: this.io,
+            hbClient: client,
+            r2Archive: archive,
+            pid,
+            db: this.db,
+          })
         } catch (e) {
           // eslint-disable-next-line no-console
           console.log("recover failed:", e)
