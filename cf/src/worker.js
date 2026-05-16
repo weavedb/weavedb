@@ -14,10 +14,15 @@ import "./atob-polyfill.js"
 //   GET  /~weavedb@1.0/zkp-inputs   → DO /zkp-inputs   (PR 3 of plan-cf.md)
 //   GET  /~weavedb@1.0/replay       → DO /replay       (PR 5 of plan-cf.md)
 //
+// Scheduled (CF cron trigger) — see anchor.js:
+//   scheduled(event, env, ctx)      — anchorAll → POST to env.ANCHOR_URL
+//                                     (PR 7 of plan-cf.md)
+//
 // Not yet implemented (deferred):
 //   POST /~weavedb@1.0/admin        — global admin
 //   GET  /wal/:pid                  — WAL range read
 
+import { anchorAll } from "./anchor.js"
 export { ProcessDO } from "./process-do.js"
 
 const STATUS_NAME = "WeaveDB"
@@ -75,6 +80,39 @@ export default {
     }
 
     return jsonResponse({ success: false, err: "not found" }, 404)
+  },
+
+  /**
+   * CF cron trigger. Anchors each pid's head bundle root to L1 via the
+   * webhook at env.ANCHOR_URL. If ANCHOR_URL is absent the run is a
+   * dry-run that just logs candidates — useful for staging.
+   *
+   * Configure in wrangler.toml:
+   *   [triggers]
+   *   crons = ["0 * * * *"]   # hourly
+   *
+   * No-op without env.BUNDLES.
+   */
+  async scheduled(event, env, ctx) {
+    if (!env.BUNDLES) {
+      // eslint-disable-next-line no-console
+      console.log("anchor cron: BUNDLES R2 binding missing; skipping")
+      return
+    }
+    const work = anchorAll({
+      bucket: env.BUNDLES,
+      anchorUrl: env.ANCHOR_URL,
+    }).then(results => {
+      // eslint-disable-next-line no-console
+      console.log(`anchor cron: ${results.length} pids processed`)
+      for (const r of results) {
+        // eslint-disable-next-line no-console
+        console.log("  ", r.pid, r.status, "slot=", r.slot, r.err ?? "")
+      }
+    })
+    // Keep the cron alive past `scheduled`'s return so anchors finish.
+    if (typeof ctx?.waitUntil === "function") ctx.waitUntil(work)
+    else await work
   },
 }
 

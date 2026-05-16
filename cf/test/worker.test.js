@@ -220,3 +220,95 @@ describe("Worker: WeaveDB routes", () => {
     assert.match(j.err, /missing id header/)
   })
 })
+
+describe("Worker: scheduled() anchor cron", () => {
+  it("no-ops without BUNDLES binding", async () => {
+    // No throw, no fetch.
+    await worker.scheduled({}, { ...baseEnv }, { waitUntil: p => p })
+  })
+
+  // Capture every promise handed to ctx.waitUntil so the test can await
+  // them — workerd's real waitUntil extends the lifetime beyond
+  // scheduled()'s return, which is also the actual semantics we want
+  // to test.
+  function collectingCtx() {
+    const promises = []
+    return {
+      waitUntil(p) {
+        promises.push(p)
+      },
+      drain: () => Promise.all(promises),
+    }
+  }
+
+  it("dry-runs anchor for each pid when ANCHOR_URL is absent", async () => {
+    const { MockR2Bucket } = await import("./mock-r2.js")
+    const { R2Archive } = await import("../src/r2-archive.js")
+    const bucket = new MockR2Bucket()
+    const archive = new R2Archive(bucket)
+    for (const pid of ["pid-x", "pid-y"]) {
+      await archive.archiveBundle({
+        pid,
+        slot: 0,
+        zkhash: `sha256:${pid}`,
+        buf: new Uint8Array(),
+      })
+    }
+    // Capture console.log to confirm the dry-run path was exercised.
+    const logs = []
+    const realLog = console.log
+    console.log = (...args) => logs.push(args.map(String).join(" "))
+    const ctx = collectingCtx()
+    try {
+      await worker.scheduled(
+        {},
+        { ...baseEnv, BUNDLES: bucket },
+        ctx,
+      )
+      await ctx.drain()
+    } finally {
+      console.log = realLog
+    }
+    const summary = logs.find(l => l.startsWith("anchor cron: 2 pids"))
+    assert.ok(summary, `expected summary log; got:\n${logs.join("\n")}`)
+  })
+
+  it("calls the anchor webhook for each pid", async () => {
+    const { MockR2Bucket } = await import("./mock-r2.js")
+    const { R2Archive } = await import("../src/r2-archive.js")
+    const bucket = new MockR2Bucket()
+    const archive = new R2Archive(bucket)
+    await archive.archiveBundle({
+      pid: "pid-cron",
+      slot: 0,
+      zkhash: "sha256:0",
+      buf: new Uint8Array(),
+    })
+    const calls = []
+    const realFetch = global.fetch
+    global.fetch = async (url, opts) => {
+      calls.push({ url: String(url), opts })
+      return new Response("", { status: 200 })
+    }
+    const ctx = collectingCtx()
+    try {
+      await worker.scheduled(
+        {},
+        {
+          ...baseEnv,
+          BUNDLES: bucket,
+          ANCHOR_URL: "https://anchor.example/post",
+        },
+        ctx,
+      )
+      await ctx.drain()
+    } finally {
+      global.fetch = realFetch
+    }
+    assert.equal(calls.length, 1)
+    assert.equal(calls[0].url, "https://anchor.example/post")
+    const body = JSON.parse(calls[0].opts.body)
+    assert.equal(body.pid, "pid-cron")
+    assert.equal(body.slot, 0)
+  })
+})
