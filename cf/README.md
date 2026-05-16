@@ -173,6 +173,54 @@ const proof = await prover.genProof(res.inputs)
 snarkjs runs in browsers and Node alike; the wasm + zkey are static
 assets you serve from your own CDN.
 
+## Sidecar validator (for client-side proving)
+
+If you want clients to generate zk proofs, you need a validator that
+maintains the live SMT and serves protocol-complete `/zkp-inputs` —
+the Worker itself can't host the SMT because workerd blocks dynamic
+`WebAssembly.compile`, which zkjson's Poseidon needs. (See plan-cf.md
+"SMT placement in the CF deployment".)
+
+The sidecar is just a Node process running `hb/src/zkp.js` pointed at
+the CF Worker's `/~scheduler@1.0/schedule` (PR 8 of plan-cf.md). It
+walks the WAL, replays through the wdb-core pipeline, maintains the
+SMT under `__zkp__/*`, and serves `/~weavedb@1.0/zkp-inputs` over HTTP.
+
+Start it like this (any host with Node, doesn't have to be a CF
+Container):
+
+```bash
+cd hb
+node -e '
+  import("./src/zkp.js").then(({default: zkp}) => zkp({
+    dbpath: "/var/lib/weavedb/zkp",
+    hb: "https://weavedb-rollup.example.workers.dev", // your CF Worker
+    port: 6365,
+    jwk: JSON.parse(process.env.JWK),
+  }).then(srv => {
+    process.on("SIGTERM", () => srv.close())
+  }))
+' &
+```
+
+Then point the Worker at it via `VALIDATOR_URL` in `wrangler.toml`:
+
+```toml
+[vars]
+VALIDATOR_URL = "https://prover.example.com:6365"
+```
+
+Redeploy. Now SDK clients hitting `/~weavedb@1.0/zkp-inputs` on the
+Worker get fully-formed inputs back (siblings + roots populated), and
+`Prover.genProof(inputs)` runs end-to-end in the browser or Node
+client. Without `VALIDATOR_URL` the Worker returns partial inputs
+(json/path/val signals only) — fine for offline encoding tests, not
+for actual proving.
+
+The sidecar is **stateless beyond its local SMT** — anyone running
+the same protocol code against the same WAL converges. You can run
+several in parallel for redundancy, or none if you don't need proofs.
+
 ## Validators (HB-parity mode)
 
 The Worker exposes R2 bundles in HB's native getMsgs format at

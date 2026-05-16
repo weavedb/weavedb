@@ -6,7 +6,7 @@
 //
 // Run: cd cf && npm test
 
-import { describe, it, beforeEach } from "node:test"
+import { describe, it, beforeEach, afterEach } from "node:test"
 import assert from "node:assert/strict"
 import { ProcessDO } from "../src/process-do.js"
 import { mockState, newMockedDO } from "./mock-state.js"
@@ -169,6 +169,97 @@ describe("ProcessDO: /zkp-inputs handler", () => {
     assert.equal(res.status, 200)
     const j = await readJson(res)
     assert.equal(j.success, true)
+  })
+
+  describe("with VALIDATOR_URL set (sidecar proxy mode)", () => {
+    let realFetch
+    let fetchCalls
+    beforeEach(() => {
+      realFetch = global.fetch
+      fetchCalls = []
+    })
+    afterEach(() => {
+      global.fetch = realFetch
+    })
+
+    it("proxies the request to env.VALIDATOR_URL", async () => {
+      global.fetch = async (url, opts) => {
+        fetchCalls.push({ url: String(url), opts })
+        return new Response(
+          JSON.stringify({
+            success: true,
+            inputs: {
+              json: ["1", "2"],
+              path: ["p1"],
+              val: ["v1"],
+              key: "key0",
+              col_key: 3,
+              root: "root123",
+              col_root: "col456",
+              siblings: ["s1", "s2"],
+              col_siblings: ["cs1"],
+            },
+            meta: { complete: true, zkhash: "h" },
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        )
+      }
+      p.env = { ...env, VALIDATOR_URL: "https://prover.example.com:6365" }
+      p.io.put("__cf_meta__/pid", "pid-zkp")
+      await p.io.flush()
+      const res = await p.fetch(
+        new Request("http://do/zkp-inputs?dir=users&doc=alice&path=name", {
+          method: "GET",
+        }),
+      )
+      assert.equal(res.status, 200)
+      assert.equal(fetchCalls.length, 1)
+      const u = new URL(fetchCalls[0].url)
+      assert.equal(u.origin, "https://prover.example.com:6365")
+      assert.equal(u.pathname, "/~weavedb@1.0/zkp-inputs")
+      assert.equal(u.searchParams.get("dir"), "users")
+      assert.equal(u.searchParams.get("doc"), "alice")
+      assert.equal(u.searchParams.get("path"), "name")
+      assert.equal(u.searchParams.get("id"), "pid-zkp")
+      const j = await readJson(res)
+      // Proxied: client sees the sidecar's full response (with siblings).
+      assert.equal(j.success, true)
+      assert.equal(j.meta.complete, true)
+      assert.equal(j.inputs.root, "root123")
+      assert.deepEqual(j.inputs.siblings, ["s1", "s2"])
+    })
+
+    it("returns 502 when the validator is unreachable", async () => {
+      global.fetch = async () => {
+        throw new Error("ECONNREFUSED")
+      }
+      p.env = { ...env, VALIDATOR_URL: "https://prover.example.com" }
+      const res = await p.fetch(
+        new Request("http://do/zkp-inputs?dir=users&doc=alice&path=name", {
+          method: "GET",
+        }),
+      )
+      assert.equal(res.status, 502)
+      const j = await readJson(res)
+      assert.match(j.err, /validator unreachable/)
+    })
+
+    it("forwards the validator's non-2xx response verbatim", async () => {
+      global.fetch = async () =>
+        new Response(
+          JSON.stringify({ success: false, err: "no compaction for pid" }),
+          { status: 404 },
+        )
+      p.env = { ...env, VALIDATOR_URL: "https://prover.example.com" }
+      const res = await p.fetch(
+        new Request("http://do/zkp-inputs?dir=users&doc=alice", {
+          method: "GET",
+        }),
+      )
+      assert.equal(res.status, 404)
+      const j = await readJson(res)
+      assert.match(j.err, /no compaction/)
+    })
   })
 })
 

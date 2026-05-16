@@ -296,6 +296,20 @@ export class ProcessDO {
     if (!this.io.get(META_INITIALIZED)) {
       return jsonResponse({ success: false, err: "db not initialized" }, 400)
     }
+
+    // Sidecar mode: when env.VALIDATOR_URL is set, the validator has the
+    // live SMT and can return protocol-complete inputs (with siblings +
+    // roots) by running the wdb-core getInputs query. The Worker
+    // proxies the request transparently so SDK clients hit one URL
+    // (the rollup) and get full inputs back.
+    //
+    // When VALIDATOR_URL is absent we fall back to the in-DO encoder
+    // (json/path/val signals only — siblings stay null). Useful for
+    // staging deployments before a validator is wired up.
+    if (this.env?.VALIDATOR_URL) {
+      return this._proxyZkpInputs(req)
+    }
+
     const url = new URL(req.url)
     const get = k => req.headers.get(k) ?? url.searchParams.get(k)
     const dir = get("dir")
@@ -328,6 +342,37 @@ export class ProcessDO {
 
     const out = computeZkpInputs({ io: this.io, dir, doc, path, query, params })
     return jsonResponse(out, out.success ? 200 : 400)
+  }
+
+  /**
+   * Forward a /zkp-inputs request to the configured validator sidecar.
+   * Returns whatever the validator returns, verbatim. Errors are
+   * surfaced as 502 so the client knows the upstream is at fault.
+   */
+  async _proxyZkpInputs(req) {
+    const url = new URL(req.url)
+    const get = k => req.headers.get(k) ?? url.searchParams.get(k)
+    const pid = this._knownPid()
+    const validatorUrl = String(this.env.VALIDATOR_URL).replace(/\/+$/, "")
+    const target = new URL(`${validatorUrl}/~weavedb@1.0/zkp-inputs`)
+    target.searchParams.set("id", pid ?? "")
+    for (const k of ["dir", "doc", "path", "query", "params"]) {
+      const v = get(k)
+      if (v != null) target.searchParams.set(k, v)
+    }
+    try {
+      const upstream = await fetch(target.toString(), { method: "GET" })
+      const text = await upstream.text()
+      return new Response(text, {
+        status: upstream.status,
+        headers: { "content-type": "application/json" },
+      })
+    } catch (e) {
+      return jsonResponse(
+        { success: false, err: `validator unreachable: ${String(e)}` },
+        502,
+      )
+    }
   }
 
   /**
