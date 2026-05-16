@@ -221,6 +221,64 @@ describe("Worker: WeaveDB routes", () => {
   })
 })
 
+describe("Worker: /~scheduler@1.0/schedule (HB compat)", () => {
+  it("returns 503 when BUNDLES binding is missing", async () => {
+    const env = { ...baseEnv, PROCESS_DO: mockNamespace() }
+    const res = await worker.fetch(
+      new Request("http://w/~scheduler@1.0/schedule?target=p1&from=0&to=10", {
+        method: "GET",
+      }),
+      env,
+      {},
+    )
+    assert.equal(res.status, 503)
+  })
+
+  it("returns 400 when target is missing", async () => {
+    const { MockR2Bucket } = await import("./mock-r2.js")
+    const env = { ...baseEnv, PROCESS_DO: mockNamespace(), BUNDLES: new MockR2Bucket() }
+    const res = await worker.fetch(
+      new Request("http://w/~scheduler@1.0/schedule", { method: "GET" }),
+      env,
+      {},
+    )
+    assert.equal(res.status, 400)
+  })
+
+  it("returns assignments in HB-compat shape", async () => {
+    const { MockR2Bucket } = await import("./mock-r2.js")
+    const { R2Archive } = await import("../src/r2-archive.js")
+    const { serializeBundle } = await import("../src/wal-do.js")
+    const bucket = new MockR2Bucket()
+    const archive = new R2Archive(bucket)
+    const buf = serializeBundle([
+      { path: null, headers: { signature: "s0" }, body: "{}", hashpath: "h0", slot: 0, ts: 1 },
+      { path: null, headers: { signature: "s1" }, body: "{}", hashpath: "h1", slot: 1, ts: 2 },
+    ])
+    await archive.archiveBundle({
+      pid: "pid-hb",
+      slot: 1,
+      zkhash: "sha256:x",
+      buf,
+      ts: 2,
+    })
+    const env = { ...baseEnv, PROCESS_DO: mockNamespace(), BUNDLES: bucket }
+    const res = await worker.fetch(
+      new Request("http://w/~scheduler@1.0/schedule?target=pid-hb", {
+        method: "GET",
+      }),
+      env,
+      {},
+    )
+    assert.equal(res.status, 200)
+    const j = await res.json()
+    assert.ok(j.assignments)
+    assert.deepEqual(Object.keys(j.assignments).sort(), ["0", "1"])
+    const data = JSON.parse(j.assignments["0"].body.data)
+    assert.equal(data[0].slot, 0)
+  })
+})
+
 describe("Worker: scheduled() anchor cron", () => {
   it("no-ops without BUNDLES binding", async () => {
     // No throw, no fetch.

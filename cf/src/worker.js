@@ -14,6 +14,12 @@ import "./atob-polyfill.js"
 //   GET  /~weavedb@1.0/zkp-inputs   → DO /zkp-inputs   (PR 3 of plan-cf.md)
 //   GET  /~weavedb@1.0/replay       → DO /replay       (PR 5 of plan-cf.md)
 //
+// HB-compat read surface (PR 8 — full HB parity):
+//   GET  /~scheduler@1.0/schedule   — serves R2-archived WAL in HB
+//                                     getMsgs shape, so hb/src/validate.js
+//                                     can subscribe to a CF rollup
+//                                     unchanged
+//
 // Scheduled (CF cron trigger) — see anchor.js:
 //   scheduled(event, env, ctx)      — anchorAll → POST to env.ANCHOR_URL
 //                                     (PR 7 of plan-cf.md)
@@ -23,6 +29,7 @@ import "./atob-polyfill.js"
 //   GET  /wal/:pid                  — WAL range read
 
 import { anchorAll } from "./anchor.js"
+import { handleScheduleRequest } from "./hb-scheduler-compat.js"
 export { ProcessDO } from "./process-do.js"
 
 const STATUS_NAME = "WeaveDB"
@@ -50,6 +57,10 @@ export default {
         }),
         { headers: { "content-type": "application/json" } },
       )
+    }
+
+    if (method === "GET" && path === "/~scheduler@1.0/schedule") {
+      return handleScheduleRequest(req, env)
     }
 
     if (

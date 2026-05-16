@@ -113,19 +113,40 @@ const proof = await Prover.fromCircuit("db2").genProof(inputs)
 
 ## Replay / validator
 
+Two read surfaces, picked based on what the consumer wants:
+
+### `/~weavedb@1.0/replay` (NDJSON, CF-native)
+
 The bundle stream at R2 `bundles/<pid>/*.bin` is ordered by slot. Anyone
-running a validator:
+running a thin validator:
 
 1. Walks R2 in order from `from_slot` to `head_slot`.
 2. Replays each delta into a local SMT.
 3. Compares the resulting root against the latest bundle's `zkhash`.
 
-No HB needed. The Worker can also expose `/replay?from=N` to stream
-bundles directly to a thin client.
+Streamed as NDJSON via `GET /~weavedb@1.0/replay?from=N&to=M&limit=K`.
+Each line: `{slot, zkhash, ts, bundle}` where `bundle` is the
+already-deserialized entry list.
 
-Because proving is client-side, a validator does *not* need any prover
-state — it just needs the bundle log + bundle index. Anyone with the
-public R2 URL can verify the chain.
+### `/~scheduler@1.0/schedule` (HB getMsgs shape — full HB parity)
+
+For deployments that want full parity with the HB-anchored mode, the
+Worker also exposes the R2 entry log in HyperBEAM's native
+`/~scheduler@1.0/schedule?target=&from=&to=` shape. Each entry's slot
+becomes its own assignment, with `body.data` carrying the
+JSON-encoded entry list.
+
+This means `hb/src/validate.js` runs against a CF deployment with
+**zero code changes** — point its `HB_URL` at the CF Worker and the
+validator's subscribe → replay → `buildBundle` → SMT zkhash pipeline
+works as if the source were a real HB scheduler. The validator
+produces signed bundles with SMT-derived `zkhash` (not the
+`sha256:` placeholder), matching exactly what the HB-anchored mode
+produces.
+
+Because proving is client-side, a thin validator does *not* need any
+prover state — it just needs the bundle log + bundle index. Anyone
+with the public R2 URL can verify the chain.
 
 ## Optional: on-chain anchor
 
