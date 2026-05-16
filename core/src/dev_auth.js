@@ -2,6 +2,7 @@ import { includes, isNil, mergeLeft, clone } from "ramda"
 import { of } from "monade"
 import { fpj, ac_funcs } from "./fpjson.js"
 import read from "./dev_read.js"
+import _get from "./dev_get.js"
 import {
   cid as _cid,
   wdb160 as _wdb160,
@@ -62,9 +63,19 @@ function default_auth({
   }
   let auth = []
   if (isNil(dirinfo)) throw Error(`dir doesn't exist: ${dir}`)
-  for (const k in dirinfo.auth) {
-    const _auth = kv.get("_config", `auth_${dirinfo.index}_${dirinfo.auth[k]}`)
-    if (_auth) auth.push(_auth.rules)
+  // Two on-disk shapes for dirinfo.auth:
+  //   1. {key: idx} map → look up rules at _config/auth_<dir>_<idx>.
+  //      This is what dev_set_auth produces.
+  //   2. Array of [key, rules] pairs stored inline. This is what set:dir
+  //      produces when its data carries an `auth` field directly (e.g.,
+  //      hb/test users_query). Use the pairs as-is.
+  if (Array.isArray(dirinfo.auth)) {
+    for (const v of dirinfo.auth) if (Array.isArray(v)) auth.push(v)
+  } else {
+    for (const k in dirinfo.auth) {
+      const _auth = kv.get("_config", `auth_${dirinfo.index}_${dirinfo.auth[k]}`)
+      if (_auth) auth.push(_auth.rules)
+    }
   }
   let allow = false
   const get = (v, obj, set) => {
@@ -83,19 +94,24 @@ function default_auth({
       get: k => kv.get("__indexes__", `${dir}/${k}`),
       put: (k, v, nosave) => kv.put("__indexes__", `${dir}/${k}`, v),
       del: (k, nosave) => kv.del("__indexes__", `${dir}/${k}`),
-      twdata: key => ({
+      data: key => ({
         val: kv.get(dir, key),
         __id__: key.split("/").pop(),
       }),
       putData: (key, val) => kv.put(dir, key, val),
       delData: key => kv.del(dir, key),
     }
-    return [
-      of({ state, env: { ...env, kv_dir } })
+    // dev_read is a router stub; dev_get does the actual fetch. Without it,
+    // $user ends up bound to the monade chain so `x$user` (isNil) is false.
+    try {
+      const res = of({ state, env: { ...env, kv_dir } })
         .map(read)
-        .val(),
-      false,
-    ]
+        .map(_get)
+        .val()
+      return [res.state.result ?? null, false]
+    } catch (e) {
+      return [null, false]
+    }
   }
   const wdb23 = v => [_wdb23(v), false]
   const wdb160 = v => [_wdb160(v), false]

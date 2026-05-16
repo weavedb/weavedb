@@ -5,7 +5,14 @@ import bodyParser from "body-parser"
 import abi from "./zkdb_ab.js"
 import { isNil, isEmpty } from "ramda"
 import { resolve } from "path"
-import { json, encode, Encoder, decode, Decoder } from "arjson"
+import { encode, Encoder, Decoder } from "arjson"
+// arjson 0.1.3 dropped the standalone `decode(buf, decoderInstance)` free
+// function in favor of Decoder instance methods. This shim preserves the
+// "decode using an existing decoder" semantic the call sites here use.
+const decode = (buf, d) => {
+  d.decode(buf, null)
+  return d.json
+}
 import {
   ethers,
   Wallet,
@@ -345,7 +352,14 @@ const zkjson = async ({
     ]
     console.log(`[${pid}]`, "generating zkp...", dir, doc)
     console.log(`[${pid}]`, params)
-    const zkp = dbs[pid].io.get(key) ?? (await dbs[pid].zkdb.genProof(params))
+    const cached = dbs[pid].io.get(key)
+    if (cached) return cached
+    // Bundles may not yet have arrived for this pid (e.g. validator pid that
+    // only carries Query messages, with the user-data bundle expected to flow
+    // through a bundler that wasn't started). Return null instead of NPE'ing
+    // on `zkdb.genProof` — the caller in checkZK only logs and moves on.
+    if (!dbs[pid].zkdb || isNil(col_id) || isNil(json)) return null
+    const zkp = await dbs[pid].zkdb.genProof(params)
     await dbs[pid].io.put(key, zkp)
     return zkp
   }

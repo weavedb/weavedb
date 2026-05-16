@@ -117,7 +117,13 @@ export default async ({
     return dbs[pid]
   }
   result = async (pid, slot, cb) => (await add(pid, 3000)).result(slot, cb)
-  if (port && !server) server = startServer({ port, jwk, zkp })
+  // Restart on each call so callers can stop/start a fresh CU between
+  // tests or server lifecycles. Previously this was a one-shot singleton
+  // that wouldn't relisten after close.
+  if (port) {
+    if (server) try { server.close() } catch (e) {}
+    server = startServer({ port, jwk, zkp })
+  }
   return { server, add }
 }
 export class CU extends Sync {

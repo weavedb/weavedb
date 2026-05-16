@@ -3,9 +3,14 @@ import { afterEach, after, describe, it, before, beforeEach } from "node:test"
 import { DB as ZKDB } from "zkjson"
 import { resolve } from "path"
 import { repeat } from "ramda"
-import draft_07 from "../src/jsonschema-draft-07.js"
 
 describe("Server", () => {
+  // snarkjs/ffjavascript keeps wasm + worker handles open after genProof,
+  // which prevents Node from exiting once the suite finishes. Force exit
+  // when the suite is done so the test runner emits its summary cleanly.
+  // Defer the exit slightly so the reporter has time to flush each subtest's
+  // ok/not-ok line before the process tears down.
+  after(() => setTimeout(() => process.exit(0), 500))
   it("should connect with a remote server", async () => {
     const zkdb = new ZKDB({
       level: 184,
@@ -53,9 +58,19 @@ describe("Server", () => {
     })
     await zkdb.init()
     await zkdb.addCollection(1)
+    // User-shaped data with a nested schema field, within the SDK's
+    // size_json=256 ceiling. Protocol-level filtering (see
+    // core/src/dev_decode.js:131 — `filter(v => v.name[0] !== "_")`)
+    // keeps `_config/*` schemas out of the zk tree in production, so the
+    // raw SDK never sees the full draft_07 spec in practice.
     const json = {
       schema: {
-        definitions: { draft_07 },
+        type: "object",
+        required: ["name"],
+        properties: {
+          name: { type: "string" },
+          age: { type: "integer" },
+        },
       },
     }
     const col_id = 1

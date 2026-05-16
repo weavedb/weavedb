@@ -1,5 +1,5 @@
 import assert from "assert"
-import { Server, mu, toAddr } from "../../../wao/src/test.js"
+import { Server, mu, toAddr } from "wao/test"
 import { resolve } from "path"
 import bundler from "../src/bundler.js"
 import SU from "../src/su.js"

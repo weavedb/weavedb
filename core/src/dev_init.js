@@ -9,16 +9,24 @@ function dev_init({
   },
 }) {
   if (id) throw Error("already initialized")
-  const _auth = [["add,set,update,upsert,del", [["deny()"]]]]
-  const _schema = {
-    type: "object",
-    required: ["index"],
-    properties: {
-      index: { type: "number" },
-      auth: { type: "object" },
-      triggers: { type: "object" },
-    },
-  }
+  // Honor user-supplied auth/schema from init_query when present, else fall
+  // back to the existing hardcoded defaults (existing callers that don't
+  // supply these fields see no behavior change).
+  const _auth = Array.isArray(query[0]?.auth)
+    ? query[0].auth
+    : [["add,set,update,upsert,del", [["deny()"]]]]
+  const _schema =
+    query[0]?.schema && typeof query[0].schema === "object"
+      ? query[0].schema
+      : {
+          type: "object",
+          required: ["index"],
+          properties: {
+            index: { type: "number" },
+            auth: { type: "object" },
+            triggers: { type: "object" },
+          },
+        }
 
   let auth = {}
   let auth_index = -1
@@ -34,6 +42,7 @@ function dev_init({
   })
   let info = {
     dirs: 3,
+    last_dir_id: 2, // _, _config, _accounts already occupy indexes 0, 1, 2
     i,
     id: _id,
     owner: signer,

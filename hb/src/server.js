@@ -8,6 +8,17 @@ import { includes, map, fromPairs, isNil, without } from "ramda"
 import { open } from "lmdb"
 import recover from "./recover.js"
 import wal from "./wal.js"
+import cuFactory from "./cu.js"
+import net from "node:net"
+
+const isPortInUse = port =>
+  new Promise(resolve => {
+    const probe = net
+      .createServer()
+      .once("error", () => resolve(true))
+      .once("listening", () => probe.close(() => resolve(false)))
+      .listen(port, "127.0.0.1")
+  })
 let dbs = {}
 let ios = {}
 let dbmap = {}
@@ -97,10 +108,11 @@ const server = async ({
     try {
       query = JSON.parse(req.headers.query ?? req.query.query)
       id = req.headers.id ?? req.query.id
-      res.json(await dbs[id][query[0]](query.slice(1)))
+      const out = await dbs[id][query[0]](query.slice(1))
+      res.json({ success: true, query, res: out?.res?.result ?? null })
     } catch (e) {
       console.log(e)
-      res.json({ success: false, query, err: e.toString() })
+      res.json({ success: false, query, err: e.toString(), res: null })
     }
   })
 
@@ -206,10 +218,35 @@ const server = async ({
   })
 
   const node = app.listen(port, () => console.log(`WeaveDB on port ${port}`))
+  // HyperBEAM's dev_weavedb relays to /weavedb/<slot> via the route
+  // /weavedb/.* → http://localhost:6366. If no CU is listening there,
+  // schedule->compute on validator pids returns 500 ("Oops!"). Start an
+  // owned CU only when the port is free, so we don't collide with tests
+  // that run their own CU (cu.test.js).
+  let cu = null
+  if (hb) {
+    const cu_port = 6366
+    const inUse = await isPortInUse(cu_port)
+    if (!inUse) {
+      try {
+        const { server: cu_server } = await cuFactory({
+          dbpath,
+          hb,
+          gateway,
+          jwk,
+          port: cu_port,
+        })
+        cu = cu_server
+      } catch (e) {
+        console.log("CU start failed:", e?.message ?? e)
+      }
+    }
+  }
   return {
     stop: () => {
       console.log("shutting down server...")
       node.close()
+      if (cu) try { cu.close() } catch (e) {}
     },
   }
 }

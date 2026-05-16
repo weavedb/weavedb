@@ -14,6 +14,11 @@ async function test2({ state, msg, env }) {
 
 export default build({
   kv,
-  async: true,
-  write: [test, test2],
+  routes: {
+    main: {
+      // route name is `pwrite` (not `write`) to match the API the
+      // hb/test/async.test.js test expects: `q.pwrite(3)`.
+      pwrite: { async: true, devs: [test, test2] },
+    },
+  },
 })

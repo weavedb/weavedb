@@ -1,6 +1,17 @@
 import { before, after, describe, it } from "node:test"
-import { json, encode, Encoder } from "arjson"
+import { ARJSON, encode, Encoder } from "arjson"
 import { clone } from "ramda"
+// arjson@^0.1.3 exposes ARJSON as a class with named-param ctor:
+//   new ARJSON({json}) — init from a fresh doc
+//   new ARJSON({arj})  — recover from a buffer of concatenated deltas
+// Older positional `json(cache, info, _)` factory shape doesn't exist
+// anymore; this shim adapts the test code. `cache` here is an array of
+// delta Uint8Arrays (from `deltas.deltas`); ARJSON.toBuffer concatenates
+// them back into the buffer the `arj` ctor path expects.
+const json = (cache, info, _n) =>
+  cache && cache.length > 0
+    ? new ARJSON({ arj: ARJSON.toBuffer(cache) })
+    : new ARJSON({ json: info })
 const infos = [
   {
     dirs: 4,
@@ -61,18 +72,18 @@ const validate = () => {
       } else {
         console.log("init")
         deltas = json(null, info, n)
-        delta = deltas.deltas()[0]
-        kv = deltas.deltas()
+        delta = deltas.deltas[0]
+        kv = deltas.deltas
       }
     } else {
       console.log("memory cache", info)
       delta = deltas.update(info)
-      kv = deltas.deltas()
+      kv = deltas.deltas
     }
     console.log(delta)
-    console.log("result:", deltas.json())
+    console.log("result:", deltas.json)
   }
-  return deltas.deltas()
+  return deltas.deltas
 }
 describe("ARJSON", () => {
   it("should encode and decode", async () => {
@@ -82,7 +93,7 @@ describe("ARJSON", () => {
     for (let v of deltas) {
       kv.push(v)
       _arjson = json(kv, undefined, 3)
-      console.log(_arjson.json())
+      console.log(_arjson.json)
     }
   })
 })

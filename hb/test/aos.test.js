@@ -27,10 +27,8 @@ import {
 } from "./test-utils.js"
 
 import { connect, createSigner } from "@permaweb/aoconnect"
-//import { AO, HB } from "wao"
-import { AO, HB } from "../../../wao/src/index.js"
-//import { Server, mu, toAddr } from "wao/test"
-import { Server, mu, toAddr } from "../../../wao/src/test.js"
+import { AO, HB } from "wao"
+import { Server, mu, toAddr } from "wao/test"
 const q1 = users_query
 const q2 = ["set:user", bob, "users", "bob"]
 let qs = [q1, q2]

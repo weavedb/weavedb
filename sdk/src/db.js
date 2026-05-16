@@ -208,7 +208,9 @@ export default class DB {
         try {
           const _res = await this.mem.write(msg)
           if (_res?.success) {
-            json = { success: true, id, query, res: _res.res, nonce }
+            // `result` is an alias for `res` retained from the original SDK
+            // shape; existing tests reach for both names.
+            json = { success: true, id, query, res: _res.res, result: _res.res, nonce }
           } else {
             json = {
               success: false,
@@ -253,11 +255,15 @@ export default class DB {
     }
   }
   async admin(...args) {
-    const { msg } = await this.sign({
+    // sign() returns { id, nonce, req }. Older code destructured `msg`,
+    // which is undefined and throws "Cannot read properties of undefined
+    // (reading 'method')" inside this.db.send.
+    // Also: sign already JSON.stringifies the query, so pass args raw.
+    const { req } = await this.sign({
       path: "/~weavedb@1.0/admin",
-      query: JSON.stringify(args),
+      query: args,
     })
-    const res = await this.db.send(msg)
+    const res = await this.db.send(req)
     return JSON.parse(res.body)
   }
   async nonce(...args) {
@@ -307,9 +313,12 @@ export default class DB {
       try {
         res = await this.mem[query[0]](query.slice(1))
         json = res
+        if (json.err) throw json.err
+        return json?.res?.result
       } catch (e) {
         console.log(e)
         json = { success: false, query, err: e.toString() }
+        if (json.err) throw json.err
       }
     } else {
       const res = await this.db.get({
@@ -318,8 +327,8 @@ export default class DB {
         query: JSON.stringify(args),
       })
       json = JSON.parse(res.body)
+      if (json.err) throw json.err
+      return json?.res
     }
-    if (json.err) throw json.err
-    return json?.res?.result
   }
 }

@@ -1,0 +1,62 @@
+name = "weavedb-rollup"
+main = "src/worker.js"
+compatibility_date = "2026-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Per-pid Durable Object that owns the live WAL, write pipeline, alarm,
+# and recovery for one WeaveDB process.
+[[durable_objects.bindings]]
+name = "PROCESS_DO"
+class_name = "ProcessDO"
+
+# SQLite-backed DO storage class. Gives us both:
+#   - state.storage.{get,put,delete,list}  (KV API)
+#   - state.storage.sql                    (SQL when needed)
+# Both surfaces share the same underlying DB.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ProcessDO"]
+
+# R2 bucket where the DO alarm archives finalized WAL bundles. This is
+# the canonical event log in CF-native mode.
+# Create with:
+#   wrangler r2 bucket create weavedb-bundles
+# Without this binding, the DO alarm has nowhere to flush and the WAL
+# will fail to commit — see plan-cf.md PR 1/2 for the design.
+[[r2_buckets]]
+binding = "BUNDLES"
+bucket_name = "weavedb-bundles"
+
+# Periodic anchor cron. Each tick walks R2 for the latest bundle of
+# every pid and POSTs the head zkhash to env.ANCHOR_URL (no-op /
+# dry-run if ANCHOR_URL is empty). See plan-cf.md PR 7.
+[triggers]
+crons = ["0 * * * *"]   # hourly; tighten/loosen to taste
+
+[vars]
+# CF-native mode is the default deployment shape: writes go to R2,
+# reads come from DO + R2. HB_URL is OPTIONAL — set it only if you
+# want recovery to also pull from a HyperBEAM-anchored source.
+# Comment out or set to "" to disable HB.
+# HB_URL = "https://hb.wdb.ae:10002"
+
+# Anchor webhook. Leave empty for dry-run (logs candidates without
+# committing to L1). For a real anchor: point at a signing service
+# that submits the zkhash root to your target chain.
+ANCHOR_URL = ""
+
+BUNDLER_URL = ""
+
+# Sidecar validator URL. When set, /~weavedb@1.0/zkp-inputs proxies
+# to <VALIDATOR_URL>/~weavedb@1.0/zkp-inputs and returns the
+# protocol-complete inputs (json + path + val + siblings + roots)
+# from the live SMT the sidecar maintains. The sidecar is
+# `hb/src/zkp.js` (or anything serving the same contract) pointed
+# at this Worker's /~scheduler@1.0/schedule. Leave empty to get the
+# in-DO partial-inputs fallback (siblings/roots null).
+# Recommended for production deploys that want client-side proving.
+VALIDATOR_URL = ""
+
+# JWK signing key is provisioned via:
+#   wrangler secret put JWK
+# Never commit the JWK to wrangler.toml.

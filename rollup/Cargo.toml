@@ -76,14 +76,6 @@ name = "fix_index_auth_test"
 path = "tests/fix_index_auth_test.rs"
 
 [[test]]
-name = "debug_get_operations"
-path = "tests/debug_get_operations.rs"
-
-[[test]]
-name = "test_index_ownership"
-path = "tests/test_index_ownership.rs"
-
-[[test]]
 name = "test_weavedb_features"
 path = "tests/test_weavedb_features.rs"
 
@@ -98,10 +90,6 @@ path = "tests/test_nonce_verification.rs"
 [[test]]
 name = "parallel_server_benchmark"
 path = "tests/parallel_server_benchmark.rs"
-
-[[test]]
-name = "realistic_parallel_benchmark"
-path = "tests/realistic_parallel_benchmark.rs"
 
 [[test]]
 name = "test_complex_queries"

@@ -49,6 +49,73 @@ const startServer = ({ port, jwk }) => {
     res.json({ proof, zkhash })
   })
 
+  // Sidecar endpoint for client-side proving: return just the
+  // circuit inputs (with siblings + roots from the live SMT) without
+  // generating a proof. The CF Worker can be configured with
+  // VALIDATOR_URL=<this server's URL> to proxy /~weavedb@1.0/zkp-inputs
+  // to this endpoint, so SDK clients hit the rollup URL and get
+  // protocol-complete inputs back transparently.
+  app.get("/~weavedb@1.0/zkp-inputs", async (req, res) => {
+    const pid = req.headers["id"] ?? req.query["pid"] ?? req.query["id"]
+    if (!pid) {
+      return res.status(400).json({ success: false, err: "missing pid" })
+    }
+    if (!dbs[pid]) {
+      return res
+        .status(404)
+        .json({ success: false, err: `no compaction for pid: ${pid}` })
+    }
+    const dir = req.headers["dir"] ?? req.query["dir"]
+    const doc = req.headers["doc"] ?? req.query["doc"]
+    if (!dir || !doc) {
+      return res
+        .status(400)
+        .json({ success: false, err: "dir and doc are required" })
+    }
+    const path = req.headers["path"] ?? req.query["path"] ?? ""
+    let query, params
+    try {
+      const q = req.headers["query"] ?? req.query["query"]
+      if (q) query = JSON.parse(q)
+      const p = req.headers["params"] ?? req.query["params"]
+      if (p) params = JSON.parse(p)
+    } catch (e) {
+      return res
+        .status(400)
+        .json({ success: false, err: "invalid query/params json" })
+    }
+    try {
+      const info = dbs[pid].io.get("_config/info")
+      const sdkDb = new DB({ id: info?.id ?? pid, jwk })
+      const data = { path }
+      if (query) data.query = query
+      if (params) Object.assign(data, params)
+      const { req: msg } = await sdkDb.sign({
+        query: ["getInputs", data, dir, doc],
+      })
+      const { res: { result } = {} } = (await dbs[pid].db.read(msg)) ?? {}
+      if (!result) {
+        return res
+          .status(500)
+          .json({ success: false, err: "getInputs returned no result" })
+      }
+      res.json({
+        success: true,
+        inputs: result.inputs,
+        meta: {
+          dir,
+          doc,
+          col_id: result.inputs?.col_key,
+          zkhash: result.zkhash,
+          i: result.i,
+          complete: true,
+        },
+      })
+    } catch (e) {
+      res.status(500).json({ success: false, err: String(e) })
+    }
+  })
+
   return app.listen(port, () => console.log(`ZK Prover on port ${port}`))
 }
 

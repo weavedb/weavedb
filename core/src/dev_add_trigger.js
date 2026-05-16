@@ -18,8 +18,13 @@ export default function add_trigger({ state, env: { kv } }) {
   }
 
   dirinfo.triggers ??= {}
-  dirinfo.triggers_index = -1
-  dirinfo.triggers[data.key] = ++dirinfo.triggers_index
+  // Reusing an existing slot lets a trigger be redefined in place; only
+  // allocate a new one if the key is new. Without this guard every trigger
+  // in a dir collided at index 0.
+  dirinfo.triggers_index ??= -1
+  if (typeof dirinfo.triggers[data.key] !== "number") {
+    dirinfo.triggers[data.key] = ++dirinfo.triggers_index
+  }
   const triggers = {
     on: data.on,
     fn: data.fn,

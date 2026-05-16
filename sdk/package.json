@@ -4,16 +4,19 @@
   "type": "module",
   "scripts": {
     "build:cjs": "babel src --out-dir dist/cjs --config-file ./.babelrc-cjs",
-    "build": "rm -rf dist && npm run build:cjs && cp src -rf dist/esm && node make.js && cp .npmignore dist/"
+    "build": "rm -rf dist && npm run build:cjs && cp src -rf dist/esm && node make.js && cp .npmignore dist/",
+    "test": "node --test test/prover.test.js"
   },
   "dependencies": {
     "hbsig": "^0.2.5",
+    "snarkjs": "^0.7.4",
     "wao": "^0.37.7"
   },
   "devDependencies": {
     "@babel/cli": "^7.24.8",
     "@babel/core": "^7.25.2",
     "@babel/plugin-transform-modules-commonjs": "^7.24.8",
-    "@babel/preset-env": "^7.25.3"
+    "@babel/preset-env": "^7.25.3",
+    "zkjson": "^0.8.4"
   }
 }

@@ -3,7 +3,7 @@ import { createData } from "@dha-team/arbundles"
 import { toAddr, tags } from "wao/utils"
 import { DataItem } from "@dha-team/arbundles"
 import { ArweaveSigner } from "@ar.io/sdk"
-import { HB } from "../../../wao/src/index.js"
+import { HB } from "wao"
 let procs = []
 let msgs = {}
 let ongoing = {}

@@ -1,0 +1,133 @@
+# Cloudflare Rollup
+
+The Cloudflare deployment of the WeaveDB rollup runs as a Worker + Durable
+Object pair, replacing the Node + Express + LMDB process. It coexists with
+the Node rollup — choose at deploy time which one to run.
+
+| Layer | Cloudflare | Node (existing) |
+| --- | --- | --- |
+| HTTP server | Worker (`cf/src/worker.js`) | Express (`hb/src/server.js`) |
+| Per-pid state | Durable Object, SQLite-backed | LMDB at `.db/` |
+| Slot ordering | Inherited from HyperBEAM (DO talks to HB) | Inherited from HyperBEAM |
+| WAL flush | DO alarm every 3s | `wal.js` polling |
+| Recovery | DO `blockConcurrencyWhile()` replays from HB | `recover.js` replays from HB |
+
+Validator, SU, CU, Bundler, and ZK Prover are unchanged in either mode —
+they continue to talk to HyperBEAM directly. Only the rollup component
+moves.
+
+## Why pick Cloudflare?
+
+- No Erlang/OTP/rebar3 toolchain
+- No `gcc-12` / `g++-12` requirement
+- No HyperBEAM submodule needed for the rollup machine itself (it just
+  needs to be able to reach a HyperBEAM endpoint)
+- Auto-scaling, edge-distributed
+- Single-tenant DO per database — strong consistency without leader election
+
+## Why pick Node?
+
+- Full local control, no Cloudflare account
+- No CF-specific bundling step
+- Existing operator playbooks unchanged
+
+## Local development
+
+```bash
+git clone https://github.com/weavedb/weavedb.git
+cd weavedb
+cd cf
+npm install
+npm run dev          # boots wrangler dev → Worker + DO at http://localhost:8787
+```
+
+To wire it up to a local HyperBEAM:
+
+```bash
+# In another terminal:
+npm run hyperbeam    # from repo root, brings up :10001
+# Then point the Worker at it:
+cd cf
+wrangler dev --var HB_URL:http://localhost:10001
+```
+
+The same SDK works against both endpoints; just change the URL passed to
+the `DB` constructor.
+
+## Deploying
+
+```bash
+cd cf
+wrangler secret put JWK            # operator key, used for admin gating
+wrangler deploy
+```
+
+Two environment variables in `cf/wrangler.toml`:
+
+| Var | Purpose |
+| --- | --- |
+| `HB_URL` | HTTPS endpoint of the HyperBEAM your rollup pulls/pushes WAL bundles to. Production default: `https://hb.wdb.ae:10002`. |
+| `BUNDLER_URL`, `VALIDATOR_URL` | Optional — Worker forwards to these on init/spawn hooks if set. |
+
+Plus one secret:
+
+| Secret | Purpose |
+| --- | --- |
+| `JWK` | The operator's Arweave JWK as a JSON string. Used to gate `init` requests when `ADMIN_ONLY=true`. |
+
+## Testing
+
+```bash
+cd cf
+npm test                  # 61 unit tests (do-kv, process-do, worker, wal-do, recover-do)
+npm run test:integration  # 6 Miniflare-driven workerd boot tests
+npm run test:all          # both suites
+```
+
+The unit tests run in pure Node against in-memory mocks; integration tests
+boot a real workerd via `wrangler unstable_dev` and exercise the bundled
+Worker.
+
+## Known issue: signed E2E ops
+
+The full signed pipeline runs end-to-end through workerd for `init`. Three
+follow-up tests (`mkdir`, `set`, `get`) hit a workerd-strict `atob` path
+in `hbsig` and `structured-headers` that the `cf/src/atob-polyfill.js`
+shim doesn't fully cover. To unblock, run:
+
+```bash
+cd cf
+./scripts/patch-atob.sh   # idempotent: replaces atob() with Buffer.from() in node_modules
+```
+
+This patches the npm packages locally only — it does not modify
+`core/src/`, `hb/src/`, or any tracked file. Re-run after every
+`npm install`. The proper long-term fix is upstream in `hbsig`.
+
+## Architecture diagram
+
+```
+        Client (SDK)
+           │ signed HTTPS
+           ▼
+   Cloudflare Worker (cf/src/worker.js)
+           │ env.PROCESS_DO.idFromName(pid).fetch()
+           ▼
+   Durable Object per pid (cf/src/process-do.js)
+   ├── pipeline: normalize → verify → parse → auth → write → store
+   ├── do-kv adapter over state.storage (SQLite-backed)
+   ├── DO alarm: WAL flush every 3s → HyperBEAM
+   └── on cold start: replay missed slots from HyperBEAM
+           │ outbound HTTPS
+           ▼
+   HyperBEAM :10001 (or hb.wdb.ae:10002 in prod)
+           │
+           └─▶ unchanged from Node mode:
+               Validator, SU, CU, Bundler, ZK Prover
+```
+
+## See also
+
+- [HyperBEAM ops](./hyperbeam.mdx) — required regardless of rollup choice
+- [Validator](./validator.mdx) / [Bundler](./bundler.mdx) / [ZK Prover](./zkp.mdx) — unchanged in CF mode
+- [`infra.md`](https://github.com/weavedb/weavedb/blob/master/infra.md) — full infra inventory across both deployments

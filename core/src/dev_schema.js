@@ -2,7 +2,10 @@ import { validate } from "jsonschema"
 export default function schema({ state, env: { kv, info } }) {
   let valid = false
   const { data, dir } = state
-  let _schema = kv.get("_config", `schema_${state.dirinfo.index}`)
+  // dev_set_schema stores schemas at _config/schema_<idx>; set:dir with an
+  // inline schema field stores it directly on the dirinfo doc. Accept both.
+  let _schema =
+    kv.get("_config", `schema_${state.dirinfo.index}`) ?? state.dirinfo.schema
   if (!_schema) throw Error("schema missing")
   try {
     valid = validate(data, _schema).valid
