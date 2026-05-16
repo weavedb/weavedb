@@ -1,90 +1,232 @@
-# weavedb-cf — Cloudflare Worker + Durable Object rollup
+# weavedb-cf — Cloudflare-native WeaveDB rollup
 
-The default Cloudflare deployment target for the WeaveDB rollup component.
+A WeaveDB rollup that runs entirely on Cloudflare Workers + Durable
+Objects + R2. No HyperBEAM required.
 
-## Status
+Same SDK surface as the Node/Express rollup at `hb/src/server.js`, so
+clients don't need to know which one is running:
 
-PR 4 of 4 in the `feat/cf-rollup` series. **70 pass, 3 skip, 0 fail**.
+```
+POST /~weavedb@1.0/set          signed writes
+GET  /~weavedb@1.0/get          reads
+GET  /~weavedb@1.0/zkp-inputs   inputs for client-side proof generation
+GET  /~weavedb@1.0/replay       NDJSON bundle stream
+GET  /~scheduler@1.0/schedule   HB-shape getMsgs (so hb/src/validate.js
+                                works against this Worker unchanged)
+GET  /status                    node info
+scheduled()                     periodic anchor cron (optional)
+```
 
-- [x] **PR 1**: `do-kv` adapter — sync KV over async DO storage. 24 unit tests.
-- [x] **PR 2**: Worker + DO skeleton — routing, signature verify, init/get/set, lazy db construction. 13 unit tests.
-- [x] **PR 3**: WAL alarm + cold-start recovery + validator spawn hook. 24 unit tests.
-- [x] **PR 4a**: Miniflare integration — real workerd boot test. 6 tests pass. Surfaced the SST/`zkjson` `Worker is not defined` bundle issue, fixed via `db-main.js` (NoSQL-only pipeline).
-- [x] **PR 4b**: Full signed E2E pipeline — **init runs end-to-end through verify → normalize → parse → auth → write → init → store inside workerd**. 3 mkdir/set/get tests skipped pending an upstream `hbsig` atob fix.
+## Architecture in one breath
 
-## Status of the 3 skipped tests
+```
+client → Worker → DO (per pid)
+                  │   ├── WAL  (state.storage)
+                  │   └── alarm
+                  │       └── serializeBundle → R2: bundles/<pid>/<slot>.bin
+                  │           with zkhash = sha256(buf)
+                  │
+                  └── on cold start, recover() replays from R2 (and/or HB)
+```
 
-The atob bug is **fixed** — when `./scripts/patch-atob.sh` is applied, all `atob()` call sites in npm packages (hbsig, structured-headers, ethers, plus core/'s nested hbsig copies) get replaced with `Buffer.from(s, "base64")`. This unblocks the workerd-strict atob errors.
+Each pid is one Durable Object. The DO owns the live WAL; finalized
+bundles get archived to R2 by the alarm. Recovery walks R2 back into
+DO state. A separate validator can subscribe via
+`/~scheduler@1.0/schedule` and produce SMT-anchored bundles using
+the existing `hb/src/validate.js` pipeline — that's full parity with
+the HB-anchored mode.
 
-With patches applied, mkdir / set / get now reach the **auth phase** and fail with `"operation not allowed"`. This is a separate auth-installation issue: `init_query.auth` (the `dirs_set` rule) is supplied as `query[0]` to the init pipeline, but `dev_init.js` only reads `query[0].branch` and `query[0].version` — it doesn't install the user-supplied auth rules. Either `dev_init` needs to honor those, or there's a follow-up call in hb's existing flow that wires them up that we haven't replicated.
+For the full design rationale, deployment trade-offs, and privacy
+posture, see `plan-cf.md` at the repo root.
 
-Same `init_query` works in `hb/test/db-bare.js`, so the existing flow handles this somehow. Worth investigating: is there an extra `["set:auth", ...]` call in hb's flow we're missing?
+## Quickstart (deploy from scratch)
 
-## What's stubbed
+Prereqs: a Cloudflare account with Workers Paid (for DO + R2), and
+the `wrangler` CLI installed.
 
-`HBClient.sendBundle` (`src/hb-client.js`) — needs a signed AO DataItem POSTed to HyperBEAM. The alarm machinery and recovery work; only the actual transmission to HB is missing. Belongs to its own PR alongside the atob fix.
+```bash
+cd cf
+npm install
 
-## Coexistence with the Node rollup
+# 1. Create the R2 bucket the alarm archives into.
+wrangler r2 bucket create weavedb-bundles
 
-This Worker is a parallel implementation of `hb/src/server.js`. Both serve the same client-facing API. Choice at deploy time:
+# 2. Provision your operator JWK (used for admin gating + signing).
+#    Generate one with:
+#      node -e 'require("arweave").wallets.generate().then(j=>console.log(JSON.stringify(j)))'
+#    or reuse an existing Arweave key.
+wrangler secret put JWK   # paste the JWK JSON when prompted
 
-| Deployment | Command | When |
+# 3. Deploy.
+wrangler deploy
+```
+
+That gives you a fully working CF-only rollup at
+`https://weavedb-rollup.<your-subdomain>.workers.dev`. The default
+config in `wrangler.toml` is CF-native (no `HB_URL`, no
+`ANCHOR_URL`). The hourly anchor cron is on but in dry-run.
+
+## Run locally
+
+```bash
+cd cf
+npm install
+wrangler dev
+```
+
+Wrangler boots `workerd` with miniflare-backed DO + R2 bindings. The
+integration tests at `cf/test/miniflare*.test.js` use the same
+machinery, so anything that runs there also runs locally.
+
+## Deployment modes
+
+Pick the mode by which env bindings you set in `wrangler.toml`.
+
+### CF-native (default)
+
+- `BUNDLES` R2 binding: required (write target).
+- `HB_URL`: not set.
+- `ANCHOR_URL`: optional. Empty = dry-run anchor cron.
+
+Writes → DO → R2. No HyperBEAM dependency. This is the recommended
+default for new deployments.
+
+### CF + Arweave permanence (hybrid)
+
+- `BUNDLES` binding (hot path).
+- `ANCHOR_URL` set to an Arweave-anchor webhook.
+
+CF still owns the hot read/write path; the cron periodically commits
+the head zkhash to Arweave for permanence. ~1–2 orders of magnitude
+cheaper than per-write-to-Arweave because you bundle many writes
+into one finalized bundle before anchoring. See plan-cf.md's
+"Optional: hybrid permanence" section.
+
+### CF + HB recovery source
+
+- `BUNDLES` binding + `HB_URL` set.
+
+Writes still go to R2 in the alarm; recovery additionally pulls from
+HB. Useful for migration: bring your HB-anchored pid up on CF, then
+drop HB once you're sure recovery never needs it again.
+
+### HB-only (legacy)
+
+If you really need HB-only, run the Node/Express rollup at
+`hb/src/server.js` instead. The CF deployment requires `BUNDLES` to
+be functional — without it the WAL has nowhere to flush.
+
+## Anchoring zkhashes to L1
+
+The anchor cron POSTs `{pid, slot, zkhash, ts}` to your `ANCHOR_URL`
+webhook. The webhook is responsible for signing and submitting to
+Ethereum / Arweave / whatever — no L1-specific signing lives in the
+Worker, which keeps the Worker bundle small and chain-agnostic.
+
+A minimal Node anchor service might look like:
+
+```js
+import express from "express"
+import { ethers } from "ethers"
+
+const app = express()
+app.use(express.json())
+app.post("/", async (req, res) => {
+  const { pid, slot, zkhash } = req.body
+  const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider)
+  const contract = new ethers.Contract(addr, abi, wallet)
+  const tx = await contract.commitRoot(pid, slot, zkhash)
+  res.json({ ok: true, tx: tx.hash })
+})
+app.listen(3000)
+```
+
+Or skip the anchor entirely — most CF-native deployments don't need
+on-chain commitment unless they expose value-bearing data.
+
+## Client-side proving
+
+The SDK `wdb-sdk` ships `Prover` + `fetchZkpInputs`:
+
+```js
+import { Prover, fetchZkpInputs } from "wdb-sdk"
+
+// Server returns encoded circuit inputs from R2 + DO state.
+const res = await fetchZkpInputs({
+  url: "https://weavedb-rollup.example.workers.dev",
+  pid,
+  dir: "users",
+  doc: "alice",
+  path: "name",
+})
+
+// Fill SMT siblings from your validator/oracle if meta.complete is false.
+
+const prover = new Prover({
+  wasm: "/circuits/db2/index_js/index.wasm",
+  zkey: "/circuits/db2/index_0001.zkey",
+})
+const proof = await prover.genProof(res.inputs)
+// proof is a 14-element zkjson tuple, ready for a Solidity verifier.
+```
+
+snarkjs runs in browsers and Node alike; the wasm + zkey are static
+assets you serve from your own CDN.
+
+## Validators (HB-parity mode)
+
+The Worker exposes R2 bundles in HB's native getMsgs format at
+`GET /~scheduler@1.0/schedule?target=<pid>&from=&to=`. That means
+`hb/src/validate.js` works against the CF Worker with **zero code
+changes** — just point its `HB_URL` config at the Worker URL.
+
+The validator's `commit()` produces SMT-derived `zkhash` bundles via
+`buildBundle()`, matching exactly what HB-anchored deployments produce.
+
+## Tests
+
+```bash
+cd cf
+npm test                   # 194 unit + handler tests
+npm run test:integration   # 2 miniflare-backed end-to-end suites
+```
+
+All in-process tests run against `MockR2Bucket` and `MockStorage`;
+miniflare exercises the real workerd runtime so workerd-incompat
+issues surface before deploy.
+
+## Where things live
+
+```
+cf/
+├── src/
+│   ├── worker.js                  router + scheduled() anchor cron
+│   ├── process-do.js              per-pid Durable Object
+│   ├── do-kv.js                   sync KV adapter over async DO storage
+│   ├── wal-do.js                  WAL alarm, serializeBundle, contentHash
+│   ├── r2-archive.js              R2 read/write/list of archived bundles
+│   ├── zkp-inputs.js              circuit input encoder (server side of client-proving)
+│   ├── recover-do.js              cold-start replay from HB and/or R2
+│   ├── anchor.js                  L1 anchor cron logic
+│   ├── hb-scheduler-compat.js     /~scheduler@1.0/schedule for HB validators
+│   ├── hb-client.js               read-only HB client (recovery only)
+│   ├── db-main.js                 Workers-only wdb-core route subset
+│   ├── auth.js                    signed-request verification
+│   └── atob-polyfill.js           workerd-compat atob shim
+└── test/                          mirrors src/ one-to-one
+```
+
+## Coexistence with hb/
+
+`cf/` and `hb/src/server.js` are independent deployment targets that
+share `wdb-core`. Same `/~weavedb@1.0/*` route surface; pick based on
+operational fit:
+
+| | `cf/` | `hb/` |
 |---|---|---|
-| Cloudflare (default) | `yarn rollup-cf` (added in PR 4) | Most users; no Erlang/HyperBEAM submodule required for the rollup process. |
-| Node + LMDB (existing) | `yarn rollup` | Users running their own HyperBEAM stack who want full local control. |
-
-Validator, SU, CU, Bundler, ZK Prover are unchanged; they continue to talk to HyperBEAM directly. Moving the rollup does not affect them.
-
-## Local development
-
-```bash
-cd cf
-npm install
-wrangler dev   # boots Worker + local DO at http://localhost:8787
-```
-
-Point a local HyperBEAM at port 10001 (`yarn hyperbeam` from the repo root) and override `HB_URL`:
-
-```bash
-wrangler dev --var HB_URL:http://localhost:10001
-```
-
-## Testing
-
-```bash
-cd cf
-npm install
-npm test       # node:test runs cf/test/*.test.js
-```
-
-PR 1 tests are pure-JS unit tests against a mock `DurableObjectStorage` — no Miniflare or wrangler runtime required. PR 2 onward will add Miniflare-driven integration tests.
-
-## No regression on existing code
-
-PR 1–3 only add files under `cf/`. No file in `core/`, `hb/`, `sdk/`, or `scripts/` is modified. Existing test suites (`cd hb && npm test`, `cd rollup && cargo test`) are unaffected.
-
-## Architecture snapshot (post-PR 3)
-
-```
-Client
-  │ signed HTTPS
-  ▼
-Worker (src/worker.js)              GET /status
-  │                                 GET /~weavedb@1.0/get   ┐
-  │ env.PROCESS_DO.idFromName(pid)  POST /~weavedb@1.0/set ─┤ → forward to DO
-  ▼
-ProcessDO per pid (src/process-do.js)
-  ├── ensureDB() — lazy: hydrate DOIo, dyn-import wdb-core, run recover()
-  ├── handleSet — verify sig, init/admin gate, run pipeline, fire validator spawn
-  ├── handleGet — read query → db[op](args)
-  └── alarm()    — walFlush() + rescheduleWalAlarm()
-       │
-       ├── wal-do.js#walFlush         reads __wal__/<h>, sends to HB, bumps height
-       ├── recover-do.js#recover      pages getMsgs from HB, replays missed
-       └── hb-client.js#HBClient      getMsgs ✓ | sendBundle ✗ (PR 4)
-            │ outbound HTTPS
-            ▼
-       https://hb.wdb.ae:10002 → HyperBEAM :10001
-```
-
-Validator/SU/CU/Bundler/ZKP are unchanged Node processes — they continue to talk directly to HyperBEAM.
+| Where | Cloudflare edge | Self-hosted Node |
+| Storage | R2 + DO SQLite | LMDB |
+| Anchor | Webhook to your chain | Arweave via aoconnect/Turbo |
+| Setup | wrangler deploy | Erlang + rebar3 + HyperBEAM submodule |
+| Cost shape | Pay-per-request + R2 storage | Per-write Arweave fee (one-time, permanent) |
+| Best for | Most apps | "Anyone, ever, can verify this on-chain" requirements |

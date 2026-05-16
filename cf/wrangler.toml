@@ -3,6 +3,8 @@ main = "src/worker.js"
 compatibility_date = "2026-04-01"
 compatibility_flags = ["nodejs_compat"]
 
+# Per-pid Durable Object that owns the live WAL, write pipeline, alarm,
+# and recovery for one WeaveDB process.
 [[durable_objects.bindings]]
 name = "PROCESS_DO"
 class_name = "ProcessDO"
@@ -15,11 +17,34 @@ class_name = "ProcessDO"
 tag = "v1"
 new_sqlite_classes = ["ProcessDO"]
 
+# R2 bucket where the DO alarm archives finalized WAL bundles. This is
+# the canonical event log in CF-native mode.
+# Create with:
+#   wrangler r2 bucket create weavedb-bundles
+# Without this binding, the DO alarm has nowhere to flush and the WAL
+# will fail to commit — see plan-cf.md PR 1/2 for the design.
+[[r2_buckets]]
+binding = "BUNDLES"
+bucket_name = "weavedb-bundles"
+
+# Periodic anchor cron. Each tick walks R2 for the latest bundle of
+# every pid and POSTs the head zkhash to env.ANCHOR_URL (no-op /
+# dry-run if ANCHOR_URL is empty). See plan-cf.md PR 7.
+[triggers]
+crons = ["0 * * * *"]   # hourly; tighten/loosen to taste
+
 [vars]
-# Public HTTPS proxy for HyperBEAM, per docs.weavedb.dev/ops/remote-servers.
-# For local dev, override with:
-#   wrangler dev --var HB_URL:http://localhost:10001
-HB_URL = "https://hb.wdb.ae:10002"
+# CF-native mode is the default deployment shape: writes go to R2,
+# reads come from DO + R2. HB_URL is OPTIONAL — set it only if you
+# want recovery to also pull from a HyperBEAM-anchored source.
+# Comment out or set to "" to disable HB.
+# HB_URL = "https://hb.wdb.ae:10002"
+
+# Anchor webhook. Leave empty for dry-run (logs candidates without
+# committing to L1). For a real anchor: point at a signing service
+# that submits the zkhash root to your target chain.
+ANCHOR_URL = ""
+
 BUNDLER_URL = ""
 VALIDATOR_URL = ""
 
