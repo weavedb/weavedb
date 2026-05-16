@@ -257,6 +257,65 @@ sdk/src/
 - `sdk/test/prover.test.js` — round-trip: inputs from a stub server →
   `Prover.genProof` → verify locally against the verification key.
 
+## SMT placement in the CF deployment
+
+The protocol already has a registered `getInputs` query
+(`core/src/dev_get_zkp_inputs.js`) that returns the full
+groth16-ready inputs (json + path + val + siblings + roots) from the
+`__zkp__/*` SMT keys persisted in the same KV as user data. Any node
+running the SST write route maintains this SMT automatically via
+`dev_decode.js`. So at the protocol level, "where do siblings come
+from" is already answered — they're in the database state itself.
+
+**The CF deployment cannot run the SMT inside the Worker today.**
+Two CF runtime restrictions block it:
+
+1. **`new Worker(...)` references** at module top-level — esbuild
+   picks ffjavascript's `browser.esm.js` which contains
+   `var browser = Worker;`. Bypassable with a `[alias]` in
+   wrangler.toml pointing `ffjavascript` and `web-worker` at their
+   node entries. (Probe: cleared this hurdle.)
+2. **`WebAssembly.compile(...) disallowed by embedder`** —
+   Cloudflare Workers prohibits dynamic WASM at runtime. zkjson's
+   Poseidon hasher uses `getCurveFromName("bn128", true, ...)`
+   which calls `buildThreadManager(wasm, true)` →
+   `WebAssembly.compile(wasm.code)`. **This one is a hard CF policy,
+   not a packaging issue.** The official path is to bind a
+   pre-compiled `.wasm` via `[[wasm_modules]]` and reference it
+   from a static binding, never compile at runtime.
+
+So full SMT-in-Worker requires one of:
+
+- **Bind pre-compiled Poseidon WASM** via `[[wasm_modules]]` and
+  patch zkjson's `buildPoseidon` to use the binding instead of
+  building dynamically. Engineering: real but bounded — Poseidon is
+  ~few KB compiled. Most invasive of the options.
+- **Pure-JS Poseidon** — drop the WASM path entirely in favor of
+  a JS-only implementation. Much slower (5-10x), no external CF
+  binding needed. Works for low-throughput pids; bad for high.
+- **SMT in a sidecar** — a Cloudflare Container or external Node
+  service subscribes to `/~scheduler@1.0/schedule` (the HB-compat
+  read surface CF already exposes) and maintains the SMT. The
+  validator stack already does this — that's `hb/src/validate.js`.
+  Lowest engineering cost.
+- **SMT in the SDK** — the client subscribes to `/replay`,
+  maintains its own SMT, computes siblings locally. Zero operator
+  trust; clients pay the replay cost. The SDK `Prover` already
+  handles `genProof` given inputs; only the SMT-maintenance helper
+  is missing.
+
+Of these, the *protocol-faithful* default is: server runs the SMT,
+SDK reads `getInputs` over HTTP. The CF runtime makes that path
+expensive (need pre-compiled WASM binding + zkjson patch). The
+*operationally simple* default that ships today is: SMT lives in the
+validator (existing `hb/src/validate.js` against
+`/~scheduler@1.0/schedule`), the Worker serves the entry log only.
+
+This isn't a CF architectural limitation of WeaveDB — it's a
+limitation of where the SMT can be cheaply *computed*. The protocol
+itself is unchanged. A future PR can pre-compile Poseidon and bring
+the SMT into the DO when the engineering payoff is worth it.
+
 ## Migration / coexistence with the Node/Express path
 
 - Same `/~weavedb@1.0/{get,set,admin}` surface, so SDKs and clients
