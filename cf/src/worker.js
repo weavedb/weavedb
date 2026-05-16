@@ -12,11 +12,11 @@ import "./atob-polyfill.js"
 //   GET  /~weavedb@1.0/get          → DO /get
 //   POST /~weavedb@1.0/set          → DO /set
 //   GET  /~weavedb@1.0/zkp-inputs   → DO /zkp-inputs   (PR 3 of plan-cf.md)
+//   GET  /~weavedb@1.0/replay       → DO /replay       (PR 5 of plan-cf.md)
 //
 // Not yet implemented (deferred):
 //   POST /~weavedb@1.0/admin        — global admin
 //   GET  /wal/:pid                  — WAL range read
-//   GET  /~weavedb@1.0/replay       — replay bundle stream (PR 5 of plan-cf.md)
 
 export { ProcessDO } from "./process-do.js"
 
@@ -50,7 +50,8 @@ export default {
     if (
       (method === "GET" && path === "/~weavedb@1.0/get") ||
       (method === "POST" && path === "/~weavedb@1.0/set") ||
-      (method === "GET" && path === "/~weavedb@1.0/zkp-inputs")
+      (method === "GET" && path === "/~weavedb@1.0/zkp-inputs") ||
+      (method === "GET" && path === "/~weavedb@1.0/replay")
     ) {
       const pid = req.headers.get("id")
       if (!pid) {
@@ -62,7 +63,9 @@ export default {
           ? "/get"
           : path === "/~weavedb@1.0/set"
             ? "/set"
-            : "/zkp-inputs"
+            : path === "/~weavedb@1.0/zkp-inputs"
+              ? "/zkp-inputs"
+              : "/replay"
       const innerUrl = new URL(req.url)
       innerUrl.pathname = innerPath
       const innerReq = new Request(innerUrl, req)

@@ -20,7 +20,7 @@ import "./atob-polyfill.js"
 import doKv from "./do-kv.js"
 import { verify, toAddr } from "./auth.js"
 import { hbClientFromEnv, HBClient } from "./hb-client.js"
-import { walFlush, rescheduleWalAlarm } from "./wal-do.js"
+import { walFlush, rescheduleWalAlarm, deserializeBundle } from "./wal-do.js"
 import { recover } from "./recover-do.js"
 import { R2Archive } from "./r2-archive.js"
 import { computeZkpInputs } from "./zkp-inputs.js"
@@ -162,6 +162,7 @@ export class ProcessDO {
     if (method === "GET" && path === "/get") return this.handleGet(req)
     if (method === "POST" && path === "/set") return this.handleSet(req)
     if (method === "GET" && path === "/zkp-inputs") return this.handleZkpInputs(req)
+    if (method === "GET" && path === "/replay") return this.handleReplay(req)
     return jsonResponse({ success: false, err: "not found" }, 404)
   }
 
@@ -314,6 +315,89 @@ export class ProcessDO {
   }
 
   /**
+   * GET /replay — stream archived bundles from R2 as NDJSON.
+   *
+   * Lets a fresh validator (or any thin client) replay the WAL log
+   * from R2 in slot order, without HyperBEAM. Each newline-delimited
+   * JSON object is one bundle:
+   *
+   *   {"slot": N, "zkhash": "sha256:...", "ts": 1700000000000, "bundle": [...entries...]}
+   *
+   * where `bundle` is the already-deserialized entry list (matches
+   * what walFlush flushed). The trailing newline lets clients use
+   * `for await (line of body.lines)` patterns.
+   *
+   * Query params (header or URL):
+   *   from    — starting slot (inclusive). Default 0.
+   *   to      — ending slot (inclusive). Default Infinity.
+   *   limit   — cap result count. Default unlimited.
+   *
+   * Requires the env.BUNDLES R2 binding. Returns 503 if absent.
+   */
+  async handleReplay(req) {
+    const archive = this.r2Archive()
+    if (!archive) {
+      return jsonResponse(
+        { success: false, err: "R2 archive not configured" },
+        503,
+      )
+    }
+    const pid = this._knownPid()
+    if (!pid) {
+      return jsonResponse({ success: false, err: "pid not initialized" }, 400)
+    }
+    const url = new URL(req.url)
+    const get = k => req.headers.get(k) ?? url.searchParams.get(k)
+    const from = parseIntOrDefault(get("from"), 0)
+    const toRaw = get("to")
+    const to = toRaw == null ? Infinity : parseIntOrDefault(toRaw, Infinity)
+    const limit = (() => {
+      const l = get("limit")
+      if (l == null) return undefined
+      const n = Number.parseInt(l, 10)
+      return Number.isFinite(n) && n > 0 ? n : undefined
+    })()
+
+    const entries = await archive.listBundles({ pid, from, to, limit })
+
+    // Stream bundle bodies as NDJSON. For typical history sizes this
+    // could be returned as one body; for very large pids it'd benefit
+    // from a TransformStream — but workerd supports both, and a single
+    // body fits the contract better with `for await (line of body.lines)`.
+    const lines = []
+    for (const entry of entries) {
+      const bundle = await archive.readBundle({ pid, slot: entry.slot })
+      if (!bundle) continue
+      let parsed
+      try {
+        parsed = deserializeBundle(bundle.buf)
+      } catch (e) {
+        // Corrupt bundle — emit a marker and continue. The validator
+        // can decide to halt or skip.
+        parsed = { error: "deserialize failed", message: String(e) }
+      }
+      lines.push(
+        JSON.stringify({
+          slot: entry.slot,
+          zkhash: bundle.zkhash,
+          ts: bundle.ts,
+          bundle: parsed,
+        }),
+      )
+    }
+    const body = lines.length > 0 ? lines.join("\n") + "\n" : ""
+    return new Response(body, {
+      status: 200,
+      headers: {
+        "content-type": "application/x-ndjson",
+        "x-replay-count": String(lines.length),
+        "x-replay-from": String(from),
+        "x-replay-to": String(to === Infinity ? -1 : to),
+      },
+    })
+  }
+
+  /**
    * POST /set — signed write.
    *
    * Mirrors hb/src/server.js's `/~weavedb@1.0/set` handler:
@@ -445,4 +529,10 @@ function jsonResponse(obj, status = 200) {
     status,
     headers: { "content-type": "application/json" },
   })
+}
+
+function parseIntOrDefault(raw, def) {
+  if (raw == null) return def
+  const n = Number.parseInt(raw, 10)
+  return Number.isFinite(n) ? n : def
 }

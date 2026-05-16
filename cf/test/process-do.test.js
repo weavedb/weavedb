@@ -172,6 +172,164 @@ describe("ProcessDO: /zkp-inputs handler", () => {
   })
 })
 
+describe("ProcessDO: /replay handler", () => {
+  let p
+  let bucket
+  let archive
+
+  beforeEach(async () => {
+    // Import test fixtures lazily to keep the top of the file lean.
+    const { MockR2Bucket } = await import("./mock-r2.js")
+    const { R2Archive } = await import("../src/r2-archive.js")
+    bucket = new MockR2Bucket()
+    archive = new R2Archive(bucket)
+
+    const result = await newMockedDO({ ...env, BUNDLES: bucket })
+    p = result.p
+    p._setR2Archive(archive)
+    p.io.put("__cf_meta__/initialized", true)
+    p.io.put("__cf_meta__/pid", "pid-replay")
+    await p.io.flush()
+
+    // Plant 5 archived bundles. Each bundle "deserializes" to an array
+    // of one fake entry — we just check the replay returns them in order.
+    const { serializeBundle } = await import("../src/wal-do.js")
+    for (let slot = 0; slot < 5; slot++) {
+      const buf = serializeBundle([
+        { path: null, headers: {}, body: `b${slot}`, hashpath: `h${slot}`, slot, ts: 1000 + slot },
+      ])
+      await archive.archiveBundle({
+        pid: "pid-replay",
+        slot,
+        zkhash: `sha256:${slot.toString().repeat(16)}`,
+        buf,
+        ts: 1000 + slot,
+      })
+    }
+  })
+
+  it("returns 503 when R2 binding is missing", async () => {
+    p._setR2Archive(null)
+    p.env = { ...env, BUNDLES: undefined }
+    p._r2Archive = null
+    const res = await p.fetch(
+      new Request("http://do/replay", { method: "GET" }),
+    )
+    assert.equal(res.status, 503)
+    const j = await readJson(res)
+    assert.match(j.err, /R2 archive not configured/)
+  })
+
+  it("returns 400 when pid is not initialized", async () => {
+    // Clear pid
+    p.io.put("__cf_meta__/pid", null)
+    const res = await p.fetch(
+      new Request("http://do/replay", { method: "GET" }),
+    )
+    assert.equal(res.status, 400)
+    const j = await readJson(res)
+    assert.match(j.err, /pid not initialized/)
+  })
+
+  it("streams all bundles as NDJSON", async () => {
+    const res = await p.fetch(
+      new Request("http://do/replay", { method: "GET" }),
+    )
+    assert.equal(res.status, 200)
+    assert.equal(res.headers.get("content-type"), "application/x-ndjson")
+    assert.equal(res.headers.get("x-replay-count"), "5")
+    const text = await res.text()
+    const lines = text.trim().split("\n")
+    assert.equal(lines.length, 5)
+    for (let i = 0; i < 5; i++) {
+      const obj = JSON.parse(lines[i])
+      assert.equal(obj.slot, i)
+      assert.equal(obj.ts, 1000 + i)
+      assert.ok(obj.zkhash.startsWith("sha256:"))
+      assert.equal(obj.bundle.length, 1)
+      assert.equal(obj.bundle[0].body, `b${i}`)
+    }
+  })
+
+  it("filters by from (inclusive)", async () => {
+    const res = await p.fetch(
+      new Request("http://do/replay?from=3", { method: "GET" }),
+    )
+    assert.equal(res.status, 200)
+    const lines = (await res.text()).trim().split("\n")
+    assert.equal(lines.length, 2)
+    assert.equal(JSON.parse(lines[0]).slot, 3)
+    assert.equal(JSON.parse(lines[1]).slot, 4)
+  })
+
+  it("filters by to (inclusive)", async () => {
+    const res = await p.fetch(
+      new Request("http://do/replay?to=2", { method: "GET" }),
+    )
+    const lines = (await res.text()).trim().split("\n")
+    assert.equal(lines.length, 3)
+    assert.equal(JSON.parse(lines[0]).slot, 0)
+    assert.equal(JSON.parse(lines[2]).slot, 2)
+  })
+
+  it("filters by both from and to", async () => {
+    const res = await p.fetch(
+      new Request("http://do/replay?from=1&to=3", { method: "GET" }),
+    )
+    const lines = (await res.text()).trim().split("\n")
+    assert.equal(lines.length, 3)
+    assert.deepEqual(
+      lines.map(l => JSON.parse(l).slot),
+      [1, 2, 3],
+    )
+  })
+
+  it("honors limit", async () => {
+    const res = await p.fetch(
+      new Request("http://do/replay?limit=2", { method: "GET" }),
+    )
+    const lines = (await res.text()).trim().split("\n")
+    assert.equal(lines.length, 2)
+    assert.deepEqual(
+      lines.map(l => JSON.parse(l).slot),
+      [0, 1],
+    )
+  })
+
+  it("empty range returns empty body", async () => {
+    const res = await p.fetch(
+      new Request("http://do/replay?from=100", { method: "GET" }),
+    )
+    assert.equal(res.status, 200)
+    assert.equal(res.headers.get("x-replay-count"), "0")
+    assert.equal((await res.text()).length, 0)
+  })
+
+  it("preserves slot order across the response", async () => {
+    // Plant an extra bundle out-of-order in R2 (a future slot) and verify
+    // that the replay still walks in slot-numeric order.
+    const { serializeBundle } = await import("../src/wal-do.js")
+    const futureBuf = serializeBundle([
+      { path: null, headers: {}, body: "future", hashpath: "h99", slot: 99, ts: 9999 },
+    ])
+    await archive.archiveBundle({
+      pid: "pid-replay",
+      slot: 99,
+      zkhash: "sha256:future",
+      buf: futureBuf,
+      ts: 9999,
+    })
+    const res = await p.fetch(
+      new Request("http://do/replay", { method: "GET" }),
+    )
+    const slots = (await res.text())
+      .trim()
+      .split("\n")
+      .map(l => JSON.parse(l).slot)
+    assert.deepEqual(slots, [0, 1, 2, 3, 4, 99])
+  })
+})
+
 describe("ProcessDO: state mechanics", () => {
   it("ensureDB short-circuits when db is already set", async () => {
     const { p } = await newMockedDO(env)

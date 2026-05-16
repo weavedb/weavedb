@@ -172,4 +172,51 @@ describe("Worker: WeaveDB routes", () => {
     const j = await readJson(res)
     assert.match(j.err, /missing id header/)
   })
+
+  it("forwards /replay with id header to the per-pid DO", async () => {
+    let seenName = null
+    let seenInnerPath = null
+    let seenSearch = null
+    const env = {
+      ...baseEnv,
+      PROCESS_DO: mockNamespace(async (req, id) => {
+        seenName = id.name
+        const u = new URL(req.url)
+        seenInnerPath = u.pathname
+        seenSearch = u.search
+        return new Response("", {
+          status: 200,
+          headers: {
+            "content-type": "application/x-ndjson",
+            "x-replay-count": "0",
+          },
+        })
+      }),
+    }
+    const res = await worker.fetch(
+      new Request("http://w/~weavedb@1.0/replay?from=5&to=10", {
+        method: "GET",
+        headers: { id: "pid-replay" },
+      }),
+      env,
+      {},
+    )
+    assert.equal(res.status, 200)
+    assert.equal(seenName, "pid-replay")
+    assert.equal(seenInnerPath, "/replay")
+    assert.match(seenSearch, /from=5/)
+    assert.match(seenSearch, /to=10/)
+  })
+
+  it("returns 400 when id header is missing on /replay", async () => {
+    const env = { ...baseEnv, PROCESS_DO: mockNamespace() }
+    const res = await worker.fetch(
+      new Request("http://w/~weavedb@1.0/replay?from=0", { method: "GET" }),
+      env,
+      {},
+    )
+    assert.equal(res.status, 400)
+    const j = await readJson(res)
+    assert.match(j.err, /missing id header/)
+  })
 })
